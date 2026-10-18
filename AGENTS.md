@@ -324,6 +324,12 @@ So:
   rule and confirm named fixtures turn red — and run the corpus scan, which
   answers the question coverage cannot: *is this true about code we did not
   write?* Both are the convention in #546 and should stay the convention.
+- **Stryker automates the first half for opted-in plugins.** `npm run mutation
+  -- --plugin <name>` mutates every line of `src/rules/**` and lists the
+  changes no fixture notices; `.agent/mutation-baseline.json` ratchets the
+  per-rule score in CI. A survivor in a guard is a missing `valid` case (FP
+  risk), one in detection a missing `invalid` case (FN risk). See
+  [docs/MUTATION_TESTING.md](./docs/MUTATION_TESTING.md).
 
 ### Reporting posture: report the finding, let the consumer scope it
 

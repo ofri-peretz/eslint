@@ -9,7 +9,11 @@
  * Detects dynamic require() calls that could lead to code injection
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { findVariable, makeReadsTaintSource } from '../../utils/provenance';
 import { resolveConstantString } from '../../utils/const-value';
@@ -65,7 +69,8 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-unsafe-dynamic-require.md',
-      description: 'Prevent unsafe dynamic require() calls that could enable code injection',
+      description:
+        'Prevent unsafe dynamic require() calls that could enable code injection',
       cwe: 'CWE-95',
       cvss: 9.8,
     },
@@ -78,7 +83,8 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
         description: 'Dynamic require() detected',
         severity: 'CRITICAL',
         fix: 'Use allowlist: const ALLOWED = ["mod1", "mod2"]; if (!ALLOWED.includes(name)) throw Error("Not allowed")',
-        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/Code_Injection',
       }),
       unsafeDynamicImport: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -88,7 +94,8 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
           'import() resolves and EVALUATES the module it is given, exactly as require() does. This specifier is reachable from request or process input, so an attacker chooses which file executes.',
         severity: 'CRITICAL',
         fix: 'Use allowlist: const ALLOWED = { csv: "./formatters/csv" }; const specifier = ALLOWED[name]; if (!specifier) throw Error("Not allowed"); await import(specifier)',
-        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/Code_Injection',
       }),
     },
     schema: [
@@ -126,11 +133,15 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
     const options = context.options[0] ?? {};
     const readsTaintSource = makeReadsTaintSource(
       context.sourceCode,
-      new Set((options.taintSources ?? DEFAULT_TAINT_SOURCES).map((s) => s.toLowerCase())),
+      new Set(
+        (options.taintSources ?? DEFAULT_TAINT_SOURCES).map((s) =>
+          s.toLowerCase(),
+        ),
+      ),
     );
-    const reportUnresolvedSpecifiers = options.reportUnresolvedSpecifiers ?? false;
+    const reportUnresolvedSpecifiers =
+      options.reportUnresolvedSpecifiers ?? false;
     const allowDynamicImport = options.allowDynamicImport ?? false;
-
 
     /**
      * Track variables that reference require
@@ -186,7 +197,8 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
      */
     const isDangerousSpecifier = (arg: TSESTree.Expression): boolean => {
       if (arg.type === 'Literal') return false;
-      if (arg.type === 'TemplateLiteral' && arg.expressions.length === 0) return false;
+      if (arg.type === 'TemplateLiteral' && arg.expressions.length === 0)
+        return false;
 
       // A `const` bound to a string literal is that string. Webpack's resolver
       // vocabulary calls a specifier a `request`, so `const request =
@@ -203,7 +215,10 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
       // evidence, opposite verdict, decided by the spelling of a parameter.
       if (arg.type === 'Identifier') {
         const variable = findVariable(context.sourceCode, arg);
-        if (variable?.defs.length === 1 && variable.defs[0].type === 'Parameter') {
+        if (
+          variable?.defs.length === 1 &&
+          variable.defs[0].type === 'Parameter'
+        ) {
           return reportUnresolvedSpecifiers;
         }
       }
@@ -222,10 +237,14 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
           // `const requireCjs = createRequire(import.meta.url)` is the
           // documented way to reach the CJS loader from ESM — the same binding
           // one call deeper, and the shape every ESM plugin host uses.
+          // `module.createRequire(…)` (the `node:module` default import) is
+          // the same function.
           if (
             node.init.type === 'CallExpression' &&
-            node.init.callee.type === 'Identifier' &&
-            node.init.callee.name === 'createRequire'
+            ((node.init.callee.type === 'Identifier' &&
+              node.init.callee.name === 'createRequire') ||
+              (node.init.callee.type === 'MemberExpression' &&
+                propertyName(node.init.callee) === 'createRequire'))
           ) {
             requireVariables.add(node.id.name);
           }
@@ -275,4 +294,3 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

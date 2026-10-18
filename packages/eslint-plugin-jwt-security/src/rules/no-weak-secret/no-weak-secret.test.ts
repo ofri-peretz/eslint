@@ -209,3 +209,47 @@ jwt.sign(p, Buffer.from(HEX, 'hex'));`,
     ],
   });
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin jwt-security).
+// Each fixture is the input that tells the rule apart from a Stryker mutant
+// that survived the suite above; see docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', noWeakSecret, {
+  valid: [
+    {
+      name: 'a base64 key of exactly 32 bytes meets the 32-byte floor',
+      code: `import jwt from 'jsonwebtoken';
+jwt.sign(p, Buffer.from('QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVpbXF1eX2A=', 'base64'));`,
+    },
+    {
+      name: 'a template-literal key of exactly the minimum length is long enough',
+      code: `import jwt from 'jsonwebtoken';
+jwt.sign(p, \`Kq7mP2vX9nL4wR8tY3bF6hJ1cZ5gD0sA\`);`,
+    },
+    {
+      name: 'a strong key that merely CONTAINS a placeholder word is not a placeholder',
+      code: `import jwt from 'jsonwebtoken';
+jwt.sign(p, 'Kq7-latest-democracy-counterexample-pleasechangeme-nondefault-x123456-topsecret-mypassword');`,
+    },
+    {
+      name: "a long key starting with 'secretariat' is not the word 'secret'",
+      code: `import jwt from 'jsonwebtoken';
+jwt.sign(p, 'secretariat-k8Qz2vN7pL4xR9mT1wY6hJ3cZ5gD0sA');`,
+    },
+    {
+      name: "a long key starting with 'passwordless' is not the word 'password'",
+      code: `import jwt from 'jsonwebtoken';
+jwt.sign(p, 'passwordless-k8Qz2vN7pL4xR9mT1wY6hJ3cZ5gD0sA');`,
+    },
+  ],
+  invalid: [
+    {
+      name: 'a base64 key is measured in decoded bytes: 44 characters, 31 bytes, == padding',
+      code: `import jwt from 'jsonwebtoken';
+jwt.sign(p, Buffer.from('QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVpbXF1eXw==', 'base64'));`,
+      errors: [{ messageId: 'shortSecret' }],
+    },
+  ],
+});

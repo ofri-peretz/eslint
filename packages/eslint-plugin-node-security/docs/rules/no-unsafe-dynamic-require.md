@@ -11,6 +11,7 @@ autofix: false
 > **Keywords:** require, code injection, security, ESLint rule, dynamic require, path traversal, arbitrary code execution, module loading, auto-fix, LLM-optimized, code security
 
 <!-- @rule-summary -->
+
 Disallows dynamic require() calls with non-literal arguments that could lead to security vulnerabilities
 <!-- @/rule-summary -->
 
@@ -28,7 +29,7 @@ Disallows dynamic `require()` calls with non-literal arguments that could lead t
 | **CWE Reference** | [CWE-706](https://cwe.mitre.org/data/definitions/706.html) (Incorrect Resolution) |
 | **Severity**      | Warning (security best practice)                                                  |
 | **Auto-Fix**      | ⚠️ Suggests fixes (manual application)                                            |
-| **Category**   | Security |
+| **Category**      | Security                                                                          |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                           |
 | **Best For**      | Node.js applications, plugin systems, dynamic module loading                      |
 
@@ -63,12 +64,17 @@ const plugin = require(`./plugins/${pluginName}`);
 // Variable paths
 const modulePath = getUserInput();
 const module = require(modulePath);
+
+// The CJS loader reached from ESM — `createRequire` or `module.createRequire`
+import nodeModule from 'node:module';
+const requireCjs = nodeModule.createRequire(import.meta.url);
+const transform = requireCjs(req.body.transform);
 ```
 
 ### ✅ Correct
 
 ```typescript
-const fs = require("fs");
+const fs = require('fs');
 ```
 
 ## Configuration
@@ -85,11 +91,11 @@ const fs = require("fs");
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowDynamicImport` | `boolean` | `false` | Allow ES6 dynamic `import()` (generally safer than `require()`) |
-| `taintSources` | `string[]` | `["req","request","ctx","event","process"]` | Identifier roots treated as attacker-reachable (default: req, request, ctx, event, process) |
-| `reportUnresolvedSpecifiers` | `boolean` | `false` | Report specifiers whose provenance cannot be resolved. Restores the pre-inversion "any non-literal is dangerous" behaviour. |
+| Option                       | Type       | Default                                     | Description                                                                                                                 |
+| ---------------------------- | ---------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `allowDynamicImport`         | `boolean`  | `false`                                     | Allow ES6 dynamic `import()` (generally safer than `require()`)                                                             |
+| `taintSources`               | `string[]` | `["req","request","ctx","event","process"]` | Identifier roots treated as attacker-reachable (default: req, request, ctx, event, process)                                 |
+| `reportUnresolvedSpecifiers` | `boolean`  | `false`                                     | Report specifiers whose provenance cannot be resolved. Restores the pre-inversion "any non-literal is dangerous" behaviour. |
 
 ### Allow Dynamic Import
 

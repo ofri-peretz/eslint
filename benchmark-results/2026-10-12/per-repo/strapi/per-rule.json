@@ -1,0 +1,381 @@
+{
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 1,
+    "avgTimeMs": 2.23,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-weak-password-recovery",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/strapi/packages/core/strapi/src/cli/commands/admin/reset-user-password.ts",
+        "line": 37,
+        "column": 15,
+        "message": "🔒 CWE-640 OWASP:A07-Authentication CVSS:8.1 | Logging sensitive data during password recovery | MEDIUM\n   Fix: Never log passwords, tokens, or sensitive recovery data | https://cwe.mitre.org/data/definitions/640.html"
+      }
+    ]
+  },
+  "express-security/require-helmet": {
+    "hits": 0,
+    "avgTimeMs": 17.23,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 15.61,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 11.44,
+    "samples": []
+  },
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 9.19,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 7.31,
+    "samples": []
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 0,
+    "avgTimeMs": 7.21,
+    "samples": []
+  },
+  "node-security/no-timing-unsafe-compare": {
+    "hits": 0,
+    "avgTimeMs": 6.85,
+    "samples": []
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 0,
+    "avgTimeMs": 5.21,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 4.48,
+    "samples": []
+  },
+  "node-security/no-unsafe-buffer-alloc": {
+    "hits": 0,
+    "avgTimeMs": 4.23,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 5.38,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 0,
+    "avgTimeMs": 3.93,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 3.93,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 2.67,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 3.61,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 0,
+    "avgTimeMs": 4.18,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 4.1,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 3.11,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 2.9,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 2.89,
+    "samples": []
+  },
+  "node-security/no-math-random-crypto": {
+    "hits": 0,
+    "avgTimeMs": 2.52,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 2.35,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 2.27,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 2.21,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 3.56,
+    "samples": []
+  },
+  "secure-coding/no-fail-open-auth": {
+    "hits": 0,
+    "avgTimeMs": 1.99,
+    "samples": []
+  },
+  "secure-coding/no-homoglyph-identifiers": {
+    "hits": 0,
+    "avgTimeMs": 1.97,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 1.84,
+    "samples": []
+  },
+  "node-security/no-unbounded-decompression": {
+    "hits": 0,
+    "avgTimeMs": 1.67,
+    "samples": []
+  },
+  "secure-coding/no-sql-injection": {
+    "hits": 0,
+    "avgTimeMs": 1.45,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 1.44,
+    "samples": []
+  },
+  "node-security/no-dynamic-command-string": {
+    "hits": 0,
+    "avgTimeMs": 1.26,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 1.14,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 1.1,
+    "samples": []
+  },
+  "secure-coding/no-log-injection": {
+    "hits": 0,
+    "avgTimeMs": 1.06,
+    "samples": []
+  },
+  "secure-coding/no-template-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.86,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 0.99,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 0.9,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 0.9,
+    "samples": []
+  },
+  "node-security/require-stream-error-handler": {
+    "hits": 0,
+    "avgTimeMs": 0.8,
+    "samples": []
+  },
+  "node-security/no-weak-dh-parameters": {
+    "hits": 0,
+    "avgTimeMs": 0.73,
+    "samples": []
+  },
+  "node-security/no-shell-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.78,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 0.71,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 0.59,
+    "samples": []
+  },
+  "node-security/no-self-signed-certs": {
+    "hits": 0,
+    "avgTimeMs": 0.5,
+    "samples": []
+  },
+  "node-security/no-env-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.49,
+    "samples": []
+  },
+  "node-security/no-dynamic-algorithm-selection": {
+    "hits": 0,
+    "avgTimeMs": 0.45,
+    "samples": []
+  },
+  "node-security/require-aead-tag-verification": {
+    "hits": 0,
+    "avgTimeMs": 0.41,
+    "samples": []
+  },
+  "node-security/no-insecure-http-parser": {
+    "hits": 0,
+    "avgTimeMs": 0.35,
+    "samples": []
+  },
+  "express-security/no-permissive-cors": {
+    "hits": 0,
+    "avgTimeMs": 0.28,
+    "samples": []
+  },
+  "express-security/no-exposed-debug-endpoints": {
+    "hits": 0,
+    "avgTimeMs": 0.25,
+    "samples": []
+  },
+  "express-security/require-express-body-parser-limits": {
+    "hits": 0,
+    "avgTimeMs": 0.21,
+    "samples": []
+  },
+  "express-security/require-csrf-protection": {
+    "hits": 0,
+    "avgTimeMs": 0.24,
+    "samples": []
+  },
+  "express-security/no-insecure-cookie-options": {
+    "hits": 0,
+    "avgTimeMs": 0.22,
+    "samples": []
+  },
+  "express-security/require-query-type-guard": {
+    "hits": 0,
+    "avgTimeMs": 0.2,
+    "samples": []
+  },
+  "express-security/require-rate-limiting": {
+    "hits": 0,
+    "avgTimeMs": 0.19,
+    "samples": []
+  },
+  "express-security/require-route-authentication": {
+    "hits": 0,
+    "avgTimeMs": 0.16,
+    "samples": []
+  },
+  "express-security/no-graphql-introspection-production": {
+    "hits": 0,
+    "avgTimeMs": 0.17,
+    "samples": []
+  },
+  "express-security/no-client-controlled-authorization": {
+    "hits": 0,
+    "avgTimeMs": 0.12,
+    "samples": []
+  },
+  "express-security/no-user-controlled-redirect": {
+    "hits": 0,
+    "avgTimeMs": 0.16,
+    "samples": []
+  },
+  "express-security/no-static-root-exposure": {
+    "hits": 0,
+    "avgTimeMs": 0.13,
+    "samples": []
+  },
+  "express-security/no-sensitive-data-in-query": {
+    "hits": 0,
+    "avgTimeMs": 0.15,
+    "samples": []
+  },
+  "express-security/no-host-header-in-links": {
+    "hits": 0,
+    "avgTimeMs": 0.15,
+    "samples": []
+  },
+  "express-security/no-error-details-in-response": {
+    "hits": 0,
+    "avgTimeMs": 0.14,
+    "samples": []
+  },
+  "express-security/require-case-insensitive-path-guard": {
+    "hits": 0,
+    "avgTimeMs": 0.12,
+    "samples": []
+  },
+  "express-security/no-user-controlled-render-locals": {
+    "hits": 0,
+    "avgTimeMs": 0.13,
+    "samples": []
+  },
+  "express-security/no-unsafe-csp-directives": {
+    "hits": 0,
+    "avgTimeMs": 0.15,
+    "samples": []
+  },
+  "express-security/require-strict-transport-security": {
+    "hits": 0,
+    "avgTimeMs": 0.11,
+    "samples": []
+  },
+  "express-security/no-disabled-helmet-protections": {
+    "hits": 0,
+    "avgTimeMs": 0.11,
+    "samples": []
+  },
+  "express-security/no-express-unsafe-regex-route": {
+    "hits": 0,
+    "avgTimeMs": 0.11,
+    "samples": []
+  },
+  "express-security/no-cors-credentials-wildcard": {
+    "hits": 0,
+    "avgTimeMs": 0.11,
+    "samples": []
+  },
+  "express-security/no-permissive-trust-proxy": {
+    "hits": 0,
+    "avgTimeMs": 0.11,
+    "samples": []
+  },
+  "express-security/no-idor-resource-access": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  }
+}

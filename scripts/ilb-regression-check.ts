@@ -39,11 +39,16 @@
  *     (a 3-repo smoke run overwriting the 22-repo corpus)  → --allow-shrink
  *   - a run that regresses past a hard threshold          → --accept-regressions
  * Either override is a deliberate re-record; say why in the PR that commits it.
+ *
+ * A repo result most of whose files failed to parse is not a measurement
+ * (scripts/lib/ilb-parse-health.ts). It is never compared, never satisfies
+ * --expect-repos, and --update-baseline refuses it with no override.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseHealthProblem } from './lib/ilb-parse-health';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -96,7 +101,7 @@ interface RepoSummary {
   loc?: number;
   fileCount?: number;
   fpEdge?: boolean;
-  findings?: { total: number; densityPerKloc: number };
+  findings?: { total: number; densityPerKloc: number; parseErrors?: number };
   timing?: { msPerFile: number };
   peakRssMb?: number;
   pluginCoverage?: Record<string, { activationRate: number }>;
@@ -237,7 +242,9 @@ const currentLlmFix = loadJson<LlmFixResult>(
  * caller says which run it is checking.
  */
 if (EXPECT_REPOS.length > 0) {
-  const succeeded = new Set(current.data.repos.filter((r) => r.success).map((r) => r.repo));
+  const succeeded = new Set(
+    current.data.repos.filter((r) => r.success && !parseHealthProblem(r)).map((r) => r.repo),
+  );
   const missing = EXPECT_REPOS.filter((r) => !succeeded.has(r));
   if (missing.length > 0) {
     console.error(
@@ -308,8 +315,15 @@ const cur = current.data;
 const base = baseline;
 
 const baseByRepo = Object.fromEntries(base.repos.map((r) => [r.repo, r]));
+const unmeasured: string[] = [];
 for (const r of cur.repos) {
   if (!r.success) continue;
+  const parseProblem = parseHealthProblem(r);
+  if (parseProblem) {
+    unmeasured.push(`${r.repo}: ${parseProblem}`);
+    fails.push(`${r.repo}: not a measurement — ${parseProblem}`);
+    continue;
+  }
   const b = baseByRepo[r.repo];
   if (!b || !b.success) {
     oks.push(`${r.repo}: new repo (no baseline) — recorded`);
@@ -555,7 +569,16 @@ if (ruleDeltaSection) console.log(ruleDeltaSection);
  * compared again. Both are refused unless explicitly overridden.
  */
 if (UPDATE_BASELINE) {
-  const covered = new Set(cur.repos.filter((r) => r.success).map((r) => r.repo));
+  // No override: a repo that was not linted cannot become anybody's floor.
+  if (unmeasured.length > 0) {
+    console.error(`\n🚫 Baseline NOT updated: ${unmeasured.length} repo result(s) did not measure their code:`);
+    for (const m of unmeasured) console.error(`   ${m}`);
+    console.error('   Fix the parser configuration in scripts/ilb-wild.ts and re-run those repos.');
+    process.exit(2);
+  }
+  const covered = new Set(
+    cur.repos.filter((r) => r.success && !parseHealthProblem(r)).map((r) => r.repo),
+  );
   const dropped = base.repos.filter((r) => r.success && !covered.has(r.repo)).map((r) => r.repo);
   if (dropped.length > 0 && !ALLOW_SHRINK) {
     console.error(

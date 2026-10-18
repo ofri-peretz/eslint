@@ -122,38 +122,67 @@ describe('MongoDB module gate', () => {
 
     it('reports once the file imports mongoose', () => {
       expect(
-        lint(`import mongoose from 'mongoose';\n${dsn}`, 'no-hardcoded-connection-string')
-          .length,
+        lint(
+          `import mongoose from 'mongoose';\n${dsn}`,
+          'no-hardcoded-connection-string',
+        ).length,
       ).toBeGreaterThan(0);
     });
 
     it('reports on a mongodb:// literal with no import at all', () => {
       // The DSN names the protocol; it is evidence in itself.
-      expect(lint(dsn, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(dsn, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
+    });
+
+    it('reports on an upper-case MONGODB:// literal with no import at all', () => {
+      // URI schemes are case-insensitive and the rule's own pattern is `/i`,
+      // so the gate must not be the stricter of the two: the rule reported
+      // this DSN in a Mongo file and abstained on it everywhere else.
+      const upper = `const uri = 'MONGODB+SRV://admin:hunter2@cluster0.example.net/app';`;
+      expect(
+        lint(upper, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
+    });
+
+    it('opens on an upper-case DSN inside a template literal too', () => {
+      const code = 'const uri = `MongoDB://admin:hunter2@${host}/app`;';
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it('opens on a mongoose PLUGIN import, not just mongoose itself', () => {
       // Eleven of the twelve corpus files holding `new Schema(` that a
       // four-package list placed "outside Mongo" were exactly this.
       expect(
-        lint(`import paginate from 'mongoose-paginate';\n${dsn}`, 'no-hardcoded-connection-string')
-          .length,
+        lint(
+          `import paginate from 'mongoose-paginate';\n${dsn}`,
+          'no-hardcoded-connection-string',
+        ).length,
       ).toBeGreaterThan(0);
     });
 
     it('opens on new Schema({...}) with no mongo import', () => {
       const code = `const userSchema = new Schema({ name: String });\n${dsn}`;
-      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it('opens on a .lean() query modifier', () => {
       const code = `export const all = () => Model.find({}).lean();\n${dsn}`;
-      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it('opens on Types.ObjectId', () => {
       const code = `export const id = new Types.ObjectId();\n${dsn}`;
-      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it("opens on a dynamic await import('mongodb')", () => {
@@ -165,12 +194,16 @@ describe('MongoDB module gate', () => {
         return MongoClient;
       }
       ${dsn}`;
-      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it('opens on a mongodb:// template literal', () => {
       const code = 'const uri = `mongodb://admin:hunter2@${host}:27017/app`;';
-      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it("opens on TypeScript's import-equals form", () => {
@@ -179,14 +212,18 @@ describe('MongoDB module gate', () => {
       // type test this way; three corpus files were silenced until the recall
       // diff caught it.
       const code = `import mongoose = require('mongoose');\n${dsn}`;
-      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it('opens on a DSN that is not at the start of the string', () => {
       // Env-file generators write `MONGODB_URL=mongodb://...`; anchoring the
       // match to the start of the literal silenced two corpus files.
       const code = `const line = 'MONGODB_URL=mongodb://admin:hunter2@127.0.0.1/db';`;
-      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it('opens on a `mongoose` binding from a RELATIVE wrapper module', () => {
@@ -198,7 +235,9 @@ describe('MongoDB module gate', () => {
       const code = `const mongoose = require('./config/mongoose');
       mongoose.connect();
       ${dsn}`;
-      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it("opens on require('mongoose') bound to a name that is NOT mongoose", () => {
@@ -207,14 +246,70 @@ describe('MongoDB module gate', () => {
       // the walk stops, so only a differently-named binding still exercises the
       // require-specifier path.
       const code = `const db = require('mongoose');\n${dsn}`;
-      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it('and stays silent on that same DSN-free file with no Mongo evidence', () => {
       expect(
-        lint(`const uri = 'postgres://localhost/app';`, 'no-hardcoded-connection-string'),
+        lint(
+          `const uri = 'postgres://localhost/app';`,
+          'no-hardcoded-connection-string',
+        ),
       ).toHaveLength(0);
     });
+  });
+
+  // The NON_MONGO_SOURCES sweep above holds code no rule would report even with
+  // the gate gone, so it cannot tell a rule that checks `fileUsesMongo()` from
+  // one that does not — Stryker showed `if (!fileUsesMongo(...)) return {}` →
+  // `if (false)` surviving in every rule. Each snippet here IS reported once
+  // the file imports mongoose, so silence without the import can only come
+  // from the gate.
+  describe('per rule, the gate is what silences code the rule would report', () => {
+    // These two cannot be told apart from their gate: the gate opens on
+    // exactly the evidence they report on (a `mongodb://` literal, `new
+    // Schema(...)`), so dropping the check changes no verdict.
+    const GATE_IS_THE_DETECTION = new Set([
+      'no-hardcoded-connection-string',
+      'require-schema-validation',
+    ]);
+    const WOULD_REPORT: Readonly<Record<string, string>> = {
+      'no-bypass-middleware': `export const rename = (id: string, name: string) => User.updateOne({ _id: id }, { name });`,
+      'no-debug-mode-production': `odm.set('debug', true);`,
+      'no-hardcoded-credentials': `export const cfg = { user: 'admin', password: 'hunter2' };`,
+      'no-operator-injection': `export const h = (req) => User.find({ age: { $gt: req.query.min } });`,
+      'no-select-sensitive-fields': `interface UserRow { email: string; password: string }
+        export const one = (id: string) => User.findOne({ id });`,
+      'no-unbounded-find': `export const active = () => User.find({ active: true });`,
+      'no-unsafe-populate': `export const h = (req) => Post.findOne({}).populate(req.query.expand);`,
+      'no-unsafe-query': `export const h = (req) => User.find({ name: req.body.name });`,
+      'no-unsafe-regex-query': `export const h = (req) => User.find({ name: { $regex: req.query.q } });`,
+      'no-unsafe-where': `export const q = { $where: 'this.a > this.b' };`,
+      'require-auth-mechanism': `mongoClient.connect(uri);`,
+      'require-lean-queries': `export const one = (id: string) => User.findOne({ id });`,
+      'require-projection': `export const one = (id: string) => User.findOne({ id });`,
+      'require-tls-connection': `mongoClient.connect(uri);`,
+    };
+
+    it('covers every rule but the two whose gate is their detection', () => {
+      expect(Object.keys(WOULD_REPORT).sort()).toEqual(
+        RULES.filter((r) => !GATE_IS_THE_DETECTION.has(r)).sort(),
+      );
+    });
+
+    it.each(Object.entries(WOULD_REPORT))(
+      'xp/%s reports with a mongoose import and is silent without one',
+      (rule, code) => {
+        expect(
+          lint(`import mongoose from 'mongoose';\n${code}`, rule).length,
+        ).toBeGreaterThan(0);
+        const without = lint(code, rule);
+        expect(without.filter((m) => !m.ruleId)).toHaveLength(0);
+        expect(without).toHaveLength(0);
+      },
+    );
   });
 
   describe('a locally bound require is not module loading', () => {

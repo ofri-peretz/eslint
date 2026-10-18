@@ -12,7 +12,8 @@
  *   - what both share:    @interlace/eslint-devkit, src and dist — every rule
  *                         imports it
  *   - what is linted:     the corpus
- *   - how it is judged:   run.ts, allowlist.json, the shim manifest, this file,
+ *   - how it is judged:   run.ts, finding-key.ts, allowlist.json, the shim
+ *                         manifest, this file,
  *                         the plugin set and the threshold
  *
  * The key this replaces hashed plugin src, the oxlint bundles and the corpus
@@ -108,6 +109,7 @@ export function computeParityCacheKey(inputs: ParityCacheKeyInputs): string {
   );
   file('harness', path.join(suite, 'run.ts'));
   file('harness', path.join(suite, 'cache-key.ts'));
+  file('harness', path.join(suite, 'finding-key.ts'));
   file('harness', path.join(suite, 'allowlist.json'));
   file(
     'harness',

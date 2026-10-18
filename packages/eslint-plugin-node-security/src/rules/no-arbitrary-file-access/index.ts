@@ -355,7 +355,15 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
           for (const stmt of body) {
             if (stmt.type !== 'VariableDeclaration') continue;
             for (const decl of stmt.declarations) {
-              if (decl.id.type !== 'Identifier' || decl.id.name !== varName)
+              // Every name the declarator binds, so the destructured
+              // `const { file } = req.query` is followed like
+              // `const file = req.query.file` — the same value, and the
+              // common Express spelling of this rule's own example.
+              if (
+                !sourceCode
+                  .getDeclaredVariables(decl)
+                  .some((v) => v.name === varName)
+              )
                 continue;
               // A local bound to something we CAN see, and it is not a
               // request: that is the generic rule's territory, not ours.
@@ -375,9 +383,16 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
     const sanitizedVariables = new Set<TSESLint.Scope.Variable | null>();
 
     /**
-     * Check if a variable is assigned from path.basename() or path.join() with basename
+     * Record the binding, and whether it is a path.basename() result
      */
     function checkVariableDeclaration(node: TSESTree.VariableDeclarator) {
+      // `const { file } = req.query`: each destructured name holds a part of
+      // the initialiser, so it carries whatever the initialiser carries.
+      if (node.init && node.id.type !== 'Identifier') {
+        for (const v of sourceCode.getDeclaredVariables(node)) {
+          bindings.set(v, node.init);
+        }
+      }
       if (node.id.type !== 'Identifier' || !node.init) {
         return;
       }
@@ -393,32 +408,12 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         sanitizedVariables.add(variable);
       }
 
-      // Check for path.join() with a sanitized variable or literal base
-      if (
-        init.type === 'CallExpression' &&
-        init.callee.type === 'MemberExpression' &&
-        init.callee.object.type === 'Identifier' &&
-        init.callee.object.name === 'path' &&
-        propertyName(init.callee) === 'join'
-      ) {
-        // Check if any argument is a sanitized variable
-        const hasSanitizedArg = init.arguments.some(
-          (arg: TSESTree.CallExpressionArgument) =>
-            arg.type === 'Identifier' && sanitizedVariables.has(resolve(arg)),
-        );
-
-        // Check if first arg is a safe base (literal or known safe variable)
-        const firstArg = init.arguments[0];
-        const hasSafeBase =
-          firstArg &&
-          (firstArg.type === 'Literal' ||
-            (firstArg.type === 'Identifier' &&
-              /^(SAFE|BASE|ROOT|UPLOAD|PUBLIC)/i.test(firstArg.name)));
-
-        if (hasSanitizedArg && hasSafeBase) {
-          sanitizedVariables.add(variable);
-        }
-      }
+      // A `path.join(SAFE_DIR, basename)` branch used to sit here and marked the
+      // join itself sanitized when ANY argument was a basename result. That
+      // let `path.join(UPLOAD_ROOT, req.query.folder, name)` through, though
+      // `req.query.folder = '../../etc'` escapes the root. `readsUserInput`
+      // already reads a join argument by argument and treats `basename` as
+      // laundering, so the safe shape stays silent without this branch.
     }
 
     /**

@@ -311,3 +311,27 @@ jwt.verify(token, readFileSync('/etc/keys/jwt.key.pub'), { algorithms: ['HS256']
     ],
   });
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin jwt-security).
+// Each fixture is the input that tells the rule apart from a Stryker mutant
+// that survived the suite above; see docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', noAlgorithmConfusion, {
+  valid: [
+    {
+      name: 'a mixed whitelist passed to a call that is not a verify is not judged',
+      code: `import jwt from 'jsonwebtoken';
+config.set('jwt', publicKey, { algorithms: ['HS256', 'RS256'] });`,
+    },
+  ],
+  invalid: [
+    {
+      name: 'the finding lands on the algorithms value, not the first option',
+      code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, publicKey, { maxAge: '1h', algorithms: ['HS256', 'RS256'] });`,
+      errors: [{ messageId: 'algorithmConfusion', line: 2, column: 58 }],
+    },
+  ],
+});

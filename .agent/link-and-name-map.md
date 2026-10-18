@@ -27,37 +27,37 @@ rule id an adopter copies out of a preset names the plugin key they register.
 
 | npm package | v | prefix | alias | docs slug | pillar | logo | docs | OG | codecov |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :-: | :-: | :-: |
-| `eslint-plugin-anthropic-security` | 0.3.4 | `anthropic-security/` | — | `plugin-anthropic-security` | security | `claude` | ✅ | ✅ | ✅ |
+| `eslint-plugin-anthropic-security` | 1.0.0 | `anthropic-security/` | — | `plugin-anthropic-security` | security | `claude` | ✅ | ✅ | ✅ |
 | `eslint-plugin-browser-security` | 2.1.9 | `browser-security/` | — | `plugin-browser-security` | security | `chromium` | ✅ | ✅ | ✅ |
 | `eslint-plugin-cli-floor` | 0.1.0 | `cli-floor/` | — | `plugin-cli-floor` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-conventions` | 6.0.8 | `conventions/` | — | `plugin-conventions` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-drizzle-security` | 0.3.8 | `drizzle-security/` | — | `plugin-drizzle-security` | security | `drizzle` | ✅ | ✅ | ✅ |
+| `eslint-plugin-drizzle-security` | 1.0.0 | `drizzle-security/` | — | `plugin-drizzle-security` | security | `drizzle` | ✅ | ✅ | ✅ |
 | `eslint-plugin-express-security` | 3.2.4 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
-| `eslint-plugin-gemini-security` | 0.3.5 | `gemini-security/` | — | `plugin-gemini-security` | security | `gemini` | ✅ | ✅ | ✅ |
+| `eslint-plugin-gemini-security` | 1.0.0 | `gemini-security/` | — | `plugin-gemini-security` | security | `gemini` | ✅ | ✅ | ✅ |
 | `eslint-plugin-import-next` | 2.8.13 | `import-next/` | — | `plugin-import-next` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-jwt-security` | 3.5.0 | `jwt-security/` | `jwt/` | `plugin-jwt-security` | security | `jwt` | ✅ | ✅ | ✅ |
-| `eslint-plugin-knex-security` | 0.4.8 | `knex-security/` | — | `plugin-knex-security` | security | `knex` | ✅ | ✅ | ✅ |
+| `eslint-plugin-jwt-security` | 3.5.1 | `jwt-security/` | `jwt/` | `plugin-jwt-security` | security | `jwt` | ✅ | ✅ | ✅ |
+| `eslint-plugin-knex-security` | 1.0.0 | `knex-security/` | — | `plugin-knex-security` | security | `knex` | ✅ | ✅ | ✅ |
 | `eslint-plugin-lambda-security` | 2.1.5 | `lambda-security/` | — | `plugin-lambda-security` | security | `lambda` | ✅ | ✅ | ✅ |
 | `eslint-plugin-maintainability` | 3.2.17 | `maintainability/` | — | `plugin-maintainability` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-mcp-sdk-security` | 0.6.0 | `mcp-sdk-security/` | — | `plugin-mcp-sdk-security` | security | `mcp` | ✅ | ✅ | ✅ |
+| `eslint-plugin-mcp-sdk-security` | 1.0.0 | `mcp-sdk-security/` | — | `plugin-mcp-sdk-security` | security | `mcp` | ✅ | ✅ | ✅ |
 | `eslint-plugin-modernization` | 3.1.9 | `modernization/` | — | `plugin-modernization` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-modularity` | 2.5.4 | `modularity/` | — | `plugin-modularity` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-mongodb-security` | 9.1.3 | `mongodb-security/` | — | `plugin-mongodb-security` | security | `mongodb` | ✅ | ✅ | ✅ |
-| `eslint-plugin-mysql-security` | 0.3.8 | `mysql-security/` | — | `plugin-mysql-security` | security | `mysql` | ✅ | ✅ | ✅ |
+| `eslint-plugin-mongodb-security` | 9.1.4 | `mongodb-security/` | — | `plugin-mongodb-security` | security | `mongodb` | ✅ | ✅ | ✅ |
+| `eslint-plugin-mysql-security` | 1.0.0 | `mysql-security/` | — | `plugin-mysql-security` | security | `mysql` | ✅ | ✅ | ✅ |
 | `eslint-plugin-nestjs-security` | 3.1.3 | `nestjs-security/` | — | `plugin-nestjs-security` | security | `nestjs` | ✅ | ✅ | ✅ |
-| `eslint-plugin-node-security` | 5.6.9 | `node-security/` | — | `plugin-node-security` | security | `node` | ✅ | ✅ | ✅ |
-| `eslint-plugin-openai-security` | 0.3.4 | `openai-security/` | — | `plugin-openai-security` | security | `openai` | ✅ | ✅ | ✅ |
+| `eslint-plugin-node-security` | 5.6.10 | `node-security/` | — | `plugin-node-security` | security | `node` | ✅ | ✅ | ✅ |
+| `eslint-plugin-openai-security` | 1.0.0 | `openai-security/` | — | `plugin-openai-security` | security | `openai` | ✅ | ✅ | ✅ |
 | `eslint-plugin-operability` | 4.1.6 | `operability/` | — | `plugin-operability` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-postgresql-security` | 2.5.0 | `postgresql-security/` | `pg/` | `plugin-postgresql-security` | security | `postgresql` | ✅ | ✅ | ✅ |
-| `eslint-plugin-prisma-security` | 0.3.8 | `prisma-security/` | — | `plugin-prisma-security` | security | `prisma` | ✅ | ✅ | ✅ |
+| `eslint-plugin-postgresql-security` | 2.6.0 | `postgresql-security/` | `pg/` | `plugin-postgresql-security` | security | `postgresql` | ✅ | ✅ | ✅ |
+| `eslint-plugin-prisma-security` | 1.0.0 | `prisma-security/` | — | `plugin-prisma-security` | security | `prisma` | ✅ | ✅ | ✅ |
 | `eslint-plugin-react-a11y` | 2.5.3 | `react-a11y/` | — | `plugin-react-a11y` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-react-features` | 1.7.11 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-reliability` | 4.1.12 | `reliability/` | — | `plugin-reliability` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-secure-coding` | 5.4.16 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-sequelize-security` | 0.3.9 | `sequelize-security/` | — | `plugin-sequelize-security` | security | `sequelize` | ✅ | ✅ | ✅ |
-| `eslint-plugin-sqlite-security` | 0.1.11 | `sqlite-security/` | — | `plugin-sqlite-security` | security | `sqlite` | ✅ | ✅ | ✅ |
-| `eslint-plugin-supabase-security` | 0.2.0 | `supabase-security/` | — | `plugin-supabase-security` | security | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-typeorm-security` | 0.3.8 | `typeorm-security/` | — | `plugin-typeorm-security` | security | `typeorm` | ✅ | ✅ | ✅ |
+| `eslint-plugin-sequelize-security` | 1.0.0 | `sequelize-security/` | — | `plugin-sequelize-security` | security | `sequelize` | ✅ | ✅ | ✅ |
+| `eslint-plugin-sqlite-security` | 1.0.0 | `sqlite-security/` | — | `plugin-sqlite-security` | security | `sqlite` | ✅ | ✅ | ✅ |
+| `eslint-plugin-supabase-security` | 1.0.0 | `supabase-security/` | — | `plugin-supabase-security` | security | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-typeorm-security` | 1.0.0 | `typeorm-security/` | — | `plugin-typeorm-security` | security | `typeorm` | ✅ | ✅ | ✅ |
 | `eslint-plugin-vercel-ai-security` | 2.3.0 | `vercel-ai-security/` | — | `plugin-vercel-ai-security` | security | `vercel` | ✅ | ✅ | ✅ |
 
 ## URL shapes

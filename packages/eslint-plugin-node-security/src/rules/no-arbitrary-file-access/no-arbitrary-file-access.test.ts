@@ -27,7 +27,10 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
       name: 'a bare global path with no visible binding is left to the generic rule',
       code: 'fs.readFileSync(filePath)',
     },
-    'fs.readFile(userFile, cb)',
+    {
+      name: 'a path variable traced to no request is not user input',
+      code: 'fs.readFile(userFile, cb)',
+    },
     'fs.readdirSync(scanPath)',
     'fs.writeFileSync(destPath, content)',
     // A local bound to something visible that is NOT a request.
@@ -76,9 +79,10 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
       name: 'mutually-recursive bindings terminate instead of blowing the stack',
       code: 'const a = b; const b = a; fs.readFileSync(a);',
     },
-    // A destructured binding names no Identifier we can follow.
+    // A destructured binding is followed to its initialiser, which here is not
+    // a request.
     {
-      name: 'a destructured binding names no identifier we can follow',
+      name: 'a binding destructured from a non-request object is not user input',
       code: 'const { p } = opts; fs.readFileSync(p);',
     },
     // A declaration with no initializer resolves to nothing.

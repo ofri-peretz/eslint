@@ -1,0 +1,604 @@
+{
+  "node-security/no-timing-unsafe-compare": {
+    "hits": 10,
+    "avgTimeMs": 13.28,
+    "samples": [
+      {
+        "ruleId": "node-security/no-timing-unsafe-compare",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/webhook/app-credential/route.ts",
+        "line": 26,
+        "column": 7,
+        "message": "🔒 CWE-208 OWASP:A02-Security CVSS:5.9 | Using === to compare secrets enables timing attacks. The comparison short-circuits on first mismatch, leaking information about the secret. | HIGH\n   Fix: Use crypto.timingSafeEqual() for constant-ti"
+      },
+      {
+        "ruleId": "node-security/no-timing-unsafe-compare",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/sync/helpscout/route.ts",
+        "line": 46,
+        "column": 9,
+        "message": "🔒 CWE-208 OWASP:A02-Security CVSS:5.9 | Using === to compare secrets enables timing attacks. The comparison short-circuits on first mismatch, leaking information about the secret. | HIGH\n   Fix: Use crypto.timingSafeEqual() for constant-ti"
+      },
+      {
+        "ruleId": "node-security/no-timing-unsafe-compare",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/recorded-daily-video/route.ts",
+        "line": 72,
+        "column": 9,
+        "message": "🔒 CWE-208 OWASP:A02-Security CVSS:5.9 | Using === to compare secrets enables timing attacks. The comparison short-circuits on first mismatch, leaking information about the secret. | HIGH\n   Fix: Use crypto.timingSafeEqual() for constant-ti"
+      },
+      {
+        "ruleId": "node-security/no-timing-unsafe-compare",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/cron/webhookTriggers/route.ts",
+        "line": 11,
+        "column": 7,
+        "message": "🔒 CWE-208 OWASP:A02-Security CVSS:5.9 | Using === to compare secrets enables timing attacks. The comparison short-circuits on first mismatch, leaking information about the secret. | HIGH\n   Fix: Use crypto.timingSafeEqual() for constant-ti"
+      },
+      {
+        "ruleId": "node-security/no-timing-unsafe-compare",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/cron/syncAppMeta/route.ts",
+        "line": 22,
+        "column": 7,
+        "message": "🔒 CWE-208 OWASP:A02-Security CVSS:5.9 | Using === to compare secrets enables timing attacks. The comparison short-circuits on first mismatch, leaking information about the secret. | HIGH\n   Fix: Use crypto.timingSafeEqual() for constant-ti"
+      }
+    ]
+  },
+  "node-security/no-math-random-crypto": {
+    "hits": 1,
+    "avgTimeMs": 7.5,
+    "samples": [
+      {
+        "ruleId": "node-security/no-math-random-crypto",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/teams/create/route.ts",
+        "line": 23,
+        "column": 10,
+        "message": "🔒 CWE-338 OWASP:A04-Cryptographic CVSS:5.3 | Math.random() is not cryptographically secure. It uses a PRNG that can be predicted. Never use it for tokens, keys, passwords, or any security-sensitive values. | CRITICAL\n   Fix: Use crypto.ran"
+      }
+    ]
+  },
+  "browser-security/no-credentials-in-query-params": {
+    "hits": 2,
+    "avgTimeMs": 3.35,
+    "samples": [
+      {
+        "ruleId": "browser-security/no-credentials-in-query-params",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/recorded-daily-video/route.ts",
+        "line": 49,
+        "column": 24,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Credentials detected in URL query parameters - this is a security risk | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use secure methods: POST body, headers (Authorization), or secure cookies | ht"
+      },
+      {
+        "ruleId": "browser-security/no-credentials-in-query-params",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/(use-page-wrapper)/(main-nav)/teams/page.tsx",
+        "line": 26,
+        "column": 31,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Credentials detected in URL query parameters - this is a security risk | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use secure methods: POST body, headers (Authorization), or secure cookies | ht"
+      }
+    ]
+  },
+  "browser-security/no-http-urls": {
+    "hits": 0,
+    "avgTimeMs": 65.54,
+    "samples": []
+  },
+  "express-security/require-helmet": {
+    "hits": 0,
+    "avgTimeMs": 37.48,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 27.08,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 25.25,
+    "samples": []
+  },
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 21.91,
+    "samples": []
+  },
+  "browser-security/no-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 18.24,
+    "samples": []
+  },
+  "browser-security/no-eval": {
+    "hits": 0,
+    "avgTimeMs": 16.05,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 14.57,
+    "samples": []
+  },
+  "browser-security/no-websocket-eval": {
+    "hits": 0,
+    "avgTimeMs": 12.47,
+    "samples": []
+  },
+  "browser-security/no-postmessage-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 11.96,
+    "samples": []
+  },
+  "browser-security/no-websocket-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 10.65,
+    "samples": []
+  },
+  "browser-security/no-filereader-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 10.59,
+    "samples": []
+  },
+  "browser-security/no-worker-message-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 10.56,
+    "samples": []
+  },
+  "browser-security/no-unsafe-eval-csp": {
+    "hits": 0,
+    "avgTimeMs": 6.72,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 10.35,
+    "samples": []
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 0,
+    "avgTimeMs": 8.03,
+    "samples": []
+  },
+  "browser-security/no-unencrypted-transmission": {
+    "hits": 0,
+    "avgTimeMs": 6.33,
+    "samples": []
+  },
+  "node-security/no-unsafe-buffer-alloc": {
+    "hits": 0,
+    "avgTimeMs": 7.82,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 0,
+    "avgTimeMs": 8.06,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 4.97,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 0,
+    "avgTimeMs": 7.13,
+    "samples": []
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 0,
+    "avgTimeMs": 6.59,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 6.73,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 7.27,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 6.38,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 6.37,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 6.02,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 6.06,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 5.66,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 5.47,
+    "samples": []
+  },
+  "secure-coding/no-homoglyph-identifiers": {
+    "hits": 0,
+    "avgTimeMs": 5.86,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 4.47,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 4.07,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 3.99,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 3.94,
+    "samples": []
+  },
+  "secure-coding/no-fail-open-auth": {
+    "hits": 0,
+    "avgTimeMs": 3.92,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 5.44,
+    "samples": []
+  },
+  "secure-coding/no-sql-injection": {
+    "hits": 0,
+    "avgTimeMs": 3.84,
+    "samples": []
+  },
+  "browser-security/require-https-only": {
+    "hits": 0,
+    "avgTimeMs": 4.11,
+    "samples": []
+  },
+  "node-security/no-unbounded-decompression": {
+    "hits": 0,
+    "avgTimeMs": 3.03,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 3.09,
+    "samples": []
+  },
+  "browser-security/no-insecure-redirects": {
+    "hits": 0,
+    "avgTimeMs": 2.79,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 2.55,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 2.55,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 2.55,
+    "samples": []
+  },
+  "browser-security/no-sensitive-localstorage": {
+    "hits": 0,
+    "avgTimeMs": 2.52,
+    "samples": []
+  },
+  "node-security/no-dynamic-command-string": {
+    "hits": 0,
+    "avgTimeMs": 2.3,
+    "samples": []
+  },
+  "secure-coding/no-template-injection": {
+    "hits": 0,
+    "avgTimeMs": 2.26,
+    "samples": []
+  },
+  "browser-security/no-disabled-certificate-validation": {
+    "hits": 0,
+    "avgTimeMs": 2.06,
+    "samples": []
+  },
+  "browser-security/no-client-side-auth-logic": {
+    "hits": 0,
+    "avgTimeMs": 3.24,
+    "samples": []
+  },
+  "browser-security/no-unsafe-inline-csp": {
+    "hits": 0,
+    "avgTimeMs": 2.29,
+    "samples": []
+  },
+  "browser-security/require-postmessage-origin-check": {
+    "hits": 0,
+    "avgTimeMs": 2.24,
+    "samples": []
+  },
+  "secure-coding/no-log-injection": {
+    "hits": 0,
+    "avgTimeMs": 2.23,
+    "samples": []
+  },
+  "browser-security/no-postmessage-wildcard-origin": {
+    "hits": 0,
+    "avgTimeMs": 2.13,
+    "samples": []
+  },
+  "browser-security/no-incomplete-url-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 2.12,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 2,
+    "samples": []
+  },
+  "node-security/require-stream-error-handler": {
+    "hits": 0,
+    "avgTimeMs": 1.89,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 1.93,
+    "samples": []
+  },
+  "node-security/no-shell-injection": {
+    "hits": 0,
+    "avgTimeMs": 1.84,
+    "samples": []
+  },
+  "browser-security/require-blob-url-revocation": {
+    "hits": 0,
+    "avgTimeMs": 1.91,
+    "samples": []
+  },
+  "node-security/no-weak-dh-parameters": {
+    "hits": 0,
+    "avgTimeMs": 1.74,
+    "samples": []
+  },
+  "browser-security/no-jwt-in-storage": {
+    "hits": 0,
+    "avgTimeMs": 1.83,
+    "samples": []
+  },
+  "browser-security/no-sensitive-indexeddb": {
+    "hits": 0,
+    "avgTimeMs": 1.59,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 1.6,
+    "samples": []
+  },
+  "browser-security/no-sensitive-sessionstorage": {
+    "hits": 0,
+    "avgTimeMs": 1.52,
+    "samples": []
+  },
+  "browser-security/no-allow-arbitrary-loads": {
+    "hits": 0,
+    "avgTimeMs": 1.43,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 1.2,
+    "samples": []
+  },
+  "browser-security/no-sensitive-cookie-js": {
+    "hits": 0,
+    "avgTimeMs": 1.19,
+    "samples": []
+  },
+  "browser-security/no-dynamic-service-worker-url": {
+    "hits": 0,
+    "avgTimeMs": 1.17,
+    "samples": []
+  },
+  "node-security/require-aead-tag-verification": {
+    "hits": 0,
+    "avgTimeMs": 1.16,
+    "samples": []
+  },
+  "browser-security/require-websocket-wss": {
+    "hits": 0,
+    "avgTimeMs": 1.11,
+    "samples": []
+  },
+  "node-security/no-insecure-http-parser": {
+    "hits": 0,
+    "avgTimeMs": 1.04,
+    "samples": []
+  },
+  "node-security/no-env-injection": {
+    "hits": 0,
+    "avgTimeMs": 1.05,
+    "samples": []
+  },
+  "node-security/no-dynamic-algorithm-selection": {
+    "hits": 0,
+    "avgTimeMs": 1.1,
+    "samples": []
+  },
+  "node-security/no-self-signed-certs": {
+    "hits": 0,
+    "avgTimeMs": 0.99,
+    "samples": []
+  },
+  "browser-security/no-cookie-auth-tokens": {
+    "hits": 0,
+    "avgTimeMs": 0.94,
+    "samples": []
+  },
+  "browser-security/detect-mixed-content": {
+    "hits": 0,
+    "avgTimeMs": 0.96,
+    "samples": []
+  },
+  "express-security/no-permissive-cors": {
+    "hits": 0,
+    "avgTimeMs": 0.9,
+    "samples": []
+  },
+  "browser-security/no-insecure-websocket": {
+    "hits": 0,
+    "avgTimeMs": 0.88,
+    "samples": []
+  },
+  "express-security/require-csrf-protection": {
+    "hits": 0,
+    "avgTimeMs": 0.78,
+    "samples": []
+  },
+  "browser-security/no-unvalidated-deeplinks": {
+    "hits": 0,
+    "avgTimeMs": 0.81,
+    "samples": []
+  },
+  "express-security/no-exposed-debug-endpoints": {
+    "hits": 0,
+    "avgTimeMs": 0.75,
+    "samples": []
+  },
+  "browser-security/require-cookie-secure-attrs": {
+    "hits": 0,
+    "avgTimeMs": 1.51,
+    "samples": []
+  },
+  "express-security/require-express-body-parser-limits": {
+    "hits": 0,
+    "avgTimeMs": 0.71,
+    "samples": []
+  },
+  "express-security/no-insecure-cookie-options": {
+    "hits": 0,
+    "avgTimeMs": 0.71,
+    "samples": []
+  },
+  "express-security/require-rate-limiting": {
+    "hits": 0,
+    "avgTimeMs": 0.67,
+    "samples": []
+  },
+  "express-security/no-graphql-introspection-production": {
+    "hits": 0,
+    "avgTimeMs": 0.52,
+    "samples": []
+  },
+  "express-security/require-query-type-guard": {
+    "hits": 0,
+    "avgTimeMs": 0.49,
+    "samples": []
+  },
+  "express-security/no-user-controlled-render-locals": {
+    "hits": 0,
+    "avgTimeMs": 1.36,
+    "samples": []
+  },
+  "express-security/no-host-header-in-links": {
+    "hits": 0,
+    "avgTimeMs": 0.45,
+    "samples": []
+  },
+  "express-security/no-user-controlled-redirect": {
+    "hits": 0,
+    "avgTimeMs": 0.48,
+    "samples": []
+  },
+  "express-security/no-sensitive-data-in-query": {
+    "hits": 0,
+    "avgTimeMs": 0.42,
+    "samples": []
+  },
+  "express-security/require-route-authentication": {
+    "hits": 0,
+    "avgTimeMs": 0.44,
+    "samples": []
+  },
+  "express-security/no-express-unsafe-regex-route": {
+    "hits": 0,
+    "avgTimeMs": 0.39,
+    "samples": []
+  },
+  "express-security/no-static-root-exposure": {
+    "hits": 0,
+    "avgTimeMs": 0.42,
+    "samples": []
+  },
+  "express-security/no-error-details-in-response": {
+    "hits": 0,
+    "avgTimeMs": 0.41,
+    "samples": []
+  },
+  "express-security/require-case-insensitive-path-guard": {
+    "hits": 0,
+    "avgTimeMs": 0.41,
+    "samples": []
+  },
+  "express-security/no-cors-credentials-wildcard": {
+    "hits": 0,
+    "avgTimeMs": 0.39,
+    "samples": []
+  },
+  "express-security/no-unsafe-csp-directives": {
+    "hits": 0,
+    "avgTimeMs": 0.38,
+    "samples": []
+  },
+  "express-security/require-strict-transport-security": {
+    "hits": 0,
+    "avgTimeMs": 0.35,
+    "samples": []
+  },
+  "express-security/no-disabled-helmet-protections": {
+    "hits": 0,
+    "avgTimeMs": 0.34,
+    "samples": []
+  },
+  "express-security/no-client-controlled-authorization": {
+    "hits": 0,
+    "avgTimeMs": 0.35,
+    "samples": []
+  },
+  "express-security/no-permissive-trust-proxy": {
+    "hits": 0,
+    "avgTimeMs": 0.34,
+    "samples": []
+  },
+  "express-security/no-idor-resource-access": {
+    "hits": 0,
+    "avgTimeMs": 0.33,
+    "samples": []
+  }
+}

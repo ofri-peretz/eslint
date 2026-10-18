@@ -1,0 +1,481 @@
+{
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 1,
+    "avgTimeMs": 13.49,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-sensitive-data-exposure",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/medusa/packages/medusa/src/commands/user.ts",
+        "line": 68,
+        "column": 9,
+        "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in logs: token | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html"
+      }
+    ]
+  },
+  "express-security/no-exposed-debug-endpoints": {
+    "hits": 1,
+    "avgTimeMs": 1.8,
+    "samples": [
+      {
+        "ruleId": "express-security/no-exposed-debug-endpoints",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/medusa/packages/medusa/src/commands/start.ts",
+        "line": 315,
+        "column": 15,
+        "message": "🔒 CWE-489 | Debug endpoint exposed without authentication | HIGH\n   Fix: Remove debug endpoints from production or add authentication | https://cwe.mitre.org/data/definitions/489.html"
+      }
+    ]
+  },
+  "node-security/no-shell-injection": {
+    "hits": 1,
+    "avgTimeMs": 4.14,
+    "samples": [
+      {
+        "ruleId": "node-security/no-shell-injection",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/medusa/packages/medusa/src/commands/develop.ts",
+        "line": 160,
+        "column": 20,
+        "message": "🔒 CWE-78 OWASP:A05-Injection CVSS:9.8 | Shell command built via string concatenation or template literal. An attacker who controls any interpolated value can execute arbitrary OS commands. | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix"
+      }
+    ]
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 2,
+    "avgTimeMs": 16.83,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-unlimited-resource-allocation",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/medusa/packages/medusa/src/api/admin/uploads/middlewares.ts",
+        "line": 14,
+        "column": 16,
+        "message": "🔒 CWE-770 OWASP:A04-Cryptographic CVSS:7.5 | File operations without size limits | MEDIUM\n   Fix: Validate file size before operations — Not a finding if the decompressed bytes are counted against a ceiling downstream | https://nodejs.org/"
+      },
+      {
+        "ruleId": "secure-coding/no-unlimited-resource-allocation",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/medusa/packages/medusa/src/api/admin/products/middlewares.ts",
+        "line": 41,
+        "column": 16,
+        "message": "🔒 CWE-770 OWASP:A04-Cryptographic CVSS:7.5 | File operations without size limits | MEDIUM\n   Fix: Validate file size before operations — Not a finding if the decompressed bytes are counted against a ceiling downstream | https://nodejs.org/"
+      }
+    ]
+  },
+  "postgresql-security/no-unsafe-query": {
+    "hits": 0,
+    "avgTimeMs": 1082.8,
+    "samples": []
+  },
+  "express-security/require-helmet": {
+    "hits": 0,
+    "avgTimeMs": 71,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 71.42,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 52.01,
+    "samples": []
+  },
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 34.05,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 34.79,
+    "samples": []
+  },
+  "node-security/no-timing-unsafe-compare": {
+    "hits": 0,
+    "avgTimeMs": 20.02,
+    "samples": []
+  },
+  "node-security/no-unsafe-buffer-alloc": {
+    "hits": 0,
+    "avgTimeMs": 18.26,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 17.21,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 16.94,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 14.37,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 14.3,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 12.79,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 14.26,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 13.33,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 0,
+    "avgTimeMs": 12.79,
+    "samples": []
+  },
+  "express-security/require-csrf-protection": {
+    "hits": 0,
+    "avgTimeMs": 7.39,
+    "samples": []
+  },
+  "node-security/no-math-random-crypto": {
+    "hits": 0,
+    "avgTimeMs": 12.82,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 10.62,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 10.81,
+    "samples": []
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 0,
+    "avgTimeMs": 9.87,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 8.53,
+    "samples": []
+  },
+  "secure-coding/no-homoglyph-identifiers": {
+    "hits": 0,
+    "avgTimeMs": 9.23,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 7.79,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 7.76,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 7.11,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 7.01,
+    "samples": []
+  },
+  "secure-coding/no-fail-open-auth": {
+    "hits": 0,
+    "avgTimeMs": 6.83,
+    "samples": []
+  },
+  "secure-coding/no-sql-injection": {
+    "hits": 0,
+    "avgTimeMs": 6.74,
+    "samples": []
+  },
+  "node-security/no-unbounded-decompression": {
+    "hits": 0,
+    "avgTimeMs": 5.86,
+    "samples": []
+  },
+  "node-security/no-dynamic-command-string": {
+    "hits": 0,
+    "avgTimeMs": 4.86,
+    "samples": []
+  },
+  "secure-coding/no-log-injection": {
+    "hits": 0,
+    "avgTimeMs": 4.59,
+    "samples": []
+  },
+  "secure-coding/no-template-injection": {
+    "hits": 0,
+    "avgTimeMs": 4.53,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 4.99,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 4.47,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 4.26,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 4.5,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 4.19,
+    "samples": []
+  },
+  "node-security/require-stream-error-handler": {
+    "hits": 0,
+    "avgTimeMs": 4.11,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 3.74,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 3.83,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 3.77,
+    "samples": []
+  },
+  "node-security/no-weak-dh-parameters": {
+    "hits": 0,
+    "avgTimeMs": 3.48,
+    "samples": []
+  },
+  "express-security/no-user-controlled-render-locals": {
+    "hits": 0,
+    "avgTimeMs": 2.03,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 2.97,
+    "samples": []
+  },
+  "node-security/no-self-signed-certs": {
+    "hits": 0,
+    "avgTimeMs": 2.43,
+    "samples": []
+  },
+  "node-security/no-env-injection": {
+    "hits": 0,
+    "avgTimeMs": 2.39,
+    "samples": []
+  },
+  "node-security/require-aead-tag-verification": {
+    "hits": 0,
+    "avgTimeMs": 3.8,
+    "samples": []
+  },
+  "node-security/no-insecure-http-parser": {
+    "hits": 0,
+    "avgTimeMs": 2.99,
+    "samples": []
+  },
+  "node-security/no-dynamic-algorithm-selection": {
+    "hits": 0,
+    "avgTimeMs": 2.01,
+    "samples": []
+  },
+  "express-security/no-permissive-cors": {
+    "hits": 0,
+    "avgTimeMs": 1.93,
+    "samples": []
+  },
+  "express-security/require-route-authentication": {
+    "hits": 0,
+    "avgTimeMs": 1.87,
+    "samples": []
+  },
+  "express-security/require-rate-limiting": {
+    "hits": 0,
+    "avgTimeMs": 2.55,
+    "samples": []
+  },
+  "express-security/require-express-body-parser-limits": {
+    "hits": 0,
+    "avgTimeMs": 1.53,
+    "samples": []
+  },
+  "express-security/require-query-type-guard": {
+    "hits": 0,
+    "avgTimeMs": 1.76,
+    "samples": []
+  },
+  "express-security/no-insecure-cookie-options": {
+    "hits": 0,
+    "avgTimeMs": 1.55,
+    "samples": []
+  },
+  "express-security/no-host-header-in-links": {
+    "hits": 0,
+    "avgTimeMs": 1.3,
+    "samples": []
+  },
+  "express-security/no-sensitive-data-in-query": {
+    "hits": 0,
+    "avgTimeMs": 1.23,
+    "samples": []
+  },
+  "express-security/no-graphql-introspection-production": {
+    "hits": 0,
+    "avgTimeMs": 1.19,
+    "samples": []
+  },
+  "express-security/no-error-details-in-response": {
+    "hits": 0,
+    "avgTimeMs": 1.12,
+    "samples": []
+  },
+  "express-security/no-cors-credentials-wildcard": {
+    "hits": 0,
+    "avgTimeMs": 0.98,
+    "samples": []
+  },
+  "express-security/no-static-root-exposure": {
+    "hits": 0,
+    "avgTimeMs": 1.09,
+    "samples": []
+  },
+  "express-security/no-user-controlled-redirect": {
+    "hits": 0,
+    "avgTimeMs": 1.06,
+    "samples": []
+  },
+  "express-security/no-client-controlled-authorization": {
+    "hits": 0,
+    "avgTimeMs": 0.99,
+    "samples": []
+  },
+  "express-security/no-express-unsafe-regex-route": {
+    "hits": 0,
+    "avgTimeMs": 0.96,
+    "samples": []
+  },
+  "express-security/require-case-insensitive-path-guard": {
+    "hits": 0,
+    "avgTimeMs": 0.99,
+    "samples": []
+  },
+  "express-security/no-unsafe-csp-directives": {
+    "hits": 0,
+    "avgTimeMs": 0.87,
+    "samples": []
+  },
+  "express-security/require-strict-transport-security": {
+    "hits": 0,
+    "avgTimeMs": 0.87,
+    "samples": []
+  },
+  "express-security/no-permissive-trust-proxy": {
+    "hits": 0,
+    "avgTimeMs": 0.79,
+    "samples": []
+  },
+  "express-security/no-disabled-helmet-protections": {
+    "hits": 0,
+    "avgTimeMs": 0.8,
+    "samples": []
+  },
+  "express-security/no-idor-resource-access": {
+    "hits": 0,
+    "avgTimeMs": 0.8,
+    "samples": []
+  },
+  "postgresql-security/no-insecure-ssl": {
+    "hits": 0,
+    "avgTimeMs": 0.49,
+    "samples": []
+  },
+  "postgresql-security/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 0.27,
+    "samples": []
+  },
+  "postgresql-security/no-transaction-on-pool": {
+    "hits": 0,
+    "avgTimeMs": 0.24,
+    "samples": []
+  },
+  "postgresql-security/no-unsafe-copy-from": {
+    "hits": 0,
+    "avgTimeMs": 0.22,
+    "samples": []
+  },
+  "postgresql-security/no-unsafe-search-path": {
+    "hits": 0,
+    "avgTimeMs": 0.21,
+    "samples": []
+  },
+  "postgresql-security/no-missing-client-release": {
+    "hits": 0,
+    "avgTimeMs": 0.19,
+    "samples": []
+  },
+  "postgresql-security/check-query-params": {
+    "hits": 0,
+    "avgTimeMs": 0.16,
+    "samples": []
+  },
+  "postgresql-security/no-floating-query": {
+    "hits": 0,
+    "avgTimeMs": 0.15,
+    "samples": []
+  },
+  "postgresql-security/no-select-all": {
+    "hits": 0,
+    "avgTimeMs": 0.14,
+    "samples": []
+  },
+  "postgresql-security/prevent-double-release": {
+    "hits": 0,
+    "avgTimeMs": 0.14,
+    "samples": []
+  },
+  "postgresql-security/no-batch-insert-loop": {
+    "hits": 0,
+    "avgTimeMs": 0.12,
+    "samples": []
+  },
+  "postgresql-security/prefer-pool-query": {
+    "hits": 0,
+    "avgTimeMs": 0.12,
+    "samples": []
+  }
+}

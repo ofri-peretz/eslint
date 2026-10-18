@@ -46,7 +46,7 @@ withCanonicalDocsUrls('plugin-typeorm-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-typeorm-security',
-    version: '0.3.8',
+    version: '1.0.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

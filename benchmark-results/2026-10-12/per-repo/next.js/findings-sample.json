@@ -1,0 +1,402 @@
+[
+  {
+    "ruleId": "node-security/detect-child-process",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/trace/upload-trace.ts",
+    "line": 25,
+    "column": 5,
+    "message": "⚠️ CWE-78 OWASP:A05-Injection CVSS:9.8 | Command injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix: Use execFile/spawn with {shell: false} and array args | https://owasp.org/www-community/attacks/Command_Injection"
+  },
+  {
+    "ruleId": "node-security/detect-child-process",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/telemetry/storage.ts",
+    "line": 254,
+    "column": 7,
+    "message": "⚠️ CWE-78 OWASP:A05-Injection CVSS:9.8 | Command injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix: Use execFile/spawn with {shell: false} and array args | https://owasp.org/www-community/attacks/Command_Injection"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/shared/lib/match-local-pattern.ts",
+    "line": 27,
+    "column": 40,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  },
+  {
+    "ruleId": "node-security/no-math-random-crypto",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/shared/lib/router/router.ts",
+    "line": 615,
+    "column": 10,
+    "message": "🔒 CWE-338 OWASP:A04-Cryptographic CVSS:5.3 | Math.random() is not cryptographically secure. It uses a PRNG that can be predicted. Never use it for tokens, keys, passwords, or any security-sensitive values. | CRITICAL\n   Fix: Use crypto.ran"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/shared/lib/router/router.ts",
+    "line": 1101,
+    "column": 28,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/shared/lib/router/router.ts",
+    "line": 1110,
+    "column": 56,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/shared/lib/router/adapters.tsx",
+    "line": 114,
+    "column": 36,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://f\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  },
+  {
+    "ruleId": "secure-coding/no-unsafe-regex-construction",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/shared/lib/router/utils/path-match.ts",
+    "line": 49,
+    "column": 9,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Dynamic regex flags: Dynamic flags can lead to unexpected behavior or security issues | HIGH\n   Fix: Use static flags instead of dynamic flags | https://owasp.org/www-community/attacks/Regular_expres"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/shared/lib/router/utils/parse-relative-url.ts",
+    "line": 35,
+    "column": 37,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/shared/lib/router/utils/parse-relative-url.ts",
+    "line": 42,
+    "column": 43,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/shared/lib/router/utils/as-path-to-search-params.ts",
+    "line": 4,
+    "column": 26,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  },
+  {
+    "ruleId": "secure-coding/no-log-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/render.tsx",
+    "line": 973,
+    "column": 15,
+    "message": "🔒 CWE-117 OWASP:A09-Logging CVSS:5.3 | Log message embeds req.url directly - a CR/LF in that value forges a log record | MEDIUM\n   Fix: Log it as a structured field (logger.info({ value }, \"message\")) or strip CR/LF/control characters firs"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/next-server.ts",
+    "line": 1759,
+    "column": 7,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  },
+  {
+    "ruleId": "node-security/detect-eval-with-expression",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/load-manifest.ts",
+    "line": 88,
+    "column": 3,
+    "message": "🔒 CWE-94 OWASP:A05-Injection CVSS:9.8 | vm.runInNewContext() compiles and runs its first argument as JavaScript, and that argument is not written out in full here. The vm module is NOT a security boundary — Node documents it as such — beca"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/base-server.ts",
+    "line": 1348,
+    "column": 13,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/base-server.ts",
+    "line": 1421,
+    "column": 62,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/base-server.ts",
+    "line": 2330,
+    "column": 9,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/web/spec-extension/adapters/next-request.ts",
+    "line": 101,
+    "column": 36,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  },
+  {
+    "ruleId": "node-security/detect-eval-with-expression",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/web/sandbox/context.ts",
+    "line": 548,
+    "column": 9,
+    "message": "🔒 CWE-94 OWASP:A05-Injection CVSS:9.8 | vm.runInContext() compiles and runs its first argument as JavaScript, and that argument is not written out in full here. The vm module is NOT a security boundary — Node documents it as such — because"
+  },
+  {
+    "ruleId": "node-security/no-unsafe-buffer-alloc",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/stream-utils/node-web-streams-helper.ts",
+    "line": 239,
+    "column": 41,
+    "message": "🔒 CWE-789 CVSS:7.5 | The allocation size is read off the wire, so the peer picks it. For `new Array(n)` the hazard is a narrow band, not \"large n\": V8 keeps a packed backing store only up to ~33.5M elements, and a length just under that tu"
+  },
+  {
+    "ruleId": "secure-coding/no-unsafe-regex-construction",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/lib/router-utils/filesystem.ts",
+    "line": 253,
+    "column": 19,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | User input in regex without escaping: User input in regex pattern can lead to ReDoS or injection attacks | HIGH\n   Fix: Escape special characters before using in regex | https://owasp.org/www-communi"
+  },
+  {
+    "ruleId": "browser-security/require-postmessage-origin-check",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/dev/on-demand-entry-handler.ts",
+    "line": 953,
+    "column": 42,
+    "message": "🔒 CWE-346 OWASP:A01-Broken CVSS:7.5 | postMessage listener lacks origin check. Malicious sites can send messages that will be processed. | HIGH\n   Fix: Add origin validation: if (event.origin !== 'https://trusted-domain.com') return; | htt"
+  },
+  {
+    "ruleId": "browser-security/require-postmessage-origin-check",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/dev/hot-reloader-webpack.ts",
+    "line": 437,
+    "column": 42,
+    "message": "🔒 CWE-346 OWASP:A01-Broken CVSS:7.5 | postMessage listener lacks origin check. Malicious sites can send messages that will be processed. | HIGH\n   Fix: Add origin validation: if (event.origin !== 'https://trusted-domain.com') return; | htt"
+  },
+  {
+    "ruleId": "node-security/no-math-random-crypto",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/dev/hot-reloader-turbopack.ts",
+    "line": 103,
+    "column": 56,
+    "message": "🔒 CWE-338 OWASP:A04-Cryptographic CVSS:5.3 | Math.random() is not cryptographically secure. It uses a PRNG that can be predicted. Never use it for tokens, keys, passwords, or any security-sensitive values. | CRITICAL\n   Fix: Use crypto.ran"
+  },
+  {
+    "ruleId": "browser-security/require-postmessage-origin-check",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/dev/hot-reloader-turbopack.ts",
+    "line": 721,
+    "column": 44,
+    "message": "🔒 CWE-346 OWASP:A01-Broken CVSS:7.5 | postMessage listener lacks origin check. Malicious sites can send messages that will be processed. | HIGH\n   Fix: Add origin validation: if (event.origin !== 'https://trusted-domain.com') return; | htt"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/dev/extract-modules-from-turbopack-message.ts",
+    "line": 21,
+    "column": 21,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/app-render/action-handler.ts",
+    "line": 266,
+    "column": 49,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  },
+  {
+    "ruleId": "secure-coding/no-log-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/api-utils/node/api-resolver.ts",
+    "line": 75,
+    "column": 9,
+    "message": "🔒 CWE-117 OWASP:A09-Logging CVSS:5.3 | Log message embeds req.url directly - a CR/LF in that value forges a log record | MEDIUM\n   Fix: Log it as a structured field (logger.info({ value }, \"message\")) or strip CR/LF/control characters firs"
+  },
+  {
+    "ruleId": "secure-coding/no-log-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/api-utils/node/api-resolver.ts",
+    "line": 386,
+    "column": 11,
+    "message": "🔒 CWE-117 OWASP:A09-Logging CVSS:5.3 | Log message embeds req.url directly - a CR/LF in that value forges a log record | MEDIUM\n   Fix: Log it as a structured field (logger.info({ value }, \"message\")) or strip CR/LF/control characters firs"
+  },
+  {
+    "ruleId": "secure-coding/no-log-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/api-utils/node/api-resolver.ts",
+    "line": 436,
+    "column": 11,
+    "message": "🔒 CWE-117 OWASP:A09-Logging CVSS:5.3 | Log message embeds req.url directly - a CR/LF in that value forges a log record | MEDIUM\n   Fix: Log it as a structured field (logger.info({ value }, \"message\")) or strip CR/LF/control characters firs"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/url.ts",
+    "line": 3,
+    "column": 22,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  },
+  {
+    "ruleId": "node-security/no-shell-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/mkcert.ts",
+    "line": 125,
+    "column": 37,
+    "message": "🔒 CWE-78 OWASP:A05-Injection CVSS:9.8 | Shell command built via string concatenation or template literal. An attacker who controls any interpolated value can execute arbitrary OS commands. | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix"
+  },
+  {
+    "ruleId": "node-security/no-shell-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/mkcert.ts",
+    "line": 147,
+    "column": 7,
+    "message": "🔒 CWE-78 OWASP:A05-Injection CVSS:9.8 | Shell command built via string concatenation or template literal. An attacker who controls any interpolated value can execute arbitrary OS commands. | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix"
+  },
+  {
+    "ruleId": "node-security/no-shell-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/mkcert.ts",
+    "line": 153,
+    "column": 33,
+    "message": "🔒 CWE-78 OWASP:A05-Injection CVSS:9.8 | Shell command built via string concatenation or template literal. An attacker who controls any interpolated value can execute arbitrary OS commands. | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix"
+  },
+  {
+    "ruleId": "node-security/no-toctou-vulnerability",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/mkcert.ts",
+    "line": 169,
+    "column": 15,
+    "message": "🔒 CWE-367 OWASP:A04-Cryptographic CVSS:7 | Time-of-check Time-of-use race condition detected | HIGH\n   Fix: Act on the result and handle the failure — open/unlink and catch ENOENT — instead of checking first. Not a finding if the path is i"
+  },
+  {
+    "ruleId": "node-security/detect-non-literal-fs-filename",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/download-swc.ts",
+    "line": 32,
+    "column": 11,
+    "message": "🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use path.resolve() with validation — Not a finding when the value is path.basename()d, checked against an allowlist, or resolved"
+  },
+  {
+    "ruleId": "node-security/detect-non-literal-fs-filename",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/download-swc.ts",
+    "line": 54,
+    "column": 32,
+    "message": "🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use path.resolve() with validation — Not a finding when the value is path.basename()d, checked against an allowlist, or resolved"
+  },
+  {
+    "ruleId": "node-security/detect-non-literal-fs-filename",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/download-swc.ts",
+    "line": 85,
+    "column": 11,
+    "message": "🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use path.resolve() with validation — Not a finding when the value is path.basename()d, checked against an allowlist, or resolved"
+  },
+  {
+    "ruleId": "node-security/detect-non-literal-fs-filename",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/download-swc.ts",
+    "line": 86,
+    "column": 11,
+    "message": "🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use path.resolve() with validation — Not a finding when the value is path.basename()d, checked against an allowlist, or resolved"
+  },
+  {
+    "ruleId": "node-security/detect-non-literal-fs-filename",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/download-swc.ts",
+    "line": 92,
+    "column": 28,
+    "message": "🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate directory is within allowed paths — Not a finding when the value is path.basename()d, checked against an allowlist, or "
+  },
+  {
+    "ruleId": "node-security/detect-non-literal-fs-filename",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/download-swc.ts",
+    "line": 102,
+    "column": 13,
+    "message": "🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use path.resolve() with validation — Not a finding when the value is path.basename()d, checked against an allowlist, or resolved"
+  },
+  {
+    "ruleId": "node-security/no-shell-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/helpers/get-registry.ts",
+    "line": 22,
+    "column": 7,
+    "message": "🔒 CWE-78 OWASP:A05-Injection CVSS:9.8 | Shell command built via string concatenation or template literal. An attacker who controls any interpolated value can execute arbitrary OS commands. | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix"
+  },
+  {
+    "ruleId": "node-security/no-toctou-vulnerability",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/export/index.ts",
+    "line": 678,
+    "column": 17,
+    "message": "🔒 CWE-367 OWASP:A04-Cryptographic CVSS:7 | Time-of-check Time-of-use race condition detected | HIGH\n   Fix: Act on the result and handle the failure — open/unlink and catch ENOENT — instead of checking first. Not a finding if the path is i"
+  },
+  {
+    "ruleId": "node-security/no-toctou-vulnerability",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/export/index.ts",
+    "line": 712,
+    "column": 17,
+    "message": "🔒 CWE-367 OWASP:A04-Cryptographic CVSS:7 | Time-of-check Time-of-use race condition detected | HIGH\n   Fix: Act on the result and handle the failure — open/unlink and catch ENOENT — instead of checking first. Not a finding if the path is i"
+  },
+  {
+    "ruleId": "browser-security/no-innerhtml",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/client/script.tsx",
+    "line": 121,
+    "column": 5,
+    "message": "🔒 CWE-79 OWASP:A05-Injection CVSS:6.1 | Assigning to innerHTML with dynamic content can execute malicious scripts. This is a critical XSS vulnerability. | CRITICAL [SOC2,PCI-DSS,GDPR,ISO27001]\n   Fix: Sanitize with DOMPurify.sanitize() bef"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/client/resolve-href.ts",
+    "line": 60,
+    "column": 7,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/client/resolve-href.ts",
+    "line": 64,
+    "column": 25,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/client/image-component.tsx",
+    "line": 119,
+    "column": 36,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  },
+  {
+    "ruleId": "browser-security/no-innerhtml",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/client/head-manager.ts",
+    "line": 11,
+    "column": 5,
+    "message": "🔒 CWE-79 OWASP:A05-Injection CVSS:6.1 | Assigning to innerHTML with dynamic content can execute malicious scripts. This is a critical XSS vulnerability. | CRITICAL [SOC2,PCI-DSS,GDPR,ISO27001]\n   Fix: Sanitize with DOMPurify.sanitize() bef"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/client/form.tsx",
+    "line": 343,
+    "column": 31,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  }
+]

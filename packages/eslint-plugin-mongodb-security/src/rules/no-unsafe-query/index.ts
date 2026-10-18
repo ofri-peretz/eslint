@@ -19,6 +19,8 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  objectKeyName,
+  propertyName,
   readsRequestShape,
 } from '@interlace/eslint-devkit';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
@@ -33,6 +35,13 @@ export interface Options {
 }
 
 type RuleOptions = [Options?];
+
+/**
+ * Operators whose value is an ARRAY of filter documents. `{ $or: [{ name:
+ * req.body.name }] }` puts user input in a filter exactly as `{ name:
+ * req.body.name }` does; the array only adds alternatives.
+ */
+const LOGICAL_OPERATORS = new Set(['$or', '$and', '$nor']);
 
 // MongoDB/Mongoose query methods
 const QUERY_METHODS = [
@@ -245,10 +254,8 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const methodName =
-          node.callee.property.type === AST_NODE_TYPES.Identifier
-            ? node.callee.property.name
-            : null;
+        // `User['updateOne'](...)` calls the same method the dotted form does.
+        const methodName = propertyName(node.callee);
 
         if (!methodName || !allMethods.has(methodName)) {
           return;
@@ -296,41 +303,72 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Check each property in the query object
-        for (const prop of queryArg.properties) {
-          if (prop.type !== AST_NODE_TYPES.Property) {
-            continue;
-          }
-
-          const value = prop.value;
-
-          // Check if the value is potentially unsafe
-          if (isUnsafePropertyValue(value, context.sourceCode)) {
-            const inputSource = getNodeSource(value);
-
-            if (containsUserInput(value, context.sourceCode)) {
-              context.report({
-                node: prop,
-                messageId: 'unsafeQuery',
-                data: {
-                  input: inputSource,
-                },
-                suggest: [
-                  {
-                    messageId: 'suggestionUseEq',
-                    fix(fixer: TSESLint.RuleFixer) {
-                      const sourceCode = context.sourceCode;
-                      const valueText = sourceCode.getText(value);
-                      return fixer.replaceText(value, `{ $eq: ${valueText} }`);
-                    },
-                  },
-                ],
-              });
-            }
-          }
-        }
+        checkFilter(queryArg);
       },
     };
+
+    /** Check every property of a filter document, recursing into `$or`/`$and`/`$nor`. */
+    function checkFilter(filter: TSESTree.ObjectExpression): void {
+      for (const prop of filter.properties) {
+        // `{ ...req.body, deleted: false }` is `find(req.body)` with extra
+        // keys: a `{ "password": { "$ne": null } }` body lands in the filter
+        // just the same. The spread position supplies the meaning, as the
+        // whole-argument check above does for a bare `.body`.
+        if (prop.type === AST_NODE_TYPES.SpreadElement) {
+          if (
+            readsRequestShape(prop.argument, context.sourceCode, {
+              bodyNeedsDepth: false,
+            }) ||
+            containsUserInput(prop.argument, context.sourceCode)
+          ) {
+            context.report({
+              node: prop,
+              messageId: 'unsafeQuery',
+              data: { input: getNodeSource(prop.argument) },
+            });
+          }
+          continue;
+        }
+
+        const value = prop.value;
+
+        // `{ $or: [{ name: req.body.name }] }` — each branch is a filter.
+        if (
+          value.type === AST_NODE_TYPES.ArrayExpression &&
+          LOGICAL_OPERATORS.has(objectKeyName(prop) ?? '')
+        ) {
+          for (const branch of value.elements) {
+            if (branch?.type === AST_NODE_TYPES.ObjectExpression) {
+              checkFilter(branch);
+            }
+          }
+          continue;
+        }
+
+        // Check if the value is potentially unsafe
+        if (
+          isUnsafePropertyValue(value, context.sourceCode) &&
+          containsUserInput(value, context.sourceCode)
+        ) {
+          context.report({
+            node: prop,
+            messageId: 'unsafeQuery',
+            data: {
+              input: getNodeSource(value),
+            },
+            suggest: [
+              {
+                messageId: 'suggestionUseEq',
+                fix(fixer: TSESLint.RuleFixer) {
+                  const valueText = context.sourceCode.getText(value);
+                  return fixer.replaceText(value, `{ $eq: ${valueText} }`);
+                },
+              },
+            ],
+          });
+        }
+      }
+    }
   },
 });
 

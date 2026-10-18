@@ -1,0 +1,250 @@
+[
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 625,
+    "column": 31,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "secure-coding/no-unsafe-regex-construction",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 663,
+    "column": 13,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Dynamic regex flags: Dynamic flags can lead to unexpected behavior or security issues | HIGH\n   Fix: Use static flags instead of dynamic flags | https://owasp.org/www-community/attacks/Regular_expres"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/TemplatedPathPlugin.js",
+    "line": 29,
+    "column": 6,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/TemplatedPathPlugin.js",
+    "line": 30,
+    "column": 17,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/NormalModule.js",
+    "line": 736,
+    "column": 35,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/DotenvPlugin.js",
+    "line": 30,
+    "column": 2,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "node-security/no-dynamic-algorithm-selection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/util/createHash.js",
+    "line": 86,
+    "column": 27,
+    "message": "🔒 CWE-327 OWASP:A04-Cryptographic CVSS:7.5 | `crypto.createHash()` receives a dynamic algorithm name. An attacker who controls this value can downgrade to a weak algorithm (MD5, SHA1, RC4) or cause a crash. | HIGH [PCI-DSS,HIPAA,ISO27001,N"
+  },
+  {
+    "ruleId": "node-security/detect-eval-with-expression",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/util/binarySearchBounds.js",
+    "line": 111,
+    "column": 17,
+    "message": "🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | eval() can be refactored to safer alternative | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Arrow function or regular function | https://owasp.org/www-community/attacks/Code_Injection"
+  },
+  {
+    "ruleId": "node-security/no-unsafe-buffer-alloc",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/util/StringXor.js",
+    "line": 56,
+    "column": 36,
+    "message": "🔒 CWE-908 CVSS:7.5 | `Buffer.allocUnsafe(size)` returns memory that has not been zeroed. Every byte not overwritten before the buffer is read or sent leaks whatever the allocator previously stored there. | HIGH\n   Fix: Use `Buffer.alloc(si"
+  },
+  {
+    "ruleId": "node-security/no-unsafe-buffer-alloc",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/util/StringXor.js",
+    "line": 64,
+    "column": 36,
+    "message": "🔒 CWE-908 CVSS:7.5 | `Buffer.allocUnsafe(size)` returns memory that has not been zeroed. Every byte not overwritten before the buffer is read or sent leaks whatever the allocator previously stored there. | HIGH\n   Fix: Use `Buffer.alloc(si"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/sharing/utils.js",
+    "line": 31,
+    "column": 21,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Self-loop quantifier (exponential backtracking): A quantifier reaches itself via the parent loop. An attacker can craft input that triggers exponential backtracking. | CRITICAL\n   Fix: Atomic group, "
+  },
+  {
+    "ruleId": "secure-coding/no-unsafe-regex-construction",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/serialization/RegExpObjectSerializer.js",
+    "line": 27,
+    "column": 10,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Dynamic regex flags: Dynamic flags can lead to unexpected behavior or security issues | HIGH\n   Fix: Use static flags instead of dynamic flags | https://owasp.org/www-community/attacks/Regular_expres"
+  },
+  {
+    "ruleId": "node-security/no-unsafe-dynamic-require",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/serialization/ObjectMiddleware.js",
+    "line": 803,
+    "column": 10,
+    "message": "🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | Dynamic require() detected | CRITICAL [SOC2,PCI-DSS,ISO27001]\n   Fix: Use allowlist: const ALLOWED = [\"mod1\", \"mod2\"]; if (!ALLOWED.includes(name)) throw Error(\"Not allowed\") | https://owasp.org/www-"
+  },
+  {
+    "ruleId": "node-security/no-unsafe-buffer-alloc",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/serialization/FileMiddleware.js",
+    "line": 192,
+    "column": 15,
+    "message": "🔒 CWE-908 CVSS:7.5 | `Buffer.allocUnsafe(size)` returns memory that has not been zeroed. Every byte not overwritten before the buffer is read or sent leaks whatever the allocator previously stored there. | HIGH\n   Fix: Use `Buffer.alloc(si"
+  },
+  {
+    "ruleId": "node-security/no-unsafe-buffer-alloc",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/serialization/FileMiddleware.js",
+    "line": 709,
+    "column": 25,
+    "message": "🔒 CWE-908 CVSS:7.5 | `Buffer.allocUnsafeSlow(size)` allocates outside the shared pool but is equally uninitialized — the returned bytes are whatever was last in that memory. | HIGH\n   Fix: Use `Buffer.alloc(size)`, or append `.fill(0)` to "
+  },
+  {
+    "ruleId": "node-security/no-unsafe-buffer-alloc",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/serialization/BinaryMiddleware.js",
+    "line": 203,
+    "column": 20,
+    "message": "🔒 CWE-908 CVSS:7.5 | `Buffer.allocUnsafe(size)` returns memory that has not been zeroed. Every byte not overwritten before the buffer is read or sent leaks whatever the allocator previously stored there. | HIGH\n   Fix: Use `Buffer.alloc(si"
+  },
+  {
+    "ruleId": "node-security/no-unsafe-buffer-alloc",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/serialization/BinaryMiddleware.js",
+    "line": 218,
+    "column": 21,
+    "message": "🔒 CWE-908 CVSS:7.5 | `Buffer.allocUnsafe(size)` returns memory that has not been zeroed. Every byte not overwritten before the buffer is read or sent leaks whatever the allocator previously stored there. | HIGH\n   Fix: Use `Buffer.alloc(si"
+  },
+  {
+    "ruleId": "node-security/require-stream-error-handler",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/schemes/HttpUriPlugin.js",
+    "line": 942,
+    "column": 30,
+    "message": "🔒 CWE-248 OWASP:A10-Mishandling CVSS:7.5 | .pipe() forwards data but not errors. A stream that emits 'error' with no listener throws inside the EventEmitter, which is an uncaught exception — the process exits. A single request for a missin"
+  },
+  {
+    "ruleId": "node-security/require-stream-error-handler",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/schemes/HttpUriPlugin.js",
+    "line": 944,
+    "column": 30,
+    "message": "🔒 CWE-248 OWASP:A10-Mishandling CVSS:7.5 | .pipe() forwards data but not errors. A stream that emits 'error' with no listener throws inside the EventEmitter, which is an uncaught exception — the process exits. A single request for a missin"
+  },
+  {
+    "ruleId": "node-security/require-stream-error-handler",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/schemes/HttpUriPlugin.js",
+    "line": 946,
+    "column": 30,
+    "message": "🔒 CWE-248 OWASP:A10-Mishandling CVSS:7.5 | .pipe() forwards data but not errors. A stream that emits 'error' with no listener throws inside the EventEmitter, which is an uncaught exception — the process exits. A single request for a missin"
+  },
+  {
+    "ruleId": "secure-coding/no-unsafe-regex-construction",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/javascript/JavascriptParser.js",
+    "line": 816,
+    "column": 24,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Dynamic regex flags: Dynamic flags can lead to unexpected behavior or security issues | HIGH\n   Fix: Use static flags instead of dynamic flags | https://owasp.org/www-community/attacks/Regular_expres"
+  },
+  {
+    "ruleId": "secure-coding/no-xxe-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/javascript/JavascriptParser.js",
+    "line": 4781,
+    "column": 51,
+    "message": "🔒 CWE-611 OWASP:A05-Injection CVSS:9.1 | XML from untrusted source without validation | HIGH\n   Fix: Validate and sanitize XML input before parsing | https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet"
+  },
+  {
+    "ruleId": "secure-coding/no-xxe-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/javascript/JavascriptParser.js",
+    "line": 4782,
+    "column": 24,
+    "message": "🔒 CWE-611 OWASP:A05-Injection CVSS:9.1 | XML from untrusted source without validation | HIGH\n   Fix: Validate and sanitize XML input before parsing | https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet"
+  },
+  {
+    "ruleId": "node-security/detect-eval-with-expression",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/javascript/JavascriptParser.js",
+    "line": 5513,
+    "column": 7,
+    "message": "🔒 CWE-94 OWASP:A05-Injection CVSS:9.8 | vm.runInContext() compiles and runs its first argument as JavaScript, and that argument is not written out in full here. The vm module is NOT a security boundary — Node documents it as such — because"
+  },
+  {
+    "ruleId": "node-security/detect-eval-with-expression",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/javascript/JavascriptModulesPlugin.js",
+    "line": 666,
+    "column": 17,
+    "message": "🔒 CWE-94 OWASP:A05-Injection CVSS:9.8 | vm.runInThisContext() compiles and runs its first argument as JavaScript, and that argument is not written out in full here. The vm module is NOT a security boundary — Node documents it as such — bec"
+  },
+  {
+    "ruleId": "node-security/detect-eval-with-expression",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/javascript/JavascriptModulesPlugin.js",
+    "line": 702,
+    "column": 17,
+    "message": "🔒 CWE-94 OWASP:A05-Injection CVSS:9.8 | vm.runInThisContext() compiles and runs its first argument as JavaScript, and that argument is not written out in full here. The vm module is NOT a security boundary — Node documents it as such — bec"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/html/HtmlParser.js",
+    "line": 741,
+    "column": 20,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/dependencies/WorkerPlugin.js",
+    "line": 527,
+    "column": 22,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "node-security/require-stream-error-handler",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/debug/ProfilingPlugin.js",
+    "line": 187,
+    "column": 13,
+    "message": "🔒 CWE-248 OWASP:A10-Mishandling CVSS:7.5 | .pipe() forwards data but not errors. A stream that emits 'error' with no listener throws inside the EventEmitter, which is an uncaught exception — the process exits. A single request for a missin"
+  },
+  {
+    "ruleId": "node-security/detect-eval-with-expression",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/css/CssParser.js",
+    "line": 2837,
+    "column": 7,
+    "message": "🔒 CWE-94 OWASP:A05-Injection CVSS:9.8 | vm.runInContext() compiles and runs its first argument as JavaScript, and that argument is not written out in full here. The vm module is NOT a security boundary — Node documents it as such — because"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/config/browserslistTargetHandler.js",
+    "line": 16,
+    "column": 17,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  }
+]

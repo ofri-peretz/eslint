@@ -11,7 +11,7 @@ For each fixture in the corpus, the suite runs:
 1. **ESLint** (Tier 3) — via `eslint.benchmark.config.mjs`, all Interlace plugins loaded from `packages/*/src/index.ts`.
 2. **Oxlint + Interlace JS plugins** (Tier 2) — via the generated `parity.oxlintrc.json`, plugins loaded from `dist/packages/*/src/index.js` through the [shim layer](../../../tools/oxlint-plugins).
 
-Both outputs are normalized to `(file, rule, line, column)` tuples (message text is stripped — wording diverges legitimately). The runner reports four numbers:
+Both outputs are normalized to `(file, rule, line, column)` tuples (message text is stripped — wording diverges legitimately). Project-scoped rules (`node-security/lock-file`) are the exception: they report once per package.json root on whichever file an engine lints first, and neither engine lints in a fixed order, so they are matched by `(project, rule, occurrence)` instead — see `finding-key.ts`. The runner reports four numbers:
 
 | Metric | Definition | Target |
 |---|---|---|

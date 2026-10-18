@@ -24,7 +24,11 @@ import {
   objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
-import { isDecodeOperation } from '../../utils';
+import {
+  getOptionValue,
+  isDecodeOperation,
+  isJwtLibraryCall,
+} from '../../utils';
 import { fromBackChannel } from '../../utils/provenance';
 import type { NoDecodeWithoutVerifyOptions } from '../../types';
 
@@ -32,6 +36,29 @@ type MessageIds =
   'decodeWithoutVerify' | 'jwtDecodeLibrary' | 'useVerifyInstead';
 
 type RuleOptions = [NoDecodeWithoutVerifyOptions?];
+
+/**
+ * The annotations the docs promise are honoured with no configuration.
+ *
+ * Declared once because the rule reads `context.options`, which ESLint does
+ * NOT merge `defaultOptions` into. Declaring them only in `defaultOptions` —
+ * as this rule did — advertised `@decoded-header-only` as a default while
+ * `create` fell back to `[]`, so the annotation the docs tell you to write
+ * suppressed nothing. (`@verified-separately` only appeared to work: it
+ * contains the devkit's built-in `@verified`.) Surfaced by Stryker: emptying
+ * the declared default changed no test's verdict.
+ */
+const DEFAULT_TRUSTED_ANNOTATIONS = [
+  '@decoded-header-only',
+  '@verified-separately',
+];
+
+/**
+ * jwt-decode's own export names, in v4 (`jwtDecode`) and v3 (`jwt_decode`,
+ * the README's default-import name). A call spelled this way reports with the
+ * library-specific message — but only through `isJwtLibraryCall`'s gates.
+ */
+const JWT_DECODE_LIBRARY_NAMES = new Set(['jwtDecode', 'jwt_decode']);
 
 export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
   name: 'no-decode-without-verify',
@@ -117,29 +144,37 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
     {
       allowHeaderInspection: false,
       trustedSanitizers: [],
-      trustedAnnotations: ['@decoded-header-only', '@verified-separately'],
+      trustedAnnotations: DEFAULT_TRUSTED_ANNOTATIONS,
       strictMode: false,
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] ?? {};
-    const { trustedAnnotations = [], allowHeaderInspection = false } = options;
+    const {
+      trustedAnnotations = DEFAULT_TRUSTED_ANNOTATIONS,
+      allowHeaderInspection = false,
+    } = options;
     const sourceCode = context.sourceCode;
 
     /**
-     * Check if this is a jwt-decode import usage
+     * A jwt-decode call the main `isDecodeOperation` path did not claim
+     * (`jwt_decode` is not in its method set).
+     *
+     * This used to match the callee NAME alone, with none of the gates every
+     * other path in this plugin goes through. Two wrong verdicts followed, both
+     * found because Stryker could delete the `jwtDecode` arm of the match
+     * without any test noticing — the only inputs that reached it were these:
+     *
+     *   - a file importing no JWT library at all, with its own helper named
+     *     `jwtDecode`, was reported as "jwt-decode library usage" — the
+     *     invariant `module-gate.lock.test.ts` states for every rule;
+     *   - `const { exp } = jwt_decode(token)`, the client-side refresh check
+     *     this rule documents as correct, was reported for the v3 spelling
+     *     while the v4 `jwtDecode` spelling was (rightly) allowed.
      */
-    // oxlint-disable-next-line consistent-function-scoping
-    const isJwtDecodeLibrary = (node: TSESTree.CallExpression): boolean => {
-      // Direct call: jwtDecode(token)
-      if (
-        node.callee.type === 'Identifier' &&
-        (node.callee.name === 'jwtDecode' || node.callee.name === 'jwt_decode')
-      ) {
-        return true;
-      }
-      return false;
-    };
+    const isJwtDecodeLibrary = (node: TSESTree.CallExpression): boolean =>
+      node.callee.type === 'Identifier' &&
+      isJwtLibraryCall(node, JWT_DECODE_LIBRARY_NAMES, sourceCode);
 
     /**
      * Claims that carry no authority. Reading them from an unverified token is
@@ -171,14 +206,30 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
      *   only selects a key that will then fail. `header.alg` / `header.jku`
      *   are NOT exempt by default — choosing those from the token is the
      *   attack — unless `allowHeaderInspection` opts every header read in.
+     *
+     * Header reads count only when the call returns the header at all:
+     * `decode(t, { complete: true })`. Without it — jsonwebtoken's plain
+     * decode, or jwt-decode, which returns the payload — `.header.kid` is a
+     * payload claim named "header": unverified data, not a key id.
      */
-    const isAllowedRead = (member: TSESTree.MemberExpression): boolean => {
+    const isAllowedRead = (
+      member: TSESTree.MemberExpression,
+      headerReads: boolean,
+    ): boolean => {
       const name = propertyName(member);
       if (namesOneOf(name, TIME_CLAIMS)) return true;
-      if (name !== 'header') return false;
+      if (!headerReads || name !== 'header') return false;
       if (allowHeaderInspection) return true;
       const next = member.parent;
       return next.type === 'MemberExpression' && propertyName(next) === 'kid';
+    };
+
+    /** `decode(t, { complete: true })` — the one shape whose result carries `.header`. */
+    const returnsHeader = (node: TSESTree.CallExpression): boolean => {
+      const options = node.arguments[1];
+      if (options?.type !== 'ObjectExpression') return false;
+      const complete = getOptionValue(options, 'complete');
+      return complete?.type === 'Literal' && complete.value === true;
     };
 
     /** `const { exp, iat: issuedAt } = decode(t)` — only time claims. */
@@ -203,7 +254,10 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
      * Anything else — reading `sub`, `role`, `scope`, or passing the object on —
      * still reports, because those are claims an attacker would want to forge.
      */
-    const readsOnlyAllowedClaims = (node: TSESTree.CallExpression): boolean => {
+    const readsOnlyAllowedClaims = (
+      node: TSESTree.CallExpression,
+      headerReads: boolean,
+    ): boolean => {
       const outer = skipTypeWrappers(node);
       // ESLint sets `parent` on every visited node, so no undefined guard here
       // (or on the reference parents below) — an unreachable branch no test
@@ -212,7 +266,7 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
 
       // decode(token).exp / decode(token, { complete: true }).header.kid
       if (parent.type === 'MemberExpression' && parent.object === outer) {
-        return isAllowedRead(parent);
+        return isAllowedRead(parent, headerReads);
       }
 
       if (parent.type !== 'VariableDeclarator') {
@@ -253,7 +307,7 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
         const isAllowed =
           useParent.type === 'MemberExpression' &&
           useParent.object === use &&
-          isAllowedRead(useParent);
+          isAllowedRead(useParent, headerReads);
         if (isAllowed) {
           sawAllowedRead = true;
         }
@@ -282,7 +336,7 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
           if (hasSafeAnnotation(node, context, trustedAnnotations)) {
             return;
           }
-          if (readsOnlyAllowedClaims(node)) {
+          if (readsOnlyAllowedClaims(node, returnsHeader(node))) {
             return;
           }
           const [tokenArgument] = node.arguments;
@@ -307,6 +361,9 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
         if (isJwtDecodeLibrary(node)) {
           // Check for safe annotations
           if (hasSafeAnnotation(node, context, trustedAnnotations)) {
+            return;
+          }
+          if (readsOnlyAllowedClaims(node, false)) {
             return;
           }
 

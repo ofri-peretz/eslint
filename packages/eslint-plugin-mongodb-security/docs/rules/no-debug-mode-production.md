@@ -5,14 +5,14 @@ tags: ['security', 'mongodb']
 category: security
 severity: medium
 cwe: CWE-489
-owasp: "A05:2021"
+owasp: 'A05:2021'
 autofix: suggestions
 ---
 
 > **Keywords:** CWE-489, debug, Mongoose, logging, production, security
 
-
 <!-- @rule-summary -->
+
 Detects Mongoose debug mode that could expose sensitive query information in production.
 <!-- @/rule-summary -->
 
@@ -27,7 +27,7 @@ Detects Mongoose debug mode that could expose sensitive query information in pro
 | **CWE Reference** | CWE-489 (Active Debug Code)          |
 | **OWASP**         | A05:2021 - Security Misconfiguration |
 | **Severity**      | Low (CVSS: 3.1)                      |
-| **Category**   | Security |
+| **Category**      | Security                             |
 
 ## Rule Details
 
@@ -43,6 +43,9 @@ Mongoose debug mode logs all queries to console, including:
 ```typescript
 // Debug mode unconditionally enabled
 mongoose.set('debug', true);
+
+// The options-object form sets the same option
+mongoose.set({ debug: true, strictQuery: true });
 
 // Debug callback in production
 mongoose.set('debug', (collectionName, method, query) => {
@@ -134,6 +137,6 @@ mongoose.set(setting, true);
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| Option         | Type      | Default | Description                                     |
+| -------------- | --------- | ------- | ----------------------------------------------- |
+| `allowInTests` | `boolean` | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files |

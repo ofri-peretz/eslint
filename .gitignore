@@ -200,3 +200,7 @@ benchmarks/CANDIDATES.md
 # deliberately contains a contradictory FN marker, so committing it would wedge
 # the ledger for everyone. Ignored so `git add -A` cannot pick it up.
 packages/*/src/tests/__coherence-probe.test.ts
+
+# Stryker HTML/JSON reports (scripts/mutation.mts) — CI uploads them as artifacts.
+benchmark-results/stryker/
+.stryker-tmp/

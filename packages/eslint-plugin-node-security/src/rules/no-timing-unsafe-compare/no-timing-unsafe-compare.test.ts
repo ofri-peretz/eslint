@@ -74,8 +74,14 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
           name: 'GAP: a secret compared through an anonymous name is not detected',
           code: 'if (a === b) { grant(); }',
         },
-        'if (node.type === expectedType) { return; }',
-        'if (symbol.flags === SymbolFlags.Property) { return; }',
+        {
+          name: 'an AST node-type compare holds no secret',
+          code: 'if (node.type === expectedType) { return; }',
+        },
+        {
+          name: 'a symbol-flag compare holds no secret',
+          code: 'if (symbol.flags === SymbolFlags.Property) { return; }',
+        },
         // The plural tail is a separate entry: only the LAST word is tested, so
         // `kind` does not cover `tokenKinds`. Removing `kinds` from
         // DEFAULT_NON_SECRET_TAILS makes this report, because the identifier
@@ -89,7 +95,10 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
         // attacker-supplied operand, so there is nothing to time. Measured: the
         // rule fired on `if (firstKey !== undefined)` in a plain object walk.
         `if (firstKey !== undefined) { use(firstKey); }`,
-        { name: 'comparing a token against undefined is a presence check, not a secret comparison', code: `if (token === undefined) return;` },
+        {
+          name: 'comparing a token against undefined is a presence check, not a secret comparison',
+          code: `if (token === undefined) return;`,
+        },
         `if (hash === null) throw new Error('missing');`,
         `if (signature.length === 0) return false;`,
         `if (apiKey !== null) init(apiKey);`,
@@ -100,7 +109,10 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
         `if (prop.key === 'text') return;`,
         `const first = keys.find((key) => key === wanted);`,
         // Regular non-secret comparisons
-        { name: 'two names compared, which is not a secret', code: 'if (name === otherName) {}' },
+        {
+          name: 'two names compared, which is not a secret',
+          code: 'if (name === otherName) {}',
+        },
         { code: 'if (count === 5) {}' },
         { code: 'if (userId === targetId) {}' },
         { code: 'if (status === "active") {}' },

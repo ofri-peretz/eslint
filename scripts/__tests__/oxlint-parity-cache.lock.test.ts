@@ -81,6 +81,7 @@ beforeEach(() => {
   put('node_modules/oxlint/dist/plugins.js', '/* oxlint */');
   put(`${SUITE}/run.ts`, '// harness');
   put(`${SUITE}/cache-key.ts`, '// key');
+  put(`${SUITE}/finding-key.ts`, '// finding key');
   put(`${SUITE}/allowlist.json`, '{"entries":[]}');
   put('.agent/oxlint-jsplugins-manifest.json', '{"plugins":[]}');
   put('eslint.benchmark.config.mjs', 'export default [];');
@@ -138,6 +139,11 @@ describe('oxlint parity cache key covers every input that decides the verdict', 
     ],
     ['the harness (run.ts)', `${SUITE}/run.ts`, '// harness v2'],
     ['the key function itself', `${SUITE}/cache-key.ts`, '// key v2'],
+    [
+      'how findings are matched',
+      `${SUITE}/finding-key.ts`,
+      '// finding key v2',
+    ],
     ['the allowlist', `${SUITE}/allowlist.json`, '{"entries":[{"rule":"x"}]}'],
     [
       'the shim manifest',

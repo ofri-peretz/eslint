@@ -403,3 +403,27 @@ describe('no-insecure-ssl — string-subscript spellings', () => {
     ],
   });
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin
+// postgresql-security). Each fixture is the input that tells the rule apart
+// from a Stryker mutant that survived the suite above; see
+// docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', noInsecureSsl, {
+  valid: pg([
+    {
+      name: 'a DSN with query parameters but no sslmode is not judged',
+      code: `import { Client } from 'pg';
+const client = new Client('postgres://db/app?application_name=api');`,
+    },
+  ]),
+  invalid: pg([
+    {
+      name: 'a spread before ssl does not hide rejectUnauthorized: false',
+      code: `const pool = new Pool({ ...base, ssl: { rejectUnauthorized: false } });`,
+      errors: [{ messageId: 'noInsecureSsl' }],
+    },
+  ]),
+});

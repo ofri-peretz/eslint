@@ -5,14 +5,14 @@ tags: ['security', 'node']
 category: security
 severity: medium
 cwe: CWE-22
-owasp: "A01:2021"
+owasp: 'A01:2021'
 autofix: false
 ---
 
 > **Keywords:** path traversal, CWE-22, file access, LFI, directory traversal, fs, readFile, security
 
-
 <!-- @rule-summary -->
+
 Prevents file system access with unsanitized user input to protect against path traversal attacks.
 <!-- @/rule-summary -->
 
@@ -27,7 +27,7 @@ Prevents file system access with unsanitized user input to protect against path 
 | **CWE Reference** | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) (Improper Limitation of Pathname) |
 | **OWASP**         | [A01:2021 Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)  |
 | **Severity**      | High                                                                                       |
-| **Category**   | Security |
+| **Category**      | Security                                                                                   |
 
 ## Rule Details
 
@@ -36,7 +36,9 @@ Path traversal vulnerabilities allow attackers to access files outside the inten
 **Smart Detection:** This rule recognizes safe patterns including:
 
 - `path.basename()` sanitization
-- `path.join()` with validated base directories
+- `path.join()` whose request-derived parts all pass through `path.basename()` —
+  one basename argument does not clear the others: `path.join(ROOT, req.query.folder, name)`
+  still escapes `ROOT` with `folder = '../../etc'`
 - `startsWith()` validation guards
 
 ## Examples
@@ -49,12 +51,16 @@ fs.readFileSync(req.query.file, 'utf8');
 
 // `process.argv` is user input too
 fs.readFileSync(process.argv[2], 'utf8');
+
+// Destructured from the request — the same value as `req.query.file`
+const { file } = req.query;
+fs.readFileSync(file, 'utf8');
 ```
 
 ### ✅ Correct
 
 ```typescript
-fs.readFileSync('./config.json')
+fs.readFileSync('./config.json');
 ```
 
 ## Error Message Format
@@ -68,13 +74,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Path Traversal detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                     |
+| :------------------------ | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Path Traversal detected`                                                                                                                                                                                                                                   |
+| **Severity & Compliance** | Impact assessment      | `HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]`                                                                                                                                                                                                                        |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                        |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/)                                                                                                                                                                                                 |
 
 ## Known False Negatives
 
@@ -104,17 +110,6 @@ function readUserFile(path) {
 ```
 
 **Mitigation**: Apply rule to wrapper implementations.
-
-### Template Literals
-
-**Why**: Complex template construction not fully traced.
-
-```typescript
-// ❌ NOT DETECTED - Template literal
-fs.readFileSync(`./uploads/${userId}/${req.query.file}`);
-```
-
-**Mitigation**: Use path.join() with basename().
 
 ### Paths This Rule Cannot Attribute To A Source
 

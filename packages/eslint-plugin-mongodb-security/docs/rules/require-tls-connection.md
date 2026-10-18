@@ -5,14 +5,14 @@ tags: ['security', 'mongodb']
 category: security
 severity: medium
 cwe: CWE-295
-owasp: "A02:2021"
+owasp: 'A02:2021'
 autofix: suggestions
 ---
 
 > **Keywords:** CWE-295, TLS, SSL, encryption, MongoDB, MitM, security
 
-
 <!-- @rule-summary -->
+
 Requires TLS/SSL encryption for MongoDB connections in production environments.
 <!-- @/rule-summary -->
 
@@ -27,7 +27,7 @@ Requires TLS/SSL encryption for MongoDB connections in production environments.
 | **CWE Reference** | CWE-295 (Improper Certificate Validation) |
 | **OWASP**         | A02:2021 - Cryptographic Failures         |
 | **Severity**      | High (CVSS: 7.4)                          |
-| **Category**   | Security |
+| **Category**      | Security                                  |
 
 ## Rule Details
 
@@ -53,8 +53,18 @@ mongoose.connect(uri, { ssl: false });
 ### ✅ Correct
 
 ```typescript
-const x = 1;
+// TLS enabled in the options
+mongoose.connect(uri, { tls: true });
+
+// mongodb+srv:// turns TLS on by default
+mongoose.connect('mongodb+srv://cluster0.example.mongodb.net/app');
+
+// TLS enabled in the connection string
+mongoose.connect('mongodb://db.example.com/app?tls=true');
 ```
+
+A `tls=false` / `ssl=false` in the connection string, or `tls: false` in the
+options, turns the `+srv` default back off and is reported.
 
 ## Receiver Requirement
 
@@ -113,6 +123,6 @@ mongoose.connect(uri, options); // TLS may or may not be enabled
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| Option         | Type      | Default | Description                                     |
+| -------------- | --------- | ------- | ----------------------------------------------- |
+| `allowInTests` | `boolean` | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files |

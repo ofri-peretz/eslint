@@ -1,0 +1,449 @@
+{
+  "lambda-security/no-error-swallowing": {
+    "hits": 7,
+    "avgTimeMs": 2.54,
+    "samples": [
+      {
+        "ruleId": "lambda-security/no-error-swallowing",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/tracer/src/Tracer.ts",
+        "line": 343,
+        "column": 7,
+        "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+      },
+      {
+        "ruleId": "lambda-security/no-error-swallowing",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/parser/src/helpers/index.ts",
+        "line": 59,
+        "column": 9,
+        "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+      },
+      {
+        "ruleId": "lambda-security/no-error-swallowing",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/parameters/src/ssm/SSMProvider.ts",
+        "line": 794,
+        "column": 9,
+        "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+      },
+      {
+        "ruleId": "lambda-security/no-error-swallowing",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/parameters/src/base/transformValue.ts",
+        "line": 77,
+        "column": 5,
+        "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+      },
+      {
+        "ruleId": "lambda-security/no-error-swallowing",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/logger/src/Logger.ts",
+        "line": 1080,
+        "column": 9,
+        "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+      }
+    ]
+  },
+  "node-security/no-unbounded-decompression": {
+    "hits": 3,
+    "avgTimeMs": 3.35,
+    "samples": [
+      {
+        "ruleId": "node-security/no-unbounded-decompression",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/parser/src/schemas/cloudwatch.ts",
+        "line": 70,
+        "column": 30,
+        "message": "🔒 CWE-409 OWASP:A04-Cryptographic CVSS:7.5 | zlib.gunzipSync() buffers the whole decompressed result in memory with no maxOutputLength cap. A few KB of crafted input can expand to gigabytes and exhaust the heap (decompression bomb). | HIGH"
+      },
+      {
+        "ruleId": "node-security/no-unbounded-decompression",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/parser/src/helpers/index.ts",
+        "line": 9,
+        "column": 23,
+        "message": "🔒 CWE-409 OWASP:A04-Cryptographic CVSS:7.5 | zlib.gunzipSync() buffers the whole decompressed result in memory with no maxOutputLength cap. A few KB of crafted input can expand to gigabytes and exhaust the heap (decompression bomb). | HIGH"
+      },
+      {
+        "ruleId": "node-security/no-unbounded-decompression",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/jmespath/src/PowertoolsFunctions.ts",
+        "line": 46,
+        "column": 26,
+        "message": "🔒 CWE-409 OWASP:A04-Cryptographic CVSS:7.5 | zlib.gunzipSync() buffers the whole decompressed result in memory with no maxOutputLength cap. A few KB of crafted input can expand to gigabytes and exhaust the heap (decompression bomb). | HIGH"
+      }
+    ]
+  },
+  "lambda-security/no-unbounded-batch-processing": {
+    "hits": 3,
+    "avgTimeMs": 1.5,
+    "samples": [
+      {
+        "ruleId": "lambda-security/no-unbounded-batch-processing",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/kafka/src/consumer.ts",
+        "line": 32,
+        "column": 15,
+        "message": "⚠️ CWE-770 OWASP:A04-Cryptographic CVSS:5.5 | Processing event.records without size check. Large batches may cause timeout or memory exhaustion. | MEDIUM\n   Fix: Validate batch size before processing: if (event.Records.length > MAX_BATCH) t"
+      },
+      {
+        "ruleId": "lambda-security/no-unbounded-batch-processing",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/kafka/src/consumer.ts",
+        "line": 33,
+        "column": 20,
+        "message": "⚠️ CWE-770 OWASP:A04-Cryptographic CVSS:5.5 | Processing event.records without size check. Large batches may cause timeout or memory exhaustion. | MEDIUM\n   Fix: Validate batch size before processing: if (event.Records.length > MAX_BATCH) t"
+      },
+      {
+        "ruleId": "lambda-security/no-unbounded-batch-processing",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/kafka/src/consumer.ts",
+        "line": 269,
+        "column": 46,
+        "message": "⚠️ CWE-770 OWASP:A04-Cryptographic CVSS:5.5 | Processing event.records without size check. Large batches may cause timeout or memory exhaustion. | MEDIUM\n   Fix: Validate batch size before processing: if (event.Records.length > MAX_BATCH) t"
+      }
+    ]
+  },
+  "lambda-security/no-unvalidated-event-body": {
+    "hits": 25,
+    "avgTimeMs": 2.59,
+    "samples": [
+      {
+        "ruleId": "lambda-security/no-unvalidated-event-body",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+        "line": 105,
+        "column": 6,
+        "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.headers without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before use | ht"
+      },
+      {
+        "ruleId": "lambda-security/no-unvalidated-event-body",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+        "line": 105,
+        "column": 40,
+        "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.headers without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before use | ht"
+      },
+      {
+        "ruleId": "lambda-security/no-unvalidated-event-body",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+        "line": 106,
+        "column": 6,
+        "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.multiValueHeaders without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi befor"
+      },
+      {
+        "ruleId": "lambda-security/no-unvalidated-event-body",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+        "line": 106,
+        "column": 50,
+        "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.multiValueHeaders without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi befor"
+      },
+      {
+        "ruleId": "lambda-security/no-unvalidated-event-body",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+        "line": 109,
+        "column": 6,
+        "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.body without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before use | https"
+      }
+    ]
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 36.54,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 31.29,
+    "samples": []
+  },
+  "lambda-security/no-hardcoded-credentials-sdk": {
+    "hits": 0,
+    "avgTimeMs": 26.98,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 16.69,
+    "samples": []
+  },
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 15.18,
+    "samples": []
+  },
+  "node-security/no-timing-unsafe-compare": {
+    "hits": 0,
+    "avgTimeMs": 12.28,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 8.26,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 0,
+    "avgTimeMs": 8.48,
+    "samples": []
+  },
+  "node-security/no-unsafe-buffer-alloc": {
+    "hits": 0,
+    "avgTimeMs": 8.75,
+    "samples": []
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 0,
+    "avgTimeMs": 7.94,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 7.39,
+    "samples": []
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 0,
+    "avgTimeMs": 7.14,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 0,
+    "avgTimeMs": 7.11,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 9.54,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 6.52,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 7.27,
+    "samples": []
+  },
+  "node-security/no-math-random-crypto": {
+    "hits": 0,
+    "avgTimeMs": 5.58,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 5.49,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 5.49,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 6.14,
+    "samples": []
+  },
+  "secure-coding/no-homoglyph-identifiers": {
+    "hits": 0,
+    "avgTimeMs": 4.7,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 4.54,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 4.26,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 4.07,
+    "samples": []
+  },
+  "secure-coding/no-fail-open-auth": {
+    "hits": 0,
+    "avgTimeMs": 3.66,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 3.64,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 3.63,
+    "samples": []
+  },
+  "secure-coding/no-sql-injection": {
+    "hits": 0,
+    "avgTimeMs": 2.96,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 2.93,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 2.7,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 2.65,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 2.42,
+    "samples": []
+  },
+  "lambda-security/no-missing-authorization-check": {
+    "hits": 0,
+    "avgTimeMs": 2.4,
+    "samples": []
+  },
+  "node-security/no-dynamic-command-string": {
+    "hits": 0,
+    "avgTimeMs": 2.15,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 2.09,
+    "samples": []
+  },
+  "lambda-security/no-secrets-in-env": {
+    "hits": 0,
+    "avgTimeMs": 2.27,
+    "samples": []
+  },
+  "secure-coding/no-log-injection": {
+    "hits": 0,
+    "avgTimeMs": 2.13,
+    "samples": []
+  },
+  "lambda-security/no-user-controlled-requests": {
+    "hits": 0,
+    "avgTimeMs": 2.05,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 1.97,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 2.16,
+    "samples": []
+  },
+  "secure-coding/no-template-injection": {
+    "hits": 0,
+    "avgTimeMs": 2.06,
+    "samples": []
+  },
+  "node-security/require-stream-error-handler": {
+    "hits": 0,
+    "avgTimeMs": 1.77,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 1.75,
+    "samples": []
+  },
+  "node-security/no-shell-injection": {
+    "hits": 0,
+    "avgTimeMs": 1.71,
+    "samples": []
+  },
+  "node-security/no-weak-dh-parameters": {
+    "hits": 0,
+    "avgTimeMs": 1.62,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 1.64,
+    "samples": []
+  },
+  "lambda-security/no-exposed-debug-endpoints": {
+    "hits": 0,
+    "avgTimeMs": 1.63,
+    "samples": []
+  },
+  "lambda-security/require-timeout-handling": {
+    "hits": 0,
+    "avgTimeMs": 1.48,
+    "samples": []
+  },
+  "lambda-security/no-permissive-cors-response": {
+    "hits": 0,
+    "avgTimeMs": 3.01,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 1.25,
+    "samples": []
+  },
+  "node-security/no-self-signed-certs": {
+    "hits": 0,
+    "avgTimeMs": 1.08,
+    "samples": []
+  },
+  "node-security/no-env-injection": {
+    "hits": 0,
+    "avgTimeMs": 1.11,
+    "samples": []
+  },
+  "lambda-security/no-env-logging": {
+    "hits": 0,
+    "avgTimeMs": 1.07,
+    "samples": []
+  },
+  "lambda-security/no-exposed-error-details": {
+    "hits": 0,
+    "avgTimeMs": 0.99,
+    "samples": []
+  },
+  "node-security/no-insecure-http-parser": {
+    "hits": 0,
+    "avgTimeMs": 0.99,
+    "samples": []
+  },
+  "node-security/require-aead-tag-verification": {
+    "hits": 0,
+    "avgTimeMs": 0.96,
+    "samples": []
+  },
+  "lambda-security/no-permissive-cors-middy": {
+    "hits": 0,
+    "avgTimeMs": 0.9,
+    "samples": []
+  },
+  "node-security/no-dynamic-algorithm-selection": {
+    "hits": 0,
+    "avgTimeMs": 0.88,
+    "samples": []
+  },
+  "lambda-security/no-overly-permissive-iam-policy": {
+    "hits": 0,
+    "avgTimeMs": 0.7,
+    "samples": []
+  }
+}

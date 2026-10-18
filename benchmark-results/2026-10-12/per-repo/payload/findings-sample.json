@@ -1,0 +1,130 @@
+[
+  {
+    "ruleId": "mongodb-security/no-unbounded-find",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/payload/packages/payload/src/versions/migrations/localizeStatus/mongo/up.ts",
+    "line": 112,
+    "column": 29,
+    "message": "ℹ️ CWE-400 OWASP:A04-Insecure CVSS:4.3 | find() without limit() may return excessive data | LOW\n   Fix: Add .limit(100) or appropriate limit to the query | https://www.mongodb.com/docs/manual/reference/method/cursor.limit/"
+  },
+  {
+    "ruleId": "mongodb-security/no-bypass-middleware",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/payload/packages/payload/src/versions/migrations/localizeStatus/mongo/up.ts",
+    "line": 153,
+    "column": 11,
+    "message": "ℹ️ CWE-284 OWASP:A01-Broken CVSS:5.3 | This method bypasses Mongoose middleware hooks | MEDIUM\n   Fix: Use findOne + save() pattern to ensure middleware runs | https://mongoosejs.com/docs/middleware.html"
+  },
+  {
+    "ruleId": "mongodb-security/no-unbounded-find",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/payload/packages/payload/src/versions/migrations/localizeStatus/mongo/up.ts",
+    "line": 176,
+    "column": 29,
+    "message": "ℹ️ CWE-400 OWASP:A04-Insecure CVSS:4.3 | find() without limit() may return excessive data | LOW\n   Fix: Add .limit(100) or appropriate limit to the query | https://www.mongodb.com/docs/manual/reference/method/cursor.limit/"
+  },
+  {
+    "ruleId": "mongodb-security/no-bypass-middleware",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/payload/packages/payload/src/versions/migrations/localizeStatus/mongo/up.ts",
+    "line": 204,
+    "column": 15,
+    "message": "ℹ️ CWE-284 OWASP:A01-Broken CVSS:5.3 | This method bypasses Mongoose middleware hooks | MEDIUM\n   Fix: Use findOne + save() pattern to ensure middleware runs | https://mongoosejs.com/docs/middleware.html"
+  },
+  {
+    "ruleId": "mongodb-security/no-bypass-middleware",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/payload/packages/payload/src/versions/migrations/localizeStatus/mongo/up.ts",
+    "line": 245,
+    "column": 13,
+    "message": "ℹ️ CWE-284 OWASP:A01-Broken CVSS:5.3 | This method bypasses Mongoose middleware hooks | MEDIUM\n   Fix: Use findOne + save() pattern to ensure middleware runs | https://mongoosejs.com/docs/middleware.html"
+  },
+  {
+    "ruleId": "mongodb-security/no-unbounded-find",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/payload/packages/payload/src/versions/migrations/localizeStatus/mongo/down.ts",
+    "line": 60,
+    "column": 29,
+    "message": "ℹ️ CWE-400 OWASP:A04-Insecure CVSS:4.3 | find() without limit() may return excessive data | LOW\n   Fix: Add .limit(100) or appropriate limit to the query | https://www.mongodb.com/docs/manual/reference/method/cursor.limit/"
+  },
+  {
+    "ruleId": "mongodb-security/no-bypass-middleware",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/payload/packages/payload/src/versions/migrations/localizeStatus/mongo/down.ts",
+    "line": 78,
+    "column": 11,
+    "message": "ℹ️ CWE-284 OWASP:A01-Broken CVSS:5.3 | This method bypasses Mongoose middleware hooks | MEDIUM\n   Fix: Use findOne + save() pattern to ensure middleware runs | https://mongoosejs.com/docs/middleware.html"
+  },
+  {
+    "ruleId": "mongodb-security/no-unbounded-find",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/payload/packages/payload/src/versions/migrations/localizeStatus/mongo/down.ts",
+    "line": 100,
+    "column": 29,
+    "message": "ℹ️ CWE-400 OWASP:A04-Insecure CVSS:4.3 | find() without limit() may return excessive data | LOW\n   Fix: Add .limit(100) or appropriate limit to the query | https://www.mongodb.com/docs/manual/reference/method/cursor.limit/"
+  },
+  {
+    "ruleId": "mongodb-security/no-bypass-middleware",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/payload/packages/payload/src/versions/migrations/localizeStatus/mongo/down.ts",
+    "line": 107,
+    "column": 17,
+    "message": "ℹ️ CWE-284 OWASP:A01-Broken CVSS:5.3 | This method bypasses Mongoose middleware hooks | MEDIUM\n   Fix: Use findOne + save() pattern to ensure middleware runs | https://mongoosejs.com/docs/middleware.html"
+  },
+  {
+    "ruleId": "mongodb-security/no-bypass-middleware",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/payload/packages/payload/src/versions/migrations/localizeStatus/mongo/down.ts",
+    "line": 132,
+    "column": 13,
+    "message": "ℹ️ CWE-284 OWASP:A01-Broken CVSS:5.3 | This method bypasses Mongoose middleware hooks | MEDIUM\n   Fix: Use findOne + save() pattern to ensure middleware runs | https://mongoosejs.com/docs/middleware.html"
+  },
+  {
+    "ruleId": "secure-coding/no-improper-sanitization",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/payload/packages/payload/src/utilities/sanitizeUserDataForEmail.ts",
+    "line": 50,
+    "column": 19,
+    "message": "🔒 CWE-116 | HTML escaping misses dangerous characters | MEDIUM\n   Fix: Escape all HTML special characters: & < > \" ' | https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html"
+  },
+  {
+    "ruleId": "node-security/detect-eval-with-expression",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/payload/packages/payload/src/utilities/dynamicImport.ts",
+    "line": 27,
+    "column": 16,
+    "message": "🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | Use template literals instead of eval() for string interpolation | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Replace eval() with template literals: `Hello ${name}` | https://owasp.org/www-community/attack"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/payload/packages/payload/src/uploads/fetchAPI-multipart/isEligibleRequest.ts",
+    "line": 2,
+    "column": 33,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Self-loop quantifier (exponential backtracking): A quantifier reaches itself via the parent loop. An attacker can craft input that triggers exponential backtracking. | CRITICAL\n   Fix: Atomic group, "
+  },
+  {
+    "ruleId": "node-security/no-toctou-vulnerability",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/payload/packages/payload/src/database/migrations/createMigration.ts",
+    "line": 14,
+    "column": 5,
+    "message": "🔒 CWE-367 OWASP:A04-Cryptographic CVSS:7 | Time-of-check Time-of-use race condition detected | HIGH\n   Fix: Act on the result and handle the failure — open/unlink and catch ENOENT — instead of checking first. Not a finding if the path is i"
+  },
+  {
+    "ruleId": "secure-coding/no-fail-open-auth",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/payload/packages/payload/src/auth/executeAuthStrategies.ts",
+    "line": 29,
+    "column": 7,
+    "message": "🔒 CWE-636 OWASP:A10-Mishandling CVSS:8.1 | Security check fails open — the catch block swallows the error and execution continues into the code the check was guarding | HIGH\n   Fix: Rethrow, return a deny value, or send a 401/403 from the "
+  },
+  {
+    "ruleId": "secure-coding/no-weak-password-recovery",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/payload/packages/payload/src/auth/operations/forgotPassword.ts",
+    "line": 143,
+    "column": 37,
+    "message": "🔒 CWE-640 OWASP:A07-Authentication CVSS:8.1 | Recovery token can be predicted or guessed | CRITICAL\n   Fix: Use cryptographically secure random tokens | https://cwe.mitre.org/data/definitions/640.html"
+  }
+]

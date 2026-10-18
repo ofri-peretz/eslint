@@ -1,0 +1,42 @@
+[
+  {
+    "ruleId": "browser-security/no-innerhtml",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/studio/components/to-be-cleaned/TooltipListener.tsx",
+    "line": 32,
+    "column": 3,
+    "message": "🔒 CWE-79 OWASP:A05-Injection CVSS:6.1 | Assigning to innerHTML with template literal with expressions can execute malicious scripts. This is a critical XSS vulnerability. | CRITICAL [SOC2,PCI-DSS,GDPR,ISO27001]\n   Fix: Sanitize with DOMPur"
+  },
+  {
+    "ruleId": "browser-security/require-blob-url-revocation",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/studio/components/layouts/ProjectLayout/LayoutHeader/FeedbackDropdown/FeedbackWidget.tsx",
+    "line": 154,
+    "column": 25,
+    "message": "🔒 CWE-401 OWASP:A06-Vulnerable CVSS:5.3 | URL.createObjectURL() creates a reference that persists until explicitly revoked. Without revokeObjectURL(), memory leaks occur. | MEDIUM\n   Fix: Call URL.revokeObjectURL(blobUrl) when the URL is n"
+  },
+  {
+    "ruleId": "browser-security/require-https-only",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/studio/components/interfaces/Settings/Database/NetworkRestrictions/AddRestrictionModal.tsx",
+    "line": 103,
+    "column": 37,
+    "message": "🔒 CWE-319 OWASP:A02-Security CVSS:7.5 | Enforce HTTPS for all external requests detected - this is a security risk | HIGH\n   Fix: Review and apply secure practices | https://cwe.mitre.org/data/definitions/319.html"
+  },
+  {
+    "ruleId": "browser-security/no-credentials-in-query-params",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/studio/components/interfaces/Settings/Database/DatabaseSettings/DatabaseSettings.tsx",
+    "line": 260,
+    "column": 21,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Credentials detected in URL query parameters - this is a security risk | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use secure methods: POST body, headers (Authorization), or secure cookies | ht"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/studio/components/interfaces/Database/Hooks/HTTPRequestFields.tsx",
+    "line": 85,
+    "column": 27,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://api.com/path/resource\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  }
+]
