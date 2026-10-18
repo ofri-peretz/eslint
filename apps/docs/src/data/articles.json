@@ -1,6 +1,26 @@
 {
   "articles": [
     {
+      "id": 4854730,
+      "title": "Six Rules Found Nothing. Only Five of Them Were Waiting.",
+      "description": "A lint rule sitting at zero is one of three different things, and reading the rule list will not tell you which. Asking each rule to fire on its own test fixture takes ten seconds — and on six silent rules it found one that could never have fired at all.",
+      "url": "https://dev.to/ofri-peretz/six-rules-found-nothing-only-five-of-them-were-waiting-2h1a",
+      "canonical_url": "https://ofriperetz.dev/articles/zero-yield-rules-dead-or-waiting",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fzero-yield-rules-dead-or-waiting.jpg",
+      "published_at": "2026-10-15T07:28:49Z",
+      "readable_publish_date": "Oct 15",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 1,
+      "positive_reactions_count": 1,
+      "comments_count": 0,
+      "tag_list": [
+        "javascript",
+        "webdev",
+        "testing"
+      ]
+    },
+    {
       "id": 4831920,
       "title": "13 Repos Keep a Credential in Web Storage. Seven Are Governments.",
       "description": "A field study of 1,423 storage call sites in 189 public repositories. The practice is rarer than the argument about it, and it concentrates somewhere specific.",
@@ -11,9 +31,9 @@
       "readable_publish_date": "Oct 11",
       "reading_time_minutes": 4,
       "page_views_count": 0,
-      "public_reactions_count": 1,
-      "positive_reactions_count": 1,
-      "comments_count": 1,
+      "public_reactions_count": 4,
+      "positive_reactions_count": 4,
+      "comments_count": 2,
       "tag_list": [
         "webdev",
         "security",
@@ -31,8 +51,8 @@
       "readable_publish_date": "Oct 7",
       "reading_time_minutes": 3,
       "page_views_count": 0,
-      "public_reactions_count": 3,
-      "positive_reactions_count": 3,
+      "public_reactions_count": 4,
+      "positive_reactions_count": 4,
       "comments_count": 2,
       "tag_list": [
         "ai",
@@ -1947,7 +1967,7 @@
       ]
     }
   ],
-  "total": 95,
-  "lastUpdated": "2026-10-13T05:55:00.425Z",
+  "total": 96,
+  "lastUpdated": "2026-10-18T14:19:09.684Z",
   "source": "public"
 }

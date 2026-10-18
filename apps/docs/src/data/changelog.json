@@ -1,7 +1,7 @@
 {
-  "releaseCount": 788,
+  "releaseCount": 789,
   "packageCount": 37,
-  "entryCount": 2268,
+  "entryCount": 2269,
   "oldestYear": 2024,
   "releases": [
     {
@@ -18955,6 +18955,21 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.8`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
+      "version": "3.5.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "five wrong verdicts in three rules surfaced by Stryker mutation testing",
           "pr": null
         }
       ]
