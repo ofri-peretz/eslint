@@ -1690,3 +1690,25 @@ ruleTester.run(
     ]),
   },
 );
+
+// Review on #1234: a `var` helper hoisted out of nested blocks has its scope
+// more than two levels below the binding's; the lookup crashed the rule.
+ruleTester.run('a var helper hoisted out of nested blocks', noUnsafeQuery, {
+  valid: pg([
+    {
+      name: 'an escaping helper declared after an unrelated function',
+      code: "import format from 'pg-format';\nconst pool = new Pool();\nfunction noop() {}\nconst lit = (v) => format('%L', v);\nawait pool.query(`SELECT * FROM t WHERE a = ${lit(req.query.a)}`);",
+    },
+    {
+      name: 'an escaping var helper declared inside a loop inside an if',
+      code: "import format from 'pg-format';\nconst pool = new Pool();\nexport function h(a, x) { if (a) { for (;;) { var lit = (v) => format('%L', v); break; } } return pool.query(`SELECT * FROM t WHERE a = ${lit(x)}`); }",
+    },
+  ]),
+  invalid: pg([
+    {
+      name: 'an interpolating var helper declared inside a loop inside an if',
+      code: "const pool = new Pool();\nexport function h(a, x) { if (a) { for (;;) { var wrap = (v) => `'${v}'`; break; } } return pool.query(`SELECT * FROM t WHERE a = ${wrap(x)}`); }",
+      errors: [{ messageId: 'unsafeTemplateLiteral' }],
+    },
+  ]),
+});

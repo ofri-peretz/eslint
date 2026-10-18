@@ -164,10 +164,10 @@
         },
         "no-unsafe-query": {
           "score": 86,
-          "killed": 1209,
+          "killed": 1193,
           "survived": 198,
           "noCoverage": 0,
-          "timeout": 10
+          "timeout": 28
         },
         "no-unsafe-search-path": {
           "score": 85.7,
@@ -184,9 +184,9 @@
           "timeout": 1
         },
         "prevent-double-release": {
-          "score": 81.5,
-          "killed": 784,
-          "survived": 178,
+          "score": 81.7,
+          "killed": 789,
+          "survived": 177,
           "noCoverage": 0,
           "timeout": 3
         }

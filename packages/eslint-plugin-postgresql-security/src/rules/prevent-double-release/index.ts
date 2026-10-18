@@ -672,8 +672,13 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                           ? callB.node.parent
                           : null;
                       if (bParentStmt && parentBlock.body.includes(bParentStmt as TSESTree.Statement)) {
-                        // Check if the if branch has exit after release
-                        if (!ifBranchHasExitAfterRelease(callA.node, ifA)) {
+                        // Check if the if branch has exit after release — or
+                        // the release leaves on its own, e.g. inside a `try`:
+                        // `try { …; client.release(); return rows; } catch …`
+                        if (
+                          !ifBranchHasExitAfterRelease(callA.node, ifA) &&
+                          !leavesAfter(callA.node)
+                        ) {
                           context.report({ node: callB.node, messageId: 'doubleRelease' });
                           reported.add(callB.node);
                           continue;
@@ -691,7 +696,10 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                   const parentBlockB = ifB.parent;
                   if (parentBlockA === parentBlockB && parentBlockA?.type === AST_NODE_TYPES.BlockStatement) {
                     // Check if ifA doesn't exit after release
-                    if (!ifBranchHasExitAfterRelease(callA.node, ifA)) {
+                    if (
+                      !ifBranchHasExitAfterRelease(callA.node, ifA) &&
+                      !leavesAfter(callA.node)
+                    ) {
                       context.report({ node: callB.node, messageId: 'doubleRelease' });
                       reported.add(callB.node);
                       continue;

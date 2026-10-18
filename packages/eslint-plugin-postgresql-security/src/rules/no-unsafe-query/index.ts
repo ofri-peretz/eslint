@@ -708,6 +708,19 @@ function returnExpressions(
   return found;
 }
 
+/** The scope `fn` opens, searched for below `scope`. */
+function functionScopeOf(
+  fn: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): TSESLint.Scope.Scope | null {
+  for (const child of scope.childScopes) {
+    if (child.block === fn && child.type === 'function') return child;
+    const found = functionScopeOf(fn, child);
+    if (found !== null) return found;
+  }
+  return null;
+}
+
 /**
  * Is a call to a function written in this file safe because everything it can
  * return is? `const pick = () => format('%L', v)`, `const lit = (v) =>
@@ -725,12 +738,12 @@ function helperReturnsSafe(
   if (fn === null || fn.async || fn.generator) return false;
   const returns = returnExpressions(fn);
   if (returns.length === 0) return false;
-  // The function's own scope is a child of the scope that declares it (one
-  // level further down for a named function expression, which first opens a
-  // scope for its own name).
-  const inner = variable.scope.childScopes
-    .flatMap((child) => [child, ...child.childScopes])
-    .find((child) => child.block === fn && child.type === 'function')!;
+  // The function's own scope sits somewhere below the scope that declares
+  // it: one level for a `const`, deeper for a named function expression
+  // (which first opens a scope for its own name) or a `var` hoisted out of
+  // nested blocks. A function always opens its scope below the scope its
+  // binding lives in, so the search cannot come back empty.
+  const inner = functionScopeOf(fn, variable.scope)!;
   return returns.every((r) => !isRawValue(r, inner, null, depth + 1));
 }
 

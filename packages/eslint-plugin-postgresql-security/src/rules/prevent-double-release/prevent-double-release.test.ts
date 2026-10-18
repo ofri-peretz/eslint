@@ -539,3 +539,39 @@ describe('prevent-double-release — pinned by mutation testing', () => {
     ]),
   });
 });
+
+// Review on #1234: a release inside a `try` in an `if` branch, followed by a
+// return, leaves; the release after the `if` is the other path.
+describe('prevent-double-release — a try inside an if branch', () => {
+  ruleTester.run('the if-then-sequential cases honour a release that leaves', preventDoubleRelease, {
+    valid: pg([
+      {
+        name: "a throw after the release in an if branch skips the release after the if, even inside a try",
+        code: "const pool = new Pool();\nexport async function f(bad) { const client = await pool.connect(); try { await client.query('SELECT 1'); if (bad) { client.release(); throw new Error('bad'); } client.release(); } catch (e) { log(e); } }",
+      },
+      {
+        name: "a throw after the release in an else branch skips the release after the if, even inside a try",
+        code: "const pool = new Pool();\nexport async function f(ok) { const client = await pool.connect(); try { await client.query('SELECT 1'); if (ok) { log('ok'); } else { client.release(); throw new Error('bad'); } client.release(); } catch (e) { log(e); } }",
+      },
+      {
+        name: "a try in an else branch that releases and returns, then the release after the if",
+        code: "const pool = new Pool();\nexport async function f(cached) { const client = await pool.connect(); if (cached) { await client.query('SELECT 1'); } else { try { const r = await client.query('SELECT 2'); client.release(); return r.rows; } catch (e) { client.release(); throw e; } } client.release(); }",
+      },
+      {
+        name: "a try in an if branch that releases and returns, then the release after the if",
+        code: "const pool = new Pool();\nexport async function f(fresh) { const client = await pool.connect(); if (fresh) { try { const r = await client.query('SELECT 2'); client.release(); return r.rows; } catch (e) { client.release(); throw e; } } client.release(); }",
+      },
+      {
+        name: "a try in an if that releases and returns, then a release in a later if",
+        code: "const pool = new Pool();\nexport async function f(a, b) { const client = await pool.connect(); if (a) { try { const r = await client.query('SELECT 2'); client.release(); return r.rows; } catch (e) { client.release(); throw e; } } if (b) { client.release(); } }",
+      },
+    ]),
+    invalid: pg([
+      {
+        name: "a try release in an if that falls out of the if, then the release after it",
+        code: "const pool = new Pool();\nexport async function f(fresh) { const client = await pool.connect(); if (fresh) { try { await client.query('SELECT 2'); client.release(); } catch (e) { log(e); } } client.release(); }",
+        errors: [{ messageId: 'doubleRelease' }],
+      },
+    ]),
+  });
+});
