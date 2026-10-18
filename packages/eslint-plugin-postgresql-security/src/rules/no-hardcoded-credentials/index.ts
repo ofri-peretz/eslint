@@ -11,6 +11,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   staticString,
+  createModuleEvidence,
 } from '@interlace/eslint-devkit';
 import { NoHardcodedCredentialsOptions } from '../../types';
 import { PG_PROTOCOLS } from '../../constants';
@@ -65,6 +66,61 @@ function parseDsnWithPassword(dsn: string): URL | null {
   return parsed.password === '' ? null : parsed;
 }
 
+/** A file that imports TypeORM, directly or through its NestJS module. */
+const fileUsesTypeorm = createModuleEvidence({
+  packages: ['typeorm', '@nestjs/typeorm'],
+});
+
+/** TypeORM's `type` values for the drivers that take a `postgres://` URL. */
+const TYPEORM_PG_TYPES: ReadonlySet<string> = new Set([
+  'postgres',
+  'aurora-postgres',
+  'cockroachdb',
+]);
+
+/** Keys of TypeORM's ormconfig contract, which a pg config never carries. */
+const TYPEORM_CONFIG_KEYS: ReadonlySet<string> = new Set([
+  'entities',
+  'synchronize',
+  'migrations',
+  'subscribers',
+  'migrationsRun',
+]);
+
+/**
+ * Is this DSN a property of a TypeORM DataSource options object —
+ * `new DataSource({ type: 'postgres', url })`, `TypeOrmModule.forRoot({…})`,
+ * an ormconfig default export?
+ *
+ * `typeorm-security/no-hardcoded-credentials` owns TypeORM configs and
+ * reports the same literal, so a project with both plugins got two CRITICAL
+ * findings on one string. The object is recognised the way that rule
+ * recognises it: TypeORM's `type` discriminator with a postgres-family driver,
+ * in a file that imports TypeORM or in an object carrying TypeORM's own config
+ * keys. A pg `Pool` config has no `type`, so nothing of this plugin's is lost.
+ */
+function inTypeormOptions(
+  node: TSESTree.Literal | TSESTree.TemplateLiteral,
+  usesTypeorm: boolean,
+): boolean {
+  if (node.parent.type !== AST_NODE_TYPES.Property) return false;
+  // A string literal's Property is an object literal's: in a destructuring
+  // pattern the value would be a pattern, not the literal.
+  const options = node.parent.parent as TSESTree.ObjectExpression;
+  // `Set#has(null)` is false, so a `type` that is absent or not static — and a
+  // key that is not nameable — simply does not match.
+  const driver = staticString(property(options, 'type')?.value) as string;
+  return (
+    TYPEORM_PG_TYPES.has(driver) &&
+    (usesTypeorm ||
+      options.properties.some(
+        (prop) =>
+          prop.type === AST_NODE_TYPES.Property &&
+          TYPEORM_CONFIG_KEYS.has(propertyKeyName(prop) as string),
+      ))
+  );
+}
+
 /** Hosts that only ever reach the developer's own machine. */
 const LOOPBACK_HOSTS: ReadonlySet<string> = new Set(['localhost', '127.0.0.1', '[::1]']);
 
@@ -110,7 +166,7 @@ export const noHardcodedCredentials: TSESLint.RuleModule<
      */
     const consumed = new Set<TSESTree.Node>();
     /** Every literal in the file that spells a DSN, judged at `Program:exit`. */
-    const dsnLiterals: TSESTree.Node[] = [];
+    const dsnLiterals: (TSESTree.Literal | TSESTree.TemplateLiteral)[] = [];
 
     const env = envOf(context);
 
@@ -197,9 +253,10 @@ export const noHardcodedCredentials: TSESLint.RuleModule<
        * reported. Loopback hosts are skipped: that is a local container's
        * throwaway default, not a deployed secret.
        */
-      'Program:exit'() {
+      'Program:exit'(program: TSESTree.Program) {
+        const usesTypeorm = fileUsesTypeorm(program);
         for (const node of dsnLiterals) {
-          if (consumed.has(node)) continue;
+          if (consumed.has(node) || inTypeormOptions(node, usesTypeorm)) continue;
           const parsed = parseDsnWithPassword(staticString(node) as string);
           if (parsed === null || LOOPBACK_HOSTS.has(parsed.hostname)) continue;
           context.report({ node, messageId: 'noHardcodedCredentials' });
