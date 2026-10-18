@@ -112,11 +112,12 @@ The remaining plugins are not opted in yet: browser-security, secure-coding, exp
 These are judgements about what a rule _should_ report, so none of them were changed:
 
 - **mongodb-security**
-  - `${req.body.x}` coercion is reported, while `String(...)` is quiet.
-  - `no-operator-injection` matches on text.
-  - `no-unsafe-regex-query` reports its own documented `escapeRegex` fix written inline.
-  - `app.set('debug', true)` is reported on any receiver.
-- **jwt-security**: documented options that no rule reads (`maxExpirationSeconds`, `trustedSanitizers`, `strictMode`, …).
+  - ~~`${req.body.x}` coercion is reported, while `String(...)` is quiet.~~ **Resolved**: a template literal or `+` over request input is a string, and is now quiet like `String()`; a `$where` string stays `no-unsafe-where`'s finding.
+  - ~~`no-operator-injection` matches on text.~~ **Resolved**: request input is a `.body`/`.query`/… read off a handler parameter, found in the AST; `Number()`/`parseInt()`/`parseFloat()`/`+x` (any primitive) are safe.
+  - ~~`no-unsafe-regex-query` reports its own documented `escapeRegex` fix written inline.~~ **Resolved**: an escaper call (`escapeRegex`, `escapeRegExp`, `_.escapeRegExp`, `escape-string-regexp`, `lodash.escaperegexp`) makes an interpolation safe.
+  - ~~`app.set('debug', true)` is reported on any receiver.~~ **Resolved**: a receiver provably made by `express()` / `express.Router()` is skipped, others still reported; the callback form `mongoose.set('debug', fn)` is now reported.
+  - `no-unsafe-populate` (added with the decisions): **Resolved**: a `const` string path is quiet; template-literal and array paths built from request input are reported.
+- **jwt-security**: ~~documented options that no rule reads (`maxExpirationSeconds`, `trustedSanitizers`, `strictMode`, …).~~ **Resolved**: `require-expiration` enforces `maxExpirationSeconds` (opt-in; numbers, `ms` strings, `now + N` `exp`); the docs say the other unread options have no effect, and the schemas keep them.
 - **node-security**
   - `lock-file` searches up to `/`.
   - `no-shell-injection` stays silent on `exec(cmd + args)`, although its own message cites it.
@@ -127,4 +128,4 @@ These are judgements about what a rule _should_ report, so none of them were cha
   - `??=` / `||=` assignments aren't tracked.
   - Numeric expressions outside `$N` are reported.
   - `UNION`/`EXPLAIN`/`SET` statements aren't recognised.
-- **Placement**: a postgres URL in a TypeORM `DataSource` is reported by two plugins.
+- **Placement**: ~~a postgres URL in a TypeORM `DataSource` is reported by two plugins.~~ **Resolved**: `postgresql-security/no-hardcoded-credentials` skips a DSN in a TypeORM options object; typeorm-security owns it, locked by a two-plugin test asserting one report.
