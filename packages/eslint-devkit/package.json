@@ -93,7 +93,7 @@
     "@typescript-eslint/parser": "^8.68.0",
     "@typescript-eslint/types": "^8.68.0",
     "@typescript-eslint/utils": "^8.68.0",
-    "gpt-tokenizer": "^4.0.0",
+    "gpt-tokenizer": "^4.0.3",
     "oxc-resolver": "^11.24.2",
     "recheck": "^4.5.0",
     "typescript": "^5.0.0 || ^6.0.0"
