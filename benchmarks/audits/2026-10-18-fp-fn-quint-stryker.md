@@ -34,7 +34,7 @@ The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-se
 | `eslint-plugin-jwt-security`                         |      4 |      2 | #1217        | 3.5.1                                                           |
 | `eslint-plugin-mongodb-security`                     |      3 |      8 | #1221, #1225 | 9.1.4                                                           |
 | `eslint-plugin-node-security` (batch 1, 12 rules)    |      2 |      8 | #1235, #1239 | 5.6.10                                                          |
-| `eslint-plugin-browser-security` (batch 1, 33 rules) |      4 |      2 | PR_NUM       | next patch (changeset `browser-security-mutation-batch1-fixes`) |
+| `eslint-plugin-browser-security` (batch 1, 33 rules) |      4 |      2 | #1263        | next patch (changeset `browser-security-mutation-batch1-fixes`) |
 | **Total**                                            | **19** | **24** |              |                                                                 |
 
 The table counts distinct fixes. Measured on the 80-shape release oracle, the old rules gave 15 wrong verdicts (8 false leaks, 7 false doubles); those collapse into the four `#1234` release fixes below.
@@ -124,7 +124,7 @@ The remaining plugins are not opted in yet: secure-coding, express, vercel-ai, m
 
 ## Open owner decisions (browser-security batch 1)
 
-These are calls about what a rule _should_ report. The triage did not change them; they are listed in PR_NUM.
+These are calls about what a rule _should_ report. The triage did not change them; they are listed in #1263.
 
 - **require-postmessage-origin-check**: the origin check is a text match. `if (e.data.origin !== 'widget')` (a payload field) and a `// checkOrigin` comment both count as a check. `window.onmessage = (e) => …` is not inspected at all.
 - **no-disabled-certificate-validation**: `checkServerIdentity: () => true` is reported, but Node treats a truthy return as a verification _error_, so it fails closed. Meanwhile `(host, cert) => host === cert.subject.CN`, which returns `false` (accept) on a mismatch, is silent.
