@@ -5,6 +5,22 @@ All notable changes to `eslint-plugin-jwt-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.5.3
+
+### Patch Changes
+
+- **🐛 Fix** — Bound the parsed-module caches behind cross-file value following.
+
+  Each cache held one parsed AST (and, for postgresql-security and the devkit, its scope
+  manager) for every relatively-imported module a lint run ever opened, in module state
+  that outlives every file and every ESLint instance. On a large codebase that is a heap
+  that grows with the number of files linted: 106k files took the ILB corpus gates past
+  an 8 GB heap. The caches now keep the 512 most recently used modules. Measured on 10.5k
+  corpus files with every recommended preset enabled: heap 2,358 MB and climbing before,
+  150-370 MB after (no growth), with no change in lint time.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.20.2`
+
 ## 3.5.2
 
 ### Patch Changes
