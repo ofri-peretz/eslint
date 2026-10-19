@@ -185,6 +185,19 @@ describe('Homepage: Structure Lock', () => {
       expect(catchCardBody).toMatch(/className="[^"]*\bmin-w-0\b[^"]*group block|className="[^"]*group block[^"]*\bmin-w-0\b[^"]*"/);
     });
 
+    it('CatchCard is a stretched title link, not an aria-labelled card link (WCAG 2.5.3, 2026-10-18)', () => {
+      // axe-core 4.14 flags label-content-name-mismatch on the old shape: a
+      // <Link aria-label="…"> wrapping the whole card, whose visible text
+      // (CWE, rule id, snippet, "Read the rule") was not in the label. The
+      // Link must wrap only the title (name === visible text) and stretch
+      // over the card via ::after. Reproduce with `npm run test:a11y`.
+      const start = homepageSource.indexOf('function CatchCard');
+      const end = homepageSource.indexOf('\n}\n', start);
+      const catchCardBody = homepageSource.slice(start, end);
+      expect(catchCardBody).not.toContain('aria-label=');
+      expect(catchCardBody).toMatch(/<Link[^>]*after:absolute after:inset-0[^>]*>\s*\{title\}\s*<\/Link>/);
+    });
+
     it('shows the SQL-injection example (CWE-89, pg/no-unsafe-query)', () => {
       expect(homepageSource).toContain('CWE-89');
       expect(homepageSource).toContain('pg/no-unsafe-query');

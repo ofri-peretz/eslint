@@ -7,9 +7,11 @@
  *
  *   - The hero code block scrolls horizontally below ~md. It is a standalone
  *     <pre>, so it must be focusable (`tabIndex={0}`) to be keyboard-scrollable.
- *   - The "What it catches" card snippets sit INSIDE the card <Link>. Making
- *     those focusable would nest a tab stop inside an anchor, so they must wrap
- *     instead of scrolling — i.e. they must NOT carry `overflow-x-auto`.
+ *   - The "What it catches" card snippets sit inside the CatchCard, under the
+ *     card link's stretched ::after overlay (until 2026-10-18 they sat inside a
+ *     whole-card <Link>). Making them focusable would add a stray tab stop the
+ *     overlay hides from the pointer, so they must wrap instead of scrolling —
+ *     i.e. they must NOT carry `overflow-x-auto`.
  *
  * Assertions run against comment-stripped source (via the audited
  * `blankComments` helper) so they can never be satisfied by a code comment.
@@ -53,22 +55,35 @@ describe('Homepage: scrollable regions are keyboard accessible', () => {
     }
   });
 
-  // Identified by SEMANTIC POSITION (enclosed in <Link>), not by a styling class:
-  // a class-based fingerprint would silently go vacuous the moment the card is
-  // restyled, letting a re-introduced scroll region through unnoticed.
-  it('no <pre> inside a <Link> is a scrollable tab stop', () => {
-    const linkBlocks = code.match(/<Link\b[\s\S]*?<\/Link>/g) ?? [];
-    const presInLinks = linkBlocks.flatMap((b) => b.match(/<pre\b[^>]*>/g) ?? []);
+  // Identified by SEMANTIC POSITION, not by a styling class: a class-based
+  // fingerprint would silently go vacuous the moment the card is restyled,
+  // letting a re-introduced scroll region through unnoticed.
+  const assertWrapsNotScrolls = (tag: string) => {
+    // A tab stop nested inside an anchor (or hidden under a link overlay) is
+    // invalid / unreachable in practice...
+    expect(tag).not.toMatch(/tabIndex/);
+    // ...so it must not be scrollable either, or it fails WCAG 2.1.1 with no fix available.
+    expect(tag).not.toMatch(/overflow-x-auto/);
+    expect(tag).toMatch(/whitespace-pre-wrap/);
+  };
+
+  it('the CatchCard snippet <pre> wraps instead of being a scrollable tab stop', () => {
+    const start = code.indexOf('function CatchCard');
+    expect(start).toBeGreaterThan(-1);
+    const catchCard = code.slice(start, code.indexOf('\n}\n', start));
+    const presInCard = catchCard.match(/<pre\b[^>]*>/g) ?? [];
 
     // Non-vacuity guard: if this hits 0, the extraction broke, not the invariant.
-    expect(presInLinks.length).toBeGreaterThan(0);
+    expect(presInCard.length).toBeGreaterThan(0);
+    presInCard.forEach(assertWrapsNotScrolls);
+  });
 
-    for (const tag of presInLinks) {
-      // A tab stop nested inside an anchor is invalid and unreachable in practice.
-      expect(tag).not.toMatch(/tabIndex/);
-      // ...so it must not be scrollable either, or it fails WCAG 2.1.1 with no fix available.
-      expect(tag).not.toMatch(/overflow-x-auto/);
-      expect(tag).toMatch(/whitespace-pre-wrap/);
-    }
+  it('no <pre> inside a <Link> is a scrollable tab stop', () => {
+    const linkBlocks = code.match(/<Link\b[\s\S]*?<\/Link>/g) ?? [];
+    // Non-vacuity guard for the Link extraction itself (the homepage has many).
+    expect(linkBlocks.length).toBeGreaterThan(0);
+    // Zero <pre> inside them is legitimate here (CatchCard now links only its title); the
+    // CatchCard test above carries the non-vacuity guard for the snippet.
+    linkBlocks.flatMap((b) => b.match(/<pre\b[^>]*>/g) ?? []).forEach(assertWrapsNotScrolls);
   });
 });
