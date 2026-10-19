@@ -13,7 +13,7 @@
       "rules": 43,
       "description": "ESLint plugin for Node.js security — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto",
       "category": "security",
-      "version": "5.6.11",
+      "version": "5.6.12",
       "published": true
     },
     {
@@ -229,7 +229,7 @@
       "rules": 4,
       "description": "ESLint plugin for the CLI floor — every commander, yargs or burgee command declares a description and a one-line example, writes through the output layer instead of console, and backs every prompt with a flag",
       "category": "quality",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "published": true
     },
     {
