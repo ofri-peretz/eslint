@@ -118,13 +118,15 @@ These are judgements about what a rule _should_ report, so none of them were cha
   - `app.set('debug', true)` is reported on any receiver.
 - **jwt-security**: documented options that no rule reads (`maxExpirationSeconds`, `trustedSanitizers`, `strictMode`, …).
 - **node-security**
-  - `lock-file` searches up to `/`.
-  - `no-shell-injection` stays silent on `exec(cmd + args)`, although its own message cites it.
-  - `detect-child-process` guards are loose.
-  - `no-zip-slip` still reports `resolve` followed by a `startsWith` check.
+  - ~~`lock-file` searches up to `/`.~~ Resolved: the search stops at the repository root (nearest `.git`); the mislabelled `lock-file/safe/case-03.js` corpus fixture is now a genuine true negative.
+  - ~~`no-shell-injection` stays silent on `exec(cmd + args)`, although its own message cites it.~~ Resolved: reported.
+  - ~~`detect-child-process` guards are loose.~~ Resolved: a guard clears only the value it checks, on a constant allowlist; the `if` and early-exit forms agree; `cp[m]` with a const `m` is a sink; a literal `exec` is quiet under `reportUnresolvedCommands`.
+  - ~~`no-zip-slip` still reports `resolve` followed by a `startsWith` check.~~ Resolved: the canonical guard is safe, a failure-branch join is reported, `@safe` is scoped to the next statement.
+  - Also decided and resolved: `no-arbitrary-file-access` (`fs/promises` sinks, later assignments, a `safePath` parameter fed request input) and `no-weak-hash-algorithm` (a digest compared against a signature-named value; no `sha256(...)` suggestion where none is defined).
 - **postgresql-security**
-  - Any `.length` is trusted as a placeholder index (a JSON body can send `{"length": …}`).
-  - `??=` / `||=` assignments aren't tracked.
-  - Numeric expressions outside `$N` are reported.
-  - `UNION`/`EXPLAIN`/`SET` statements aren't recognised.
+  - ~~Any `.length` is trusted as a placeholder index (a JSON body can send `{"length": …}`).~~ Resolved: only the length of an array the file builds.
+  - ~~`??=` / `||=` assignments aren't tracked.~~ Resolved: tracked like `+=`.
+  - ~~Numeric expressions outside `$N` are reported.~~ Resolved: provably numeric values are safe anywhere.
+  - ~~`UNION`/`EXPLAIN`/`SET` statements aren't recognised.~~ Resolved, with `SHOW` and `VALUES` too.
+  - Also decided and resolved: an allowlist lookup in a const object/Map literal of fixed strings is not reported.
 - **Placement**: a postgres URL in a TypeORM `DataSource` is reported by two plugins.
