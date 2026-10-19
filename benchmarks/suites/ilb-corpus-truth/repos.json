@@ -48,12 +48,6 @@
     "corpus": "lambda-corpus"
   },
   {
-    "name": "autobe",
-    "repo": "https://github.com/wrtnlabs/autobe.git",
-    "commit": "f5de9927c8eee6805afa3aeafd204f4c45037e49",
-    "corpus": "nest-corpus5"
-  },
-  {
     "name": "awesome-nest-bp",
     "repo": "https://github.com/NarHakobyan/awesome-nest-boilerplate.git",
     "commit": "8f1c0a8cded54a198ddbc23922aa755922d2b155",
