@@ -261,9 +261,20 @@ function attributableSource(
     }
     // `let name = req.query.name; name = name.replace(/[\r\n]/g, '');` — a
     // later write is an indirection too: the initializer no longer says what
-    // reaches the log line, so the hop is not evidence.
-    if (variable.references.some((ref) => ref.isWrite() && !ref.init)) {
-      return null;
+    // reaches the log line, so the hop is not evidence. Only writes before the
+    // log line count, and a plain `=` to another request field keeps the
+    // attribution: every value that can reach the line is then request data.
+    for (const ref of variable.references) {
+      if (!ref.isWrite() || ref.init) continue;
+      if (ref.identifier.range[0] > node.range[0]) continue;
+      const write = ref.identifier.parent;
+      if (
+        write.type !== 'AssignmentExpression' ||
+        write.operator !== '=' ||
+        !requestFieldOf(write.right, roots, requestProperties)
+      ) {
+        return null;
+      }
     }
     return requestFieldOf(definition.node.init, roots, requestProperties);
   }

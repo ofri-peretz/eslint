@@ -41,6 +41,18 @@ describe('no-log-injection (mutation edges)', () => {
         errors: [{ messageId: 'logInjection' as const }],
       },
       {
+        // @found CodeRabbit review on #1270
+        name: 'a write after the log line does not change what the log line read',
+        code: "function h(req) { let name = req.query.name; logger.info('user ' + name); name = 'safe'; }",
+        errors: [{ messageId: 'logInjection' as const }],
+      },
+      {
+        // @found CodeRabbit review on #1270
+        name: 'a local reassigned to another request field still carries request data',
+        code: "function h(req) { let name = req.query.name; name = req.query.other; logger.info('user ' + name); }",
+        errors: [{ messageId: 'logInjection' as const }],
+      },
+      {
         name: 'a request field nested in a parenthesised concatenation is a direct operand',
         code: "function h(req) { logger.info('a ' + ('b ' + req.query.name)); }",
         errors: [{ messageId: 'logInjection' as const }],
