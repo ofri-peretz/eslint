@@ -7,6 +7,21 @@
     {
       "package": "eslint-plugin-browser-security",
       "short": "eslint-plugin-browser-security",
+      "version": "2.1.11",
+      "date": "2026-10-19T14:02:35Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "wrong verdicts surfaced by Stryker mutation testing (batch 2)",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
       "version": "2.1.10",
       "date": "2026-10-19T08:21:44Z",
       "isApp": false,
@@ -19116,21 +19131,6 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-browser-security",
-      "short": "eslint-plugin-browser-security",
-      "version": "2.1.11",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "wrong verdicts surfaced by Stryker mutation testing (batch 2)",
-          "pr": null
         }
       ]
     },
