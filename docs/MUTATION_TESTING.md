@@ -33,7 +33,11 @@ Defaults are deliberately gentle for a dev machine: `--concurrency 2`, and
 tests changed (state in `.cache/mutation/`). Incremental results can be stale
 for _static_ mutants (module-level code such as a pattern list): a new test
 that kills one is not noticed. Pass `--force` to re-test everything;
-`--update-baseline` always does, and CI has no cache. A full pilot run of
+`--update-baseline` always does, and CI has no cache. The incremental state
+also leaks into the report: a `--rules` or `--since` run's `mutation.json`
+still lists every other rule with its last cached result (Stryker carries
+out-of-scope mutants forward, even under `--force`). The grader ignores them
+and grades only the rules the run mutated. A full pilot run of
 `postgresql-security` + `jwt-security` is ~30 minutes at concurrency 3.
 
 Everything is in one shared config, [`scripts/mutation/stryker.config.mjs`](../scripts/mutation/stryker.config.mjs).
