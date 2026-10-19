@@ -1,8 +1,11 @@
 {
   "generatedAt": "2026-08-12T00:27:34.766Z",
-  "corpusHash": "sha256:ff73f5f0b7b51d00444e9f0fb3827072b722bffbc83ecfe0a05b720d540d3740",
-  "filesScanned": 107384,
+  "corpusHash": "sha256:c1702ff56fa9014b70c76ac34f5e40a212a4ec84e18e5578a80475b90cd98a11",
+  "filesScanned": 106002,
   "note": "Per-rule off-SDK ceiling. Regenerate with --update-baseline only when the increase is understood and explained in the PR body.",
+  "amendments": [
+    "2026-10-19: autobe (wrtnlabs/autobe@f5de992) removed, upstream repository deleted. Its off-SDK contribution was 0 for every rule under both the baseline-commit rules (d4cbc1846) and current rules, so the per-rule ceilings are unchanged; corpusHash re-derived for the 106 remaining pins and filesScanned 107384 - 1382 = 106002. See CORPUS_CHANGES.md."
+  ],
   "rules": {
     "express-security/require-helmet": 0,
     "express-security/no-permissive-cors": 0,
