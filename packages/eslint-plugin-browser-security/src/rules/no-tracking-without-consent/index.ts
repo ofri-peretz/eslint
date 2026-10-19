@@ -42,7 +42,11 @@
  * `consentIdentifiers` is the escape hatch.
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import { isAnalyticsTransmission } from '../../utils/analytics-sinks';
 
@@ -100,11 +104,12 @@ export const noTrackingWithoutConsent = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Tracking Without Consent',
         cwe: 'CWE-359',
-        description: 'Analytics tracking without consent check - violates privacy regulations',
+        description:
+          'Analytics tracking without consent check - violates privacy regulations',
         severity: 'MEDIUM',
         fix: 'Wrap tracking calls in consent check: if (hasConsent) { analytics.track(...) }',
         documentationLink: 'https://cwe.mitre.org/data/definitions/359.html',
-      })
+      }),
     },
     schema: [
       {
@@ -198,24 +203,36 @@ export const noTrackingWithoutConsent = createRule<RuleOptions, MessageIds>({
      *
      * and its own test suite pinned the first shape as acceptable.
      */
-    function analyzeTest(
-      test: TSESTree.Node,
-    ): { consent: boolean; negated: boolean } {
+    function analyzeTest(test: TSESTree.Node): {
+      consent: boolean;
+      negated: boolean;
+    } {
       let negated = false;
       let current: TSESTree.Node = test;
       while (current.type === 'UnaryExpression' && current.operator === '!') {
         negated = !negated;
         current = current.argument;
       }
-      // `hasConsent === false` reads the same way as `!hasConsent`.
-      if (
-        current.type === 'BinaryExpression' &&
-        (current.operator === '===' || current.operator === '==') &&
-        current.right.type === 'Literal' &&
-        current.right.value === false
-      ) {
-        negated = !negated;
-        current = current.left as TSESTree.Node;
+      // `hasConsent === false`, `hasConsent !== true` and `false === hasConsent`
+      // all read the same way as `!hasConsent`.
+      if (current.type === 'BinaryExpression') {
+        const equality =
+          current.operator === '===' || current.operator === '==';
+        const inequality =
+          current.operator === '!==' || current.operator === '!=';
+        const left = current.left as TSESTree.Node;
+        const [literal, other] =
+          left.type === 'Literal'
+            ? [left, current.right]
+            : [current.right, left];
+        if (
+          (equality || inequality) &&
+          literal.type === 'Literal' &&
+          typeof literal.value === 'boolean'
+        ) {
+          if (equality !== literal.value) negated = !negated;
+          current = other;
+        }
       }
       return { consent: mentionsConsent(current), negated };
     }
@@ -223,7 +240,8 @@ export const noTrackingWithoutConsent = createRule<RuleOptions, MessageIds>({
     /** Is `node` within `range`? */
     function within(node: TSESTree.Node, container: TSESTree.Node): boolean {
       return (
-        node.range[0] >= container.range[0] && node.range[1] <= container.range[1]
+        node.range[0] >= container.range[0] &&
+        node.range[1] <= container.range[1]
       );
     }
 
@@ -259,9 +277,14 @@ export const noTrackingWithoutConsent = createRule<RuleOptions, MessageIds>({
           current.operator === '&&' &&
           current.right === child
         ) {
-          const { consent, negated } = analyzeTest(current.left as TSESTree.Node);
+          const { consent, negated } = analyzeTest(
+            current.left as TSESTree.Node,
+          );
           if (consent && !negated) return true;
-        } else if (current.type === 'BlockStatement' || current.type === 'Program') {
+        } else if (
+          current.type === 'BlockStatement' ||
+          current.type === 'Program'
+        ) {
           if (guardedByEarlyExit(current, child)) return true;
         }
 
@@ -294,7 +317,10 @@ export const noTrackingWithoutConsent = createRule<RuleOptions, MessageIds>({
 
     /** Does this branch always leave the current function? */
     function exitsUnconditionally(branch: TSESTree.Statement): boolean {
-      if (branch.type === 'ReturnStatement' || branch.type === 'ThrowStatement') {
+      if (
+        branch.type === 'ReturnStatement' ||
+        branch.type === 'ThrowStatement'
+      ) {
         return true;
       }
       return (

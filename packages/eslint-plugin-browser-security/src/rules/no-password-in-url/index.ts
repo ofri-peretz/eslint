@@ -10,7 +10,11 @@
  * @see https://cwe.mitre.org/data/definitions/598.html
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -107,9 +111,10 @@ function hasUserinfoPassword(value: string): boolean {
     if (at <= 0) continue;
     const userinfo = authority.slice(0, at);
     // A password is the part after the colon. `https://token@host` carries a
-    // username only, which CWE-521 is not about.
+    // username only, which CWE-521 is not about. The username may be empty:
+    // `https://:secret@host` still sends `secret` as the password.
     const colon = userinfo.indexOf(':');
-    if (colon > 0 && colon < userinfo.length - 1) return true;
+    if (colon !== -1 && colon < userinfo.length - 1) return true;
   }
   return false;
 }
@@ -129,11 +134,12 @@ export const noPasswordInUrl = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'violation Detected',
         cwe: 'CWE-521',
-        description: 'Prevent passwords in URLs detected - this is a security risk',
+        description:
+          'Prevent passwords in URLs detected - this is a security risk',
         severity: 'CRITICAL',
         fix: 'Review and apply secure practices',
         documentationLink: 'https://cwe.mitre.org/data/definitions/521.html',
-      })
+      }),
     },
     schema: [],
   },
@@ -145,7 +151,7 @@ export const noPasswordInUrl = createRule<RuleOptions, MessageIds>({
         messageId: 'violationDetected',
       });
     }
-    
+
     /**
      * Is this node a PIECE of a larger string expression?
      *

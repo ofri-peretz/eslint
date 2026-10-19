@@ -65,6 +65,7 @@ import {
   isModuleBinding,
   MessageIcons,
   namesOneOf,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -160,11 +161,19 @@ const MULTER_FIELD_METHODS: ReadonlySet<string> = new Set([
 
 /** Is this literal a media type or a media-type prefix? */
 function isMediaTypeLiteral(node: TSESTree.Node): boolean {
-  if (node.type !== AST_NODE_TYPES.Literal) return false;
-  if (typeof node.value !== 'string') return false;
-  const slash = node.value.indexOf('/');
+  // `` `image/` `` is the same string as `'image/'`: a template with no
+  // substitutions is read as its cooked text.
+  const text =
+    node.type === AST_NODE_TYPES.TemplateLiteral &&
+    node.expressions.length === 0
+      ? node.quasis[0].value.cooked
+      : node.type === AST_NODE_TYPES.Literal
+        ? node.value
+        : null;
+  if (typeof text !== 'string') return false;
+  const slash = text.indexOf('/');
   if (slash <= 0) return false;
-  return IANA_TOP_LEVEL_TYPES.has(node.value.slice(0, slash));
+  return IANA_TOP_LEVEL_TYPES.has(text.slice(0, slash));
 }
 
 /** Is this expression a `.type` read — the File API's MIME property? */
@@ -384,17 +393,23 @@ export const requireMimeTypeValidation = createRule<RuleOptions, MessageIds>({
             sourceCode,
           );
           if (factory !== undefined) {
-            const config = factory.arguments[0];
+            // The options may be bound to a name first:
+            // `const opts = { fileFilter }; multer(opts)`.
+            const arg = factory.arguments[0];
+            const config =
+              arg?.type === AST_NODE_TYPES.Identifier
+                ? resolveInitializer(arg, sourceCode)
+                : arg;
             const hasFileFilter =
               config?.type === AST_NODE_TYPES.ObjectExpression &&
               config.properties.some(
                 (property) =>
                   property.type === AST_NODE_TYPES.Property &&
-                  !property.computed &&
-                  property.key.type === AST_NODE_TYPES.Identifier &&
+                  // `objectKeyName`: `'fileFilter'` and `['fileFilter']`
+                  // name the same option as `fileFilter`.
                   // `limits` caps file SIZE. It is not a type check, and
                   // accepting it as one was a false negative asserted by a test.
-                  property.key.name === 'fileFilter',
+                  objectKeyName(property) === 'fileFilter',
               );
             if (!hasFileFilter) {
               context.report({ node, messageId: 'violationDetected' });

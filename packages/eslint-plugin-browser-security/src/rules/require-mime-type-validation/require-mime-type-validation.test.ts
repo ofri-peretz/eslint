@@ -115,6 +115,7 @@ ruleTester.run('require-mime-type-validation', requireMimeTypeValidation, {
       errors: [{ messageId: 'prefixMimeCheck', data: { method: 'startsWith' } }],
     },
     {
+      name: 'an includes() test on a media type is a substring test',
       code: `if (file.type.includes('image/')) send(file);`,
       errors: [{ messageId: 'prefixMimeCheck' }],
     },
