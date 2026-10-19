@@ -5,6 +5,13 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.6.12
+
+### Patch Changes
+
+- **🐛 Fix** — `resolveModuleBinding` resolves a static computed destructuring key: `const { ['promises']: fsp } = require('node:fs')` names `fs.promises` like `{ promises: fsp }` does. A runtime key (`{ [k]: v }`) still abstains. node-security's `no-arbitrary-file-access`, `no-static-iv` and `no-unbounded-decompression` now report that spelling; cli-floor drops its local copy of the same resolution.
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.20.1`
+
 ## 5.6.11
 
 ### Patch Changes
