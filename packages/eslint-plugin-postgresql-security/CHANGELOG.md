@@ -5,6 +5,22 @@ All notable changes to `eslint-plugin-postgresql-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.6.2
+
+### Patch Changes
+
+- **🐛 Fix** — `no-unsafe-query` policy gaps decided after the 2026-10-18 audit
+
+  - `$${x.length}` is a placeholder index only when `x` is an array the file builds (a literal, a `.map`/`.filter`/`.slice`/`.concat` result, or a binding annotated as an array). `$${req.body.x.length}` is reported: a JSON body can send `{"length": "1 OR 1=1"}`.
+  - `q ??= …`, `q ||= …` and `q &&= …` into a query variable are tracked like `+=`.
+  - A provably numeric value is safe outside `$N` as well: `${req.query.page * 10}`, `${+x}`, `${ids.map(Number).join(',')}`.
+  - An allowlist lookup in a `const` object or `new Map([...])` literal of fixed values — `${TABLES[req.query.t]}`, `${COLUMNS.get(req.query.sort)}` — is no longer reported, unless the table is written to after it is declared.
+  - `(SELECT …) UNION …`, `EXPLAIN …`, `SET …`, `SHOW …` and `VALUES (…)` are recognised as SQL statements.
+
+- **🐛 Fix** — leave postgres URLs in TypeORM configs to typeorm-security
+
+  `no-hardcoded-credentials` no longer reports a `postgres://user:pass@…` URL inside a TypeORM options object — `new DataSource({ type: 'postgres', url })`, `TypeOrmModule.forRoot({ … })`, an ormconfig export. `typeorm-security/no-hardcoded-credentials` reports the same literal, so a project running both plugins got two CRITICAL findings on one secret. An object counts as TypeORM's when it has a postgres-family `type` and the file imports `typeorm` / `@nestjs/typeorm` or the object carries TypeORM's own keys (`entities`, `synchronize`, …).
+
 ## 2.6.1
 
 ### Patch Changes
