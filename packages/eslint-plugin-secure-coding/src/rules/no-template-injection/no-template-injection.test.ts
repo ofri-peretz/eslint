@@ -23,7 +23,10 @@ describe('no-template-injection', () => {
       // Template literal without expressions — safe
       { code: 'Handlebars.compile(`<h1>Static template</h1>`)' },
       // Not a known engine — not checked
-      { code: 'someCustomEngine.render(userInput)' },
+      {
+        name: 'a receiver that is not a known template engine is not checked',
+        code: 'someCustomEngine.render(userInput)',
+      },
       // Known engine but unknown method
       { code: 'ejs.escape(userInput)' },
       // renderFile with a file path variable is a separate concern (CWE-22)

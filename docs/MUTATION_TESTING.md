@@ -154,7 +154,9 @@ Opted in: `postgresql-security` and `jwt-security` (the pilot), then
 `mongodb-security` (16 rules, 1,822 mutants, ~7 min at concurrency 3), then
 `node-security` batch 1 (12 of its 43 rules; the other 31 are `pending`),
 then `browser-security` batch 1 (its 33 `recommended` rules) and batch 2 (the
-other 13; nothing is `pending` any more).
+other 13; nothing is `pending` any more),
+then `secure-coding` batch 1 (8 of its 18 `recommended` rules; the other 26
+are `pending`).
 
 One lesson from `mongodb-security` applies to every plugin with a file-level
 module gate (`if (!fileUsesMongo(ast)) return {}`): a sweep of non-SDK files
@@ -172,7 +174,10 @@ Proposed order for the rest, each as its own PR (run → triage → bank):
    Its gates are test-path exemptions rather than an SDK import; the same
    lesson applies, and `src/test-path-gate.test.ts` is its gate table.
 3. **`secure-coding`** (34 rules) — cross-cutting and in every preset, so a
-   blind spot there reaches the most users.
+   blind spot there reaches the most users. Batch 1 is the 8 smallest
+   `recommended` rules (3,313 mutants, ~12 min at concurrency 2). All 18
+   `recommended` rules together are 11,990 mutants, over an hour locally, so
+   the other 10 are batch 2; the 16 non-`recommended` rules come after.
 4. **`express-security`** (28), **`browser-security`** (46; both batches are in —
    `src/test-path-gate.test.ts` is its gate table),
    **`nestjs-security`** (10), **`lambda-security`** (14) — the large

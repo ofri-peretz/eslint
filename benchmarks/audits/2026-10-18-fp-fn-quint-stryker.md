@@ -6,7 +6,7 @@ Two methods were applied to four security plugins, and every finding was handled
 2. It was fixed with a test that fails on the old rule.
 3. It shipped as a patch release.
 
-The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-security` (batch 1) and, on 2026-10-19, `browser-security` (batches 1 and 2). Together they produced **53 distinct wrong verdicts: 22 false positives and 31 false negatives**, plus one crash. Every finding below is fixed, and every fix is published, or queued for the next release where noted.
+The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-security` (batch 1) and, on 2026-10-19, `browser-security` (batches 1 and 2) and `secure-coding` (batch 1). Together they produced **55 distinct wrong verdicts: 23 false positives and 32 false negatives**, plus one crash. Every finding below is fixed, and every fix is published, or queued for the next release where noted.
 
 ## Method
 
@@ -36,7 +36,8 @@ The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-se
 | `eslint-plugin-node-security` (batch 1, 12 rules)    |      2 |      8 | #1235, #1239 | 5.6.10                                                          |
 | `eslint-plugin-browser-security` (batch 1, 33 rules) |      4 |      2 | #1263        | next patch (changeset `browser-security-mutation-batch1-fixes`) |
 | `eslint-plugin-browser-security` (batch 2, 13 rules) |      3 |      7 | #1267        | next patch (changeset `browser-security-mutation-batch2-fixes`) |
-| **Total**                                            | **22** | **31** |              |                                                                 |
+| `eslint-plugin-secure-coding` (batch 1, 8 rules)     |      1 |      1 | #1270        | next patch (changeset `secure-coding-mutation-batch1-fixes`)    |
+| **Total**                                            | **23** | **32** |              |                                                                 |
 
 The table counts distinct fixes. Measured on the 80-shape release oracle, the old rules gave 15 wrong verdicts (8 false leaks, 7 false doubles); those collapse into the four `#1234` release fixes below.
 
@@ -128,17 +129,27 @@ Batch 2 covers the 13 rules that were `pending` after batch 1. The first run tes
 | no-tracking-without-consent  | FN   | tracking inside a yoda `if (false === hasConsent())`                                                                     |
 | no-tracking-without-consent  | FP   | tracking after an early `if (hasConsent() !== true) return;`                                                             |
 
+### secure-coding (batch 1)
+
+Batch 1 covers the 8 smallest of the 18 `recommended` rules; 3,313 mutants. All 18 together are 11,990 mutants, so the other 10 `recommended` rules are batch 2. The highest-value survivors in `no-homoglyph-identifiers`, `no-log-injection`, `no-template-injection`, `no-fail-open-auth` and `no-xxe-injection` became fixtures in a `mutation-edges.test.ts` per rule. The rest are listed per rule in #1270. A redundant literal/template short-circuit in `no-template-injection` was deleted: `untrustedSource` already returns null for static text. Review on #1270 caught that the first `no-log-injection` fix let an earlier safe write hide a later request write (`name = 'safe'; name = req.query.other;`); the rule now attributes the writes that can reach the log line, and a write under a branch, in a closure or later in a loop does not end that walk. The gap never shipped, so it is not counted as a separate FN.
+
+| Rule                  | Kind | Wrong verdict on                                                                                                                      |
+| :-------------------- | :--- | :------------------------------------------------------------------------------------------------------------------------------------ |
+| no-template-injection | FN   | a request template behind `??`, `\|\|`, the right of `&&`, or in a conditional branch: `Handlebars.compile(req.query.tpl ?? DEFAULT)` |
+| no-log-injection      | FP   | a local reassigned after its request initializer: `let name = req.query.name; name = name.replace(/[\r\n]/g, '')`                     |
+
 ## Mutation-testing coverage
 
-| Plugin              |           Rules banked |                                                           Mean score |
-| :------------------ | ---------------------: | -------------------------------------------------------------------: |
-| mongodb-security    |                16 / 16 |                                                                 90.2 |
-| jwt-security        |                13 / 13 |                                                                 84.2 |
-| postgresql-security |                13 / 13 |                       83.0 (no-unsafe-query 75.6 → 86.0 after #1234) |
-| node-security       | 12 / 43 (31 `pending`) |                                                              batch 1 |
-| browser-security    |                46 / 46 | 92.1 batch 1 (84.8 before triage); 85.4 batch 2 (82.9 before triage) |
+| Plugin              |           Rules banked |                                                                          Mean score |
+| :------------------ | ---------------------: | ----------------------------------------------------------------------------------: |
+| mongodb-security    |                16 / 16 |                                                                                90.2 |
+| jwt-security        |                13 / 13 |                                                                                84.2 |
+| postgresql-security |                13 / 13 |                                      83.0 (no-unsafe-query 75.6 → 86.0 after #1234) |
+| node-security       | 12 / 43 (31 `pending`) |                                                                             batch 1 |
+| browser-security    |                46 / 46 |                92.1 batch 1 (84.8 before triage); 85.4 batch 2 (82.9 before triage) |
+| secure-coding       |  8 / 34 (26 `pending`) | 78.6 (no-template-injection 79.4 → 83.2, no-log-injection 87.7 → 88.7 after triage) |
 
-The remaining plugins are not opted in yet: secure-coding, express, vercel-ai, mcp-sdk, lambda, nestjs and the per-SDK plugins. The rollout order is in [`docs/MUTATION_TESTING.md`](../../docs/MUTATION_TESTING.md).
+The remaining plugins are not opted in yet: express, vercel-ai, mcp-sdk, lambda, nestjs and the per-SDK plugins. The rollout order is in [`docs/MUTATION_TESTING.md`](../../docs/MUTATION_TESTING.md).
 
 ## Open owner decisions (browser-security batch 1)
 
@@ -160,6 +171,15 @@ These are calls about what a rule _should_ report. The triage did not change the
 - **require-mime-type-validation**: multer options it cannot see (a parameter, an import, a spread) are reported as having no `fileFilter`. The docs say "a `fileFilter` or strict size `limits`", but the code (and a test) refuse `limits` as a type check.
 - **no-tracking-without-consent**: a string comparison such as `consent.status === 'denied'` counts as a consent guard; `hasConsent() || analytics.track()` is reported correctly, but `!hasConsent() || analytics.track()` is reported too.
 - **Untriaged survivors**: the time box left no-missing-cors-check (72.0), no-clickjacking (76.7), no-unescaped-url-parameter (79.7), require-csp-headers (82.2) and no-missing-security-headers (83.8) at their first-run scores.
+
+## Open owner decisions (secure-coding batch 1)
+
+These are calls about what a rule _should_ report. The triage did not change them; they are listed in #1270.
+
+- **no-fail-open-auth**: only a falsy _literal_ initializer is a deny state. `let token;` and `let token = undefined` followed by a swallowed check and `if (!token) return deny()` stay reported (both pinned). One write to anything but such a local inside the `try` (`req.user = token`) also keeps the swallow reported. Any truthy literal in the `catch` is a grant, so `return 'denied'` is reported as `failOpenReturn`.
+- **no-template-injection**: `ejs.renderFile(req.query.view)` is reported as template injection, but its first argument is a file path, so the finding is path traversal (CWE-22), not CWE-94. Concatenation nested deeper than the depth budget (6) is silent.
+- **no-xxe-injection**: an internal entity (`<!ENTITY lol "lol">`, the billion-laughs shape, CWE-776) is not reported by the DTD-literal check. It is now pinned as valid.
+- **no-homoglyph-identifiers**: regular-expression literals are not scanned for invisible characters, and an identifier written entirely in one confusable script is not a homoglyph (both pinned as valid).
 
 ## Owner decisions (resolved in #1251)
 

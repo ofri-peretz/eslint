@@ -301,6 +301,23 @@ function untrustedSource(
     return untrustedSource(node.argument, vocabulary, depth + 1);
   }
 
+  // `req.query.tpl ?? DEFAULT`, `req.query.tpl || DEFAULT` and
+  // `custom ? req.body.tpl : DEFAULT` each hand the engine the request's
+  // template on some path. `a && b` can only yield `b` as a template: when
+  // `a` short-circuits, its value is falsy, and a falsy template is empty.
+  if (node.type === AST_NODE_TYPES.LogicalExpression) {
+    return node.operator === '&&'
+      ? untrustedSource(node.right, vocabulary, depth + 1)
+      : (untrustedSource(node.left, vocabulary, depth + 1) ??
+          untrustedSource(node.right, vocabulary, depth + 1));
+  }
+  if (node.type === AST_NODE_TYPES.ConditionalExpression) {
+    return (
+      untrustedSource(node.consequent, vocabulary, depth + 1) ??
+      untrustedSource(node.alternate, vocabulary, depth + 1)
+    );
+  }
+
   if (node.type === AST_NODE_TYPES.MemberExpression) {
     // Walk to the root of `req.body.template` and judge the whole chain.
     let root: TSESTree.Node = node;
@@ -510,22 +527,8 @@ export const noTemplateInjection = createRule<RuleOptions, MessageIds>({
         const firstArg = args[0];
         if (!firstArg) return;
 
-        // A literal and a zero-expression template are both static text, so
-        // `untrustedSource` returns null for them anyway — but stopping here
-        // keeps the common case out of the walk entirely.
-        if (
-          firstArg.type === AST_NODE_TYPES.Literal &&
-          typeof (firstArg as TSESTree.Literal).value === 'string'
-        )
-          return;
-
-        // Template literal with NO expressions → safe (equivalent to a string literal)
-        if (
-          firstArg.type === AST_NODE_TYPES.TemplateLiteral &&
-          (firstArg as TSESTree.TemplateLiteral).expressions.length === 0
-        )
-          return;
-
+        // A string literal or a zero-expression template is static text:
+        // `untrustedSource` has no branch that reads either, so it returns null.
         // Being dynamic is not being attacker-controlled. See untrustedSource.
         if (untrustedSource(firstArg, vocabulary) === null) return;
 

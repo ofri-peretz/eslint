@@ -225,6 +225,97 @@ function findLocalVariable(
 }
 
 /**
+ * The statements that can run their body more than once.
+ *
+ * @protocol-constant The complete set of ESTree loop statement node types; the
+ * language defines it, so there is nothing for a user to add or remove.
+ */
+const LOOP_TYPES: ReadonlySet<string> = new Set([
+  'ForStatement',
+  'ForInStatement',
+  'ForOfStatement',
+  'WhileStatement',
+  'DoWhileStatement',
+]);
+
+/** Is `outer` on the parent chain of `inner`? */
+function isAncestor(outer: TSESTree.Node, inner: TSESTree.Node): boolean {
+  for (let n: TSESTree.Node | undefined = inner; n; n = n.parent) {
+    if (n === outer) return true;
+  }
+  return false;
+}
+
+/**
+ * Does this write run on every path to the read?
+ *
+ * Only the plainest shape counts: a statement of its own (`name = …;` or the
+ * declaration) directly in a block that encloses the read. A write under an
+ * `if`, inside a closure, or in a sibling block may not run, so it does not
+ * end the walk back to earlier writes.
+ */
+function isStraightLineTo(
+  target: TSESTree.Identifier | TSESTree.JSXIdentifier,
+  read: TSESTree.Node,
+): boolean {
+  const statement = target.parent.parent;
+  if (
+    statement?.type !== 'ExpressionStatement' &&
+    statement?.type !== 'VariableDeclaration'
+  ) {
+    return false;
+  }
+  const block = statement.parent;
+  return (
+    (block?.type === 'BlockStatement' || block?.type === 'Program') &&
+    isAncestor(block, read)
+  );
+}
+
+/**
+ * Can a write placed after the read still reach it on a later loop turn?
+ *
+ * Yes when a loop encloses both, unless the straight-line write before the read
+ * sits inside that same loop: it then runs again before every read.
+ */
+function isCarriedByLoop(
+  write: TSESTree.Node,
+  read: TSESTree.Node,
+  dominator: TSESTree.Node | undefined,
+): boolean {
+  for (let n: TSESTree.Node | undefined = read; n; n = n.parent) {
+    if (
+      LOOP_TYPES.has(n.type) &&
+      isAncestor(n, write) &&
+      !(dominator && isAncestor(n, dominator))
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * The request field a write stores, or null.
+ *
+ * The initializer and a plain `=` store their right-hand side; any other write
+ * (`+=`, `++`, destructuring) stores something the rule cannot attribute.
+ */
+function writtenRequestField(
+  ref: TSESLint.Scope.Reference,
+  init: TSESTree.Expression,
+  roots: ReadonlySet<string>,
+  requestProperties: ReadonlySet<string>,
+): string | null {
+  if (ref.init) return requestFieldOf(init, roots, requestProperties);
+  const write = ref.identifier.parent;
+  if (write.type !== 'AssignmentExpression' || write.operator !== '=') {
+    return null;
+  }
+  return requestFieldOf(write.right, roots, requestProperties);
+}
+
+/**
  * Can an attacker steer this expression, and through what?
  *
  * Two shapes qualify, and only two:
@@ -259,7 +350,44 @@ function attributableSource(
     ) {
       return null;
     }
-    return requestFieldOf(definition.node.init, roots, requestProperties);
+    // `let name = req.query.name; name = name.replace(/[\r\n]/g, '');` — the
+    // initializer is not what reaches the log line, the write is. So attribute
+    // the writes that can reach the read: walking back from the read, every
+    // write up to and including the first one on the straight line to it (it
+    // runs on every path, so nothing before it survives), plus any write after
+    // the read that a loop carries back round to it. Report when any of them
+    // stores a request field; branching the rule cannot see through therefore
+    // stays a report rather than a silent pass.
+    const writes = variable.references.filter((ref) => ref.isWrite());
+    const reaching: TSESLint.Scope.Reference[] = [];
+    let dominator: TSESTree.Node | undefined;
+    for (const ref of writes
+      .filter((w) => w.identifier.range[0] < node.range[0])
+      .reverse()) {
+      reaching.push(ref);
+      if (isStraightLineTo(ref.identifier, node)) {
+        dominator = ref.identifier;
+        break;
+      }
+    }
+    for (const ref of writes) {
+      if (
+        ref.identifier.range[0] > node.range[0] &&
+        isCarriedByLoop(ref.identifier, node, dominator)
+      ) {
+        reaching.push(ref);
+      }
+    }
+    for (const ref of reaching) {
+      const field = writtenRequestField(
+        ref,
+        definition.node.init,
+        roots,
+        requestProperties,
+      );
+      if (field) return field;
+    }
+    return null;
   }
   return requestFieldOf(node, roots, requestProperties);
 }
