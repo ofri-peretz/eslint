@@ -40,6 +40,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ESLint } from 'eslint';
 import { readFlatEntries } from './lib/read-baseline.ts';
+import { clearCircularDependencyCache } from '../packages/eslint-plugin-import-next/src/rules/no-cycle.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -517,9 +518,39 @@ const hits = new Map<string, Hit>();
 let linted = 0;
 let failed = 0;
 
+const repoOf = (file: string): string =>
+  path.relative(CACHE, file).split('/')[0] ?? '';
+
 const BATCH = 200;
-for (let i = 0; i < mine.length; i += BATCH) {
-  const batch = mine.slice(i, i + BATCH);
+/**
+ * `import-next/no-cycle` keeps a module-level import-graph cache across every
+ * file this worker process ever lints — by design, so a single codebase's
+ * cycles survive across `lintFiles()` calls (see no-cycle.ts's own doc
+ * comment). A real-source-scan worker is not one codebase: it is dozens of
+ * unrelated third-party repositories linted back to back in the same
+ * process, and two repos never import from each other, so carrying one
+ * repo's graph into the next buys nothing and only grows without bound.
+ * Shards 3, 7 and 18 (the oversized monorepos, see the WORKER_HEAP_MB
+ * comment above) ran long enough — tens of thousands of files in one
+ * process — for that unbounded growth to exhaust even the raised heap
+ * ceiling from #1197 (#1196). Clearing the cache at every repository
+ * boundary keeps the per-repo caching benefit while bounding the cache to
+ * one repository's worth of graph at a time.
+ */
+let currentRepo: string | null = null;
+for (let i = 0; i < mine.length;) {
+  const repo = repoOf(mine[i]);
+  if (repo !== currentRepo) {
+    clearCircularDependencyCache();
+    currentRepo = repo;
+  }
+  // A batch must not cross into the next repository, or clearing the cache
+  // for that next repository would also wipe the cycle graph this batch
+  // still needs for the tail end of the current one.
+  let end = Math.min(i + BATCH, mine.length);
+  while (end > i + 1 && repoOf(mine[end - 1]) !== repo) end -= 1;
+  const batch = mine.slice(i, end);
+  i = end;
   let results: Awaited<ReturnType<ESLint['lintFiles']>>;
   try {
     results = await eslint.lintFiles(batch);
@@ -530,7 +561,7 @@ for (let i = 0; i < mine.length; i += BATCH) {
   for (const result of results) {
     linted += 1;
     const rel = path.relative(CACHE, result.filePath);
-    const repo = rel.split('/')[0] ?? '';
+    const fileRepo = rel.split('/')[0] ?? '';
     for (const message of result.messages) {
       const ruleId = message.ruleId;
       if (ruleId === null || ruleId === undefined) continue;
@@ -540,7 +571,7 @@ for (let i = 0; i < mine.length; i += BATCH) {
         samples: [],
       };
       hit.count += 1;
-      hit.repos.add(repo);
+      hit.repos.add(fileRepo);
       /**
        * One sample per repository, not the first four findings.
        *
@@ -551,7 +582,7 @@ for (let i = 0; i < mine.length; i += BATCH) {
        * rule does across a corpus, which is the only reason to keep samples.
        */
       if (
-        !hit.samples.some((existing) => existing.startsWith(`${repo}/`)) &&
+        !hit.samples.some((existing) => existing.startsWith(`${fileRepo}/`)) &&
         hit.samples.length < 8
       ) {
         hit.samples.push(`${rel}:${message.line}`);
