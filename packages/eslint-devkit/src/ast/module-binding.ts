@@ -29,7 +29,7 @@
  * ```
  */
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
-import { propertyName } from './spellings';
+import { objectKeyName, propertyName } from './spellings';
 // The shim, not the package: `@typescript-eslint/utils` is an OPTIONAL peer,
 // so a runtime import of it makes devkit unloadable wherever the consumer
 // did not install it. Only the type import above may name the package.
@@ -80,17 +80,15 @@ function destructuredKey(pattern: TSESTree.Node, boundName: string): string | un
   if (pattern.type !== AST_NODE_TYPES.ObjectPattern) return undefined;
 
   for (const property of pattern.properties) {
-    // Skips RestElement (`{ ...rest }`) and computed keys (`{ [k]: v }`) — neither names a
-    // knowable export — and nested patterns, whose value is not the bound identifier.
+    // Skips RestElement (`{ ...rest }`) and nested patterns, whose value is not the bound
+    // identifier.
     if (property.type !== AST_NODE_TYPES.Property) continue;
-    if (property.computed) continue;
     if (property.value.type !== AST_NODE_TYPES.Identifier) continue;
     if (property.value.name !== boundName) continue;
 
-    // Non-computed keys are an Identifier (`{ readFile: x }`) or a string Literal
-    // (`{ 'readFile': x }`); both name the export directly.
-    const { key } = property;
-    return key.type === AST_NODE_TYPES.Identifier ? key.name : String((key as TSESTree.Literal).value);
+    // `{ readFile: x }`, `{ 'readFile': x }` and `{ ['readFile']: x }` all name the export;
+    // a runtime key (`{ [k]: x }`) names none, so the caller abstains.
+    return objectKeyName(property) ?? undefined;
   }
   return undefined;
 }
