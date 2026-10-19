@@ -544,12 +544,14 @@ function CatchCard({
   href: string;
   snippet: string;
 }) {
+  // Stretched-link card (WCAG 2.5.3 Label in Name): the <Link> wraps only the
+  // visible title, so its accessible name IS its visible text. Its ::after
+  // overlay makes the whole card the hit target and carries the focus ring.
+  // Do not move the Link back around the whole card with an aria-label: the
+  // card's visible text (CWE, rule id, snippet, "Read the rule") would then be
+  // missing from the label, which axe flags as label-content-name-mismatch.
   return (
-    <Link
-      href={href}
-      aria-label={`${title} — ${cwe} — open rule ${ruleId}`}
-      className="group block min-w-0 rounded-xl border border-fd-border bg-fd-card p-6 hover:border-orange-500/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fd-primary transition-all"
-    >
+    <div className="group block min-w-0 relative rounded-xl border border-fd-border bg-fd-card p-6 hover:border-orange-500/50 hover:shadow-md transition-all">
       <div className="flex items-baseline gap-2 mb-3 flex-wrap min-w-0">
         <span className="rounded bg-orange-500/15 px-2 py-0.5 text-xs font-mono font-medium text-orange-900 dark:text-orange-100 whitespace-nowrap shrink-0">
           {cwe}
@@ -557,9 +559,16 @@ function CatchCard({
         <span className="text-xs text-fd-muted-foreground whitespace-nowrap shrink-0">caught by</span>
         <code className="text-xs font-mono text-fd-foreground break-all">{ruleId}</code>
       </div>
-      <h3 className="text-lg font-semibold mb-3 group-hover:text-fd-primary transition-colors">{title}</h3>
-      {/* WCAG 2.1.1: this <pre> is inside the card <Link>, so it must not become a
-          focusable scroll region (a tab stop nested in an anchor). Wrap instead. */}
+      <h3 className="text-lg font-semibold mb-3 group-hover:text-fd-primary transition-colors">
+        <Link
+          href={href}
+          className="after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-fd-primary"
+        >
+          {title}
+        </Link>
+      </h3>
+      {/* WCAG 2.1.1: this <pre> sits under the card's link overlay, so it must not
+          become a focusable scroll region (a stray tab stop in the card). Wrap instead. */}
       <pre className="bg-fd-background/80 rounded-md p-3 text-xs font-mono whitespace-pre-wrap break-words border border-fd-border/50">
         <code className="text-fd-foreground">{snippet}</code>
       </pre>
@@ -567,6 +576,6 @@ function CatchCard({
         Read the rule
         <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" aria-hidden />
       </div>
-    </Link>
+    </div>
   );
 }
