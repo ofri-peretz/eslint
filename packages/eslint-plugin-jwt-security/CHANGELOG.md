@@ -5,6 +5,15 @@ All notable changes to `eslint-plugin-jwt-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.5.2
+
+### Patch Changes
+
+- **🐛 Fix** — `require-expiration` enforces `maxExpirationSeconds`; option docs say what is read
+
+  - `require-expiration` now reads `maxExpirationSeconds`, which was documented and ignored. When set, a token whose lifetime the file states statically and that exceeds the limit is reported: `expiresIn` as seconds or as an `ms` string (`'7d'`, `'2 hours'`), and a payload `exp` of `Math.floor(Date.now() / 1000) + N`. A lifetime from the environment, a parameter or a call is not judged. The option is opt-in: its schema default of 86400 is removed, so an unchanged config reports nothing new.
+  - The rule docs now say plainly that `trustedSanitizers`, `strictMode`, `recommendedAlgorithms`, `knownAudiences`, `knownIssuers`, `envPatterns`, and `trustedAnnotations` (everywhere but `no-decode-without-verify`) have no effect. They stay in the schemas, so existing configs remain valid.
+
 ## 3.5.1
 
 ### Patch Changes
