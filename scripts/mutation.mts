@@ -266,8 +266,12 @@ for (const plugin of plugins) {
       `no report at ${path.relative(ROOT, report)} — run without --grade-only first`,
     );
 
+  // Grade only what this run mutated: the report also carries every other
+  // rule's last incremental result (see scoreReport).
+  const ran = since ? (mutate ?? []).map((f) => ruleOf(f) ?? '') : selected;
   const scores: Record<string, RuleScore> = scoreReport(
     JSON.parse(fs.readFileSync(report, 'utf8')) as MutationReport,
+    ran,
   );
   const verdicts = grade(scores, baseline.plugins[plugin]?.rules);
 

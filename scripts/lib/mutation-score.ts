@@ -80,12 +80,25 @@ export function ruleOf(file: string): string | undefined {
  * (e.g. `createRule({})` — RuleCreator throws before any `it` registers): no
  * test ran, so nothing survived anything. Counting it would charge every rule
  * one phantom survivor for its own definition object.
+ *
+ * `ran` is the rules this run MUTATED, and every other rule in the report is
+ * dropped. The report is not "what this run tested": in incremental mode
+ * Stryker copies every mutant OUTSIDE the current `--mutate` scope forward
+ * from the last run's state file so they "aren't forgotten" — `--force` only
+ * re-tests the in-scope ones. A `--rules a` run's report therefore still lists
+ * b, c, … with whatever status they had when last tested; graded, a rule
+ * nobody touched can fail the run, and banked, it rewrites a score nobody
+ * measured.
  */
-export function scoreReport(report: MutationReport): Record<string, RuleScore> {
+export function scoreReport(
+  report: MutationReport,
+  ran: Iterable<string>,
+): Record<string, RuleScore> {
+  const inRun = new Set(ran);
   const tally = new Map<string, Omit<RuleScore, 'score'>>();
   for (const [file, { mutants }] of Object.entries(report.files)) {
     const rule = ruleOf(file);
-    if (!rule) continue;
+    if (!rule || !inRun.has(rule)) continue;
     const t = tally.get(rule) ?? {
       killed: 0,
       survived: 0,

@@ -85,6 +85,7 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
       errors: [{ messageId: 'violationDetected' }],
     })),
     {
+      name: 'a wildcard Access-Control-Allow-Origin header',
       code: "res.setHeader('Access-Control-Allow-Origin', '*')",
       errors: [{ messageId: 'violationDetected' }],
     },

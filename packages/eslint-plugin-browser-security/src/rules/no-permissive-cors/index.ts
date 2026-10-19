@@ -65,6 +65,14 @@ function foldToString(
   if (node.type === AST_NODE_TYPES.Literal) {
     return typeof node.value === 'string' ? node.value : null;
   }
+  // `` `*` `` is the same string as `'*'`: a template with no substitutions
+  // folds to its cooked text.
+  if (
+    node.type === AST_NODE_TYPES.TemplateLiteral &&
+    node.expressions.length === 0
+  ) {
+    return node.quasis[0].value.cooked;
+  }
   if (node.type === AST_NODE_TYPES.Identifier) {
     const init = resolveInitializer(node, sourceCode);
     return init === undefined
@@ -265,8 +273,9 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
           // caught.
           if (
             originProp &&
-            originProp.value.type === AST_NODE_TYPES.Literal &&
-            (originProp.value.value === '*' || originProp.value.value === true)
+            (foldToString(originProp.value, sourceCode) === '*' ||
+              (originProp.value.type === AST_NODE_TYPES.Literal &&
+                originProp.value.value === true))
           ) {
             report(node);
           }

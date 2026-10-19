@@ -8,6 +8,7 @@
  * @provenBy {"file":"scripts/lib/mutation-score.ts","find":"      else if (status === 'Survived' && testsCompleted === 0) continue;\n","replace":""}
  * @provenBy {"file":"scripts/lib/mutation-score.ts","find":"  return shipped.filter((r) => !pending.has(r)).toSorted();","replace":"  return [...shipped].toSorted();"}
  * @provenBy {"file":"scripts/lib/mutation-score.ts","find":"    (r) => !(r in sorted),","replace":"    (r) => r !== '',"}
+ * @provenBy {"file":"scripts/lib/mutation-score.ts","find":"    if (!rule || !inRun.has(rule)) continue;","replace":"    if (!rule) continue;"}
  * @provenBy {"file":".agent/mutation-baseline.json","find":"\"require-max-age\": {","replace":"\"require-max-age-renamed\": {"}
  */
 
@@ -27,9 +28,12 @@
  *                       once, on the PR that adds it, and never again unless
  *                       someone remembers
  *
- * The fourth case is a measurement artefact, not policy: the vitest runner
- * reports a mutant that crashes a test FILE at import as `Survived` with zero
- * tests completed. Counted, it charges every rule a phantom survivor.
+ * Two cases are measurement artefacts, not policy. A report is not "what this
+ * run tested": Stryker's incremental mode carries every out-of-scope rule's
+ * last result into it, so only the rules the run mutated are graded. And the
+ * vitest runner reports a mutant that crashes a test FILE at import as
+ * `Survived` with zero tests completed. Counted, it charges every rule a
+ * phantom survivor.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -145,20 +149,23 @@ describe('scoreReport', () => {
   });
 
   it('scores per rule: Killed+Timeout over Killed+Timeout+Survived+NoCoverage', () => {
-    const scores = scoreReport({
-      files: {
-        'src/rules/a/index.ts': {
-          mutants: [
-            m('Killed', 3),
-            m('Timeout', 1),
-            m('Survived', 2),
-            m('NoCoverage', 0),
-            m('Ignored'),
-            m('CompileError'),
-          ],
+    const scores = scoreReport(
+      {
+        files: {
+          'src/rules/a/index.ts': {
+            mutants: [
+              m('Killed', 3),
+              m('Timeout', 1),
+              m('Survived', 2),
+              m('NoCoverage', 0),
+              m('Ignored'),
+              m('CompileError'),
+            ],
+          },
         },
       },
-    });
+      ['a'],
+    );
     expect(scores.a).toEqual({
       score: 50,
       killed: 1,
@@ -169,12 +176,42 @@ describe('scoreReport', () => {
   });
 
   it('does not count a survivor that ran zero tests (a test file that crashed at import)', () => {
-    const scores = scoreReport({
-      files: {
-        'src/rules/a/index.ts': { mutants: [m('Killed', 4), m('Survived', 0)] },
+    const scores = scoreReport(
+      {
+        files: {
+          'src/rules/a/index.ts': {
+            mutants: [m('Killed', 4), m('Survived', 0)],
+          },
+        },
       },
-    });
+      ['a'],
+    );
     expect(scores.a.score).toBe(100);
+  });
+
+  // browser-security batch 2: `--rules <13 pending rules>` printed
+  // `REGRESSED no-disabled-certificate-validation 94.2 (baseline 94.3)` and
+  // exited 1. That batch-1 rule was not mutated; Stryker's incremental mode
+  // had copied its last-known mutants into the report, and the grader graded
+  // every rule the report named.
+  it('scores only the rules this run mutated, not the ones the incremental cache carried in', () => {
+    const report = {
+      files: {
+        'src/rules/a/index.ts': { mutants: [m('Killed', 1), m('Survived', 1)] },
+        'src/rules/stale/index.ts': { mutants: [m('Survived', 1)] },
+      },
+    };
+    const scores = scoreReport(report, ['a']);
+    expect(Object.keys(scores)).toEqual(['a']);
+    // the stale rule neither fails the run…
+    expect(failing(grade(scores, { a: s(50), stale: s(100) }))).toEqual([]);
+    // …nor gets banked (refused, or written) by --update-baseline
+    const base: Baseline = { plugins: { p: { rules: { stale: s(100) } } } };
+    const r = bank(base, 'p', scores, false);
+    expect(r.refused).toEqual([]);
+    expect(r.baseline.plugins.p.rules.stale.score).toBe(100);
+    // a rule that DID run and dropped still fails
+    expect(failing(grade(scores, { a: s(60) }))).toHaveLength(1);
   });
 
   it('maps only rule sources to rules', () => {

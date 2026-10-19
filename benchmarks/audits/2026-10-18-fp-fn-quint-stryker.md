@@ -6,7 +6,7 @@ Two methods were applied to four security plugins, and every finding was handled
 2. It was fixed with a test that fails on the old rule.
 3. It shipped as a patch release.
 
-The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-security` (batch 1) and, on 2026-10-19, `browser-security` (batch 1) and `secure-coding` (batch 1). Together they produced **45 distinct wrong verdicts: 20 false positives and 25 false negatives**, plus one crash. Every finding below is fixed, and every fix is published, or queued for the next release where noted.
+The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-security` (batch 1) and, on 2026-10-19, `browser-security` (batches 1 and 2) and `secure-coding` (batch 1). Together they produced **55 distinct wrong verdicts: 23 false positives and 32 false negatives**, plus one crash. Every finding below is fixed, and every fix is published, or queued for the next release where noted.
 
 ## Method
 
@@ -35,8 +35,9 @@ The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-se
 | `eslint-plugin-mongodb-security`                     |      3 |      8 | #1221, #1225 | 9.1.4                                                           |
 | `eslint-plugin-node-security` (batch 1, 12 rules)    |      2 |      8 | #1235, #1239 | 5.6.10                                                          |
 | `eslint-plugin-browser-security` (batch 1, 33 rules) |      4 |      2 | #1263        | next patch (changeset `browser-security-mutation-batch1-fixes`) |
+| `eslint-plugin-browser-security` (batch 2, 13 rules) |      3 |      7 | #1267        | next patch (changeset `browser-security-mutation-batch2-fixes`) |
 | `eslint-plugin-secure-coding` (batch 1, 8 rules)     |      1 |      1 | #1270        | next patch (changeset `secure-coding-mutation-batch1-fixes`)    |
-| **Total**                                            | **20** | **25** |              |                                                                 |
+| **Total**                                            | **23** | **32** |              |                                                                 |
 
 The table counts distinct fixes. Measured on the 80-shape release oracle, the old rules gave 15 wrong verdicts (8 false leaks, 7 false doubles); those collapse into the four `#1234` release fixes below.
 
@@ -111,6 +112,23 @@ Batch 1 covers the 33 `recommended` rules; 4,733 mutants. Survivors were triaged
 | no-postmessage-wildcard-origin     | FN   | ``postMessage(data, `*`)`` and ``{ targetOrigin: `*` }``                                                                                           |
 | no-disabled-certificate-validation | FN   | `process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0` and `` = `0` `` (`process.env` stores both as `'0'`)                                                |
 
+### browser-security (batch 2)
+
+Batch 2 covers the 13 rules that were `pending` after batch 1. The first run tested 3,825 mutants in about 28 minutes at concurrency 2; the banked entries total 3,833, because the four rules fixed during triage were re-run against their final code. All 13 are banked and `pending` is gone. The time-boxed triage went to the four rules below, where survivors pointed at real wrong verdicts; their fixtures (and the boundary cases that kill the cheap survivors) are in each rule's `mutation-edges.test.ts`, and those four rules were re-banked after the fixes.
+
+| Rule                         | Kind | Wrong verdict on                                                                                                         |
+| :--------------------------- | :--- | :----------------------------------------------------------------------------------------------------------------------- |
+| no-permissive-cors           | FN   | a template-literal wildcard or header name: ``setHeader('Access-Control-Allow-Origin', `*`)``, ``cors({ origin: `*` })`` |
+| no-permissive-cors           | FN   | a `cors()` origin bound to a constant: `const ANY = '*'; cors({ origin: ANY })`                                          |
+| no-password-in-url           | FN   | a password after an empty username: `https://:secret@host`                                                               |
+| require-mime-type-validation | FP   | multer options bound to a name first: `const opts = { fileFilter }; multer(opts)`                                        |
+| require-mime-type-validation | FP   | a quoted `'fileFilter'` key                                                                                              |
+| require-mime-type-validation | FN   | a template-literal prefix test: ``file.type.startsWith(`image/`)``                                                       |
+| require-mime-type-validation | FN   | a quoted `fetch` init key, `fetch(url, { 'body': file })` (found by `check:computed-keys` on the new fixture)            |
+| no-tracking-without-consent  | FN   | tracking inside `if (hasConsent() !== true)` / `!= true`                                                                 |
+| no-tracking-without-consent  | FN   | tracking inside a yoda `if (false === hasConsent())`                                                                     |
+| no-tracking-without-consent  | FP   | tracking after an early `if (hasConsent() !== true) return;`                                                             |
+
 ### secure-coding (batch 1)
 
 Batch 1 covers the 8 smallest of the 18 `recommended` rules; 3,313 mutants. All 18 together are 11,990 mutants, so the other 10 `recommended` rules are batch 2. The highest-value survivors in `no-homoglyph-identifiers`, `no-log-injection`, `no-template-injection`, `no-fail-open-auth` and `no-xxe-injection` became fixtures in a `mutation-edges.test.ts` per rule. The rest are listed per rule in #1270. A redundant literal/template short-circuit in `no-template-injection` was deleted: `untrustedSource` already returns null for static text.
@@ -122,14 +140,14 @@ Batch 1 covers the 8 smallest of the 18 `recommended` rules; 3,313 mutants. All 
 
 ## Mutation-testing coverage
 
-| Plugin              |           Rules banked |                                     Mean score |
-| :------------------ | ---------------------: | ---------------------------------------------: |
-| mongodb-security    |                16 / 16 |                                           90.2 |
-| jwt-security        |                13 / 13 |                                           84.2 |
-| postgresql-security |                13 / 13 | 83.0 (no-unsafe-query 75.6 → 86.0 after #1234) |
-| node-security       | 12 / 43 (31 `pending`) |                                        batch 1 |
-| browser-security    | 33 / 46 (13 `pending`) |                      92.1 (84.8 before triage) |
-| secure-coding       |  8 / 34 (26 `pending`) |          78.0 (banked from the pre-triage run) |
+| Plugin              |           Rules banked |                                                           Mean score |
+| :------------------ | ---------------------: | -------------------------------------------------------------------: |
+| mongodb-security    |                16 / 16 |                                                                 90.2 |
+| jwt-security        |                13 / 13 |                                                                 84.2 |
+| postgresql-security |                13 / 13 |                       83.0 (no-unsafe-query 75.6 → 86.0 after #1234) |
+| node-security       | 12 / 43 (31 `pending`) |                                                              batch 1 |
+| browser-security    |                46 / 46 | 92.1 batch 1 (84.8 before triage); 85.4 batch 2 (82.9 before triage) |
+| secure-coding       |  8 / 34 (26 `pending`) |                                78.0 (banked from the pre-triage run) |
 
 The remaining plugins are not opted in yet: express, vercel-ai, mcp-sdk, lambda, nestjs and the per-SDK plugins. The rollout order is in [`docs/MUTATION_TESTING.md`](../../docs/MUTATION_TESTING.md).
 
@@ -145,6 +163,14 @@ These are calls about what a rule _should_ report. The triage did not change the
 - **no-dynamic-service-worker-url**: `const { 'serviceWorker': sw } = navigator` (quoted, computed or defaulted) followed by `sw.register(url)` is silent.
 - **Template literals across the transport family**: `` const u = `ws://${host}/s` `` (no-insecure-websocket) and `http://` templates (no-http-urls) are not read; ``addEventListener(`message`, …)`` is not a listener.
 - **Smaller scope questions**: `_.assign(el, { innerHTML })` (no-innerhtml only models `Object.assign`); class fields as namespace or body names (no-http-urls, no-credentials-in-query-params, no-unsafe-inline-csp); the legacy `X-Content-Security-Policy` header; `cache.example.com` not treated as RFC 2606 reserved; no-client-side-auth-logic's depth budget counts `&&` chain length.
+
+## Open owner decisions (browser-security batch 2)
+
+- **Deprecated rules**: `no-permissive-cors` and `no-missing-cors-check` are deprecated in favour of `express-security/no-permissive-cors`. `no-missing-cors-check` is mostly source-text regexes and banks the lowest score (72.0). Triage it, or leave it until removal?
+- **no-password-in-url** only reads `http://` and `https://`. `ftp://u:p@host`, `wss://u:p@host` and `postgres://u:p@host` are silent.
+- **require-mime-type-validation**: multer options it cannot see (a parameter, an import, a spread) are reported as having no `fileFilter`. The docs say "a `fileFilter` or strict size `limits`", but the code (and a test) refuse `limits` as a type check.
+- **no-tracking-without-consent**: a string comparison such as `consent.status === 'denied'` counts as a consent guard; `hasConsent() || analytics.track()` is reported correctly, but `!hasConsent() || analytics.track()` is reported too.
+- **Untriaged survivors**: the time box left no-missing-cors-check (72.0), no-clickjacking (76.7), no-unescaped-url-parameter (79.7), require-csp-headers (82.2) and no-missing-security-headers (83.8) at their first-run scores.
 
 ## Open owner decisions (secure-coding batch 1)
 

@@ -33,7 +33,11 @@ Defaults are deliberately gentle for a dev machine: `--concurrency 2`, and
 tests changed (state in `.cache/mutation/`). Incremental results can be stale
 for _static_ mutants (module-level code such as a pattern list): a new test
 that kills one is not noticed. Pass `--force` to re-test everything;
-`--update-baseline` always does, and CI has no cache. A full pilot run of
+`--update-baseline` always does, and CI has no cache. The incremental state
+also leaks into the report: a `--rules` or `--since` run's `mutation.json`
+still lists every other rule with its last cached result (Stryker carries
+out-of-scope mutants forward, even under `--force`). The grader ignores them
+and grades only the rules the run mutated. A full pilot run of
 `postgresql-security` + `jwt-security` is ~30 minutes at concurrency 3.
 
 Everything is in one shared config, [`scripts/mutation/stryker.config.mjs`](../scripts/mutation/stryker.config.mjs).
@@ -149,8 +153,8 @@ naming every rule not banked yet. `pending` is a named backlog, not a wildcard:
 Opted in: `postgresql-security` and `jwt-security` (the pilot), then
 `mongodb-security` (16 rules, 1,822 mutants, ~7 min at concurrency 3), then
 `node-security` batch 1 (12 of its 43 rules; the other 31 are `pending`),
-then `browser-security` batch 1 (its 33 `recommended` rules; the other 13 are
-`pending`),
+then `browser-security` batch 1 (its 33 `recommended` rules) and batch 2 (the
+other 13; nothing is `pending` any more),
 then `secure-coding` batch 1 (8 of its 18 `recommended` rules; the other 26
 are `pending`).
 
@@ -174,9 +178,8 @@ Proposed order for the rest, each as its own PR (run → triage → bank):
    `recommended` rules (3,313 mutants, ~12 min at concurrency 2). All 18
    `recommended` rules together are 11,990 mutants, over an hour locally, so
    the other 10 are batch 2; the 16 non-`recommended` rules come after.
-4. **`express-security`** (28), **`browser-security`** (46; batch 1, the 33
-   `recommended` rules, is in — `src/test-path-gate.test.ts` is its gate
-   table),
+4. **`express-security`** (28), **`browser-security`** (46; both batches are in —
+   `src/test-path-gate.test.ts` is its gate table),
    **`nestjs-security`** (10), **`lambda-security`** (14) — the large
    framework plugins whose rules are almost all in `recommended` (179 of the
    223 shipped rules are; `.agent/preset-membership-audit.md`).
