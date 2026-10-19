@@ -29,7 +29,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :-: | :-: | :-: |
 | `eslint-plugin-anthropic-security` | 1.0.0 | `anthropic-security/` | — | `plugin-anthropic-security` | security | `claude` | ✅ | ✅ | ✅ |
 | `eslint-plugin-browser-security` | 2.1.9 | `browser-security/` | — | `plugin-browser-security` | security | `chromium` | ✅ | ✅ | ✅ |
-| `eslint-plugin-cli-floor` | 0.1.0 | `cli-floor/` | — | `plugin-cli-floor` | quality | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-cli-floor` | 0.1.1 | `cli-floor/` | — | `plugin-cli-floor` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-conventions` | 6.0.8 | `conventions/` | — | `plugin-conventions` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-drizzle-security` | 1.0.0 | `drizzle-security/` | — | `plugin-drizzle-security` | security | `drizzle` | ✅ | ✅ | ✅ |
 | `eslint-plugin-express-security` | 3.2.4 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
@@ -45,7 +45,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-mongodb-security` | 9.1.5 | `mongodb-security/` | — | `plugin-mongodb-security` | security | `mongodb` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mysql-security` | 1.0.0 | `mysql-security/` | — | `plugin-mysql-security` | security | `mysql` | ✅ | ✅ | ✅ |
 | `eslint-plugin-nestjs-security` | 3.1.3 | `nestjs-security/` | — | `plugin-nestjs-security` | security | `nestjs` | ✅ | ✅ | ✅ |
-| `eslint-plugin-node-security` | 5.6.11 | `node-security/` | — | `plugin-node-security` | security | `node` | ✅ | ✅ | ✅ |
+| `eslint-plugin-node-security` | 5.6.12 | `node-security/` | — | `plugin-node-security` | security | `node` | ✅ | ✅ | ✅ |
 | `eslint-plugin-openai-security` | 1.0.0 | `openai-security/` | — | `plugin-openai-security` | security | `openai` | ✅ | ✅ | ✅ |
 | `eslint-plugin-operability` | 4.1.6 | `operability/` | — | `plugin-operability` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-postgresql-security` | 2.6.2 | `postgresql-security/` | `pg/` | `plugin-postgresql-security` | security | `postgresql` | ✅ | ✅ | ✅ |
