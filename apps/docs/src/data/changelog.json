@@ -5,6 +5,71 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.6.11",
+      "date": "2026-10-19T01:43:21Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "close the FP/FN policy gaps left open by the 2026-10-18 audit",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mongodb-security",
+      "short": "eslint-plugin-mongodb-security",
+      "version": "9.1.5",
+      "date": "2026-10-19T01:43:20Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "five rules follow the 2026-10 owner decisions on what to report",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
+      "version": "3.5.2",
+      "date": "2026-10-19T01:43:17Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`require-expiration` enforces `maxExpirationSeconds`; option docs say what is read",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "short": "eslint-plugin-postgresql-security",
+      "version": "2.6.2",
+      "date": "2026-10-19T01:43:17Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-unsafe-query` policy gaps decided after the 2026-10-18 audit",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "leave postgres URLs in TypeORM configs to typeorm-security",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "2.6.1",
@@ -19027,21 +19092,6 @@
     {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
-      "version": "3.5.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`require-expiration` enforces `maxExpirationSeconds`; option docs say what is read",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-jwt-security",
-      "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
       "date": null,
       "isApp": false,
@@ -19155,56 +19205,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-mongodb-security",
-      "short": "eslint-plugin-mongodb-security",
-      "version": "9.1.5",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "five rules follow the 2026-10 owner decisions on what to report",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-node-security",
-      "short": "eslint-plugin-node-security",
-      "version": "5.6.11",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "close the FP/FN policy gaps left open by the 2026-10-18 audit",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-postgresql-security",
-      "short": "eslint-plugin-postgresql-security",
-      "version": "2.6.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-unsafe-query` policy gaps decided after the 2026-10-18 audit",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "leave postgres URLs in TypeORM configs to typeorm-security",
           "pr": null
         }
       ]
