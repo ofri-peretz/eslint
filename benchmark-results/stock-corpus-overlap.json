@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-09-14T16:13:02.491Z",
+  "generatedAt": "2026-10-19T17:52:15.797Z",
   "oxc": {
-    "path": "../../../../oos/oxc",
-    "commit": "3b331810",
+    "path": "../oos/oxc",
+    "commit": "c0423a1b9",
     "namespaceCount": 16,
-    "totalRuleFiles": 866,
-    "uniqueSlugs": 803,
+    "totalRuleFiles": 867,
+    "uniqueSlugs": 804,
     "namespaces": [
       {
         "namespace": "eslint",
@@ -580,7 +580,7 @@
       },
       {
         "namespace": "typescript",
-        "ruleCount": 110,
+        "ruleCount": 111,
         "rules": [
           "adjacent-overload-signatures",
           "array-type",
@@ -616,6 +616,7 @@
           "no-extraneous-class",
           "no-floating-promises",
           "no-for-in-array",
+          "no-generated-empty-object-type",
           "no-implied-eval",
           "no-import-type-side-effects",
           "no-inferrable-types",
@@ -972,9 +973,9 @@
   },
   "ours": {
     "manifestPath": ".agent/oxlint-jsplugins-manifest.json",
-    "pluginCount": 31,
-    "totalRules": 482,
-    "uniqueSlugs": 439
+    "pluginCount": 32,
+    "totalRules": 497,
+    "uniqueSlugs": 454
   },
   "overlap": {
     "slugCount": 120,
