@@ -218,23 +218,10 @@ function isRedirectValidated(
   }
 
   // `res.redirect(isTrustedRedirect(target) ? target : '/')` — the guard is the
-  // ternary's own test.
+  // ternary's own test, and `isGuardedDestination` checks that first.
   // Only a guard we can *prove* anchors the whole origin counts; the same shape
   // over `/https?:\/\/example\.com/` (no `^…$`, unescaped dot) stays reported,
   // which is the entire difference between the two corpus fixtures.
-  if (
-    target.type === 'ConditionalExpression' &&
-    provesSafeDestination(target.test, sourceCode)
-  ) {
-    return true;
-  }
-
-  // A synthetic node with no `loc` cannot be placed in the source, so no
-  // surrounding guard can be found for it. Reported rather than assumed safe.
-  if (!node.loc?.start || !node.loc?.end) {
-    return false;
-  }
-
   return isGuardedDestination(node, target, sourceCode, (test) =>
     provesSafeDestination(test, sourceCode),
   );

@@ -461,9 +461,7 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
       // and it is one no competitor on this corpus catches either.
       if (member.property.type === 'Identifier') {
         const init = resolveInitializer(member.property, sourceCode);
-        if (init !== undefined && staticString(init) !== null) {
-          return staticString(init);
-        }
+        if (init !== undefined) return staticString(init);
       }
       return null;
     }
@@ -483,10 +481,9 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
     function isDocumentReceiver(object: TSESTree.Node): boolean {
       // `document.write(...)`
       if (object.type === 'Identifier') {
-        return (
-          object.name === 'document' ||
-          /^(?:.*[a-z])?[Dd]oc(?:ument)?$/.test(object.name)
-        );
+        // `document`, `doc`, `iframeDoc`, `newDocument` — the pattern covers
+        // the bare `document` too.
+        return /^(?:.*[a-z])?[Dd]oc(?:ument)?$/.test(object.name);
       }
       // `window.document.write(...)`, `iframe.contentDocument.write(...)`,
       // `el.ownerDocument.write(...)`

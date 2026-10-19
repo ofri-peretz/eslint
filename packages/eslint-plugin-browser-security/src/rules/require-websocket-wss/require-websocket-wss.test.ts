@@ -25,7 +25,7 @@ ruleTester.run('require-websocket-wss', requireWebsocketWss, {
       code: `const ws = new WebSocket('wss://acmecorp.io/socket');`,
     },
     {
-      code: `const ws = new WebSocket('wss://api.acmecorp.io:443/ws');`,
+      name: 'wss:// with an explicit 443 port', code: `const ws = new WebSocket('wss://api.acmecorp.io:443/ws');`,
     },
     // Localhost is allowed by default
     {

@@ -35,7 +35,7 @@ ruleTester.run('require-cookie-secure-attrs', requireCookieSecureAttrs, {
 
     // PRE-EXISTING DEFECT, now fixed: deleting a cookie was reported for
     // missing attributes on a value that no longer exists.
-    { code: `document.cookie = 'sid=; Max-Age=0';` },
+    { name: 'deleting a cookie with Max-Age=0 needs no attributes', code: `document.cookie = 'sid=; Max-Age=0';` },
     {
       code: `document.cookie = 'sid=; expires=Thu, 01 Jan 1970 00:00:00 GMT';`,
     },

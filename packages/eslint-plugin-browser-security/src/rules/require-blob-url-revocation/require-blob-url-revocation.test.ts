@@ -19,7 +19,7 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-blob-url-revocation', requireBlobUrlRevocation, {
   valid: [
-        'const x = 42;',
+        { name: 'a file with no object URL', code: 'const x = 42;' },
         'const flag = true;',
         'function noop() {}',
     // Properly revoked

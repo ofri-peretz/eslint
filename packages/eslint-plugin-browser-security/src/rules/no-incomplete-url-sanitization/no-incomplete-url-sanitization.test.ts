@@ -80,7 +80,10 @@ ruleTester.run('no-incomplete-url-sanitization', noIncompleteUrlSanitization, {
     { code: "if ((a + b).includes('trusted.com')) { go(); }" },
 
     // ── indexOf is only containment once compared against -1 / 0 ─────────
-    { code: "log(url.indexOf('trusted.com'));" },
+    {
+      name: 'an indexOf result handed on uncompared makes no containment claim',
+      code: "log(url.indexOf('trusted.com'));",
+    },
     { code: "if (url.indexOf('trusted.com') === -1) { deny(); }" },
     { code: "if (url.indexOf('trusted.com') > 0) { go(); }" },
     { code: "if (url.indexOf('trusted.com') >= 1) { go(); }" },

@@ -21,7 +21,7 @@ ruleTester.run('no-sensitive-localstorage', noSensitiveLocalstorage, {
   valid: [
     // Non-sensitive data
     { name: 'a theme preference', code: `localStorage.setItem('theme', 'dark');` },
-    { code: `localStorage.setItem('language', 'en');` },
+    { name: 'a non-sensitive key', code: `localStorage.setItem('language', 'en');` },
     { code: `localStorage['settings'] = JSON.stringify(settings);` },
     // Test file with allowInTests
     {

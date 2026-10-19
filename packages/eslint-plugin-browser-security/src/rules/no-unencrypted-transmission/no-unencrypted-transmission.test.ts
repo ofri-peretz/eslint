@@ -51,7 +51,7 @@ describe('no-unencrypted-transmission', () => {
         },
         // WSS
         {
-          code: 'const ws = new WebSocket("wss://acmecorp.io");',
+          name: 'a wss:// URL is encrypted', code: 'const ws = new WebSocket("wss://acmecorp.io");',
         },
         // Secure database connections
         {

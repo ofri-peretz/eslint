@@ -43,6 +43,7 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
     },
     // Safe: with sanitization
     {
+      name: 'the message is sanitized inline before innerHTML',
       code: `
         const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {

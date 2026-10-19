@@ -20,7 +20,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-sensitive-sessionstorage', noSensitiveSessionstorage, {
   valid: [
     { name: 'a theme preference', code: `sessionStorage.setItem('theme', 'dark');` },
-    { code: `sessionStorage.setItem('step', '3');` },
+    { name: 'a non-sensitive key', code: `sessionStorage.setItem('step', '3');` },
     { code: `const v = sessionStorage.getItem('password');` },
     // Test files allowed by default
     { code: `sessionStorage.setItem('password', pw);`, filename: 'x.test.ts' },

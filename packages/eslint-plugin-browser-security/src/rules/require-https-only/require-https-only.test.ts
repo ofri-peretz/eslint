@@ -25,7 +25,7 @@ ruleTester.run('require-https-only', requireHttpsOnly, {
 
     // HTTPS on both sinks, across every axios verb the rule claims.
     { name: 'https', code: "fetch('https://api.example.com')" },
-    { code: "axios.get('https://secure.io')" },
+    { name: 'axios.get over https', code: "axios.get('https://secure.io')" },
     { code: "axios.post('https://api.stripe.com/v1/charges', body)" },
     { code: "axios.put('https://api.acme.io/users/1', patch)" },
     { code: "axios.delete('https://api.acme.io/users/1')" },

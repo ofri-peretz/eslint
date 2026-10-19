@@ -48,6 +48,7 @@ ruleTester.run(
       },
       // Corpus lock: benchmarks/corpus/CWE-295/safe/tls-default-verification.js
       {
+        name: 'default verification when no TLS option is set',
         code: "https.request({ host, path: '/secret', method: 'GET' }, onRes)",
       },
       // Delegation as a single expression.

@@ -42,7 +42,6 @@ import { isAttackerSteerableUrl } from '../../utils/url-taint';
 
 type MessageIds = 'substringHostCheck' | 'incompleteSchemeDenylist';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface -- Rule has no configurable options
 export interface Options {
   /**
    * Substrings that say the value under test is a URL, host or origin, matched
@@ -125,7 +124,8 @@ function isHostLikeLiteral(raw: string): boolean {
   value = value.replace(/^\/\//, '');
   value = value.replace(/^\./, '');
   const withoutPort = value.replace(/:\d{1,5}$/, '');
-  if (/[/?#@\s:]/.test(withoutPort)) return false;
+  // A path, query, fragment, credentials or a second colon all fail the
+  // label charset test below, so they need no separate check.
   const labels = withoutPort.split('.');
   if (labels.length < 2) return false;
   if (!labels.every((label) => /^[a-z0-9-]+$/.test(label))) return false;
@@ -496,9 +496,8 @@ export const noIncompleteUrlSanitization = createRule<RuleOptions, MessageIds>({
         const method = propertyName(callee);
         if (method === null) return;
 
-        if (node.arguments.length > 0) {
-          checkSubstringHostCheck(node, method, callee.object);
-        }
+        // No-argument calls fall out at its `arguments.length !== 1` check.
+        checkSubstringHostCheck(node, method, callee.object);
 
         // `href.startsWith('javascript:')`, `href.indexOf('javascript:') > -1`.
         if (NEEDLE_METHODS.has(method) && node.arguments.length > 0) {

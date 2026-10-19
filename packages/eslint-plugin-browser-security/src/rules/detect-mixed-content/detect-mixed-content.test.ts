@@ -34,7 +34,7 @@ ruleTester.run('detect-mixed-content', detectMixedContent, {
     // line does not draw two findings under two CWEs, which is what got this
     // rule demoted out of `recommended` in the first place.
     { name: 'an http URL in a variable that never reaches the DOM', code: "const url = 'http://acmecorp.io/api'" },        // -> no-http-urls
-    { code: "fetch('http://cdn.acmecorp.io/lib.js')" },      // -> require-https-only
+    { name: 'a fetch URL argument is left to require-https-only', code: "fetch('http://cdn.acmecorp.io/lib.js')" },      // -> require-https-only
     { code: "const base = 'http://localhost.evil.com/api'" },// -> no-http-urls
     { code: "const base = 'http://'" },                      // -> no-http-urls
     { code: "const svg = 'http://www.w3.org/2000/svg'" },    // namespace: nobody

@@ -17,7 +17,7 @@ ruleTester.run('no-credentials-in-query-params', noCredentialsInQueryParams, {
     // Safe URLs without credentials
     { name: 'a URL with no credential in it', code: "const url = 'https://api.example.com/data'" },
     { code: "const url = 'https://api.example.com?user=john'" },
-    { code: "fetch('https://api.example.com/users')" },
+    { name: 'a fetch URL with no query string', code: "fetch('https://api.example.com/users')" },
     { code: 'const x = 1' },
 
     // --- A template is not a URL just because it contains "token=" ----------

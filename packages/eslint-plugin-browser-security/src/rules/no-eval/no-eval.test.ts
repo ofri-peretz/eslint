@@ -42,6 +42,7 @@ ruleTester.run('no-eval', noEval, {
     },
     // Safe JSON.parse
     {
+      name: 'JSON.parse is not an evaluator',
       code: `const data = JSON.parse(jsonString);`,
     },
     // setTimeout with function

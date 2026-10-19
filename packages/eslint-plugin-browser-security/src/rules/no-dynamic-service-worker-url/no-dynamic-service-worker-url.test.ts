@@ -25,6 +25,7 @@ ruleTester.run('no-dynamic-service-worker-url', noDynamicServiceWorkerUrl, {
       code: `navigator.serviceWorker.register('/sw.js');`,
     },
     {
+      name: 'a second literal script path',
       code: `navigator.serviceWorker.register('/service-worker.js');`,
     },
     {

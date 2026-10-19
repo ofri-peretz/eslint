@@ -211,33 +211,6 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
       return undefined;
     }
 
-    /**
-     * Is the *authority* of this `http://` template chunk supplied by an
-     * interpolation rather than written down?
-     *
-     * ``` `http://${host}:${port}` ``` is not a hardcoded HTTP URL — it is a
-     * configured endpoint, and this rule has no host to judge. Five of the
-     * eight corpus findings were exactly this shape (webpack dev-server proxy
-     * targets and the Shopify CLI's local theme server), each reported with
-     * the message `Hardcoded HTTP URL detected: "http://"`, which is not true
-     * of the code and not actionable.
-     *
-     * Deliberately narrow: only a *fully* interpolated authority is unknowable.
-     * ``` `http://api.${env}.com/x` ``` still reports, because `api.` is
-     * already enough to know the host is not loopback.
-     */
-    function hasInterpolatedAuthority(node: TSESTree.TemplateElement, cooked: string): boolean {
-      const rest = /^http:\/\/(.*)$/is.exec(cooked)?.[1];
-      if (rest === undefined) return false;
-      // The authority runs to the first path / query / fragment delimiter.
-      const authority = rest.split(/[/?#]/)[0];
-      // Something was written down — judge it normally.
-      if (authority !== '') return false;
-      // Nothing written down, and another chunk follows: the next `${…}` IS
-      // the authority.
-      return !node.tail;
-    }
-
     function checkStringValue(node: TSESTree.Node, value: string): void {
       const httpPattern = /^http:\/\//i;
 
@@ -260,11 +233,8 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
       // `canonic_module_name.indexOf('http://') !== -1` is pm2 deciding whether a module
       // spec is a remote URL; reporting it flags the check as the vulnerability. Shared
       // with no-unencrypted-transmission so the two cannot disagree.
-      {
-        const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
-        if (parent !== undefined && isProtocolInspection(node, parent)) {
-          return;
-        }
+      if (isProtocolInspection(node, node.parent as TSESTree.Node)) {
+        return;
       }
 
       // RFC 2606 reserved domains exist so that nothing treats them as a real endpoint.
@@ -300,7 +270,18 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
       // rewrite. `const URL_PREFIXES = ['http://', 'https://', 'data:']` is
       // Lighthouse's table for classifying URLs, not a URL, and the report it
       // drew read `Hardcoded HTTP URL detected: "http://"` — a statement about
-      // nothing. Same reasoning as the fully interpolated authority above.
+      // nothing.
+      //
+      // This is also what exempts a template whose authority is FULLY
+      // interpolated — `` `http://${host}:${port}` `` — whose first chunk is
+      // exactly a bare scheme. That shape is a configured endpoint with no host
+      // to judge (five of eight corpus findings: webpack dev-server proxy
+      // targets and the Shopify CLI's local theme server). A dedicated
+      // `hasInterpolatedAuthority` check used to sit in the `TemplateElement`
+      // visitor; every chunk it skipped reached this line and returned here,
+      // so it was deleted as redundant (mutation testing: none of its mutants
+      // could change a verdict). `` `http://api.${env}.com/x` `` still reports
+      // — `api.` is written down.
       //
       // Deliberately last of the exemptions. Placed first it shadowed the
       // protocol-inspection check, whose own shape (`s.indexOf('http://')`) is
@@ -332,10 +313,7 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
         // 8.68.0; 8.54.0 handed back the raw text. This selector is a bare
         // `TemplateElement` visitor, so a TAGGED template reaches it and the
         // host is still written down — dropping the quasi loses a real finding.
-        const cooked = node.value.cooked ?? node.value.raw;
-        if (cooked && !hasInterpolatedAuthority(node, cooked)) {
-          checkStringValue(node, cooked);
-        }
+        checkStringValue(node, node.value.cooked ?? node.value.raw);
       },
     };
   },
