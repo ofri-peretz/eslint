@@ -153,8 +153,8 @@ naming every rule not banked yet. `pending` is a named backlog, not a wildcard:
 Opted in: `postgresql-security` and `jwt-security` (the pilot), then
 `mongodb-security` (16 rules, 1,822 mutants, ~7 min at concurrency 3), then
 `node-security` batch 1 (12 of its 43 rules; the other 31 are `pending`),
-then `browser-security` batch 1 (its 33 `recommended` rules; the other 13 are
-`pending`).
+then `browser-security` batch 1 (its 33 `recommended` rules) and batch 2 (the
+other 13; nothing is `pending` any more).
 
 One lesson from `mongodb-security` applies to every plugin with a file-level
 module gate (`if (!fileUsesMongo(ast)) return {}`): a sweep of non-SDK files
@@ -173,9 +173,8 @@ Proposed order for the rest, each as its own PR (run → triage → bank):
    lesson applies, and `src/test-path-gate.test.ts` is its gate table.
 3. **`secure-coding`** (34 rules) — cross-cutting and in every preset, so a
    blind spot there reaches the most users.
-4. **`express-security`** (28), **`browser-security`** (46; batch 1, the 33
-   `recommended` rules, is in — `src/test-path-gate.test.ts` is its gate
-   table),
+4. **`express-security`** (28), **`browser-security`** (46; both batches are in —
+   `src/test-path-gate.test.ts` is its gate table),
    **`nestjs-security`** (10), **`lambda-security`** (14) — the large
    framework plugins whose rules are almost all in `recommended` (179 of the
    223 shipped rules are; `.agent/preset-membership-audit.md`).

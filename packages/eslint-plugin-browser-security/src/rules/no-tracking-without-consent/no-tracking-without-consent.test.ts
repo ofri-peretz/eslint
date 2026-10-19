@@ -44,7 +44,7 @@ ruleTester.run('no-tracking-without-consent', noTrackingWithoutConsent, {
   invalid: [
     // Unconditional analytics.track
     { name: 'a tracking call on no consent path', code: "analytics.track('page_view')", errors: [{ messageId: 'violationDetected' }] },
-    { code: 'analytics.identify(user)', errors: [{ messageId: 'violationDetected' }] },
+    { name: 'an identify call with no consent check', code: 'analytics.identify(user)', errors: [{ messageId: 'violationDetected' }] },
     { code: "analytics.page('/home')", errors: [{ messageId: 'violationDetected' }] },
     // Unconditional gtag
     { code: "gtag('event', 'purchase')", errors: [{ messageId: 'violationDetected' }] },

@@ -57,6 +57,7 @@ ruleTester.run('no-password-in-url', noPasswordInUrl, {
       errors: [{ messageId: 'violationDetected' }],
     },
     {
+      name: 'a password in the userinfo of a fetched URL',
       code: "fetch('https://admin:secret123@api.com')",
       errors: [{ messageId: 'violationDetected' }],
     },
