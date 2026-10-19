@@ -1,7 +1,7 @@
 {
-  "releaseCount": 801,
+  "releaseCount": 802,
   "packageCount": 37,
-  "entryCount": 2285,
+  "entryCount": 2286,
   "oldestYear": 2024,
   "releases": [
     {
@@ -19415,6 +19415,21 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.17",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "wrong verdicts surfaced by Stryker mutation testing (batch 1)",
           "pr": null
         }
       ]
