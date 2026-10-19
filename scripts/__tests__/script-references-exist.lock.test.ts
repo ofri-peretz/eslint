@@ -12,6 +12,9 @@
  * `scripts/*.ts` files deleted long before, so both commands failed for anyone
  * who ran them. The README listed 35 scripts by their old `.mjs` names after
  * the move to `.ts`. Nothing compared either list with the directory.
+ *
+ * @provenBy {"file":"package.json","find":"\"tsx scripts/ilb-corpus-integrity.ts\"","replace":"\"tsx scripts/ilb-corpus-integrity.mjs\""}
+ * @provenBy {"file":"scripts/README.md","find":"| `ilb-corpus-integrity.ts` |","replace":"| `ilb-corpus-integrity.mjs` |"}
  */
 
 import { describe, it, expect } from 'vitest';

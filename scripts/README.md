@@ -4,7 +4,7 @@ Repo-wide automation scripts. Every script in this directory is invoked from `pa
 
 > **Boundary vs `tools/`:** scripts in this directory orchestrate the repo (generate, audit, sync, release). Code that gets *built* or *published* lives in [`../tools/`](../tools/) (custom ESLint rules, oxlint shims, the cwe-analytics-engine package). If a file is consumed at runtime by a package, put it in `tools/`. If it's invoked from CI or `npm run`, put it here.
 
-## ILB Benchmark Suite (28 scripts)
+## ILB Benchmark Suite (22 scripts)
 
 The Interlace Lint Bench — see [`../benchmarks/README.md`](../benchmarks/README.md) for the philosophy and what each suite measures. These scripts run the suites and emit results into [`../benchmark-results/`](../benchmark-results/).
 
@@ -57,7 +57,7 @@ Pre-commit and CI gates that fail loudly.
 | `validate-mermaid.sh` | Mermaid diagram syntax check |
 | `verify-oxlint-shims.ts` | Oxlint shim parity check |
 
-## Syncers (5 scripts)
+## Syncers (4 scripts)
 
 Keep derived files (READMEs, tags, doc sections) in sync with their canonical sources.
 
@@ -68,7 +68,7 @@ Keep derived files (READMEs, tags, doc sections) in sync with their canonical so
 | `sync-readme-rules.ts` | Refresh per-plugin rule tables in READMEs |
 | `sync-source-versions.ts` | Sync source-code version constants |
 
-## Generators (5 scripts)
+## Generators (4 scripts)
 
 Generate code, configs, or scaffolding.
 
@@ -97,7 +97,7 @@ Article publishing pipeline (see [`../distribution/PUBLISHING_QUEUE.md`](../dist
 | `fix-shallow-tests.ts` | Detect and patch shallow test files |
 | `lint-workflows.ts` | Lint `.github/workflows/*.yml` |
 
-## CI, Release, Stats, Setup (9 scripts)
+## CI, Release, Stats, Setup (8 scripts)
 
 | Script | Purpose |
 | :--- | :--- |
