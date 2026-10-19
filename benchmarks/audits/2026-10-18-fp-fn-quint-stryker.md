@@ -113,7 +113,7 @@ Batch 1 covers the 33 `recommended` rules; 4,733 mutants. Survivors were triaged
 
 ### browser-security (batch 2)
 
-Batch 2 covers the 13 rules that were `pending` after batch 1; 3,825 mutants tested, about 28 minutes at concurrency 2. All 13 are banked and `pending` is gone. The time-boxed triage went to the four rules below, where survivors pointed at real wrong verdicts; their fixtures (and the boundary cases that kill the cheap survivors) are in each rule's `mutation-edges.test.ts`, and those four rules were re-banked after the fixes.
+Batch 2 covers the 13 rules that were `pending` after batch 1. The first run tested 3,825 mutants in about 28 minutes at concurrency 2; the banked entries total 3,833, because the four rules fixed during triage were re-run against their final code. All 13 are banked and `pending` is gone. The time-boxed triage went to the four rules below, where survivors pointed at real wrong verdicts; their fixtures (and the boundary cases that kill the cheap survivors) are in each rule's `mutation-edges.test.ts`, and those four rules were re-banked after the fixes.
 
 | Rule                         | Kind | Wrong verdict on                                                                                                         |
 | :--------------------------- | :--- | :----------------------------------------------------------------------------------------------------------------------- |
@@ -136,7 +136,7 @@ Batch 2 covers the 13 rules that were `pending` after batch 1; 3,825 mutants tes
 | jwt-security        |                13 / 13 |                                                                 84.2 |
 | postgresql-security |                13 / 13 |                       83.0 (no-unsafe-query 75.6 → 86.0 after #1234) |
 | node-security       | 12 / 43 (31 `pending`) |                                                              batch 1 |
-| browser-security    |                46 / 46 | 92.1 batch 1 (84.8 before triage); 85.2 batch 2 (82.9 before triage) |
+| browser-security    |                46 / 46 | 92.1 batch 1 (84.8 before triage); 85.4 batch 2 (82.9 before triage) |
 
 The remaining plugins are not opted in yet: secure-coding, express, vercel-ai, mcp-sdk, lambda, nestjs and the per-SDK plugins. The rollout order is in [`docs/MUTATION_TESTING.md`](../../docs/MUTATION_TESTING.md).
 

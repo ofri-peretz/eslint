@@ -726,9 +726,9 @@
           "timeout": 1
         },
         "require-mime-type-validation": {
-          "score": 90.4,
-          "killed": 190,
-          "survived": 20,
+          "score": 92.6,
+          "killed": 188,
+          "survived": 15,
           "noCoverage": 0,
           "timeout": 0
         },
