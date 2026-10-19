@@ -107,9 +107,9 @@ The table counts distinct fixes. Measured on the 80-shape release oracle, the ol
 
 The remaining plugins are not opted in yet: browser-security, secure-coding, express, vercel-ai, mcp-sdk, lambda, nestjs and the per-SDK plugins. The rollout order is in [`docs/MUTATION_TESTING.md`](../../docs/MUTATION_TESTING.md).
 
-## Open: owner decisions (not changed)
+## Owner decisions (resolved in #1251)
 
-These are judgements about what a rule _should_ report, so none of them were changed:
+These were judgements about what a rule _should_ report. The owner decided each one, and #1251 implements them:
 
 - **mongodb-security**
   - ~~`${req.body.x}` coercion is reported, while `String(...)` is quiet.~~ **Resolved**: a template literal or `+` over request input is a string, and is now quiet like `String()`; a `$where` string stays `no-unsafe-where`'s finding.
@@ -119,13 +119,15 @@ These are judgements about what a rule _should_ report, so none of them were cha
   - `no-unsafe-populate` (added with the decisions): **Resolved**: a `const` string path is quiet; template-literal and array paths built from request input are reported.
 - **jwt-security**: ~~documented options that no rule reads (`maxExpirationSeconds`, `trustedSanitizers`, `strictMode`, …).~~ **Resolved**: `require-expiration` enforces `maxExpirationSeconds` (opt-in; numbers, `ms` strings, `now + N` `exp`); the docs say the other unread options have no effect, and the schemas keep them.
 - **node-security**
-  - `lock-file` searches up to `/`.
-  - `no-shell-injection` stays silent on `exec(cmd + args)`, although its own message cites it.
-  - `detect-child-process` guards are loose.
-  - `no-zip-slip` still reports `resolve` followed by a `startsWith` check.
+  - ~~`lock-file` searches up to `/`.~~ Resolved: the search stops at the repository root (nearest `.git`); the mislabelled `lock-file/safe/case-03.js` corpus fixture is now a genuine true negative.
+  - ~~`no-shell-injection` stays silent on `exec(cmd + args)`, although its own message cites it.~~ Resolved: reported.
+  - ~~`detect-child-process` guards are loose.~~ Resolved: a guard clears only the value it checks, on a constant allowlist; the `if` and early-exit forms agree; `cp[m]` with a const `m` is a sink; a literal `exec` is quiet under `reportUnresolvedCommands`.
+  - ~~`no-zip-slip` still reports `resolve` followed by a `startsWith` check.~~ Resolved: the canonical guard is safe, a failure-branch join is reported, `@safe` is scoped to the next statement.
+  - Also decided and resolved: `no-arbitrary-file-access` (`fs/promises` sinks, later assignments, a `safePath` parameter fed request input) and `no-weak-hash-algorithm` (a digest compared against a signature-named value; no `sha256(...)` suggestion where none is defined).
 - **postgresql-security**
-  - Any `.length` is trusted as a placeholder index (a JSON body can send `{"length": …}`).
-  - `??=` / `||=` assignments aren't tracked.
-  - Numeric expressions outside `$N` are reported.
-  - `UNION`/`EXPLAIN`/`SET` statements aren't recognised.
+  - ~~Any `.length` is trusted as a placeholder index (a JSON body can send `{"length": …}`).~~ Resolved: only the length of an array the file builds.
+  - ~~`??=` / `||=` assignments aren't tracked.~~ Resolved: tracked like `+=`.
+  - ~~Numeric expressions outside `$N` are reported.~~ Resolved: provably numeric values are safe anywhere.
+  - ~~`UNION`/`EXPLAIN`/`SET` statements aren't recognised.~~ Resolved, with `SHOW` and `VALUES` too.
+  - Also decided and resolved: an allowlist lookup in a const object/Map literal of fixed strings is not reported.
 - **Placement**: ~~a postgres URL in a TypeORM `DataSource` is reported by two plugins.~~ **Resolved**: `postgresql-security/no-hardcoded-credentials` skips a DSN in a TypeORM options object; typeorm-security owns it, locked by a two-plugin test asserting one report.

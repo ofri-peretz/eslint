@@ -25,7 +25,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 | **CWE Reference** | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) (SQL Injection) |
 | **Severity**      | Critical (CVSS: 9.8)                                                     |
 | **Auto-Fix**      | ❌ No auto-fix available                                                 |
-| **Category**   | Security |
+| **Category**      | Security                                                                 |
 | **ESLint MCP**    | ✅ Optimized for AI assistant integration                                |
 | **Best For**      | Protecting database operations from SQL injection vulnerabilities        |
 
@@ -33,13 +33,13 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 > Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
 
-| Dimension | Value |
-| :--- | :--- |
-| **CWE** | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) — Improper Neutralization of Special Elements used in an SQL Command (CVSS 9.8 Critical) |
-| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| Dimension                    | Value                                                                                                                                                                                                                                                                              |
+| :--------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CWE**                      | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) — Improper Neutralization of Special Elements used in an SQL Command (CVSS 9.8 Critical)                                                                                                                                  |
+| **Feedback-loop tier**       | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment)                                                          |
 | **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · **10,000+× cheaper than disclosure** — SQL injection is the most-cited OWASP A03 finding ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
-| **Niche relevance** | **Critical:** fintech (regulatory + transaction data), healthtech (PHI), B2B SaaS (multi-tenant exposure), cybersecurity · **High:** marketplaces, infra/devtools · **Medium:** B2C |
-| **Investor-frame impact** | SQL injection → full database disclosure → mandatory disclosure cycle. The most-cited single attack class in security-incident reports for two decades. Lint-time enforcement of parameterized queries is the cheapest possible structural defense. |
+| **Niche relevance**          | **Critical:** fintech (regulatory + transaction data), healthtech (PHI), B2B SaaS (multi-tenant exposure), cybersecurity · **High:** marketplaces, infra/devtools · **Medium:** B2C                                                                                                |
+| **Investor-frame impact**    | SQL injection → full database disclosure → mandatory disclosure cycle. The most-cited single attack class in security-incident reports for two decades. Lint-time enforcement of parameterized queries is the cheapest possible structural defense.                                |
 
 **Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
 
@@ -84,13 +84,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component                 | Purpose                | Example                                                                                                                                                                                                                       |
-| :------------------------ | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                     |
+| :------------------------ | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Risk Standards**        | Security benchmarks    | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description**     | Specific vulnerability | `SQL Injection detected`                                                                                                                                                                                                      |
-| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,HIPAA,ISO27001]`                                                                                                                                                                                      |
-| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                          |
-| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/)                                                                                                                                                                   |
+| **Issue Description**     | Specific vulnerability | `SQL Injection detected`                                                                                                                                                                                                                                    |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,HIPAA,ISO27001]`                                                                                                                                                                                                                    |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                        |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/)                                                                                                                                                                                                 |
 
 ## What the rule treats as safe inside an interpolation
 
@@ -99,14 +99,26 @@ structurally — never because of what a variable is called:
 
 - a constant: a literal, a `const` that folds to one, a member of a `const`
   object literal, or a TypeScript `enum` member with a literal initialiser;
+- an **allowlist lookup**: `${TABLES[req.query.t]}` where `TABLES` is a `const`
+  object literal of fixed values, or `${COLUMNS.get(req.query.sort)}` where
+  `COLUMNS` is a `const new Map([[k, v], …])` of fixed values — and nothing
+  writes to the table after it is declared. The lookup can only yield one of
+  the vetted values, or `undefined`;
+- a **number**, anywhere: arithmetic other than `+` (`${req.query.page * 10}`),
+  unary `+`/`-`, `Number()` / `parseInt` / `Math.*`, a counter, and a list of
+  numbers joined with fixed text (`${ids.map(Number).join(',')}`). A `+` is a
+  number only when both sides are;
 - a bind-parameter **index** after a single `$` — `$${params.length}`,
   `$${i + 1}`, `$${params.push(v)}` — the dynamic-filter builder idiom. The
-  index must be provably a number: `.length`, `.push(…)`, a counter, a
+  index must be provably a number: the `.length` of an array this file
+  builds (a literal, a `.map`/`.filter`/`.slice`/`.concat` result, or a
+  binding annotated `T[]` / `Array<T>`), `.push(…)`, a counter, a
   `Number()` / `parseInt` / `Math.*` result, arithmetic, a `: number`
   parameter or an array callback's index argument. `$${n}` where `n` is an
-  untyped parameter or request data is reported;
+  untyped parameter or request data is reported — and so is
+  `$${req.body.x.length}`: a JSON body can send `{"length": "1 OR 1=1"}`;
 - a SET or column list filled only with fixed text — ``sets.push(`name =
-  $${values.length}`)`` then ``${sets.join(', ')}`` — or the element of a
+$${values.length}`)`` then `${sets.join(', ')}` — or the element of a
   `for…of` over a fixed column array that nothing adds to or overwrites. Column
   names from `Object.keys(req.body)` / `Object.entries(req.body)`, or pushed
   into the array from the request, are not fixed text and are reported;
@@ -126,7 +138,9 @@ Any other call is **not** an escaper: `${ids.join(',')}`, `${email.trim()}` and
 
 The static text has to start with a statement — `SELECT … FROM`, `INSERT INTO`,
 `UPDATE … SET`, `DELETE FROM`, `WITH … AS (`, `COPY`, `GRANT`, DDL, a bare
-`SELECT`, `CALL`, `LISTEN` or `NOTIFY` — after any whitespace and any leading
+`SELECT`, `CALL`, `LISTEN`, `NOTIFY`, a parenthesised query opening a set
+operation (`(SELECT …) UNION …`), `EXPLAIN …`, `SET …`, `SHOW …` or
+`VALUES (…)` — after any whitespace and any leading
 SQL comments (`/* controller:users */`, `-- by id`). A sentence that merely
 mentions one of those words further in (`how do I select rows from …`) is not
 a statement.
@@ -154,6 +168,15 @@ redis, keeps the rule silent.
 Query builders imported from a relative module are read in that module: a
 builder that returns an interpolated template, or assembles `q` over several
 statements and returns it, is judged exactly as one written in the same file.
+
+A query assembled in a local variable is followed through `=`, `+=` and the
+logical assignments `??=`, `||=` and `&&=`:
+
+```typescript
+let q;
+q ??= `SELECT * FROM t WHERE a = ${req.query.a}`; // ❌ reported at pool.query(q)
+await pool.query(q);
+```
 
 <WhenNotToUse />
 
@@ -227,6 +250,7 @@ await client.query(format('SELECT * FROM %I.users', userSchema));
 
 - [check-query-params](./check-query-params) - Validates parameter count
 - [no-batch-insert-loop](./no-batch-insert-loop) - Prevents N+1 queries
+
 ---
 
-*If this rule caught a real vulnerability in your codebase, [⭐ star the repo](https://github.com/ofri-peretz/eslint) — it keeps the detection logic maintained.*
+_If this rule caught a real vulnerability in your codebase, [⭐ star the repo](https://github.com/ofri-peretz/eslint) — it keeps the detection logic maintained._

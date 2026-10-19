@@ -10,7 +10,11 @@
  * @see https://cwe.mitre.org/data/definitions/829.html
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -41,7 +45,8 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/lock-file.md',
-      description: 'Ensure package lock file exists for the configured package manager',
+      description:
+        'Ensure package lock file exists for the configured package manager',
       cwe: 'CWE-829',
       cvss: 7.5,
     },
@@ -50,11 +55,12 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Lock File Missing',
         cwe: 'CWE-829',
-        description: 'Package lock file missing ({{ lockFile }}) for {{ packageManager }}. Commit the lock file to ensure supply chain integrity.',
+        description:
+          'Package lock file missing ({{ lockFile }}) for {{ packageManager }}. Commit the lock file to ensure supply chain integrity.',
         severity: 'HIGH',
         fix: 'Generate and commit the {{ lockFile }} file.',
         documentationLink: 'https://cwe.mitre.org/data/definitions/829.html',
-      })
+      }),
     },
     schema: [
       {
@@ -109,7 +115,8 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
     /**
      * The nearest ancestor directory containing any of `names`.
      *
-     * Walks to the filesystem root. The previous version stopped after ten
+     * Walks up to and including `stopAt` when given, else to the filesystem
+     * root. The previous version stopped after ten
      * levels, which silently manufactured findings in monorepos: Shopify/cli
      * `packages/app/src/cli/services/app-logs/logs-command/ui/components/hooks/
      * usePollAppLogs.ts` sits eleven directories below the repo root, so the
@@ -117,12 +124,17 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
      * The rule reported "lock file missing" about a repo that commits one.
      */
     // oxlint-disable-next-line consistent-function-scoping
-    const findUpward = (from: string, names: readonly string[]): string | undefined => {
+    const findUpward = (
+      from: string,
+      names: readonly string[],
+      stopAt?: string,
+    ): string | undefined => {
       let dir = from;
       for (;;) {
         for (const name of names) {
           if (fs.existsSync(path.join(dir, name))) return dir;
         }
+        if (dir === stopAt) return undefined;
         const parent = path.dirname(dir);
         if (parent === dir) return undefined;
         dir = parent;
@@ -131,7 +143,17 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
 
     return {
       Program(node: TSESTree.Program) {
-        const found = findUpward(path.dirname(context.filename), targetLockFiles) !== undefined;
+        const start = path.dirname(context.filename);
+        // The lock-file search stops at the repository root: the nearest
+        // ancestor holding `.git` (a directory, or a file for worktrees and
+        // submodules). Walking past it let a stray `~/pnpm-lock.yaml` satisfy
+        // every project under the home directory — a lock file nobody commits
+        // with the repo protects none of its installs. With no `.git` above
+        // the file (a tarball, a CI checkout without history) the walk goes to
+        // the filesystem root, as before.
+        const repoRoot = findUpward(start, ['.git']);
+        const found =
+          findUpward(start, targetLockFiles, repoRoot) !== undefined;
 
         if (!found) {
           // A missing lock file is one fact about the project. The guard that
@@ -146,7 +168,9 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
           //
           // No manifest anywhere above the file: not a JS project, so there is
           // no lock file to be missing.
-          const root = findUpward(path.dirname(context.filename), ['package.json']);
+          const root = findUpward(path.dirname(context.filename), [
+            'package.json',
+          ]);
           if (root === undefined) return;
           if (reportedRoots.has(root)) return;
           reportedRoots.add(root);
@@ -157,7 +181,7 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
             data: {
               packageManager: reportedManager,
               lockFile: targetLockFile,
-            }
+            },
           });
         }
       },

@@ -20,8 +20,10 @@ import {
   createRule,
   formatLLMMessage,
   isModuleBinding,
+  memberPath,
   MessageIcons,
   propertyName,
+  resolveModuleBinding,
   unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -87,6 +89,7 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
       'appendFile',
       'appendFileSync',
     ];
+    const fsMethods = new Set([...fsReadMethods, ...fsWriteMethods]);
     const userInputSources = new Set([
       'req',
       'request',
@@ -105,6 +108,35 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
      */
     const bindings = new Map<TSESLint.Scope.Variable, TSESTree.Node>();
     const resolve = (id: TSESTree.Identifier) => findVariable(sourceCode, id);
+
+    /**
+     * Right-hand sides of later `name = <expr>` assignments to a variable.
+     *
+     * `let f; f = req.query.x; fs.readFileSync(f)` is the declaration form
+     * written in two statements, and was silent: only a declarator's
+     * initialiser was ever recorded as the binding's value.
+     */
+    const assignedValues = (
+      variable: TSESLint.Scope.Variable,
+    ): TSESTree.Node[] =>
+      variable.references.flatMap((ref) => {
+        const parent = ref.identifier.parent;
+        return parent.type === AST_NODE_TYPES.AssignmentExpression &&
+          parent.left === ref.identifier
+          ? [parent.right]
+          : [];
+      });
+
+    /** Every value written to a variable: its initialiser and its assignments. */
+    const writtenValues = (
+      variable: TSESLint.Scope.Variable,
+    ): TSESTree.Node[] => {
+      const bound = bindings.get(variable);
+      return [
+        ...(bound === undefined ? [] : [bound]),
+        ...assignedValues(variable),
+      ];
+    };
 
     /** `path.basename(x)`, or `basename` imported / required from `path`. */
     const isBasenameCall = (node: TSESTree.CallExpression): boolean =>
@@ -169,8 +201,12 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         case 'Identifier': {
           if (userInputSources.has(node.name.toLowerCase())) return true;
           const variable = resolve(node);
-          const bound = variable ? bindings.get(variable) : undefined;
-          return bound !== undefined && readsUserInput(bound, depth + 1);
+          return (
+            variable !== null &&
+            writtenValues(variable).some((value) =>
+              readsUserInput(value, depth + 1),
+            )
+          );
         }
         // Walk to the root of `req.query.file` and judge the base object.
         case 'MemberExpression': {
@@ -269,7 +305,11 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
      * Does a call site in this file pass a request-derived value into
      * `name`'s parameter number `index`?
      */
-    function callerPassesUserInput(name: string, index: number): boolean {
+    function callerPassesUserInput(
+      name: string,
+      index: number,
+      directOnly = false,
+    ): boolean {
       return allCalls.some((call) => {
         const callee = call.callee;
         const calleeName =
@@ -286,6 +326,9 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         return (
           arg !== undefined &&
           arg.type !== 'SpreadElement' &&
+          // `directOnly`: a call is where laundering happens, so
+          // `helper(sanitizePath(req.query.f))` is not a DIRECT pass.
+          !(directOnly && arg.type === 'CallExpression') &&
           readsUserInput(arg)
         );
       });
@@ -322,13 +365,21 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
      * asserts.
      */
     function variableTracesToUserInput(
-      varName: string,
+      id: TSESTree.Identifier,
       from: TSESTree.Node,
     ): boolean {
+      const varName = id.name;
       // The path argument IS the request object: `fs.readFileSync(req)`.
       // `readsUserInput` recognises this for `req.query.f` but never saw the
       // bare form, because a bare Identifier is routed here instead.
       if (userInputSources.has(varName.toLowerCase())) return true;
+      const variable = resolve(id);
+      if (
+        variable !== null &&
+        assignedValues(variable).some((value) => readsUserInput(value))
+      ) {
+        return true;
+      }
 
       // `Program.parent` is null, not undefined — `!= null` catches both, and
       // an `!== undefined` loop walked straight off the top of the tree.
@@ -538,18 +589,47 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
        * silent about it.
        */
       if (/^(safe|sanitized|validated|clean)/i.test(varName)) {
-        const bound = variable ? bindings.get(variable) : undefined;
-        if (bound === undefined) return true;
         /*
          * A CALL is where laundering happens, so it is not a contradiction.
          * `const cleanPath = sanitizePath(req.query.f)` reads user input and
          * is exactly what the name claims; treating any taint below the
          * initialiser as contradicting cost a false positive on that shape the
          * first time this was tightened. Only a DIRECT read — the request
-         * expression assigned straight to the binding — says the name is wrong.
+         * expression assigned straight to the binding, by its declaration or
+         * by any later assignment — says the name is wrong.
          */
-        if (bound.type === AST_NODE_TYPES.CallExpression) return true;
-        return !readsUserInput(bound);
+        // Declared nowhere in this file: nothing here contradicts the name.
+        if (variable === null) return true;
+        const written = writtenValues(variable);
+        if (written.length > 0) {
+          return written.every(
+            (value) =>
+              value.type === AST_NODE_TYPES.CallExpression ||
+              !readsUserInput(value),
+          );
+        }
+        /*
+         * No value written here: a parameter, or a name from elsewhere. The
+         * name is trusted — unless a caller in this file passes request input
+         * straight into that parameter, which is the code contradicting it.
+         */
+        const def = variable.defs[0];
+        if (def?.type === 'Parameter') {
+          const fn = def.node as
+            | TSESTree.FunctionDeclaration
+            | TSESTree.FunctionExpression
+            | TSESTree.ArrowFunctionExpression;
+          const name = functionName(fn);
+          return !(
+            name !== undefined &&
+            callerPassesUserInput(
+              name,
+              fn.params.indexOf(def.name as TSESTree.Parameter),
+              true,
+            )
+          );
+        }
+        return true;
       }
 
       return false;
@@ -572,16 +652,46 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
       },
     };
 
+    /**
+     * The export path a callee names on the `fs` module, `fs/promises` folded
+     * in as `['promises', …]`, or null.
+     *
+     * A receiver spelled `fs` still counts whatever it is bound to — the rule
+     * has always read that name, and a file that calls `fs.readFileSync`
+     * without importing it is still reading files. Beyond that the callee is
+     * RESOLVED: `import fsp from 'fs/promises'`, `require('fs').promises`,
+     * `import fileSystem from 'node:fs'` and a named `readFile` from
+     * `fs/promises` all reach the file system, and all were silent.
+     */
+    function fsExportPath(callee: TSESTree.Node): string[] | null {
+      const spelled = memberPath(callee);
+      if (spelled?.[0] === 'fs') {
+        return spelled.slice(1);
+      }
+      const binding = resolveModuleBinding(callee, sourceCode.getScope(callee));
+      if (binding?.module === 'fs') return binding.path;
+      if (binding?.module === 'fs/promises') {
+        return ['promises', ...binding.path];
+      }
+      return null;
+    }
+
+    /** `fs.readFile`, `fs.promises.readFile`, and every spelling of them. */
+    function isFsSink(callee: TSESTree.Node): boolean {
+      const exportPath = fsExportPath(callee);
+      if (exportPath === null) return false;
+      const method =
+        exportPath.length === 2 && exportPath[0] === 'promises'
+          ? exportPath[1]
+          : exportPath.length === 1
+            ? exportPath[0]
+            : null;
+      return fsMethods.has(method ?? '');
+    }
+
     function checkFsCall(node: TSESTree.CallExpression) {
       // Detect fs.* with user input
-      if (
-        node.callee.type === 'MemberExpression' &&
-        node.callee.object.type === 'Identifier' &&
-        node.callee.object.name === 'fs' &&
-        [...fsReadMethods, ...fsWriteMethods].includes(
-          propertyName(node.callee) ?? '',
-        )
-      ) {
+      if (isFsSink(node.callee)) {
         const pathArg = node.arguments[0];
 
         // Skip if path is a literal (safe)
@@ -591,8 +701,6 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
 
         // Check if path is a variable
         if (pathArg && pathArg.type === 'Identifier') {
-          const varName = pathArg.name;
-
           // Skip if variable is sanitized or validated
           if (isVariableSafe(pathArg, node)) {
             return;
@@ -601,7 +709,7 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
           // This rule's message names user input as the cause. Without
           // evidence of a request it is both wrong and a duplicate of
           // detect-non-literal-fs-filename, which owns unattributable paths.
-          if (!variableTracesToUserInput(varName, node)) {
+          if (!variableTracesToUserInput(pathArg, node)) {
             return;
           }
 

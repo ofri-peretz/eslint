@@ -163,11 +163,11 @@
           "timeout": 1
         },
         "no-unsafe-query": {
-          "score": 86,
-          "killed": 1193,
-          "survived": 198,
+          "score": 87,
+          "killed": 1421,
+          "survived": 213,
           "noCoverage": 0,
-          "timeout": 28
+          "timeout": 12
         },
         "no-unsafe-search-path": {
           "score": 85.7,
@@ -311,11 +311,11 @@
     "node-security": {
       "rules": {
         "detect-child-process": {
-          "score": 76.9,
-          "killed": 735,
-          "survived": 221,
+          "score": 79.1,
+          "killed": 789,
+          "survived": 208,
           "noCoverage": 0,
-          "timeout": 2
+          "timeout": 0
         },
         "detect-eval-with-expression": {
           "score": 84.8,
@@ -325,9 +325,9 @@
           "timeout": 1
         },
         "no-arbitrary-file-access": {
-          "score": 89.7,
-          "killed": 363,
-          "survived": 42,
+          "score": 90.5,
+          "killed": 439,
+          "survived": 46,
           "noCoverage": 0,
           "timeout": 3
         },
@@ -346,9 +346,9 @@
           "timeout": 0
         },
         "no-shell-injection": {
-          "score": 90.3,
-          "killed": 131,
-          "survived": 13,
+          "score": 91.8,
+          "killed": 113,
+          "survived": 9,
           "noCoverage": 1,
           "timeout": 0
         },
@@ -374,16 +374,16 @@
           "timeout": 0
         },
         "no-weak-hash-algorithm": {
-          "score": 90.6,
-          "killed": 326,
-          "survived": 32,
+          "score": 91.2,
+          "killed": 358,
+          "survived": 33,
           "noCoverage": 2,
           "timeout": 5
         },
         "no-zip-slip": {
-          "score": 92.3,
-          "killed": 371,
-          "survived": 31,
+          "score": 94.2,
+          "killed": 525,
+          "survived": 32,
           "noCoverage": 0,
           "timeout": 2
         },

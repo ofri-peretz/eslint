@@ -33,6 +33,11 @@ Prevents file system access with unsanitized user input to protect against path 
 
 Path traversal vulnerabilities allow attackers to access files outside the intended directory using sequences like `../`. This rule detects `fs.*` calls where the path comes from user input.
 
+The sink is the `fs` module however it is reached: `fs.readFile`, `fs.promises.readFile`,
+a default, namespace or named import from `fs/promises` (`import fsp from 'fs/promises'`,
+`import { readFile } from 'node:fs/promises'`), `require('fs').promises`, and `fs` imported
+under another name.
+
 **Smart Detection:** This rule recognizes safe patterns including:
 
 - `path.basename()` sanitization
@@ -55,6 +60,17 @@ fs.readFileSync(process.argv[2], 'utf8');
 // Destructured from the request — the same value as `req.query.file`
 const { file } = req.query;
 fs.readFileSync(file, 'utf8');
+
+// Assigned after the declaration
+let target;
+target = req.query.file;
+await fsp.readFile(target);
+
+// A safe-sounding parameter, filled with request input by a caller in this file
+function readSafe(safePath) {
+  return fs.readFileSync(safePath);
+}
+readSafe(req.query.file);
 ```
 
 ### ✅ Correct

@@ -13,6 +13,7 @@
  *   - exec('literal command') — static string, no injection surface
  *   - spawn('cmd', [args]) — args array is the safe parameterization form
  *   - exec(variable) — indirect; data-flow analysis required, out of scope
+ *     (but `exec(cmd + args)` IS reported: the `+` is the concatenation)
  *   - a concatenation whose every interpolated value folds to a literal
  *     written in the same file (see below)
  *
@@ -147,17 +148,13 @@ function isStringConcatOrTemplate(node: TSESTree.Node): boolean {
     node.expressions.length > 0
   )
     return true;
-  if (
-    node.type === AST_NODE_TYPES.BinaryExpression &&
-    node.operator === '+' &&
-    (node.left.type === AST_NODE_TYPES.Literal ||
-      node.left.type === AST_NODE_TYPES.TemplateLiteral ||
-      node.left.type === AST_NODE_TYPES.BinaryExpression ||
-      node.right.type === AST_NODE_TYPES.Literal ||
-      node.right.type === AST_NODE_TYPES.TemplateLiteral)
-  )
-    return true;
-  return false;
+  // Any `+`, whatever its operands. `exec(cmd + args)` — two identifiers, no
+  // literal in sight — is the exact shape this rule's own message cites, and
+  // it was silent: the operand-type test demanded a literal or template on one
+  // side. The first argument of a shell call is a command string, so a `+`
+  // there concatenates; when every operand folds to a literal written in this
+  // file, `isLiteralConstant` still clears it.
+  return node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+';
 }
 
 export const noShellInjection = createRule<RuleOptions, MessageIds>({

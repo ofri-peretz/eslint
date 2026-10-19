@@ -97,6 +97,19 @@ const SQL_STATEMENTS: readonly RegExp[] = [
   /^\s*call\s+[\w".]+\s*\(/i,
   /^\s*(?:un)?listen\s+[\w"*]*\s*(?:;|$)/i,
   /^\s*notify\s+[\w"]*\s*(?:,|;|$)/i,
+  // A parenthesised query opens a set operation: `(SELECT …) UNION (SELECT …)`.
+  /^\s*\(\s*(?:select|with|values)\b/i,
+  // `EXPLAIN [ANALYZE] [(options)] <statement>` runs the statement it explains
+  // when ANALYZE is given, and plans it otherwise — either way it is SQL.
+  /^\s*explain\b[\s\S]*\b(?:select|insert|update|delete|with|values|merge|execute)\b/i,
+  // `SET [SESSION | LOCAL] name { = | TO } …` and the keyword forms. The name
+  // may be the interpolated part (`'SET ' + guc + ' = 0'`), so it is optional.
+  /^\s*set\s+(?:(?:session|local)\s+)?(?:[\w."]*\s*(?:=|\bto\b)|role\b|time\s+zone\b|transaction\b|constraints\b|session\s+authorization\b)/i,
+  // `SHOW name` / `SHOW ALL` — the operand is usually the interpolated part,
+  // so required whitespace after the verb is the whole anchor, as for SELECT.
+  /^\s*show\s/i,
+  // A bare VALUES list is a complete statement: `VALUES (1, 'a'), (2, 'b')`.
+  /^\s*values\s*\(/i,
 ];
 
 /** Methods on the pg API (Client, the module itself) that quote what they are given. */
@@ -146,6 +159,13 @@ const MUTATING_METHODS: ReadonlySet<string> = new Set([
   'add',
   'assign',
 ]);
+
+/**
+ * `??=`, `||=`, `&&=`: each either keeps the value or writes its right-hand
+ * side, so the right-hand side is one more value the binding can hold — not
+ * arithmetic, and not a no-op.
+ */
+const LOGICAL_ASSIGNMENTS: ReadonlySet<string> = new Set(['??=', '||=', '&&=']);
 
 /** How far a value is followed through bindings and helper returns. */
 const MAX_VALUE_HOPS = 8;
@@ -352,7 +372,11 @@ function isNumeric(
         node.operator === '+' || node.operator === '-' || node.operator === '~'
       );
     case AST_NODE_TYPES.MemberExpression:
-      return propertyName(node) === 'length';
+      // Only an array's length is a number. `req.body.x.length` is whatever
+      // the client sent: a JSON body can carry `{"length": "1 OR 1=1"}`.
+      return (
+        propertyName(node) === 'length' && isBuiltArray(node.object, scope)
+      );
     case AST_NODE_TYPES.CallExpression:
       return (
         (node.callee.type === AST_NODE_TYPES.MemberExpression &&
@@ -372,6 +396,76 @@ function isNumeric(
     default:
       return false;
   }
+}
+
+/** Calls whose result is always a new array, whatever the receiver held. */
+const ARRAY_RETURNING_METHODS: ReadonlySet<string> = new Set([
+  'map',
+  'filter',
+  'slice',
+  'concat',
+]);
+
+/** Type names that annotate an array: `Array<T>`, `ReadonlyArray<T>`. */
+const ARRAY_TYPE_NAMES: ReadonlySet<string> = new Set([
+  'Array',
+  'ReadonlyArray',
+]);
+
+/** Is this type annotation an array type — `T[]`, `Array<T>`, `ReadonlyArray<T>`? */
+function isArrayAnnotation(
+  annotation: TSESTree.TSTypeAnnotation | undefined,
+): boolean {
+  const type = annotation?.typeAnnotation;
+  if (type?.type === AST_NODE_TYPES.TSArrayType) return true;
+  // A qualified name (`ns.Array`) has no `name`, so it is not one of these.
+  return (
+    type?.type === AST_NODE_TYPES.TSTypeReference &&
+    ARRAY_TYPE_NAMES.has((type.typeName as TSESTree.Identifier).name)
+  );
+}
+
+/**
+ * Is this expression an array this file builds — a literal, the result of
+ * `.map`/`.filter`/`.slice`/`.concat`, or a binding annotated as an array or
+ * declared (and never reassigned) as one of those?
+ *
+ * The question `$${x.length}` needs answered: only an array's `.length` is
+ * guaranteed to be a number.
+ */
+function isBuiltArray(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+  depth = 0,
+): boolean {
+  const value = unwrapTypeSyntax(node);
+  if (value.type === AST_NODE_TYPES.ArrayExpression) return true;
+  if (value.type === AST_NODE_TYPES.CallExpression) {
+    return (
+      value.callee.type === AST_NODE_TYPES.MemberExpression &&
+      ARRAY_RETURNING_METHODS.has(propertyName(value.callee) ?? '')
+    );
+  }
+  if (value.type !== AST_NODE_TYPES.Identifier) return false;
+  const variable = resolveVariable(value.name, scope);
+  const def = variable?.defs[0];
+  // `depth`: `const a = b, b = a` would otherwise chase itself forever.
+  if (def === undefined || depth >= MAX_VALUE_HOPS) return false;
+  if (def.type === 'Parameter') {
+    return isArrayAnnotation((def.name as TSESTree.Identifier).typeAnnotation);
+  }
+  if (def.type !== 'Variable') return false;
+  const declarator = def.node as TSESTree.VariableDeclarator;
+  if (isArrayAnnotation(declarator.id.typeAnnotation)) return true;
+  // Its initialiser, when it is the binding's only write. A `for…of` element
+  // has none; a destructured name (`const [x] = [[1]]`) is an element, not
+  // the array; a reassigned `let` proves nothing about the value at the use.
+  const init = singleInit(variable);
+  return (
+    init !== null &&
+    declarator.id.type === AST_NODE_TYPES.Identifier &&
+    isBuiltArray(init, variable!.scope, depth + 1)
+  );
 }
 
 /** `Number(x)`, `parseInt(x)`, `Math.floor(x)` — a global number conversion. */
@@ -432,7 +526,8 @@ function isNumericBinding(
       if (parent?.type === AST_NODE_TYPES.UpdateExpression) return true;
       if (
         parent?.type === AST_NODE_TYPES.AssignmentExpression &&
-        parent.operator !== '='
+        parent.operator !== '=' &&
+        !LOGICAL_ASSIGNMENTS.has(parent.operator)
       ) {
         return (
           parent.operator !== '+=' || isNumeric(parent.right, write.from, seen)
@@ -607,7 +702,8 @@ function isFixedTextList(
  *     either imported by name from a module;
  *   - anything exported by `pg-format` (`format`, `format.ident`, …);
  *   - pg-promise's formatting namespace, `<pgp>.as.<fn>(x)`;
- *   - the global number conversions and `Math.*` / `Number.*`;
+ *   - (the global number conversions and `Math.*` / `Number.*` are numeric,
+ *     and cleared by `isRawValue` before this is asked);
  *   - a placeholder list, `<arr>.map(cb).join(sep)`, whose callback returns
  *     only `$N` placeholders and fixed text;
  *   - a call the devkit already proves static (`path.join` over constants).
@@ -621,9 +717,10 @@ function isSafeCall(
   const argsSafe = (): boolean =>
     call.arguments.every((a) => !isRawValue(a, scope, null, depth + 1));
 
+  // The global number conversions (`Number(x)`, `parseInt`, `Math.*`,
+  // `Number.*`) never get here: `isRawValue` clears every numeric expression
+  // before it asks about calls.
   if (callee.type === AST_NODE_TYPES.Identifier) {
-    if (NUMBER_CONVERSIONS.has(callee.name) && isGlobal(callee.name, scope))
-      return true;
     // `String(x)` is exactly as safe as `x`.
     if (callee.name === 'String' && isGlobal('String', scope) && argsSafe())
       return true;
@@ -644,19 +741,18 @@ function isSafeCall(
     }
     if (method !== null && PG_ESCAPER_METHODS.has(method)) return true;
     if (
-      callee.object.type === AST_NODE_TYPES.Identifier &&
-      NUMBER_NAMESPACES.has(callee.object.name) &&
-      isGlobal(callee.object.name, scope)
-    ) {
-      return true;
-    }
-    if (
       callee.object.type === AST_NODE_TYPES.MemberExpression &&
       propertyName(callee.object) === 'as'
     ) {
       return true;
     }
     if (method === 'join' && isPlaceholderList(callee.object, scope))
+      return true;
+    // `ids.map(Number).join(',')` — digits and a fixed separator.
+    if (method === 'join' && isNumberList(callee.object, scope) && argsSafe())
+      return true;
+    // `COLUMNS.get(req.query.sort)` on a const Map literal of fixed strings.
+    if (method === 'get' && isLookupTable(callee.object, scope, 'map'))
       return true;
   }
 
@@ -748,6 +844,88 @@ function helperReturnsSafe(
 }
 
 /**
+ * Is this `<list>.map(cb)` with a callback that turns every element into a
+ * number — `Number`, `parseInt`, `parseFloat`, or a function returning a
+ * numeric expression?
+ */
+function isNumberList(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): boolean {
+  if (
+    node.type !== AST_NODE_TYPES.CallExpression ||
+    node.callee.type !== AST_NODE_TYPES.MemberExpression ||
+    propertyName(node.callee) !== 'map'
+  ) {
+    return false;
+  }
+  const [mapper] = node.arguments;
+  if (mapper === undefined) return false;
+  if (mapper.type === AST_NODE_TYPES.Identifier) {
+    return NUMBER_CONVERSIONS.has(mapper.name) && isGlobal(mapper.name, scope);
+  }
+  const result = callbackResult(mapper);
+  return result !== null && isNumeric(result, scope, new Set());
+}
+
+/**
+ * Is this a `const` lookup table — an object literal (`kind: 'object'`) or a
+ * `new Map([[k, v], …])` literal (`kind: 'map'`) — whose every value is fixed,
+ * and which nothing writes to or hands away after it is declared?
+ */
+function isLookupTable(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+  kind: 'object' | 'map',
+): boolean {
+  // A member chain (`cfg.TABLES`) has no `name`, and resolves to nothing.
+  const variable = resolveVariable((node as TSESTree.Identifier).name, scope);
+  const def = variable?.defs[0];
+  if (
+    def?.type !== 'Variable' ||
+    (def.parent as TSESTree.VariableDeclaration).kind !== 'const'
+  ) {
+    return false;
+  }
+  const init = unwrapTypeSyntax(singleInit(variable!));
+  const isFixed = (value: TSESTree.Node): boolean =>
+    isStaticExpression({ node: value, scope: variable!.scope });
+  let fixed: boolean;
+  if (kind === 'object') {
+    fixed =
+      init?.type === AST_NODE_TYPES.ObjectExpression &&
+      init.properties.every(
+        (p) => p.type === AST_NODE_TYPES.Property && isFixed(p.value),
+      );
+  } else {
+    // `new lib.Map(…)` has no `name`, so it is not the global Map.
+    const entries =
+      init?.type === AST_NODE_TYPES.NewExpression &&
+      (init.callee as TSESTree.Identifier).name === 'Map' &&
+      isGlobal('Map', variable!.scope)
+        ? init.arguments[0]
+        : undefined;
+    fixed =
+      entries?.type === AST_NODE_TYPES.ArrayExpression &&
+      entries.elements.every(
+        (entry) =>
+          entry?.type === AST_NODE_TYPES.ArrayExpression &&
+          entry.elements.length === 2 &&
+          entry.elements[1] !== null &&
+          isFixed(entry.elements[1]),
+      );
+  }
+  return (
+    fixed &&
+    !variable!.references.some(
+      (ref) =>
+        !ref.isWrite() &&
+        changesOrEscapes(ref.identifier as TSESTree.Identifier),
+    )
+  );
+}
+
+/**
  * Every value a local binding can hold: its initialiser and the right-hand
  * side of every `=` / `+=` written to it. `null` when the binding is not a
  * plain local variable (a parameter, an import, a destructured name) or a
@@ -768,7 +946,8 @@ function writtenValues(
     if (
       parent?.type === AST_NODE_TYPES.AssignmentExpression &&
       parent.operator !== '=' &&
-      parent.operator !== '+='
+      parent.operator !== '+=' &&
+      !LOGICAL_ASSIGNMENTS.has(parent.operator)
     ) {
       continue; // `-=`, `*=` … produce numbers
     }
@@ -898,6 +1077,10 @@ function isRawValue(
   depth = 0,
 ): boolean {
   const part = unwrapTypeSyntax(value);
+  // A number prints as digits wherever it is interpolated — `$${n}` or
+  // `LIMIT ${page * 10}`. Arithmetic other than `+` yields a number whatever
+  // its operands hold (NaN at worst: broken SQL, not injected SQL).
+  if (isNumeric(part, scope, new Set())) return false;
   if (
     part.type === AST_NODE_TYPES.BinaryExpression ||
     part.type === AST_NODE_TYPES.TemplateLiteral
@@ -921,6 +1104,11 @@ function isRawValue(
       propertyName(part) === 'length' &&
       !isRawValue(part.object, scope, null, depth + 1)
     ) {
+      return false;
+    }
+    // `TABLES[req.query.t]` on a const literal of fixed strings can only yield
+    // one of those strings (or undefined): the allowlist fix itself.
+    if (part.computed && isLookupTable(part.object, scope, 'object')) {
       return false;
     }
     return !isConstantMember(part, scope);
@@ -1334,7 +1522,11 @@ export const noUnsafeQuery: TSESLint.RuleModule<
         if (node.left.type !== AST_NODE_TYPES.Identifier) return;
         const key = keyFor(node.left);
 
-        if (node.operator === '+=') {
+        // `q ??= …`, `q ||= …`, `q &&= …` write their right-hand side into
+        // the query exactly when they write anything, and were ignored. Each
+        // is tracked as one more fragment, like `+=`: the statement it can
+        // produce is judged with the rest of what the binding holds.
+        if (node.operator === '+=' || LOGICAL_ASSIGNMENTS.has(node.operator)) {
           const existing = fragments.get(key);
           if (existing === undefined) fragments.set(key, [node.right]);
           else existing.push(node.right);
