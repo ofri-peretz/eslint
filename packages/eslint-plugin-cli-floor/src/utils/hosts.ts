@@ -171,32 +171,13 @@ function unwrap(node: TSESTree.Node): TSESTree.Node {
 }
 
 /**
- * `resolveModuleBinding`, plus the one destructuring spelling it skips:
- * `const { ['Command']: foo } = require('commander')`. A computed key that is a
- * static string names the export exactly as the dotted key does, and a
- * minifier or a hand-written constant index produces it.
+ * `resolveModuleBinding`, which also resolves a static computed destructuring
+ * key: `const { ['Command']: foo } = require('commander')`.
  */
-export function bindingOf(
+export const bindingOf: (
   node: TSESTree.Node,
   scope: Scope,
-): ModuleBindingResult | undefined {
-  const direct = resolveModuleBinding(node, scope);
-  if (direct || node.type !== AST_NODE_TYPES.Identifier) return direct;
-  const def = lookup(node.name, scope)?.defs[0];
-  if (def?.type !== 'Variable' || def.node.init === null) return undefined;
-  if (def.node.id.type !== AST_NODE_TYPES.ObjectPattern) return undefined;
-  const property = def.node.id.properties.find(
-    (p): p is TSESTree.Property =>
-      p.type === AST_NODE_TYPES.Property &&
-      p.computed &&
-      p.value.type === AST_NODE_TYPES.Identifier &&
-      p.value.name === node.name,
-  );
-  const key = property ? staticString(property.key) : null;
-  if (key === null) return undefined;
-  const base = resolveModuleBinding(def.node.init, scope);
-  return base && { module: base.module, path: [...base.path, key] };
-}
+) => ModuleBindingResult | undefined = resolveModuleBinding;
 
 type ModuleBindingResult = { module: string; path: string[] };
 
