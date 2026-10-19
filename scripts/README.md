@@ -11,27 +11,26 @@ The Interlace Lint Bench — see [`../benchmarks/README.md`](../benchmarks/READM
 | Script | Purpose |
 | :--- | :--- |
 | `ilb-scorecard.ts` | Headline scorecard across all suites (the start-here output) |
-| `ilb-leaderboard-publish.mjs` | Plugin-vs-plugin leaderboard |
+| `ilb-leaderboard-publish.ts` | Plugin-vs-plugin leaderboard |
 | `ilb-regression-check.ts` | CI gate that fails PRs on regression vs `baseline.json` |
-| `ilb-promotion-gate.mjs` | Severity / lifecycle promotion gate (warn → error) |
-| `ilb-corpus-integrity.mjs` | Frozen-corpus integrity check (no silent commit drift) |
+| `ilb-promotion-gate.ts` | Severity / lifecycle promotion gate (warn → error) |
+| `ilb-corpus-integrity.ts` | Frozen-corpus integrity check (no silent commit drift) |
 | `ilb-doc-resync.ts`, `ilb-doc-test-alignment.mjs` | Doc ↔ rule ↔ test alignment |
-| `ilb-fixture-coverage.mjs`, `ilb-validate-fixtures.mjs` | Fixture inventory + validation |
-| `ilb-validate-results.mjs` | Schema-check every emitted result JSON |
-| `ilb-history-backfill.mjs` | Backfill `history.ndjson` from older runs |
-| `ilb-federated-aggregate.mjs` | Cross-bench aggregation for the federated wild metric |
-| `ilb-diff-publish.mjs` | Diff between two scorecards |
-| `ilb-iso25010-report.mjs`, `ilb-mappings-report.mjs` | ISO/IEC 25010 + framework crosswalks |
-| `ilb-kappa.mjs` | Multi-rater agreement (Cohen's κ) vs sonarjs / microsoft-sdl |
-| `ilb-severity-audit.mjs` | Per-rule severity audit |
-| `ilb-cve-synthesize.mjs` | CVE→fixture synthesis for ILB-Wild |
-| `ilb-provenance.mjs` | Provenance manifest generation |
-| `ilb-autofix-bench.mjs` | Autofix accuracy bench |
+| `ilb-fixture-coverage.ts`, `ilb-validate-fixtures.mjs` | Fixture inventory + validation |
+| `ilb-validate-results.ts` | Schema-check every emitted result JSON |
+| `ilb-history-backfill.ts` | Backfill `history.ndjson` from older runs |
+| `ilb-federated-aggregate.ts` | Cross-bench aggregation for the federated wild metric |
+| `ilb-diff-publish.ts` | Diff between two scorecards |
+| `ilb-iso25010-report.ts`, `ilb-mappings-report.mjs` | ISO/IEC 25010 + framework crosswalks |
+| `ilb-kappa.ts` | Multi-rater agreement (Cohen's κ) vs sonarjs / microsoft-sdl |
+| `ilb-severity-audit.ts` | Per-rule severity audit |
+| `ilb-cve-synthesize.ts` | CVE→fixture synthesis for ILB-Wild |
+| `ilb-provenance.ts` | Provenance manifest generation |
+| `ilb-autofix-bench.ts` | Autofix accuracy bench |
 | `ilb-stress-test.ts`, `ilb-stress-test-docs.ts` | Stress tests (rules + docs site) |
 | `ilb-fuzz.ts` | Property-based fuzz tester for rule logic |
-| `ilb-wild.mjs` | Wild-corpus runner |
-| `ilb-smoke.mjs` | Fast smoke test (PR gate) |
-| `ilb-mcp-test.mjs` | MCP server integration test |
+| `ilb-wild.ts` | Wild-corpus runner |
+| `ilb-smoke.ts` | Fast smoke test (PR gate) |
 | `ilb-meta-url-fix.ts` | Codemod for fixing rule meta URLs |
 
 ## Audits (4 scripts)
@@ -40,10 +39,10 @@ Find structural problems across the rule fleet.
 
 | Script | Purpose |
 | :--- | :--- |
-| `audit-rule.mjs` | Single-rule deep audit |
-| `audit-rule-meta-completeness.mjs` | Surfaces holes in rule meta (drives [`../docs/META_HYGIENE.md`](../docs/META_HYGIENE.md)) |
-| `audit-rule-portability.mjs` | Cross-plugin portability check |
-| `audit-cwe-rendering.mjs` | CWE rendering correctness |
+| `audit-rule.ts` | Single-rule deep audit |
+| `audit-rule-meta-completeness.ts` | Surfaces holes in rule meta (drives [`../docs/META_HYGIENE.md`](../docs/META_HYGIENE.md)) |
+| `audit-rule-portability.ts` | Cross-plugin portability check |
+| `audit-cwe-rendering.ts` | CWE rendering correctness |
 
 ## Validators / Checks (6 scripts)
 
@@ -56,7 +55,7 @@ Pre-commit and CI gates that fail loudly.
 | `check-version-alignment.ts` | `package.json` ↔ lockfile ↔ npm version alignment |
 | `validate-docs.ts` | Docs structure validation |
 | `validate-mermaid.sh` | Mermaid diagram syntax check |
-| `verify-oxlint-shims.mjs` | Oxlint shim parity check |
+| `verify-oxlint-shims.ts` | Oxlint shim parity check |
 
 ## Syncers (5 scripts)
 
@@ -75,11 +74,10 @@ Generate code, configs, or scaffolding.
 
 | Script | Purpose |
 | :--- | :--- |
-| `build-package.mjs` | Per-package build orchestration |
-| `generate-changelogs.mjs` | Generate changelog entries from conventional commits |
-| `generate-oxlint-shims.mjs` | Generate oxlint shim files in `tools/oxlint-plugins/` |
-| `generate-rule-tests.mjs` | Generate rule test scaffolding |
-| `scaffold-mcp.mjs` | Scaffold a new MCP server |
+| `build-package.ts` | Per-package build orchestration |
+| `generate-changelogs.ts` | Generate changelog entries from conventional commits |
+| `generate-oxlint-shims.ts` | Generate oxlint shim files in `tools/oxlint-plugins/` |
+| `generate-rule-tests.ts` | Generate rule test scaffolding |
 
 ## Content / Devto (2 scripts)
 
@@ -94,23 +92,23 @@ Article publishing pipeline (see [`../distribution/PUBLISHING_QUEUE.md`](../dist
 
 | Script | Purpose |
 | :--- | :--- |
-| `coverage-gap-analysis.mjs` | Find rules with low test coverage |
-| `docs-cwe-coverage.mjs` | CWE coverage report for the docs site |
-| `fix-shallow-tests.mjs` | Detect and patch shallow test files |
-| `lint-workflows.mjs` | Lint `.github/workflows/*.yml` |
+| `coverage-gap-analysis.ts` | Find rules with low test coverage |
+| `docs-cwe-coverage.ts` | CWE coverage report for the docs site |
+| `fix-shallow-tests.ts` | Detect and patch shallow test files |
+| `lint-workflows.ts` | Lint `.github/workflows/*.yml` |
 
 ## CI, Release, Stats, Setup (9 scripts)
 
 | Script | Purpose |
 | :--- | :--- |
 | `ci-status.ts` | Local CI status check (`npm run ci:status`) |
-| `release-status.mjs` | Pending release inspection |
-| `extract-changelog.mjs` | Extract per-version changelog block for release notes |
-| `reconcile-tags.mjs` | Reconcile mismatched version tags |
+| `release-status.ts` | Pending release inspection |
+| `extract-changelog.ts` | Extract per-version changelog block for release notes |
+| `reconcile-tags.ts` | Reconcile mismatched version tags |
 | `setup-branch-protection.sh` | One-shot branch protection setup (`npm run setup-branch-protection`) |
 | `delete-branches.sh` | Bulk-delete merged branches |
 | `benchmark-plugin.ts` | Per-plugin perf benchmark |
-| `codemod-lift-cwe-to-meta-docs.mjs` | Codemod: lift CWE refs into rule meta docs |
+| `codemod-lift-cwe-to-meta-docs.ts` | Codemod: lift CWE refs into rule meta docs |
 | [`fetch-eslint-version-stats.ts`](./fetch-eslint-version-stats.ts) | Refresh npm download share by ESLint major (drives [`../docs/ESLINT_VERSION_SUPPORT.md`](../docs/ESLINT_VERSION_SUPPORT.md)) |
 
 ## Conventions
