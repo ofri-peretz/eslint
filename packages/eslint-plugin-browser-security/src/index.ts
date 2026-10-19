@@ -181,7 +181,7 @@ withCanonicalDocsUrls('plugin-browser-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-browser-security',
-    version: '2.1.9',
+    version: '2.1.10',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
