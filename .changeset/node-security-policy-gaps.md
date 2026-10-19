@@ -1,0 +1,12 @@
+---
+'eslint-plugin-node-security': patch
+---
+
+fix(node-security): close the FP/FN policy gaps left open by the 2026-10-18 audit
+
+- `lock-file` stops its upward search at the repository root (the nearest ancestor holding `.git`, a directory or a worktree/submodule file). A stray `~/pnpm-lock.yaml` no longer satisfies every project under the home directory. With no `.git` above the file, the search still runs to the filesystem root.
+- `no-shell-injection` reports `exec(cmd + args)` — a `+` between non-literal operands — the shape its own message cites. Operands that all fold to literals in the file stay quiet.
+- `detect-child-process` allowlist guards clear only the value they check: `if (!BRANCHES.includes(branch)) return; execFile('git', ['push', remote, branch])` reports the unchecked `remote`. `includes()` / `has()` count only on a constant allowlist (an array or `Set` literal, or a `const` bound to one); the enclosing-`if` and early-exit (`return` / `throw` / `continue` / `break`) forms agree, including an `else` branch and a guard in an outer block; a positive check that falls through validates nothing. `cp[m](cmd)` with `const m = 'exec'` is the `exec` sink. `reportUnresolvedCommands` no longer reports a fully literal `execSync('npm ci', { stdio })` or `exec('ls', callback)`.
+- `no-zip-slip` accepts the canonical guard — `const p = path.resolve(dest, entry.name); if (!p.startsWith(dest + path.sep)) throw …;` then `p`, and the `path.relative()` spelling — and a guard clause before the join. A join inside the branch where the check failed is reported. `@safe` covers the statement directly below it (block or line comment), not the whole file.
+- `no-arbitrary-file-access` treats `fs.promises.*`, `fs/promises` (default, namespace or named imports, `require('fs').promises`) and `fs` under any local name as file-system sinks; follows a later assignment (`let f; f = req.query.x; fs.readFileSync(f)`); and stops trusting a `safePath`-style parameter name when a caller in the same file passes request input straight into it.
+- `no-weak-hash-algorithm` reports a weak digest compared with `===` / `!==` against a signature/token/hmac/mac/digest-named value (`if (signature === createHash('md5')…digest('hex'))`). The bare-helper `sha256(...)` suggestion is offered only when a `sha256` is callable there, so a file's own `sha1()` helper is no longer rewritten to call an undefined function.

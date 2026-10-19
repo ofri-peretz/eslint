@@ -483,13 +483,157 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * Which outcome of an `if` test means the path is contained.
+     *
+     * `'true'` — `p.startsWith(dest + sep)`, `ALLOWED.includes(name)`: the
+     * consequent is the safe branch. `'false'` — `name.includes('..')`,
+     * `rel.startsWith('..')`: the consequent is where traversal was FOUND, so
+     * only the alternate (or the code after an exiting consequent) is safe.
+     * `!` flips it. An `||` is safe when false if either side is, an `&&` safe
+     * when true if either side is — that is what makes
+     * `rel.startsWith('..') || path.isAbsolute(rel)` a guard. `null`: the test
+     * proves nothing about containment.
+     *
+     * The old check asked only "does the test mention startsWith/includes?",
+     * so a join written inside the branch the check FAILED into — the one
+     * place the path is known to escape — read as validated.
+     */
+    const safeOutcome = (test: TSESTree.Node): 'true' | 'false' | null => {
+      if (test.type === 'UnaryExpression' && test.operator === '!') {
+        const inner = safeOutcome(test.argument);
+        return inner === null ? null : inner === 'true' ? 'false' : 'true';
+      }
+      if (test.type === 'LogicalExpression') {
+        const sides = new Set([
+          safeOutcome(test.left),
+          safeOutcome(test.right),
+        ]);
+        if (test.operator === '||' && sides.has('false')) return 'false';
+        if (test.operator === '&&' && sides.has('true')) return 'true';
+        return null;
+      }
+      if (
+        test.type !== 'CallExpression' ||
+        test.callee.type !== 'MemberExpression'
+      ) {
+        return null;
+      }
+      const method = propertyName(test.callee);
+      if (method !== 'startsWith' && method !== 'includes') return null;
+      // `x.startsWith('..')` and `x.includes('..')` look for traversal; any
+      // other argument — a destination prefix, an allowlisted name — is a
+      // containment or membership test.
+      const needle = staticString(test.arguments[0]);
+      const findsTraversal =
+        needle !== null &&
+        (method === 'includes'
+          ? needle.includes('..')
+          : needle.startsWith('..'));
+      return findsTraversal ? 'false' : 'true';
+    };
+
+    /** Does this statement always leave the enclosing list? */
+    const EXITS = new Set([
+      'ReturnStatement',
+      'ThrowStatement',
+      'ContinueStatement',
+      'BreakStatement',
+    ]);
+    const alwaysExits = (statement: TSESTree.Statement): boolean =>
+      EXITS.has(statement.type) ||
+      (statement.type === 'BlockStatement' &&
+        statement.body.some((inner) => EXITS.has(inner.type)));
+
+    /**
+     * An `if` used as a guard clause: the branch where the test says "escaped"
+     * always leaves, so everything after the `if` runs only when contained.
+     */
+    const isGuardClause = (statement: TSESTree.Statement): boolean => {
+      if (statement.type !== 'IfStatement') return false;
+      const safe = safeOutcome(statement.test);
+      if (safe === 'false') return alwaysExits(statement.consequent);
+      return (
+        safe === 'true' &&
+        statement.alternate != null &&
+        alwaysExits(statement.alternate)
+      );
+    };
+
+    /** The statements `container` holds, if it is a statement list. */
+    const statementsOf = (
+      container: TSESTree.Node,
+    ): readonly TSESTree.Node[] | null => {
+      if (container.type === 'BlockStatement' || container.type === 'Program') {
+        return container.body;
+      }
+      return container.type === 'SwitchCase' ? container.consequent : null;
+    };
+
+    /**
+     * `const p = path.resolve(dest, entry.name)` followed, in the same block,
+     * by a guard clause whose test reads `p` — or reads a `const` built by
+     * `path.relative(…, p)` — before anything else touches `p`.
+     *
+     * The documented fix, and the one every advisory prints. It used to be
+     * reported: the validation search walked only the join's ancestors, and
+     * the check sits beside the declaration, not above it.
+     */
+    const isCheckedAfterBinding = (call: TSESTree.Node): boolean => {
+      const declarator = call.parent;
+      if (
+        declarator?.type !== 'VariableDeclarator' ||
+        declarator.id.type !== 'Identifier'
+      ) {
+        return false;
+      }
+      const declaration = declarator.parent;
+      const list = statementsOf(declaration.parent);
+      if (list === null) return false;
+      /** Bindings whose test, in a guard, is a test of `p`. */
+      const subjects = [...context.sourceCode.getDeclaredVariables(declarator)];
+      const reads = (node: TSESTree.Node): boolean =>
+        subjects.some((variable) =>
+          variable.references.some(
+            (ref) =>
+              !ref.init &&
+              ref.identifier.range[0] >= node.range[0] &&
+              ref.identifier.range[1] <= node.range[1],
+          ),
+        );
+      for (const sibling of list.slice(list.indexOf(declaration) + 1)) {
+        if (isGuardClause(sibling as TSESTree.Statement)) {
+          if (reads((sibling as TSESTree.IfStatement).test)) return true;
+        }
+        if (!reads(sibling)) continue;
+        // `const rel = path.relative(dest, p)` — a derived subject, not a use.
+        if (
+          sibling.type === 'VariableDeclaration' &&
+          sibling.declarations[0].init?.type === 'CallExpression' &&
+          sibling.declarations[0].init.callee.type === 'MemberExpression' &&
+          propertyName(sibling.declarations[0].init.callee) === 'relative'
+        ) {
+          subjects.push(
+            ...context.sourceCode.getDeclaredVariables(sibling.declarations[0]),
+          );
+          continue;
+        }
+        // Anything else that touches `p` before a guard uses it unchecked.
+        return false;
+      }
+      return false;
+    };
+
+    /**
      * Check if path has been validated or sanitized
      * Detects patterns like:
      * - validatePath(), sanitizePath() custom functions
      * - path.basename() sanitization
-     * - startsWith() validation in preceding if-block
+     * - the safe branch of an enclosing containment check
+     * - a guard clause before the join, in any enclosing block
+     * - the join bound to a name that a guard clause then checks
      */
     const isPathValidated = (pathNode: TSESTree.Node): boolean => {
+      let child: TSESTree.Node = pathNode;
       let current: TSESTree.Node | undefined = pathNode;
 
       while (current) {
@@ -513,36 +657,32 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           return true;
         }
 
-        // Check for preceding if-block with startsWith validation
+        if (
+          current.type === 'CallExpression' &&
+          isCheckedAfterBinding(current)
+        ) {
+          return true;
+        }
+
         if (current.type === 'IfStatement') {
-          const test = current.test;
-          // if (path.startsWith(...)) or if (!path.startsWith(...)) { throw/return }
-          if (
-            test.type === 'CallExpression' &&
-            test.callee.type === 'MemberExpression' &&
-            propertyName(test.callee) === 'startsWith'
-          ) {
-            return true;
-          }
-          if (
-            test.type === 'UnaryExpression' &&
-            test.operator === '!' &&
-            test.argument.type === 'CallExpression' &&
-            test.argument.callee.type === 'MemberExpression' &&
-            propertyName(test.argument.callee) === 'startsWith'
-          ) {
-            return true;
-          }
-          // if (path.includes('..')) { throw/return }
-          if (
-            test.type === 'CallExpression' &&
-            test.callee.type === 'MemberExpression' &&
-            propertyName(test.callee) === 'includes'
-          ) {
-            return true;
+          const safe = safeOutcome(current.test);
+          // Inside the test, the join IS the check being made
+          // (`if (!path.resolve(dest, e).startsWith(dest)) throw`).
+          if (child === current.test && safe !== null) return true;
+          if (child === current.consequent && safe === 'true') return true;
+          if (child === current.alternate && safe === 'false') return true;
+        }
+
+        // A guard clause earlier in any enclosing block.
+        const list = statementsOf(current);
+        if (list !== null) {
+          for (const sibling of list) {
+            if (sibling === child) break;
+            if (isGuardClause(sibling as TSESTree.Statement)) return true;
           }
         }
 
+        child = current;
         current = current.parent as TSESTree.Node;
       }
 
@@ -618,17 +758,23 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         // pull request whose entire content was that mistake.
         if (namesArchive(node.callee)) hasArchiveContext = true;
         if (isArchiveExtraction(node) && !isSafeLibrary(node)) {
-          // Check for @safe annotations in the source
+          // An `@safe` annotation covers the statement it sits directly above
+          // — and everything inside it, so one on a function covers that
+          // function. It used to be ANY block comment containing `@safe`
+          // anywhere in the file, so a `/** @safe */` in a file header
+          // silenced every extraction below it, while `// @safe` written
+          // right above the call was ignored.
           const sourceCode = context.sourceCode;
           let hasSafeAnnotation = false;
-
-          // Look for @safe comments in the source code
-          const allComments = sourceCode.getAllComments();
-          for (const comment of allComments) {
-            if (comment.type === 'Block' && comment.value.includes('@safe')) {
-              hasSafeAnnotation = true;
-              break;
-            }
+          for (
+            let annotated: TSESTree.Node | undefined = node;
+            annotated && !hasSafeAnnotation;
+            annotated = annotated.parent
+          ) {
+            if (!/Statement|Declaration/.test(annotated.type)) continue;
+            hasSafeAnnotation = sourceCode
+              .getCommentsBefore(annotated)
+              .some((comment) => /@safe\b/.test(comment.value));
           }
 
           if (hasSafeAnnotation) {

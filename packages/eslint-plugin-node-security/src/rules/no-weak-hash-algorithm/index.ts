@@ -248,7 +248,7 @@ function normalizeName(name: string): string {
  * chain, so a hash passed to a function, returned, or compared is never exempt.
  * Only a hash that is *stored under a non-cryptographic name* qualifies.
  */
-function assignedName(node: TSESTree.Node): string | null {
+function chainTop(node: TSESTree.Node): TSESTree.Node {
   let current: TSESTree.Node = node;
   let parent = current.parent;
 
@@ -273,6 +273,40 @@ function assignedName(node: TSESTree.Node): string | null {
     }
     break;
   }
+  return current;
+}
+
+/** Equality operators: the digest is being matched, not ordered. */
+const EQUALITY_OPERATORS: ReadonlySet<string> = new Set([
+  '===',
+  '==',
+  '!==',
+  '!=',
+]);
+
+/**
+ * The name of what this digest is COMPARED against, if anything.
+ *
+ * `if (signature === createHash('md5').update(body).digest('hex'))` stores
+ * nothing — the digest goes straight into `===` — so `assignedName` sees no
+ * name and the call was silent. But the comparison is the security decision:
+ * a forged body whose MD5 collides passes this check.
+ */
+function comparedName(node: TSESTree.Node): string | null {
+  const current = chainTop(node);
+  const parent = current.parent;
+  if (
+    parent?.type !== AST_NODE_TYPES.BinaryExpression ||
+    !EQUALITY_OPERATORS.has(parent.operator)
+  ) {
+    return null;
+  }
+  return expressionName(parent.left === current ? parent.right : parent.left);
+}
+
+function assignedName(node: TSESTree.Node): string | null {
+  const current = chainTop(node);
+  const parent = current.parent;
 
   if (!parent) return null;
 
@@ -541,6 +575,15 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
       reportUnclassifiedHashes = false,
     } = options as Options;
     const isSecurityUse = makeNameTest(securityUseNames);
+    // What a digest is CHECKED against: the security names plus the two that
+    // only mean "authentication tag" in a comparison. `mac` and `digest` are
+    // not security names on their own — `const digest = md5(file)` is a
+    // content digest — but `digest === md5(body)` is verifying one.
+    const isComparedSecurityValue = makeNameTest([
+      ...securityUseNames,
+      'mac',
+      'digest',
+    ]);
     // Whole-word, exactly as the security list is matched. A superset of the
     // old exact-membership test — `cacheKey` still normalizes to `cachekey` —
     // that additionally reads the compound spellings the corpus produced:
@@ -577,6 +620,9 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
     function hasSecurityUse(node: TSESTree.CallExpression): boolean {
       const stored = assignedName(node);
       if (stored !== null && isSecurityUse(stored)) return true;
+
+      const compared = comparedName(node);
+      if (compared !== null && isComparedSecurityValue(compared)) return true;
 
       for (const argument of hashInputNames(node)) {
         if (isSecurityUse(argument)) return true;
@@ -717,6 +763,25 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
       );
     }
 
+    /** Is a `sha256` callable wherever this weak helper is? */
+    function canCallSha256(callee: TSESTree.Node): boolean {
+      const scope = context.sourceCode.getScope(callee);
+      const declared = (name: string): boolean => {
+        for (
+          let current: TSESLint.Scope.Scope | null = scope;
+          current;
+          current = current.upper
+        ) {
+          const variable = current.set.get(name);
+          if (variable) return variable.defs.length > 0;
+        }
+        return false;
+      };
+      return (
+        declared('sha256') || !declared((callee as TSESTree.Identifier).name)
+      );
+    }
+
     function checkCallExpression(node: TSESTree.CallExpression) {
       if (isTestFile) return;
       if (isNonCryptographicUse(node)) return;
@@ -767,17 +832,20 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
               algorithm: weakPattern.name,
               replacement: weakPattern.replacement,
             },
-            suggest: [
-              {
-                messageId: 'useSha256',
-                fix: (fixer: TSESLint.RuleFixer) => {
-                  if (node.callee.type === AST_NODE_TYPES.Identifier) {
-                    return fixer.replaceText(node.callee, 'sha256');
-                  }
-                  return null;
-                },
-              },
-            ],
+            // `sha256(...)` only when there is a `sha256` to call. A file
+            // that defines or imports `sha1` itself and has no `sha256`
+            // beside it would be rewritten to call a function that does not
+            // exist. An ambient `sha1`, declared nowhere here, keeps the
+            // suggestion: its sibling is as available as it is.
+            suggest: canCallSha256(node.callee)
+              ? [
+                  {
+                    messageId: 'useSha256',
+                    fix: (fixer: TSESLint.RuleFixer) =>
+                      fixer.replaceText(node.callee, 'sha256'),
+                  },
+                ]
+              : [],
           });
         }
       }

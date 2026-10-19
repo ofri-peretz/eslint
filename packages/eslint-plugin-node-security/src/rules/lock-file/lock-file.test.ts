@@ -1,6 +1,6 @@
 /**
  * @fileoverview Tests for lock-file
- * 
+ *
  * NOTE: This rule checks for the lock file in the file system.
  * This repo uses npm, so package-lock.json exists at the root.
  */
@@ -63,7 +63,10 @@ function deeplyNestedFileInLockedProject(): string {
   );
   // Eight more directories: the manifest stays inside ten levels, the lock
   // file at the repo root does not.
-  const nested = path.join(pkg, ...Array.from({ length: 8 }, (_, i) => `d${i}`));
+  const nested = path.join(
+    pkg,
+    ...Array.from({ length: 8 }, (_, i) => `d${i}`),
+  );
   fs.mkdirSync(nested, { recursive: true });
   return path.join(nested, 'deep.js');
 }
@@ -76,14 +79,14 @@ ruleTester.run('lock-file', lockFile, {
     // here and were intentionally omitted.
     {
       name: 'the expected lock file',
-      code: "const validDefault = 1",
+      code: 'const validDefault = 1',
       filename: __filename,
     },
     {
       name: 'a project with package-lock.json passes when packageManager is npm',
-      code: "const validNpm = 1",
+      code: 'const validNpm = 1',
       filename: __filename,
-      options: [{ packageManager: 'npm' }]
+      options: [{ packageManager: 'npm' }],
     },
     // A lock file twelve directories up is still a lock file.
     {
@@ -96,6 +99,7 @@ ruleTester.run('lock-file', lockFile, {
     // arm has to accept it — the same result as omitting the option, which is
     // exactly the equivalence the schema's `default: 'any'` now claims.
     {
+      name: "spelling out 'any' accepts the package-lock.json this repository commits",
       code: 'const validAny = 1',
       filename: __filename,
       options: [{ packageManager: 'any' }],
@@ -112,59 +116,123 @@ ruleTester.run('lock-file', lockFile, {
   invalid: [
     {
       name: 'a lock file for a package manager the project does not use',
-      code: "const invalidPnpm = 1",
+      code: 'const invalidPnpm = 1',
       filename: projectWithoutLockFile(),
       options: [{ packageManager: 'pnpm' }],
-      errors: [{ 
-        messageId: 'violationDetected',
-        data: { packageManager: 'pnpm', lockFile: 'pnpm-lock.yaml' }
-      }]
+      errors: [
+        {
+          messageId: 'violationDetected',
+          data: { packageManager: 'pnpm', lockFile: 'pnpm-lock.yaml' },
+        },
+      ],
     },
     {
-      code: "const invalidYarn = 1",
+      code: 'const invalidYarn = 1',
       filename: projectWithoutLockFile(),
       options: [{ packageManager: 'yarn' }],
-      errors: [{ 
-        messageId: 'violationDetected',
-        data: { packageManager: 'yarn', lockFile: 'yarn.lock' }
-      }]
+      errors: [
+        {
+          messageId: 'violationDetected',
+          data: { packageManager: 'yarn', lockFile: 'yarn.lock' },
+        },
+      ],
     },
     {
-      code: "const invalidOutside = 1",
+      code: 'const invalidOutside = 1',
       filename: projectWithoutLockFile(),
       options: [{ packageManager: 'npm' }],
-      errors: [{
-        messageId: 'violationDetected',
-        data: { packageManager: 'npm', lockFile: 'package-lock.json' }
-      }]
+      errors: [
+        {
+          messageId: 'violationDetected',
+          data: { packageManager: 'npm', lockFile: 'package-lock.json' },
+        },
+      ],
     },
     // The DEFAULT path, previously untested: no option at all. It must report
     // `any` and list all three candidate names, which is what the schema's
     // `default: 'any'` promises a reader.
     {
-      code: "const invalidNoOption = 1",
+      code: 'const invalidNoOption = 1',
       filename: projectWithoutLockFile(),
-      errors: [{
-        messageId: 'violationDetected',
-        data: {
-          packageManager: 'any',
-          lockFile: 'package-lock.json | yarn.lock | pnpm-lock.yaml',
+      errors: [
+        {
+          messageId: 'violationDetected',
+          data: {
+            packageManager: 'any',
+            lockFile: 'package-lock.json | yarn.lock | pnpm-lock.yaml',
+          },
         },
-      }],
+      ],
     },
     // …and spelling `'any'` explicitly must be indistinguishable from omitting
     // it. If these two ever diverge, the documented default is a lie.
     {
-      code: "const invalidExplicitAny = 1",
+      code: 'const invalidExplicitAny = 1',
       filename: projectWithoutLockFile(),
       options: [{ packageManager: 'any' }],
-      errors: [{
-        messageId: 'violationDetected',
-        data: {
-          packageManager: 'any',
-          lockFile: 'package-lock.json | yarn.lock | pnpm-lock.yaml',
+      errors: [
+        {
+          messageId: 'violationDetected',
+          data: {
+            packageManager: 'any',
+            lockFile: 'package-lock.json | yarn.lock | pnpm-lock.yaml',
+          },
         },
-      }],
+      ],
+    },
+  ],
+});
+
+/**
+ * A git repository with no lock file, nested inside a directory that has one —
+ * the shape of a checkout under a home directory holding a stray
+ * `~/pnpm-lock.yaml`. The outer lock file is not part of the repository, so it
+ * pins none of the repository's installs.
+ */
+function repoBelowAStrayLockFile(gitAs: 'dir' | 'file'): string {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'lock-file-home-'));
+  fs.writeFileSync(path.join(home, 'pnpm-lock.yaml'), 'lockfileVersion: 9\n');
+  const repo = path.join(home, 'repo');
+  fs.mkdirSync(path.join(repo, 'src'), { recursive: true });
+  if (gitAs === 'dir') fs.mkdirSync(path.join(repo, '.git'));
+  else fs.writeFileSync(path.join(repo, '.git'), 'gitdir: ../elsewhere/.git\n');
+  fs.writeFileSync(
+    path.join(repo, 'package.json'),
+    JSON.stringify({ name: 'repo-fixture', version: '1.0.0' }),
+  );
+  return path.join(repo, 'src', 'index.js');
+}
+
+/** The same layout, with the lock file committed at the repository root. */
+function repoWithItsOwnLockFile(): string {
+  const file = repoBelowAStrayLockFile('dir');
+  const repo = path.dirname(path.dirname(file));
+  fs.writeFileSync(path.join(repo, 'pnpm-lock.yaml'), 'lockfileVersion: 9\n');
+  return file;
+}
+
+ruleTester.run('lock-file: the search stops at the repository root', lockFile, {
+  valid: [
+    {
+      name: 'a lock file at the repository root (where .git is) is found',
+      code: 'const repoRootLock = 1',
+      filename: repoWithItsOwnLockFile(),
+      options: [{ packageManager: 'pnpm' }],
+    },
+  ],
+  invalid: [
+    {
+      name: 'a stray lock file above the repository root does not count',
+      code: 'const strayHomeLock = 1',
+      filename: repoBelowAStrayLockFile('dir'),
+      options: [{ packageManager: 'pnpm' }],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a .git FILE (worktree, submodule) marks the repository root too',
+      code: 'const strayHomeLockWorktree = 1',
+      filename: repoBelowAStrayLockFile('file'),
+      errors: [{ messageId: 'violationDetected' }],
     },
   ],
 });

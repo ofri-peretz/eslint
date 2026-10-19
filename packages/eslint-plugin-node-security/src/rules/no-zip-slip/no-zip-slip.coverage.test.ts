@@ -108,9 +108,14 @@ describe('no-zip-slip coverage gaps', () => {
         code: "const AdmZip = require('adm-zip'); if (flag) { fs.cp(path.join(dest, entry.name)); }",
         errors: [{ messageId: 'unvalidatedArchivePath' }],
       },
-      // Negated includes() is not treated as startsWith validation
+      // includes('..') in its FAILURE branch — where traversal was found —
+      // validates nothing. (This case used to be `!includes('..')`, pinned as
+      // unvalidated only because a negated includes() was not recognised at
+      // all. Since 2026-10-18 a check validates its success branch, and the
+      // then-branch of `!includes('..')` is that branch: see
+      // containment-guard.test.ts.)
       {
-        code: "const AdmZip = require('adm-zip'); if (!entryPath.includes('..')) { fs.cp(path.join(dest, entry.name)); }",
+        code: "const AdmZip = require('adm-zip'); if (entryPath.includes('..')) { fs.cp(path.join(dest, entry.name)); }",
         errors: [{ messageId: 'unvalidatedArchivePath' }],
       },
       // Negated plain function call (callee not a MemberExpression)
@@ -129,11 +134,11 @@ describe('no-zip-slip coverage gaps', () => {
         noZipSlip,
         options ? ({ options } as never) : undefined,
       );
-      // The shared mock does not stub getAllComments; the CallExpression
+      // The shared mock does not stub getCommentsBefore; the CallExpression
       // handler needs it for the @safe-annotation scan.
       Object.assign(
         result.context.sourceCode as unknown as Record<string, unknown>,
-        { getAllComments: () => [] },
+        { getCommentsBefore: () => [] },
       );
       return result;
     }
@@ -207,7 +212,9 @@ describe('no-zip-slip coverage gaps', () => {
     it('reports unvalidated archive path with line 0 when loc is absent', () => {
       // The mock node has no archive in view, so the context gate is opened
       // explicitly; this case is about the loc fallback, not classification.
-      const { listeners, reports } = setup([{ reportWithoutArchiveContext: true }]);
+      const { listeners, reports } = setup([
+        { reportWithoutArchiveContext: true },
+      ]);
       const entryName: Record<string, unknown> = {
         type: 'MemberExpression',
         object: { type: 'Identifier', name: 'entry' },
