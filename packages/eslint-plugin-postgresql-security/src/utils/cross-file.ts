@@ -26,6 +26,7 @@ import { createRequire } from 'node:module';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
+  createLRUCache,
   objectKeyName,
   propertyName,
   unwrapTypeSyntax,
@@ -76,11 +77,27 @@ const RELATIVE = /^\.{1,2}(?:\/|$)/;
 /** `./db.js` written for TypeScript's ESM output, meaning `./db.ts`. */
 const JS_EXTENSION = /\.[cm]?js$/;
 
-/** Parsed modules by absolute path, invalidated by modification time. */
-const modules = new Map<
+/**
+ * Parsed modules by absolute path, invalidated by modification time.
+ *
+ * Bounded. Each entry holds a whole AST and its scope manager, and this is module state: it
+ * outlives every file and every ESLint instance in the process. Unbounded, it
+ * kept one parsed copy of every relatively-imported module a run ever opened,
+ * which took the corpus gates (106k files) past an 8 GB heap.
+ * Relative imports cluster by directory, so a recency window keeps the hits
+ * that matter. 512 is measured, not guessed: on amplication (3.3k files) 128
+ * thrashed to 3x the lint time, 512 matched unbounded speed at a flat heap.
+ */
+export const MAX_CACHED_MODULES = 512;
+const modules = createLRUCache<
   string,
   { readonly mtimeMs: number; readonly info: ModuleInfo | null }
->();
+>(MAX_CACHED_MODULES);
+
+/** How many parsed modules are held right now. For the bound's regression test. */
+export function cachedModuleCount(): number {
+  return modules.size;
+}
 
 interface RuleContextLike {
   readonly physicalFilename: string;

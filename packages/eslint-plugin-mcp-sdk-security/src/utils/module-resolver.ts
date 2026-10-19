@@ -25,7 +25,11 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { propertyName, staticString } from '@interlace/eslint-devkit';
+import {
+  createLRUCache,
+  propertyName,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { lookupVariable } from './tool-registration';
 
 /** Where an expression lives: the scope to resolve its names in, and its file. */
@@ -123,11 +127,31 @@ interface ParsedModule {
   scope: TSESLint.Scope.Scope;
 }
 
-/** Parsed modules, per parser (a parse is only valid for the parser that made it). */
-const caches = new WeakMap<
-  object,
-  Map<string, { mtimeMs: number; parsed: ParsedModule | undefined }>
->();
+type ModuleCache = ReturnType<
+  typeof createLRUCache<
+    string,
+    { mtimeMs: number; parsed: ParsedModule | undefined }
+  >
+>;
+
+/**
+ * Parsed modules, per parser (a parse is only valid for the parser that made it).
+ *
+ * Bounded per parser. The parser is one object for a whole lint run, so the
+ * WeakMap never releases its entry while the run lasts, and an unbounded inner
+ * map kept a parsed AST of every relatively-imported module the run ever
+ * opened — the shape that took the corpus gates (106k files) past an 8 GB heap.
+ * Relative imports cluster by directory, so a recency window keeps the hits
+ * that matter. 512 is measured, not guessed: on amplication (3.3k files) 128
+ * thrashed to 3x the lint time, 512 matched unbounded speed at a flat heap.
+ */
+export const MAX_CACHED_MODULES = 512;
+const caches = new WeakMap<object, ModuleCache>();
+
+/** How many parsed modules are held for `parser`. For the bound's regression test. */
+export function cachedModuleCount(parser: unknown): number {
+  return caches.get(parser as object)?.size ?? 0;
+}
 
 /** Parse a module with the active parser; `undefined` on any failure. */
 export function parseModule(
@@ -144,7 +168,7 @@ export function parseModule(
   }
   let cache = caches.get(parser as object);
   if (cache === undefined) {
-    cache = new Map();
+    cache = createLRUCache(MAX_CACHED_MODULES);
     caches.set(parser as object, cache);
   }
   const cached = cache.get(file);
