@@ -35,7 +35,7 @@ The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-se
 | `eslint-plugin-mongodb-security`                     |      3 |      8 | #1221, #1225 | 9.1.4                                                           |
 | `eslint-plugin-node-security` (batch 1, 12 rules)    |      2 |      8 | #1235, #1239 | 5.6.10                                                          |
 | `eslint-plugin-browser-security` (batch 1, 33 rules) |      4 |      2 | #1263        | next patch (changeset `browser-security-mutation-batch1-fixes`) |
-| `eslint-plugin-browser-security` (batch 2, 13 rules) |      3 |      6 | this PR      | next patch (changeset `browser-security-mutation-batch2-fixes`) |
+| `eslint-plugin-browser-security` (batch 2, 13 rules) |      3 |      6 | #1267        | next patch (changeset `browser-security-mutation-batch2-fixes`) |
 | **Total**                                            | **22** | **30** |              |                                                                 |
 
 The table counts distinct fixes. Measured on the 80-shape release oracle, the old rules gave 15 wrong verdicts (8 false leaks, 7 false doubles); those collapse into the four `#1234` release fixes below.
