@@ -1,7 +1,7 @@
 {
-  "releaseCount": 796,
+  "releaseCount": 799,
   "packageCount": 37,
-  "entryCount": 2278,
+  "entryCount": 2283,
   "oldestYear": 2024,
   "releases": [
     {
@@ -19025,6 +19025,21 @@
       ]
     },
     {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.20.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`resolveModuleBinding` resolves a static computed destructuring key: `const { ['promises']: fsp } = require('node:fs')` names `fs.promises` like `{ promises: fsp }` does. A runtime key (`{ [k]: v }`) still abstains. node-security's `no-arbitrary-file-access`, `no-static-iv` and `no-unbounded-decompression` now report that spelling; cli-floor drops its local copy of the same resolution.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.2.0",
@@ -19066,6 +19081,26 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-cli-floor",
+      "short": "eslint-plugin-cli-floor",
+      "version": "0.1.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`resolveModuleBinding` resolves a static computed destructuring key: `const { ['promises']: fsp } = require('node:fs')` names `fs.promises` like `{ promises: fsp }` does. A runtime key (`{ [k]: v }`) still abstains. node-security's `no-arbitrary-file-access`, `no-static-iv` and `no-unbounded-decompression` now report that spelling; cli-floor drops its local copy of the same resolution.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.1`",
+          "pr": null
         }
       ]
     },
@@ -19205,6 +19240,26 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.6.12",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`resolveModuleBinding` resolves a static computed destructuring key: `const { ['promises']: fsp } = require('node:fs')` names `fs.promises` like `{ promises: fsp }` does. A runtime key (`{ [k]: v }`) still abstains. node-security's `no-arbitrary-file-access`, `no-static-iv` and `no-unbounded-decompression` now report that spelling; cli-floor drops its local copy of the same resolution.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.1`",
           "pr": null
         }
       ]
