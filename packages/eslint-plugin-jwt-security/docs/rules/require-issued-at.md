@@ -62,11 +62,11 @@ await new SignJWT({ sub })
 
 ## Options
 
-| Option               | Type       | Default | Description                                                      |
-| -------------------- | ---------- | ------- | ---------------------------------------------------------------- |
-| `trustedSanitizers`  | `string[]` | `[]`    | Extra function names to treat as sanitizers                      |
-| `trustedAnnotations` | `string[]` | `[]`    | Extra JSDoc annotations to treat as safe markers                 |
-| `strictMode`         | `boolean`  | `false` | Disable false-positive suppression — report even sanitized input |
+| Option               | Type       | Default | Description                                                                             |
+| -------------------- | ---------- | ------- | --------------------------------------------------------------------------------------- |
+| `trustedSanitizers`  | `string[]` | `[]`    | **No effect** — accepted so existing configs stay valid; the rule does not read it yet. |
+| `trustedAnnotations` | `string[]` | `[]`    | **No effect** — accepted so existing configs stay valid; the rule does not read it yet. |
+| `strictMode`         | `boolean`  | `false` | **No effect** — accepted so existing configs stay valid; the rule does not read it yet. |
 
 ## Known False Negatives
 

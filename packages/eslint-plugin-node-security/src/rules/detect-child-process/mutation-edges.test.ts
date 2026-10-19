@@ -124,6 +124,23 @@ describe('detect-child-process mutation-guided edges', () => {
         `,
       },
       {
+        // This was pinned INVALID: the enclosing-if form ignored a guard on a
+        // member expression, while the early-exit form just above accepted it.
+        // Owner decision 2026-10-18: the two forms agree. `fmt` is a const copy
+        // of exactly the value the allowlist checked.
+        name: 'an enclosing includes() on the request field clears its const copy',
+        code: `
+          import { execFile } from 'child_process';
+          const FORMATS = ['png', 'jpg'];
+          export function convert(req) {
+            const fmt = req.query.fmt;
+            if (FORMATS.includes(req.query.fmt)) {
+              execFile('convert', ['in.png', fmt]);
+            }
+          }
+        `,
+      },
+      {
         name: 'a guard on the request field itself clears the local copy passed to execFile',
         code: `
           import { execFile } from 'child_process';
@@ -502,20 +519,6 @@ describe('detect-child-process mutation-guided edges', () => {
             const fmt = req.query.fmt;
             const other = req.query.other;
             if (FORMATS.includes(other)) {
-              execFile('convert', ['in.png', fmt]);
-            }
-          }
-        `,
-        errors: [{ messageId: 'argumentInjection' }],
-      },
-      {
-        name: 'an includes() guard on a request field does not clear an enclosed argv',
-        code: `
-          import { execFile } from 'child_process';
-          const FORMATS = ['png', 'jpg'];
-          export function convert(req) {
-            const fmt = req.query.fmt;
-            if (FORMATS.includes(req.query.fmt)) {
               execFile('convert', ['in.png', fmt]);
             }
           }

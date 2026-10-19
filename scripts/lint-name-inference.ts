@@ -577,14 +577,6 @@ const REGISTERED: RegistryEntry[] = [
   // call". They are grouped here because they need ONE fix — resolve the import
   // from `ai` / `@ai-sdk/*` once, in a shared util, the way node-security now
   // resolves child_process — not seven separate patches.
-  {
-    file: 'eslint-plugin-mongodb-security/src/rules/no-operator-injection/index.ts',
-    direction: 'report',
-    reason:
-      'userInputPatterns substring-matched against the printed text of a value to decide it is ' +
-      'user input. The same defect no-ssrf carried until it moved to readsRequestShape, one ' +
-      'layer further from the AST.',
-  },
   // ── direction: report — a wrong guess ships a false positive ──────────
   {
     file: 'eslint-plugin-secure-coding/src/rules/no-hardcoded-session-tokens/index.ts',

@@ -16,7 +16,9 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  objectKeyName,
   propertyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
@@ -57,6 +59,52 @@ function getNodeSource(node: TSESTree.Node): string {
 function containsUserInput(node: TSESTree.Node): boolean {
   const source = getNodeSource(node);
   return USER_INPUT_PATTERNS.some((pattern) => source.includes(pattern));
+}
+
+/**
+ * Request input, or a template literal built from it:
+ * `` `${req.query.rel}` `` names exactly the path `req.query.rel` does.
+ */
+function fromRequest(node: TSESTree.Node): boolean {
+  if (node.type === AST_NODE_TYPES.TemplateLiteral) {
+    return node.expressions.some(fromRequest);
+  }
+  // Only a member chain can spell `req.query…`; anything else reads as ''.
+  return containsUserInput(node);
+}
+
+/** The variable a name resolves to, walking outward from `scope`. */
+function lookup(
+  name: string,
+  scope: TSESLint.Scope.Scope,
+): TSESLint.Scope.Variable | undefined {
+  for (
+    let current: TSESLint.Scope.Scope | null = scope;
+    current !== null;
+    current = current.upper
+  ) {
+    const variable = current.set.get(name);
+    if (variable !== undefined) return variable;
+  }
+  return undefined;
+}
+
+/**
+ * `const AUTHOR = 'author'` — a name for a path the program wrote. Every
+ * identifier argument used to be reported, so naming a hardcoded path, which
+ * is the fix this rule's message asks for, was itself a finding.
+ */
+function isConstString(
+  node: TSESTree.Identifier,
+  scope: TSESLint.Scope.Scope,
+): boolean {
+  const def = lookup(node.name, scope)?.defs[0];
+  return (
+    def?.type === 'Variable' &&
+    def.parent.kind === 'const' &&
+    // A string literal or an uninterpolated template.
+    staticString(def.node.init) !== null
+  );
 }
 
 export const noUnsafePopulate = createRule<RuleOptions, MessageIds>({
@@ -123,48 +171,35 @@ export const noUnsafePopulate = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Check each argument to populate()
+        const scope = context.sourceCode.getScope(node);
+        /** A path value: request-built, or a name that is not a const string. */
+        const unsafePath = (value: TSESTree.Node): boolean =>
+          fromRequest(value) ||
+          (value.type === AST_NODE_TYPES.Identifier &&
+            !isConstString(value, scope));
+
         for (const arg of node.arguments) {
-          // Direct user input: .populate(req.body.field)
           if (
-            arg.type === AST_NODE_TYPES.MemberExpression &&
-            containsUserInput(arg)
+            // `.populate(req.query.include)`, `` .populate(`${req.query.rel}`) ``,
+            // `.populate(userField)`
+            unsafePath(arg) ||
+            // `.populate([req.query.rel, 'author'])` — each element is a path.
+            (arg.type === AST_NODE_TYPES.ArrayExpression &&
+              arg.elements.some(
+                (element) => element !== null && fromRequest(element),
+              )) ||
+            // `.populate({ path: req.body.field })`
+            (arg.type === AST_NODE_TYPES.ObjectExpression &&
+              arg.properties.some(
+                (prop) =>
+                  prop.type === AST_NODE_TYPES.Property &&
+                  // `{ path }`, `{ 'path' }` and `{ ['path'] }` are one key.
+                  objectKeyName(prop) === 'path' &&
+                  unsafePath(prop.value),
+              ))
           ) {
             context.report({ node, messageId: 'unsafePopulate' });
             return;
-          }
-
-          // Identifier that could be tainted: .populate(userField)
-          if (arg.type === AST_NODE_TYPES.Identifier) {
-            // We flag identifiers that aren't string literals as potentially unsafe
-            context.report({ node, messageId: 'unsafePopulate' });
-            return;
-          }
-
-          // Object with user-controlled path property: .populate({ path: req.body.field })
-          if (arg.type === AST_NODE_TYPES.ObjectExpression) {
-            for (const prop of arg.properties) {
-              if (prop.type !== AST_NODE_TYPES.Property) continue;
-              const keyName =
-                prop.key.type === AST_NODE_TYPES.Identifier
-                  ? prop.key.name
-                  : null;
-              if (
-                keyName === 'path' &&
-                prop.value.type === AST_NODE_TYPES.MemberExpression &&
-                containsUserInput(prop.value)
-              ) {
-                context.report({ node, messageId: 'unsafePopulate' });
-                return;
-              }
-              if (
-                keyName === 'path' &&
-                prop.value.type === AST_NODE_TYPES.Identifier
-              ) {
-                context.report({ node, messageId: 'unsafePopulate' });
-                return;
-              }
-            }
           }
         }
       },

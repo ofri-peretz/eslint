@@ -18,6 +18,7 @@ import {
   isTestFilePath,
   objectKeyName,
   propertyName,
+  resolveModuleBinding,
 } from '@interlace/eslint-devkit';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
@@ -77,6 +78,51 @@ function isUserRegExp(node: TSESTree.Node): boolean {
   return (
     pattern?.type === AST_NODE_TYPES.MemberExpression &&
     containsUserInput(pattern)
+  );
+}
+
+/** The names a regex-escaping helper goes by: lodash's, and the common hand-rolled ones. */
+const REGEX_ESCAPE_NAMES: ReadonlySet<string> = new Set([
+  'escapeRegex',
+  'escapeRegExp',
+  'escapeStringRegexp',
+]);
+
+/** Packages whose default export escapes a string for a RegExp, whatever it is imported as. */
+const REGEX_ESCAPE_MODULES: ReadonlySet<string> = new Set([
+  'escape-string-regexp',
+  'lodash.escaperegexp',
+]);
+
+/**
+ * `escapeRegex(q)`, `_.escapeRegExp(q)`, or the default export of
+ * `escape-string-regexp` / `lodash.escaperegexp` under any local name.
+ *
+ * Every interpolation in a `$regex` template used to be reported, so the
+ * rule's own documented fix — `` `^${escapeRegex(q)}` ``, an escaped value
+ * anchored — was a finding. An escaped string matches itself literally: no
+ * metacharacter is left for a ReDoS pattern or a `.*` to be built from.
+ * Recognised by NAME, as the owner decided (2026-10-18); a helper named
+ * `escapeRegex` that does not escape is the user's own bug to own.
+ */
+function isRegexEscape(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): boolean {
+  if (node.type !== AST_NODE_TYPES.CallExpression) return false;
+  const { callee } = node;
+  const name =
+    callee.type === AST_NODE_TYPES.Identifier
+      ? callee.name
+      : callee.type === AST_NODE_TYPES.MemberExpression
+        ? propertyName(callee)
+        : null;
+  if (name !== null && REGEX_ESCAPE_NAMES.has(name)) return true;
+  const binding = resolveModuleBinding(callee, scope);
+  return (
+    binding !== undefined &&
+    REGEX_ESCAPE_MODULES.has(binding.module) &&
+    binding.path.length === 0
   );
 }
 
@@ -213,9 +259,15 @@ export const noUnsafeRegexQuery = createRule<RuleOptions, MessageIds>({
           // `{ $regex: req.query.q }`
           (value.type === AST_NODE_TYPES.MemberExpression &&
             containsUserInput(value)) ||
-          // Template literal with expressions
+          // A template literal interpolating anything but an escaped value
           (value.type === AST_NODE_TYPES.TemplateLiteral &&
-            value.expressions.length > 0) ||
+            value.expressions.some(
+              (expression) =>
+                !isRegexEscape(
+                  expression,
+                  context.sourceCode.getScope(expression),
+                ),
+            )) ||
           // `{ $regex: new RegExp(req.query.q) }`
           isUserRegExp(value)
         ) {

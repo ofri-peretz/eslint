@@ -65,7 +65,7 @@ describe('detect-child-process', () => {
         },
         {
           name: 'a command built by concatenating a binding into exec',
-        code: 'child_process.exec("git clone " + repoUrl);',
+          code: 'child_process.exec("git clone " + repoUrl);',
           options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
@@ -87,64 +87,75 @@ describe('detect-child-process', () => {
   });
 
   describe('Invalid Code - execFile/spawn (Rule flags dynamic args)', () => {
-    ruleTester.run('invalid - execFile and spawn with dynamic arguments', detectChildProcess, {
-      valid: [
-        // spawn/spawnSync with shell: false AND literal args are now correctly SAFE
-        {
-          name: 'shell: false on a literal spawn runs no shell',
-          code: 'child_process.spawn("node", ["script.js"], { shell: false });',
-        },
-        {
-          code: 'child_process.spawnSync("ls", ["-la"], { shell: false });',
-        },
-        // A LITERAL command with no shell is safe even when the argv array is
-        // dynamic. `execFile` never uses a shell, so ["clone", repoUrl] reaches
-        // execve as two argv entries — there is no interpreter to inject into.
-        // Shopify/cli tree-kill.ts had three of these, in a file whose comment
-        // says it uses spawn precisely to avoid shell injection.
-        {
-          code: 'child_process.execFile("git", ["clone", repoUrl], { shell: false });',
-        },
-        {
-          code: 'child_process.execFileSync("npm", ["install", packageName], { shell: false });',
-        },
-        // Same, with no options object at all — no shell is the default.
-        { code: "child_process.spawn('pgrep', ['-lfP', parentPid]);" },
-        { code: "child_process.spawn('taskkill', ['/pid', rootPid, '/T', '/F']);" },
-      ],
-      invalid: [
-        // A literal command with a shell is a different matter: the argv array
-        // is a script again, so a dynamic element can start a second process.
-        {
-          code: 'child_process.execFile("git", ["clone", repoUrl], { shell: true });',
-          options: [{ reportUnresolvedCommands: true }],
-          errors: [{ messageId: 'childProcessCommandInjection' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - execFile and spawn with dynamic arguments',
+      detectChildProcess,
+      {
+        valid: [
+          // spawn/spawnSync with shell: false AND literal args are now correctly SAFE
+          {
+            name: 'shell: false on a literal spawn runs no shell',
+            code: 'child_process.spawn("node", ["script.js"], { shell: false });',
+          },
+          {
+            name: 'an all-literal spawnSync with shell: false runs no shell and takes no input',
+            code: 'child_process.spawnSync("ls", ["-la"], { shell: false });',
+          },
+          // A LITERAL command with no shell is safe even when the argv array is
+          // dynamic. `execFile` never uses a shell, so ["clone", repoUrl] reaches
+          // execve as two argv entries — there is no interpreter to inject into.
+          // Shopify/cli tree-kill.ts had three of these, in a file whose comment
+          // says it uses spawn precisely to avoid shell injection.
+          {
+            code: 'child_process.execFile("git", ["clone", repoUrl], { shell: false });',
+          },
+          {
+            code: 'child_process.execFileSync("npm", ["install", packageName], { shell: false });',
+          },
+          // Same, with no options object at all — no shell is the default.
+          { code: "child_process.spawn('pgrep', ['-lfP', parentPid]);" },
+          {
+            code: "child_process.spawn('taskkill', ['/pid', rootPid, '/T', '/F']);",
+          },
+        ],
+        invalid: [
+          // A literal command with a shell is a different matter: the argv array
+          // is a script again, so a dynamic element can start a second process.
+          {
+            code: 'child_process.execFile("git", ["clone", repoUrl], { shell: true });',
+            options: [{ reportUnresolvedCommands: true }],
+            errors: [{ messageId: 'childProcessCommandInjection' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - spawn()', () => {
-    ruleTester.run('invalid - spawn with unsafe arguments', detectChildProcess, {
-      valid: [],
-      invalid: [
-        {
-          code: 'child_process.spawn("bash", ["-c", userCommand]);',
-          options: UNRESOLVED,
-          errors: [{ messageId: 'childProcessCommandInjection' }],
-        },
-        {
-          code: 'child_process.spawn(userCommand, args);',
-          options: UNRESOLVED,
-          errors: [{ messageId: 'untrustedProgram' }],
-        },
-        {
-          code: 'child_process.spawnSync("sh", ["-c", userInput]);',
-          options: UNRESOLVED,
-          errors: [{ messageId: 'childProcessCommandInjection' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - spawn with unsafe arguments',
+      detectChildProcess,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'child_process.spawn("bash", ["-c", userCommand]);',
+            options: UNRESOLVED,
+            errors: [{ messageId: 'childProcessCommandInjection' }],
+          },
+          {
+            code: 'child_process.spawn(userCommand, args);',
+            options: UNRESOLVED,
+            errors: [{ messageId: 'untrustedProgram' }],
+          },
+          {
+            code: 'child_process.spawnSync("sh", ["-c", userInput]);',
+            options: UNRESOLVED,
+            errors: [{ messageId: 'childProcessCommandInjection' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Suggestions', () => {
@@ -197,7 +208,9 @@ describe('detect-child-process', () => {
       invalid: [
         {
           code: 'child_process.exec(userCommand);',
-          options: [{ allowLiteralStrings: true, reportUnresolvedCommands: true }],
+          options: [
+            { allowLiteralStrings: true, reportUnresolvedCommands: true },
+          ],
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
       ],
@@ -205,68 +218,79 @@ describe('detect-child-process', () => {
   });
 
   describe('Edge Cases - Coverage', () => {
-    ruleTester.run('edge cases - default case in switch (line 251)', detectChildProcess, {
-      valid: [],
-      invalid: [
-        // Test with execFileSync to trigger default case in generateRefactoringSteps (line 251)
-        {
-          code: 'child_process.execFileSync(userCommand, args);',
-          options: UNRESOLVED,
-          errors: [{ messageId: 'untrustedProgram' }],
-        },
-        // Test with fork to trigger default case
-        {
-          code: 'child_process.fork(userScript);',
-          options: UNRESOLVED,
-          errors: [{ messageId: 'untrustedProgram' }],
-        },
-        // Test with forkSync to trigger forkSync case in generateRefactoringSteps (lines 429-438)
-        {
-          code: 'child_process.forkSync(userScript);',
-          options: UNRESOLVED,
-          errors: [{ messageId: 'untrustedProgram' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'edge cases - default case in switch (line 251)',
+      detectChildProcess,
+      {
+        valid: [],
+        invalid: [
+          // Test with execFileSync to trigger default case in generateRefactoringSteps (line 251)
+          {
+            code: 'child_process.execFileSync(userCommand, args);',
+            options: UNRESOLVED,
+            errors: [{ messageId: 'untrustedProgram' }],
+          },
+          // Test with fork to trigger default case
+          {
+            code: 'child_process.fork(userScript);',
+            options: UNRESOLVED,
+            errors: [{ messageId: 'untrustedProgram' }],
+          },
+          // Test with forkSync to trigger forkSync case in generateRefactoringSteps (lines 429-438)
+          {
+            code: 'child_process.forkSync(userScript);',
+            options: UNRESOLVED,
+            errors: [{ messageId: 'untrustedProgram' }],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('edge cases - non-dangerous method (line 290)', detectChildProcess, {
-      valid: [
-        // Test with a method that's NOT in dangerousMethods to cover line 290
-        // Note: child_process doesn't have many other methods, but if one exists that's not dangerous,
-        // it should be valid. However, since we can't easily test this without modifying the rule,
-        // we'll test with a method that might not be in the default list
-        {
-          code: 'child_process.someOtherMethod(command);',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'edge cases - non-dangerous method (line 290)',
+      detectChildProcess,
+      {
+        valid: [
+          // Test with a method that's NOT in dangerousMethods to cover line 290
+          // Note: child_process doesn't have many other methods, but if one exists that's not dangerous,
+          // it should be valid. However, since we can't easily test this without modifying the rule,
+          // we'll test with a method that might not be in the default list
+          {
+            code: 'child_process.someOtherMethod(command);',
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   /**
    * TDD Tests: False Positive Reduction
    * These tests define expected behavior for safe patterns that should NOT trigger warnings.
    * Currently these tests may fail - the rule needs to be updated to pass them.
-   * 
+   *
    * Issue: https://github.com/interlace-tools/eslint/issues/XXX
    * Benchmark: eslint-benchmark-suite/benchmarks/fn-fp-comparison
    */
   describe('False Positive Reduction (TDD)', () => {
-    ruleTester.run('safe execFile with literal command and args', detectChildProcess, {
-      valid: [
-        // FP Fix #1: execFile with literal command + literal args array is SAFE
-        // The command is static, args are static - no injection possible
-        {
-          code: `
+    ruleTester.run(
+      'safe execFile with literal command and args',
+      detectChildProcess,
+      {
+        valid: [
+          // FP Fix #1: execFile with literal command + literal args array is SAFE
+          // The command is static, args are static - no injection possible
+          {
+            code: `
             const { execFile } = require('child_process');
             execFile('git', ['clone', 'https://github.com/user/repo.git'], (err, stdout) => {
               console.log(stdout);
             });
           `,
-        },
-        // FP Fix #2: execFile with literal command, variable args from allowlist
-        {
-          code: `
+          },
+          // FP Fix #2: execFile with literal command, variable args from allowlist
+          {
+            code: `
             const { execFile } = require('child_process');
             const ALLOWED_BRANCHES = ['main', 'develop', 'staging'];
             function checkoutBranch(branch) {
@@ -277,58 +301,66 @@ describe('detect-child-process', () => {
               }
             }
           `,
-        },
-        // FP Fix #3: spawn with shell: false and literal args (inherently safe)
-        {
-          code: `
+          },
+          // FP Fix #3: spawn with shell: false and literal args (inherently safe)
+          {
+            code: `
             const { spawn } = require('child_process');
             const ls = spawn('ls', ['-la', '/tmp'], { shell: false });
           `,
-          options: [{ allowLiteralSpawn: true }],
-        },
-        // FP Fix #4: execFileSync with literal command for build tools
-        {
-          code: `
+            options: [{ allowLiteralSpawn: true }],
+          },
+          // FP Fix #4: execFileSync with literal command for build tools
+          {
+            code: `
             const { execFileSync } = require('child_process');
             execFileSync('npm', ['run', 'build'], { cwd: process.cwd() });
           `,
-          options: [{ allowLiteralSpawn: true }],
-        },
-      ],
-      invalid: [],
-    });
+            options: [{ allowLiteralSpawn: true }],
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('unsafe patterns should still be flagged', detectChildProcess, {
-      valid: [],
-      invalid: [
-        // These should still be flagged - user input flows into command
-        {
-          code: `
+    ruleTester.run(
+      'unsafe patterns should still be flagged',
+      detectChildProcess,
+      {
+        valid: [],
+        invalid: [
+          // These should still be flagged - user input flows into command
+          {
+            code: `
             const { execFile } = require('child_process');
             execFile(userCommand, ['--version'], callback);
           `,
-          options: UNRESOLVED,
-          errors: [{ messageId: 'untrustedProgram' }],
-        },
-        {
-          code: `
+            options: UNRESOLVED,
+            errors: [{ messageId: 'untrustedProgram' }],
+          },
+          {
+            code: `
             const { execFile } = require('child_process');
             execFile('node', ['-e', userScript], callback);
           `,
-          options: UNRESOLVED,
-          errors: [{ messageId: 'childProcessCommandInjection' }],
-        },
-      ],
-    });
+            options: UNRESOLVED,
+            errors: [{ messageId: 'childProcessCommandInjection' }],
+          },
+        ],
+      },
+    );
     /**
      * Benchmark FP Regression: safe_cmd_validated
      * execFile with allowlist-validated format inside template literal args
      * Source: eslint-benchmark-suite/benchmarks/fn-fp-comparison/fixtures/safe/safe-patterns.js
      */
-    ruleTester.run('benchmark FP: safe_cmd_validated - allowlist guard clause', detectChildProcess, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'benchmark FP: safe_cmd_validated - allowlist guard clause',
+      detectChildProcess,
+      {
+        valid: [
+          {
+            code: `
             const { execFile } = require('child_process');
             const ALLOWED_FORMATS = ['png', 'jpg', 'gif'];
             function convert(format) {
@@ -338,13 +370,13 @@ describe('detect-child-process', () => {
               return execFile('convert', ['input.img', \`output.\${format}\`]);
             }
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 });
-
 
 // ---------------------------------------------------------------------------
 // Coverage-completion wave: dual-layer tests for previously untested branches.
@@ -357,55 +389,64 @@ import type { CommandPattern } from './index';
 
 describe('detect-child-process — coverage completion', () => {
   describe('argument-shape edge cases', () => {
-    ruleTester.run('zero-arg and non-literal second-arg calls', detectChildProcess, {
-      valid: [
-        // execFile with an options object (non-array, non-literal) as the
-        // second argument: exercises the `hasOnlyLiteralArgs` branch that
-        // rejects a non-array second argument, and is then exempt because the
-        // command is a literal and execFile never opens a shell.
-        { code: `const cp = require('child_process'); cp.execFile('ls', { cwd: '/' }, cb);` },
-        // Second arg is a plain Literal (not an array) — hasOnlyLiteralArgs=true, execFile has no shell
-        {
-          code: `const cp = require('child_process'); cp.execFile('ls', '-l');`,
-        },
-        // spawn all-literal with NO options arg — default shell:false is safe
-        {
-          code: `const cp = require('child_process'); cp.spawn('ls', ['-l']);`,
-        },
-        // spawn all-literal with explicit { shell: false }
-        {
-          code: `const cp = require('child_process'); cp.spawn('ls', ['-l'], { shell: false });`,
-        },
-        // spawn all-literal with options object without a shell property
-        {
-          code: `const cp = require('child_process'); cp.spawn('ls', ['-l'], { cwd: '/tmp' });`,
-        },
-        // spawn all-literal with non-object options arg (identifier) — treated as default shell:false
-        {
-          code: `const legacyOpts = getOpts(); const cp = require('child_process'); cp.spawn('ls', ['-l'], legacyOpts);`,
-        },
-      ],
-      invalid: [
-        // exec() with zero arguments — hasOnlyLiteralArgs returns false on empty args
-        {
-          code: `const cp = require('child_process'); cp.exec();`,
-          options: UNRESOLVED,
-          errors: [{ messageId: 'childProcessCommandInjection' }],
-        },
-        // exec with literal command + callback — not "only literal args", allowLiteralStrings off
-        {
-          code: `const cp = require('child_process'); cp.exec('ls -l', function (err, out) {});`,
-          options: UNRESOLVED,
-          errors: [{ messageId: 'childProcessCommandInjection' }],
-        },
-        // spawn all-literal but shell: true — unsafe
-        {
-          code: `const cp = require('child_process'); cp.spawn('ls', ['-l'], { shell: true });`,
-          options: UNRESOLVED,
-          errors: [{ messageId: 'childProcessCommandInjection' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'zero-arg and non-literal second-arg calls',
+      detectChildProcess,
+      {
+        valid: [
+          // execFile with an options object (non-array, non-literal) as the
+          // second argument: exercises the `hasOnlyLiteralArgs` branch that
+          // rejects a non-array second argument, and is then exempt because the
+          // command is a literal and execFile never opens a shell.
+          {
+            code: `const cp = require('child_process'); cp.execFile('ls', { cwd: '/' }, cb);`,
+          },
+          // Second arg is a plain Literal (not an array) — hasOnlyLiteralArgs=true, execFile has no shell
+          {
+            code: `const cp = require('child_process'); cp.execFile('ls', '-l');`,
+          },
+          // spawn all-literal with NO options arg — default shell:false is safe
+          {
+            code: `const cp = require('child_process'); cp.spawn('ls', ['-l']);`,
+          },
+          // spawn all-literal with explicit { shell: false }
+          {
+            code: `const cp = require('child_process'); cp.spawn('ls', ['-l'], { shell: false });`,
+          },
+          // spawn all-literal with options object without a shell property
+          {
+            code: `const cp = require('child_process'); cp.spawn('ls', ['-l'], { cwd: '/tmp' });`,
+          },
+          // spawn all-literal with non-object options arg (identifier) — treated as default shell:false
+          {
+            code: `const legacyOpts = getOpts(); const cp = require('child_process'); cp.spawn('ls', ['-l'], legacyOpts);`,
+          },
+          // exec with a literal command + callback. This was pinned as REPORTED
+          // under reportUnresolvedCommands, because the literal-exec exemption
+          // demanded every argument be static and a callback never is. Owner
+          // decision 2026-10-18: the option reports unresolved COMMANDS, and a
+          // literal command is resolved — exec's second argument is never argv.
+          {
+            code: `const cp = require('child_process'); cp.exec('ls -l', function (err, out) {});`,
+            options: UNRESOLVED,
+          },
+        ],
+        invalid: [
+          // exec() with zero arguments — hasOnlyLiteralArgs returns false on empty args
+          {
+            code: `const cp = require('child_process'); cp.exec();`,
+            options: UNRESOLVED,
+            errors: [{ messageId: 'childProcessCommandInjection' }],
+          },
+          // spawn all-literal but shell: true — unsafe
+          {
+            code: `const cp = require('child_process'); cp.spawn('ls', ['-l'], { shell: true });`,
+            options: UNRESOLVED,
+            errors: [{ messageId: 'childProcessCommandInjection' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('allowLiteralStrings option', () => {
@@ -422,17 +463,23 @@ describe('detect-child-process — coverage completion', () => {
   });
 
   describe('additionalMethods option (no COMMAND_PATTERNS entry)', () => {
-    ruleTester.run('custom method reported with fallback metadata', detectChildProcess, {
-      valid: [],
-      invalid: [
-        // 'doExec' has no COMMAND_PATTERNS entry: exercises the pattern=null fallbacks
-        {
-          code: `const { doExec } = require('child_process'); doExec(userInput);`,
-          options: [{ additionalMethods: ['doExec'], reportUnresolvedCommands: true }],
-          errors: [{ messageId: 'untrustedProgram' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'custom method reported with fallback metadata',
+      detectChildProcess,
+      {
+        valid: [],
+        invalid: [
+          // 'doExec' has no COMMAND_PATTERNS entry: exercises the pattern=null fallbacks
+          {
+            code: `const { doExec } = require('child_process'); doExec(userInput);`,
+            options: [
+              { additionalMethods: ['doExec'], reportUnresolvedCommands: true },
+            ],
+            errors: [{ messageId: 'untrustedProgram' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('allowlist guard-clause variants', () => {
@@ -559,14 +606,30 @@ describe('detect-child-process — coverage completion', () => {
     });
 
     it('returns method-specific steps for every known method', () => {
-      expect(generateRefactoringSteps(pattern('exec'))).toContain('Replace exec() with execFile() or spawn()');
-      expect(generateRefactoringSteps(pattern('execSync'))).toContain('Replace exec() with execFile() or spawn()');
-      expect(generateRefactoringSteps(pattern('spawn'))).toContain('cross-spawn for cross-platform safety');
-      expect(generateRefactoringSteps(pattern('execFile'))).toContain('Replace execFile() with spawn() for better security');
-      expect(generateRefactoringSteps(pattern('execFileSync'))).toContain('Replace execFileSync() with spawnSync() for better security');
-      expect(generateRefactoringSteps(pattern('spawnSync'))).toContain('Handle synchronous execution properly');
-      expect(generateRefactoringSteps(pattern('fork'))).toContain('Replace fork() with spawn() for Node.js scripts');
-      expect(generateRefactoringSteps(pattern('forkSync'))).toContain('Replace forkSync() with spawnSync() for Node.js scripts');
+      expect(generateRefactoringSteps(pattern('exec'))).toContain(
+        'Replace exec() with execFile() or spawn()',
+      );
+      expect(generateRefactoringSteps(pattern('execSync'))).toContain(
+        'Replace exec() with execFile() or spawn()',
+      );
+      expect(generateRefactoringSteps(pattern('spawn'))).toContain(
+        'cross-spawn for cross-platform safety',
+      );
+      expect(generateRefactoringSteps(pattern('execFile'))).toContain(
+        'Replace execFile() with spawn() for better security',
+      );
+      expect(generateRefactoringSteps(pattern('execFileSync'))).toContain(
+        'Replace execFileSync() with spawnSync() for better security',
+      );
+      expect(generateRefactoringSteps(pattern('spawnSync'))).toContain(
+        'Handle synchronous execution properly',
+      );
+      expect(generateRefactoringSteps(pattern('fork'))).toContain(
+        'Replace fork() with spawn() for Node.js scripts',
+      );
+      expect(generateRefactoringSteps(pattern('forkSync'))).toContain(
+        'Replace forkSync() with spawnSync() for Node.js scripts',
+      );
     });
 
     it('returns generic steps for a method without a dedicated case', () => {

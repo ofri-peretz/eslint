@@ -94,6 +94,19 @@ const integrityHash = crypto.createHash('ripemd160').update(data).digest('hex');
 > for why, and set `reportUnclassifiedHashes: true` to also flag weak hashes
 > whose name gives no purpose. Names listed in `nonCryptographicNames` stay
 > exempt either way.
+>
+> A digest **compared** against such a value is a security use too — the
+> comparison is the check a collision defeats. Besides the `securityUseNames`,
+> a comparison against a value named `mac` or `digest` counts:
+>
+> ```typescript
+> if (signature === crypto.createHash('md5').update(body).digest('hex'))
+>   accept();
+> ```
+>
+> For a bare helper call (`sha1(data)`), the `sha256(...)` suggestion is offered
+> only when a `sha256` is callable there. A file that defines or imports its own
+> `sha1` and has no `sha256` gets the report without a suggestion.
 
 ### ✅ Correct
 

@@ -59,7 +59,7 @@ describe('no-weak-hash-algorithm coverage gaps', () => {
   });
 
   describe('Layer 2: suggestion fix defensive re-check', () => {
-    it('replaces the callee with sha256 while it is an Identifier, and returns null once it is not', () => {
+    it('replaces the callee with sha256', () => {
       const { listeners, reports } = createWithMockContext(
         noWeakHashAlgorithm as never,
         // The mock node has no parent chain, so no security use is visible;
@@ -111,12 +111,11 @@ describe('no-weak-hash-algorithm coverage gaps', () => {
       expect(fix1).toEqual({ range: [0, 4], text: 'sha256' });
       expect(replaced).toEqual([[callee, 'sha256']]);
 
-      // Mutate the node so the callee is no longer an Identifier — a state the
-      // parser cannot produce after the outer guard — and re-run the fix.
-      node.callee = { type: 'MemberExpression' };
-      const fix2 = report.suggest[0].fix(fixer);
-      expect(fix2).toBeNull();
-      expect(replaced).toHaveLength(1);
+      // The second half of this test used to mutate the callee into a
+      // MemberExpression and assert the fixer returned null — a defensive
+      // re-check for a state the parser cannot produce. The re-check is gone
+      // (2026-10-18): the suggestion is now built only when `sha256` is
+      // callable, and its fixer replaces the callee unconditionally.
     });
   });
 });

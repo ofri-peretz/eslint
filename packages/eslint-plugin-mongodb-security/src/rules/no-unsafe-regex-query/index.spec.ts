@@ -206,3 +206,74 @@ ruleTester.run('regex sinks the property loop missed', noUnsafeRegexQuery, {
     },
   ]),
 });
+
+/**
+ * An escaped value interpolated into a `$regex` template is the rule's own
+ * documented fix — `` `^${escapeRegex(q)}` `` anchors a value that can no
+ * longer carry a metacharacter. It was reported, because every interpolation
+ * was. Owner decision, 2026-10-18.
+ */
+ruleTester.run('escaped interpolation', noUnsafeRegexQuery, {
+  valid: xmo([
+    {
+      name: 'the documented fix: an anchored escapeRegex() value',
+      code: 'User.find({ name: { $regex: `^${escapeRegex(req.query.q)}` } });',
+    },
+    {
+      name: "lodash's escapeRegExp, called off the namespace",
+      code: 'User.find({ name: { $regex: `^${_.escapeRegExp(req.query.q)}$` } });',
+    },
+    {
+      name: 'a bare escapeRegExp()',
+      code: 'User.find({ name: { $regex: `${escapeRegExp(req.query.q)}` } });',
+    },
+    {
+      name: 'escape-string-regexp under its conventional name',
+      code: 'User.find({ name: { $regex: `^${escapeStringRegexp(req.query.q)}` } });',
+    },
+    {
+      name: 'escape-string-regexp imported under any name',
+      code: "import esc from 'escape-string-regexp';\nUser.find({ name: { $regex: `^${esc(req.query.q)}` } });",
+    },
+    {
+      name: 'lodash.escaperegexp required under any name',
+      code: "const quote = require('lodash.escaperegexp');\nUser.find({ name: { $regex: `^${quote(req.query.q)}` } });",
+    },
+    {
+      name: 'every interpolation escaped',
+      code: 'User.find({ name: { $regex: `^${escapeRegex(a)}-${escapeRegex(b)}` } });',
+    },
+  ]),
+  invalid: xmo([
+    {
+      name: 'one escaped interpolation does not cover another',
+      code: 'User.find({ name: { $regex: `^${escapeRegex(a)}-${req.query.q}` } });',
+      errors: [{ messageId: 'unsafeRegex' }],
+    },
+    {
+      name: 'a helper that is not an escaper',
+      code: 'User.find({ name: { $regex: `^${trim(req.query.q)}` } });',
+      errors: [{ messageId: 'unsafeRegex' }],
+    },
+    {
+      name: 'an unrelated module imported under an escaper-like name',
+      code: "import esc from 'html-escaper';\nUser.find({ name: { $regex: `^${esc(req.query.q)}` } });",
+      errors: [{ messageId: 'unsafeRegex' }],
+    },
+    {
+      name: 'a named export of an escaping module is not its default',
+      code: "import { other } from 'escape-string-regexp';\nUser.find({ name: { $regex: `^${other(req.query.q)}` } });",
+      errors: [{ messageId: 'unsafeRegex' }],
+    },
+    {
+      name: 'a computed member is not known to be an escaper',
+      code: 'User.find({ name: { $regex: `^${_[fn](req.query.q)}` } });',
+      errors: [{ messageId: 'unsafeRegex' }],
+    },
+    {
+      name: 'a called call is not an escaper',
+      code: 'User.find({ name: { $regex: `^${make()(req.query.q)}` } });',
+      errors: [{ messageId: 'unsafeRegex' }],
+    },
+  ]),
+});

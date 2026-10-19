@@ -63,12 +63,12 @@ jwt.verify(token, secret, {
 
 ## Options
 
-| Option               | Type       | Default | Description                                                      |
-| -------------------- | ---------- | ------- | ---------------------------------------------------------------- |
-| `knownIssuers`       | `string[]` | `[]`    | Known valid issuers to suggest                                   |
-| `trustedSanitizers`  | `string[]` | `[]`    | Extra function names to treat as sanitizers                      |
-| `trustedAnnotations` | `string[]` | `[]`    | Extra JSDoc annotations to treat as safe markers                 |
-| `strictMode`         | `boolean`  | `false` | Disable false-positive suppression — report even sanitized input |
+| Option               | Type       | Default | Description                                                                             |
+| -------------------- | ---------- | ------- | --------------------------------------------------------------------------------------- |
+| `knownIssuers`       | `string[]` | `[]`    | **No effect** — accepted so existing configs stay valid; the rule does not read it yet. |
+| `trustedSanitizers`  | `string[]` | `[]`    | **No effect** — accepted so existing configs stay valid; the rule does not read it yet. |
+| `trustedAnnotations` | `string[]` | `[]`    | **No effect** — accepted so existing configs stay valid; the rule does not read it yet. |
+| `strictMode`         | `boolean`  | `false` | **No effect** — accepted so existing configs stay valid; the rule does not read it yet. |
 
 <WhenNotToUse />
 
@@ -131,7 +131,7 @@ const issuers = getTenantIssuers();
 jwt.verify(token, secret, { issuer: issuers });
 ```
 
-**Mitigation**: Use `trustedAnnotations` for complex validation patterns.
+**Mitigation**: Pass the issuer list inline or through a same-file `const`, or disable the rule on that line with a comment saying why.
 
 ## Further Reading
 

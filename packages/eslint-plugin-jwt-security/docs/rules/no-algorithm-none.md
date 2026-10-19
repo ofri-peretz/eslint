@@ -60,12 +60,12 @@ jwt.verify(token, secret, { algorithms: ['HS256'] });
 
 ## Options
 
-| Option               | Type       | Default | Description                                                      |
-| -------------------- | ---------- | ------- | ---------------------------------------------------------------- |
-| `allowInTests`       | `boolean`  | `false` | Allow "none" algorithm in test files                             |
-| `trustedSanitizers`  | `string[]` | `[]`    | Extra function names to treat as sanitizers                      |
-| `trustedAnnotations` | `string[]` | `[]`    | Extra JSDoc annotations to treat as safe markers                 |
-| `strictMode`         | `boolean`  | `false` | Disable false-positive suppression — report even sanitized input |
+| Option               | Type       | Default | Description                                                                             |
+| -------------------- | ---------- | ------- | --------------------------------------------------------------------------------------- |
+| `allowInTests`       | `boolean`  | `false` | Allow "none" algorithm in test files                                                    |
+| `trustedSanitizers`  | `string[]` | `[]`    | **No effect** — accepted so existing configs stay valid; the rule does not read it yet. |
+| `trustedAnnotations` | `string[]` | `[]`    | **No effect** — accepted so existing configs stay valid; the rule does not read it yet. |
+| `strictMode`         | `boolean`  | `false` | **No effect** — accepted so existing configs stay valid; the rule does not read it yet. |
 
 ```javascript
 {

@@ -18,6 +18,7 @@ import {
   isTestFilePath,
   objectKeyName,
   propertyName,
+  resolveModuleBinding,
 } from '@interlace/eslint-devkit';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
@@ -26,6 +27,62 @@ export interface Options {
   allowInTests?: boolean;
 }
 type RuleOptions = [Options?];
+
+/** The variable a name resolves to, walking outward from `scope`. */
+function lookup(
+  name: string,
+  scope: TSESLint.Scope.Scope,
+): TSESLint.Scope.Variable | undefined {
+  for (
+    let current: TSESLint.Scope.Scope | null = scope;
+    current !== null;
+    current = current.upper
+  ) {
+    const variable = current.set.get(name);
+    if (variable !== undefined) return variable;
+  }
+  return undefined;
+}
+
+/**
+ * Is this `.set()` receiver an Express application or router — `express()` /
+ * `express.Router()` called directly, or a binding written once from one?
+ *
+ * Express has an app setting of its own called `debug`, and
+ * `app.set('debug', true)` is that, not Mongoose. The rule reported it on any
+ * receiver. Only a receiver PROVABLY made by Express is skipped: the factory
+ * must resolve to the `express` module through its import, so a local
+ * function that happens to be called `express` does not qualify, and an
+ * unknown receiver is still reported — `db.set('debug', true)` may well be a
+ * Mongoose instance.
+ */
+function createdByExpress(
+  receiver: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): boolean {
+  let value = receiver;
+  if (value.type === AST_NODE_TYPES.Identifier) {
+    const variable = lookup(value.name, scope);
+    if (variable === undefined) return false;
+    const def = variable.defs[0];
+    if (
+      def?.type !== 'Variable' ||
+      def.node.id.type !== AST_NODE_TYPES.Identifier ||
+      def.node.init === null ||
+      variable.references.filter((ref) => ref.isWrite()).length !== 1
+    ) {
+      return false;
+    }
+    value = def.node.init;
+  }
+  if (value.type !== AST_NODE_TYPES.CallExpression) return false;
+  const binding = resolveModuleBinding(value.callee, scope);
+  return (
+    binding?.module === 'express' &&
+    (binding.path.length === 0 ||
+      (binding.path.length === 1 && binding.path[0] === 'Router'))
+  );
+}
 
 export const noDebugModeProduction = createRule<RuleOptions, MessageIds>({
   name: 'no-debug-mode-production',
@@ -82,6 +139,10 @@ export const noDebugModeProduction = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
+    const isFunction = (node: TSESTree.Node): boolean =>
+      node.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+      node.type === AST_NODE_TYPES.FunctionExpression;
+
     const report = (node: TSESTree.CallExpression, value: TSESTree.Node) =>
       context.report({
         node,
@@ -90,19 +151,38 @@ export const noDebugModeProduction = createRule<RuleOptions, MessageIds>({
           {
             messageId: 'suggestionGateOnNodeEnv',
             fix: (fixer: TSESLint.RuleFixer) =>
-              fixer.replaceText(value, "process.env.NODE_ENV !== 'production'"),
+              fixer.replaceText(
+                value,
+                isFunction(value)
+                  ? // Keep the logger; turn it off in production. Mongoose
+                    // reads `false` as "debug off".
+                    `process.env.NODE_ENV !== 'production' && (${context.sourceCode.getText(value)})`
+                  : "process.env.NODE_ENV !== 'production'",
+              ),
           },
         ],
       });
 
-    const isTrue = (node: TSESTree.Node): boolean =>
-      node.type === AST_NODE_TYPES.Literal && node.value === true;
+    /**
+     * `true`, or a function. Mongoose calls a debug FUNCTION for every query
+     * with the collection, the method and the query document — the same
+     * disclosure `true` makes, routed through the caller's logger. The docs
+     * listed `mongoose.set('debug', (coll, method, query) => …)` as incorrect,
+     * and the rule never reported it.
+     */
+    const enablesDebug = (node: TSESTree.Node): boolean =>
+      (node.type === AST_NODE_TYPES.Literal && node.value === true) ||
+      isFunction(node);
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          propertyName(node.callee) !== 'set'
+          propertyName(node.callee) !== 'set' ||
+          createdByExpress(
+            node.callee.object,
+            context.sourceCode.getScope(node),
+          )
         ) {
           return;
         }
@@ -113,7 +193,7 @@ export const noDebugModeProduction = createRule<RuleOptions, MessageIds>({
           secondArg &&
           firstArg.type === AST_NODE_TYPES.Literal &&
           firstArg.value === 'debug' &&
-          isTrue(secondArg)
+          enablesDebug(secondArg)
         ) {
           report(node, secondArg);
           return;
@@ -126,7 +206,7 @@ export const noDebugModeProduction = createRule<RuleOptions, MessageIds>({
             if (
               prop.type === AST_NODE_TYPES.Property &&
               objectKeyName(prop) === 'debug' &&
-              isTrue(prop.value)
+              enablesDebug(prop.value)
             ) {
               report(node, prop.value);
             }

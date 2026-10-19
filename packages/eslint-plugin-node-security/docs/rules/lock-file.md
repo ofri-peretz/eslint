@@ -1,6 +1,6 @@
 ---
 title: lock-file
-description: "CWE: [CWE-829](https://cwe.mitre.org/data/definitions/829.html)"
+description: 'CWE: [CWE-829](https://cwe.mitre.org/data/definitions/829.html)'
 tags: ['security', 'node']
 category: security
 severity: medium
@@ -12,8 +12,8 @@ autofix: false
 > **CWE:** [CWE-829: Inclusion of Functionality from Untrusted Control Sphere](https://cwe.mitre.org/data/definitions/829.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M2: Inadequate Supply Chain Security](https://owasp.org/www-project-mobile-top-10/)
 
-
 <!-- @rule-summary -->
+
 CWE: [CWE-829](https://cwe.mitre.org/data/definitions/829.html)
 <!-- @/rule-summary -->
 
@@ -25,7 +25,7 @@ ESLint Rule: lock-file. This rule is part of [`eslint-plugin-node-security`](htt
 | -------------- | ------------------------------------------ |
 | **Severity**   | High (Supply Chain Risk)                   |
 | **Auto-Fix**   | ❌ No (requires package manager run)       |
-| **Category**   | Security |
+| **Category**   | Security                                   |
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration    |
 | **Best For**   | All Node.js projects ensuring build parity |
 
@@ -101,6 +101,15 @@ This rule supports the following configuration in your ESLint config:
 }
 ```
 
+### Where the rule looks
+
+The rule searches from the linted file's directory upward, and stops at the
+repository root: the nearest ancestor containing `.git` (a directory, or the
+`.git` file of a worktree or submodule). A lock file above the repository —
+a stray `~/pnpm-lock.yaml`, say — is not committed with the project and pins
+none of its installs, so it does not count. With no `.git` anywhere above the
+file, the search continues to the filesystem root.
+
 ## Examples
 
 ### ❌ Incorrect
@@ -143,6 +152,6 @@ The following patterns are **not detected** due to static analysis limitations:
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
+| Option           | Type                                       | Default | Description                                                                                                                                                         |
+| ---------------- | ------------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `packageManager` | `"any"` \| `"npm"` \| `"yarn"` \| `"pnpm"` | `"any"` | Package manager whose lock file is required. `any` accepts package-lock.json, yarn.lock or pnpm-lock.yaml — the right setting for a repo that has not standardised. |

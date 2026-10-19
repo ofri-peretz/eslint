@@ -495,6 +495,7 @@ export function read(req, other){ const file = req.query.f; if (!other.startsWit
       errors: [{ messageId: 'violationDetected' }],
     },
     {
+      name: 'a parameter is user input when a caller in the file passes req.params',
       code: 'function read(userFile, cb) { fs.readFile(userFile, cb); } read(req.params.name, cb);',
       errors: [{ messageId: 'violationDetected' }],
     },

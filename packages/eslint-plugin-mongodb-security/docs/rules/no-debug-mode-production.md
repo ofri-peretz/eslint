@@ -56,8 +56,26 @@ mongoose.set('debug', (collectionName, method, query) => {
 ### ✅ Correct
 
 ```typescript
-const x = 1;
+// Gated on the environment
+mongoose.set('debug', process.env.NODE_ENV !== 'production');
+
+// A debug logger kept for development only
+mongoose.set(
+  'debug',
+  process.env.NODE_ENV !== 'production' &&
+    ((coll, method) => log(coll, method)),
+);
+
+// Express's own `debug` app setting — the receiver is provably an Express app
+import express from 'express';
+const app = express();
+app.set('debug', true);
 ```
+
+Only a receiver created by `express()` or `express.Router()` (imported from
+`express`) is skipped. A receiver the rule cannot trace — `app.set('debug',
+true)` with no visible origin — is still reported, because it may be a Mongoose
+instance.
 
 ## Known False Positives
 

@@ -66,6 +66,7 @@ describe('no-shell-injection', () => {
         },
         // spawn with args array — structurally safe parameterization form
         {
+          name: 'spawn with an args array and no shell is the safe parameterisation',
           code: "import { exec, execSync, spawn, spawnSync, execFile, execFileSync } from 'node:child_process';\nspawn('git', ['clone', userRepo]);",
         },
         // execFile routes via PATH-safe mechanism

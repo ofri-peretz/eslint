@@ -237,9 +237,33 @@ exec(`${userCommand} ${userArgs}`);
 // ✅ SAFE
 const ALLOWED_COMMANDS = ['ls', 'cat', 'head'];
 if (ALLOWED_COMMANDS.includes(userCommand)) {
-  execFile(userCommand, [userArgs], { shell: false });
+  execFile(userCommand, ['--', userArgs], { shell: false });
 }
 ```
+
+### Allowlist guards
+
+An allowlist check clears **the value it checks**, not the whole call:
+
+```typescript
+const BRANCHES = ['main', 'develop'];
+
+// ❌ `remote` is never checked — still reported
+if (!BRANCHES.includes(branch)) return;
+execFile('git', ['push', remote, branch]);
+
+// ✅ every value that can vary is checked
+if (!BRANCHES.includes(branch) || !REMOTES.has(remote)) return;
+execFile('git', ['push', remote, branch]);
+```
+
+- The list must be a **constant**: an array or `Set` literal, or a `const` bound to
+  one. `'ls cat'.includes(cmd)` is a substring test, and `req.body.allowed.includes(cmd)`
+  checks input against a list the same caller wrote — neither counts.
+- The enclosing-`if` form and the early-exit form are the same guard:
+  `if (A.includes(x)) { run(x) }`, `if (!A.includes(x)) return; run(x)` and
+  `if (!A.includes(x)) { throw … } else { run(x) }` all validate `x`. An `if` that
+  falls through (`if (A.includes(x)) { log() } run(x)`) validates nothing.
 
 ## Migration Guide
 

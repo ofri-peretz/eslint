@@ -30,6 +30,10 @@ import { createRule, isStaticExpression } from '@interlace/eslint-devkit';
  * emits, and command injection is not less injectable for being minified.
  */
 import { makeReadsTaintSource } from '../../utils/provenance';
+import {
+  constInitializerOf,
+  resolveConstantString,
+} from '../../utils/const-value';
 
 /**
  * `strategyValidate`, `strategySanitize` and `strategyRestrict` used to sit
@@ -90,6 +94,21 @@ const DEFAULT_TAINT_SOURCES = ['req', 'request', 'ctx', 'event', 'process'];
  * qualify for the "literal command, no shell" exemption. Matched on the
  * basename, so `/bin/sh` and `sh` are the same binary.
  */
+/**
+ * Membership tests an allowlist guard is written with: `Array#includes` and
+ * `Set#has`. Either counts only on a constant receiver — see
+ * `isConstantAllowlist`.
+ */
+const ALLOWLIST_METHODS: ReadonlySet<string> = new Set(['includes', 'has']);
+
+/** Statements after which control never reaches the next sibling. */
+const EXIT_STATEMENTS: ReadonlySet<string> = new Set([
+  AST_NODE_TYPES.ReturnStatement,
+  AST_NODE_TYPES.ThrowStatement,
+  AST_NODE_TYPES.ContinueStatement,
+  AST_NODE_TYPES.BreakStatement,
+]);
+
 /**
  * The one taint root that is the operator rather than a remote party.
  *
@@ -814,6 +833,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
      */
     const argumentInjectionSite = (
       node: TSESTree.CallExpression,
+      validated: ReadonlySet<string>,
     ): TSESTree.Node | null => {
       const argv = node.arguments[1];
       if (argv?.type !== AST_NODE_TYPES.ArrayExpression) return null;
@@ -833,6 +853,9 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
           element.type === AST_NODE_TYPES.SpreadElement
             ? element.argument
             : element;
+        // A value an allowlist guard proved cannot be an option the list does
+        // not contain.
+        if (isValidatedBy(validated, target)) continue;
         if (cannotStartWithDash(target)) continue;
         return element;
       }
@@ -872,139 +895,160 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Check if a variable is validated against an allowlist before use
-     * Looks for patterns like: if (ALLOWED.includes(arg)) or if (!ALLOWED.includes(arg)) { return/throw }
+     * Is this receiver a constant allowlist — an array or `Set` literal of
+     * static values, or a `const` bound to one?
+     *
+     * `includes` is a generic name: `'convert ffmpeg'.includes(tool)` is a
+     * substring test that `'conv'` passes, and `req.body.allowed.includes(tool)`
+     * checks the input against a list the same attacker wrote. Neither is an
+     * allowlist, and both used to clear the call.
      */
-    const hasPrecedingAllowlistValidation = (
-      node: TSESTree.CallExpression,
-    ): boolean => {
-      // Helper: check if an arg node contains a validated variable
-      const makeArgChecker = (validatedVarNames: Set<string>) => {
-        const check = (argNode: TSESTree.Node): boolean => {
-          if (
-            argNode.type === 'Identifier' &&
-            validatedVarNames.has(argNode.name)
-          )
-            return true;
-          if (argNode.type === 'TemplateLiteral') {
-            return argNode.expressions.some(
-              (e) => e.type === 'Identifier' && validatedVarNames.has(e.name),
-            );
-          }
-          if (argNode.type === AST_NODE_TYPES.ArrayExpression) {
-            return argNode.elements.some((el) => el !== null && check(el));
-          }
-          return false;
-        };
-        return check;
-      };
-
-      // Helper: check if a guard clause IfStatement validates any of our call's args
-      const checkGuardClause = (ifNode: TSESTree.IfStatement): boolean => {
-        const test = ifNode.test;
-
-        // Pattern 1: if (ALLOWED.includes(arg)) { ... our call is inside ... }
-        if (
-          test.type === 'CallExpression' &&
-          test.callee.type === 'MemberExpression' &&
-          propertyName(test.callee) === 'includes'
-        ) {
-          const validatedVarNames = new Set<string>();
-          for (const testArg of test.arguments) {
-            if (testArg.type === 'Identifier')
-              validatedVarNames.add(testArg.name);
-          }
-          const check = makeArgChecker(validatedVarNames);
-          for (const arg of node.arguments) {
-            if (check(arg)) return true;
-          }
-        }
-
-        // Pattern 2: if (!ALLOWED.includes(arg)) { throw/return } — guard clause
-        if (
-          test.type === AST_NODE_TYPES.UnaryExpression &&
-          test.operator === '!' &&
-          test.argument.type === AST_NODE_TYPES.CallExpression &&
-          test.argument.callee.type === AST_NODE_TYPES.MemberExpression &&
-          propertyName(test.argument.callee) === 'includes'
-        ) {
-          const consequent = ifNode.consequent;
-          const isGuardBody =
-            consequent.type === AST_NODE_TYPES.ReturnStatement ||
-            consequent.type === AST_NODE_TYPES.ThrowStatement ||
-            (consequent.type === AST_NODE_TYPES.BlockStatement &&
-              consequent.body.length > 0 &&
-              (consequent.body[0].type === AST_NODE_TYPES.ReturnStatement ||
-                consequent.body[0].type === AST_NODE_TYPES.ThrowStatement));
-          if (isGuardBody) {
-            const validatedVarNames = new Set<string>();
-            for (const testArg of test.argument.arguments) {
-              if (testArg.type === 'Identifier')
-                validatedVarNames.add(testArg.name);
-            }
-            const check = makeArgChecker(
-              validatedVarNames.size > 0 ? validatedVarNames : new Set(['*']),
-            );
-            // If we have specific validated var names, check them; otherwise check any identifier
-            if (validatedVarNames.size > 0) {
-              for (const arg of node.arguments) {
-                if (check(arg)) return true;
-              }
-            } else {
-              // No specific args in includes() - treat as generic guard
-              for (const arg of node.arguments) {
-                if (
-                  arg.type === 'Identifier' ||
-                  (arg.type === AST_NODE_TYPES.ArrayExpression &&
-                    arg.elements.some((el) => el?.type === 'Identifier'))
-                ) {
-                  return true;
-                }
-              }
-            }
-          }
-        }
-        return false;
-      };
-
-      // Pass 1: Walk up parent chain looking for ancestor IfStatements
-      let current: TSESTree.Node | undefined = node.parent;
-      while (current) {
-        if (current.type === 'IfStatement') {
-          if (checkGuardClause(current)) return true;
-        }
-        current = current.parent;
-      }
-
-      // Pass 2: Look for guard clause IfStatements as preceding siblings in the same block
-      // This handles: function f(x) { if (!allowed.includes(x)) throw ...; execFile('cmd', [x]); }
-      let stmt: TSESTree.Node | undefined = node.parent;
-      // Walk up to find the statement that contains our call in a block
-      while (
-        stmt &&
-        stmt.parent &&
-        stmt.parent.type !== AST_NODE_TYPES.BlockStatement
+    const isConstantAllowlist = (receiver: TSESTree.Node): boolean => {
+      let list: TSESTree.Node | null | undefined =
+        receiver.type === AST_NODE_TYPES.Identifier
+          ? constInitializerOf(context.sourceCode, receiver)
+          : receiver;
+      // `new lib.Set(…)` has no `name`, so it is not the global Set.
+      if (
+        list?.type === AST_NODE_TYPES.NewExpression &&
+        (list.callee as TSESTree.Identifier).name === 'Set'
       ) {
-        stmt = stmt.parent;
+        list = list.arguments[0];
+      }
+      // A hole is `undefined`, as constant as any literal; a spread is
+      // constant exactly when `isStaticArg` can prove it.
+      return (
+        list?.type === AST_NODE_TYPES.ArrayExpression &&
+        list.elements.every((el) => el === null || isStaticArg(el))
+      );
+    };
+
+    /**
+     * The values an `if` test proves are on a constant allowlist when it
+     * evaluates to `truthy`, as source text.
+     *
+     * One recursion serves both guard forms, which is what makes them agree:
+     * `if (A.includes(x)) { call }` is `facts(test, true)` for the consequent,
+     * and `if (!A.includes(x)) return; call` is `facts(test, false)` for what
+     * follows. `!` flips the polarity; `&&` proves both sides when true, `||`
+     * both when false. Only the FIRST argument is the value checked —
+     * `includes(x, from)` takes an index second.
+     */
+    const allowlistFacts = (
+      test: TSESTree.Node,
+      truthy: boolean,
+      into: Set<string>,
+    ): void => {
+      if (
+        test.type === AST_NODE_TYPES.UnaryExpression &&
+        test.operator === '!'
+      ) {
+        allowlistFacts(test.argument, !truthy, into);
+        return;
+      }
+      if (test.type === AST_NODE_TYPES.LogicalExpression) {
+        if (
+          (test.operator === '&&' && truthy) ||
+          (test.operator === '||' && !truthy)
+        ) {
+          allowlistFacts(test.left, truthy, into);
+          allowlistFacts(test.right, truthy, into);
+        }
+        return;
       }
       if (
-        stmt &&
-        stmt.parent &&
-        stmt.parent.type === AST_NODE_TYPES.BlockStatement
+        truthy &&
+        test.type === AST_NODE_TYPES.CallExpression &&
+        test.callee.type === AST_NODE_TYPES.MemberExpression &&
+        ALLOWLIST_METHODS.has(propertyName(test.callee) ?? '') &&
+        test.arguments[0] !== undefined &&
+        isConstantAllowlist(test.callee.object)
       ) {
-        const block = stmt.parent as TSESTree.BlockStatement;
-        const callIndex = block.body.indexOf(stmt as TSESTree.Statement);
-        if (callIndex > 0) {
-          // Check preceding siblings for guard clause IfStatements
-          for (let i = 0; i < callIndex; i++) {
-            const sibling = block.body[i];
-            if (sibling.type === 'IfStatement') {
-              if (checkGuardClause(sibling)) return true;
-            }
+        into.add(context.sourceCode.getText(test.arguments[0]));
+      }
+    };
+
+    /** Does this statement always leave the enclosing block? */
+    // oxlint-disable-next-line consistent-function-scoping
+    const alwaysExits = (statement: TSESTree.Statement): boolean => {
+      if (EXIT_STATEMENTS.has(statement.type)) return true;
+      return (
+        statement.type === AST_NODE_TYPES.BlockStatement &&
+        statement.body.some((inner) => EXIT_STATEMENTS.has(inner.type))
+      );
+    };
+
+    /**
+     * Source texts proven to be on a constant allowlist wherever `node` runs.
+     *
+     * Walks every ancestor. An enclosing `if` contributes what its test proves
+     * for the branch the call is in — the consequent gets the true facts, the
+     * alternate the false ones, so `if (A.includes(x)) {} else { call(x) }` no
+     * longer validates `x`. Every statement list on the way contributes its
+     * preceding guard clauses: an `if` whose consequent always exits proves
+     * its false facts for what follows, one whose alternate always exits its
+     * true facts. A plain `if (A.includes(x)) { … }` that falls through proves
+     * nothing about the code after it.
+     */
+    const allowlistValidated = (node: TSESTree.CallExpression): Set<string> => {
+      const validated = new Set<string>();
+      let child: TSESTree.Node = node;
+      for (
+        let current: TSESTree.Node | undefined = node.parent;
+        current;
+        child = current, current = current.parent
+      ) {
+        if (current.type === AST_NODE_TYPES.IfStatement) {
+          if (child === current.consequent) {
+            allowlistFacts(current.test, true, validated);
+          } else if (child === current.alternate) {
+            allowlistFacts(current.test, false, validated);
+          }
+        }
+        const list =
+          current.type === AST_NODE_TYPES.BlockStatement ||
+          current.type === AST_NODE_TYPES.Program
+            ? current.body
+            : current.type === AST_NODE_TYPES.SwitchCase
+              ? current.consequent
+              : null;
+        if (list === null) continue;
+        for (const sibling of list) {
+          if (sibling === child) break;
+          if (sibling.type !== AST_NODE_TYPES.IfStatement) continue;
+          if (alwaysExits(sibling.consequent)) {
+            allowlistFacts(sibling.test, false, validated);
+          } else if (sibling.alternate && alwaysExits(sibling.alternate)) {
+            allowlistFacts(sibling.test, true, validated);
           }
         }
       }
+      return validated;
+    };
 
+    /**
+     * Is this argument — or every part of it that could vary — a value an
+     * allowlist guard proved? A name matches its own text, and a `const` copy
+     * matches the text it was copied from: `const tool = req.query.tool`
+     * guarded as `TOOLS.includes(req.query.tool)` is the same value.
+     */
+    const isValidatedBy = (
+      validated: ReadonlySet<string>,
+      argument: TSESTree.Node,
+    ): boolean => {
+      if (validated.has(context.sourceCode.getText(argument))) return true;
+      if (argument.type === AST_NODE_TYPES.Identifier) {
+        const copiedFrom = constInitializerOf(context.sourceCode, argument);
+        return (
+          copiedFrom !== null &&
+          validated.has(context.sourceCode.getText(copiedFrom))
+        );
+      }
+      if (argument.type === AST_NODE_TYPES.TemplateLiteral) {
+        return argument.expressions.every(
+          (part) => isStaticArg(part) || isValidatedBy(validated, part),
+        );
+      }
       return false;
     };
 
@@ -1213,8 +1257,15 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       // child_process.exec(...)
       if (node.callee.type === 'MemberExpression') {
         // A dynamic `cp[m](...)` names no method, so there is nothing to look
-        // up in the dangerous set.
-        const methodName = propertyName(node.callee);
+        // up in the dangerous set — unless `m` is a `const` bound to a string,
+        // in which case it names exactly one: `const m = 'exec'; cp[m](cmd)`
+        // is `cp.exec(cmd)` and was silent.
+        const methodName =
+          propertyName(node.callee) ??
+          (node.callee.computed
+            ? (resolveConstantString(context.sourceCode, node.callee.property)
+                ?.value ?? null)
+            : null);
         if (methodName === null || !dangerousMethodsSet.has(methodName)) {
           return null;
         }
@@ -1268,23 +1319,31 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       const { method } = detected;
       const { args, pattern, isDynamic } = extractCommandInfo(node, method);
 
+      // Allow literal strings if configured (legacy option, kept for
+      // backward compat with existing user configs). Checked first: the
+      // always-on exemption below now covers every literal exec it used to
+      // add, except a call with no arguments at all.
+      if (allowLiteralStrings && method === 'exec' && !isDynamic) {
+        return;
+      }
+
       // ALWAYS safe: exec/execSync called with a single string literal that
       // contains no interpolation — there is no user input to inject. The
       // rule discourages exec() in general (because it's easy to add a
       // template-literal later), but a fully-literal call is structurally
       // safe and shouldn't be flagged. Fire-on-stylistic-discouragement is
       // out of scope for a security rule.
+      //
+      // Only the command is read. exec's second argument is an options object
+      // or a callback, never argv, so `execSync('npm ci', { stdio })` is as
+      // literal as `execSync('npm ci')`. Requiring every argument to be static
+      // (`hasOnlyLiteralArgs`) rejected the shorthand `{ stdio }` and
+      // `reportUnresolvedCommands` then reported a command with no input at all.
       if (
         (method === 'exec' || method === 'execSync') &&
         !isDynamic &&
-        hasOnlyLiteralArgs(node.arguments)
+        node.arguments.length > 0
       ) {
-        return;
-      }
-
-      // Allow literal strings if configured (legacy option, kept for
-      // backward compat with existing user configs).
-      if (allowLiteralStrings && method === 'exec' && !isDynamic) {
         return;
       }
 
@@ -1315,15 +1374,47 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         }
       }
 
-      // Allow safe methods when args are validated against an allowlist
-      // Pattern: if (ALLOWED.includes(arg)) { execFile('cmd', [arg]) }
+      // Allowlist guards. `if (ALLOWED.includes(arg)) { execFile('cmd', [arg]) }`
+      //
+      // A guard clears the argument it validates and nothing else. It used to
+      // clear the CALL: `if (!BRANCHES.includes(branch)) return;
+      // execFile('git', ['push', remote, branch])` was silent about `remote`,
+      // which nothing checked. Now the call is cleared outright only when every
+      // position that can carry input — the command and each argv element — is
+      // static or validated; otherwise the validated parts are set aside and the
+      // rest is judged as if the guard were not there.
       const allSafeMethods = ['execFile', 'execFileSync', 'spawn', 'spawnSync'];
+      const validated = allSafeMethods.includes(method)
+        ? allowlistValidated(node)
+        : new Set<string>();
+      // A spread is never cleared: its text (`...x`) is not a value a guard
+      // checked, and what the array holds is unknown.
+      const isCleared = (argument: TSESTree.Node): boolean =>
+        isStaticArg(argument) || isValidatedBy(validated, argument);
+      const [commandArg, argvArg] = node.arguments;
       if (
-        allSafeMethods.includes(method) &&
-        hasPrecedingAllowlistValidation(node)
+        validated.size > 0 &&
+        commandArg !== undefined &&
+        isCleared(commandArg) &&
+        (argvArg === undefined ||
+          argvArg.type === AST_NODE_TYPES.ObjectExpression ||
+          (argvArg.type === AST_NODE_TYPES.ArrayExpression
+            ? argvArg.elements.every((el) => el === null || isCleared(el))
+            : isCleared(argvArg)))
       ) {
         return;
       }
+      /** Request data the guards above did not validate. */
+      const readsUnvalidatedTaint = (argument: TSESTree.Node): boolean => {
+        if (validated.size === 0) return readsTaintSource(argument);
+        if (argument.type === AST_NODE_TYPES.ArrayExpression) {
+          return argument.elements.some(
+            (el) => el !== null && readsUnvalidatedTaint(el),
+          );
+        }
+        if (isCleared(argument)) return false;
+        return readsTaintSource(argument);
+      };
 
       // ALWAYS safe: a LITERAL command with no shell.
       //
@@ -1368,8 +1459,8 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       const command = node.arguments[0];
       const commandIsSteerable =
         command === undefined ||
-        isFreeReference(command) ||
-        readsRemoteTaintSource(command);
+        (!isValidatedBy(validated, command) &&
+          (isFreeReference(command) || readsRemoteTaintSource(command)));
       if (!usesShell(node, method) && !commandIsSteerable) {
         // …but the paragraph above says argument injection is real and that a
         // rule which cannot name the binary cannot judge it. Here the binary IS
@@ -1378,7 +1469,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         // ecosystem's own labelled corpus:
         // benchmarks/corpus/CWE-088/vulnerable/git-ls-remote-arg-injection.js
         // and tar-user-args.js were both silent.
-        const injected = argumentInjectionSite(node);
+        const injected = argumentInjectionSite(node, validated);
         if (injected === null) return;
         context.report({
           node: injected,
@@ -1424,14 +1515,15 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
           ),
         );
       }
-      const unknowable = injectablePositions.some((argument) =>
-        isFreeReference(argument),
+      const unknowable = injectablePositions.some(
+        (argument) =>
+          !isValidatedBy(validated, argument) && isFreeReference(argument),
       );
 
       if (
         !reportUnresolvedCommands &&
         !unknowable &&
-        !node.arguments.some((argument) => readsTaintSource(argument))
+        !node.arguments.some((argument) => readsUnvalidatedTaint(argument))
       ) {
         return;
       }

@@ -81,7 +81,18 @@ User.updateOne(
 // Use schema validation + sanitization
 const email = sanitize(req.body.email);
 User.find({ email: { $eq: email } });
+
+// Coerced to a string — however it is spelled, '[object Object]' carries no operator
+User.find({ name: String(req.body.name) });
+User.find({ slug: `${prefix}-${req.body.name}` });
+User.find({ name: 'user:' + req.body.name });
+User.findById(`${req.params.id}`);
 ```
+
+A string built from request input is not this rule's finding, but it can be
+another rule's: in `$where` the string is JavaScript, and
+[no-unsafe-where](./no-unsafe-where.md) reports it; in `$regex` it is a pattern,
+and [no-unsafe-regex-query](./no-unsafe-regex-query.md) reports it.
 
 ## Error Message Format
 

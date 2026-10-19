@@ -69,6 +69,7 @@ describe('no-weak-hash-algorithm', () => {
       { code: 'this.sha = createHash("sha1").update(lua).digest("hex");' },
       // The same shape through each supported assignment form.
       {
+        name: 'an MD5 stored as an etag is an identifier, not a security control',
         code: 'const etag = crypto.createHash("md5").update(body).digest("hex");',
       },
       {
@@ -202,19 +203,14 @@ describe('no-weak-hash-algorithm', () => {
               },
             ],
           },
+          // No suggestion. This used to offer `sha256(secret)` — a call to a
+          // function the file never defines, which would not build. Owner
+          // decision 2026-10-18: with no `sha256` in scope there is nothing
+          // correct to suggest at the call site; the createHash report above
+          // fixes the algorithm where it is chosen.
           {
             messageId: 'weakHashAlgorithm',
-            suggestions: [
-              {
-                messageId: 'useSha256',
-                output: `
-          function sha1(data) {
-            return crypto.createHash("sha1").update(data).digest("hex");
-          }
-          const sessionToken = sha256(secret);
-        `,
-              },
-            ],
+            suggestions: [],
           },
         ],
       },
@@ -1214,20 +1210,10 @@ ruleTester.run('mutation-guided edges', noWeakHashAlgorithm, {
     {
       name: 'a local digest helper that calls other functions is still not an HMAC',
       code: LOCAL_SHA1_HELPER,
-      errors: [
-        {
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            {
-              messageId: 'useSha256',
-              output: LOCAL_SHA1_HELPER.replace(
-                'sha1(secret)',
-                'sha256(secret)',
-              ),
-            },
-          ],
-        },
-      ],
+      // Reported, but with no suggestion: rewriting the call to `sha256(secret)`
+      // would call a function this file never defines (owner decision
+      // 2026-10-18; it used to pin exactly that rewrite).
+      errors: [{ messageId: 'weakHashAlgorithm', suggestions: [] }],
     },
   ],
 });

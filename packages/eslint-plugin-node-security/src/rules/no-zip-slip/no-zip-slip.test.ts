@@ -142,6 +142,7 @@ describe('no-zip-slip', () => {
         // archive extraction, which is the only place a literal `../` means
         // zip slip.
         {
+          name: 'a traversal literal as the extraction destination',
           code: "zip.extractAllTo('../../output');",
           errors: [{ messageId: 'pathTraversalInArchive' }],
         },
@@ -253,12 +254,15 @@ describe('no-zip-slip', () => {
   describe('Valid Code - False Positives Reduced', () => {
     ruleTester.run('valid - false positives reduced', noZipSlip, {
       valid: [
-        // Safe annotations
+        // Safe annotations. The annotation sits on the extraction it vouches
+        // for: a `/** @safe */` above the require — the shape this case used
+        // to pin — no longer silences every extraction in the file
+        // (containment-guard.test.ts).
         {
           code: `
-            /** @safe */
             const AdmZip = require("adm-zip");
             const zip = new AdmZip(file);
+            /** @safe */
             zip.extractAllTo(dest);
           `,
         },

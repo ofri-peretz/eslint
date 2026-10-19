@@ -11,6 +11,7 @@ autofix: false
 > **Keywords:** zip slip, CWE-22, path traversal, archive extraction, tar, security
 
 <!-- @rule-summary -->
+
 Detects zip slip/archive extraction vulnerabilities
 <!-- @/rule-summary -->
 
@@ -28,7 +29,7 @@ Detects zip slip/archive extraction vulnerabilities. This rule is part of [`esli
 | **CWE Reference** | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) (Path Traversal) |
 | **Severity**      | High (CVSS 8.1)                                                           |
 | **Auto-Fix**      | 💡 Suggestions available                                                  |
-| **Category**   | Security |
+| **Category**      | Security                                                                  |
 
 ## Vulnerability and Risk
 
@@ -75,7 +76,37 @@ tar.extract({ file: uploadedTar, cwd: targetDir });
 ### ✅ Correct
 
 ```typescript
-const safeExtract = require("safe-archive-extract"); safeExtract(file, dest);
+const safeExtract = require('safe-archive-extract');
+safeExtract(file, dest);
+
+// Resolve, check containment, then use the checked path
+for (const entry of archive.entries()) {
+  const outputPath = path.resolve(targetDir, entry.name);
+  if (!outputPath.startsWith(targetDir + path.sep)) {
+    throw new Error(`Zip Slip: ${entry.name}`);
+  }
+  fs.writeFileSync(outputPath, entry.getData());
+}
+
+// The path.relative() spelling of the same check
+const rel = path.relative(targetDir, outputPath);
+if (rel.startsWith('..') || path.isAbsolute(rel)) continue;
+```
+
+A check validates only the branch where it **passed**. A join written in the branch
+where it failed — `if (!p.startsWith(dest)) { write(path.join(dest, entry.name)) }`
+— is still reported.
+
+### `@safe`
+
+An `@safe` comment — block (`/** @safe */`) or line (`// @safe`) — covers the
+statement directly below it, and everything inside that statement (so one on a
+function covers the function). It does not cover the rest of the file: a
+`/** @safe */` in a file header vouches for the first statement only.
+
+```typescript
+// @safe — entries were verified by the upload service
+zip.extractAllTo(dest);
 ```
 
 ## Configuration
@@ -94,14 +125,14 @@ const safeExtract = require("safe-archive-extract"); safeExtract(file, dest);
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `archiveFunctions` | `string[]` | `["extract","extractAll","extractAllTo","unzip","untar","extractArchive"]` | Archive extraction functions to check |
-| `pathValidationFunctions` | `string[]` | `["validatePath","sanitizePath","checkPath","safePath"]` | Path validation functions |
-| `safeLibraries` | `string[]` | `["yauzl","safe-archive-extract","tar-stream","unzipper"]` | Libraries with safe extraction |
-| `archiveEntryFields` | `string[]` | `["name","path","fileName","entryName","filename"]` | Property names an archive entry exposes its path on. Replaces the default. |
-| `archiveModules` | `string[]` | `["adm-zip","unzipper","yauzl","yazl","tar","tar-fs","tar-stream","extract-zip","node-stream-zip","jszip","archiver","decompress","unzip-stream","zip-stream","gunzip-maybe","7zip-min","node-7z"]` | Module specifiers that mean this file works with archives |
-| `reportWithoutArchiveContext` | `boolean` | `false` | Report entry-name and traversal shapes in files with no archive. Restores the pre-inversion behaviour. |
+| Option                        | Type       | Default                                                                                                                                                                                             | Description                                                                                            |
+| ----------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `archiveFunctions`            | `string[]` | `["extract","extractAll","extractAllTo","unzip","untar","extractArchive"]`                                                                                                                          | Archive extraction functions to check                                                                  |
+| `pathValidationFunctions`     | `string[]` | `["validatePath","sanitizePath","checkPath","safePath"]`                                                                                                                                            | Path validation functions                                                                              |
+| `safeLibraries`               | `string[]` | `["yauzl","safe-archive-extract","tar-stream","unzipper"]`                                                                                                                                          | Libraries with safe extraction                                                                         |
+| `archiveEntryFields`          | `string[]` | `["name","path","fileName","entryName","filename"]`                                                                                                                                                 | Property names an archive entry exposes its path on. Replaces the default.                             |
+| `archiveModules`              | `string[]` | `["adm-zip","unzipper","yauzl","yazl","tar","tar-fs","tar-stream","extract-zip","node-stream-zip","jszip","archiver","decompress","unzip-stream","zip-stream","gunzip-maybe","7zip-min","node-7z"]` | Module specifiers that mean this file works with archives                                              |
+| `reportWithoutArchiveContext` | `boolean`  | `false`                                                                                                                                                                                             | Report entry-name and traversal shapes in files with no archive. Restores the pre-inversion behaviour. |
 
 ## Error Message Format
 
@@ -114,13 +145,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Path Traversal detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                     |
+| :------------------------ | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Path Traversal detected`                                                                                                                                                                                                                                   |
+| **Severity & Compliance** | Impact assessment      | `HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]`                                                                                                                                                                                                                        |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                        |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/)                                                                                                                                                                                                 |
 
 ## Known False Negatives
 
