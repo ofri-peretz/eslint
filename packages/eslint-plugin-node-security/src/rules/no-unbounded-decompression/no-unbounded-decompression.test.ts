@@ -58,7 +58,6 @@ describe('no-unbounded-decompression', () => {
       { code: `import { constants } from 'zlib'; constants(body, cb);` },
       { code: `const [zlib] = require('zlib'); zlib.gunzip(body, cb);` },
       { code: `const { ...rest } = require('zlib'); rest.gunzip(body, cb);` },
-      { code: `const { ['gunzip']: g } = require('zlib'); g(body, cb);` },
       { code: `const { gunzip: { g } } = require('zlib'); g(body, cb);` },
       // Not a resolvable callee shape: the method is named at runtime.
       { code: `${REQUIRE}zlib[method](body, cb);` },
@@ -142,6 +141,13 @@ describe('no-unbounded-decompression', () => {
       },
     ],
     invalid: [
+      // A static computed destructuring key names the same export as `{ gunzip: g }`.
+      // It was listed as valid, which pinned a false negative (fixed in devkit).
+      {
+        name: 'gunzip destructured under a static computed key',
+        code: `const { ['gunzip']: g } = require('zlib'); g(body, cb);`,
+        errors: [{ messageId: 'unboundedDecompression' }],
+      },
       // LOCK: benchmarks/corpus/CWE-409/vulnerable/gunzip-no-limit.js
       // `zlib.gunzip(reqBody, cb)` buffers the whole expansion — a few KB of
       // crafted gzip becomes gigabytes of heap.

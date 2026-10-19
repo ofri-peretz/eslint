@@ -171,6 +171,11 @@ describe('resolveModuleBinding', () => {
           code: `const p = require('fs')['promises']; p['readFile'](f);`,
           errors: 1,
         },
+        // A static computed destructuring key names the export like its plain spelling.
+        {
+          code: `const { ['promises']: p } = require('node:fs'); p['readFile'](f);`,
+          errors: 1,
+        },
       ],
     },
   );
