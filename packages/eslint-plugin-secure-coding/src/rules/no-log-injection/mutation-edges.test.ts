@@ -33,6 +33,35 @@ describe('no-log-injection (mutation edges)', () => {
         name: 'a local reassigned after its request initializer no longer carries the request value',
         code: "function h(req) { let name = req.query.name; name = name.replace(/[\\r\\n]/g, ''); logger.info('user ' + name); }",
       },
+      {
+        // @found CodeRabbit review on #1270
+        name: 'the last straight-line write before the log line decides: request then safe is safe',
+        code: "function h(req) { let name = req.query.name; name = 'safe'; logger.info('user ' + name); }",
+      },
+      {
+        name: 'a write at the top of the loop body overwrites the request write from the previous turn',
+        code: "function h(req, xs) { let name = req.query.a; for (const x of xs) { name = 'safe'; logger.info('user ' + name); name = req.query.b; } }",
+      },
+      {
+        name: 'a compound write is not a request field, so the hop is not evidence',
+        code: "function h(req) { let name = 'a'; name += req.query.b; logger.info('user ' + name); }",
+      },
+      {
+        name: 'a straight-line safe write at module top level ends the walk back',
+        code: "let name = req.query.a; name = 'safe'; logger.info('user ' + name);",
+      },
+      {
+        name: 'a declaration inside the loop body runs again before every read',
+        code: "function h(req, xs) { for (const x of xs) { let name = 'safe'; logger.info('user ' + name); name = req.query.b; } }",
+      },
+      {
+        name: 'a request write after the loop never reaches a read inside it',
+        code: "function h(req, xs) { let name = 'safe'; for (const x of xs) { logger.info('user ' + name); } name = req.query.b; }",
+      },
+      {
+        name: 'an update write stores a number, not the request field',
+        code: "function h(req) { let name = req.query.n; name++; logger.info('count ' + name); }",
+      },
     ],
     invalid: [
       {
@@ -50,6 +79,73 @@ describe('no-log-injection (mutation edges)', () => {
         // @found CodeRabbit review on #1270
         name: 'a local reassigned to another request field still carries request data',
         code: "function h(req) { let name = req.query.name; name = req.query.other; logger.info('user ' + name); }",
+        errors: [{ messageId: 'logInjection' as const }],
+      },
+      {
+        // @found CodeRabbit review on #1270
+        name: 'an earlier safe write does not hide a later request write that reaches the log line',
+        code: "function h(req) { let name = req.query.name; name = 'safe'; name = req.query.other; logger.info('user ' + name); }",
+        errors: [{ messageId: 'logInjection' as const }],
+      },
+      {
+        // @found CodeRabbit review on #1270
+        name: 'the last straight-line write before the log line decides: safe then request is request',
+        code: "function h(req) { let name = 'safe'; name = req.query.other; logger.info('user ' + name); }",
+        errors: [{ messageId: 'logInjection' as const }],
+      },
+      {
+        name: 'a conditional safe write may not run, so the request initializer can still reach the log line',
+        code: "function h(req, c) { let name = req.query.name; if (c) name = 'safe'; logger.info('user ' + name); }",
+        errors: [{ messageId: 'logInjection' as const }],
+      },
+      {
+        name: 'a conditional request write may reach the log line past a safe initializer',
+        code: "function h(req, c) { let name = 'safe'; if (c) { name = req.query.other; } logger.info('user ' + name); }",
+        errors: [{ messageId: 'logInjection' as const }],
+      },
+      {
+        name: 'a write inside a closure may never run, so the request initializer still reaches the log line',
+        code: "function h(req) { let name = req.query.name; const reset = () => { name = 'safe'; }; logger.info('user ' + name); }",
+        errors: [{ messageId: 'logInjection' as const }],
+      },
+      {
+        name: 'a request write later in the loop body reaches the log line on the next turn',
+        code: "function h(req, xs) { let name = 'safe'; for (const x of xs) { logger.info('user ' + name); name = req.query.other; } }",
+        errors: [{ messageId: 'logInjection' as const }],
+      },
+      {
+        name: 'a safe write in a braced branch may not run, so the request initializer still reaches',
+        code: "function h(req, c) { let name = req.query.name; if (c) { name = 'safe'; } logger.info('user ' + name); }",
+        errors: [{ messageId: 'logInjection' as const }],
+      },
+      {
+        name: 'a read of the local between its write and the log line is not a write',
+        code: "function h(req, res) { let name = req.query.name; res.locals.user = name; logger.info('user ' + name); }",
+        errors: [{ messageId: 'logInjection' as const }],
+      },
+      {
+        name: 'a for-loop initializer does not end the walk, and the loop carries the later write back',
+        code: "function h(req) { for (let name = 'a', i = 0; i < 3; i++) { logger.info('user ' + name); name = req.query.b; } }",
+        errors: [{ messageId: 'logInjection' as const }],
+      },
+      {
+        name: 'a while loop carries a later request write back to the read',
+        code: "function h(req, c) { let name = 'safe'; while (c()) { logger.info('user ' + name); name = req.query.b; } }",
+        errors: [{ messageId: 'logInjection' as const }],
+      },
+      {
+        name: 'a do-while loop carries a later request write back to the read',
+        code: "function h(req, c) { let name = 'safe'; do { logger.info('user ' + name); name = req.query.b; } while (c()); }",
+        errors: [{ messageId: 'logInjection' as const }],
+      },
+      {
+        name: 'a for-in loop carries a later request write back to the read',
+        code: "function h(req, o) { let name = 'safe'; for (const k in o) { logger.info('user ' + name); name = req.query.b; } }",
+        errors: [{ messageId: 'logInjection' as const }],
+      },
+      {
+        name: 'a for-loop update may never run, so the request initializer still reaches a read after the loop',
+        code: "function h(req, n) { let name = req.query.name; for (let i = 0; i < n; name = 'safe') { i++; } logger.info('user ' + name); }",
         errors: [{ messageId: 'logInjection' as const }],
       },
       {

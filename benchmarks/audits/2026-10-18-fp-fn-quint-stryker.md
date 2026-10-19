@@ -131,7 +131,7 @@ Batch 2 covers the 13 rules that were `pending` after batch 1. The first run tes
 
 ### secure-coding (batch 1)
 
-Batch 1 covers the 8 smallest of the 18 `recommended` rules; 3,313 mutants. All 18 together are 11,990 mutants, so the other 10 `recommended` rules are batch 2. The highest-value survivors in `no-homoglyph-identifiers`, `no-log-injection`, `no-template-injection`, `no-fail-open-auth` and `no-xxe-injection` became fixtures in a `mutation-edges.test.ts` per rule. The rest are listed per rule in #1270. A redundant literal/template short-circuit in `no-template-injection` was deleted: `untrustedSource` already returns null for static text.
+Batch 1 covers the 8 smallest of the 18 `recommended` rules; 3,313 mutants. All 18 together are 11,990 mutants, so the other 10 `recommended` rules are batch 2. The highest-value survivors in `no-homoglyph-identifiers`, `no-log-injection`, `no-template-injection`, `no-fail-open-auth` and `no-xxe-injection` became fixtures in a `mutation-edges.test.ts` per rule. The rest are listed per rule in #1270. A redundant literal/template short-circuit in `no-template-injection` was deleted: `untrustedSource` already returns null for static text. Review on #1270 caught that the first `no-log-injection` fix let an earlier safe write hide a later request write (`name = 'safe'; name = req.query.other;`); the rule now attributes the writes that can reach the log line, and a write under a branch, in a closure or later in a loop does not end that walk. The gap never shipped, so it is not counted as a separate FN.
 
 | Rule                  | Kind | Wrong verdict on                                                                                                                      |
 | :-------------------- | :--- | :------------------------------------------------------------------------------------------------------------------------------------ |
@@ -140,14 +140,14 @@ Batch 1 covers the 8 smallest of the 18 `recommended` rules; 3,313 mutants. All 
 
 ## Mutation-testing coverage
 
-| Plugin              |           Rules banked |                                                           Mean score |
-| :------------------ | ---------------------: | -------------------------------------------------------------------: |
-| mongodb-security    |                16 / 16 |                                                                 90.2 |
-| jwt-security        |                13 / 13 |                                                                 84.2 |
-| postgresql-security |                13 / 13 |                       83.0 (no-unsafe-query 75.6 → 86.0 after #1234) |
-| node-security       | 12 / 43 (31 `pending`) |                                                              batch 1 |
-| browser-security    |                46 / 46 | 92.1 batch 1 (84.8 before triage); 85.4 batch 2 (82.9 before triage) |
-| secure-coding       |  8 / 34 (26 `pending`) |                                78.0 (banked from the pre-triage run) |
+| Plugin              |           Rules banked |                                                                          Mean score |
+| :------------------ | ---------------------: | ----------------------------------------------------------------------------------: |
+| mongodb-security    |                16 / 16 |                                                                                90.2 |
+| jwt-security        |                13 / 13 |                                                                                84.2 |
+| postgresql-security |                13 / 13 |                                      83.0 (no-unsafe-query 75.6 → 86.0 after #1234) |
+| node-security       | 12 / 43 (31 `pending`) |                                                                             batch 1 |
+| browser-security    |                46 / 46 |                92.1 batch 1 (84.8 before triage); 85.4 batch 2 (82.9 before triage) |
+| secure-coding       |  8 / 34 (26 `pending`) | 78.6 (no-template-injection 79.4 → 83.2, no-log-injection 87.7 → 88.7 after triage) |
 
 The remaining plugins are not opted in yet: express, vercel-ai, mcp-sdk, lambda, nestjs and the per-SDK plugins. The rollout order is in [`docs/MUTATION_TESTING.md`](../../docs/MUTATION_TESTING.md).
 

@@ -779,9 +779,9 @@
           "timeout": 11
         },
         "no-log-injection": {
-          "score": 87.7,
-          "killed": 127,
-          "survived": 18,
+          "score": 88.7,
+          "killed": 204,
+          "survived": 26,
           "noCoverage": 0,
           "timeout": 2
         },
@@ -793,9 +793,9 @@
           "timeout": 6
         },
         "no-template-injection": {
-          "score": 79.4,
-          "killed": 138,
-          "survived": 36,
+          "score": 83.2,
+          "killed": 148,
+          "survived": 30,
           "noCoverage": 0,
           "timeout": 1
         },
