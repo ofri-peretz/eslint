@@ -53,6 +53,7 @@ ruleTester.run(
       },
       // Delegation as a single expression.
       {
+        name: 'checkServerIdentity delegating to the default check',
         code: 'tls.connect({ checkServerIdentity: (h, c) => tls.checkServerIdentity(h, c) })',
       },
       // Throwing is reporting.

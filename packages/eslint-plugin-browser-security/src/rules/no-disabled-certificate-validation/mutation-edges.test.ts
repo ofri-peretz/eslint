@@ -43,6 +43,10 @@ ruleTester.run(
         name: "NODE_TLS_REJECT_UNAUTHORIZED = '1' keeps verification on",
         code: "process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1'",
       },
+      {
+        name: 'appending to the variable does not store 0',
+        code: 'process.env.NODE_TLS_REJECT_UNAUTHORIZED += 0',
+      },
     ],
     invalid: [
       {
@@ -63,6 +67,21 @@ ruleTester.run(
       {
         name: 'FN: a no-substitution template 0 is the same string',
         code: 'process.env.NODE_TLS_REJECT_UNAUTHORIZED = `0`',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'a default-assigning ??= stores 0 when the variable is unset',
+        code: "process.env.NODE_TLS_REJECT_UNAUTHORIZED ??= '0'",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'a ||= stores 0 when the variable is unset or empty',
+        code: "process.env.NODE_TLS_REJECT_UNAUTHORIZED ||= '0'",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'a &&= stores 0 over a variable that is already set',
+        code: "process.env.NODE_TLS_REJECT_UNAUTHORIZED &&= '0'",
         errors: [{ messageId: 'violationDetected' }],
       },
     ],

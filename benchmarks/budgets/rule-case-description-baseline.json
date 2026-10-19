@@ -9,7 +9,7 @@
     "browser-security/no-client-side-auth-logic": 48,
     "browser-security/no-cookie-auth-tokens": 40,
     "browser-security/no-credentials-in-query-params": 35,
-    "browser-security/no-disabled-certificate-validation": 27,
+    "browser-security/no-disabled-certificate-validation": 26,
     "browser-security/no-dynamic-service-worker-url": 33,
     "browser-security/no-eval": 52,
     "browser-security/no-filereader-innerhtml": 30,
