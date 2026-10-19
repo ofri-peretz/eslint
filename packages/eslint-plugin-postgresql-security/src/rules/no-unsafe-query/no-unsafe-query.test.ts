@@ -671,7 +671,9 @@ describe('no-unsafe-query — fp/fn review 2026-10', () => {
       {
         // @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
         name: "FP: '$' + (n + 1) concatenation is a placeholder index",
-        code: "const n = values.length; // zero-deferral 2026-10: an index must be provably numeric\ndb.query('SELECT * FROM t WHERE a = $' + (n + 1), values);",
+        // `values` is declared: since 2026-10-18 only the length of an array
+        // built in this file is an index (request JSON can carry `length`).
+        code: "const values = [];\nconst n = values.length; // zero-deferral 2026-10: an index must be provably numeric\ndb.query('SELECT * FROM t WHERE a = $' + (n + 1), values);",
       },
       {
         // @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
@@ -681,7 +683,8 @@ describe('no-unsafe-query — fp/fn review 2026-10', () => {
       {
         // @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
         name: 'FP: a static template ending in $ followed by an index',
-        code: 'const i = values.length; // zero-deferral 2026-10: an index must be provably numeric\ndb.query(`SELECT * FROM t WHERE a = $` + (i + 1), values);',
+        // `values` declared, for the same reason as the case above.
+        code: 'const values = [];\nconst i = values.length; // zero-deferral 2026-10: an index must be provably numeric\ndb.query(`SELECT * FROM t WHERE a = $` + (i + 1), values);',
       },
     ]),
     invalid: pg([
@@ -817,6 +820,15 @@ db.query(\`INSERT INTO items (a, b) VALUES \${valuesSql}\`, params);`),
           name: 'FP: a numeric auto-initialised enum member folds to a constant',
           code: 'enum Level { Low, High }\ndb.query(`SELECT id FROM t WHERE lvl = ${Level.High}`);',
         },
+        {
+          // This was pinned INVALID ("a computed member key"). Owner decision
+          // 2026-10-18: a lookup in a const literal of fixed strings is the
+          // allowlist fix the docs recommend — it can only yield one of
+          // those strings, or undefined. policy-decisions.test.ts has the
+          // boundaries (a non-fixed value, a later write, a let binding).
+          name: 'a computed key into a const table of fixed strings',
+          code: "const TABLES = { users: 'u' };\ndb.query(`SELECT id FROM ${TABLES[req.query.k]}`);",
+        },
       ]),
       invalid: pg([
         {
@@ -832,11 +844,6 @@ db.query(\`INSERT INTO items (a, b) VALUES \${valuesSql}\`, params);`),
         {
           name: 'a reassigned object',
           code: "let TABLES = { users: 'u' };\nTABLES = req.body;\ndb.query(`SELECT id FROM ${TABLES.users}`);",
-          errors: [{ messageId: 'unsafeTemplateLiteral' }],
-        },
-        {
-          name: 'a computed member key',
-          code: "const TABLES = { users: 'u' };\ndb.query(`SELECT id FROM ${TABLES[req.query.k]}`);",
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
         {
@@ -1092,8 +1099,10 @@ describe('no-unsafe-query — residual risks closed', () => {
           code: "const ph = ids.map((id, i) => `$${i + 1}`).join(',');\ndb.query(`SELECT * FROM t WHERE id IN (${ph})`, ids);",
         },
         {
+          // `params` declared: only the length of an array built in this file
+          // is an index (owner decision 2026-10-18).
           name: 'a const holding params.length',
-          code: 'const n = params.length;\ndb.query(`SELECT * FROM t WHERE a = $${n}`, params);',
+          code: 'const params = [];\nconst n = params.length;\ndb.query(`SELECT * FROM t WHERE a = $${n}`, params);',
         },
         {
           name: 'a typed parameter of an enclosing function, read inside a callback',
