@@ -35,7 +35,7 @@ The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-se
 | `eslint-plugin-mongodb-security`                     |      3 |      8 | #1221, #1225 | 9.1.4                                                           |
 | `eslint-plugin-node-security` (batch 1, 12 rules)    |      2 |      8 | #1235, #1239 | 5.6.10                                                          |
 | `eslint-plugin-browser-security` (batch 1, 33 rules) |      4 |      2 | #1263        | next patch (changeset `browser-security-mutation-batch1-fixes`) |
-| `eslint-plugin-secure-coding` (batch 1, 8 rules)     |      1 |      1 | PR_REF       | next patch (changeset `secure-coding-mutation-batch1-fixes`)    |
+| `eslint-plugin-secure-coding` (batch 1, 8 rules)     |      1 |      1 | #1270        | next patch (changeset `secure-coding-mutation-batch1-fixes`)    |
 | **Total**                                            | **20** | **25** |              |                                                                 |
 
 The table counts distinct fixes. Measured on the 80-shape release oracle, the old rules gave 15 wrong verdicts (8 false leaks, 7 false doubles); those collapse into the four `#1234` release fixes below.
@@ -113,7 +113,7 @@ Batch 1 covers the 33 `recommended` rules; 4,733 mutants. Survivors were triaged
 
 ### secure-coding (batch 1)
 
-Batch 1 covers the 8 smallest of the 18 `recommended` rules; 3,313 mutants. All 18 together are 11,990 mutants, so the other 10 `recommended` rules are batch 2. The highest-value survivors in `no-homoglyph-identifiers`, `no-log-injection`, `no-template-injection`, `no-fail-open-auth` and `no-xxe-injection` became fixtures in a `mutation-edges.test.ts` per rule. The rest are listed per rule in PR_REF. A redundant literal/template short-circuit in `no-template-injection` was deleted: `untrustedSource` already returns null for static text.
+Batch 1 covers the 8 smallest of the 18 `recommended` rules; 3,313 mutants. All 18 together are 11,990 mutants, so the other 10 `recommended` rules are batch 2. The highest-value survivors in `no-homoglyph-identifiers`, `no-log-injection`, `no-template-injection`, `no-fail-open-auth` and `no-xxe-injection` became fixtures in a `mutation-edges.test.ts` per rule. The rest are listed per rule in #1270. A redundant literal/template short-circuit in `no-template-injection` was deleted: `untrustedSource` already returns null for static text.
 
 | Rule                  | Kind | Wrong verdict on                                                                                                                      |
 | :-------------------- | :--- | :------------------------------------------------------------------------------------------------------------------------------------ |
@@ -148,7 +148,7 @@ These are calls about what a rule _should_ report. The triage did not change the
 
 ## Open owner decisions (secure-coding batch 1)
 
-These are calls about what a rule _should_ report. The triage did not change them; they are listed in PR_REF.
+These are calls about what a rule _should_ report. The triage did not change them; they are listed in #1270.
 
 - **no-fail-open-auth**: only a falsy _literal_ initializer is a deny state. `let token;` and `let token = undefined` followed by a swallowed check and `if (!token) return deny()` stay reported (both pinned). One write to anything but such a local inside the `try` (`req.user = token`) also keeps the swallow reported. Any truthy literal in the `catch` is a grant, so `return 'denied'` is reported as `failOpenReturn`.
 - **no-template-injection**: `ejs.renderFile(req.query.view)` is reported as template injection, but its first argument is a file path, so the finding is path traversal (CWE-22), not CWE-94. Concatenation nested deeper than the depth budget (6) is silent.
