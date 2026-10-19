@@ -6,7 +6,7 @@ Two methods were applied to four security plugins, and every finding was handled
 2. It was fixed with a test that fails on the old rule.
 3. It shipped as a patch release.
 
-The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-security` (batch 1) and, on 2026-10-19, `browser-security` (batch 1). Together they produced **43 distinct wrong verdicts: 19 false positives and 24 false negatives**, plus one crash. Every finding below is fixed, and every fix is published, or queued for the next release where noted.
+The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-security` (batch 1) and, on 2026-10-19, `browser-security` (batches 1 and 2). Together they produced **52 distinct wrong verdicts: 22 false positives and 30 false negatives**, plus one crash. Every finding below is fixed, and every fix is published, or queued for the next release where noted.
 
 ## Method
 
@@ -35,7 +35,8 @@ The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-se
 | `eslint-plugin-mongodb-security`                     |      3 |      8 | #1221, #1225 | 9.1.4                                                           |
 | `eslint-plugin-node-security` (batch 1, 12 rules)    |      2 |      8 | #1235, #1239 | 5.6.10                                                          |
 | `eslint-plugin-browser-security` (batch 1, 33 rules) |      4 |      2 | #1263        | next patch (changeset `browser-security-mutation-batch1-fixes`) |
-| **Total**                                            | **19** | **24** |              |                                                                 |
+| `eslint-plugin-browser-security` (batch 2, 13 rules) |      3 |      6 | this PR      | next patch (changeset `browser-security-mutation-batch2-fixes`) |
+| **Total**                                            | **22** | **30** |              |                                                                 |
 
 The table counts distinct fixes. Measured on the 80-shape release oracle, the old rules gave 15 wrong verdicts (8 false leaks, 7 false doubles); those collapse into the four `#1234` release fixes below.
 
@@ -110,15 +111,31 @@ Batch 1 covers the 33 `recommended` rules; 4,733 mutants. Survivors were triaged
 | no-postmessage-wildcard-origin     | FN   | ``postMessage(data, `*`)`` and ``{ targetOrigin: `*` }``                                                                                           |
 | no-disabled-certificate-validation | FN   | `process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0` and `` = `0` `` (`process.env` stores both as `'0'`)                                                |
 
+### browser-security (batch 2)
+
+Batch 2 covers the 13 rules that were `pending` after batch 1; 3,825 mutants tested, about 28 minutes at concurrency 2. All 13 are banked and `pending` is gone. The time-boxed triage went to the four rules below, where survivors pointed at real wrong verdicts; their fixtures (and the boundary cases that kill the cheap survivors) are in each rule's `mutation-edges.test.ts`, and those four rules were re-banked after the fixes.
+
+| Rule                         | Kind | Wrong verdict on                                                                                                         |
+| :--------------------------- | :--- | :----------------------------------------------------------------------------------------------------------------------- |
+| no-permissive-cors           | FN   | a template-literal wildcard or header name: ``setHeader('Access-Control-Allow-Origin', `*`)``, ``cors({ origin: `*` })`` |
+| no-permissive-cors           | FN   | a `cors()` origin bound to a constant: `const ANY = '*'; cors({ origin: ANY })`                                          |
+| no-password-in-url           | FN   | a password after an empty username: `https://:secret@host`                                                               |
+| require-mime-type-validation | FP   | multer options bound to a name first: `const opts = { fileFilter }; multer(opts)`                                        |
+| require-mime-type-validation | FP   | a quoted `'fileFilter'` key                                                                                              |
+| require-mime-type-validation | FN   | a template-literal prefix test: ``file.type.startsWith(`image/`)``                                                       |
+| no-tracking-without-consent  | FN   | tracking inside `if (hasConsent() !== true)` / `!= true`                                                                 |
+| no-tracking-without-consent  | FN   | tracking inside a yoda `if (false === hasConsent())`                                                                     |
+| no-tracking-without-consent  | FP   | tracking after an early `if (hasConsent() !== true) return;`                                                             |
+
 ## Mutation-testing coverage
 
-| Plugin              |           Rules banked |                                     Mean score |
-| :------------------ | ---------------------: | ---------------------------------------------: |
-| mongodb-security    |                16 / 16 |                                           90.2 |
-| jwt-security        |                13 / 13 |                                           84.2 |
-| postgresql-security |                13 / 13 | 83.0 (no-unsafe-query 75.6 → 86.0 after #1234) |
-| node-security       | 12 / 43 (31 `pending`) |                                        batch 1 |
-| browser-security    | 33 / 46 (13 `pending`) |                      92.1 (84.8 before triage) |
+| Plugin              |           Rules banked |                                                           Mean score |
+| :------------------ | ---------------------: | -------------------------------------------------------------------: |
+| mongodb-security    |                16 / 16 |                                                                 90.2 |
+| jwt-security        |                13 / 13 |                                                                 84.2 |
+| postgresql-security |                13 / 13 |                       83.0 (no-unsafe-query 75.6 → 86.0 after #1234) |
+| node-security       | 12 / 43 (31 `pending`) |                                                              batch 1 |
+| browser-security    |                46 / 46 | 92.1 batch 1 (84.8 before triage); 85.2 batch 2 (82.9 before triage) |
 
 The remaining plugins are not opted in yet: secure-coding, express, vercel-ai, mcp-sdk, lambda, nestjs and the per-SDK plugins. The rollout order is in [`docs/MUTATION_TESTING.md`](../../docs/MUTATION_TESTING.md).
 
@@ -134,6 +151,14 @@ These are calls about what a rule _should_ report. The triage did not change the
 - **no-dynamic-service-worker-url**: `const { 'serviceWorker': sw } = navigator` (quoted, computed or defaulted) followed by `sw.register(url)` is silent.
 - **Template literals across the transport family**: `` const u = `ws://${host}/s` `` (no-insecure-websocket) and `http://` templates (no-http-urls) are not read; ``addEventListener(`message`, …)`` is not a listener.
 - **Smaller scope questions**: `_.assign(el, { innerHTML })` (no-innerhtml only models `Object.assign`); class fields as namespace or body names (no-http-urls, no-credentials-in-query-params, no-unsafe-inline-csp); the legacy `X-Content-Security-Policy` header; `cache.example.com` not treated as RFC 2606 reserved; no-client-side-auth-logic's depth budget counts `&&` chain length.
+
+## Open owner decisions (browser-security batch 2)
+
+- **Deprecated rules**: `no-permissive-cors` and `no-missing-cors-check` are deprecated in favour of `express-security/no-permissive-cors`. `no-missing-cors-check` is mostly source-text regexes and banks the lowest score (72.0). Triage it, or leave it until removal?
+- **no-password-in-url** only reads `http://` and `https://`. `ftp://u:p@host`, `wss://u:p@host` and `postgres://u:p@host` are silent.
+- **require-mime-type-validation**: multer options it cannot see (a parameter, an import, a spread) are reported as having no `fileFilter`. The docs say "a `fileFilter` or strict size `limits`", but the code (and a test) refuse `limits` as a type check.
+- **no-tracking-without-consent**: a string comparison such as `consent.status === 'denied'` counts as a consent guard; `hasConsent() || analytics.track()` is reported correctly, but `!hasConsent() || analytics.track()` is reported too.
+- **Untriaged survivors**: the time box left no-missing-cors-check (72.0), no-clickjacking (76.7), no-unescaped-url-parameter (79.7), require-csp-headers (82.2) and no-missing-security-headers (83.8) at their first-run scores.
 
 ## Owner decisions (resolved in #1251)
 
