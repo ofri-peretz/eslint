@@ -170,7 +170,10 @@ describe('no-xxe-injection', () => {
 
         // ---- correctly configured parsers ---------------------------------
         // Secure libxmljs usage with noent: false
-        'const libxml = require("libxmljs"); const doc = libxml.parseXmlString(xmlString, { noent: false });',
+        {
+          name: 'libxmljs with noent: false does not substitute entities',
+          code: 'const libxml = require("libxmljs"); const doc = libxml.parseXmlString(xmlString, { noent: false });',
+        },
         // A secure option whose value is literal `null` rather than `false`.
         'const libxml = require("libxmljs"); const doc = libxml.parseXmlString(xmlString, { entityResolver: null });',
         // fast-xml-parser takes its entity policy on the CONSTRUCTOR, so the

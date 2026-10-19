@@ -259,6 +259,12 @@ function attributableSource(
     ) {
       return null;
     }
+    // `let name = req.query.name; name = name.replace(/[\r\n]/g, '');` — a
+    // later write is an indirection too: the initializer no longer says what
+    // reaches the log line, so the hop is not evidence.
+    if (variable.references.some((ref) => ref.isWrite() && !ref.init)) {
+      return null;
+    }
     return requestFieldOf(definition.node.init, roots, requestProperties);
   }
   return requestFieldOf(node, roots, requestProperties);

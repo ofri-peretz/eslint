@@ -79,7 +79,10 @@ async function handleAdminAction(req, res) {
       `function f() { try { localStorage.removeItem('k'); } catch (e) {} render(); }`,
       // Bare verbs are deliberately not decisions: `jwt.verify` is a real
       // miss, and it is the price of not matching sinon/mock/schema `.verify`.
-      `function f(t) { try { jwt.verify(t, key); } catch (e) {} proceed(); }`,
+      {
+        name: 'GAP: a bare jwt.verify is not a named security decision',
+        code: `function f(t) { try { jwt.verify(t, key); } catch (e) {} proceed(); }`,
+      },
       `function f(x) { try { validate(x); } catch (e) {} proceed(); }`,
       // Measured on okta-auth-js: verb + `Auth\\w*` would match all three of
       // these, and none of them decides anything about a caller's access.

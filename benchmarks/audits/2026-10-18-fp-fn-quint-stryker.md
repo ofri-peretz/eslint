@@ -6,7 +6,7 @@ Two methods were applied to four security plugins, and every finding was handled
 2. It was fixed with a test that fails on the old rule.
 3. It shipped as a patch release.
 
-The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-security` (batch 1) and, on 2026-10-19, `browser-security` (batch 1). Together they produced **43 distinct wrong verdicts: 19 false positives and 24 false negatives**, plus one crash. Every finding below is fixed, and every fix is published, or queued for the next release where noted.
+The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-security` (batch 1) and, on 2026-10-19, `browser-security` (batch 1) and `secure-coding` (batch 1). Together they produced **45 distinct wrong verdicts: 20 false positives and 25 false negatives**, plus one crash. Every finding below is fixed, and every fix is published, or queued for the next release where noted.
 
 ## Method
 
@@ -35,7 +35,8 @@ The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-se
 | `eslint-plugin-mongodb-security`                     |      3 |      8 | #1221, #1225 | 9.1.4                                                           |
 | `eslint-plugin-node-security` (batch 1, 12 rules)    |      2 |      8 | #1235, #1239 | 5.6.10                                                          |
 | `eslint-plugin-browser-security` (batch 1, 33 rules) |      4 |      2 | #1263        | next patch (changeset `browser-security-mutation-batch1-fixes`) |
-| **Total**                                            | **19** | **24** |              |                                                                 |
+| `eslint-plugin-secure-coding` (batch 1, 8 rules)     |      1 |      1 | PR_REF       | next patch (changeset `secure-coding-mutation-batch1-fixes`)    |
+| **Total**                                            | **20** | **25** |              |                                                                 |
 
 The table counts distinct fixes. Measured on the 80-shape release oracle, the old rules gave 15 wrong verdicts (8 false leaks, 7 false doubles); those collapse into the four `#1234` release fixes below.
 
@@ -110,6 +111,15 @@ Batch 1 covers the 33 `recommended` rules; 4,733 mutants. Survivors were triaged
 | no-postmessage-wildcard-origin     | FN   | ``postMessage(data, `*`)`` and ``{ targetOrigin: `*` }``                                                                                           |
 | no-disabled-certificate-validation | FN   | `process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0` and `` = `0` `` (`process.env` stores both as `'0'`)                                                |
 
+### secure-coding (batch 1)
+
+Batch 1 covers the 8 smallest of the 18 `recommended` rules; 3,313 mutants. All 18 together are 11,990 mutants, so the other 10 `recommended` rules are batch 2. The highest-value survivors in `no-homoglyph-identifiers`, `no-log-injection`, `no-template-injection`, `no-fail-open-auth` and `no-xxe-injection` became fixtures in a `mutation-edges.test.ts` per rule. The rest are listed per rule in PR_REF. A redundant literal/template short-circuit in `no-template-injection` was deleted: `untrustedSource` already returns null for static text.
+
+| Rule                  | Kind | Wrong verdict on                                                                                                                      |
+| :-------------------- | :--- | :------------------------------------------------------------------------------------------------------------------------------------ |
+| no-template-injection | FN   | a request template behind `??`, `\|\|`, the right of `&&`, or in a conditional branch: `Handlebars.compile(req.query.tpl ?? DEFAULT)` |
+| no-log-injection      | FP   | a local reassigned after its request initializer: `let name = req.query.name; name = name.replace(/[\r\n]/g, '')`                     |
+
 ## Mutation-testing coverage
 
 | Plugin              |           Rules banked |                                     Mean score |
@@ -119,8 +129,9 @@ Batch 1 covers the 33 `recommended` rules; 4,733 mutants. Survivors were triaged
 | postgresql-security |                13 / 13 | 83.0 (no-unsafe-query 75.6 → 86.0 after #1234) |
 | node-security       | 12 / 43 (31 `pending`) |                                        batch 1 |
 | browser-security    | 33 / 46 (13 `pending`) |                      92.1 (84.8 before triage) |
+| secure-coding       |  8 / 34 (26 `pending`) |          78.0 (banked from the pre-triage run) |
 
-The remaining plugins are not opted in yet: secure-coding, express, vercel-ai, mcp-sdk, lambda, nestjs and the per-SDK plugins. The rollout order is in [`docs/MUTATION_TESTING.md`](../../docs/MUTATION_TESTING.md).
+The remaining plugins are not opted in yet: express, vercel-ai, mcp-sdk, lambda, nestjs and the per-SDK plugins. The rollout order is in [`docs/MUTATION_TESTING.md`](../../docs/MUTATION_TESTING.md).
 
 ## Open owner decisions (browser-security batch 1)
 
@@ -134,6 +145,15 @@ These are calls about what a rule _should_ report. The triage did not change the
 - **no-dynamic-service-worker-url**: `const { 'serviceWorker': sw } = navigator` (quoted, computed or defaulted) followed by `sw.register(url)` is silent.
 - **Template literals across the transport family**: `` const u = `ws://${host}/s` `` (no-insecure-websocket) and `http://` templates (no-http-urls) are not read; ``addEventListener(`message`, …)`` is not a listener.
 - **Smaller scope questions**: `_.assign(el, { innerHTML })` (no-innerhtml only models `Object.assign`); class fields as namespace or body names (no-http-urls, no-credentials-in-query-params, no-unsafe-inline-csp); the legacy `X-Content-Security-Policy` header; `cache.example.com` not treated as RFC 2606 reserved; no-client-side-auth-logic's depth budget counts `&&` chain length.
+
+## Open owner decisions (secure-coding batch 1)
+
+These are calls about what a rule _should_ report. The triage did not change them; they are listed in PR_REF.
+
+- **no-fail-open-auth**: only a falsy _literal_ initializer is a deny state. `let token;` and `let token = undefined` followed by a swallowed check and `if (!token) return deny()` stay reported (both pinned). One write to anything but such a local inside the `try` (`req.user = token`) also keeps the swallow reported. Any truthy literal in the `catch` is a grant, so `return 'denied'` is reported as `failOpenReturn`.
+- **no-template-injection**: `ejs.renderFile(req.query.view)` is reported as template injection, but its first argument is a file path, so the finding is path traversal (CWE-22), not CWE-94. Concatenation nested deeper than the depth budget (6) is silent.
+- **no-xxe-injection**: an internal entity (`<!ENTITY lol "lol">`, the billion-laughs shape, CWE-776) is not reported by the DTD-literal check. It is now pinned as valid.
+- **no-homoglyph-identifiers**: regular-expression literals are not scanned for invisible characters, and an identifier written entirely in one confusable script is not a homoglyph (both pinned as valid).
 
 ## Owner decisions (resolved in #1251)
 

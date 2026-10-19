@@ -678,6 +678,94 @@
         "require-mime-type-validation",
         "require-url-validation"
       ]
+    },
+    "secure-coding": {
+      "rules": {
+        "no-fail-open-auth": {
+          "score": 83.1,
+          "killed": 273,
+          "survived": 57,
+          "noCoverage": 0,
+          "timeout": 9
+        },
+        "no-homoglyph-identifiers": {
+          "score": 53.7,
+          "killed": 104,
+          "survived": 92,
+          "noCoverage": 0,
+          "timeout": 3
+        },
+        "no-improper-sanitization": {
+          "score": 76.7,
+          "killed": 385,
+          "survived": 120,
+          "noCoverage": 0,
+          "timeout": 11
+        },
+        "no-log-injection": {
+          "score": 87.7,
+          "killed": 127,
+          "survived": 18,
+          "noCoverage": 0,
+          "timeout": 2
+        },
+        "no-privilege-escalation": {
+          "score": 83.7,
+          "killed": 298,
+          "survived": 53,
+          "noCoverage": 6,
+          "timeout": 6
+        },
+        "no-template-injection": {
+          "score": 79.4,
+          "killed": 138,
+          "survived": 36,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "no-weak-password-recovery": {
+          "score": 70.4,
+          "killed": 231,
+          "survived": 97,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-xxe-injection": {
+          "score": 89,
+          "killed": 203,
+          "survived": 22,
+          "noCoverage": 3,
+          "timeout": 1
+        }
+      },
+      "pending": [
+        "__tests__",
+        "detect-non-literal-regexp",
+        "detect-object-injection",
+        "detect-weak-password-validation",
+        "no-bidi-characters",
+        "no-directive-injection",
+        "no-electron-security-issues",
+        "no-format-string-injection",
+        "no-graphql-injection",
+        "no-hardcoded-credentials",
+        "no-hardcoded-session-tokens",
+        "no-improper-type-validation",
+        "no-insecure-comparison",
+        "no-ldap-injection",
+        "no-missing-authentication",
+        "no-pii-in-logs",
+        "no-redos-vulnerable-regex",
+        "no-sensitive-data-exposure",
+        "no-sql-injection",
+        "no-unchecked-loop-condition",
+        "no-unlimited-resource-allocation",
+        "no-unsafe-deserialization",
+        "no-unsafe-regex-construction",
+        "no-xpath-injection",
+        "require-backend-authorization",
+        "require-secure-defaults"
+      ]
     }
   }
 }
