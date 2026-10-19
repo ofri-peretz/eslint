@@ -6,7 +6,7 @@ Two methods were applied to four security plugins, and every finding was handled
 2. It was fixed with a test that fails on the old rule.
 3. It shipped as a patch release.
 
-The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-security` (batch 1) and, on 2026-10-19, `browser-security` (batches 1 and 2). Together they produced **52 distinct wrong verdicts: 22 false positives and 30 false negatives**, plus one crash. Every finding below is fixed, and every fix is published, or queued for the next release where noted.
+The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-security` (batch 1) and, on 2026-10-19, `browser-security` (batches 1 and 2). Together they produced **53 distinct wrong verdicts: 22 false positives and 31 false negatives**, plus one crash. Every finding below is fixed, and every fix is published, or queued for the next release where noted.
 
 ## Method
 
@@ -35,8 +35,8 @@ The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-se
 | `eslint-plugin-mongodb-security`                     |      3 |      8 | #1221, #1225 | 9.1.4                                                           |
 | `eslint-plugin-node-security` (batch 1, 12 rules)    |      2 |      8 | #1235, #1239 | 5.6.10                                                          |
 | `eslint-plugin-browser-security` (batch 1, 33 rules) |      4 |      2 | #1263        | next patch (changeset `browser-security-mutation-batch1-fixes`) |
-| `eslint-plugin-browser-security` (batch 2, 13 rules) |      3 |      6 | #1267        | next patch (changeset `browser-security-mutation-batch2-fixes`) |
-| **Total**                                            | **22** | **30** |              |                                                                 |
+| `eslint-plugin-browser-security` (batch 2, 13 rules) |      3 |      7 | #1267        | next patch (changeset `browser-security-mutation-batch2-fixes`) |
+| **Total**                                            | **22** | **31** |              |                                                                 |
 
 The table counts distinct fixes. Measured on the 80-shape release oracle, the old rules gave 15 wrong verdicts (8 false leaks, 7 false doubles); those collapse into the four `#1234` release fixes below.
 
@@ -123,6 +123,7 @@ Batch 2 covers the 13 rules that were `pending` after batch 1; 3,825 mutants tes
 | require-mime-type-validation | FP   | multer options bound to a name first: `const opts = { fileFilter }; multer(opts)`                                        |
 | require-mime-type-validation | FP   | a quoted `'fileFilter'` key                                                                                              |
 | require-mime-type-validation | FN   | a template-literal prefix test: ``file.type.startsWith(`image/`)``                                                       |
+| require-mime-type-validation | FN   | a quoted `fetch` init key, `fetch(url, { 'body': file })` (found by `check:computed-keys` on the new fixture)            |
 | no-tracking-without-consent  | FN   | tracking inside `if (hasConsent() !== true)` / `!= true`                                                                 |
 | no-tracking-without-consent  | FN   | tracking inside a yoda `if (false === hasConsent())`                                                                     |
 | no-tracking-without-consent  | FP   | tracking after an early `if (hasConsent() !== true) return;`                                                             |

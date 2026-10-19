@@ -18,7 +18,7 @@
 | :------------------------------------------------------------------------- | :----------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`2026-05-03.md`](./2026-05-03.md)                                         | 📝 Reference | ILB audit, 2026-05-03 — names every known FP/FN, attributes each to a rule, produces a triage queue ranked by impact                                                                     |
 | [`2026-05-09.md`](./2026-05-09.md)                                         | 📝 Reference | ILB audit — formatter + vocabulary + provenance iteration                                                                                                                                |
-| [`2026-10-18-fp-fn-quint-stryker.md`](./2026-10-18-fp-fn-quint-stryker.md) | 🟢 Live      | FP/FN audit by Quint oracles + Stryker mutation testing across postgresql/jwt/mongodb/node-security/browser-security — 52 wrong verdicts (22 FP, 30 FN), each fixed failing-first; released as patches, browser-security queued for its next patch |
+| [`2026-10-18-fp-fn-quint-stryker.md`](./2026-10-18-fp-fn-quint-stryker.md) | 🟢 Live      | FP/FN audit by Quint oracles + Stryker mutation testing across postgresql/jwt/mongodb/node-security/browser-security — 53 wrong verdicts (22 FP, 31 FN), each fixed failing-first; released as patches, browser-security queued for its next patch |
 
 ### Compliance & credibility — submission packets
 

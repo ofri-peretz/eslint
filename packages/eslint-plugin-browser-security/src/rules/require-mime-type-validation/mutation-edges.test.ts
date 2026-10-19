@@ -49,6 +49,12 @@ ruleTester.run(
       },
     ],
     invalid: [
+      // @found Stryker mutation-survivor triage, 2026-10-19
+      {
+        name: 'FN: a quoted body key is the same fetch body',
+        code: "function f(input) { const file = input.files[0]; return fetch('/upload', { method: 'POST', 'body': file }); }",
+        errors: [{ messageId: 'missingMimeValidation' }],
+      },
       {
         name: 'fetch with a body of a selected file and no type check',
         code: "function f(input) { const file = input.files[0]; return fetch('/upload', { method: 'POST', body: file }); }",

@@ -120,6 +120,7 @@ ruleTester.run('require-mime-type-validation', requireMimeTypeValidation, {
       errors: [{ messageId: 'prefixMimeCheck' }],
     },
     {
+      name: 'an indexOf() === 0 test on a media type is a prefix test',
       code: `if (file.type.indexOf('application/') === 0) send(file);`,
       errors: [{ messageId: 'prefixMimeCheck' }],
     },

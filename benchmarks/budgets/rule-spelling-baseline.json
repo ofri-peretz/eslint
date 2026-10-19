@@ -14,7 +14,6 @@
     "packages/eslint-plugin-browser-security/src/rules/no-unescaped-url-parameter/untrusted-text.ts::dotted-property-only::? node.property.name",
     "packages/eslint-plugin-browser-security/src/rules/no-unescaped-url-parameter/untrusted-text.ts::string-literal-only::n.type === AST_NODE_TYPES.Literal && typeof n.value === 'number';",
     "packages/eslint-plugin-browser-security/src/rules/require-csp-headers/index.ts::bare-object-key-only::parent.key.name === 'key'",
-    "packages/eslint-plugin-browser-security/src/rules/require-mime-type-validation/index.ts::bare-object-key-only::property.key.name === 'body',",
     "packages/eslint-plugin-browser-security/src/rules/require-postmessage-origin-check/index.ts::bare-object-key-only::if (node.key.type === 'PrivateIdentifier') return `this.#${node.key.name}`;",
     "packages/eslint-plugin-browser-security/src/rules/require-postmessage-origin-check/index.ts::dotted-property-only::? `#${node.property.name}`",
     "packages/eslint-plugin-browser-security/src/utils/dynamic-code-sinks.ts::string-literal-only::return node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string'",

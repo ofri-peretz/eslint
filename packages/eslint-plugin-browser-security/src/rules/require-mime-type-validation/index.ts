@@ -247,9 +247,8 @@ function isUploadSink(node: TSESTree.CallExpression): boolean {
     return node.arguments[1].properties.some(
       (property) =>
         property.type === AST_NODE_TYPES.Property &&
-        !property.computed &&
-        property.key.type === AST_NODE_TYPES.Identifier &&
-        property.key.name === 'body',
+        // `'body'` and `['body']` name the same init field as `body`.
+        objectKeyName(property) === 'body',
     );
   }
   if (callee.type === AST_NODE_TYPES.MemberExpression) {
