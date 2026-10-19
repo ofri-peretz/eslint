@@ -38,7 +38,7 @@ ruleTester.run('no-http-urls', noHttpUrls, {
       name: 'a list of scheme prefixes is not a request',
       code: "const URL_PREFIXES = ['http://', 'https://', 'data:'];",
     },
-    { code: "if (u.startsWith('http://')) { upgrade(u); }" },
+    { name: 'a bare scheme passed to startsWith is a guard', code: "if (u.startsWith('http://')) { upgrade(u); }" },
     { code: "const scheme = 'http://';" },
     // The template form of the same thing, for the same reason.
     { code: 'const u = `http://`;' },

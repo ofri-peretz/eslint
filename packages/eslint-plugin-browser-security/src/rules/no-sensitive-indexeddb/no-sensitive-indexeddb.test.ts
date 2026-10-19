@@ -20,7 +20,10 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-sensitive-indexeddb', noSensitiveIndexeddb, {
   valid: [
     { name: 'an ordinary store', code: `db.createObjectStore('users');` },
-    { code: `db.createObjectStore('settings');` },
+    {
+      name: 'a non-sensitive store name',
+      code: `db.createObjectStore('settings');`,
+    },
     { code: `db.createObjectStore('passwords');`, filename: 'db.test.ts' },
     { code: `db.createObjectStore();` },
     { code: `db.createObjectStore(computeName());` },

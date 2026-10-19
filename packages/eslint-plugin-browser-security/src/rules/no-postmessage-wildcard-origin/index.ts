@@ -17,6 +17,7 @@ import {
   AST_NODE_TYPES,
   createRule,
   objectKeyName,
+  staticString,
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
@@ -118,10 +119,8 @@ export const noPostmessageWildcardOrigin = createRule<RuleOptions, MessageIds>({
         const targetOriginArg = args[1];
 
         // Check for literal "*" as second argument
-        if (
-          targetOriginArg.type === AST_NODE_TYPES.Literal &&
-          targetOriginArg.value === '*'
-        ) {
+        // `'*'` and `` `*` `` are the same wildcard.
+        if (staticString(targetOriginArg) === '*') {
           context.report({
             node: targetOriginArg,
             messageId: 'wildcardOrigin',
@@ -146,8 +145,7 @@ export const noPostmessageWildcardOrigin = createRule<RuleOptions, MessageIds>({
 
             if (
               objectKeyName(prop) === 'targetOrigin' &&
-              prop.value.type === AST_NODE_TYPES.Literal &&
-              prop.value.value === '*'
+              staticString(prop.value) === '*'
             ) {
               context.report({
                 node: prop.value,

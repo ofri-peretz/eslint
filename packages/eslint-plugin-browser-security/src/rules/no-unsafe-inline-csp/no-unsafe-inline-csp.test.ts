@@ -33,7 +33,10 @@ ruleTester.run('no-unsafe-inline-csp', noUnsafeInlineCsp, {
       code: `const csp = "script-src 'self' 'nonce-abc123'";`,
     },
     // Safe CSP with hash
-    { code: `const csp = "script-src 'self' 'sha256-xxx'";` },
+    {
+      name: 'a hash source is not unsafe-inline',
+      code: `const csp = "script-src 'self' 'sha256-xxx'";`,
+    },
     // No CSP content
     { code: `const message = "Hello world";` },
     // Test files allowed

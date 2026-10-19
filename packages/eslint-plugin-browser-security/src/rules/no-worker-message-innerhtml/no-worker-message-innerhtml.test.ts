@@ -43,6 +43,7 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
     },
     // Safe: with sanitization
     {
+      name: 'the message is sanitized before innerHTML',
       code: `
         const myWorker = new Worker('worker.js');
         myWorker.onmessage = (e) => {

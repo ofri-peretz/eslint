@@ -18,6 +18,7 @@ import {
   MessageIcons,
   createRule,
   isTestFilePath,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { isAnchoredRegexpTest } from '../../utils/regexp-anchoring';
@@ -78,19 +79,31 @@ const NON_WINDOW_RECEIVERS = new Set([
  */
 function receiverKey(node: TSESTree.Node): string | undefined {
   if (node.type === 'Identifier') return node.name;
-  if (
-    node.type === 'MemberExpression' &&
-    !node.computed &&
-    node.property.type === 'Identifier'
-  ) {
+  if (node.type === 'MemberExpression') {
+    // `this.#socket` is a field of its own, distinct from `this.socket`. A
+    // private name has exactly one spelling — it can never be computed — so
+    // reading it directly misses nothing.
+    const name =
+      node.property.type === 'PrivateIdentifier'
+        ? `#${node.property.name}`
+        : propertyName(node);
+    if (name === null) return undefined;
     if (node.object.type === 'ThisExpression') {
-      return `this.${node.property.name}`;
+      return `this.${name}`;
     }
     if (node.object.type === 'Identifier') {
-      return `${node.object.name}.${node.property.name}`;
+      return `${node.object.name}.${name}`;
     }
   }
   return undefined;
+}
+
+/** `this.<field>` for a class field key, or `undefined` for a computed one. */
+function fieldKey(node: TSESTree.PropertyDefinition): string | undefined {
+  // A private name has exactly one spelling; it can never be computed.
+  if (node.key.type === 'PrivateIdentifier') return `this.#${node.key.name}`;
+  const name = objectKeyName(node);
+  return name === null ? undefined : `this.${name}`;
 }
 
 /** The constructor name a type annotation names, if it names one directly. */
@@ -118,10 +131,10 @@ function hasOriginCheck(
 
   // Common origin validation patterns
   const originPatterns = [
-    /event\.origin\s*[!=]==?\s*/,
-    /e\.origin\s*[!=]==?\s*/,
-    /\.origin\s*[!=]==?\s*/,
-    /origin\s*[!=]==?\s*/,
+    // `event.origin ===`, `e.origin !=`, `origin ==` — one pattern covers
+    // every receiver spelling; the three narrower copies it subsumed were
+    // removed (a mutant in any of them could not change a verdict).
+    /origin\s*[!=]==?/,
     /checkOrigin/i,
     /validateOrigin/i,
     /isAllowedOrigin/i,
@@ -237,9 +250,8 @@ export const requirePostmessageOriginCheck = createRule<
       // `class C { connection!: WebSocket }` — the declared type names the
       // receiver even when the assignment is out of reach.
       PropertyDefinition(node: TSESTree.PropertyDefinition) {
-        if (node.key.type !== 'Identifier') return;
         rememberIfNonWindow(
-          `this.${node.key.name}`,
+          fieldKey(node),
           annotatedTypeName(node.typeAnnotation),
         );
       },
@@ -255,14 +267,21 @@ export const requirePostmessageOriginCheck = createRule<
         if (node.callee.type !== 'Identifier') return;
         const typeName = node.callee.name;
         const parent = node.parent as TSESTree.Node | undefined;
-        if (parent?.type === 'VariableDeclarator' && parent.init === node) {
+        // A `new` expression is never a declarator's id, an assignment's
+        // target or a field's key, so its parent position needs no check.
+        if (parent?.type === 'VariableDeclarator') {
           // A destructuring pattern names no receiver, and `receiverKey`
           // answers `undefined` for it.
           rememberIfNonWindow(receiverKey(parent.id), typeName);
           return;
         }
-        if (parent?.type === 'AssignmentExpression' && parent.right === node) {
+        if (parent?.type === 'AssignmentExpression') {
           rememberIfNonWindow(receiverKey(parent.left), typeName);
+          return;
+        }
+        // `class Feed { socket = new WebSocket(url) }` / `#socket = …`
+        if (parent?.type === 'PropertyDefinition') {
+          rememberIfNonWindow(fieldKey(parent), typeName);
         }
       },
 
@@ -344,18 +363,17 @@ export const requirePostmessageOriginCheck = createRule<
           }
         }
 
-        // Handler is a reference (variable) - can't analyze
-        if (handlerArg.type === 'Identifier') {
-          // Could add more sophisticated analysis here
-          // For now, we skip variable references as they may be validated elsewhere
-        }
+        // A handler passed by reference (`addEventListener('message', onMsg)`)
+        // is not analysed: it may be validated where it is defined.
       },
 
       'Program:exit'() {
         for (const { handler, receiver } of unverified) {
           // A WebSocket / EventSource / Worker / BroadcastChannel message has
           // no origin to check — see NON_WINDOW_RECEIVERS.
-          if (receiver !== undefined && nonWindowReceivers.has(receiver)) {
+          // `rememberIfNonWindow` never records an unnameable receiver, so an
+          // `undefined` one is never in the set.
+          if (nonWindowReceivers.has(receiver as string)) {
             continue;
           }
           const guarded = anchoredOriginTests.some(

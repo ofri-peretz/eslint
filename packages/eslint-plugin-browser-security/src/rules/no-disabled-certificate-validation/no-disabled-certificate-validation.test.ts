@@ -48,10 +48,12 @@ ruleTester.run(
       },
       // Corpus lock: benchmarks/corpus/CWE-295/safe/tls-default-verification.js
       {
+        name: 'default verification when no TLS option is set',
         code: "https.request({ host, path: '/secret', method: 'GET' }, onRes)",
       },
       // Delegation as a single expression.
       {
+        name: 'checkServerIdentity delegating to the default check',
         code: 'tls.connect({ checkServerIdentity: (h, c) => tls.checkServerIdentity(h, c) })',
       },
       // Throwing is reporting.

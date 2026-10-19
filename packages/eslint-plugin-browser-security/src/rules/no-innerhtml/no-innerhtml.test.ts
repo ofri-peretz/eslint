@@ -32,7 +32,10 @@ ruleTester.run('no-innerhtml', noInnerhtml, {
     { code: 'process.stderr.write(`${message}\n`)' },
     { code: 'stdout.write(`Bundling ${extension.localIdentifier}...`)' },
     { code: 'options.stdout.write(`done ${name}`)' },
-    { code: 'socket.write(payload)' },
+    {
+      name: 'a socket write is not a document write',
+      code: 'socket.write(payload)',
+    },
     { code: 'res.write(chunk)' },
     { code: 'post.write(postData)' },
     { code: 'result.write(item, offset, length)' },

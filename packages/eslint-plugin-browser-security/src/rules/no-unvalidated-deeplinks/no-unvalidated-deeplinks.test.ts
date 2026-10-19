@@ -19,7 +19,7 @@ ruleTester.run('no-unvalidated-deeplinks', noUnvalidatedDeeplinks, {
         'function noop() {}',
     // Static URLs are safe
     { name: 'a literal URL', code: "Linking.openURL('https://example.com')" },
-    { code: "navigation.navigate('Home')" },
+    { name: 'navigating to a literal screen name', code: "navigation.navigate('Home')" },
     { code: "const url = 'myapp://page'" },
 
     // ---- Corpus FP lock (okta/okta-signin-widget, 7 of 7 findings) --------

@@ -35,6 +35,7 @@ ruleTester.run('no-postmessage-wildcard-origin', noPostmessageWildcardOrigin, {
     },
     // Options object with specific origin
     {
+      name: 'a specific target origin in the options form',
       code: `window.postMessage(data, { targetOrigin: 'https://example.com' });`,
     },
     // No origin argument (will fail at runtime but not our concern)

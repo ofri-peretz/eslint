@@ -18,7 +18,7 @@ ruleTester.run('no-client-side-auth-logic', noClientSideAuthLogic, {
     { name: 'the token is verified', code: "if (await verifyToken(token)) { proceed() }" },
     { code: "const isAuth = await authService.verify()" },
     // Non-auth localStorage usage
-    { code: "if (localStorage.getItem('theme')) { setTheme() }" },
+    { name: 'a storage key that names no auth decision', code: "if (localStorage.getItem('theme')) { setTheme() }" },
     { code: "const x = 1" },
 
     // --- A flag test is not an auth decision -------------------------------

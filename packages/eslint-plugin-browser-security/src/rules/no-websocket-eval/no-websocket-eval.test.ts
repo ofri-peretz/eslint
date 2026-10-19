@@ -32,6 +32,7 @@ ruleTester.run('no-websocket-eval', noWebsocketEval, {
     },
     // Safe: textContent
     {
+      name: 'the message is written with textContent, not evaluated',
       code: `
         const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {

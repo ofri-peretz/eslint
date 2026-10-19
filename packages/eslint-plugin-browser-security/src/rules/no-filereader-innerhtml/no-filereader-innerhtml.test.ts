@@ -42,6 +42,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
 
     // Safe: using textContent
     {
+      name: 'file content written with textContent',
       code: `
         const reader = new FileReader();
         reader.onload = (e) => {

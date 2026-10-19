@@ -34,6 +34,7 @@ ruleTester.run(
       },
       // Has origin check with loose equality
       {
+        name: 'a loose origin comparison is an origin check',
         code: `
         window.addEventListener('message', (e) => {
           if (e.origin != 'https://example.com') return;
@@ -364,17 +365,8 @@ ruleTester.run(
         `,
         errors: [{ messageId: 'missingOriginCheck' }],
       },
-      {
-        code: `
-          class C {
-            ['connection']: WebSocket = new WebSocket('wss://example.test');
-            listen() {
-              this.connection.addEventListener('message', (e) => render(e.data));
-            }
-          }
-        `,
-        errors: [{ messageId: 'missingOriginCheck' }],
-      },
+      // `['connection']: WebSocket` names the same field as `connection`;
+      // it is valid now — see mutation-edges.test.ts.
       // A `new` expression in neither a declarator initialiser nor an
       // assignment right-hand side.
       {

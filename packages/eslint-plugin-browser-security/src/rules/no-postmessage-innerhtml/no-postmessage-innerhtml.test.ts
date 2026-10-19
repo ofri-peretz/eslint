@@ -41,6 +41,7 @@ ruleTester.run('no-postmessage-innerhtml', noPostmessageInnerhtml, {
     },
     // Safe: with origin check and sanitization
     {
+      name: 'an origin-checked, sanitised payload',
       code: `
         window.addEventListener('message', (event) => {
           if (event.origin !== 'https://trusted.com') return;

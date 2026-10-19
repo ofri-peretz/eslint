@@ -26,7 +26,7 @@ describe('no-insecure-redirects', () => {
       valid: [
         // Relative redirects
         { name: 'a literal in-app path', code: 'res.redirect("/dashboard");' },
-        { code: 'res.redirect("../home");' },
+        { name: 'a literal parent-relative path', code: 'res.redirect("../home");' },
         // Test files (if ignoreInTests is true)
         {
           code: 'res.redirect(req.query.url);',

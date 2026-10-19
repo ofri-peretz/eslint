@@ -39,6 +39,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  staticString,
 } from '@interlace/eslint-devkit';
 import {
   hasProvableJwtValue,
@@ -93,11 +94,12 @@ const NON_CREDENTIAL_LITERAL =
 
 function isProvablyNotACredential(node: TSESTree.Node | undefined): boolean {
   if (node === undefined) return false;
+  // `'1'` and `` `1` `` are the same string.
+  const text = staticString(node);
+  if (text !== null) return NON_CREDENTIAL_LITERAL.test(text);
   if (node.type !== AST_NODE_TYPES.Literal) return false;
   const { value } = node;
-  if (typeof value === 'boolean' || typeof value === 'number') return true;
-  if (typeof value === 'string') return NON_CREDENTIAL_LITERAL.test(value);
-  return false;
+  return typeof value === 'boolean' || typeof value === 'number';
 }
 
 export const noJwtInStorage = createRule<RuleOptions, MessageIds>({

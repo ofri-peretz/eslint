@@ -25,7 +25,7 @@ ruleTester.run('no-insecure-websocket', noInsecureWebsocket, {
         'const flag = true;',
     // Secure WebSocket connections
     { name: 'wss://', code: "new WebSocket('wss://acmecorp.io')" },
-    { code: "const ws = new WebSocket('wss://secure.acmecorp.io/socket')" },
+    { name: 'a wss:// constructor URL is secure', code: "const ws = new WebSocket('wss://secure.acmecorp.io/socket')" },
     { code: "new WebSocket(`wss://acmecorp.io/${path}`)" },
     // Non-WebSocket code
     { code: "const x = 1" },

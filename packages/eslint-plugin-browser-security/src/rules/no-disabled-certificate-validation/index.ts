@@ -14,6 +14,7 @@ import {
   MessageIcons,
   objectKeyName,
   propertyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
@@ -188,7 +189,21 @@ export const noDisabledCertificateValidation = createRule<
           propertyName(node.left.object) === 'env' &&
           propertyName(node.left) === 'NODE_TLS_REJECT_UNAUTHORIZED'
         ) {
-          if (node.right.type === 'Literal' && node.right.value === '0') {
+          // `process.env` stores every assignment as a string, so `= 0`
+          // writes '0' exactly as `= '0'` does and disables verification the
+          // same way. Matching only the quoted spelling missed it.
+          //
+          // Only an operator that STORES the right-hand side can write '0':
+          // `=`, and the logical forms when they assign (`??=` on an unset
+          // variable, the usual state). `+= 0` appends to whatever is there.
+          const right = node.right;
+          // `=`, `||=`, `&&=`, `??=` — the ECMAScript assignment operators
+          // that store the right-hand side itself rather than combining it.
+          if (!/^(?:\|\||&&|\?\?)?=$/.test(node.operator)) return;
+          if (
+            staticString(right) === '0' ||
+            (right.type === 'Literal' && right.value === 0)
+          ) {
             report(node);
           }
         }
