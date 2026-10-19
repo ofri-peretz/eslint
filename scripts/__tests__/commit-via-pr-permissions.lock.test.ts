@@ -47,5 +47,19 @@ describe('workflows that commit via PR can open the PR', () => {
           'fails with "Resource not accessible by integration" (#803).',
       ).toMatch(/^\s*pull-requests:\s*write\b/m);
     });
+
+    // A PR pushed and opened with GITHUB_TOKEN fires no workflows, so its required checks never
+    // report and it sits BLOCKED forever (#1274). The checkout token authenticates the push and
+    // GH_TOKEN the `gh pr create`; both need the PAT that docs-data.yml uses.
+    it(`${file} pushes and opens its PR with the bot PAT`, () => {
+      const pat =
+        'secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || github.token';
+      expect(text, `${file}: the checkout token`).toContain(
+        `token: \${{ ${pat} }}`,
+      );
+      expect(text, `${file}: the commit-via-pr step's GH_TOKEN`).toMatch(
+        /uses: \.\/\.github\/actions\/commit-via-pr\s+env:\s+GH_TOKEN: \$\{\{ secrets\.RELEASE_BOT_PAT \|\| secrets\.AGENTS_REPO_PAT \|\| github\.token \}\}/,
+      );
+    });
   }
 });

@@ -98,6 +98,11 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Pushed and opened with a PAT where one is configured: GitHub fires no workflows
+          # for events made with GITHUB_TOKEN, so the bot PR's required checks would never
+          # report and it would sit BLOCKED forever (docs-data.yml has the full note).
+          token: ${{ secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || github.token }}
       - uses: ./.github/actions/setup
         with:
           turbo-cache: 'false'
@@ -130,7 +135,7 @@ jobs:
       - name: Commit the refreshed inventory
         uses: ./.github/actions/commit-via-pr
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || github.token }}
         with:
           branch: automated/real-source-inventory
           paths: benchmarks/budgets/real-world-rule-inventory.json

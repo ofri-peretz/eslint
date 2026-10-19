@@ -433,7 +433,10 @@ jobs:
             echo "::warning title=Refresh PR not created::Numbers are committed on 'bench/weekly-refresh' but PR creation failed (likely the 'Allow GitHub Actions to create and approve pull requests' repo setting). Open it manually: https://github.com/${GITHUB_REPOSITORY}/compare/main...bench/weekly-refresh"
           fi
         env:
-          GH_TOKEN: ${{ github.token }}
+          # A PR opened with GITHUB_TOKEN fires no workflows, so its required checks never
+          # report (docs-data.yml has the full note). Only `gh` gets the PAT; the push above
+          # keeps the job's own token, which is all this Pages-deploying job is meant to hold.
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || github.token }}
 
       # The workflow's own header says it exists because "a number nobody
       # re-measures is a number that quietly rots" — and until now a FAILED

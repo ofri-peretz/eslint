@@ -39,6 +39,11 @@ jobs:
       issues: write # open the failure issue
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Pushed and opened with a PAT where one is configured: GitHub fires no workflows
+          # for events made with GITHUB_TOKEN, so the bot PR's required checks would never
+          # report and it would sit BLOCKED forever (docs-data.yml has the full note).
+          token: ${{ secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || github.token }}
 
       - name: Set up Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
@@ -87,7 +92,7 @@ jobs:
       - name: Commit whatever moved
         uses: ./.github/actions/commit-via-pr
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || github.token }}
         with:
           branch: automated/comparison-artifacts
           paths: benchmark-results/ benchmarks/budgets/
