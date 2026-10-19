@@ -5,6 +5,21 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.17",
+      "date": "2026-10-19T19:36:48Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "wrong verdicts surfaced by Stryker mutation testing (batch 1)",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-browser-security",
       "short": "eslint-plugin-browser-security",
       "version": "2.1.11",
@@ -19415,21 +19430,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-secure-coding",
-      "short": "eslint-plugin-secure-coding",
-      "version": "5.4.17",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "wrong verdicts surfaced by Stryker mutation testing (batch 1)",
           "pr": null
         }
       ]
