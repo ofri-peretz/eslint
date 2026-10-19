@@ -6,7 +6,7 @@ Two methods were applied to four security plugins, and every finding was handled
 2. It was fixed with a test that fails on the old rule.
 3. It shipped as a patch release.
 
-The plugins: `postgresql-security`, `jwt-security`, `mongodb-security` and `node-security` (batch 1). Together they produced **37 distinct wrong verdicts: 15 false positives and 22 false negatives**, plus one crash. Every finding below is fixed, and every fix is published, or queued for the next release where noted.
+The plugins: `postgresql-security`, `jwt-security`, `mongodb-security`, `node-security` (batch 1) and, on 2026-10-19, `browser-security` (batch 1). Together they produced **43 distinct wrong verdicts: 19 false positives and 24 false negatives**, plus one crash. Every finding below is fixed, and every fix is published, or queued for the next release where noted.
 
 ## Method
 
@@ -27,14 +27,15 @@ The plugins: `postgresql-security`, `jwt-security`, `mongodb-security` and `node
 
 ## Findings and releases
 
-| Plugin                                               |     FP |     FN | PRs          | Released in                                         |
-| :--------------------------------------------------- | -----: | -----: | :----------- | :-------------------------------------------------- |
-| `eslint-plugin-postgresql-security` (Quint oracle)   |      2 |      0 | #1202        | 2.6.0                                               |
-| `eslint-plugin-postgresql-security` (Stryker triage) |      4 |      4 | #1234, #1244 | next patch (changeset `postgresql-mutation-triage`) |
-| `eslint-plugin-jwt-security`                         |      4 |      2 | #1217        | 3.5.1                                               |
-| `eslint-plugin-mongodb-security`                     |      3 |      8 | #1221, #1225 | 9.1.4                                               |
-| `eslint-plugin-node-security` (batch 1, 12 rules)    |      2 |      8 | #1235, #1239 | 5.6.10                                              |
-| **Total**                                            | **15** | **22** |              |                                                     |
+| Plugin                                               |     FP |     FN | PRs          | Released in                                                     |
+| :--------------------------------------------------- | -----: | -----: | :----------- | :-------------------------------------------------------------- |
+| `eslint-plugin-postgresql-security` (Quint oracle)   |      2 |      0 | #1202        | 2.6.0                                                           |
+| `eslint-plugin-postgresql-security` (Stryker triage) |      4 |      4 | #1234, #1244 | next patch (changeset `postgresql-mutation-triage`)             |
+| `eslint-plugin-jwt-security`                         |      4 |      2 | #1217        | 3.5.1                                                           |
+| `eslint-plugin-mongodb-security`                     |      3 |      8 | #1221, #1225 | 9.1.4                                                           |
+| `eslint-plugin-node-security` (batch 1, 12 rules)    |      2 |      8 | #1235, #1239 | 5.6.10                                                          |
+| `eslint-plugin-browser-security` (batch 1, 33 rules) |      4 |      2 | PR_NUM       | next patch (changeset `browser-security-mutation-batch1-fixes`) |
+| **Total**                                            | **19** | **24** |              |                                                                 |
 
 The table counts distinct fixes. Measured on the 80-shape release oracle, the old rules gave 15 wrong verdicts (8 false leaks, 7 false doubles); those collapse into the four `#1234` release fixes below.
 
@@ -96,6 +97,19 @@ The table counts distinct fixes. Measured on the 80-shape release oracle, the ol
 | no-timing-unsafe-compare  | FN   | `this.#apiToken === req.query.t`                                                                                      |
 | no-math-random-crypto     | FP   | `Math.random()` inside a block-bodied `setInterval` callback                                                          |
 
+### browser-security (batch 1)
+
+Batch 1 covers the 33 `recommended` rules; 4,733 mutants. Survivors were triaged rule by rule. Most became fixtures in a `mutation-edges.test.ts` per rule. The 22 test-path gates are pinned by one table, `src/test-path-gate.test.ts`. Redundant code that only equivalent mutants could reach was deleted where the deletion is behaviour-preserving (e.g. three `origin ===` text patterns subsumed by a fourth, a ternary guard `isGuardedDestination` already runs, a template-authority helper the bare-scheme exemption already covers).
+
+| Rule                               | Kind | Wrong verdict on                                                                                                                                   |
+| :--------------------------------- | :--- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
+| require-postmessage-origin-check   | FP   | a WebSocket/Worker held in a class field initialiser, `socket = new WebSocket(url)` (only method assignments and annotated fields were recognised) |
+| require-postmessage-origin-check   | FP   | a private field: `#socket = new WebSocket(url)`, `#socket!: WebSocket`, `this.#socket = new WebSocket(url)`                                        |
+| require-postmessage-origin-check   | FP   | a quoted computed field key `['connection']: WebSocket` (a test had pinned it as a report)                                                         |
+| no-jwt-in-storage                  | FP   | ``setItem('auth_attempted', `1`)``, the template spelling of the already-exempt `'1'`                                                              |
+| no-postmessage-wildcard-origin     | FN   | ``postMessage(data, `*`)`` and ``{ targetOrigin: `*` }``                                                                                           |
+| no-disabled-certificate-validation | FN   | `process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0` and `` = `0` `` (`process.env` stores both as `'0'`)                                                |
+
 ## Mutation-testing coverage
 
 | Plugin              |           Rules banked |                                     Mean score |
@@ -104,8 +118,22 @@ The table counts distinct fixes. Measured on the 80-shape release oracle, the ol
 | jwt-security        |                13 / 13 |                                           84.2 |
 | postgresql-security |                13 / 13 | 83.0 (no-unsafe-query 75.6 → 86.0 after #1234) |
 | node-security       | 12 / 43 (31 `pending`) |                                        batch 1 |
+| browser-security    | 33 / 46 (13 `pending`) |                      92.1 (84.8 before triage) |
 
-The remaining plugins are not opted in yet: browser-security, secure-coding, express, vercel-ai, mcp-sdk, lambda, nestjs and the per-SDK plugins. The rollout order is in [`docs/MUTATION_TESTING.md`](../../docs/MUTATION_TESTING.md).
+The remaining plugins are not opted in yet: secure-coding, express, vercel-ai, mcp-sdk, lambda, nestjs and the per-SDK plugins. The rollout order is in [`docs/MUTATION_TESTING.md`](../../docs/MUTATION_TESTING.md).
+
+## Open owner decisions (browser-security batch 1)
+
+These are calls about what a rule _should_ report. The triage did not change them; they are listed in PR_NUM.
+
+- **require-postmessage-origin-check**: the origin check is a text match. `if (e.data.origin !== 'widget')` (a payload field) and a `// checkOrigin` comment both count as a check. `window.onmessage = (e) => …` is not inspected at all.
+- **no-disabled-certificate-validation**: `checkServerIdentity: () => true` is reported, but Node treats a truthy return as a verification _error_, so it fails closed. Meanwhile `(host, cert) => host === cert.subject.CN`, which returns `false` (accept) on a mismatch, is silent.
+- **no-jwt-in-storage**: `setItem('token', null)` is reported, although `null` is stored as the already-exempt word `"null"`. An existing test pins this as deliberate.
+- **no-insecure-redirects**: `allowedDomains` is in the schema, `defaultOptions` and the docs, but `create` never reads it.
+- **no-incomplete-url-sanitization**: `allowedHosts.includes('trusted.com')` on an array is reported (`Array#includes` is exact); `url.search('trusted.com') !== -1` is silent; `href === 'javascript:void(0)'` placeholder handling is reported.
+- **no-dynamic-service-worker-url**: `const { 'serviceWorker': sw } = navigator` (quoted, computed or defaulted) followed by `sw.register(url)` is silent.
+- **Template literals across the transport family**: `` const u = `ws://${host}/s` `` (no-insecure-websocket) and `http://` templates (no-http-urls) are not read; ``addEventListener(`message`, …)`` is not a listener.
+- **Smaller scope questions**: `_.assign(el, { innerHTML })` (no-innerhtml only models `Object.assign`); class fields as namespace or body names (no-http-urls, no-credentials-in-query-params, no-unsafe-inline-csp); the legacy `X-Content-Security-Policy` header; `cache.example.com` not treated as RFC 2606 reserved; no-client-side-auth-logic's depth budget counts `&&` chain length.
 
 ## Owner decisions (resolved in #1251)
 

@@ -428,6 +428,256 @@
         "require-secure-deletion",
         "require-storage-encryption"
       ]
+    },
+    "browser-security": {
+      "rules": {
+        "detect-mixed-content": {
+          "score": 88.2,
+          "killed": 30,
+          "survived": 4,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-allow-arbitrary-loads": {
+          "score": 87.5,
+          "killed": 21,
+          "survived": 3,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-client-side-auth-logic": {
+          "score": 94.7,
+          "killed": 105,
+          "survived": 4,
+          "noCoverage": 2,
+          "timeout": 3
+        },
+        "no-cookie-auth-tokens": {
+          "score": 93.1,
+          "killed": 27,
+          "survived": 1,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "no-credentials-in-query-params": {
+          "score": 88.7,
+          "killed": 79,
+          "survived": 10,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-disabled-certificate-validation": {
+          "score": 94.3,
+          "killed": 134,
+          "survived": 8,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-dynamic-service-worker-url": {
+          "score": 95.4,
+          "killed": 168,
+          "survived": 7,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "no-eval": {
+          "score": 95.3,
+          "killed": 62,
+          "survived": 1,
+          "noCoverage": 2,
+          "timeout": 0
+        },
+        "no-filereader-innerhtml": {
+          "score": 95.5,
+          "killed": 63,
+          "survived": 2,
+          "noCoverage": 1,
+          "timeout": 1
+        },
+        "no-http-urls": {
+          "score": 90.6,
+          "killed": 87,
+          "survived": 9,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-incomplete-url-sanitization": {
+          "score": 95.3,
+          "killed": 305,
+          "survived": 15,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "no-innerhtml": {
+          "score": 91.7,
+          "killed": 330,
+          "survived": 27,
+          "noCoverage": 3,
+          "timeout": 2
+        },
+        "no-insecure-redirects": {
+          "score": 93.6,
+          "killed": 88,
+          "survived": 6,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-insecure-websocket": {
+          "score": 91.3,
+          "killed": 21,
+          "survived": 2,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-jwt-in-storage": {
+          "score": 91.2,
+          "killed": 73,
+          "survived": 6,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "no-postmessage-innerhtml": {
+          "score": 92.3,
+          "killed": 36,
+          "survived": 2,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "no-postmessage-wildcard-origin": {
+          "score": 96.1,
+          "killed": 50,
+          "survived": 1,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "no-sensitive-cookie-js": {
+          "score": 90.3,
+          "killed": 28,
+          "survived": 1,
+          "noCoverage": 2,
+          "timeout": 0
+        },
+        "no-sensitive-indexeddb": {
+          "score": 90.5,
+          "killed": 77,
+          "survived": 6,
+          "noCoverage": 2,
+          "timeout": 0
+        },
+        "no-sensitive-localstorage": {
+          "score": 91.6,
+          "killed": 55,
+          "survived": 2,
+          "noCoverage": 3,
+          "timeout": 0
+        },
+        "no-sensitive-sessionstorage": {
+          "score": 90.7,
+          "killed": 49,
+          "survived": 3,
+          "noCoverage": 2,
+          "timeout": 0
+        },
+        "no-unencrypted-transmission": {
+          "score": 90.4,
+          "killed": 123,
+          "survived": 11,
+          "noCoverage": 2,
+          "timeout": 0
+        },
+        "no-unsafe-eval-csp": {
+          "score": 93.1,
+          "killed": 27,
+          "survived": 1,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "no-unsafe-inline-csp": {
+          "score": 92.1,
+          "killed": 117,
+          "survived": 9,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "no-unvalidated-deeplinks": {
+          "score": 95.6,
+          "killed": 195,
+          "survived": 9,
+          "noCoverage": 0,
+          "timeout": 2
+        },
+        "no-websocket-eval": {
+          "score": 90,
+          "killed": 27,
+          "survived": 2,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "no-websocket-innerhtml": {
+          "score": 94.8,
+          "killed": 37,
+          "survived": 1,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "no-worker-message-innerhtml": {
+          "score": 94.8,
+          "killed": 37,
+          "survived": 1,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "require-blob-url-revocation": {
+          "score": 97.7,
+          "killed": 130,
+          "survived": 2,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "require-cookie-secure-attrs": {
+          "score": 95.1,
+          "killed": 39,
+          "survived": 1,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "require-https-only": {
+          "score": 85.9,
+          "killed": 48,
+          "survived": 8,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "require-postmessage-origin-check": {
+          "score": 90.4,
+          "killed": 190,
+          "survived": 19,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "require-websocket-wss": {
+          "score": 82.7,
+          "killed": 72,
+          "survived": 13,
+          "noCoverage": 2,
+          "timeout": 0
+        }
+      },
+      "pending": [
+        "no-clickjacking",
+        "no-missing-cors-check",
+        "no-missing-csrf-protection",
+        "no-missing-security-headers",
+        "no-password-in-url",
+        "no-permissive-cors",
+        "no-sensitive-data-in-analytics",
+        "no-sensitive-data-in-cache",
+        "no-tracking-without-consent",
+        "no-unescaped-url-parameter",
+        "require-csp-headers",
+        "require-mime-type-validation",
+        "require-url-validation"
+      ]
     }
   }
 }
