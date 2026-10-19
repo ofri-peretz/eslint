@@ -1,7 +1,7 @@
 {
-  "releaseCount": 799,
+  "releaseCount": 800,
   "packageCount": 37,
-  "entryCount": 2283,
+  "entryCount": 2284,
   "oldestYear": 2024,
   "releases": [
     {
@@ -19101,6 +19101,21 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "2.1.10",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "wrong verdicts surfaced by Stryker mutation testing (batch 1)",
+          "pr": null
         }
       ]
     },
