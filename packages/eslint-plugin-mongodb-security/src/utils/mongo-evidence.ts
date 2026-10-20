@@ -120,16 +120,74 @@ function isMongoDynamicLoad(
   return isMongoLiteral(node.arguments[0]);
 }
 
-/** `new Schema({...})` / `new mongoose.Schema({...})`. */
-function isSchemaConstruction(node: TSESTree.Node): boolean {
+/**
+ * Local names a file imports from a package that is NOT MongoDB.
+ *
+ * `Schema` is a Mongoose name, not a Mongoose-only name: dynamoose, ottoman,
+ * prosemirror and normalizr all export one, and `new Schema({ id: { type:
+ * String } })` is written the same way in each. A `Schema` the file imports
+ * from one of them is that library's, and constructing it is no evidence of
+ * MongoDB. A relative import is not foreign — `./db` may well re-export
+ * Mongoose's.
+ */
+function foreignImportNames(ast: TSESTree.Program): ReadonlySet<string> {
+  const names = new Set<string>();
+  for (const statement of ast.body) {
+    if (statement.type !== AST_NODE_TYPES.ImportDeclaration) continue;
+    const source = statement.source.value;
+    if (
+      source.startsWith('.') ||
+      source.startsWith('/') ||
+      isMongoSpecifier(source)
+    ) {
+      continue;
+    }
+    for (const specifier of statement.specifiers) {
+      names.add(specifier.local.name);
+    }
+  }
+  return names;
+}
+
+/** The identifier a callee hangs off: `Schema`, or `dynamoose` in `dynamoose.Schema`. */
+function rootName(node: TSESTree.Node): string | null {
+  if (node.type === AST_NODE_TYPES.Identifier) return node.name;
+  if (node.type === AST_NODE_TYPES.MemberExpression)
+    return rootName(node.object);
+  return null;
+}
+
+/**
+ * `new Schema({...})` / `new mongoose.Schema({...})` — unless the `Schema` (or
+ * the namespace it is read from) was imported from a non-Mongo package.
+ */
+export function isSchemaConstruction(
+  node: TSESTree.Node,
+  foreign: ReadonlySet<string> = new Set(),
+): boolean {
   if (node.type !== AST_NODE_TYPES.NewExpression) return false;
   const { callee } = node;
-  if (callee.type === AST_NODE_TYPES.Identifier)
-    return callee.name === 'Schema';
-  return (
-    callee.type === AST_NODE_TYPES.MemberExpression &&
-    propertyName(callee) === 'Schema'
-  );
+  const named =
+    callee.type === AST_NODE_TYPES.Identifier
+      ? callee.name === 'Schema'
+      : callee.type === AST_NODE_TYPES.MemberExpression &&
+        propertyName(callee) === 'Schema';
+  if (!named) return false;
+  const root = rootName(callee);
+  return root === null || !foreign.has(root);
+}
+
+/** Per-file cache of {@link foreignImportNames}, shared with the rules. */
+const foreignCache = new WeakMap<TSESTree.Program, ReadonlySet<string>>();
+
+/** Local names this file imports from non-Mongo packages (cached per Program). */
+export function nonMongoImports(ast: TSESTree.Program): ReadonlySet<string> {
+  let names = foreignCache.get(ast);
+  if (names === undefined) {
+    names = foreignImportNames(ast);
+    foreignCache.set(ast, names);
+  }
+  return names;
 }
 
 /**
@@ -410,6 +468,7 @@ export function fileUsesMongo(ast: TSESTree.Program): boolean {
 
 function computeUsesMongo(ast: TSESTree.Program): boolean {
   let found = false;
+  const foreign = nonMongoImports(ast);
 
   const visit = (node: TSESTree.Node, requireIsShadowed: boolean): void => {
     if (
@@ -427,7 +486,7 @@ function computeUsesMongo(ast: TSESTree.Program): boolean {
       isImportEquals(node) ||
       bindsMongooseName(node) ||
       isMongoDynamicLoad(node, requireIsShadowed) ||
-      isSchemaConstruction(node) ||
+      isSchemaConstruction(node, foreign) ||
       isObjectIdEvidence(node) ||
       isLeanCall(node) ||
       isNativeCollectionCall(node) ||

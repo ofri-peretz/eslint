@@ -299,3 +299,52 @@ describe('no-hardcoded-credentials — fp/fn review 2026-10', () => {
     ],
   });
 });
+
+describe('test files (BENCHMARK-CRITERIA B1)', () => {
+  ruleTester.run('a spec is not a committed production secret', noHardcodedCredentials, {
+    valid: [
+      {
+        // @found ILB-Corpus-Truth off-SDK regression, 2026-10-19
+        name: 'FP: a DSN fixture handed to the function under test in a vitest spec',
+        filename: '/repo/server/src/db/postgres-connection-config.test.ts',
+        code: `import { createPostgresClientConfig } from './postgres-connection-config';
+it('provides an IP connection host', () => {
+  const config = createPostgresClientConfig('postgres://bookorbit:secret@203.0.113.7:5432/bookorbit');
+  expect(config.host).toBe('203.0.113.7');
+});`,
+      },
+      {
+        // @found ILB-Corpus-Truth off-SDK regression, 2026-10-19
+        name: 'FP: a driver config in a __tests__ directory',
+        filename: '/repo/src/__tests__/db.ts',
+        code: "import { Pool } from 'pg';\nnew Pool({ host: 'db.example.com', password: 'Pr0dS3cret' });",
+      },
+    ],
+    invalid: [],
+  });
+  ruleTester.run('UI text that shows the DSN format', noHardcodedCredentials, {
+    valid: [
+      {
+        // @found ILB-Corpus-Truth off-SDK regression, 2026-10-19
+        name: 'FP: a DSN placeholder on a form input',
+        filename: '/repo/src/features/data-db/ByodbSpaceCreateSection.tsx',
+        code: `export const Field = () => (
+  <Input placeholder="postgresql://user:password@host:5432/database" />
+);`,
+      },
+      {
+        name: 'a DSN placeholder in an expression container',
+        filename: '/repo/src/features/data-db/Field.tsx',
+        code: "export const F = () => <Input placeholder={'postgres://u:p4ss@db.example.com/x'} />;",
+      },
+    ],
+    invalid: [
+      {
+        name: 'the same DSN in a non-test config module is still reported',
+        filename: '/repo/server/src/db/postgres-connection-config.ts',
+        code: "export const DATABASE_URL = 'postgres://bookorbit:secret@203.0.113.7:5432/bookorbit';",
+        errors: [{ messageId: 'noHardcodedCredentials' }],
+      },
+    ],
+  });
+});

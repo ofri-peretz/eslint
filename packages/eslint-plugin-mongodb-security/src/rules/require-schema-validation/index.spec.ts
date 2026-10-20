@@ -148,3 +148,43 @@ ruleTester.run('mutation-guided edges', requireSchemaValidation, {
     },
   ]),
 });
+
+// ---------------------------------------------------------------------------
+// A `Schema` that belongs to another library. Not wrapped in `xmo`: the
+// corpus file imported nothing from Mongo, and that is the shape under test.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('another library’s Schema', requireSchemaValidation, {
+  valid: [
+    {
+      // @found ILB-Corpus-Truth off-SDK regression, 2026-10-19
+      name: 'FP: a dynamoose Schema in a file with no MongoDB',
+      code: `import { Schema } from 'dynamoose';
+export const NotificationSchema = new Schema({
+  id: { type: String, hashKey: true },
+  content: { type: String },
+});`,
+    },
+    {
+      // @found ILB-Corpus-Truth off-SDK regression, 2026-10-19
+      name: 'FP: a namespaced dynamoose Schema beside a mongoose import',
+      code: `import 'mongoose';
+import * as dynamoose from 'dynamoose';
+new dynamoose.Schema({ status: { type: String } });`,
+    },
+  ],
+  invalid: [
+    {
+      name: 'a Schema read off `this` has no import to disqualify it',
+      code: `import 'mongoose';
+new this.mongoose.Schema({ name: { type: String } });`,
+      errors: [{ messageId: 'requireSchemaValidation' }],
+    },
+    {
+      name: 'a Schema re-exported from a local module is still Mongoose’s',
+      code: `import { Schema } from './db';
+new Schema({ name: { type: String } });`,
+      errors: [{ messageId: 'requireSchemaValidation' }],
+    },
+  ],
+});

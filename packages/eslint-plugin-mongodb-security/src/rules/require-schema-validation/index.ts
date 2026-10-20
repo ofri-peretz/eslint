@@ -16,9 +16,12 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
-  propertyName,
 } from '@interlace/eslint-devkit';
-import { fileUsesMongo } from '../../utils/mongo-evidence';
+import {
+  fileUsesMongo,
+  isSchemaConstruction,
+  nonMongoImports,
+} from '../../utils/mongo-evidence';
 
 type MessageIds = 'requireSchemaValidation';
 export interface Options {
@@ -98,12 +101,11 @@ export const requireSchemaValidation = createRule<RuleOptions, MessageIds>({
         // `new Schema(...)` or `new mongoose.Schema(...)` — the form the
         // Mongoose docs open with, and the one the module gate already counts
         // as Mongo evidence.
-        const isSchema =
-          node.callee.type === AST_NODE_TYPES.Identifier
-            ? node.callee.name === 'Schema'
-            : node.callee.type === AST_NODE_TYPES.MemberExpression &&
-              propertyName(node.callee) === 'Schema';
-        if (!isSchema) {
+        // A `Schema` imported from another package (dynamoose, ottoman) is
+        // that library's, even in a file that also imports mongoose.
+        if (
+          !isSchemaConstruction(node, nonMongoImports(context.sourceCode.ast))
+        ) {
           return;
         }
 

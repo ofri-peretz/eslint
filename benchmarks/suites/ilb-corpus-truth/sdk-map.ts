@@ -54,7 +54,10 @@ export const SDK_PACKAGES: Readonly<Record<string, readonly string[]>> = {
     'bun:sqlite',
     'sqlite',
   ],
-  'prisma-security': ['@prisma/client', 'prisma'],
+  // `.prisma/client` is the generated client Prisma writes to
+  // `node_modules/.prisma/client` — a package, not a relative path, and the
+  // import NestJS samples write for a `PrismaService extends PrismaClient`.
+  'prisma-security': ['@prisma/client', 'prisma', '.prisma'],
   'typeorm-security': ['typeorm', '@nestjs/typeorm'],
   'sequelize-security': ['sequelize', 'sequelize-typescript', '@nestjs/sequelize'],
   'postgresql-security': [
@@ -123,9 +126,15 @@ export const PLATFORM_PLUGINS: readonly string[] = [
   'reliability',
 ];
 
-/** Package root of an import specifier; null for relative/absolute paths. */
+/**
+ * Package root of an import specifier; null for relative/absolute paths.
+ *
+ * Relative means `.`, `..`, `./…` or `../…` — not any leading dot. A dotted
+ * package directory such as `.prisma/client` is a package, and reading it as
+ * relative scored a file importing Prisma's generated client as off-SDK.
+ */
 export function packageRoot(specifier: string): string | null {
-  if (specifier.startsWith('.') || specifier.startsWith('/')) return null;
+  if (/^\.\.?(\/|$)/.test(specifier) || specifier.startsWith('/')) return null;
   const parts = specifier.split('/');
   return specifier.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0];
 }
