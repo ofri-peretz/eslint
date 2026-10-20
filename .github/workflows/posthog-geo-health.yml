@@ -81,6 +81,22 @@ jobs:
             gh issue create --title "$TITLE" --body "$BODY"
           fi
 
+      # The alarm closes itself once every host is back above the threshold; without this the
+      # issue stayed open after the gap was fixed until someone closed it by hand (#1250).
+      - name: ✅ Close the issue once geo is back
+        if: steps.check.outputs.code == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          TITLE="PostHog pageviews are missing geo"
+          OPEN=$(gh issue list --state open --search "$TITLE in:title" \
+            --json number,title --jq "[.[] | select(.title == \"$TITLE\")][0].number // empty")
+          if [ -n "$OPEN" ]; then
+            gh issue close "$OPEN" --comment "Every Interlace host is back above the geo threshold as of [this run]($RUN_URL). Closing until the next gap."
+          fi
+
       - name: ⛔ Fail the job
         if: steps.check.outputs.code != '0'
         env:
