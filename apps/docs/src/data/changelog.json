@@ -5,6 +5,81 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "eslint-plugin-mcp-sdk-security",
+      "short": "eslint-plugin-mcp-sdk-security",
+      "version": "1.0.1",
+      "date": "2026-10-19T23:36:58Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Bound the parsed-module caches behind cross-file value following.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "short": "eslint-plugin-postgresql-security",
+      "version": "2.6.3",
+      "date": "2026-10-19T23:36:16Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Bound the parsed-module caches behind cross-file value following.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.20.2",
+      "date": "2026-10-19T23:34:30Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Bound the parsed-module caches behind cross-file value following.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
+      "version": "3.5.3",
+      "date": "2026-10-19T23:33:33Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Bound the parsed-module caches behind cross-file value following.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-secure-coding",
       "short": "eslint-plugin-secure-coding",
       "version": "5.4.17",
@@ -19105,21 +19180,6 @@
       ]
     },
     {
-      "package": "@interlace/eslint-devkit",
-      "short": "eslint-devkit",
-      "version": "1.20.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Bound the parsed-module caches behind cross-file value following.",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.2.0",
@@ -19200,26 +19260,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.8`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-jwt-security",
-      "short": "eslint-plugin-jwt-security",
-      "version": "3.5.3",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Bound the parsed-module caches behind cross-file value following.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.2`",
           "pr": null
         }
       ]
@@ -19340,46 +19380,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-mcp-sdk-security",
-      "short": "eslint-plugin-mcp-sdk-security",
-      "version": "1.0.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Bound the parsed-module caches behind cross-file value following.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.2`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-postgresql-security",
-      "short": "eslint-plugin-postgresql-security",
-      "version": "2.6.3",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Bound the parsed-module caches behind cross-file value following.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.2`",
           "pr": null
         }
       ]
