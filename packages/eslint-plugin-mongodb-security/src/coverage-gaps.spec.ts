@@ -574,12 +574,6 @@ ruleTester.run(
         code: `new Schema({ name: { ...base, type: String } });`,
         errors: [{ messageId: 'requireSchemaValidation' }],
       },
-      // String-literal 'required' key is not recognized as validation
-      // (Identifier keys only), so the field is reported.
-      {
-        code: `new Schema({ name: { type: String, 'required': true } });`,
-        errors: [{ messageId: 'requireSchemaValidation' }],
-      },
     ]),
   },
 );

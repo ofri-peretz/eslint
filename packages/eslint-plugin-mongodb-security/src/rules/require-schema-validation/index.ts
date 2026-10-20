@@ -16,6 +16,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  staticString,
 } from '@interlace/eslint-devkit';
 import {
   fileUsesMongo,
@@ -29,7 +30,7 @@ export interface Options {
 }
 type RuleOptions = [Options?];
 
-const VALIDATION_PROPERTIES = new Set([
+const VALIDATION_PROPERTIES: ReadonlySet<string | null> = new Set([
   'required',
   'validate',
   'enum',
@@ -41,6 +42,14 @@ const VALIDATION_PROPERTIES = new Set([
   'minLength',
   'maxLength',
 ]);
+
+/** The static name of an option key: `required`, `'required'`, `['required']`. */
+function optionKey(property: TSESTree.Property): string | null {
+  const { key } = property;
+  if (key.type === AST_NODE_TYPES.Identifier && !property.computed)
+    return key.name;
+  return staticString(key);
+}
 
 export const requireSchemaValidation = createRule<RuleOptions, MessageIds>({
   name: 'require-schema-validation',
@@ -121,22 +130,17 @@ export const requireSchemaValidation = createRule<RuleOptions, MessageIds>({
           // Only check object-style field definitions (not shorthand like { name: String })
           if (field.value.type !== AST_NODE_TYPES.ObjectExpression) continue;
 
-          const fieldProps = field.value.properties;
-          const hasType = fieldProps.some((p) => {
-            if (p.type !== AST_NODE_TYPES.Property) return false;
-            return (
-              p.key.type === AST_NODE_TYPES.Identifier && p.key.name === 'type'
-            );
-          });
+          // Keys are read as Mongoose reads them: `type`, `'type'` and
+          // `['type']` all declare the field's type, and a quoted
+          // `'required'` validates it as much as a bare one does.
+          const keys = field.value.properties.map((p) =>
+            p.type === AST_NODE_TYPES.Property ? optionKey(p) : null,
+          );
+          if (!keys.includes('type')) continue;
 
-          if (!hasType) continue;
-
-          const hasValidation = fieldProps.some((p) => {
-            if (p.type !== AST_NODE_TYPES.Property) return false;
-            const keyName =
-              p.key.type === AST_NODE_TYPES.Identifier ? p.key.name : null;
-            return keyName !== null && VALIDATION_PROPERTIES.has(keyName);
-          });
+          const hasValidation = keys.some((key) =>
+            VALIDATION_PROPERTIES.has(key),
+          );
 
           if (!hasValidation) {
             context.report({
