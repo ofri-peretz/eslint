@@ -37,7 +37,7 @@
       "rules": 16,
       "description": "ESLint plugin for MongoDB and Mongoose security — detects NoSQL operator injection, unsafe queries and regex, hardcoded connection strings, and missing TLS",
       "category": "security",
-      "version": "9.1.5",
+      "version": "9.1.6",
       "published": true
     },
     {
@@ -61,7 +61,7 @@
       "rules": 13,
       "description": "ESLint plugin for the pg PostgreSQL driver — detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL",
       "category": "security",
-      "version": "2.6.3",
+      "version": "2.6.4",
       "published": true
     },
     {
@@ -69,7 +69,7 @@
       "rules": 5,
       "description": "ESLint plugin for knex — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
       "category": "security",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "published": true
     },
     {
@@ -93,7 +93,7 @@
       "rules": 4,
       "description": "ESLint plugin for the Sequelize ORM — detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
       "category": "security",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "published": true
     },
     {
@@ -109,7 +109,7 @@
       "rules": 4,
       "description": "ESLint plugin for typeorm — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
       "category": "security",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "published": true
     },
     {
@@ -260,5 +260,5 @@
   "totalRules": 497,
   "totalPlugins": 32,
   "allPluginsCount": 32,
-  "generatedAt": "2026-10-19"
+  "generatedAt": "2026-10-20"
 }

@@ -1,7 +1,7 @@
 {
-  "releaseCount": 806,
+  "releaseCount": 812,
   "packageCount": 37,
-  "entryCount": 2293,
+  "entryCount": 2305,
   "oldestYear": 2024,
   "releases": [
     {
@@ -19180,6 +19180,21 @@
       ]
     },
     {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.20.3",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "config-shape ownership covers the config, not the whole file",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.2.0",
@@ -19385,6 +19400,71 @@
       ]
     },
     {
+      "package": "eslint-plugin-knex-security",
+      "short": "eslint-plugin-knex-security",
+      "version": "1.0.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "config-shape ownership covers the config, not the whole file",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mongodb-security",
+      "short": "eslint-plugin-mongodb-security",
+      "version": "9.1.6",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "a `Schema` imported from another library is not Mongoose's",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "require-schema-validation reads quoted option keys",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "short": "eslint-plugin-postgresql-security",
+      "version": "2.6.4",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no-hardcoded-credentials skips test files",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
@@ -19510,6 +19590,26 @@
       ]
     },
     {
+      "package": "eslint-plugin-sequelize-security",
+      "short": "eslint-plugin-sequelize-security",
+      "version": "1.0.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "config-shape ownership covers the config, not the whole file",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-supabase-security",
       "short": "eslint-plugin-supabase-security",
       "version": "1.0.0",
@@ -19525,6 +19625,26 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-typeorm-security",
+      "short": "eslint-plugin-typeorm-security",
+      "version": "1.0.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "config-shape ownership covers the config, not the whole file",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.3`",
           "pr": null
         }
       ]
