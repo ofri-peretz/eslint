@@ -273,6 +273,25 @@ function computeUsesPostgres(ast: TSESTree.Program, withDsn = true): boolean {
   return found;
 }
 
+/**
+ * The specifiers a module re-exports from: `export * from './pool'`,
+ * `export { pool } from './pool'`. A barrel hands these through to whoever
+ * imports it; everything else it imports, it keeps.
+ */
+function reexportSpecifiersIn(ast: TSESTree.Program): string[] {
+  const found: string[] = [];
+  for (const statement of ast.body) {
+    if (
+      (statement.type === AST_NODE_TYPES.ExportAllDeclaration ||
+        statement.type === AST_NODE_TYPES.ExportNamedDeclaration) &&
+      statement.source
+    ) {
+      found.push(statement.source.value);
+    }
+  }
+  return found;
+}
+
 /** Every module specifier a file loads: imports, re-exports, `require`, `import()`. */
 function specifiersIn(ast: TSESTree.Program): string[] {
   const found: string[] = [];
@@ -337,7 +356,15 @@ function relativeModuleUsesPostgres(
   visited: Set<string>,
 ): boolean {
   if (hops > MAX_MODULE_HOPS) return false;
-  for (const specifier of specifiersIn(ast)) {
+  // The linted file's own imports are all candidates. Past the first hop only
+  // RE-EXPORTS are followed: a barrel that re-exports the pool hands it on,
+  // but a module that merely imports something which somewhere imports `pg`
+  // does not. Following every import made the gate a reachability search over
+  // the dependency graph — in a TypeORM app whose DataSource module imports a
+  // hundred entities, one of which reaches `pg`, every repository file
+  // "used PostgreSQL" and `repo.query('SELECT * …')` was reported.
+  const specifiers = hops === 1 ? specifiersIn(ast) : reexportSpecifiersIn(ast);
+  for (const specifier of specifiers) {
     const target = resolveRelative(file, specifier);
     if (target === null || visited.has(target)) continue;
     visited.add(target);
@@ -354,6 +381,44 @@ function relativeModuleUsesPostgres(
 }
 
 const relativeCache = new WeakMap<TSESTree.Program, boolean>();
+
+/**
+ * ORMs and SQL clients other than PostgreSQL's own. Their files are their
+ * plugins' to judge — the sink decides the plugin.
+ */
+const OTHER_SQL_CLIENTS: ReadonlySet<string> = new Set([
+  'typeorm',
+  '@nestjs/typeorm',
+  'knex',
+  'objection',
+  'sequelize',
+  'sequelize-typescript',
+  '@nestjs/sequelize',
+  '@prisma/client',
+  'drizzle-orm',
+  'mysql',
+  'mysql2',
+]);
+
+/**
+ * Does this file import another SQL client or ORM directly?
+ *
+ * Relative evidence says "a module this file imports holds a pg client". In a
+ * file that imports TypeORM itself, the `.query()` / `.release()` it calls are
+ * TypeORM's — `queryRunner.release()` beside an imported service that happens
+ * to own a `pg.Pool` is not a pg client released twice. Such a file opens the
+ * gate only on its own PostgreSQL evidence.
+ */
+function importsOtherSqlClient(ast: TSESTree.Program): boolean {
+  return specifiersIn(ast).some((specifier) => {
+    if (specifier.startsWith('.') || specifier.startsWith('/')) return false;
+    const parts = specifier.split('/');
+    const root = specifier.startsWith('@')
+      ? parts.slice(0, 2).join('/')
+      : parts[0];
+    return OTHER_SQL_CLIENTS.has(root);
+  });
+}
 
 interface GateContext {
   readonly physicalFilename: string;
@@ -383,7 +448,9 @@ export function usesPostgres(context: GateContext): boolean {
   const cached = relativeCache.get(ast);
   if (cached !== undefined) return cached;
   const env = envOf(context);
-  const result = relativeModuleUsesPostgres(ast, env.file, env.parser, 1, new Set());
+  const result =
+    !importsOtherSqlClient(ast) &&
+    relativeModuleUsesPostgres(ast, env.file, env.parser, 1, new Set());
   relativeCache.set(ast, result);
   return result;
 }

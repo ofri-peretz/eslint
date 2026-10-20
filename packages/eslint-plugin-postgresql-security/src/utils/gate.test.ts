@@ -96,3 +96,53 @@ describe('usesPostgres — evidence one relative import away', () => {
     expect(usesPostgres(closed)).toBe(false);
   });
 });
+
+describe('usesPostgres — a dependency graph is not a re-export chain', () => {
+  // @found ILB-Corpus-Truth off-SDK regression, 2026-10-19
+  // activepieces: a TypeORM DataSource module imports ~100 entity modules, one
+  // of which imports `pg`. Every repository file that imported the DataSource
+  // "used PostgreSQL", and `repo.query('SELECT * …')` drew postgresql-security
+  // findings on TypeORM code.
+  const app = project('typeorm-app', {
+    'database-connection.ts':
+      "import { DataSource } from 'typeorm';\nimport { FlowEntity } from './flow-entity';\nexport const databaseConnection = () => new DataSource({ entities: [FlowEntity] });\n",
+    'flow-entity.ts':
+      "import { EntitySchema } from 'typeorm';\nimport { notify } from './pg-listener';\nexport const FlowEntity = new EntitySchema({ name: 'flow' });\n",
+    'pg-listener.ts':
+      "import { Client } from 'pg';\nexport const notify = new Client();\n",
+    'barrel.ts': "export * from './pg-listener';\n",
+  });
+  const migration = path.join(app, 'migrations/m.ts');
+
+  it('does not open on a module that only imports something reaching pg', () => {
+    expect(
+      usesPostgres(
+        context(
+          migration,
+          "import { databaseConnection } from '../database-connection';\nawait databaseConnection().query('SELECT * FROM agent');",
+        ),
+      ),
+    ).toBe(false);
+  });
+
+  it('still opens through a re-export of the client', () => {
+    expect(
+      usesPostgres(context(migration, "import { notify } from '../barrel';")),
+    ).toBe(true);
+  });
+
+  it('takes no relative evidence in a file that imports another ORM itself', () => {
+    // @found ILB-Corpus-Truth off-SDK regression, 2026-10-19
+    // laudspeaker app.cron.service.ts: `queryRunner.release()` on a TypeORM
+    // QueryRunner drew prevent-double-release because an imported service
+    // owned a pg.Pool.
+    expect(
+      usesPostgres(
+        context(
+          migration,
+          "import { DataSource } from 'typeorm';\nimport { notify } from '../barrel';\nawait queryRunner.release();",
+        ),
+      ),
+    ).toBe(false);
+  });
+});

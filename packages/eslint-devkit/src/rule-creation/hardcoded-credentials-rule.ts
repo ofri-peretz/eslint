@@ -232,10 +232,28 @@ export function createHardcodedCredentialsRule(
     ...(config.connectionKeys ?? []),
   ];
 
+  const isConfigShape = configShapeEvidence(config.configShapes ?? []);
   const usesModule = createModuleEvidence({
     packages: config.modules,
-    extraEvidence: configShapeEvidence(config.configShapes ?? []),
+    extraEvidence: isConfigShape,
   });
+  const importsModule = createModuleEvidence({ packages: config.modules });
+  /**
+   * Is `node` one of the driver's config-file shapes, or nested inside one?
+   *
+   * A file the driver owns only through such a shape — an `ormconfig`-style
+   * `{ type: 'mysql', entities }` with no `typeorm` import — owns that object
+   * and nothing else in it. The app config that holds it usually holds the
+   * Redis, SMTP and queue settings too, and `bullRedis: { host, port,
+   * password }` is not a database credential.
+   */
+  const withinConfigShape = (node: TSESTree.Node): boolean => {
+    for (let at: TSESTree.Node | undefined = node; at; at = at.parent) {
+      if (at.type === AST_NODE_TYPES.ObjectExpression && isConfigShape?.(at))
+        return true;
+    }
+    return false;
+  };
   const originOf = createOriginClassifier(config.modules);
 
   return {
@@ -281,6 +299,8 @@ export function createHardcodedCredentialsRule(
       if (isTestFilePath(context.filename)) return {};
       const env = envOf(context);
       let ownsFile = false;
+      /** Owned through a config-file shape alone, with no driver import. */
+      let ownsShapeOnly = false;
       /**
        * Nodes already reported. A credential can be reached twice — once
        * through its parent config's scan and once from its own visitor.
@@ -374,10 +394,12 @@ export function createHardcodedCredentialsRule(
       return {
         Program(program: TSESTree.Program) {
           ownsFile = usesModule(program);
+          ownsShapeOnly = ownsFile && !importsModule(program);
         },
 
         ObjectExpression(node: TSESTree.ObjectExpression) {
           if (!ownsFile) return;
+          if (ownsShapeOnly && !withinConfigShape(node)) return;
           if (!looksLikeConnectionConfig(node, connectionKeys)) return;
           if (passedToForeign(node, originOf, env)) return;
           scanConfig(node);

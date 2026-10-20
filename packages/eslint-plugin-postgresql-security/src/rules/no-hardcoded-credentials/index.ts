@@ -12,6 +12,7 @@ import {
   MessageIcons,
   staticString,
   createModuleEvidence,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import { NoHardcodedCredentialsOptions } from '../../types';
 import { PG_PROTOCOLS } from '../../constants';
@@ -159,6 +160,13 @@ export const noHardcodedCredentials: TSESLint.RuleModule<
     // PostgreSQL client at all. Registering no visitors is both the gate and
     // the cheap path — a file with no database in it does no work.
     if (!usesPostgres(context)) return {};
+    // A test pointing at a throwaway database is not a committed production
+    // secret (BENCHMARK-CRITERIA B1) — the policy every credentials rule built
+    // on the devkit factory already follows. The file-wide DSN sweep below made
+    // this matter: `parse('postgres://u:secret@db.example.test/app')` in a spec
+    // is a fixture; the corpus had dozens across teable, bookorbit, immich and
+    // nhost.
+    if (isTestFilePath(context.filename)) return {};
 
     /**
      * String literals already judged as the DSN of a config site — so the
@@ -231,6 +239,11 @@ export const noHardcodedCredentials: TSESLint.RuleModule<
     };
 
     const collectDsn = (node: TSESTree.Literal | TSESTree.TemplateLiteral): void => {
+      // `<input placeholder="postgresql://user:password@host:5432/db" />` is
+      // UI text showing the format, never a connection a driver reads.
+      const attribute =
+        node.parent?.type === AST_NODE_TYPES.JSXExpressionContainer ? node.parent.parent : node.parent;
+      if (attribute?.type === AST_NODE_TYPES.JSXAttribute) return;
       const text = staticString(node);
       if (text !== null && PG_PROTOCOLS.some((protocol) => text.startsWith(protocol))) {
         dsnLiterals.push(node);

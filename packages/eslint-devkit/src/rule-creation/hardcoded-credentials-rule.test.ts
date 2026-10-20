@@ -400,3 +400,47 @@ describe('rule metadata', () => {
     expect(rule.defaultOptions).toEqual([]);
   });
 });
+
+const shapeRule = createHardcodedCredentialsRule({
+  meta: {
+    type: 'problem',
+    docs: {
+      description: 'test',
+      url: 'https://example.test/rule',
+      cwe: 'CWE-798',
+      cvss: 9.8,
+      confidence: 'high',
+    },
+  },
+  modules: ['test-orm'],
+  urlSchemes: SCHEMES,
+  configShapes: [{ key: 'type', values: ['mysql'], with: ['entities'] }],
+  fix: 'fix',
+  urlFix: 'url fix',
+});
+
+describe('createHardcodedCredentialsRule — ownership through a config shape', () => {
+  ruleTester.run('config shape', shapeRule, {
+    valid: [
+      {
+        // @found ILB-Corpus-Truth off-SDK regression, 2026-10-19
+        name: 'FP: a Redis block beside the driver config, no driver import',
+        code: "export default { db: { type: 'mysql', entities: [] }, redis: { host: 'localhost', port: 6379, password: 'x' } };",
+      },
+    ],
+    invalid: [
+      {
+        name: 'the shape itself is owned',
+        code: "export default { type: 'mysql', entities: [], host: 'db', password: 'hunter2' };",
+        errors: [{ messageId: 'hardcodedPassword' }],
+      },
+      {
+        name: 'a driver import still owns every config in the file',
+        code:
+          DRIVER +
+          "export default { db: { type: 'mysql', entities: [] }, other: { host: 'h', port: 1, password: 'x' } };",
+        errors: [{ messageId: 'hardcodedPassword' }],
+      },
+    ],
+  });
+});

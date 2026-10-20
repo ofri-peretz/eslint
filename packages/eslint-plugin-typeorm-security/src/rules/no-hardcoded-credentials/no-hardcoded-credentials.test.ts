@@ -106,3 +106,43 @@ describe('no-hardcoded-credentials — fp/fn review 2026-10', () => {
     ],
   });
 });
+
+/**
+ * An app config that holds a TypeORM block AND other services' settings, with
+ * no typeorm import — the config shape is the only evidence, and it covers the
+ * TypeORM block, not its neighbours.
+ */
+describe('no-hardcoded-credentials — config-shape ownership', () => {
+  const APP_CONFIG = `export default defineConfig({
+  database: {
+    type: 'mysql',
+    host: process.env.MYSQL_HOST || 'db.internal',
+    password: process.env.MYSQL_PASSWORD || 'y3xxKRAmamMGTk3s',
+    synchronize: true,
+  },
+  bullRedis: {
+    host: 'localhost',
+    port: '6379',
+    password: '123456',
+  },
+});`;
+  ruleTester.run('config-shape ownership', noHardcodedCredentials, {
+    valid: [
+      {
+        // @found ILB-Corpus-Truth off-SDK regression, 2026-10-19
+        name: 'FP: a Redis block beside a TypeORM config shape, no typeorm import',
+        code: `export default defineConfig({
+  database: { type: 'mysql', password: process.env.MYSQL_PASSWORD, synchronize: true },
+  bullRedis: { host: 'localhost', port: '6379', password: '123456' },
+});`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'the TypeORM block of the same config is still reported',
+        code: APP_CONFIG,
+        errors: [{ messageId: 'hardcodedPassword', line: 5 }],
+      },
+    ],
+  });
+});
