@@ -142,19 +142,19 @@ jobs:
   # ratchet — bump them in scripts/audit-rule-meta-completeness.ts as
   # plugins improve.
   ilb-corpus-truth:
-    # The one bench that measures behaviour on code we did not write: 107
+    # The one bench that measures behaviour on code we did not write: 106
     # pinned repositories, ~110k files. It answers "how many findings are about
     # an SDK the file never imports?" — the question that found four broken
     # plugins on 2026-08-10 and that no fixture-based bench can ask.
     #
-    # Scheduled only, never on PRs. Cloning 107 repos is network-heavy and the
+    # Scheduled only, never on PRs. Cloning 106 repos is network-heavy and the
     # per-PR half of this guarantee is `benchmarks/__tests__/
     # sdk-gate-coverage.lock.test.ts`, which runs in the normal test task in
     # seconds.
     name: ILB-Corpus-Truth (off-SDK regression gate)
     needs: gate
     # `gate` sets run=true for any non-draft pull_request, so gating on it alone
-    # would run this 60-minute 107-repo clone on every PR — the opposite of what
+    # would run this 60-minute 106-repo clone on every PR — the opposite of what
     # the comment above promises. The event check is what makes it schedule-only.
     if: needs.gate.outputs.run == 'true' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
@@ -162,7 +162,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # This job clones and lints 107 third-party repositories. It never
+          # This job clones and lints 106 third-party repositories. It never
           # pushes, so leaving GITHUB_TOKEN in .git/config only widens what that
           # third-party code sits next to.
           persist-credentials: false
@@ -205,7 +205,7 @@ jobs:
     # — the platform and quality plugins, which have no SDK to gate on and hold
     # roughly three-quarters of consumer downloads.
     #
-    # Scheduled only, for the same reason as Corpus-Truth: 107 clones.
+    # Scheduled only, for the same reason as Corpus-Truth: 106 clones.
     name: ILB-Preset-Budget (recommended-preset noise gate)
     needs: gate
     if: needs.gate.outputs.run == 'true' && github.event_name != 'pull_request'
@@ -224,7 +224,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Clones and lints 107 third-party repositories and never pushes.
+          # Clones and lints 106 third-party repositories and never pushes.
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
         with:
@@ -244,7 +244,7 @@ jobs:
           path: .bench-repos
           key: corpus-truth-${{ hashFiles('benchmarks/suites/ilb-corpus-truth/repos.json') }}
       - name: Run ILB-Preset-Budget
-        # 30 plugins over 107 repositories needs more than the default heap.
+        # 30 plugins over 106 repositories needs more than the default heap.
         env:
           NODE_OPTIONS: --max-old-space-size=8192
         run: npm run ilb:preset-budget
