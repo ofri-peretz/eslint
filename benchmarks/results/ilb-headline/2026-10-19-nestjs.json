@@ -26,10 +26,7 @@
         "min": 989.4294769999997,
         "max": 1027.9429469999995,
         "samples": [
-          1002.72876,
-          1009.1193160000003,
-          1027.9429469999995,
-          989.4294769999997,
+          1002.72876, 1009.1193160000003, 1027.9429469999995, 989.4294769999997,
           1027.9140640000005
         ],
         "exitCode": 1,
@@ -43,11 +40,8 @@
         "min": 363.904344999999,
         "max": 394.7892639999991,
         "samples": [
-          363.904344999999,
-          385.7190440000013,
-          387.0704470000019,
-          394.0836649999983,
-          394.7892639999991
+          363.904344999999, 385.7190440000013, 387.0704470000019,
+          394.0836649999983, 394.7892639999991
         ],
         "exitCode": 1,
         "filesProcessed": 1000,
@@ -62,11 +56,8 @@
         "min": 295.0409610000006,
         "max": 301.45278600000165,
         "samples": [
-          296.98473899999954,
-          298.05631099999937,
-          301.45278600000165,
-          296.53361399999994,
-          295.0409610000006
+          296.98473899999954, 298.05631099999937, 301.45278600000165,
+          296.53361399999994, 295.0409610000006
         ],
         "exitCode": 0,
         "filesProcessed": 1000,
@@ -79,11 +70,8 @@
         "min": 295.9560280000005,
         "max": 318.68616600000314,
         "samples": [
-          318.68616600000314,
-          312.0430540000016,
-          308.46247700000094,
-          309.7634470000012,
-          295.9560280000005
+          318.68616600000314, 312.0430540000016, 308.46247700000094,
+          309.7634470000012, 295.9560280000005
         ],
         "exitCode": 0,
         "filesProcessed": 1000,
@@ -98,11 +86,8 @@
         "min": 1726.4249729999992,
         "max": 1828.9322199999988,
         "samples": [
-          1808.171781000001,
-          1771.119589,
-          1726.4249729999992,
-          1735.2666069999977,
-          1828.9322199999988
+          1808.171781000001, 1771.119589, 1726.4249729999992,
+          1735.2666069999977, 1828.9322199999988
         ],
         "exitCode": 1,
         "filesProcessed": 1000,
@@ -115,11 +100,8 @@
         "min": 427.3196889999999,
         "max": 492.67324400000143,
         "samples": [
-          436.50616300000183,
-          427.3196889999999,
-          459.04303900000014,
-          448.5291020000004,
-          492.67324400000143
+          436.50616300000183, 427.3196889999999, 459.04303900000014,
+          448.5291020000004, 492.67324400000143
         ],
         "exitCode": 1,
         "filesProcessed": 1000,
@@ -134,11 +116,8 @@
         "min": 118.99976900000183,
         "max": 145.62472299999718,
         "samples": [
-          127.44452799999999,
-          135.88406899999973,
-          118.99976900000183,
-          129.98438199999873,
-          145.62472299999718
+          127.44452799999999, 135.88406899999973, 118.99976900000183,
+          129.98438199999873, 145.62472299999718
         ],
         "exitCode": 1,
         "filesProcessed": 1000,
@@ -151,11 +130,8 @@
         "min": 125.27916800000094,
         "max": 148.91018100000292,
         "samples": [
-          148.91018100000292,
-          144.7634020000005,
-          140.09821700000248,
-          125.27916800000094,
-          125.9344170000004
+          148.91018100000292, 144.7634020000005, 140.09821700000248,
+          125.27916800000094, 125.9344170000004
         ],
         "exitCode": 1,
         "filesProcessed": 1000,
@@ -243,11 +219,8 @@
         "min": 544.7955039999943,
         "max": 578.751261999998,
         "samples": [
-          575.7571719999978,
-          555.7656419999985,
-          544.7955039999943,
-          556.2746960000004,
-          578.751261999998
+          575.7571719999978, 555.7656419999985, 544.7955039999943,
+          556.2746960000004, 578.751261999998
         ],
         "exitCode": 1,
         "filesProcessed": 1000,
@@ -263,11 +236,8 @@
         "min": 531.4746779999987,
         "max": 608.1902380000029,
         "samples": [
-          533.3886009999987,
-          531.4746779999987,
-          535.3369869999951,
-          540.9165040000007,
-          608.1902380000029
+          533.3886009999987, 531.4746779999987, 535.3369869999951,
+          540.9165040000007, 608.1902380000029
         ],
         "exitCode": 1,
         "filesProcessed": 1000,
@@ -283,11 +253,8 @@
         "min": 534.4540899999993,
         "max": 557.8801469999962,
         "samples": [
-          535.763092000001,
-          534.8879559999987,
-          538.8496769999983,
-          534.4540899999993,
-          557.8801469999962
+          535.763092000001, 534.8879559999987, 538.8496769999983,
+          534.4540899999993, 557.8801469999962
         ],
         "exitCode": 1,
         "filesProcessed": 1000,
@@ -303,11 +270,8 @@
         "min": 672.3712870000018,
         "max": 710.5445369999943,
         "samples": [
-          672.3712870000018,
-          677.2792929999996,
-          710.5445369999943,
-          699.0256930000032,
-          673.6756009999954
+          672.3712870000018, 677.2792929999996, 710.5445369999943,
+          699.0256930000032, 673.6756009999954
         ],
         "exitCode": 1,
         "filesProcessed": 1000,
@@ -323,11 +287,8 @@
         "min": 1588.6612649999952,
         "max": 1672.9178370000009,
         "samples": [
-          1672.9178370000009,
-          1588.6612649999952,
-          1610.1737590000048,
-          1595.8089299999992,
-          1622.6463690000019
+          1672.9178370000009, 1588.6612649999952, 1610.1737590000048,
+          1595.8089299999992, 1622.6463690000019
         ],
         "exitCode": 1,
         "filesProcessed": 1000,
@@ -401,17 +362,13 @@
         "node-security/no-arbitrary-file-access",
         "node-security/no-zip-slip"
       ],
-      "theirs": [
-        "eslint-plugin-security:detect-non-literal-fs-filename"
-      ],
+      "theirs": ["eslint-plugin-security:detect-non-literal-fs-filename"],
       "note": "eslint-plugin-security flags any non-literal fs path — higher recall, far more false positives on legitimate dynamic paths."
     },
     {
       "job": "Object injection / prototype pollution",
       "category": "security",
-      "ours": [
-        "secure-coding/detect-object-injection"
-      ],
+      "ours": ["secure-coding/detect-object-injection"],
       "theirs": [
         "eslint-plugin-security:detect-object-injection",
         "eslint-plugin-sonarjs:no-angular-bypass-sanitization"
@@ -442,9 +399,7 @@
         "browser-security/require-postmessage-origin-check",
         "browser-security/no-postmessage-innerhtml"
       ],
-      "theirs": [
-        "@microsoft/eslint-plugin-sdl:no-postmessage-star-origin"
-      ]
+      "theirs": ["@microsoft/eslint-plugin-sdl:no-postmessage-star-origin"]
     },
     {
       "job": "Cookie security & token storage",
@@ -552,21 +507,14 @@
     {
       "job": "Circular dependencies",
       "category": "modules",
-      "ours": [
-        "import-next/no-cycle"
-      ],
-      "theirs": [
-        "eslint-plugin-import:no-cycle"
-      ],
+      "ours": ["import-next/no-cycle"],
+      "theirs": ["eslint-plugin-import:no-cycle"],
       "note": "Same job; the incumbent has ~30M weekly downloads and far more battle-testing across exotic resolver setups."
     },
     {
       "job": "Unresolved / invalid imports",
       "category": "modules",
-      "ours": [
-        "import-next/no-unresolved",
-        "import-next/named"
-      ],
+      "ours": ["import-next/no-unresolved", "import-next/named"],
       "theirs": [
         "eslint-plugin-import:no-unresolved",
         "eslint-plugin-import:named"
@@ -724,9 +672,7 @@
         "ok": true
       },
       "theirs": {
-        "rules": [
-          "eslint-plugin-security:detect-non-literal-fs-filename"
-        ],
+        "rules": ["eslint-plugin-security:detect-non-literal-fs-filename"],
         "ruleCount": 1,
         "ms": 507.6369909999994,
         "findings": 0,
@@ -738,9 +684,7 @@
       "category": "security",
       "note": "Both flag bracket-notation writes; eslint-plugin-security is notoriously noisy on this rule and most teams disable it.",
       "ours": {
-        "rules": [
-          "secure-coding/detect-object-injection"
-        ],
+        "rules": ["secure-coding/detect-object-injection"],
         "ruleCount": 1,
         "ms": 518.8793270000024,
         "findings": 0,
@@ -800,9 +744,7 @@
         "ok": true
       },
       "theirs": {
-        "rules": [
-          "@microsoft/eslint-plugin-sdl:no-postmessage-star-origin"
-        ],
+        "rules": ["@microsoft/eslint-plugin-sdl:no-postmessage-star-origin"],
         "ruleCount": 1,
         "ms": 645.7589269999953,
         "findings": 0,
@@ -1001,18 +943,14 @@
       "category": "modules",
       "note": "Same job; the incumbent has ~30M weekly downloads and far more battle-testing across exotic resolver setups.",
       "ours": {
-        "rules": [
-          "import-next/no-cycle"
-        ],
+        "rules": ["import-next/no-cycle"],
         "ruleCount": 1,
         "ms": 641.7556980000081,
         "findings": 3,
         "ok": true
       },
       "theirs": {
-        "rules": [
-          "eslint-plugin-import:no-cycle"
-        ],
+        "rules": ["eslint-plugin-import:no-cycle"],
         "ruleCount": 1,
         "ms": 1651.442194000003,
         "findings": 0,
@@ -1023,10 +961,7 @@
       "job": "Unresolved / invalid imports",
       "category": "modules",
       "ours": {
-        "rules": [
-          "import-next/no-unresolved",
-          "import-next/named"
-        ],
+        "rules": ["import-next/no-unresolved", "import-next/named"],
         "ruleCount": 2,
         "ms": 589.5102210000041,
         "findings": 0,

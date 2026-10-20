@@ -333,6 +333,10 @@ it('provides an IP connection host', () => {
 );`,
       },
       {
+        name: 'a driver-shaped config in a file with no PostgreSQL evidence',
+        code: "new Pool({ host: 'db.example.com', password: 'Pr0dS3cret' });",
+      },
+      {
         name: 'a DSN placeholder in an expression container',
         filename: '/repo/src/features/data-db/Field.tsx',
         code: "export const F = () => <Input placeholder={'postgres://u:p4ss@db.example.com/x'} />;",

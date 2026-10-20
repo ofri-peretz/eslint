@@ -188,3 +188,34 @@ new Schema({ name: { type: String } });`,
     },
   ],
 });
+
+ruleTester.run(
+  'option keys are read by their static name',
+  requireSchemaValidation,
+  {
+    valid: xmo([
+      {
+        // @found mutation testing (Stryker), 2026-10-19
+        name: 'FP: a quoted validation key validates the field',
+        code: `new Schema({ name: { type: String, 'required': true } });`,
+      },
+      {
+        name: 'a computed identifier key is not the type option',
+        code: `new Schema({ name: { [type]: String } });`,
+      },
+    ]),
+    invalid: xmo([
+      {
+        // @found mutation testing (Stryker), 2026-10-19
+        name: 'FN: a quoted type key declares a field',
+        code: `new Schema({ name: { 'type': String } });`,
+        errors: [{ messageId: 'requireSchemaValidation' }],
+      },
+      {
+        name: 'a computed string-literal type key declares a field',
+        code: `new Schema({ name: { ['type']: String, ...shared } });`,
+        errors: [{ messageId: 'requireSchemaValidation' }],
+      },
+    ]),
+  },
+);

@@ -242,8 +242,8 @@ export const noHardcodedCredentials: TSESLint.RuleModule<
       // `<input placeholder="postgresql://user:password@host:5432/db" />` is
       // UI text showing the format, never a connection a driver reads.
       const attribute =
-        node.parent?.type === AST_NODE_TYPES.JSXExpressionContainer ? node.parent.parent : node.parent;
-      if (attribute?.type === AST_NODE_TYPES.JSXAttribute) return;
+        node.parent.type === AST_NODE_TYPES.JSXExpressionContainer ? node.parent.parent : node.parent;
+      if (attribute.type === AST_NODE_TYPES.JSXAttribute) return;
       const text = staticString(node);
       if (text !== null && PG_PROTOCOLS.some((protocol) => text.startsWith(protocol))) {
         dsnLiterals.push(node);

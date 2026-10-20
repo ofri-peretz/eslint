@@ -121,8 +121,8 @@
           "timeout": 2
         },
         "no-hardcoded-credentials": {
-          "score": 94.9,
-          "killed": 131,
+          "score": 95.2,
+          "killed": 139,
           "survived": 7,
           "noCoverage": 0,
           "timeout": 0
@@ -293,9 +293,9 @@
           "timeout": 1
         },
         "require-schema-validation": {
-          "score": 90.1,
-          "killed": 73,
-          "survived": 8,
+          "score": 92.5,
+          "killed": 50,
+          "survived": 4,
           "noCoverage": 0,
           "timeout": 0
         },
