@@ -1,6 +1,26 @@
 {
   "articles": [
     {
+      "id": 4876191,
+      "title": "Rename the Variable, Change the Security Verdict",
+      "description": "One of my own rules flags a Zod schema containing no XPath, and stays silent on textbook XPath injection. Both come from the same heuristic: it decides whether a value is attacker-controlled by substring-matching the variable's name.",
+      "url": "https://dev.to/ofri-peretz/rename-the-variable-change-the-security-verdict-5a25",
+      "canonical_url": "https://ofriperetz.dev/articles/rule-that-reads-variable-names",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Frule-that-reads-variable-names.jpg",
+      "published_at": "2026-10-19T07:36:46Z",
+      "readable_publish_date": "Oct 19",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 1,
+      "positive_reactions_count": 1,
+      "comments_count": 0,
+      "tag_list": [
+        "security",
+        "webdev",
+        "javascript"
+      ]
+    },
+    {
       "id": 4854730,
       "title": "Six Rules Found Nothing. Only Five of Them Were Waiting.",
       "description": "A lint rule sitting at zero is one of three different things, and reading the rule list will not tell you which. Asking each rule to fire on its own test fixture takes ten seconds — and on six silent rules it found one that could never have fired at all.",
@@ -1967,7 +1987,7 @@
       ]
     }
   ],
-  "total": 96,
-  "lastUpdated": "2026-10-18T14:19:09.684Z",
+  "total": 97,
+  "lastUpdated": "2026-10-25T18:30:53.051Z",
   "source": "public"
 }
