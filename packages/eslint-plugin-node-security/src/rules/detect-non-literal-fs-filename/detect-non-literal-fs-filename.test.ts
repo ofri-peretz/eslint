@@ -403,22 +403,32 @@ describe('detect-non-literal-fs-filename', () => {
       detectNonLiteralFsFilename,
       {
         valid: [
-          // The corpus line itself.
-          'fs.readFileSync(process.env.TWILIO_CA_BUNDLE);',
-          // Through a binding, the way the same idiom is usually written.
-          'const ca = process.env.TWILIO_CA_BUNDLE;\nfs.readFileSync(ca);',
-          // argv, used entire.
-          'const p = process.argv[2];\nfs.readFile(p);',
-          // `path.resolve` of one whole value normalises it; it adds no part.
-          'fs.readFileSync(path.resolve(process.env.CONFIG));',
+          {
+            name: 'whole process.env value is not traversal (twilio-node corpus line)',
+            code: 'fs.readFileSync(process.env.TWILIO_CA_BUNDLE);',
+          },
+          {
+            name: 'whole process.env value through a const binding is not traversal',
+            code: 'const ca = process.env.TWILIO_CA_BUNDLE;\nfs.readFileSync(ca);',
+          },
+          {
+            name: 'whole process.argv value is not traversal',
+            code: 'const p = process.argv[2];\nfs.readFile(p);',
+          },
+          {
+            name: 'path.resolve of one whole process.env value adds no part',
+            code: 'fs.readFileSync(path.resolve(process.env.CONFIG));',
+          },
         ],
         invalid: [
           // A prefix the value can walk out of — still a finding.
           {
+            name: 'process.env appended to a fixed prefix reports',
             code: "fs.readFileSync('/etc/app/' + process.env.NAME);",
             errors: [{ messageId: 'fsPathTraversal' }],
           },
           {
+            name: 'process.env in a template after a base reports',
             code: 'fs.readFileSync(`${BASE}/${process.env.NAME}`);',
             errors: [{ messageId: 'fsPathTraversal' }],
           },
@@ -428,6 +438,60 @@ describe('detect-non-literal-fs-filename', () => {
             code:
               "const sourceDirectory = path.join(__dirname, '..', 'packages', process.argv[2]);\n" +
               'fs.cpSync(sourceDirectory, dest, {recursive: true});',
+            errors: [{ messageId: 'fsPathTraversal' }],
+          },
+        ],
+      },
+    );
+
+    // `reportWholeProcessValues` turns the suppression above off. Measured
+    // 2026-10-25: eslint-plugin-security@4.2.0 reports
+    // `fs.readFileSync(process.argv[2])` and we did not, so a drop-in for that
+    // plugin lost a finding on the swap. Default stays off (valid cases above).
+    ruleTester.run(
+      'reportWholeProcessValues reports a whole process value',
+      detectNonLiteralFsFilename,
+      {
+        valid: [
+          {
+            name: 'default: whole process.argv path stays quiet (option off)',
+            code: 'const fs = require("fs"); fs.readFileSync(process.argv[2]);',
+          },
+          {
+            name: 'option on: a plain literal path is still quiet',
+            code: "fs.readFileSync('config.json');",
+            options: [{ reportWholeProcessValues: true }],
+          },
+        ],
+        invalid: [
+          {
+            name: 'option on: whole process.argv path reports (eslint-plugin-security repro)',
+            code: 'const fs = require("fs"); fs.readFileSync(process.argv[2]);',
+            options: [{ reportWholeProcessValues: true }],
+            errors: [{ messageId: 'fsPathTraversal' }],
+          },
+          {
+            name: 'option on: whole process.env path reports',
+            code: 'fs.readFileSync(process.env.TWILIO_CA_BUNDLE);',
+            options: [{ reportWholeProcessValues: true }],
+            errors: [{ messageId: 'fsPathTraversal' }],
+          },
+          {
+            name: 'option on: process.argv through a const binding reports',
+            code: 'const p = process.argv[2];\nfs.readFile(p);',
+            options: [{ reportWholeProcessValues: true }],
+            errors: [{ messageId: 'fsPathTraversal' }],
+          },
+          {
+            name: 'option on: path.resolve of one process.env value reports',
+            code: 'fs.readFileSync(path.resolve(process.env.CONFIG));',
+            options: [{ reportWholeProcessValues: true }],
+            errors: [{ messageId: 'fsPathTraversal' }],
+          },
+          {
+            name: 'option on: process.env base with literal segments reports',
+            code: "fs.readFileSync(path.join(process.env.HOME, '.terraform.d', 'credentials.tfrc.json'));",
+            options: [{ reportWholeProcessValues: true }],
             errors: [{ messageId: 'fsPathTraversal' }],
           },
         ],

@@ -51,6 +51,9 @@
  *     already chooses which files it opens; for a CLI, `readFile(argv[2])` IS
  *     the feature. Measured at 7% precision before `isWholeTaintValue` existed.
  *     The COMPOSED form still reports — a fixed prefix an argument extends.
+ *     `reportWholeProcessValues: true` opts in (2026-10-25), for a drop-in
+ *     that must match `eslint-plugin-security`, which reports it. The DEFAULT
+ *     stays off; flip the option, never the default.
  *
  *   ✗ "That suppression should apply to requests too."
  *     No. A remote caller supplying the ENTIRE path does not need to escape a
@@ -141,6 +144,18 @@ export interface Options {
    * be proved. Measured at 7% precision on a real-code corpus, so it is off.
    */
   reportUnresolvedPaths?: boolean;
+
+  /**
+   * Report a `process.argv` / `process.env` value used as the WHOLE path
+   * (`fs.readFileSync(process.argv[2])`). Default: `false`.
+   *
+   * Off by default for the reason in the lock header: whoever sets argv or the
+   * environment already chooses which files the process opens. `true` drops
+   * `process` from `WHOLE_VALUE_TRUSTED_ROOTS`, which matches
+   * `eslint-plugin-security`'s rule of the same name — the setting a
+   * drop-in for that plugin needs so a swap loses no finding.
+   */
+  reportWholeProcessValues?: boolean;
 
   /**
    * Turn the hardcoded-path check off entirely. Default: `false` (the check
@@ -596,6 +611,12 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
             default: false,
             description:
               'Report paths whose provenance cannot be resolved. Restores the pre-inversion behaviour; measured at 7% precision on real code.',
+          },
+          reportWholeProcessValues: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Report process.argv / process.env used as the whole path (fs.readFileSync(process.argv[2])). Off by default: whoever sets argv or the environment already chooses which files the process opens. True matches eslint-plugin-security.',
           },
           allowLiterals: {
             type: 'boolean',
@@ -1666,7 +1687,9 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
          * roots conflated "already trusted with the process" with "unauthenticated
          * and remote".
          */
-        WHOLE_VALUE_TRUSTED_ROOTS = new Set(['process']);
+        WHOLE_VALUE_TRUSTED_ROOTS = new Set(
+          options.reportWholeProcessValues ? [] : ['process'],
+        );
 
         /**
          * Roots whose NAME is not evidence of anything.

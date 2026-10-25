@@ -77,6 +77,10 @@ request root.
   and still reports: `path.join(__dirname,'..',pkgFromArgv)` gives an argument a
   fixed prefix to escape.
 
+  Opt-in since 2026-10-25: `reportWholeProcessValues: true` reports it, matching
+  `eslint-plugin-security` — for a drop-in that must not lose its findings. The
+  default stays off.
+
   I listed this as a TP from CWE-22 reflex and the existing design was right.
   The distinction that matters is not "is it tainted" but **who controls it** —
   process-level input is already process-level trust; a request is not.

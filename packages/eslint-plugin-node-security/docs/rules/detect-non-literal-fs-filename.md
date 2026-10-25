@@ -411,5 +411,6 @@ fileManager.read(userPath);
 | ------ | ---- | ------- | ----------- |
 | `taintSources` | `string[]` | `["process"]` | Identifier roots treated as attacker-reachable. Default: ['process'] (process.argv and process.env). Request roots (req/request/ctx/event) are deliberately NOT included — no-arbitrary-file-access owns those, and listing them here would double-report one line at two severities. Add them only if you run this rule without that one. |
 | `reportUnresolvedPaths` | `boolean` | `false` | Report paths whose provenance cannot be resolved. Restores the pre-inversion behaviour; measured at 7% precision on real code. |
+| `reportWholeProcessValues` | `boolean` | `false` | Report process.argv / process.env used as the whole path (fs.readFileSync(process.argv[2])). Off by default: whoever sets argv or the environment already chooses which files the process opens. True matches eslint-plugin-security. |
 | `allowLiterals` | `boolean` | `false` | Allow literal string paths. Default true: a rule named "non-literal" reporting a literal contradicts its contract. Set false to also flag hardcoded paths containing "../" — measured as this rule's largest FP class on real code. |
 | `additionalMethods` | `string[]` | `[]` | Additional fs methods to check |
