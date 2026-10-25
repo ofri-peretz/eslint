@@ -40,13 +40,13 @@ Wrapped rules keep their own schema, so a user can still pass our options under
 | 5   | `detect-eval-with-expression`           | `node-security/detect-eval-with-expression` (same name)    | wrap   |   1/1 |   1/3 | none                                | Fires on a bare `eval()`. No argument means nothing can run, so this is a **false positive. Fix it in the rule** and add a case to the rule's tests.                                                                                                                                                                                                   |
 | 6   | `detect-invisible-characters`           | none                                                       | gap    |  0/13 |   0/7 | —                                   | New in 4.1.0. It covers U+3164 and U+FFA0 in strings, templates, identifiers and comments. `no-bidi-characters` doesn't catch them, even with `additionalCharacters`. **Closed by a new rule, `secure-coding/no-invisible-characters`**, with all 13 + 7 cases ported into its tests.                                                                  |
 | 7   | `detect-new-buffer`                     | `node-security/no-deprecated-buffer`                       | wrap   |   1/1 |   1/1 | none                                | Fires on `new Buffer('test')`. The constructor is DEP0005 for any argument. **Declare as a divergence.**                                                                                                                                                                                                                                               |
-| 8   | `detect-no-csrf-before-method-override` | none                                                       | retire |   0/1 |   0/1 | —                                   | The rule matches only `express.csrf()` and `express.methodOverride()`. Those were Express 3 built-ins, removed in Express 4 (2014). **Retire it.** Also fix `wont-fix.json`: its reason cites `csurf`, which isn't what the rule matches.                                                                                                              |
+| 8   | `detect-no-csrf-before-method-override` | none                                                       | retire |   0/1 |   0/1 | —                                   | The rule matches only `express.csrf()` and `express.methodOverride()`. Those were Express 3 built-ins: Express 4.22.3 throws when you read them, and on 5.3.0 they are `undefined` (R1 matrix). **Retire it.** Also fix `wont-fix.json`: its reason cites `csurf`, which isn't what the rule matches.                                                  |
 | 9   | `detect-non-literal-fs-filename`        | `node-security/detect-non-literal-fs-filename` (same name) | wrap   | 25/25 |  0/10 | none                                | The corpus case is closed (the old report named it as open). **Outside the corpus:** `fs.readFileSync(process.argv[2])` is silent in ours and reported by theirs, even though our schema says `process` is a default taint source. Fix it before ship (R10).                                                                                           |
 | 10  | `detect-non-literal-regexp`             | `secure-coding/detect-non-literal-regexp` (same name)      | wrap   |   1/1 |   0/2 | none                                | None.                                                                                                                                                                                                                                                                                                                                                  |
 | 11  | `detect-non-literal-require`            | `node-security/no-dynamic-require`                         | wrap   |   2/2 |   0/4 | none                                | None. `no-dynamic-dependency-loading` also fires on both cases. We map only one rule, so each line gets one finding.                                                                                                                                                                                                                                   |
 | 12  | `detect-object-injection`               | `secure-coding/detect-object-injection` (same name)        | wrap   |   1/1 |   0/1 | none                                | None.                                                                                                                                                                                                                                                                                                                                                  |
 | 13  | `detect-possible-timing-attacks`        | `node-security/no-timing-unsafe-compare`                   | wrap   |   0/2 |   0/2 | `{ reportLiteralComparands: true }` | **The two missing live cases:** `if (password === 'mypass') {}` and `if ('mypass' === password) {}`. `isSourceConstant()` skips literal comparands on purpose, to avoid false positives like `revokedToken === 'access'`. **Closed by a new option** that defaults to `false` in node-security and is pinned to `true` here (intent, open question 2). |
-| 14  | `detect-pseudoRandomBytes`              | none                                                       | retire |   0/1 |   0/1 | —                                   | On Node 24.22, `crypto.pseudoRandomBytes === crypto.randomBytes` is `true`, so the API is the CSPRNG and the defect can't occur. **Retire it.** Also fix `wont-fix.json`: it says the API was "removed", but it still exists.                                                                                                                          |
+| 14  | `detect-pseudoRandomBytes`              | none                                                       | retire |   0/1 |   0/1 | —                                   | On every Node in the R1 matrix (measured 18.16 to 26.10), `crypto.pseudoRandomBytes === crypto.randomBytes` is `true`, so the API is the CSPRNG and the defect can't occur. **Retire it.** Also fix `wont-fix.json`: it says the API was "removed", but it still exists.                                                                               |
 | 15  | `detect-unsafe-regex`                   | `secure-coding/no-redos-vulnerable-regex`                  | wrap   |   1/2 |   0/2 | none                                | One case is declined: `new RegExp('x+x+)+y')` is not valid regex syntax. Core ESLint and oxlint already report it with `no-invalid-regexp`. The existing partial won't-fix stays.                                                                                                                                                                      |
 
 **Totals on the 4.2.0 corpus (107 invalid, 112 valid):**
@@ -75,12 +75,41 @@ Wrapped rules keep their own schema, so a user can still pass our options under
   - `mapping.json`.
   - `index.js` and `index.d.ts`.
   - `README.md` and `LICENSE`.
+
+  **The supported runtime matrix**, which is what "a defect that can't occur on a
+  supported runtime" is measured against:
+
+  - **Node:** `engines.node` is `^18.18.0 || ^20.9.0 || >=21.1.0`. That is the
+    incumbent's own range, so the swap never narrows it.
+  - **Express:** the majors that are still published, 4 (`latest-4` 4.22.3) and 5
+    (`latest` 5.3.0).
+
+  A retirement is valid only with evidence that covers every entry in the matrix. The
+  evidence goes in its `wont-fix.json` entry.
+
+  - **`detect-pseudoRandomBytes`:** `crypto.pseudoRandomBytes === crypto.randomBytes`
+    returned `true` on every local Node from 18.16.1 to 26.10.0 (24 versions, including
+    18.19, 20.x, 22.x and 24.x), measured 2026-10-25.
+  - **`detect-no-csrf-before-method-override`:** reading `express.csrf` throws
+    `Most middleware (like csrf) is no longer bundled` on Express 4.22.3. On Express
+    5.3.0 both `express.csrf` and `express.methodOverride` are `undefined`.
+
+  If the matrix grows to a runtime where the evidence doesn't hold, the retirement
+  reverts to a live rule or to a declared parity miss.
+
 - **R2 — the mapping is data.** `mapping.json` has the shape
   `{ incumbent: { name, version }, rules: { <id>: { plugin, rule, defaultOptions? } | { retired: true, reason } } }`.
   It is the only place a rule ID's source is written (PRINCIPLES rule 7).
 - **R3 — no logic.** `index.js` builds `rules` from `mapping.json`:
-  - A wrapped rule is `{ ...target, meta: { ...target.meta, defaultOptions } }`. Its
-    `create` is unchanged.
+  - A wrapped rule with **no** `defaultOptions` in its mapping entry is the target
+    rule object itself, unchanged (`rules[id] === target`). Its own
+    `meta.defaultOptions`, if it has any, are untouched.
+  - A wrapped rule **with** a mapping override is
+    `{ ...target, meta: { ...target.meta, defaultOptions: override } }`. Its `create`
+    is unchanged.
+  - The R4 lock covers both cases. Every rule without an override must be the
+    identical object, and every rule with an override must have exactly the mapped
+    `meta.defaultOptions`.
   - A retired rule is `{ meta: { deprecated: true, docs, schema: [] }, create: () => ({}) }`.
 
   The plugin's `meta` is `{ name: 'oxlint-plugin-security', version }`. `configs`
@@ -114,6 +143,20 @@ Wrapped rules keep their own schema, so a user can still pass our options under
   - a finding on a valid case that isn't listed in `divergences.json`;
   - an entry in `divergences.json` that no longer fires (a stale declaration);
   - per-case diagnostics that differ between ESLint and oxlint.
+
+  **"Differ" has a precise meaning.** For each case, the runner compares the multiset
+  of `(ruleId, line, column, endLine, endColumn)` tuples, normalized to 1-based lines
+  and columns. Three things are deliberately **not** compared:
+
+  - **Message text.** It comes from the same rule object, but engines format it
+    differently. oxlint prints `security(id): …`.
+  - **Severity.** It comes from the config, not from the rule.
+  - **Fixes and suggestions.** They are reported side by side but don't gate, because
+    oxlint's JS-plugin fix support is a separate contract.
+
+  If an engine doesn't report an end position, the runner compares only
+  `(ruleId, line, column)` for that case and says so in its output.
+
 - **R8 — control run.** `drop-in.mjs --subject eslint-plugin-security` runs the incumbent
   through the same harness and must report 100% and 0. If it doesn't, the harness is
   wrong and the gate's result means nothing.
