@@ -243,7 +243,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     let GRAPHQL_OP_KEYWORDS: string[];
     let GRAPHQL_SCHEMA_KEYWORDS: string[];
     let GRAPHQL_TAG_NAMES: Set<string>;
-    let GRAPHQL_SCHEMA_BINDING: RegExp;
+    const GRAPHQL_SCHEMA_BINDING = /typedef|schema|sdl/i;
 
     /**
      * Check if this is a GraphQL-related operation
@@ -863,7 +863,6 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
          * and standalone selection sets are unambiguous and need none of this.
          */
         GRAPHQL_TAG_NAMES = new Set(['gql', 'graphql']);
-        GRAPHQL_SCHEMA_BINDING = /typedef|schema|sdl/i;
       },
       // Check template literals for GraphQL queries
       TemplateLiteral(node: TSESTree.TemplateLiteral) {

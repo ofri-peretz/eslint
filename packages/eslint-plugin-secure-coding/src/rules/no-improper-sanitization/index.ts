@@ -209,7 +209,8 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         context: TSESLint.RuleContext<string, unknown[]>,
       ): boolean;
     };
-    let ENTITY: RegExp;
+    /** `&amp;` `&lt;` `&#039;` `&#x27;` — a replacement that produces markup-safe text. */
+    const ENTITY = /&(?:amp|lt|gt|quot|apos|#x[0-9a-f]+|#\d+);/i;
 
     /**
      * Check if sanitization is safe
@@ -400,9 +401,6 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
           trustedOrmPatterns: [],
           strictMode,
         });
-
-        /** `&amp;` `&lt;` `&#039;` `&#x27;` — a replacement that produces markup-safe text. */
-        ENTITY = /&(?:amp|lt|gt|quot|apos|#x[0-9a-f]+|#\d+);/i;
       },
       // Check call expressions for sanitization issues
       CallExpression(node: TSESTree.CallExpression) {

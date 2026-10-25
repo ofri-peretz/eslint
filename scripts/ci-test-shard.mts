@@ -225,6 +225,16 @@ function countTestFiles(dir: string): number {
  */
 const NO_TEST_ALLOWLIST = new Set<string>(['registry']);
 
+/**
+ * The `oxlint-plugin-*` packages carry no source to test: each is a manifest
+ * plus a one-line re-export (docs/intents/oxlint-native-plugin-names) or the
+ * eslint-plugin-security façade built from mapping.json
+ * (docs/intents/oxlint-plugin-security-drop-in). What they ship is verified
+ * where it can be: `oxlint:aliases:verify` loads every one through real
+ * oxlint, and drop-in.mjs gates the façade.
+ */
+const noTestByDesign = (name: string) => name.startsWith('oxlint-plugin-');
+
 const wantCoverage = process.env.CI_TEST_SHARD_COVERAGE === '1';
 
 /** Every workspace manifest, with the directory it came from. */
@@ -345,7 +355,8 @@ function discoverPackages(lane: Lane): { testable: Pkg[]; untested: string[] } {
         } else {
           testable.push({ name: pkg.name, dir, task, cost, deps });
         }
-      } else if (!NO_TEST_ALLOWLIST.has(pkg.name)) untested.push(pkg.name);
+      } else if (!NO_TEST_ALLOWLIST.has(pkg.name) && !noTestByDesign(pkg.name))
+        untested.push(pkg.name);
     }
   }
   // Sort by cost desc, name asc as tiebreak. Descending order is what makes the

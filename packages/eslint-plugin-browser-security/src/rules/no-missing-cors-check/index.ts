@@ -143,9 +143,18 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
     let trustedLibraries: string[];
     let isTestFile: boolean;
     let sourceCode: Readonly<TSESLint.SourceCode>;
-    let CALLS_USE: RegExp;
-    let CALLS_USE_OR_CORS: RegExp;
-    let CALLS_HEADER_SETTER: RegExp;
+    /*
+     * These match SOURCE TEXT, so a dotted-only pattern puts the blind spot in
+     * the PATTERN rather than in a guard: `app['use'](…)` never matched
+     * `\buse\s*\(`, and the wildcard origin inside it went unreported.
+     * Each accepts `.name(` or `['name'](` and nothing else, so a key chosen at
+     * runtime still does not match. Written literally — a rule that assembles
+     * its own patterns at runtime is a shape this repo's rule-audit flags.
+     */
+    const CALLS_USE = /(?:\.\s*use|\[\s*['"]use['"]\s*\])\s*\(/i;
+    const CALLS_USE_OR_CORS = /(?:\.\s*use|\[\s*['"]use['"]\s*\]|\bcors)\s*\(/i;
+    const CALLS_HEADER_SETTER =
+      /(?:\.\s*(?:setHeader|header)|\[\s*['"](?:setHeader|header)['"]\s*\])\s*\(/i;
 
     function checkLiteral(node: TSESTree.Literal) {
       if (isTestFile) {
@@ -509,19 +518,6 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
         const filename = context.filename;
         isTestFile = allowInTests && isTestFilePath(filename);
         sourceCode = context.sourceCode;
-
-        /*
-         * These match SOURCE TEXT, so a dotted-only pattern puts the blind spot in
-         * the PATTERN rather than in a guard: `app['use'](…)` never matched
-         * `\buse\s*\(`, and the wildcard origin inside it went unreported.
-         * Each accepts `.name(` or `['name'](` and nothing else, so a key chosen at
-         * runtime still does not match. Written literally — a rule that assembles
-         * its own patterns at runtime is a shape this repo's rule-audit flags.
-         */
-        CALLS_USE = /(?:\.\s*use|\[\s*['"]use['"]\s*\])\s*\(/i;
-        CALLS_USE_OR_CORS = /(?:\.\s*use|\[\s*['"]use['"]\s*\]|\bcors)\s*\(/i;
-        CALLS_HEADER_SETTER =
-          /(?:\.\s*(?:setHeader|header)|\[\s*['"](?:setHeader|header)['"]\s*\])\s*\(/i;
       },
       Literal: checkLiteral,
       CallExpression: checkCallExpression,

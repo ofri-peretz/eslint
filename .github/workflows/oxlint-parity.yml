@@ -37,6 +37,8 @@ on:
       - 'scripts/generate-oxlint-aliases.mts'
       - 'scripts/verify-oxlint-aliases.mts'
       - 'packages/oxlint-plugin-*/**'
+      - 'benchmarks/suites/ilb-competitor-parity/**'
+      - 'benchmarks/corpus/competitor-parity/**'
       - 'scripts/verify-oxlint-shims.ts'
       - 'scripts/__tests__/oxlint-export-lock.test.ts'
       - 'scripts/__tests__/vitest.config.mts'
@@ -121,6 +123,42 @@ jobs:
   # is what a PR needs. This job is a ~3.3m runtime smoke that costs a scarce
   # runner slot (20 concurrent, account-wide) for signal the weekly cron and the
   # static audit already cover between them.
+  security-drop-in:
+    # oxlint-plugin-security's ship gate (docs/intents/oxlint-plugin-security-drop-in,
+    # R7–R9). The control run proves the harness and always gates. The façade's
+    # own result gates only once `private` is flipped: while private, a red
+    # gate is the expected state of work in progress and is reported, not fatal.
+    name: Security drop-in gate
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build the mapped plugins
+        run: |
+          npx turbo run build \
+            --filter='./packages/eslint-plugin-node-security' \
+            --filter='./packages/eslint-plugin-secure-coding'
+      - name: Control run — the incumbent must score 100% and 0
+        run: node benchmarks/suites/ilb-competitor-parity/drop-in.mjs --subject eslint-plugin-security
+      - name: Drop-in gate — oxlint-plugin-security
+        run: |
+          set -uo pipefail
+          if node benchmarks/suites/ilb-competitor-parity/drop-in.mjs; then exit 0; fi
+          private=$(node -p "require('./packages/oxlint-plugin-security/package.json').private === true")
+          if [ "$private" = "true" ]; then
+            echo "::warning::oxlint-plugin-security's gate is red; it stays private until it is green."
+            exit 0
+          fi
+          echo "::error::oxlint-plugin-security is public and its drop-in gate is red."
+          exit 1
+
   runtime-and-parity:
     name: Runtime smoke + parity
     needs: gate
@@ -231,7 +269,7 @@ jobs:
   # on all of them and runs with `if: always()`, so it sees the whole run.
   report:
     name: 🚨 Report a scheduled failure
-    needs: [gate, static-audit, runtime-and-parity, deep-parity]
+    needs: [gate, static-audit, security-drop-in, runtime-and-parity, deep-parity]
     if: >-
       always() && github.event_name == 'schedule' &&
       contains(needs.*.result, 'failure')

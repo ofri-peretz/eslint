@@ -546,7 +546,13 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
     let vocab: Vocabulary;
     let sourceCode: Readonly<TSESLint.SourceCode>;
     let isTestFile: boolean;
-    let MAX_BINDING_HOPS: number;
+    /**
+     * How many `const` hops the crypto meaning is allowed to be away from the
+     * `Math.random()` call. Two covers `raw` → `apiKey` and the one-alias
+     * relay; beyond that the flow stops being visible in one glance and the
+     * answer stops being trustworthy.
+     */
+    const MAX_BINDING_HOPS = 2;
 
     /**
      * The declarator this identifier is bound to, when the binding has exactly
@@ -954,14 +960,6 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
 
         const filename = context.filename;
         isTestFile = allowInTests && isTestFilePath(filename);
-
-        /**
-         * How many `const` hops the crypto meaning is allowed to be away from the
-         * `Math.random()` call. Two covers `raw` → `apiKey` and the one-alias
-         * relay; beyond that the flow stops being visible in one glance and the
-         * answer stops being trustworthy.
-         */
-        MAX_BINDING_HOPS = 2;
       },
       CallExpression(node: TSESTree.CallExpression) {
         if (isTestFile) return;

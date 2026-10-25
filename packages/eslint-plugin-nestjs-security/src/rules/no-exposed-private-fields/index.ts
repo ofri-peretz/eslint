@@ -129,9 +129,45 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
     let terms: string[][];
     let PERSISTED_DECORATORS: Set<string>;
     let TRANSPORT_DECORATORS: Set<string>;
-    let CREDENTIAL_DELIVERY: RegExp;
-    let CREDENTIAL_NAMED: RegExp;
-    let INBOUND_NAME: RegExp;
+    /**
+     * Classes whose purpose is to deliver a credential to the caller.
+     *
+     * A login/refresh/token endpoint returns a token by definition — flagging
+     * `RefreshResponseDto.refreshToken` is noise, not a finding. The risk this
+     * rule exists for is a credential riding along on an *unrelated* payload.
+     */
+    const CREDENTIAL_DELIVERY =
+      /(Login|SignIn|SignUp|Register|Auth|Refresh|Token|Session|Credential|Verify|Otp|Mfa|TwoFactor)\w*(Response|ResponseDto|Payload|Result)$/;
+    /**
+     * Classes named after the credential they carry.
+     *
+     * `ApiKeyToken`, `AuthTokenPairDTO`, `LoginTokenDTO`, `RotateClientSecretDTO`,
+     * and the bare `Token` model prisma-starter returns from its login
+     * mutation — the credential is the payload, not a passenger on it. The
+     * name must *end* with the credential word (optionally followed by a shape
+     * suffix), so `UserEntity` with a `token` column stays firmly in scope.
+     */
+    const CREDENTIAL_NAMED =
+      /(^|[a-z])(Token|Credential|Secret|ApiKey|Otp|Mfa)(Pair)?(DTO|Dto|Object|Output|Model)?$/;
+    /**
+     * Whether the class is a *response* shape.
+     *
+     * Deliberately excludes plain `*Dto`. A `LoginDto` or `AuthEmailLoginDto`
+     * must carry a `password` field — that is inbound payload, not a leak, and
+     * matching on `Dto$` reported every login form in every real repository.
+     * Only entities, persisted models and explicitly response-named classes
+     * are serialized back to clients.
+     */
+    /**
+     * Class names that describe a *request* body.
+     *
+     * `RegisterPayload` matches the `Payload$` response convention while being
+     * bound with `@Body()` and never returned. `@Exclude()` on it is a no-op at
+     * best, and under `excludeExtraneousValues` it strips the field the request
+     * depends on — so the rule's own advice would break the endpoint.
+     */
+    const INBOUND_NAME =
+      /^(Create|Update|Patch|Upsert|Register|SignUp|SignIn|Login|Reset|Change|Verify|Send|Request)[A-Z]/;
 
     function isEntityOrDto(cls: ClassNode): boolean {
       const name = cls.id?.name;
@@ -232,48 +268,6 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
          * directory was reported for carrying the token it exists to return.
          */
         TRANSPORT_DECORATORS = new Set(['ObjectType', 'ApiProperty']);
-
-        /**
-         * Classes whose purpose is to deliver a credential to the caller.
-         *
-         * A login/refresh/token endpoint returns a token by definition — flagging
-         * `RefreshResponseDto.refreshToken` is noise, not a finding. The risk this
-         * rule exists for is a credential riding along on an *unrelated* payload.
-         */
-        CREDENTIAL_DELIVERY =
-          /(Login|SignIn|SignUp|Register|Auth|Refresh|Token|Session|Credential|Verify|Otp|Mfa|TwoFactor)\w*(Response|ResponseDto|Payload|Result)$/;
-
-        /**
-         * Classes named after the credential they carry.
-         *
-         * `ApiKeyToken`, `AuthTokenPairDTO`, `LoginTokenDTO`, `RotateClientSecretDTO`,
-         * and the bare `Token` model prisma-starter returns from its login
-         * mutation — the credential is the payload, not a passenger on it. The
-         * name must *end* with the credential word (optionally followed by a shape
-         * suffix), so `UserEntity` with a `token` column stays firmly in scope.
-         */
-        CREDENTIAL_NAMED =
-          /(^|[a-z])(Token|Credential|Secret|ApiKey|Otp|Mfa)(Pair)?(DTO|Dto|Object|Output|Model)?$/;
-
-        /**
-         * Whether the class is a *response* shape.
-         *
-         * Deliberately excludes plain `*Dto`. A `LoginDto` or `AuthEmailLoginDto`
-         * must carry a `password` field — that is inbound payload, not a leak, and
-         * matching on `Dto$` reported every login form in every real repository.
-         * Only entities, persisted models and explicitly response-named classes
-         * are serialized back to clients.
-         */
-        /**
-         * Class names that describe a *request* body.
-         *
-         * `RegisterPayload` matches the `Payload$` response convention while being
-         * bound with `@Body()` and never returned. `@Exclude()` on it is a no-op at
-         * best, and under `excludeExtraneousValues` it strips the field the request
-         * depends on — so the rule's own advice would break the endpoint.
-         */
-        INBOUND_NAME =
-          /^(Create|Update|Patch|Upsert|Register|SignUp|SignIn|Login|Reset|Change|Verify|Send|Request)[A-Z]/;
         return true;
       },
       PropertyDefinition(node: TSESTree.PropertyDefinition) {

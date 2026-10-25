@@ -352,12 +352,20 @@ describe('detect-eval-with-expression', () => {
     );
   });
 
-  describe('Edge Cases - No Arguments (line 239)', () => {
+  describe('Edge Cases - No Arguments', () => {
     ruleTester.run('edge cases - no arguments', detectEvalWithExpression, {
-      valid: [],
+      valid: [
+        {
+          // eslint-plugin-security's detect-eval-with-expression is silent here
+          // too: with no argument there is no string, so nothing can run.
+          name: 'a bare eval() has no argument, so nothing can run',
+          code: 'eval();',
+        },
+      ],
       invalid: [
         {
-          code: 'eval();',
+          name: 'eval(userInput) still reports once an argument is present',
+          code: 'eval(userInput);',
           errors: [{ messageId: 'strategyRefactor' }],
         },
       ],

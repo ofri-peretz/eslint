@@ -1,0 +1,124 @@
+---
+title: no-disabled-template-escaping
+description: Disallows assigning `false` to `escapeMarkup`, which disables template HTML auto-escaping (CWE-79)
+tags: ['security', 'core']
+category: security
+severity: medium
+cwe: CWE-79
+autofix: false
+---
+
+> **Keywords:** XSS, cross-site scripting, escapeMarkup, template auto-escaping, Mustache, HTML escaping, CWE-79, eslint-plugin-security, detect-disable-mustache-escape
+
+<!-- @rule-summary -->
+
+Disallows assigning `false` to `escapeMarkup`, which disables template HTML auto-escaping (CWE-79)
+<!-- @/rule-summary -->
+
+**CWE:** [CWE-79](https://cwe.mitre.org/data/definitions/79.html)
+**OWASP:** [A03:2021 — Injection](https://owasp.org/Top10/A03_2021-Injection/)
+
+Auto-escaping is the XSS defence of a template engine, and `escapeMarkup = false` turns it
+off for every template at once. This rule is part of
+[`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding),
+and is the drop-in for `eslint-plugin-security`'s `detect-disable-mustache-escape`.
+
+## Quick Summary
+
+| Aspect            | Details                                                                         |
+| ----------------- | ------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-79](https://cwe.mitre.org/data/definitions/79.html) (Cross-site Scripting) |
+| **Severity**      | Medium (CVSS 6.1)                                                               |
+| **Auto-Fix**      | ❌ No — whether a template needs raw HTML is a design decision, not a rewrite   |
+| **Category**      | Security                                                                        |
+
+## Vulnerability and Risk
+
+**Vulnerability:** With `escapeMarkup` on, a template engine turns `<script>` in a value
+into the text `&lt;script&gt;`. With it `false`, every interpolated value is written into
+the page as HTML.
+
+**Risk:** One user-controlled value in any template rendered by that engine becomes
+stored or reflected cross-site scripting. The setting is made once, usually in setup
+code, so no review of an individual template ever sees it.
+
+## Rule Details
+
+Reports an assignment of the literal `false` to a property named `escapeMarkup`, in any
+spelling of the property:
+
+- `view.escapeMarkup = false`
+- `view['escapeMarkup'] = false`
+- ``view[`escapeMarkup`] = false``
+
+It does not report:
+
+- a bare variable named `escapeMarkup` — it is not an option on anything;
+- `escapeMarkup = true`, or any value other than the literal `false` (the string
+  `'false'` is truthy);
+- `view[escapeMarkup] = false` where `escapeMarkup` is a variable — which property that
+  writes is decided at runtime;
+- a comparison such as `view.escapeMarkup === false`.
+
+## Examples
+
+### ❌ Incorrect
+
+```js
+a.escapeMarkup = false;
+view['escapeMarkup'] = false;
+this.options.escapeMarkup = false;
+```
+
+### ✅ Correct
+
+```js
+// Leave auto-escaping on.
+view.escapeMarkup = true;
+
+// Render the one trusted, sanitized fragment through the engine's raw-output
+// syntax (for example a triple mustache) instead of disabling escaping globally.
+```
+
+## Options
+
+This rule has no options.
+
+## Error Message Format
+
+```
+🔒 CWE-79 OWASP:A05-Injection CVSS:6.1 | escapeMarkup is set to false, so the template engine renders every interpolated value as raw HTML. One user-controlled value in any template is then a cross-site scripting vulnerability. | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
+   Fix: Remove the assignment and keep auto-escaping on. Render trusted HTML through the template engine's explicit raw-output syntax at the one site that needs it, after sanitizing it. | https://cwe.mitre.org/data/definitions/79.html
+```
+
+## Known False Negatives
+
+### The option set in an object literal
+
+**Why**: The rule reports the assignment form `x.escapeMarkup = false`, as
+`eslint-plugin-security` does. `new Engine({ escapeMarkup: false })` is not an assignment.
+
+**Mitigation**: Keep engine configuration in one reviewed module.
+
+### A falsy value other than `false`
+
+**Why**: `x.escapeMarkup = 0`, `= null` or `= !1` disables escaping in an engine that
+tests the option for truthiness, but whether a given engine does is not visible in the
+AST.
+
+**Mitigation**: Write the option as a boolean.
+
+### The key held in a variable
+
+**Why**: `const k = 'escapeMarkup'; x[k] = false` names the property only at runtime.
+
+**Mitigation**: Accepted; the rule does not do data-flow.
+
+## Further Reading
+
+- **[CWE-79](https://cwe.mitre.org/data/definitions/79.html)** — Improper Neutralization of Input During Web Page Generation
+- **[OWASP XSS Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)**
+
+## Related Rules
+
+- [`no-template-injection`](./no-template-injection.md) — user input used as the template itself

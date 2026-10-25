@@ -5,7 +5,7 @@ tags: ['security', 'timing-attack', 'cwe-208', 'nodejs']
 category: security
 severity: high
 cwe: CWE-208
-owasp: "A02:2021"
+owasp: 'A02:2021'
 autofix: false
 ---
 
@@ -13,8 +13,8 @@ autofix: false
 > **CWE:** [CWE-208](https://cwe.mitre.org/data/definitions/208.html)  
 > **OWASP:** [A02:2021-Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 
-
 <!-- @rule-summary -->
+
 Disallow timing-unsafe comparison of secrets
 <!-- @/rule-summary -->
 
@@ -222,30 +222,67 @@ compare(userToken, validToken);
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `secretPatterns` | `string[]` | `["token","secret","password","hash","signature","mac","hmac","digest","apiKey","api_key","api-key","auth","credential","bearer","jwt","csrf","nonce","ssn","social_security","social-security","pii","private_key","private-key","privateKey","access_token","access-token","accessToken","refresh_token","refresh-token","refreshToken","session_id","session-id","sessionId","auth_token","auth-token","authToken","encryption_key","encryption-key","encryptionKey"]` | Variable name patterns that indicate secrets |
-| `untrustedSources` | `string[]` | `["req","request","ctx","event"]` | Identifier roots treated as attacker-controlled (default: req, request, ctx, event) |
-| `reportUnverifiedComparisons` | `boolean` | `false` | Report on a secret-looking name alone, without an attacker-controlled operand. Restores the pre-inversion behaviour. |
-| `nonSecretWords` | `string[]` | `["author","authors","authored","authoring","authorship","hashtag","hashtags"]` | Whole words that mean a secretPatterns match was a collision (default: author, authors, authored, authoring, authorship, hashtag, hashtags). Replaces the list. |
-| `nonSecretTails` | `string[]` | `["count","counts","limit","limits","usage","total","size","length","price","cost","quota","address","addresses","index","rank","percent","path","paths","pathname","pathnames","endpoint","endpoints","route","routes","hostname","host","port","origin","kind","kinds","type","types","flag","flags","category"]` | Trailing words that make the value a measurement or location rather than a credential (default: count, counts, limit, limits, usage, total, size, length, price, cost, quota, address, addresses, index, rank, percent, path, paths, pathname, pathnames, endpoint, endpoints, route, routes, hostname, host, port, origin, kind, kinds, type, types, flag, flags, category). Replaces the list. |
+| Option                        | Type       | Default                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Description                                                                                                                                                                                                                                                                                                                                                                                      |
+| ----------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `secretPatterns`              | `string[]` | `["token","secret","password","hash","signature","mac","hmac","digest","apiKey","api_key","api-key","auth","credential","bearer","jwt","csrf","nonce","ssn","social_security","social-security","pii","private_key","private-key","privateKey","access_token","access-token","accessToken","refresh_token","refresh-token","refreshToken","session_id","session-id","sessionId","auth_token","auth-token","authToken","encryption_key","encryption-key","encryptionKey"]` | Variable name patterns that indicate secrets                                                                                                                                                                                                                                                                                                                                                     |
+| `untrustedSources`            | `string[]` | `["req","request","ctx","event"]`                                                                                                                                                                                                                                                                                                                                                                                                                                         | Identifier roots treated as attacker-controlled (default: req, request, ctx, event)                                                                                                                                                                                                                                                                                                              |
+| `reportUnverifiedComparisons` | `boolean`  | `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Report on a secret-looking name alone, without an attacker-controlled operand. Restores the pre-inversion behaviour.                                                                                                                                                                                                                                                                             |
+| `reportLiteralComparands`     | `boolean`  | `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Report a secret-named value compared against a string literal (password === 'mypass'), in either order, on the name alone. Off by default because string comparands are usually tags (revokedToken === 'access').                                                                                                                                                                                |
+| `nonSecretWords`              | `string[]` | `["author","authors","authored","authoring","authorship","hashtag","hashtags"]`                                                                                                                                                                                                                                                                                                                                                                                           | Whole words that mean a secretPatterns match was a collision (default: author, authors, authored, authoring, authorship, hashtag, hashtags). Replaces the list.                                                                                                                                                                                                                                  |
+| `nonSecretTails`              | `string[]` | `["count","counts","limit","limits","usage","total","size","length","price","cost","quota","address","addresses","index","rank","percent","path","paths","pathname","pathnames","endpoint","endpoints","route","routes","hostname","host","port","origin","kind","kinds","type","types","flag","flags","category"]`                                                                                                                                                       | Trailing words that make the value a measurement or location rather than a credential (default: count, counts, limit, limits, usage, total, size, length, price, cost, quota, address, addresses, index, rank, percent, path, paths, pathname, pathnames, endpoint, endpoints, route, routes, hostname, host, port, origin, kind, kinds, type, types, flag, flags, category). Replaces the list. |
+
+### Literal comparands
+
+By default a comparison against a string literal is skipped: in
+`revokedToken === 'access'` the literal is a tag, not a secret, and a credential
+written into the source is a CWE-798 finding for
+`secure-coding/no-hardcoded-credentials`, not a timing oracle.
+`reportLiteralComparands: true` reports a secret-named value against a string
+literal on the name alone, in either order. It is what `eslint-plugin-security`'s
+`detect-possible-timing-attacks` does, so a drop-in replacement for that plugin turns it on.
+
+```jsonc
+{
+  "node-security/no-timing-unsafe-compare": [
+    "error",
+    { "reportLiteralComparands": true },
+  ],
+}
+```
+
+```js
+if (password === 'mypass') {
+} // reported with the option on
+if ('mypass' === password) {
+} // reported with the option on
+```
 
 ### Both halves of the vocabulary are yours
 
-`secretPatterns` says *this is a secret*; `nonSecretWords` and `nonSecretTails`
-say *…except when*. All three are substring-or-word matches on identifiers, so
+`secretPatterns` says _this is a secret_; `nonSecretWords` and `nonSecretTails`
+say _…except when_. All three are substring-or-word matches on identifiers, so
 all three are tunable — a rule that lets you widen the positive list but not the
 exclusions makes the widening unusable.
 
 ```jsonc
 {
-  "node-security/no-timing-unsafe-compare": ["error", {
-    // Re-admit a bare `key`, then exclude the senses this codebase uses.
-    "secretPatterns": ["token", "secret", "key", "signature"],
-    "nonSecretWords": ["author", "hashtag", "keyboard", "keyring"],
-    // `tokenChapter` is a position in a document, not a credential.
-    "nonSecretTails": ["count", "limit", "size", "length", "index", "chapter"]
-  }]
+  "node-security/no-timing-unsafe-compare": [
+    "error",
+    {
+      // Re-admit a bare `key`, then exclude the senses this codebase uses.
+      "secretPatterns": ["token", "secret", "key", "signature"],
+      "nonSecretWords": ["author", "hashtag", "keyboard", "keyring"],
+      // `tokenChapter` is a position in a document, not a credential.
+      "nonSecretTails": [
+        "count",
+        "limit",
+        "size",
+        "length",
+        "index",
+        "chapter",
+      ],
+    },
+  ],
 }
 ```
 

@@ -5,8 +5,8 @@
 Every rule declares `meta.interop.runtimes`. A rule lists `oxlint` only when its
 own test suite passes on oxlint's `RuleTester` as well as ESLint's
 (`vitest.dual-rule-tester.ts`), and it is not type-aware. Measured on oxlint
-`1.88.0`: **565 of 586** rules run on
-both engines. The 21 below run on ESLint only. In oxlint or Vite+ they still load,
+`1.88.0`: **568 of 588** rules run on
+both engines. The 20 below run on ESLint only. In oxlint or Vite+ they still load,
 but nothing guarantees they report the same findings, so do not rely on them there.
 
 Re-measure with `npm run oxlint:runtimes:survey`, then `npm run oxlint:runtimes`.
@@ -18,7 +18,7 @@ Re-measure with `npm run oxlint:runtimes:survey`, then `npm run oxlint:runtimes`
 | `import-next/named`                              | Type-aware: reads TypeScript parser services, which oxlint does not provide (hasParserServices).                                                                                                                                               |
 | `import-next/namespace`                          | Type-aware: reads TypeScript parser services, which oxlint does not provide (hasParserServices).                                                                                                                                               |
 | `import-next/no-cycle`                           | No RuleTester cases to measure it on oxlint with.                                                                                                                                                                                              |
-| `import-next/no-named-export`                    | 7 of 30 of its test cases fail on oxlint, e.g. allowPatterns glob with regex metacharacters: Should have no errors but had 1: [                                                                                                                |
+| `import-next/no-named-export`                    | 7 of 30 of its test cases fail on oxlint, e.g. glob allowPatterns match: Should have no errors but had 1: [                                                                                                                                    |
 | `import-next/no-relative-packages`               | 1 of 22 of its test cases fail on oxlint, e.g. import helper from '../helpers/helper';: Should have no errors but had 1: [                                                                                                                     |
 | `mcp-sdk-security/no-duplicate-tool-name`        | 1 of 31 of its test cases fail on oxlint, e.g. the same name held in a const, and imported from a relative module: Should have 2 errors but had 1: [                                                                                           |
 | `mcp-sdk-security/no-sql-injection-in-tool`      | 1 of 29 of its test cases fail on oxlint, e.g. a pool imported from a relative module: Should have 1 error but had 0: []                                                                                                                       |
@@ -30,7 +30,6 @@ Re-measure with `npm run oxlint:runtimes:survey`, then `npm run oxlint:runtimes`
 | `nestjs-security/no-missing-validation-pipe`     | Type-aware: reads TypeScript parser services, which oxlint does not provide (undecoratedDto resolves the @Body() DTO and its decorators' origin when parserOptions.project is set; syntax-only behaviour is unchanged without it).             |
 | `nestjs-security/require-guards`                 | 41 of 86 of its test cases fail on oxlint, e.g. a role checked by hand inside the handler instead of by a guard: Should have 1 error but had 0: []                                                                                             |
 | `node-security/lock-file`                        | 7 of 13 of its test cases fail on oxlint, e.g. a lock file for a package manager the project does not use: Should have 1 error but had 0: []                                                                                                   |
-| `node-security/no-timing-unsafe-compare`         | 1 of 235 of its test cases fail on oxlint, e.g. a bearer token compared to a session secret gates five endpoints: Detected duplicate test case                                                                                                 |
 | `postgresql-security/no-unsafe-query`            | 1 of 437 of its test cases fail on oxlint, e.g. FP: a numeric auto-initialised enum member folds to a constant: Cannot read properties of null (reading 'type')                                                                                |
 | `secure-coding/detect-object-injection`          | Type-aware: reads TypeScript parser services, which oxlint does not provide (hasParserServices).                                                                                                                                               |
 | `vercel-ai-security/no-unsafe-output-handling`   | 4 of 70 of its test cases fail on oxlint, e.g. import 'ai'; const { text } = await generateText({ prompt: 'Hello' }); console.log(text); function render(text) { db.query(`SELECT * FROM users WHERE name = '${text}'`); } : Cannot read prope |

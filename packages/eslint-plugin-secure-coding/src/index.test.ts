@@ -50,9 +50,12 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
       'no-hardcoded-session-tokens',
       'require-secure-defaults',
       'no-bidi-characters', // CWE-1007 Trojan Source
+      'no-invisible-characters', // CWE-1007 invisible letters (security drop-in)
+      'no-disabled-template-escaping', // CWE-79 escapeMarkup = false (security drop-in)
     ]);
-    // 32 on main + `no-bidi-characters`, added here for CWE-1007 parity.
-    expect(ruleKeys.length).toBe(33);
+    // 32 on main + `no-bidi-characters`, added here for CWE-1007 parity, + the
+    // two rules eslint-plugin-security@4.2.0 had and this plugin did not.
+    expect(ruleKeys.length).toBe(35);
   });
 
   describe('configurations', () => {

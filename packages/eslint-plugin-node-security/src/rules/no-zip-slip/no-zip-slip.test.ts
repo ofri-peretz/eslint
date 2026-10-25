@@ -130,7 +130,10 @@ describe('no-zip-slip', () => {
           name: 'a traversal string that never reaches an extraction is not a slip',
           code: 'const maliciousPath = "../../../etc/passwd";',
         },
-        'const zipEntry = "../config.json";',
+        {
+          name: 'a traversal string assigned to a zipEntry variable is not an extraction',
+          code: 'const zipEntry = "../config.json";',
+        },
         'const entry = "subdir/../../../root/.ssh/id_rsa";',
         // Shopify/cli packages/cli/bin/bundle.js:28, verbatim shape.
         "const yogafile = glob.sync('../../node_modules/.pnpm/**/yoga.wasm')[0];",

@@ -290,7 +290,14 @@ export const noUnlimitedResourceAllocation = createRule<
     };
     let REQUEST_SURFACE: ReadonlySet<string>;
     let requestRoots: Set<string>;
-    let ARCHIVE_MODULES: RegExp;
+    /**
+     * Local names bound to a decompression module. Populated from imports and
+     * requires so an aliased binding (`const unzip = require('unzipper')`)
+     * resolves, while an unrelated identifier that merely reads like one does
+     * not.
+     */
+    const ARCHIVE_MODULES =
+      /^(unzipper|tar|tar-stream|yauzl|adm-zip|node:zlib|zlib)$/;
     let archiveBindings: Set<string>;
     let ALLOCATORS: ReadonlySet<string>;
 
@@ -807,15 +814,6 @@ export const noUnlimitedResourceAllocation = createRule<
         requestRoots = new Set(
           userInputVariables.map((name) => name.toLowerCase()),
         );
-
-        /**
-         * Local names bound to a decompression module. Populated from imports and
-         * requires so an aliased binding (`const unzip = require('unzipper')`)
-         * resolves, while an unrelated identifier that merely reads like one does
-         * not.
-         */
-        ARCHIVE_MODULES =
-          /^(unzipper|tar|tar-stream|yauzl|adm-zip|node:zlib|zlib)$/;
         archiveBindings = new Set<string>(['zlib']);
 
         /**

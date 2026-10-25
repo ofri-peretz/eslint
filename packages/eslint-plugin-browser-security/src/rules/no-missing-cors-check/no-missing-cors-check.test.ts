@@ -53,6 +53,7 @@ describe('no-missing-cors-check', () => {
         },
         // CORS with trusted library
         {
+          name: 'cors configured with a single trusted origin is checked',
           code: 'app.use(cors({ origin: "https://example.com" }));',
         },
         // Test files (when allowInTests is true)

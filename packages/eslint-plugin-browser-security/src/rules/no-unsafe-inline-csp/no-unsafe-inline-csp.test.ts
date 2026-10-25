@@ -44,6 +44,7 @@ ruleTester.run('no-unsafe-inline-csp', noUnsafeInlineCsp, {
     },
     // Test files allowed
     {
+      name: 'a policy with unsafe-inline inside a test file is allowed',
       code: `const csp = "script-src 'unsafe-inline'";`,
       filename: 'csp.test.ts',
     },

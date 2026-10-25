@@ -91,7 +91,22 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
   createOnce(context) {
     let bodyPropertyNames: ReadonlySet<string>;
     let sensitiveParams: string[];
-    let OUT_OF_BAND_FLOWS: RegExp;
+    /**
+     * Path segments of the out-of-band verification flows.
+     *
+     * A password-reset link carries its token in the query because there is no
+     * other channel — the recipient is not authenticated yet, so a header or a
+     * cookie is not available, and the link has to survive being pasted from an
+     * email client. The token is single-use and short-lived, which is what makes
+     * the design acceptable; every mainstream framework ships it this way.
+     *
+     * Reporting it says "use the Authorization header instead", which cannot be
+     * done. This is deliberately narrow: it exempts `token=` only, and only when
+     * the path names one of these flows, so `?apikey=`, `?password=` and a bare
+     * `?token=` on an API endpoint all still report.
+     */
+    const OUT_OF_BAND_FLOWS =
+      /\/(reset|reset-password|forgot|verify|verify-email|confirm|activate|unsubscribe|magic-?link)\b/;
 
     /**
      * Does this URL carry a credential we should report?
@@ -176,23 +191,6 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
           'secret=',
           'auth=',
         ];
-
-        /**
-         * Path segments of the out-of-band verification flows.
-         *
-         * A password-reset link carries its token in the query because there is no
-         * other channel — the recipient is not authenticated yet, so a header or a
-         * cookie is not available, and the link has to survive being pasted from an
-         * email client. The token is single-use and short-lived, which is what makes
-         * the design acceptable; every mainstream framework ships it this way.
-         *
-         * Reporting it says "use the Authorization header instead", which cannot be
-         * done. This is deliberately narrow: it exempts `token=` only, and only when
-         * the path names one of these flows, so `?apikey=`, `?password=` and a bare
-         * `?token=` on an API endpoint all still report.
-         */
-        OUT_OF_BAND_FLOWS =
-          /\/(reset|reset-password|forgot|verify|verify-email|confirm|activate|unsubscribe|magic-?link)\b/;
       },
       Literal(node: TSESTree.Literal) {
         if (typeof node.value === 'string') {

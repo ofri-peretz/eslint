@@ -16,6 +16,7 @@
     "secure-coding/no-directive-injection": [
       "nominal-inference-suppress"
     ],
+    "secure-coding/no-disabled-template-escaping": [],
     "secure-coding/no-electron-security-issues": [
       "orphan-message"
     ],
@@ -48,6 +49,7 @@
     "secure-coding/no-insecure-comparison": [
       "dynamic-regexp"
     ],
+    "secure-coding/no-invisible-characters": [],
     "secure-coding/no-ldap-injection": [
       "orphan-message",
       "unasserted-message",

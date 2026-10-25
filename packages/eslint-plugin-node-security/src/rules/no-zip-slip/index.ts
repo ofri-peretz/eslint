@@ -357,7 +357,20 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
     let filename: string;
     let archiveModuleSet: Set<string>;
     let hasArchiveContext: boolean;
-    let ARCHIVE_NAME: RegExp;
+    /**
+     * Names that only appear when archives are in play: `new AdmZip(file)`,
+     * `zipfile.readEntry()`, `tarStream.extract()`.
+     *
+     * A name heuristic, deliberately — but it gates CONTEXT, never a finding.
+     * The report still requires the entry-name or traversal evidence below; all
+     * this decides is whether that evidence is about an archive. Checked
+     * against the two corpus files that produced `unvalidatedArchivePath`
+     * (`Shopify/cli` `packages/e2e/setup/app.ts` and
+     * `bin/bundling/esbuild-plugin-dedup-cli-kit.js`): neither contains the
+     * substring `zip`, `tar` or `archive` anywhere.
+     */
+    const ARCHIVE_NAME =
+      /zip|tarball|archive|gzip|gunzip|untar|tarstream|\btar\b/i;
     let pending: (() => void)[];
     let EXITS: Set<string>;
     const isArchiveModule = (specifier: unknown): boolean =>
@@ -710,21 +723,6 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
          * formatting.
          */
         hasArchiveContext = reportWithoutArchiveContext;
-
-        /**
-         * Names that only appear when archives are in play: `new AdmZip(file)`,
-         * `zipfile.readEntry()`, `tarStream.extract()`.
-         *
-         * A name heuristic, deliberately — but it gates CONTEXT, never a finding.
-         * The report still requires the entry-name or traversal evidence below; all
-         * this decides is whether that evidence is about an archive. Checked
-         * against the two corpus files that produced `unvalidatedArchivePath`
-         * (`Shopify/cli` `packages/e2e/setup/app.ts` and
-         * `bin/bundling/esbuild-plugin-dedup-cli-kit.js`): neither contains the
-         * substring `zip`, `tar` or `archive` anywhere.
-         */
-        ARCHIVE_NAME =
-          /zip|tarball|archive|gzip|gunzip|untar|tarstream|\btar\b/i;
 
         /** Shapes deferred to Program:exit, once archive context is known. */
         pending = [];

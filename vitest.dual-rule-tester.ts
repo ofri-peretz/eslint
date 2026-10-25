@@ -150,6 +150,18 @@ function convertCase(
   return item;
 }
 
+/** JSON with object keys sorted at every level. */
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value)
+      .sort()
+      .map((k) => `${JSON.stringify(k)}:${stableStringify((value as Dict)[k])}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value) ?? 'undefined';
+}
+
 /**
  * oxlint's tester rejects duplicate cases, comparing everything except
  * `name`, `errors` and `output`; run each such case once.
@@ -158,7 +170,8 @@ function unique(cases: (Dict | null)[], seen: Set<string>): Dict[] {
   return cases.filter((c): c is Dict => {
     if (!c) return false;
     const { name: _n, errors: _e, output: _o, ...identity } = c;
-    const key = JSON.stringify(identity);
+    // Key order must not matter: oxlint compares with a stable stringify.
+    const key = stableStringify(identity);
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

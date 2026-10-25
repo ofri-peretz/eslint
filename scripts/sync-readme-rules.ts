@@ -831,17 +831,24 @@ export function processPlugin(
  * Same predicate as the lock: published, and not one of the thirty plugins.
  */
 function nonPluginReadmeTargets(): string[] {
-  return fs
-    .readdirSync(PACKAGES_DIR, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && !e.name.startsWith('eslint-plugin-'))
-    .filter((e) => {
-      const manifest = path.join(PACKAGES_DIR, e.name, 'package.json');
-      const readme = path.join(PACKAGES_DIR, e.name, 'README.md');
-      if (!fs.existsSync(manifest) || !fs.existsSync(readme)) return false;
-      return !JSON.parse(fs.readFileSync(manifest, 'utf-8')).private;
-    })
-    .map((e) => e.name)
-    .sort();
+  return (
+    fs
+      .readdirSync(PACKAGES_DIR, { withFileTypes: true })
+      .filter((e) => e.isDirectory() && !e.name.startsWith('eslint-plugin-'))
+      // oxlint-plugin-* READMEs are generated whole by their own scripts
+      // (generate-oxlint-aliases.mts renders this same table, through prettier;
+      // generate-oxlint-security.mts owns the façade's). Two writers would
+      // fight over formatting on every run.
+      .filter((e) => !e.name.startsWith('oxlint-plugin-'))
+      .filter((e) => {
+        const manifest = path.join(PACKAGES_DIR, e.name, 'package.json');
+        const readme = path.join(PACKAGES_DIR, e.name, 'README.md');
+        if (!fs.existsSync(manifest) || !fs.existsSync(readme)) return false;
+        return !JSON.parse(fs.readFileSync(manifest, 'utf-8')).private;
+      })
+      .map((e) => e.name)
+      .sort()
+  );
 }
 
 function syncNonPluginReadmes(

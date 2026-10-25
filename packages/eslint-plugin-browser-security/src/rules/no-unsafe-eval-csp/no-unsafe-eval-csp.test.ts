@@ -27,7 +27,10 @@ ruleTester.run('no-unsafe-eval-csp', noUnsafeEvalCsp, {
       code: `const csp = "script-src 'self' 'nonce-abc123'";`,
     },
     // No CSP content
-    { code: `const message = "Some text";` },
+    {
+      name: 'a string with no CSP content is ignored',
+      code: `const message = "Some text";`,
+    },
     // Test files allowed
     {
       code: `const csp = "script-src 'unsafe-eval'";`,

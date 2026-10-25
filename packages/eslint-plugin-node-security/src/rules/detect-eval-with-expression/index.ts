@@ -478,16 +478,10 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     /**
      * Extract expression text for pattern analysis
      */
-    const extractExpression = (node: TSESTree.CallExpression): string => {
-      const sourceCode = context.sourceCode;
-
-      // Try to get the argument text
-      if (node.arguments.length > 0) {
-        return sourceCode.getText(node.arguments[0]);
-      }
-
-      return 'dynamic expression';
-    };
+    const extractExpression = (node: TSESTree.CallExpression): string =>
+      // `checkCallExpression` returns on a call with no argument before it
+      // gets here, so the first argument always exists.
+      context.sourceCode.getText(node.arguments[0] as TSESTree.Node);
 
     /**
      * Which eval-like function this callee ultimately names, if any.
@@ -574,21 +568,19 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       // Check if it's a call to an eval-like function
       const evalName = evalCalleeName(node.callee);
       if (evalName !== null) {
+        // A bare `eval()` has no string to run: it returns `undefined` and
+        // executes nothing. eslint-plugin-security is silent on it too, and
+        // reporting it was the one false positive the eslint-plugin-security
+        // drop-in gate measured on this rule.
+        if (node.arguments.length === 0) return;
+
         // Skip if it's a literal string and literals are allowed
-        if (
-          allowLiteralStrings &&
-          node.arguments.length > 0 &&
-          isLiteralString(node.arguments[0])
-        ) {
+        if (allowLiteralStrings && isLiteralString(node.arguments[0])) {
           return;
         }
 
         // Skip if it's a direct string literal (safe)
-        if (
-          node.arguments.length > 0 &&
-          evalName === 'eval' &&
-          isLiteralString(node.arguments[0])
-        ) {
+        if (evalName === 'eval' && isLiteralString(node.arguments[0])) {
           return;
         }
 

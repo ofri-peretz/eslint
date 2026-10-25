@@ -85,6 +85,7 @@ describe('no-unlimited-resource-allocation', () => {
           },
           // Validated file operations
           {
+            name: 'a file read guarded by a size comparison against a maximum is bounded',
             code: 'if (stats.size < MAX_FILE_SIZE) { fs.readFile(path, callback); }',
           },
           // Resource allocation outside loops

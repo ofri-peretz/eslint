@@ -1,4 +1,6 @@
 {
+  "command": null,
+  "maintainedBy": "Shrinks only. create-once-ratchet.lock.test.ts fails on a create() rule missing from this list and on a listed file that no longer uses create(); whoever migrates a rule removes its entry. Reasons came from the createOnce codemod that left these rules behind.",
   "$comment": "Rules still authored with ESLint create() instead of oxlint createOnce(). This list may only shrink: scripts/__tests__/create-once-ratchet.lock.test.ts fails on a create() rule not listed here, and on a listed file that no longer uses create(). See docs/intents/oxlint-native-plugin-names.",
   "rules": {
     "packages/eslint-plugin-browser-security/src/rules/no-missing-csrf-protection/index.ts": "a per-file `let` starts undefined on every file and a visitor reads it; resetting it in before() needs a hand-chosen initial value",

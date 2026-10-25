@@ -73,7 +73,7 @@ export const noUnsafeEvalCsp = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     currentOptions,
   ) {
-    let UNSAFE_EVAL: string;
+    const UNSAFE_EVAL = 'unsafe-eval';
     let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /**
@@ -109,8 +109,6 @@ export const noUnsafeEvalCsp = createRule<RuleOptions, MessageIds>({
         if (allowInTests && isTestFile) {
           return false;
         }
-
-        UNSAFE_EVAL = 'unsafe-eval';
         sourceCode = context.sourceCode;
         return true;
       },

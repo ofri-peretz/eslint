@@ -784,7 +784,22 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     let armedLoops: WeakSet<TSESTree.ForInStatement>;
     let sourceCode: Readonly<TSESLint.SourceCode>;
     let isInCodemodContext: boolean;
-    let NUMERIC_RENDERING_CHARS: RegExp;
+    /**
+     * A `+` chain with a provably-numeric operand somewhere inside it.
+     *
+     * `samples[frameStart + frame * stride + channel]` is ordinary index
+     * arithmetic, but `+` is not provably numeric unless BOTH ends are, and
+     * `frameStart` is a bare parameter. The *concatenation* argument settles it
+     * anyway: the result must contain the numeric operand's rendering as a
+     * contiguous substring, and every `String(number)` — including `NaN`,
+     * `Infinity`, `-0` and `1e+21` — contains at least one of `[0-9NI]`. None of
+     * `__proto__`, `prototype` or `constructor` contains any of those, so the
+     * sum cannot equal one of them whatever the other operands hold.
+     *
+     * Scoped to the CONFIGURED `dangerousProperties`, because a user who adds
+     * `slot0` to the list breaks the premise and must keep the finding.
+     */
+    const NUMERIC_RENDERING_CHARS = /[0-9NI]/;
     let REQUEST_ROOTS: Set<string>;
     let numericVarCache: WeakMap<object, boolean>;
     let numericVarInProgress: WeakSet<object>;
@@ -3577,23 +3592,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           if (/codemod\.[mc]?[jt]sx?$/i.test(filename)) return true;
           return fileUsesAstTooling(sourceCode.ast);
         })();
-
-        /**
-         * A `+` chain with a provably-numeric operand somewhere inside it.
-         *
-         * `samples[frameStart + frame * stride + channel]` is ordinary index
-         * arithmetic, but `+` is not provably numeric unless BOTH ends are, and
-         * `frameStart` is a bare parameter. The *concatenation* argument settles it
-         * anyway: the result must contain the numeric operand's rendering as a
-         * contiguous substring, and every `String(number)` — including `NaN`,
-         * `Infinity`, `-0` and `1e+21` — contains at least one of `[0-9NI]`. None of
-         * `__proto__`, `prototype` or `constructor` contains any of those, so the
-         * sum cannot equal one of them whatever the other operands hold.
-         *
-         * Scoped to the CONFIGURED `dangerousProperties`, because a user who adds
-         * `slot0` to the list breaks the premise and must keep the finding.
-         */
-        NUMERIC_RENDERING_CHARS = /[0-9NI]/;
 
         /**
          * Does this expression carry caller-supplied data?

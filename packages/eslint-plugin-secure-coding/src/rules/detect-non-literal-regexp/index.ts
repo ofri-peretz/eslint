@@ -719,7 +719,14 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let allowLiterals: boolean;
     let maxPatternLength: number;
-    let RISK_LEVEL: string;
+    // Severity is constant, and that is the honest state of it.
+    //
+    // A `determineRiskLevel` used to escalate to CRITICAL, and exactly one
+    // thing ever produced that: the REGEXP_PATTERNS entry that matched `**`,
+    // `++` or `??` as TEXT in the printed source. With the table gone nothing
+    // reaches it, so the function collapsed to a constant — which is what it
+    // always was for every finding the rule can still justify.
+    const RISK_LEVEL = 'HIGH';
 
     /**
      * Check if a node is a literal string (potentially safe)
@@ -1016,15 +1023,6 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
         // `options` is always an object here (defaulted just above), so a
         // second `|| {}` fallback could never fire — removed as dead code.
         ({ allowLiterals = true, maxPatternLength = 100 } = options);
-
-        // Severity is constant, and that is the honest state of it.
-        //
-        // A `determineRiskLevel` used to escalate to CRITICAL, and exactly one
-        // thing ever produced that: the REGEXP_PATTERNS entry that matched `**`,
-        // `++` or `??` as TEXT in the printed source. With the table gone nothing
-        // reaches it, so the function collapsed to a constant — which is what it
-        // always was for every finding the rule can still justify.
-        RISK_LEVEL = 'HIGH';
       },
       // Reflect.construct(RegExp, [...]) is normalised to the direct shape
       // before the check runs, so one code path handles both spellings.

@@ -109,54 +109,44 @@ addressable (it wants reviewed PRs, not solo merges); `Contributors 3` is not, w
 inviting contributors. `CII-Best-Practices 0` on both sides is a free 10 for whoever
 registers first.
 
-## 2. Drop-in replaceability — 96.0%, up from 36.9%
+## 2. Drop-in replaceability — 104/104 through `oxlint-plugin-security` (restated 2026-10-25)
 
-Measured against **their own RuleTester corpus** — 189 cases captured verbatim from
-`eslint-plugin-security@4.0.1`, vendored at
-`benchmarks/corpus/competitor-parity/eslint-plugin-security.json` (Apache-2.0, attribution retained).
+Measured against **their own RuleTester corpus**: 219 cases captured verbatim from
+`eslint-plugin-security@4.2.0` and vendored at
+`benchmarks/corpus/competitor-parity/eslint-plugin-security.json` (Apache-2.0, attribution
+retained). 4.2.0 added `detect-invisible-characters` (13 + 7 cases) and the line-terminator
+bidi cases since the 4.0.1 run below.
 
-**Weighted parity: 48 of 50 live cases = 96.0%** (raw 49/84; 34 cases across 5 classes are
-declared won't-fix in `wont-fix.json`).
+**Two measurements, and they answer different questions.**
 
-| Their rule class | cases | 2026-08-11 | **now** | status |
+- **The drop-in gate:** `benchmarks/suites/ilb-competitor-parity/drop-in.mjs`, run on
+  `oxlint-plugin-security`. Each incumbent ID is enabled alone, through its mapped rule,
+  on ESLint and on oxlint. Result:
+  - **104/104** live invalid cases are detected.
+  - 12/112 valid cases are reported, all 12 declared in `divergences.json`: 11
+    `spawn(cmd)` with a non-literal command (CWE-78), and `new Buffer` (DEP0005).
+  - The two engines report identical findings on every case.
+  - The control run, the incumbent through the same harness, scores 107/107 and 0/112.
+- **The any-rule upper bound:** `run.mjs`, with all of our security rules on and no pinned
+  options. Weighted parity is **102/104 (98.1%)**: raw 102/107, and 3 cases are declined in
+  `wont-fix.json`. Its baseline is now committed, so it ratchets.
+
+| Their rule class | cases | 4.0.1 run | **4.2.0 gate** | how |
 |---|---|---|---|---|
-| `detect-buffer-noassert` | 29 | 0 | 0 | **declared won't-fix** (dead since Node 8) |
-| `detect-non-literal-fs-filename` | 25 | 16 | **23** | partial — see the FN below |
-| `detect-child-process` | 15 | 5 | **15** | complete |
-| `detect-bidi-characters` | 2 | 0 | **2** | complete (`no-bidi-characters`, CWE-1007) |
-| `detect-non-literal-require` | 2 | 2 | 2 | complete |
-| `detect-possible-timing-attacks` | 2 | 2 | 2 | complete |
-| `detect-unsafe-regex` | 2 | 1 | 1 | **won't-fix (partial)** — the open case is invalid regex syntax |
-| `detect-disable-mustache-escape` | 1 | 0 | 0 | **won't-fix** (taxonomy — needs a template-engine plugin) |
-| `detect-no-csrf-before-method-override` | 1 | 0 | 0 | **won't-fix** (`csurf` deprecated 2022) |
-| `detect-pseudoRandomBytes` | 1 | 0 | 0 | **won't-fix** (API removed) |
-| the remaining 4 classes | 4 | 4 | 4 | complete |
+| `detect-buffer-noassert` | 29 | won't-fix | **29** | `node-security/no-buffer-overread`. Removed from `wont-fix.json`. |
+| `detect-non-literal-fs-filename` | 25 | 23 | **25** | the façade pins `reportWholeProcessValues` (#1295) |
+| `detect-child-process` | 15 | 15 | **15** | 11 valid cases are declared divergences |
+| `detect-invisible-characters` | 13 | (new) | **13** | new `secure-coding/no-invisible-characters` |
+| `detect-bidi-characters` | 12 | 2 | **12** | `secure-coding/no-bidi-characters` |
+| `detect-possible-timing-attacks` | 2 | 2 | **2** | the façade pins the new `reportLiteralComparands` |
+| `detect-unsafe-regex` | 2 | 1 | 1 | **won't-fix (partial)**: the open case is invalid regex syntax |
+| `detect-disable-mustache-escape` | 1 | won't-fix | **1** | new `secure-coding/no-disabled-template-escaping` |
+| `detect-no-csrf-before-method-override` | 1 | won't-fix | retired | Express 3 API; throws on 4.22.3, `undefined` on 5.3.0 |
+| `detect-pseudoRandomBytes` | 1 | won't-fix | retired | `=== crypto.randomBytes` on every supported Node |
+| the remaining 5 classes | 5 | 5 | 5 | complete |
 
-The gain came from replacing two name matchers with real module resolution
-(`resolveModuleBinding` in devkit) plus `node:` specifier normalisation, chained
-`require('cp').exec()`, destructured requires, `fs.promises` and `fs-extra`.
-
-### The two open cases are one bug, and it is bigger than two cases
-
-Both live misses are `detect-non-literal-fs-filename`, and they share a root cause: **the
-rule only reports on bare identifiers.** Any `MemberExpression` or `CallExpression`
-argument falls through silently.
-
-```js
-fs.readFileSync(x)             // fsPathTraversal  ✅
-fs.readFileSync(x.y)           // (none)           ❌
-fs.readFileSync(req.query.f)   // (none)           ❌  ← textbook CWE-22
-fs.readFileSync(getPath())     // (none)           ❌
-```
-
-This is inverted: the *unknown* identifier reports while the *definitely tainted*
-`req.query.f` is silent. It is the same node-type fall-through that was found and fixed in
-`detect-child-process` (where `cp.exec(req.query.cmd)` now fires correctly) — the fix landed
-in one rule and not the other. Closing it takes parity to 50/50 and shuts a real CWE-22 blind
-spot that the corpus only samples twice.
-
-**Their 100% on their own tests is tautological** — those tests exist to make those rules
-pass. It measures self-consistency, not detection quality. Which is why §3 exists.
+**Their 100% on their own tests is tautological**: those tests exist to make those rules
+pass. That measures self-consistency, not detection quality, which is why §3 exists.
 
 ## 3. Detection on a neutral corpus (new, 2026-08-13)
 

@@ -26,7 +26,10 @@ describe('no-redos-vulnerable-regex', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - safe regex patterns', noRedosVulnerableRegex, {
       valid: [
-        'const regex = /^[a-z]+$/;',
+        {
+          name: 'an anchored single-class quantifier is not vulnerable',
+          code: 'const regex = /^[a-z]+$/;',
+        },
         {
           name: 'an anchored negated-class email shape is not vulnerable',
           code: 'const emailRegex = /^[^@]+@[^@]+$/;',

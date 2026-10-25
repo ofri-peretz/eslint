@@ -362,9 +362,6 @@
     "userparams",
     "uservar"
   ],
-  "packages/eslint-plugin-secure-coding/src/rules/no-graphql-injection/index.ts#GRAPHQL_SCHEMA_KEYWORDS": [
-    "scalar"
-  ],
   "packages/eslint-plugin-secure-coding/src/rules/no-hardcoded-credentials/index.ts#DEFAULT_PLACEHOLDER_WORDS": [
     "dummy",
     "notreal",

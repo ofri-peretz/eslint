@@ -131,6 +131,37 @@ jobs:
         with:
           turbo-cache: "false"
 
+      # ── Incumbent drift (docs/intents/oxlint-plugin-security-drop-in, R11) ──
+      # oxlint-plugin-security answers to eslint-plugin-security's rule IDs at
+      # one pinned version. A new incumbent rule is a config that fails to load
+      # on oxlint, so a release has to be noticed within a week, not at the next
+      # audit. On a schedule, not in PR CI, per the checks-on-a-schedule rule.
+      # continue-on-error: drift must not stop the benchmark refresh below.
+      - name: Incumbent drift — eslint-plugin-security vs oxlint-plugin-security
+        id: incumbent_drift
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          pinned=$(node -p "require('./packages/oxlint-plugin-security/mapping.json').incumbent.version")
+          latest=$(npm view eslint-plugin-security version)
+          echo "pinned $pinned, latest $latest"
+          if [ "$pinned" != "$latest" ]; then
+            echo "::error::eslint-plugin-security $latest is out; oxlint-plugin-security maps $pinned."
+            exit 1
+          fi
+
+      - name: 🚨 Report incumbent drift
+        if: steps.incumbent_drift.outcome == 'failure'
+        uses: ./.github/actions/report-failure
+        with:
+          title: 'eslint-plugin-security released a version oxlint-plugin-security does not map'
+          body: >-
+            oxlint-plugin-security pins eslint-plugin-security's rule IDs at the
+            version in packages/oxlint-plugin-security/mapping.json, and npm now
+            has a newer one. Re-vendor the corpus, map any new rule, and re-run
+            benchmarks/suites/ilb-competitor-parity/drop-in.mjs.
+          token: ${{ github.token }}
+
       # ── Corpus ────────────────────────────────────────────────────────
       # The OOS corpus lives outside the repo (../oos locally). On a runner
       # it does not exist, so clone it shallow. --depth=1 keeps each repo at

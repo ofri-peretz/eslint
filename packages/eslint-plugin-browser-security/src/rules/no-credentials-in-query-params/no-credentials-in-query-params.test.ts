@@ -38,7 +38,10 @@ ruleTester.run('no-credentials-in-query-params', noCredentialsInQueryParams, {
     {
       code: 'outputDebug(`Loaded session for ${store}: token=${maskToken(session.accessToken)}`)',
     },
-    { code: 'log(`user=${name} token=${redact(t)}`)' },
+    {
+      name: 'a log template with a redacted token value is not a URL',
+      code: 'log(`user=${name} token=${redact(t)}`)',
+    },
     // The prefix requirement now matches the Literal branch: a bare `token=`
     // with no `?` or `&` before it is not a query parameter.
     { code: 'const msg = `status: token=${x}`' },

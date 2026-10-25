@@ -112,7 +112,12 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let checkArrowFunctions: boolean;
     let scopeStack: Set<string>[];
-    let MODULE_SCOPE_DEPTH: number;
+    /**
+     * scopeStack[0] is the vestigial set created by the initializer and
+     * scopeStack[1] is the module scope pushed by `Program()`; real function
+     * scopes start at index 2.
+     */
+    const MODULE_SCOPE_DEPTH = 2;
 
     function enterScope() {
       scopeStack.push(new Set());
@@ -535,13 +540,6 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
 
         // Track variables declared in each scope
         scopeStack = [new Set()];
-
-        /**
-         * scopeStack[0] is the vestigial set created by the initializer and
-         * scopeStack[1] is the module scope pushed by `Program()`; real function
-         * scopes start at index 2.
-         */
-        MODULE_SCOPE_DEPTH = 2;
       },
       Program() {
         /*

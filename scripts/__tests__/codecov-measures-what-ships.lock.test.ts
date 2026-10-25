@@ -55,6 +55,10 @@ function packagesByVisibility(): { published: string[]; private_: string[] } {
     withFileTypes: true,
   })) {
     if (!e.isDirectory()) continue;
+    // oxlint-plugin-* ship no code of their own — a one-line re-export of a
+    // measured plugin, or the mapping-driven security façade — so codecov.yml
+    // ignores them as a family (docs/intents/oxlint-native-plugin-names).
+    if (e.name.startsWith('oxlint-plugin-')) continue;
     const pkg = join(ROOT, 'packages', e.name, 'package.json');
     if (!existsSync(pkg)) continue;
     const json = JSON.parse(readFileSync(pkg, 'utf-8')) as {

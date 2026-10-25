@@ -77,6 +77,7 @@ describe('detect-object-injection', () => {
           code: 'export function build(store) { const read = (key) => store[key]; return read; }',
         },
         {
+          name: 'indexing usage by a value from its own entries is a read, not a write',
           code: 'export function f(usage) { return Object.entries(usage).map(([k, v]) => usage[v]); }',
         },
         {

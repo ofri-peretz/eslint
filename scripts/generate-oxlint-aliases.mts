@@ -23,6 +23,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import prettier from 'prettier';
+import {
+  loadPluginRegistry,
+  renderEcosystemTable,
+} from './sync-readme-rules.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const PACKAGES_DIR = path.join(ROOT, 'packages');
@@ -117,6 +121,13 @@ const renderIndex = (plugin: string) =>
 
 const renderTypes = (plugin: string) =>
   `${HEADER(plugin)}import plugin = require('${plugin}/oxlint');\n\nexport = plugin;\n`;
+
+/**
+ * Every published README cross-links the ecosystem (ecosystem-table-completeness
+ * lock), rendered by the same function as the plugin READMEs'. An alias lists
+ * every plugin, its own eslint-plugin-<name> included.
+ */
+const REGISTRY = loadPluginRegistry();
 
 /** The oxlint the READMEs say they were verified on — the one CI installs. */
 const OXLINT_VERSION = (
@@ -349,6 +360,7 @@ Install [\`${plugin.name}\`](https://www.npmjs.com/package/${plugin.name}) inste
 | oxlint | verified on \`${OXLINT_VERSION}\`: CI loads every rule ID through \`jsPlugins\` |
 | Vite+ | \`lint.jsPlugins\` in \`vite.config.ts\` |${node ? `\n| Node.js | \`${node}\` |` : ''}`,
     unmark(rules),
+    renderEcosystemTable(REGISTRY, alias),
     unmark(support),
     `## 📄 License
 
@@ -415,6 +427,9 @@ for (const [file, content] of planned) {
 // drift too: a deleted plugin must take its alias with it.
 for (const dir of fs.readdirSync(PACKAGES_DIR)) {
   if (!dir.startsWith('oxlint-plugin-')) continue;
+  // The eslint-plugin-security drop-in, not an alias: it has its own generator
+  // (scripts/generate-oxlint-security.mts, docs/intents/oxlint-plugin-security-drop-in).
+  if (dir === 'oxlint-plugin-security') continue;
   for (const file of fs.readdirSync(path.join(PACKAGES_DIR, dir))) {
     const full = path.join(PACKAGES_DIR, dir, file);
     // Build output and installs, not generated sources.

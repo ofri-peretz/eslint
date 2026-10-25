@@ -1,7 +1,7 @@
 /**
  * ilb:competitor-parity — can our plugins replace eslint-plugin-security?
  *
- * Runs the competitor's OWN RuleTester corpus (189 cases, captured verbatim) against
+ * Runs the competitor's OWN RuleTester corpus (219 cases at 4.2.0, captured verbatim) against
  * our plugins. Their `invalid` cases are the fairest possible must-detect set: they are
  * the competitor's own definition of a true positive, so we cannot be accused of
  * authoring a corpus that flatters us.
@@ -75,7 +75,8 @@ const eslint = new ESLint({
 const byClass = {};
 const validFires = [];
 for (const c of cases) {
-  const cls = c.rule.replace(/ \(.*\)| in comment-line/, '');
+  // 4.2.0 adds `detect-invisible-characters in comment` beside `… in comment-line`.
+  const cls = c.rule.replace(/ \(.*\)$| in comment(?:-line)?$/, '');
   byClass[cls] ??= { detected: 0, invalid: 0, fired: 0, valid: 0, rules: new Set() };
   const b = byClass[cls];
   const res = await eslint.lintText(c.code ?? '', { filePath: c.filename ?? 'case.js' });

@@ -43,6 +43,7 @@ describe('detect-non-literal-regexp', () => {
         // nothing — exercises the "no arguments" false branches in
         // extractPattern.
         {
+          name: 'new RegExp with no arguments has no pattern to flag',
           code: 'new RegExp();',
         },
       ],

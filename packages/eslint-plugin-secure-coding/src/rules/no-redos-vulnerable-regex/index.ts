@@ -358,7 +358,59 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
   ) {
     let maxPatternLength: number;
     let reportSecondDegreePolynomial: boolean;
-    let MAX_SAFE_REPETITION: number;
+    /**
+     * NFA-based ReDoS detection via scslre — the same library eslint-plugin-regexp
+     * uses. It builds the automaton and looks for genuine ambiguity, so it sees
+     * what character-level heuristics cannot (cross-quantifier trades, deep
+     * nested loops) and, just as importantly, sees what they only think they
+     * see.
+     *
+     * The three outcomes are distinct and the caller must not collapse them:
+     *
+     * - `reported`     — scslre found real ambiguity and has already reported.
+     * - `clean`        — scslre analysed the pattern and it is NOT vulnerable.
+     *                    This is a VERDICT, not an absence of one.
+     * - `unanalysable` — parsing or analysis threw. Only here do heuristics run.
+     *
+     * `clean` used to be conflated with `unanalysable` (both returned `false`),
+     * so every pattern scslre cleared was handed to the heuristic matcher,
+     * which then overruled it. That is how
+     * `/^https:\/\/js\.stripe\.com\/v3\/?(\?.*)?$/` (stripe/stripe-js
+     * `src/shared.ts:23`) was reported as "Nested Quantifier Pattern: exponential
+     * backtracking | CRITICAL". It is anchored at both ends, has two independent
+     * optional groups, no nesting, and is linear. The heuristic
+     * `\([^)]*[+*?][^)]*\)[+*?]` matched it only because `(\?.*)?` contains a
+     * `?`, a `*`, and a trailing `?` — quantifier characters counted, not
+     * quantifier nesting.
+     */
+    /**
+     * Shapes scslre reports that were TIMED as linear.
+     *
+     * Suppressing an upstream finding needs a stronger warrant than adding one,
+     * so both entries carry the measurement that justifies them and nothing is
+     * suppressed on reasoning alone.
+     *
+     * **1. A bounded OUTER quantifier.** `^(a+){1,3}$` runs in 0.1 ms while
+     * `^(a+)+$` takes 5,151 ms on the same input. Bounding the outer loop caps
+     * the number of ways the inner one can be split, so the work is polynomial
+     * in a constant — there is no blow-up to trigger. The distinction is exact
+     * and counterintuitive: bounding the INNER quantifier does NOT help
+     * (`^(a{1,3})+$` still takes 2,008 ms), which is why this looks only at the
+     * quantifier applied to the GROUP.
+     *
+     * **2. Disjoint character classes across the ambiguity.** `^\s*(\S+\s*)+$`
+     * is the canonical "ReDoS example" in blog posts and runs in 0.0 ms: `\S`
+     * and `\s` are complements, so no input can be split between them two ways
+     * and there is nothing to backtrack over. Reporting it teaches a developer
+     * to rewrite correct code, and it is common enough — trimming and tokenising
+     * — to be a recurring false positive.
+     */
+    /**
+     * The largest outer repetition bound still measured under 3 ms — see the
+     * table in `isProvablyLinear`. Above this the cost climbs exponentially:
+     * 8 is 140 ms and 20 is nearly 20 seconds.
+     */
+    const MAX_SAFE_REPETITION = 5;
 
     function isProvablyLinear(pattern: string): boolean {
       // `(...)` followed by a BOUNDED quantifier — but the BOUND SIZE decides,
@@ -919,60 +971,6 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
         const [options = {}] = currentOptions();
         ({ maxPatternLength = 500, reportSecondDegreePolynomial = true } =
           options || {});
-
-        /**
-         * NFA-based ReDoS detection via scslre — the same library eslint-plugin-regexp
-         * uses. It builds the automaton and looks for genuine ambiguity, so it sees
-         * what character-level heuristics cannot (cross-quantifier trades, deep
-         * nested loops) and, just as importantly, sees what they only think they
-         * see.
-         *
-         * The three outcomes are distinct and the caller must not collapse them:
-         *
-         * - `reported`     — scslre found real ambiguity and has already reported.
-         * - `clean`        — scslre analysed the pattern and it is NOT vulnerable.
-         *                    This is a VERDICT, not an absence of one.
-         * - `unanalysable` — parsing or analysis threw. Only here do heuristics run.
-         *
-         * `clean` used to be conflated with `unanalysable` (both returned `false`),
-         * so every pattern scslre cleared was handed to the heuristic matcher,
-         * which then overruled it. That is how
-         * `/^https:\/\/js\.stripe\.com\/v3\/?(\?.*)?$/` (stripe/stripe-js
-         * `src/shared.ts:23`) was reported as "Nested Quantifier Pattern: exponential
-         * backtracking | CRITICAL". It is anchored at both ends, has two independent
-         * optional groups, no nesting, and is linear. The heuristic
-         * `\([^)]*[+*?][^)]*\)[+*?]` matched it only because `(\?.*)?` contains a
-         * `?`, a `*`, and a trailing `?` — quantifier characters counted, not
-         * quantifier nesting.
-         */
-        /**
-         * Shapes scslre reports that were TIMED as linear.
-         *
-         * Suppressing an upstream finding needs a stronger warrant than adding one,
-         * so both entries carry the measurement that justifies them and nothing is
-         * suppressed on reasoning alone.
-         *
-         * **1. A bounded OUTER quantifier.** `^(a+){1,3}$` runs in 0.1 ms while
-         * `^(a+)+$` takes 5,151 ms on the same input. Bounding the outer loop caps
-         * the number of ways the inner one can be split, so the work is polynomial
-         * in a constant — there is no blow-up to trigger. The distinction is exact
-         * and counterintuitive: bounding the INNER quantifier does NOT help
-         * (`^(a{1,3})+$` still takes 2,008 ms), which is why this looks only at the
-         * quantifier applied to the GROUP.
-         *
-         * **2. Disjoint character classes across the ambiguity.** `^\s*(\S+\s*)+$`
-         * is the canonical "ReDoS example" in blog posts and runs in 0.0 ms: `\S`
-         * and `\s` are complements, so no input can be split between them two ways
-         * and there is nothing to backtrack over. Reporting it teaches a developer
-         * to rewrite correct code, and it is common enough — trimming and tokenising
-         * — to be a recurring false positive.
-         */
-        /**
-         * The largest outer repetition bound still measured under 3 ms — see the
-         * table in `isProvablyLinear`. Above this the cost climbs exponentially:
-         * 8 is 140 ms and 20 is nearly 20 seconds.
-         */
-        MAX_SAFE_REPETITION = 5;
       },
       Literal: checkLiteralRegExp,
       // Reflect.construct(RegExp, [...]) is normalised to the direct shape

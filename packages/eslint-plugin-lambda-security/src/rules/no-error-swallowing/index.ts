@@ -94,12 +94,23 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
   ) {
     let allowInTests: boolean;
     let allowWithComment: boolean;
-    let LOGGER_OBJECTS: RegExp;
-    let LOGGER_METHODS: RegExp;
-    let LOGGING_FUNCTIONS: RegExp;
-    let FORWARDING_CALLBACKS: RegExp;
-    let RESPONSE_OBJECTS: RegExp;
-    let RESPONSE_METHODS: RegExp;
+    /** Loggers whose methods count as recording the error. */
+    const LOGGER_OBJECTS =
+      /^(console|logger|log|winston|pino|bunyan|sentry|Sentry)$/;
+    const LOGGER_METHODS =
+      /^(log|error|warn|info|debug|captureException|captureMessage)$/;
+    /** Bare calls that record: logError(), reportError(), captureError(), trackError(). */
+    const LOGGING_FUNCTIONS = /^(log|report|capture|track|record|notify)\w*$/i;
+    /**
+     * Callbacks that hand the error onward. Passing the error to one of these
+     * is propagation, not swallowing — it is `throw` spelled asynchronously,
+     * and Express's own error middleware is reached no other way.
+     */
+    const FORWARDING_CALLBACKS = /^(next|reject|callback|cb|done|fail|emit)$/;
+    /** Response objects whose terminal methods answer the request. */
+    const RESPONSE_OBJECTS = /^(res|response|reply|ctx)$/;
+    const RESPONSE_METHODS =
+      /^(status|sendStatus|json|send|end|writeHead|render|redirect)$/;
 
     /**
      * Does the caught error appear anywhere in these arguments?
@@ -359,24 +370,6 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
         if (allowInTests && isTestFile) {
           return false;
         }
-
-        /** Loggers whose methods count as recording the error. */
-        LOGGER_OBJECTS =
-          /^(console|logger|log|winston|pino|bunyan|sentry|Sentry)$/;
-        LOGGER_METHODS =
-          /^(log|error|warn|info|debug|captureException|captureMessage)$/;
-        /** Bare calls that record: logError(), reportError(), captureError(), trackError(). */
-        LOGGING_FUNCTIONS = /^(log|report|capture|track|record|notify)\w*$/i;
-        /**
-         * Callbacks that hand the error onward. Passing the error to one of these
-         * is propagation, not swallowing — it is `throw` spelled asynchronously,
-         * and Express's own error middleware is reached no other way.
-         */
-        FORWARDING_CALLBACKS = /^(next|reject|callback|cb|done|fail|emit)$/;
-        /** Response objects whose terminal methods answer the request. */
-        RESPONSE_OBJECTS = /^(res|response|reply|ctx)$/;
-        RESPONSE_METHODS =
-          /^(status|sendStatus|json|send|end|writeHead|render|redirect)$/;
         return true;
       },
       CatchClause(node: TSESTree.CatchClause) {

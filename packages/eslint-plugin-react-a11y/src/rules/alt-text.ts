@@ -196,7 +196,8 @@ export const altText = createRule<RuleOptions, MessageIds>({
     let areaComponents: string[];
     let inputImageComponents: string[];
     let importedImageComponents: Set<string>;
-    let IMAGE_MODULE: RegExp;
+    const IMAGE_MODULE =
+      /^(next\/image|next\/legacy\/image|next\/future\/image)$/;
 
     type Kind = 'img' | 'object' | 'area' | 'inputImage';
 
@@ -414,9 +415,6 @@ export const altText = createRule<RuleOptions, MessageIds>({
          * too, while an unrelated `<Image>` from a charting library is not.
          */
         importedImageComponents = new Set<string>();
-
-        IMAGE_MODULE =
-          /^(next\/image|next\/legacy\/image|next\/future\/image)$/;
       },
       Program(node: TSESTree.Program) {
         importedImageComponents.clear();

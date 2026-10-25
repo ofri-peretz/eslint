@@ -60,6 +60,8 @@ function oxlintWith(configObject: unknown, alias: string) {
 const aliases = fs
   .readdirSync(PACKAGES_DIR)
   .filter((dir) => dir.startsWith('oxlint-plugin-'))
+  // The drop-in façade maps another plugin's IDs; it is verified below.
+  .filter((dir) => dir !== 'oxlint-plugin-security')
   .sort();
 
 const failures: string[] = [];
@@ -113,6 +115,36 @@ for (const alias of aliases) {
     console.log(`  ✓ ${alias}: ${expected.length} rules as ${short}/*`);
   } catch (error) {
     failures.push(`${alias}: ${(error as Error).message}`);
+  }
+}
+
+// oxlint-plugin-security (docs/intents/oxlint-plugin-security-drop-in, R5): every
+// incumbent `security/<id>` from its mapping loads through jsPlugins, and an ID it
+// does not define is rejected under the `security` namespace.
+{
+  const facade = 'oxlint-plugin-security';
+  try {
+    const mapping = JSON.parse(
+      fs.readFileSync(path.join(PACKAGES_DIR, facade, 'mapping.json'), 'utf8'),
+    ) as { rules: Record<string, unknown> };
+    const all = oxlint(
+      Object.fromEntries(
+        Object.keys(mapping.rules).map((id) => [`security/${id}`, 'off']),
+      ),
+      facade,
+    );
+    const bogus = oxlint({ [`security/${SENTINEL}`]: 'error' }, facade);
+    const want = `Rule '${SENTINEL}' not found in plugin 'security'`;
+    if (all.status !== 0)
+      failures.push(`${facade}: oxlint rejected its IDs\n${all.output}`);
+    else if (!bogus.output.includes(want))
+      failures.push(`${facade}: expected "${want}", got\n${bogus.output}`);
+    else
+      console.log(
+        `  ✓ ${facade}: ${Object.keys(mapping.rules).length} incumbent IDs as security/*`,
+      );
+  } catch (error) {
+    failures.push(`${facade}: ${(error as Error).message}`);
   }
 }
 
