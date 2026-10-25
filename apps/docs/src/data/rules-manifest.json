@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-10-12T04:02:01.331Z",
+  "generatedAt": "2026-10-25T23:00:19.812Z",
   "totals": {
     "plugins": 32,
-    "rules": 498,
+    "rules": 500,
     "recommended": 298,
     "deprecated": 9,
-    "withCwe": 322,
+    "withCwe": 324,
     "withSealRecord": 101,
     "sealed": 0,
     "firingOnCorpus": 47,
@@ -10267,6 +10267,26 @@
     {
       "plugin": "eslint-plugin-secure-coding",
       "prefix": "secure-coding",
+      "rule": "no-disabled-template-escaping",
+      "id": "secure-coding/no-disabled-template-escaping",
+      "description": "Disallows assigning `false` to `escapeMarkup`, which disables template HTML auto-escaping (CWE-79)",
+      "cwe": "CWE-79",
+      "cvss": 6.1,
+      "confidence": null,
+      "type": "problem",
+      "fixable": false,
+      "hasSuggestions": false,
+      "deprecated": false,
+      "recommended": null,
+      "docsUrl": "https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-disabled-template-escaping",
+      "corpusFindings": null,
+      "budgetReason": null,
+      "seal": null,
+      "detection": null
+    },
+    {
+      "plugin": "eslint-plugin-secure-coding",
+      "prefix": "secure-coding",
       "rule": "no-electron-security-issues",
       "id": "secure-coding/no-electron-security-issues",
       "description": "Detects Electron security vulnerabilities and insecure configurations",
@@ -10544,6 +10564,26 @@
         "falsePositives": [],
         "competitors": []
       }
+    },
+    {
+      "plugin": "eslint-plugin-secure-coding",
+      "prefix": "secure-coding",
+      "rule": "no-invisible-characters",
+      "id": "secure-coding/no-invisible-characters",
+      "description": "Disallows invisible letters such as the Hangul fillers (U+3164, U+FFA0), which hide identifiers, values and comment text from code review (CWE-1007)",
+      "cwe": "CWE-1007",
+      "cvss": 5.3,
+      "confidence": null,
+      "type": "problem",
+      "fixable": false,
+      "hasSuggestions": true,
+      "deprecated": false,
+      "recommended": null,
+      "docsUrl": "https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-invisible-characters",
+      "corpusFindings": null,
+      "budgetReason": null,
+      "seal": null,
+      "detection": null
     },
     {
       "plugin": "eslint-plugin-secure-coding",

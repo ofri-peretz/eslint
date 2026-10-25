@@ -4,6 +4,7 @@ import { cn } from '@interlace/ui/cn';
 import * as Twoslash from 'fumadocs-twoslash/ui';
 import { Mermaid } from '@/components/mdx/mermaid';
 import { InstallSnippet } from '@/components/mdx/install-snippet';
+import { EngineSetup } from '@/components/docs/engine-setup';
 import { Stat } from '@/components/mdx/stat';
 import { Steps, Step } from 'fumadocs-ui/components/steps';
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
@@ -150,6 +151,7 @@ function Img({ className, ...props }: ComponentProps<'img'>) {
  * - Accordion/Accordions for collapsible sections
  * - InstallSnippet — npm/pnpm/yarn/bun package-install switcher
  *   (CODE_EXAMPLE_PHILOSOPHY)
+ * - EngineSetup — oxlint / Vite+ first, ESLint second: install + config tabs
  */
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {
@@ -159,6 +161,7 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     img: Img, // Unsized external images (README badges) bypass next/image
     Mermaid, // Diagram rendering (also usable as a direct MDX component)
     InstallSnippet, // Package-install snippet w/ PM switcher
+    EngineSetup, // oxlint / Vite+ + ESLint install-and-config tabs for a plugin
     Stat, // Plugin/rule counts from the generated numbers manifest — never hand-type them
     Steps, // Multi-step guides
     Step,

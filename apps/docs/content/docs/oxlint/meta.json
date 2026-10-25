@@ -1,0 +1,7 @@
+{
+  "title": "oxlint / Vite+",
+  "description": "Every plugin, as an oxlint JS plugin",
+  "icon": "Zap",
+  "root": true,
+  "pages": ["index"]
+}
