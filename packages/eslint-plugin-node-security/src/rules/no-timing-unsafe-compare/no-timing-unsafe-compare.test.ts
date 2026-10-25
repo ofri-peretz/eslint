@@ -118,7 +118,10 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
         { code: 'if (status === "active") {}' },
         { code: 'if (index === 0) {}' },
         // Similar names that are NOT secrets (use specific non-matching names)
-        { code: 'if (role === "admin") {}' },
+        {
+          code: 'if (role === "admin") {}',
+          name: 'comparing a role name to a literal is not a secret comparison',
+        },
         { code: 'if (method === "oauth") {}' },
         { code: 'if (length === 8) {}' },
         // Non-comparison operators with secrets (should NOT flag)

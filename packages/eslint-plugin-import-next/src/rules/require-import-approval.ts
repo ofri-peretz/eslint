@@ -96,6 +96,7 @@ function getPackageName(importPath: string): string {
 export const requireImportApproval = createRule<RuleOptions, MessageIds>({
   name: 'require-import-approval',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/require-import-approval.md',
@@ -107,7 +108,7 @@ export const requireImportApproval = createRule<RuleOptions, MessageIds>({
         issueName: 'Unapproved Package Import',
         description:
           "Package '{{packageName}}' requires approval before use. " +
-          "{{reason}}",
+          '{{reason}}',
         severity: 'HIGH',
         fix:
           'Either:\n' +
@@ -121,7 +122,7 @@ export const requireImportApproval = createRule<RuleOptions, MessageIds>({
         issueName: 'Blocked Package Import',
         description:
           "Package '{{packageName}}' is blocked and cannot be used. " +
-          "{{reason}}",
+          '{{reason}}',
         severity: 'CRITICAL',
         fix:
           'Use an approved alternative: {{alternative}}\n' +
@@ -139,7 +140,10 @@ export const requireImportApproval = createRule<RuleOptions, MessageIds>({
               type: 'object',
               properties: {
                 package: { type: 'string' },
-                status: { type: 'string', enum: ['approved', 'pending', 'blocked'] },
+                status: {
+                  type: 'string',
+                  enum: ['approved', 'pending', 'blocked'],
+                },
                 reason: { type: 'string' },
                 alternative: { type: 'string' },
                 approvedBy: { type: 'string' },
@@ -171,11 +175,13 @@ export const requireImportApproval = createRule<RuleOptions, MessageIds>({
       ignorePatterns: [],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options]: readonly [RequireImportApprovalOptions],
+    currentOptions,
   ) {
-    const { packages, defaultPolicy = 'allow', ignorePatterns = [] } = options;
+    let packages: PackagePolicy[];
+    let defaultPolicy: 'allow' | 'deny';
+    let ignorePatterns: string[];
 
     function checkImport(importPath: string, node: TSESTree.Node) {
       if (!isPackageImport(importPath)) return;
@@ -188,7 +194,7 @@ export const requireImportApproval = createRule<RuleOptions, MessageIds>({
       }
 
       // Find matching policy
-      const policy = packages.find(p => matchPackage(packageName, p.package));
+      const policy = packages.find((p) => matchPackage(packageName, p.package));
 
       if (policy) {
         if (policy.status === 'blocked') {
@@ -198,7 +204,8 @@ export const requireImportApproval = createRule<RuleOptions, MessageIds>({
             data: {
               packageName,
               reason: policy.reason || 'Policy violation',
-              alternative: policy.alternative || 'Contact security team for alternatives',
+              alternative:
+                policy.alternative || 'Contact security team for alternatives',
             },
           });
         } else if (policy.status === 'pending') {
@@ -228,6 +235,10 @@ export const requireImportApproval = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        ({ packages, defaultPolicy = 'allow', ignorePatterns = [] } = options);
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const importPath = node.source.value;
         if (typeof importPath === 'string') {

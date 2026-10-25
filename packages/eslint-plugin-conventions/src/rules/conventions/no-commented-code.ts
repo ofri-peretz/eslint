@@ -236,6 +236,7 @@ export const noCommentedCode = createRule<RuleOptions, MessageIds>({
    */
   skipGeneratedFiles: true,
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/no-commented-code.md',
@@ -302,25 +303,14 @@ export const noCommentedCode = createRule<RuleOptions, MessageIds>({
       minLines: 1,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      ignoreSingleLine = false,
-      ignoreInTests = true,
-      minLines = 1,
-    }: Options = options || {};
-
-    const filename = context.filename;
-    const isTestFile =
-      ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
-
-    if (isTestFile) {
-      return {};
-    }
-
-    const sourceCode = context.sourceCode;
+    let ignoreSingleLine: boolean;
+    let ignoreInTests: boolean;
+    let minLines: number;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /**
      * Check comment nodes
@@ -394,6 +384,25 @@ export const noCommentedCode = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          ignoreSingleLine = false,
+          ignoreInTests = true,
+          minLines = 1,
+        } = options || {});
+
+        const filename = context.filename;
+        const isTestFile =
+          ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+
+        sourceCode = context.sourceCode;
+        return true;
+      },
       Program() {
         const comments = sourceCode.getAllComments();
 

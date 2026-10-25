@@ -19,8 +19,14 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-cookie-secure-attrs', requireCookieSecureAttrs, {
   valid: [
-    { name: 'both attributes set', code: `document.cookie = 'theme=dark; Secure; SameSite=Strict';` },
-    { code: `document.cookie = 'sid=abc; Path=/; Secure; SameSite=Lax';` },
+    {
+      name: 'both attributes set',
+      code: `document.cookie = 'theme=dark; Secure; SameSite=Strict';`,
+    },
+    {
+      name: 'a session cookie with Secure and SameSite=Lax is complete',
+      code: `document.cookie = 'sid=abc; Path=/; Secure; SameSite=Lax';`,
+    },
     { code: `const c = document.cookie;` },
     { code: `myObj.cookie = 'theme=dark';` },
     { code: `document.cookie = 'theme=dark';`, filename: 'x.test.ts' },
@@ -35,7 +41,10 @@ ruleTester.run('require-cookie-secure-attrs', requireCookieSecureAttrs, {
 
     // PRE-EXISTING DEFECT, now fixed: deleting a cookie was reported for
     // missing attributes on a value that no longer exists.
-    { name: 'deleting a cookie with Max-Age=0 needs no attributes', code: `document.cookie = 'sid=; Max-Age=0';` },
+    {
+      name: 'deleting a cookie with Max-Age=0 needs no attributes',
+      code: `document.cookie = 'sid=; Max-Age=0';`,
+    },
     {
       code: `document.cookie = 'sid=; expires=Thu, 01 Jan 1970 00:00:00 GMT';`,
     },
@@ -147,16 +156,20 @@ ruleTester.run('lock: sink spellings', requireCookieSecureAttrs, {
  * `/;\s*secure/i` matched `; secureFlag=1`, which is not the Secure attribute,
  * and `/;\s*samesite/i` matched `; samesiteHint` with no `=`.
  */
-ruleTester.run('lock: attribute matching is anchored', requireCookieSecureAttrs, {
-  valid: [{ code: `document.cookie = 'a=b; Secure; SameSite=None';` }],
-  invalid: [
-    {
-      code: `document.cookie = 'a=b; secureFlag=1; SameSite=Lax';`,
-      errors: [{ messageId: 'missingSecure' }],
-    },
-    {
-      code: `document.cookie = 'a=b; Secure; samesiteHint';`,
-      errors: [{ messageId: 'missingSameSite' }],
-    },
-  ],
-});
+ruleTester.run(
+  'lock: attribute matching is anchored',
+  requireCookieSecureAttrs,
+  {
+    valid: [{ code: `document.cookie = 'a=b; Secure; SameSite=None';` }],
+    invalid: [
+      {
+        code: `document.cookie = 'a=b; secureFlag=1; SameSite=Lax';`,
+        errors: [{ messageId: 'missingSecure' }],
+      },
+      {
+        code: `document.cookie = 'a=b; Secure; samesiteHint';`,
+        errors: [{ messageId: 'missingSameSite' }],
+      },
+    ],
+  },
+);

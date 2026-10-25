@@ -27,6 +27,10 @@ type RuleOptions = [Options?];
 export const anchorIsValid = createRule<RuleOptions, MessageIds>({
   name: 'anchor-is-valid',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/anchor-is-valid',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/anchor-is-valid.md',
@@ -75,14 +79,20 @@ export const anchorIsValid = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
-    const { components = [], specialLink = [] } = options || {};
-    const anchors = new Set(['a', ...components]);
+    let components: string[];
+    let specialLink: string[];
+    let anchors: Set<string>;
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        ({ components = [], specialLink = [] } = options || {});
+        anchors = new Set(['a', ...components]);
+      },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (
           node.name.type !== 'JSXIdentifier' ||

@@ -17,6 +17,7 @@ type MessageIds = 'noAccessStateInSetState';
 export const noAccessStateInSetState = createRule<[], MessageIds>({
   name: 'no-access-state-in-setstate',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-access-state-in-setstate.md',
@@ -30,12 +31,13 @@ export const noAccessStateInSetState = createRule<[], MessageIds>({
         description: 'Accessing this.state inside setState call',
         severity: 'HIGH',
         fix: 'Use functional setState: this.setState(prevState => ({...prevState, ...updates}))',
-        documentationLink: 'https://react.dev/reference/react/Component#setstate',
+        documentationLink:
+          'https://react.dev/reference/react/Component#setstate',
       }),
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Check if this is a setState call
@@ -62,7 +64,10 @@ export const noAccessStateInSetState = createRule<[], MessageIds>({
 /**
  * Check if a node contains access to this.state
  */
-function containsThisStateAccess(node: TSESTree.Node, visited = new Set<TSESTree.Node>()): boolean {
+function containsThisStateAccess(
+  node: TSESTree.Node,
+  visited = new Set<TSESTree.Node>(),
+): boolean {
   // Prevent infinite recursion
   if (visited.has(node)) {
     return false;

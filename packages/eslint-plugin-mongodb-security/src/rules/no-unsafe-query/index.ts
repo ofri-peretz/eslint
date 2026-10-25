@@ -166,6 +166,7 @@ function isPrimitiveCoercion(node: TSESTree.Node): boolean {
 export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-query',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-unsafe-query.md',
@@ -217,88 +218,11 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true, additionalMethods: [] }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    // Every rule here is MongoDB-specific, and none of them could ask the
-    // file-level question: over the corpus, 47% of this plugin's findings were
-    // in files with no Mongo in them. `receiver.ts` discriminates by receiver
-    // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
-    // well as in a Mongoose one. Registering no visitors is both the gate and
-    // the cheap path.
-    if (!fileUsesMongo(context.sourceCode.ast)) return {};
-
-    const { allowInTests = true, additionalMethods = [] } = options as Options;
-    const filename = context.filename;
-    const inTestFile = isTestFilePath(filename);
-
-    if (allowInTests && inTestFile) {
-      return {};
-    }
-
-    const allMethods = new Set([...QUERY_METHODS, ...additionalMethods]);
-
-    return {
-      CallExpression(node: TSESTree.CallExpression) {
-        // Check if this is a MongoDB query method call
-        if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
-          return;
-        }
-
-        // `User['updateOne'](...)` calls the same method the dotted form does.
-        const methodName = propertyName(node.callee);
-
-        if (!methodName || !allMethods.has(methodName)) {
-          return;
-        }
-
-        // Check first argument (the query object)
-        const queryArg = node.arguments[0];
-        if (!queryArg) return;
-
-        // `find(req.body)` — the caller hands you the whole query document.
-        // `{"$ne": null}` as a password turns the lookup into "any user",
-        // which is the canonical NoSQL authentication bypass and the most
-        // direct form the bug takes. This early-returned on anything that was
-        // not an object literal, so it was missed entirely (ILB-0121).
-        if (
-          queryArg.type !== AST_NODE_TYPES.ObjectExpression &&
-          queryArg.type !== AST_NODE_TYPES.SpreadElement &&
-          !isPrimitiveCoercion(queryArg) &&
-          // `bodyNeedsDepth: false` — the argument POSITION supplies the
-          // meaning the depth rule normally waits for. A bare `.body` is
-          // ambiguous in general; a bare `.body` used as the filter document
-          // of a Mongo query is the bug itself.
-          (readsRequestShape(queryArg, context.sourceCode, {
-            bodyNeedsDepth: false,
-          }) ||
-            containsUserInput(queryArg, context.sourceCode))
-        ) {
-          context.report({
-            node: queryArg,
-            messageId: 'unsafeQuery',
-            data: { input: getNodeSource(queryArg) },
-            suggest: [
-              {
-                messageId: 'suggestionUseEq',
-                fix(fixer: TSESLint.RuleFixer) {
-                  const valueText = context.sourceCode.getText(queryArg);
-                  return fixer.replaceText(queryArg, `{ $eq: ${valueText} }`);
-                },
-              },
-            ],
-          });
-          return;
-        }
-
-        if (queryArg.type !== AST_NODE_TYPES.ObjectExpression) {
-          return;
-        }
-
-        checkFilter(queryArg);
-      },
-    };
+    let allMethods: Set<string>;
 
     /** Check every property of a filter document, recursing into `$or`/`$and`/`$nor`. */
     function checkFilter(filter: TSESTree.ObjectExpression): void {
@@ -364,6 +288,89 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
         }
       }
     }
+
+    return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Every rule here is MongoDB-specific, and none of them could ask the
+        // file-level question: over the corpus, 47% of this plugin's findings were
+        // in files with no Mongo in them. `receiver.ts` discriminates by receiver
+        // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
+        // well as in a Mongoose one. Registering no visitors is both the gate and
+        // the cheap path.
+        if (!fileUsesMongo(context.sourceCode.ast)) return false;
+
+        const { allowInTests = true, additionalMethods = [] } =
+          options as Options;
+        const filename = context.filename;
+        const inTestFile = isTestFilePath(filename);
+
+        if (allowInTests && inTestFile) {
+          return false;
+        }
+
+        allMethods = new Set([...QUERY_METHODS, ...additionalMethods]);
+        return true;
+      },
+      CallExpression(node: TSESTree.CallExpression) {
+        // Check if this is a MongoDB query method call
+        if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
+          return;
+        }
+
+        // `User['updateOne'](...)` calls the same method the dotted form does.
+        const methodName = propertyName(node.callee);
+
+        if (!methodName || !allMethods.has(methodName)) {
+          return;
+        }
+
+        // Check first argument (the query object)
+        const queryArg = node.arguments[0];
+        if (!queryArg) return;
+
+        // `find(req.body)` — the caller hands you the whole query document.
+        // `{"$ne": null}` as a password turns the lookup into "any user",
+        // which is the canonical NoSQL authentication bypass and the most
+        // direct form the bug takes. This early-returned on anything that was
+        // not an object literal, so it was missed entirely (ILB-0121).
+        if (
+          queryArg.type !== AST_NODE_TYPES.ObjectExpression &&
+          queryArg.type !== AST_NODE_TYPES.SpreadElement &&
+          !isPrimitiveCoercion(queryArg) &&
+          // `bodyNeedsDepth: false` — the argument POSITION supplies the
+          // meaning the depth rule normally waits for. A bare `.body` is
+          // ambiguous in general; a bare `.body` used as the filter document
+          // of a Mongo query is the bug itself.
+          (readsRequestShape(queryArg, context.sourceCode, {
+            bodyNeedsDepth: false,
+          }) ||
+            containsUserInput(queryArg, context.sourceCode))
+        ) {
+          context.report({
+            node: queryArg,
+            messageId: 'unsafeQuery',
+            data: { input: getNodeSource(queryArg) },
+            suggest: [
+              {
+                messageId: 'suggestionUseEq',
+                fix(fixer: TSESLint.RuleFixer) {
+                  const valueText = context.sourceCode.getText(queryArg);
+                  return fixer.replaceText(queryArg, `{ $eq: ${valueText} }`);
+                },
+              },
+            ],
+          });
+          return;
+        }
+
+        if (queryArg.type !== AST_NODE_TYPES.ObjectExpression) {
+          return;
+        }
+
+        checkFilter(queryArg);
+      },
+    };
   },
 });
 

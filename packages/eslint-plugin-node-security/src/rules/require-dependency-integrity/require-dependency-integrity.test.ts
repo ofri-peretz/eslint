@@ -24,7 +24,10 @@ ruleTester.run('require-dependency-integrity', requireDependencyIntegrity, {
     },
     // Non-CDN resources
     { code: 'const script = \'<script src="/local/app.js"></script>\'' },
-    { code: 'const x = 1' },
+    {
+      code: 'const x = 1',
+      name: 'code with no CDN resource tag has nothing to check',
+    },
     // TAGGED template, every quasi an invalid escape: `cooked` is null
     // throughout, so `renderTemplate` reads `raw` — and raw holds no CDN tag.
     {

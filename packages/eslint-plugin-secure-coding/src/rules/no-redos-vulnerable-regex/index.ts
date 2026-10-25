@@ -101,21 +101,35 @@
  * ESLint Rule: no-redos-vulnerable-regex
  * Detects ReDoS-vulnerable regex patterns in literal regex patterns
  * CWE-400: Uncontrolled Resource Consumption
- * 
+ *
  * Complements detect-non-literal-regexp by checking literal regex patterns
- * 
+ *
  * @see https://cwe.mitre.org/data/definitions/400.html
  * @see https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  formatLLMMessage,
+  MessageIcons,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { RegExpParser, visitRegExpAST } from '@eslint-community/regexpp';
-import type { Node as RegExpNode, Quantifier as RegExpQuantifier } from '@eslint-community/regexpp/ast';
+import type {
+  Node as RegExpNode,
+  Quantifier as RegExpQuantifier,
+} from '@eslint-community/regexpp/ast';
 import { JS } from 'refa';
 import { analyse } from 'scslre';
-import { asDirectConstruction, isRegExpConstructor } from '../../utils/regexp-intrinsic';
-import { confirmsRedos, worstBacktrackingDegree } from '../../utils/redos-oracle';
+import {
+  asDirectConstruction,
+  isRegExpConstructor,
+} from '../../utils/regexp-intrinsic';
+import {
+  confirmsRedos,
+  worstBacktrackingDegree,
+} from '../../utils/redos-oracle';
 
 // Module-level parser; cheap to reuse.
 /**
@@ -137,7 +151,9 @@ const COMPLEMENTARY_CLASS_PROBES = [
   ['\\\\W', '\\\\w'],
   ['\\\\D', '\\\\d'],
 ].map(([x, y]) => ({
-  group: new RegExp(`\\(\\s*(?:${x}|${y})[+*][^)]*(?:${x}|${y})[+*?][^)]*\\)[+*]`),
+  group: new RegExp(
+    `\\(\\s*(?:${x}|${y})[+*][^)]*(?:${x}|${y})[+*?][^)]*\\)[+*]`,
+  ),
   a: new RegExp(`${x}[+*]`),
   b: new RegExp(`${y}[+*?]`),
 }));
@@ -183,7 +199,7 @@ const INTERPOLATION_PLACEHOLDER = '\uE000';
  */
 function relaxBoundedRangesUnderUnboundedQuantifier(
   ast: ReturnType<RegExpParser['parsePattern']>,
-  pattern: string
+  pattern: string,
 ): string {
   const edits: Array<[number, number, string]> = [];
 
@@ -234,7 +250,7 @@ export interface Options {
    * analyser had already cleared; that layer is gone. Removed in the next major.
    */
   allowCommonPatterns?: boolean;
-  
+
   /**
    * Report second-degree polynomial backtracking as well as degree 3 and
    * exponential. Default: true.
@@ -266,18 +282,23 @@ type RuleOptions = [Options?];
 
 // Type guard for regex literal nodes
 const isRegExpLiteral = (
-  node: TSESTree.Node
+  node: TSESTree.Node,
 ): node is TSESTree.Literal & { regex: { pattern: string; flags: string } } => {
-  return node.type === 'Literal' && Object.prototype.hasOwnProperty.call(node, 'regex');
+  return (
+    node.type === 'Literal' &&
+    Object.prototype.hasOwnProperty.call(node, 'regex')
+  );
 };
 
 export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
   name: 'no-redos-vulnerable-regex',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-redos-vulnerable-regex.md',
-      description: 'Detects ReDoS-vulnerable regex patterns in literal regex patterns',
+      description:
+        'Detects ReDoS-vulnerable regex patterns in literal regex patterns',
       cwe: 'CWE-400',
     },
     messages: {
@@ -292,7 +313,8 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
         // (see timed-corrections.test.ts), so a reader holding a pattern the
         // analyser misjudged needs to know what settles it — a measurement.
         fix: '{{fix}} — Not a finding if the quantifiers cannot overlap',
-        documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
       }),
     },
     schema: [
@@ -330,62 +352,13 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
       reportSecondDegreePolynomial: true,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const { maxPatternLength = 500, reportSecondDegreePolynomial = true }: Options = options || {};
-
-    /**
-     * NFA-based ReDoS detection via scslre — the same library eslint-plugin-regexp
-     * uses. It builds the automaton and looks for genuine ambiguity, so it sees
-     * what character-level heuristics cannot (cross-quantifier trades, deep
-     * nested loops) and, just as importantly, sees what they only think they
-     * see.
-     *
-     * The three outcomes are distinct and the caller must not collapse them:
-     *
-     * - `reported`     — scslre found real ambiguity and has already reported.
-     * - `clean`        — scslre analysed the pattern and it is NOT vulnerable.
-     *                    This is a VERDICT, not an absence of one.
-     * - `unanalysable` — parsing or analysis threw. Only here do heuristics run.
-     *
-     * `clean` used to be conflated with `unanalysable` (both returned `false`),
-     * so every pattern scslre cleared was handed to the heuristic matcher,
-     * which then overruled it. That is how
-     * `/^https:\/\/js\.stripe\.com\/v3\/?(\?.*)?$/` (stripe/stripe-js
-     * `src/shared.ts:23`) was reported as "Nested Quantifier Pattern: exponential
-     * backtracking | CRITICAL". It is anchored at both ends, has two independent
-     * optional groups, no nesting, and is linear. The heuristic
-     * `\([^)]*[+*?][^)]*\)[+*?]` matched it only because `(\?.*)?` contains a
-     * `?`, a `*`, and a trailing `?` — quantifier characters counted, not
-     * quantifier nesting.
-     */
-    /**
-     * Shapes scslre reports that were TIMED as linear.
-     *
-     * Suppressing an upstream finding needs a stronger warrant than adding one,
-     * so both entries carry the measurement that justifies them and nothing is
-     * suppressed on reasoning alone.
-     *
-     * **1. A bounded OUTER quantifier.** `^(a+){1,3}$` runs in 0.1 ms while
-     * `^(a+)+$` takes 5,151 ms on the same input. Bounding the outer loop caps
-     * the number of ways the inner one can be split, so the work is polynomial
-     * in a constant — there is no blow-up to trigger. The distinction is exact
-     * and counterintuitive: bounding the INNER quantifier does NOT help
-     * (`^(a{1,3})+$` still takes 2,008 ms), which is why this looks only at the
-     * quantifier applied to the GROUP.
-     *
-     * **2. Disjoint character classes across the ambiguity.** `^\s*(\S+\s*)+$`
-     * is the canonical "ReDoS example" in blog posts and runs in 0.0 ms: `\S`
-     * and `\s` are complements, so no input can be split between them two ways
-     * and there is nothing to backtrack over. Reporting it teaches a developer
-     * to rewrite correct code, and it is common enough — trimming and tokenising
-     * — to be a recurring false positive.
-     */
-    /**
-     * The largest outer repetition bound still measured under 3 ms — see the
-     * table in `isProvablyLinear`. Above this the cost climbs exponentially:
-     * 8 is 140 ms and 20 is nearly 20 seconds.
-     */
-    const MAX_SAFE_REPETITION = 5;
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let maxPatternLength: number;
+    let reportSecondDegreePolynomial: boolean;
+    let MAX_SAFE_REPETITION: number;
 
     function isProvablyLinear(pattern: string): boolean {
       // `(...)` followed by a BOUNDED quantifier — but the BOUND SIZE decides,
@@ -422,9 +395,12 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
       // The measured shapes the shortcut exists for are unaffected — `^(a+){1,3}$`
       // and the rest of the timing table have no group under `*` or `+`.
       const groupUnderUnboundedQuantifier = /\)[*+]/.test(pattern);
-      const bounded = groupUnderUnboundedQuantifier ? null : /\)\{(\d+)(?:,(\d+))?\}/.exec(pattern);
+      const bounded = groupUnderUnboundedQuantifier
+        ? null
+        : /\)\{(\d+)(?:,(\d+))?\}/.exec(pattern);
       if (bounded !== null) {
-        const max = bounded[2] !== undefined ? Number(bounded[2]) : Number(bounded[1]);
+        const max =
+          bounded[2] !== undefined ? Number(bounded[2]) : Number(bounded[1]);
         if (max <= MAX_SAFE_REPETITION) return true;
       }
 
@@ -451,10 +427,7 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
      * most ReDoS write-ups and still passes the NFA analyser is the reason this
      * function exists.
      */
-    function isProvablyCatastrophic(
-      ast: RegExpAst,
-      flags: string
-    ): boolean {
+    function isProvablyCatastrophic(ast: RegExpAst, flags: string): boolean {
       // Decided on the PARSED pattern, by set intersection — not by matching
       // the source text.
       //
@@ -530,16 +503,14 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
       node: TSESTree.Node,
       pattern: string,
       flags: string,
-      runtimeBuilt = false
+      runtimeBuilt = false,
     ): void {
       try {
         const parse = (source: string) =>
-          REGEXPP_PARSER.parsePattern(
-            source,
-            0,
-            source.length,
-            { unicode: flags.includes('u'), unicodeSets: flags.includes('v') }
-          );
+          REGEXPP_PARSER.parsePattern(source, 0, source.length, {
+            unicode: flags.includes('u'),
+            unicodeSets: flags.includes('v'),
+          });
         // `unicodeSets` has to reach the ANALYSER, not just the parser above.
         // Without it a `/v` pattern is handed to refa with `unicode: false`,
         // which rejects every `\p{...}` escape with "Unicode property escapes
@@ -549,8 +520,17 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
         // backtracks. Every `/v` pattern using a property escape was dropped.
         const run = (ast: ReturnType<typeof parse>) =>
           analyse(
-            { pattern: ast, flags: { ignoreCase: flags.includes('i'), unicode: flags.includes('u'), unicodeSets: flags.includes('v'), dotAll: flags.includes('s'), multiline: flags.includes('m') } as never },
-            { reportTypes: { Move: false } }
+            {
+              pattern: ast,
+              flags: {
+                ignoreCase: flags.includes('i'),
+                unicode: flags.includes('u'),
+                unicodeSets: flags.includes('v'),
+                dotAll: flags.includes('s'),
+                multiline: flags.includes('m'),
+              } as never,
+            },
+            { reportTypes: { Move: false } },
           );
 
         const ast = parse(pattern);
@@ -563,7 +543,10 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
         // already reported are left with the FIRST pass's findings, so nothing
         // that reports today changes shape.
         if (result.reports.length === 0) {
-          const relaxed = relaxBoundedRangesUnderUnboundedQuantifier(ast, pattern);
+          const relaxed = relaxBoundedRangesUnderUnboundedQuantifier(
+            ast,
+            pattern,
+          );
           if (relaxed !== pattern) {
             result = run(parse(relaxed));
           }
@@ -589,7 +572,6 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-
         // ONE report per regex, not one per ambiguity path.
         //
         // scslre returns a report for every distinct path it finds through the
@@ -613,7 +595,8 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
               // This correction is only reached on the literal path — verified:
               // `new RegExp('^(a|a)*$')` arrives with the flag false — so
               // interpolating it rendered nothing and left an uncoverable arm.
-              vulnerabilityName: 'Ambiguous alternation (exponential backtracking)',
+              vulnerabilityName:
+                'Ambiguous alternation (exponential backtracking)',
               description:
                 'Alternatives inside a quantified group match the same input, so every character can be taken by either branch and the engine explores 2^n paths before failing.',
               severity: 'CRITICAL',
@@ -673,12 +656,15 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
             node,
             messageId: 'redosVulnerable',
             data: {
-              vulnerabilityName: `${runtimeBuilt ? 'Runtime-built ' : ''}${report.type === 'Self'
-                ? `Self-loop quantifier (${isExp ? 'exponential' : 'polynomial'} backtracking)`
-                : `Cross-quantifier trade (${isExp ? 'exponential' : 'polynomial'} backtracking)`}`,
-              description: report.type === 'Self'
-                ? `A quantifier reaches itself via the parent loop. An attacker can craft input that triggers ${isExp ? 'exponential' : 'polynomial'} backtracking.`
-                : `Two quantifiers can exchange characters, enabling ${isExp ? 'exponential' : 'polynomial'} backtracking on crafted input.`,
+              vulnerabilityName: `${runtimeBuilt ? 'Runtime-built ' : ''}${
+                report.type === 'Self'
+                  ? `Self-loop quantifier (${isExp ? 'exponential' : 'polynomial'} backtracking)`
+                  : `Cross-quantifier trade (${isExp ? 'exponential' : 'polynomial'} backtracking)`
+              }`,
+              description:
+                report.type === 'Self'
+                  ? `A quantifier reaches itself via the parent loop. An attacker can craft input that triggers ${isExp ? 'exponential' : 'polynomial'} backtracking.`
+                  : `Two quantifiers can exchange characters, enabling ${isExp ? 'exponential' : 'polynomial'} backtracking on crafted input.`,
               severity: isExp ? 'CRITICAL' : 'HIGH',
               fix: 'Atomic group, possessive quantifier, or rewrite to remove the ambiguity',
             },
@@ -749,7 +735,9 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
       seen.add(node);
 
       if (node.type === AST_NODE_TYPES.Literal) {
-        return typeof node.value === 'string' ? { pattern: node.value, exact: true } : null;
+        return typeof node.value === 'string'
+          ? { pattern: node.value, exact: true }
+          : null;
       }
 
       if (node.type === AST_NODE_TYPES.TemplateLiteral) {
@@ -778,10 +766,16 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
         );
       }
 
-      if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
+      if (
+        node.type === AST_NODE_TYPES.BinaryExpression &&
+        node.operator === '+'
+      ) {
         const left = resolveOrPlaceholder(node.left, seen);
         const right = resolveOrPlaceholder(node.right, seen);
-        return { pattern: left.pattern + right.pattern, exact: left.exact && right.exact };
+        return {
+          pattern: left.pattern + right.pattern,
+          exact: left.exact && right.exact,
+        };
       }
 
       if (node.type === AST_NODE_TYPES.Identifier) {
@@ -846,9 +840,15 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
      * src = req.query.p;` holds neither value with certainty, and picking the
      * declaration would be reading the code the author did not run.
      */
-    function resolveBindingInit(node: TSESTree.Identifier): TSESTree.Expression | null {
+    function resolveBindingInit(
+      node: TSESTree.Identifier,
+    ): TSESTree.Expression | null {
       const scope = context.sourceCode.getScope(node);
-      for (let current: typeof scope | null = scope; current; current = current.upper) {
+      for (
+        let current: typeof scope | null = scope;
+        current;
+        current = current.upper
+      ) {
         const variable = current.variables.find((v) => v.name === node.name);
         if (!variable) continue;
         if (variable.defs.length !== 1) return null;
@@ -863,7 +863,11 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
     /** Does anything in scope declare this name, rather than it being the global? */
     function isShadowed(name: string, node: TSESTree.Node): boolean {
       const scope = context.sourceCode.getScope(node);
-      for (let current: typeof scope | null = scope; current; current = current.upper) {
+      for (
+        let current: typeof scope | null = scope;
+        current;
+        current = current.upper
+      ) {
         const variable = current.variables.find((v) => v.name === name);
         if (variable) return variable.defs.length > 0;
       }
@@ -873,7 +877,9 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
     /**
      * Check new RegExp() calls for ReDoS vulnerabilities
      */
-    function checkNewRegExp(node: TSESTree.CallExpression | TSESTree.NewExpression) {
+    function checkNewRegExp(
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ) {
       const callee = node.callee;
       // Resolve the INTRINSIC, not the spelling. `callee.name === 'RegExp'`
       // was wrong in both directions, and the 2026-08-18 adversarial wave found
@@ -901,13 +907,73 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
       // same false positive that `/…/` did. Second argument carries the flags.
       const flagsArg = node.arguments[1];
       const flags =
-        flagsArg?.type === AST_NODE_TYPES.Literal && typeof flagsArg.value === 'string'
+        flagsArg?.type === AST_NODE_TYPES.Literal &&
+        typeof flagsArg.value === 'string'
           ? flagsArg.value
           : '';
       checkWithScslre(node, resolved.pattern, flags, !resolved.exact);
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({ maxPatternLength = 500, reportSecondDegreePolynomial = true } =
+          options || {});
+
+        /**
+         * NFA-based ReDoS detection via scslre — the same library eslint-plugin-regexp
+         * uses. It builds the automaton and looks for genuine ambiguity, so it sees
+         * what character-level heuristics cannot (cross-quantifier trades, deep
+         * nested loops) and, just as importantly, sees what they only think they
+         * see.
+         *
+         * The three outcomes are distinct and the caller must not collapse them:
+         *
+         * - `reported`     — scslre found real ambiguity and has already reported.
+         * - `clean`        — scslre analysed the pattern and it is NOT vulnerable.
+         *                    This is a VERDICT, not an absence of one.
+         * - `unanalysable` — parsing or analysis threw. Only here do heuristics run.
+         *
+         * `clean` used to be conflated with `unanalysable` (both returned `false`),
+         * so every pattern scslre cleared was handed to the heuristic matcher,
+         * which then overruled it. That is how
+         * `/^https:\/\/js\.stripe\.com\/v3\/?(\?.*)?$/` (stripe/stripe-js
+         * `src/shared.ts:23`) was reported as "Nested Quantifier Pattern: exponential
+         * backtracking | CRITICAL". It is anchored at both ends, has two independent
+         * optional groups, no nesting, and is linear. The heuristic
+         * `\([^)]*[+*?][^)]*\)[+*?]` matched it only because `(\?.*)?` contains a
+         * `?`, a `*`, and a trailing `?` — quantifier characters counted, not
+         * quantifier nesting.
+         */
+        /**
+         * Shapes scslre reports that were TIMED as linear.
+         *
+         * Suppressing an upstream finding needs a stronger warrant than adding one,
+         * so both entries carry the measurement that justifies them and nothing is
+         * suppressed on reasoning alone.
+         *
+         * **1. A bounded OUTER quantifier.** `^(a+){1,3}$` runs in 0.1 ms while
+         * `^(a+)+$` takes 5,151 ms on the same input. Bounding the outer loop caps
+         * the number of ways the inner one can be split, so the work is polynomial
+         * in a constant — there is no blow-up to trigger. The distinction is exact
+         * and counterintuitive: bounding the INNER quantifier does NOT help
+         * (`^(a{1,3})+$` still takes 2,008 ms), which is why this looks only at the
+         * quantifier applied to the GROUP.
+         *
+         * **2. Disjoint character classes across the ambiguity.** `^\s*(\S+\s*)+$`
+         * is the canonical "ReDoS example" in blog posts and runs in 0.0 ms: `\S`
+         * and `\s` are complements, so no input can be split between them two ways
+         * and there is nothing to backtrack over. Reporting it teaches a developer
+         * to rewrite correct code, and it is common enough — trimming and tokenising
+         * — to be a recurring false positive.
+         */
+        /**
+         * The largest outer repetition bound still measured under 3 ms — see the
+         * table in `isProvablyLinear`. Above this the cost climbs exponentially:
+         * 8 is 140 ms and 20 is nearly 20 seconds.
+         */
+        MAX_SAFE_REPETITION = 5;
+      },
       Literal: checkLiteralRegExp,
       // Reflect.construct(RegExp, [...]) is normalised to the direct shape
       // before the check runs, so one code path handles both spellings.
@@ -917,4 +983,3 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

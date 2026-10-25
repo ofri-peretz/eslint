@@ -11,9 +11,20 @@
  * @see OWASP LLM10: Unbounded Consumption
  */
 
-import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
-import { calleeName, isRequestDerived, optionValue, sdkCallName } from '../../utils/sdk';
+import {
+  calleeName,
+  isRequestDerived,
+  optionValue,
+  sdkCallName,
+} from '../../utils/sdk';
 
 type MessageIds = 'unboundedSteps';
 
@@ -27,10 +38,12 @@ type RuleOptions = [Options?];
 export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
   name: 'require-max-steps',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-max-steps.md',
-      description: 'Disallow unbounded multi-step tool loops (hasToolCall-only stop conditions, request-controlled step limits)',
+      description:
+        'Disallow unbounded multi-step tool loops (hasToolCall-only stop conditions, request-controlled step limits)',
       cwe: 'CWE-834',
       cvss: 6.5,
     },
@@ -41,11 +54,13 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-834',
         owasp: 'A05:2021',
         cvss: 6.5,
-        description: '{{function}} with tools sets a step limit that does not bound the loop ({{reason}}).',
+        description:
+          '{{function}} with tools sets a step limit that does not bound the loop ({{reason}}).',
         severity: 'MEDIUM',
         compliance: ['SOC2'],
         fix: 'Bound the loop with a server-side constant: stopWhen: [hasToolCall(...), stepCountIs(20)] (v5+) or maxSteps: 20 (v4)',
-        documentationLink: 'https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling#multi-step-calls-using-stopwhen',
+        documentationLink:
+          'https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling#multi-step-calls-using-stopwhen',
       }),
     },
     schema: [
@@ -67,14 +82,8 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
       suggestedMaxSteps: 5,
     },
   ],
-  create(context) {
-    // Every rule in this plugin is Vercel-AI-specific, and none of them knew
-    // it: over 107,384 files, 91% of this plugin's findings were in files with
-    // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
-    // the cheap path — a file without the SDK does no work.
-    if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
-
-    const sourceCode = context.sourceCode;
+  createOnce(context) {
+    let sourceCode: typeof context.sourceCode;
 
     /**
      * Why this step setting fails to bound the loop, or `null` if it does.
@@ -83,13 +92,20 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
      * runs exactly one step (v4 `maxSteps: 1`, v5+ `stopWhen: stepCountIs(1)`).
      */
     function unboundedReason(key: string, value: TSESTree.Node): string | null {
-      if (isRequestDerived(value, sourceCode)) return `${key} comes from the request`;
-      if (value.type === AST_NODE_TYPES.Identifier && value.name === 'Infinity') {
+      if (isRequestDerived(value, sourceCode))
+        return `${key} comes from the request`;
+      if (
+        value.type === AST_NODE_TYPES.Identifier &&
+        value.name === 'Infinity'
+      ) {
         return `${key} is Infinity`;
       }
       if (key !== 'stopWhen') return null;
 
-      const conditions = value.type === AST_NODE_TYPES.ArrayExpression ? value.elements : [value];
+      const conditions =
+        value.type === AST_NODE_TYPES.ArrayExpression
+          ? value.elements
+          : [value];
       const named = conditions.map((c) =>
         c?.type === AST_NODE_TYPES.CallExpression ? calleeName(c.callee) : null,
       );
@@ -109,6 +125,16 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        // Every rule in this plugin is Vercel-AI-specific, and none of them knew
+        // it: over 107,384 files, 91% of this plugin's findings were in files with
+        // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
+        // the cheap path — a file without the SDK does no work.
+        if (!fileUsesVercelAi(context.sourceCode.ast)) return false;
+
+        sourceCode = context.sourceCode;
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const matchedFunction = sdkCallName(node, FUNCTIONS_WITH_TOOLS);
         if (!matchedFunction) return;

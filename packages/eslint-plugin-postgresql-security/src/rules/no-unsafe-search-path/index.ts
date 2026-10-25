@@ -1,3 +1,4 @@
+import { RuleCreator } from '@interlace/eslint-devkit';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -49,7 +50,8 @@ const SQL_SINK_METHODS: ReadonlySet<string> = new Set(['query', 'execute']);
  * `\s+` spans newlines, so the multi-line spelling every migration file uses
  * is covered by the same pattern.
  */
-const SEARCH_PATH_STATEMENT = /^\s*set\s+(?:local\s+|session\s+)?search_path\b/i;
+const SEARCH_PATH_STATEMENT =
+  /^\s*set\s+(?:local\s+|session\s+)?search_path\b/i;
 
 /** SQL comments, stripped before a statement's verb is read. */
 
@@ -131,12 +133,15 @@ function functionImplementation(
   | TSESTree.FunctionExpression
   | TSESTree.ArrowFunctionExpression
   | null {
-  const def = variable.defs.find((d) => d.type === 'FunctionName' || d.type === 'Variable');
+  const def = variable.defs.find(
+    (d) => d.type === 'FunctionName' || d.type === 'Variable',
+  );
   if (def === undefined) return null;
   if (def.type === 'FunctionName') {
     return def.node as TSESTree.FunctionDeclaration;
   }
-  if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return null;
+  if (variable.references.filter((ref) => ref.isWrite()).length !== 1)
+    return null;
   const init = (def.node as TSESTree.VariableDeclarator).init;
   if (
     init === null ||
@@ -162,14 +167,17 @@ function functionImplementation(
 function returnedExpression(body: TSESTree.Node): TSESTree.Node | null {
   if (body.type === AST_NODE_TYPES.BlockStatement) {
     const [only] = body.body;
-    if (body.body.length !== 1 || only.type !== AST_NODE_TYPES.ReturnStatement) {
+    if (
+      body.body.length !== 1 ||
+      only.type !== AST_NODE_TYPES.ReturnStatement
+    ) {
       return null;
     }
     return only.argument === null ? null : returnedExpression(only.argument);
   }
   return body.type === AST_NODE_TYPES.TemplateLiteral ||
     body.type === AST_NODE_TYPES.BinaryExpression ||
-    (staticString(body) !== null)
+    staticString(body) !== null
     ? body
     : null;
 }
@@ -196,8 +204,11 @@ function isStringRawTag(node: TSESTree.TaggedTemplateExpression): boolean {
 }
 
 /** The initialiser of a binding written exactly once. */
-function singleAssignedInit(variable: TSESLint.Scope.Variable): TSESTree.Node | null {
-  if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return null;
+function singleAssignedInit(
+  variable: TSESLint.Scope.Variable,
+): TSESTree.Node | null {
+  if (variable.references.filter((ref) => ref.isWrite()).length !== 1)
+    return null;
   const def = variable.defs.find((d) => d.type === 'Variable');
   if (def === undefined) return null;
   const init = (def.node as TSESTree.VariableDeclarator).init;
@@ -243,7 +254,9 @@ function effectiveExpression(
     const impl = fn === null ? null : functionImplementation(fn);
     if (impl === null) return node;
     const returned = returnedExpression(impl.body);
-    return returned === null ? node : effectiveExpression(returned, scope, depth + 1);
+    return returned === null
+      ? node
+      : effectiveExpression(returned, scope, depth + 1);
   }
 
   return node;
@@ -318,14 +331,19 @@ function isAllowlistGuarded(
     if (
       call?.type === AST_NODE_TYPES.CallExpression &&
       call.range[1] <= sink.range[0] &&
-      isAssertionAbout(call, call.arguments.indexOf(ref.identifier as TSESTree.Expression), ref.from)
+      isAssertionAbout(
+        call,
+        call.arguments.indexOf(ref.identifier as TSESTree.Expression),
+        ref.from,
+      )
     ) {
       return true;
     }
     // `Program.parent` is `null`, not `undefined` — an `!== undefined` guard
     // walks one step past the root and dereferences it.
     for (
-      let current: TSESTree.Node | null | undefined = ref.identifier as TSESTree.Node;
+      let current: TSESTree.Node | null | undefined =
+        ref.identifier as TSESTree.Node;
       current !== undefined && current !== null;
       current = current.parent
     ) {
@@ -340,7 +358,10 @@ function isAllowlistGuarded(
         parent.type === AST_NODE_TYPES.IfStatement &&
         parent.test === current
       ) {
-        return parent.range[1] <= sink.range[0] && exitsUnconditionally(parent.consequent);
+        return (
+          parent.range[1] <= sink.range[0] &&
+          exitsUnconditionally(parent.consequent)
+        );
       }
     }
     return false;
@@ -393,8 +414,9 @@ function hasRawPart(
 export const noUnsafeSearchPath: TSESLint.RuleModule<
   'noUnsafeSearchPath',
   NoUnsafeSearchPathOptions
-> = {
+> = RuleCreator.withoutDocs<NoUnsafeSearchPathOptions, 'noUnsafeSearchPath'>({
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       description:
@@ -421,14 +443,16 @@ export const noUnsafeSearchPath: TSESLint.RuleModule<
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    // Every rule here is PostgreSQL-specific, and none of them knew it: over
-    // 108,838 files, 94% of this plugin's findings were in files with no
-    // PostgreSQL client at all. Registering no visitors is both the gate and
-    // the cheap path — a file with no database in it does no work.
-    if (!usesPostgres(context)) return {};
-
+  createOnce(context) {
     return {
+      before() {
+        // Every rule here is PostgreSQL-specific, and none of them knew it: over
+        // 108,838 files, 94% of this plugin's findings were in files with no
+        // PostgreSQL client at all. Registering no visitors is both the gate and
+        // the cheap path — a file with no database in it does no work.
+        if (!usesPostgres(context)) return false;
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
@@ -439,7 +463,10 @@ export const noUnsafeSearchPath: TSESLint.RuleModule<
         }
 
         const [queryArg] = node.arguments;
-        if (queryArg === undefined || queryArg.type === AST_NODE_TYPES.SpreadElement) {
+        if (
+          queryArg === undefined ||
+          queryArg.type === AST_NODE_TYPES.SpreadElement
+        ) {
           return;
         }
 
@@ -449,9 +476,14 @@ export const noUnsafeSearchPath: TSESLint.RuleModule<
         // $1, …)` is how the value is parameterised — and a bound value the
         // caller chose is exactly the hijack CWE-426 describes. Judged on the
         // values array, the same way the template form judges its parts.
-        const config = queryArg.type === AST_NODE_TYPES.ObjectExpression ? queryArg : null;
-        const textNode = config === null ? queryArg : configProperty(config, 'text');
-        const valuesNode = config === null ? node.arguments[1] : configProperty(config, 'values');
+        const config =
+          queryArg.type === AST_NODE_TYPES.ObjectExpression ? queryArg : null;
+        const textNode =
+          config === null ? queryArg : configProperty(config, 'text');
+        const valuesNode =
+          config === null
+            ? node.arguments[1]
+            : configProperty(config, 'values');
         if (
           textNode !== undefined &&
           SET_CONFIG_SEARCH_PATH.test(stripComments(staticText(textNode))) &&
@@ -459,7 +491,8 @@ export const noUnsafeSearchPath: TSESLint.RuleModule<
           valuesNode.elements.some(
             (element) =>
               element !== null &&
-              (element.type === AST_NODE_TYPES.SpreadElement || isRawPart(element, scope, node)),
+              (element.type === AST_NODE_TYPES.SpreadElement ||
+                isRawPart(element, scope, node)),
           )
         ) {
           context.report({ node: queryArg, messageId: 'noUnsafeSearchPath' });
@@ -474,7 +507,9 @@ export const noUnsafeSearchPath: TSESLint.RuleModule<
         // finding. All-constant arguments are the safe form and stay quiet.
         if (expression.type === AST_NODE_TYPES.CallExpression) {
           const statement = expression.arguments.find(
-            (arg) => arg.type !== AST_NODE_TYPES.SpreadElement && setsSearchPath(staticText(arg)),
+            (arg) =>
+              arg.type !== AST_NODE_TYPES.SpreadElement &&
+              setsSearchPath(staticText(arg)),
           );
           if (statement === undefined) return;
           const dynamic = expression.arguments.some(
@@ -509,7 +544,11 @@ export const noUnsafeSearchPath: TSESLint.RuleModule<
       NewExpression(node: TSESTree.NewExpression) {
         const scope = context.sourceCode.getScope(node);
         for (const argument of connectionConfigArguments(node, scope)) {
-          const config = follow({ node: argument, scope, env: envOf(context) }).node;
+          const config = follow({
+            node: argument,
+            scope,
+            env: envOf(context),
+          }).node;
           if (config.type !== AST_NODE_TYPES.ObjectExpression) continue;
           const options = configProperty(config, 'options');
           if (
@@ -525,4 +564,4 @@ export const noUnsafeSearchPath: TSESLint.RuleModule<
       },
     };
   },
-};
+});

@@ -1,6 +1,14 @@
 {
   "command": null,
   "maintainedBy": "written by local `npm run ilb:oxlint-parity[:cached]` runs, read only by `--cached` (npm run quality). CI runs `--ci` and never reads it; keys come from benchmarks/suites/ilb-oxlint-parity/cache-key.ts",
+  "2712c916acbc27da75403b85b25a299607b0ed480d6cbe0621ca36272395806a": {
+    "status": "pass",
+    "at": "2026-10-25",
+    "shared": 3932,
+    "eslintOnly": 0,
+    "oxlintOnly": 0,
+    "parityRate": 1
+  },
   "a7e8473b0dbdb3fb8fa1074f90751b210e2f2847b9a4bccd61d28161ef3cc55a": {
     "status": "pass",
     "at": "2026-09-13",

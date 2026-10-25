@@ -15,14 +15,44 @@ import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 type MessageIds = 'noAdjacentInlineElements';
 
 const INLINE_ELEMENTS = new Set([
-  'span', 'a', 'strong', 'em', 'b', 'i', 'u', 'small', 'big', 'sub', 'sup',
-  'code', 'kbd', 'samp', 'var', 'cite', 'abbr', 'acronym', 'dfn', 'q', 'time',
-  'mark', 'ruby', 'rt', 'rp', 'bdi', 'bdo', 'wbr', 'ins', 'del', 's', 'strike'
+  'span',
+  'a',
+  'strong',
+  'em',
+  'b',
+  'i',
+  'u',
+  'small',
+  'big',
+  'sub',
+  'sup',
+  'code',
+  'kbd',
+  'samp',
+  'var',
+  'cite',
+  'abbr',
+  'acronym',
+  'dfn',
+  'q',
+  'time',
+  'mark',
+  'ruby',
+  'rt',
+  'rp',
+  'bdi',
+  'bdo',
+  'wbr',
+  'ins',
+  'del',
+  's',
+  'strike',
 ]);
 
 export const noAdjacentInlineElements = createRule<[], MessageIds>({
   name: 'no-adjacent-inline-elements',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-adjacent-inline-elements.md',
@@ -36,12 +66,13 @@ export const noAdjacentInlineElements = createRule<[], MessageIds>({
         description: 'Adjacent inline elements can cause layout issues',
         severity: 'MEDIUM',
         fix: 'Wrap adjacent inline elements in a block-level container',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Inline_elements',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/HTML/Inline_elements',
       }),
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       JSXElement(node: TSESTree.JSXElement) {
         if (node.children.length < 2) return;

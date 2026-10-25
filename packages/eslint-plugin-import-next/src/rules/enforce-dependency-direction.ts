@@ -81,6 +81,7 @@ function getLayerOrder(layer: string | null, layers: string[]): number {
 export const enforceDependencyDirection = createRule<RuleOptions, MessageIds>({
   name: 'enforce-dependency-direction',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/enforce-dependency-direction.md',

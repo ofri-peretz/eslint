@@ -96,10 +96,7 @@ function getCorsConfigNode(
   }
 
   // app.use(cors({...}))
-  if (
-    callee.type === 'MemberExpression' &&
-    propertyName(callee) === 'use'
-  ) {
+  if (callee.type === 'MemberExpression' && propertyName(callee) === 'use') {
     const firstArg = node.arguments[0];
     if (
       firstArg?.type === 'CallExpression' &&
@@ -117,6 +114,7 @@ function getCorsConfigNode(
 export const noCorsCredentialsWildcard = createRule<RuleOptions, MessageIds>({
   name: 'no-cors-credentials-wildcard',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-cors-credentials-wildcard.md',
@@ -157,25 +155,33 @@ export const noCorsCredentialsWildcard = createRule<RuleOptions, MessageIds>({
       allowInTests: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const { allowInTests = false } = options as Options;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-
-    if (isTestFile) {
-      return {};
-    }
-
-    const sourceCode = context.sourceCode;
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        const { allowInTests = false } = options as Options;
+
+        const filename = context.filename;
+        const isTestFile = allowInTests && isTestFilePath(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+
+        sourceCode = context.sourceCode;
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const corsConfigNode = getCorsConfigNode(node);
 

@@ -91,6 +91,7 @@ type RuleOptions = [Options?];
 export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
   name: 'no-client-side-auth-logic',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-client-side-auth-logic.md',
@@ -139,30 +140,14 @@ export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
       credentialProperties: [...DEFAULT_CREDENTIAL_PROPERTIES],
     },
   ],
-  create(context, [options = {}]) {
+  createOnce(context, currentOptions) {
+    let authKeywords: string[];
+    let credentialProperties: string[];
+    let sourceCode: typeof context.sourceCode;
+    let STORAGES: ReadonlySet<string>;
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
     }
-
-    // A vocabulary the consumer cannot reach is a vocabulary they must accept
-    // whole — and every word list is wrong for somebody's domain.
-    const {
-      authKeywords = [...DEFAULT_AUTH_KEYWORDS],
-      credentialProperties = [...DEFAULT_CREDENTIAL_PROPERTIES],
-    } = options;
-
-    const { sourceCode } = context;
-
-    /**
-     * Web-storage globals. `sessionStorage` is the same trust boundary as
-     * `localStorage` — it just expires sooner — and matching only the bare
-     * `localStorage` identifier meant `window.localStorage.getItem('isAdmin')`,
-     * the spelling every implicit-globals lint rule asks for, was silent.
-     */
-    const STORAGES: ReadonlySet<string> = new Set([
-      'localStorage',
-      'sessionStorage',
-    ]);
 
     /**
      * Is this expression a read of a storage key that names an authorization
@@ -269,6 +254,26 @@ export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+
+        // A vocabulary the consumer cannot reach is a vocabulary they must accept
+        // whole — and every word list is wrong for somebody's domain.
+        ({
+          authKeywords = [...DEFAULT_AUTH_KEYWORDS],
+          credentialProperties = [...DEFAULT_CREDENTIAL_PROPERTIES],
+        } = options);
+
+        ({ sourceCode } = context);
+
+        /**
+         * Web-storage globals. `sessionStorage` is the same trust boundary as
+         * `localStorage` — it just expires sooner — and matching only the bare
+         * `localStorage` identifier meant `window.localStorage.getItem('isAdmin')`,
+         * the spelling every implicit-globals lint rule asks for, was silent.
+         */
+        STORAGES = new Set(['localStorage', 'sessionStorage']);
+      },
       IfStatement(node: TSESTree.IfStatement) {
         checkBranch(node, node.test);
       },

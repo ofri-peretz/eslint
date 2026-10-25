@@ -21,6 +21,10 @@ type RuleOptions = [];
 export const iframeHasTitle = createRule<RuleOptions, MessageIds>({
   name: 'iframe-has-title',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/iframe-has-title',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/iframe-has-title.md',
@@ -42,7 +46,7 @@ export const iframeHasTitle = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier' || node.name.name !== 'iframe') {

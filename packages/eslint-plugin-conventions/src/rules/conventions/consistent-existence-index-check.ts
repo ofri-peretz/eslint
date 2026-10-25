@@ -40,6 +40,10 @@ export const consistentExistenceIndexCheck = createRule<
 >({
   name: 'consistent-existence-index-check',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'unicorn/consistent-existence-index-check',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/consistent-existence-index-check.md',
@@ -99,9 +103,8 @@ export const consistentExistenceIndexCheck = createRule<
   },
   defaultOptions: [{ preferred: 'Object.hasOwn' }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const { preferred = 'Object.hasOwn' } = options || {};
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let preferred: 'Object.hasOwn' | 'in' | 'hasOwnProperty';
 
     function reportInconsistentCheck(
       node: TSESTree.Node,
@@ -208,6 +211,10 @@ export const consistentExistenceIndexCheck = createRule<
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({ preferred = 'Object.hasOwn' } = options || {});
+      },
       // Check for hasOwnProperty calls
       CallExpression(node: TSESTree.CallExpression) {
         // Direct hasOwnProperty calls: obj.hasOwnProperty(prop). Reindented

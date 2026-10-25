@@ -10,8 +10,17 @@
  * @see OWASP ASI01: Agent Confusion
  */
 
-import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { isSystemPromptProp, getStaticPropName } from '../../utils/prompt-props';
+import {
+  AST_NODE_TYPES,
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
+import {
+  isSystemPromptProp,
+  getStaticPropName,
+} from '../../utils/prompt-props';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 import { isRequestDerived, isStaticText, sdkCallName } from '../../utils/sdk';
 
@@ -27,10 +36,12 @@ type RuleOptions = [Options?];
 export const noDynamicSystemPrompt = createRule<RuleOptions, MessageIds>({
   name: 'no-dynamic-system-prompt',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/no-dynamic-system-prompt.md',
-      description: 'Prevent dynamic content in system prompts to avoid agent confusion attacks',
+      description:
+        'Prevent dynamic content in system prompts to avoid agent confusion attacks',
       cwe: 'CWE-74',
       cvss: 8,
     },
@@ -41,11 +52,13 @@ export const noDynamicSystemPrompt = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-74',
         owasp: 'A03:2021',
         cvss: 8.0,
-        description: 'System prompt contains dynamic content. This can lead to agent confusion attacks.',
+        description:
+          'System prompt contains dynamic content. This can lead to agent confusion attacks.',
         severity: 'HIGH',
         compliance: ['SOC2'],
         fix: 'Use a static system prompt defined as a constant. Avoid template literals or concatenation.',
-        documentationLink: 'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
+        documentationLink:
+          'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
       }),
       userControlledSystemPrompt: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -53,11 +66,13 @@ export const noDynamicSystemPrompt = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-74',
         owasp: 'A03:2021',
         cvss: 8.0,
-        description: 'System prompt is read straight from the request body. The caller can replace the agent\'s instructions.',
+        description:
+          "System prompt is read straight from the request body. The caller can replace the agent's instructions.",
         severity: 'HIGH',
         compliance: ['SOC2'],
         fix: 'Keep the system prompt server-side; let the request select from a fixed set of prompts by id',
-        documentationLink: 'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
+        documentationLink:
+          'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
       }),
     },
     schema: [
@@ -78,17 +93,9 @@ export const noDynamicSystemPrompt = createRule<RuleOptions, MessageIds>({
       allowStaticTemplates: true,
     },
   ],
-  create(context, [options]) {
-    // Every rule in this plugin is Vercel-AI-specific, and none of them knew
-    // it: over 107,384 files, 91% of this plugin's findings were in files with
-    // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
-    // the cheap path — a file without the SDK does no work.
-    if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
-
-    // Merged with `defaultOptions` before `create` runs.
-    const { allowStaticTemplates } = options as Required<Options>;
-
-    const sourceCode = context.sourceCode;
+  createOnce(context, currentOptions) {
+    let allowStaticTemplates: boolean;
+    let sourceCode: typeof context.sourceCode;
 
     /**
      * Does this value vary at runtime? Templates and concatenations are
@@ -103,11 +110,26 @@ export const noDynamicSystemPrompt = createRule<RuleOptions, MessageIds>({
       if (node.type === 'BinaryExpression' && node.operator === '+') {
         return !isStaticText(node, sourceCode);
       }
-      if (node.type === 'CallExpression') return !isStaticText(node, sourceCode);
+      if (node.type === 'CallExpression')
+        return !isStaticText(node, sourceCode);
       return node.type === 'AwaitExpression';
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule in this plugin is Vercel-AI-specific, and none of them knew
+        // it: over 107,384 files, 91% of this plugin's findings were in files with
+        // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
+        // the cheap path — a file without the SDK does no work.
+        if (!fileUsesVercelAi(context.sourceCode.ast)) return false;
+
+        // Merged with `defaultOptions` before `create` runs.
+        ({ allowStaticTemplates } = options as Required<Options>);
+
+        sourceCode = context.sourceCode;
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (!sdkCallName(node)) return;
 

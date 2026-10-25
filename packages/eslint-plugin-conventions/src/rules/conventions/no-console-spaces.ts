@@ -30,6 +30,10 @@ type RuleOptions = [];
 export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
   name: 'no-console-spaces',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'unicorn/no-console-spaces',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/no-console-spaces.md',
@@ -53,19 +57,8 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    // Console methods that join parameters with spaces
-    const consoleMethods = new Set([
-      'log',
-      'debug',
-      'info',
-      'warn',
-      'error',
-      'table',
-      'trace',
-      'group',
-      'groupCollapsed',
-    ]);
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let consoleMethods: Set<string>;
 
     // oxlint-disable-next-line consistent-function-scoping
     function isInAllowedContext(): boolean {
@@ -178,6 +171,20 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        // Console methods that join parameters with spaces
+        consoleMethods = new Set([
+          'log',
+          'debug',
+          'info',
+          'warn',
+          'error',
+          'table',
+          'trace',
+          'group',
+          'groupCollapsed',
+        ]);
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (isConsoleMethodCall(node) && !isInAllowedContext()) {
           // Check each argument for leading/trailing spaces

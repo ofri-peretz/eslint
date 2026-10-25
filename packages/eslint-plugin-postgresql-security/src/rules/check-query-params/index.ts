@@ -1,3 +1,4 @@
+import { RuleCreator } from '@interlace/eslint-devkit';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -81,8 +82,11 @@ function isStringRawTag(node: TSESTree.TaggedTemplateExpression): boolean {
 }
 
 /** The initialiser of a binding written exactly once. */
-function singleAssignedInit(variable: TSESLint.Scope.Variable): TSESTree.Node | null {
-  if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return null;
+function singleAssignedInit(
+  variable: TSESLint.Scope.Variable,
+): TSESTree.Node | null {
+  if (variable.references.filter((ref) => ref.isWrite()).length !== 1)
+    return null;
   const def = variable.defs.find((d) => d.type === 'Variable');
   if (def === undefined) return null;
   return (def.node as TSESTree.VariableDeclarator).init ?? null;
@@ -99,12 +103,15 @@ function functionImplementation(
   | TSESTree.FunctionExpression
   | TSESTree.ArrowFunctionExpression
   | null {
-  const def = variable.defs.find((d) => d.type === 'FunctionName' || d.type === 'Variable');
+  const def = variable.defs.find(
+    (d) => d.type === 'FunctionName' || d.type === 'Variable',
+  );
   if (def === undefined) return null;
   if (def.type === 'FunctionName') {
     return def.node as TSESTree.FunctionDeclaration;
   }
-  if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return null;
+  if (variable.references.filter((ref) => ref.isWrite()).length !== 1)
+    return null;
   const init = (def.node as TSESTree.VariableDeclarator).init;
   if (
     init === null ||
@@ -121,7 +128,10 @@ function functionImplementation(
 function returnedExpression(body: TSESTree.Node): TSESTree.Node | null {
   if (body.type === AST_NODE_TYPES.BlockStatement) {
     const [only] = body.body;
-    if (body.body.length !== 1 || only.type !== AST_NODE_TYPES.ReturnStatement) {
+    if (
+      body.body.length !== 1 ||
+      only.type !== AST_NODE_TYPES.ReturnStatement
+    ) {
       return null;
     }
     return only.argument === null ? null : returnedExpression(only.argument);
@@ -160,7 +170,9 @@ function effectiveExpression(
     const impl = fn === null ? null : functionImplementation(fn);
     if (impl === null) return node;
     const returned = returnedExpression(impl.body);
-    return returned === null ? node : effectiveExpression(returned, scope, depth + 1);
+    return returned === null
+      ? node
+      : effectiveExpression(returned, scope, depth + 1);
   }
 
   return node;
@@ -217,10 +229,17 @@ function highestPlaceholder(text: string): number {
  * from an array whose length the file cannot see is a report on evidence that
  * does not exist.
  */
-function knowableValueCount(node: TSESTree.Node, scope: TSESLint.Scope.Scope): number | null {
+function knowableValueCount(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): number | null {
   const resolved = effectiveExpression(node, scope);
   if (resolved.type !== AST_NODE_TYPES.ArrayExpression) return null;
-  if (resolved.elements.some((el) => el !== null && el.type === AST_NODE_TYPES.SpreadElement)) {
+  if (
+    resolved.elements.some(
+      (el) => el !== null && el.type === AST_NODE_TYPES.SpreadElement,
+    )
+  ) {
     return null;
   }
   return resolved.elements.length;
@@ -254,11 +273,13 @@ function configPair(
 export const checkQueryParams: TSESLint.RuleModule<
   'parameterCountMismatch',
   CheckQueryParamsOptions
-> = {
+> = RuleCreator.withoutDocs<CheckQueryParamsOptions, 'parameterCountMismatch'>({
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
-      description: 'Ensure the number of query parameters matches the arguments array.',
+      description:
+        'Ensure the number of query parameters matches the arguments array.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/check-query-params.md',
       cwe: 'CWE-20',
       cvss: 7.5,
@@ -267,7 +288,8 @@ export const checkQueryParams: TSESLint.RuleModule<
       parameterCountMismatch: formatLLMMessage({
         icon: MessageIcons.QUALITY,
         issueName: 'Parameter Count Mismatch',
-        description: 'Query parameter count mismatch detected: {{expected}} placeholder(s), {{actual}} value(s).',
+        description:
+          'Query parameter count mismatch detected: {{expected}} placeholder(s), {{actual}} value(s).',
         severity: 'HIGH',
         cwe: 'CWE-20',
         effort: 'low',
@@ -278,13 +300,7 @@ export const checkQueryParams: TSESLint.RuleModule<
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    // Every rule here is PostgreSQL-specific, and none of them knew it: over
-    // 108,838 files, 94% of this plugin's findings were in files with no
-    // PostgreSQL client at all. Registering no visitors is both the gate and
-    // the cheap path — a file with no database in it does no work.
-    if (!usesPostgres(context)) return {};
-
+  createOnce(context) {
     /**
      * Report when a knowable statement and a knowable values array disagree.
      *
@@ -314,7 +330,8 @@ export const checkQueryParams: TSESLint.RuleModule<
       if (provided === null) return;
 
       const highest = highestPlaceholder(text);
-      const mismatched = provided < highest || (highest >= 1 && provided > highest);
+      const mismatched =
+        provided < highest || (highest >= 1 && provided > highest);
       if (!mismatched) return;
 
       context.report({
@@ -328,6 +345,14 @@ export const checkQueryParams: TSESLint.RuleModule<
     };
 
     return {
+      before() {
+        // Every rule here is PostgreSQL-specific, and none of them knew it: over
+        // 108,838 files, 94% of this plugin's findings were in files with no
+        // PostgreSQL client at all. Registering no visitors is both the gate and
+        // the cheap path — a file with no database in it does no work.
+        if (!usesPostgres(context)) return false;
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
@@ -338,7 +363,8 @@ export const checkQueryParams: TSESLint.RuleModule<
         }
 
         const [first, second] = node.arguments;
-        if (first === undefined || first.type === AST_NODE_TYPES.SpreadElement) return;
+        if (first === undefined || first.type === AST_NODE_TYPES.SpreadElement)
+          return;
 
         const scope = context.sourceCode.getScope(node);
 
@@ -352,9 +378,13 @@ export const checkQueryParams: TSESLint.RuleModule<
           return;
         }
 
-        if (second === undefined || second.type === AST_NODE_TYPES.SpreadElement) return;
+        if (
+          second === undefined ||
+          second.type === AST_NODE_TYPES.SpreadElement
+        )
+          return;
         check(first, second, scope);
       },
     };
   },
-};
+});

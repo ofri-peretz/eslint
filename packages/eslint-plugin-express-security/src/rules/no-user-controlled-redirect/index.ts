@@ -76,6 +76,7 @@ const ORIGIN_PROPS = new Set(['host', 'hostname', 'origin']);
 export const noUserControlledRedirect = createRule<RuleOptions, MessageIds>({
   name: 'no-user-controlled-redirect',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-user-controlled-redirect.md',
@@ -118,16 +119,12 @@ export const noUserControlledRedirect = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const { responseObjects, requestObjects } = options as Options;
-    const extraResNames = new Set(responseObjects ?? []);
-    const extraReqNames = new Set(requestObjects ?? []);
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let extraResNames: Set<string>;
+    let extraReqNames: Set<string>;
 
     /**
      * Returns true if `node` is a member expression whose root object is a
@@ -383,6 +380,19 @@ export const noUserControlledRedirect = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        const { responseObjects, requestObjects } = options as Options;
+        extraResNames = new Set(responseObjects ?? []);
+        extraReqNames = new Set(requestObjects ?? []);
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (!isRedirectCall(node)) return;
 

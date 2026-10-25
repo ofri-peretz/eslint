@@ -123,6 +123,7 @@ function hasExplanatoryComment(
 export const noUnsafeTypeNarrowing = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-type-narrowing',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-reliability/docs/rules/no-unsafe-type-narrowing.md',
@@ -192,35 +193,13 @@ export const noUnsafeTypeNarrowing = createRule<RuleOptions, MessageIds>({
       allowWithComment: false,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { ignoreInTests = true, allowWithComment = false }: Options =
-      options || {};
-
-    const filename = context.filename;
-    // `ignoreInTests` is documented ecosystem-wide as "Skip this rule in
-    // `*.test.*` / `*.spec.*` files" — a glob with nothing to say about the
-    // extension. The alternation here was `ts|tsx|js|jsx`, which quietly
-    // dropped the option on `.mts`/`.cts`/`.mjs`/`.cjs`: `c.test.mts` reported
-    // where `c.test.ts` did not, for the same source. `[cm]?` restores the
-    // documented contract, and matches the `[cm]?[jt]sx?` tail of the devkit's
-    // own `TEST_BASENAME`.
-    //
-    // Deliberately NOT the devkit's `isTestFilePath`: that helper also treats
-    // `fixture|mock|e2e-spec|stories|story` basenames and whole test
-    // DIRECTORIES as exempt, which would silence this rule on `.stories.ts`
-    // and on every file under `__tests__/`. That is a far larger behaviour
-    // change than the extension defect being fixed here.
-    const isTestFile =
-      ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
-
-    if (isTestFile) {
-      return {};
-    }
-
-    const sourceCode = context.sourceCode;
+    let ignoreInTests: boolean;
+    let allowWithComment: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /**
      * Check type assertions
@@ -256,6 +235,34 @@ export const noUnsafeTypeNarrowing = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({ ignoreInTests = true, allowWithComment = false } = options || {});
+
+        const filename = context.filename;
+        // `ignoreInTests` is documented ecosystem-wide as "Skip this rule in
+        // `*.test.*` / `*.spec.*` files" — a glob with nothing to say about the
+        // extension. The alternation here was `ts|tsx|js|jsx`, which quietly
+        // dropped the option on `.mts`/`.cts`/`.mjs`/`.cjs`: `c.test.mts` reported
+        // where `c.test.ts` did not, for the same source. `[cm]?` restores the
+        // documented contract, and matches the `[cm]?[jt]sx?` tail of the devkit's
+        // own `TEST_BASENAME`.
+        //
+        // Deliberately NOT the devkit's `isTestFilePath`: that helper also treats
+        // `fixture|mock|e2e-spec|stories|story` basenames and whole test
+        // DIRECTORIES as exempt, which would silence this rule on `.stories.ts`
+        // and on every file under `__tests__/`. That is a far larger behaviour
+        // change than the extension defect being fixed here.
+        const isTestFile =
+          ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+
+        sourceCode = context.sourceCode;
+        return true;
+      },
       TSAsExpression: checkTypeAssertion,
     };
   },

@@ -78,6 +78,7 @@ const CRYPTO_ALGORITHM_FUNCTIONS = new Set([
 export const noDynamicAlgorithmSelection = createRule<[], MessageIds>({
   name: 'no-dynamic-algorithm-selection',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-dynamic-algorithm-selection.md',
@@ -105,9 +106,9 @@ export const noDynamicAlgorithmSelection = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
-    const sourceCode = context.sourceCode;
-    const isLiteralConstant = makeIsLiteralConstant(sourceCode);
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let isLiteralConstant: (node: TSESTree.Node) => boolean;
 
     /**
      * Can this algorithm name be anything other than a literal in this file?
@@ -125,6 +126,10 @@ export const noDynamicAlgorithmSelection = createRule<[], MessageIds>({
     };
 
     return {
+      before() {
+        sourceCode = context.sourceCode;
+        isLiteralConstant = makeIsLiteralConstant(sourceCode);
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const { callee, arguments: args } = node;
 

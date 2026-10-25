@@ -36,7 +36,12 @@
  */
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  propertyName,
+} from '@interlace/eslint-devkit';
 
 type MessageIds = 'envKeyInjection' | 'envBulkInjection';
 
@@ -97,6 +102,7 @@ function memberChainRoot(node: TSESTree.Node): TSESTree.Identifier | null {
 export const noEnvInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-env-injection',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-env-injection.md',
@@ -158,20 +164,16 @@ export const noEnvInjection = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    const { extraRequestRoots, requestRootNames } = options as Options;
-    // The two COMPOSE: `requestRootNames` replaces the default list and
-    // `extraRequestRoots` is appended to whatever that ends up being, so
-    // `{ requestRootNames: [], extraRequestRoots: ['inbound'] }` means
-    // exactly `inbound`.
-    const requestRoots = new Set([
-      ...(requestRootNames ?? DEFAULT_REQUEST_ROOTS),
-      ...(extraRequestRoots ?? []),
-    ]);
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let requestRoots: Set<string>;
 
     /** The nearest binding for an identifier, walking outward through scopes. */
     function findVariable(node: TSESTree.Identifier) {
-      let scope: TSESLint.Scope.Scope | null = context.sourceCode.getScope(node);
+      let scope: TSESLint.Scope.Scope | null =
+        context.sourceCode.getScope(node);
       while (scope) {
         const found = scope.variables.find((v) => v.name === node.name);
         if (found) return found;
@@ -218,6 +220,18 @@ export const noEnvInjection = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        const { extraRequestRoots, requestRootNames } = options as Options;
+        // The two COMPOSE: `requestRootNames` replaces the default list and
+        // `extraRequestRoots` is appended to whatever that ends up being, so
+        // `{ requestRootNames: [], extraRequestRoots: ['inbound'] }` means
+        // exactly `inbound`.
+        requestRoots = new Set([
+          ...(requestRootNames ?? DEFAULT_REQUEST_ROOTS),
+          ...(extraRequestRoots ?? []),
+        ]);
+      },
       // process.env[key] = value
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         const { left } = node;

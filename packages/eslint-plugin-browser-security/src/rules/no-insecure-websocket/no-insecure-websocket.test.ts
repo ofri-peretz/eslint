@@ -21,14 +21,20 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-insecure-websocket', noInsecureWebsocket, {
   valid: [
-        'const x = 42;',
-        'const flag = true;',
+    'const x = 42;',
+    {
+      name: 'a boolean declaration opens no socket',
+      code: 'const flag = true;',
+    },
     // Secure WebSocket connections
     { name: 'wss://', code: "new WebSocket('wss://acmecorp.io')" },
-    { name: 'a wss:// constructor URL is secure', code: "const ws = new WebSocket('wss://secure.acmecorp.io/socket')" },
-    { code: "new WebSocket(`wss://acmecorp.io/${path}`)" },
+    {
+      name: 'a wss:// constructor URL is secure',
+      code: "const ws = new WebSocket('wss://secure.acmecorp.io/socket')",
+    },
+    { code: 'new WebSocket(`wss://acmecorp.io/${path}`)' },
     // Non-WebSocket code
-    { code: "const x = 1" },
+    { code: 'const x = 1' },
 
     // --- deferred to `require-websocket-wss` --------------------------------
     // The constructor argument belongs to the sibling, which reports the same
@@ -41,7 +47,7 @@ ruleTester.run('no-insecure-websocket', noInsecureWebsocket, {
     // rule reporting one line twice by itself, asserted as correct by its own
     // suite, on top of the third report the sibling added.
     { code: "new WebSocket('ws://acmecorp.io')" },
-    { code: "new WebSocket(`ws://acmecorp.io/${path}`)" },
+    { code: 'new WebSocket(`ws://acmecorp.io/${path}`)' },
   ],
 
   invalid: [
@@ -82,7 +88,9 @@ ruleTester.run('regression: corpus findings', noInsecureWebsocket, {
     // vulnerability. `no-http-urls` and `no-unencrypted-transmission` have
     // shared `isProtocolInspection` since the http sweep; this rule was never
     // given it, so the family disagreed about whether a guard is a finding.
-    { code: "if (url.startsWith('ws://')) { throw new Error('cleartext socket rejected'); }" },
+    {
+      code: "if (url.startsWith('ws://')) { throw new Error('cleartext socket rejected'); }",
+    },
     { code: "if (endpoint.includes('ws://')) reject();" },
     { code: "const isPlain = scheme === 'ws://';" },
     { code: "url.replace('ws://', 'wss://');" },

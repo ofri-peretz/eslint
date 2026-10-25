@@ -11,7 +11,11 @@
  * @see https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-namespace.md
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 
 type MessageIds = 'noNamespace';
 
@@ -25,6 +29,10 @@ type RuleOptions = [Options?];
 export const noNamespace = createRule<RuleOptions, MessageIds>({
   name: 'no-namespace',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/no-namespace',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-namespace.md',
@@ -59,9 +67,8 @@ export const noNamespace = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ ignore: [] }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const ignorePatterns = options.ignore || [];
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let ignorePatterns: string[];
 
     function isIgnored(source: string): boolean {
       return ignorePatterns.some((pattern: string) => {
@@ -72,17 +79,17 @@ export const noNamespace = createRule<RuleOptions, MessageIds>({
         // `new RegExp()` (CodeQL: `js/incomplete-sanitization`).
         const escaped = pattern.replace(/[.+^${}()|[\]\\*?]/g, '\\$&');
         const regex = new RegExp(
-          '^' +
-            escaped
-              .replace(/\\\*/g, '.*')
-              .replace(/\\\?/g, '.') +
-            '$',
+          '^' + escaped.replace(/\\\*/g, '.*').replace(/\\\?/g, '.') + '$',
         );
         return regex.test(source);
       });
     }
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ignorePatterns = options.ignore || [];
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const source = node.source.value as string;
 

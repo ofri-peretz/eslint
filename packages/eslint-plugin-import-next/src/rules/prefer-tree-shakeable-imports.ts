@@ -59,8 +59,16 @@ type RuleOptions = [PreferTreeShakeableOptions?];
 // Known large packages that benefit from subpath/named imports
 const KNOWN_LARGE_PACKAGES: PackageConfig[] = [
   { name: 'lodash', subpathPattern: 'lodash/{method}', preferNamed: false },
-  { name: '@mui/material', subpathPattern: '@mui/material/{Component}', preferNamed: true },
-  { name: '@mui/icons-material', subpathPattern: '@mui/icons-material/{Icon}', preferNamed: false },
+  {
+    name: '@mui/material',
+    subpathPattern: '@mui/material/{Component}',
+    preferNamed: true,
+  },
+  {
+    name: '@mui/icons-material',
+    subpathPattern: '@mui/icons-material/{Icon}',
+    preferNamed: false,
+  },
   { name: '@heroicons/react', preferNamed: false },
   { name: 'date-fns', preferNamed: true },
   { name: 'rxjs', preferNamed: true },
@@ -75,7 +83,10 @@ const KNOWN_LARGE_PACKAGES: PackageConfig[] = [
 /**
  * Check if import is from a target package
  */
-function matchesPackage(importPath: string, packages: PackageConfig[]): PackageConfig | null {
+function matchesPackage(
+  importPath: string,
+  packages: PackageConfig[],
+): PackageConfig | null {
   for (const pkg of packages) {
     // Exact match or scoped package match
     if (importPath === pkg.name || importPath.startsWith(`${pkg.name}/`)) {
@@ -88,18 +99,18 @@ function matchesPackage(importPath: string, packages: PackageConfig[]): PackageC
 export const preferTreeShakeableImports = createRule<RuleOptions, MessageIds>({
   name: 'prefer-tree-shakeable-imports',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/prefer-tree-shakeable-imports.md',
-      description:
-        'Prefer import patterns that enable effective tree-shaking',
+      description: 'Prefer import patterns that enable effective tree-shaking',
     },
     messages: {
       namespaceImport: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Namespace Import Blocks Tree-Shaking',
         description:
-          "Namespace import 'import * as {{alias}} from \"{{source}}\"' prevents tree-shaking. " +
+          'Namespace import \'import * as {{alias}} from "{{source}}"\' prevents tree-shaking. ' +
           'The bundler cannot determine which exports are actually used.',
         severity: 'MEDIUM',
         fix:
@@ -159,23 +170,30 @@ export const preferTreeShakeableImports = createRule<RuleOptions, MessageIds>({
       blockAllNamespaceImports: false,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      targetPackages = KNOWN_LARGE_PACKAGES,
-      blockAllNamespaceImports = false,
-    }: PreferTreeShakeableOptions = options || {};
+    let targetPackages: PackageConfig[];
+    let blockAllNamespaceImports: boolean;
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          targetPackages = KNOWN_LARGE_PACKAGES,
+          blockAllNamespaceImports = false,
+        } = options || {});
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const importPath = node.source.value;
         if (typeof importPath !== 'string') return;
 
         // Check for namespace imports
         const namespaceSpecifier = node.specifiers.find(
-          (spec: TSESTree.ImportClause): spec is TSESTree.ImportNamespaceSpecifier =>
+          (
+            spec: TSESTree.ImportClause,
+          ): spec is TSESTree.ImportNamespaceSpecifier =>
             spec.type === AST_NODE_TYPES.ImportNamespaceSpecifier,
         );
 
@@ -198,7 +216,9 @@ export const preferTreeShakeableImports = createRule<RuleOptions, MessageIds>({
 
         // Check for default imports from large packages
         const defaultSpecifier = node.specifiers.find(
-          (spec: TSESTree.ImportClause): spec is TSESTree.ImportDefaultSpecifier =>
+          (
+            spec: TSESTree.ImportClause,
+          ): spec is TSESTree.ImportDefaultSpecifier =>
             spec.type === AST_NODE_TYPES.ImportDefaultSpecifier,
         );
 
@@ -212,7 +232,8 @@ export const preferTreeShakeableImports = createRule<RuleOptions, MessageIds>({
               messageId: 'defaultImportFromLargePackage',
               data: {
                 source: importPath,
-                packageHint: matchedPackage.subpathPattern || 'use named imports',
+                packageHint:
+                  matchedPackage.subpathPattern || 'use named imports',
               },
             });
           }

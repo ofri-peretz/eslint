@@ -10,7 +10,13 @@
  * @see OWASP LLM04: Model Denial of Service
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+} from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 import { declaresOption, sdkCallName } from '../../utils/sdk';
 
@@ -26,10 +32,12 @@ type RuleOptions = [Options?];
 export const requireRequestTimeout = createRule<RuleOptions, MessageIds>({
   name: 'require-request-timeout',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-request-timeout.md',
-      description: 'Require timeout configuration for AI SDK calls to prevent DoS',
+      description:
+        'Require timeout configuration for AI SDK calls to prevent DoS',
       cwe: 'CWE-400',
       cvss: 5,
     },
@@ -40,11 +48,13 @@ export const requireRequestTimeout = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-400',
         owasp: 'A05:2021',
         cvss: 5.0,
-        description: '{{function}} call lacks timeout configuration. This can lead to denial of service.',
+        description:
+          '{{function}} call lacks timeout configuration. This can lead to denial of service.',
         severity: 'MEDIUM',
         compliance: ['SOC2'],
         fix: 'Add timeout configuration or use AbortController with setTimeout',
-        documentationLink: 'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
+        documentationLink:
+          'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
       }),
     },
     schema: [
@@ -65,22 +75,25 @@ export const requireRequestTimeout = createRule<RuleOptions, MessageIds>({
       allowInTests: true,
     },
   ],
-  create(context, [options]) {
-    // Every rule in this plugin is Vercel-AI-specific, and none of them knew
-    // it: over 107,384 files, 91% of this plugin's findings were in files with
-    // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
-    // the cheap path — a file without the SDK does no work.
-    if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
-
-    // Merged with `defaultOptions` before `create` runs.
-    const { allowInTests } = options as Required<Options>;
-
-    // Skip test files if allowed
-    if (allowInTests && isTestFilePath(context.filename)) {
-      return {};
-    }
-
+  createOnce(context, currentOptions) {
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule in this plugin is Vercel-AI-specific, and none of them knew
+        // it: over 107,384 files, 91% of this plugin's findings were in files with
+        // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
+        // the cheap path — a file without the SDK does no work.
+        if (!fileUsesVercelAi(context.sourceCode.ast)) return false;
+
+        // Merged with `defaultOptions` before `create` runs.
+        const { allowInTests } = options as Required<Options>;
+
+        // Skip test files if allowed
+        if (allowInTests && isTestFilePath(context.filename)) {
+          return false;
+        }
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const matchedFunction = sdkCallName(node);
         if (!matchedFunction) return;
@@ -104,4 +117,10 @@ export const requireRequestTimeout = createRule<RuleOptions, MessageIds>({
   },
 });
 
-const TIMEOUT_KEYS = ['timeout', 'abortSignal', 'signal', 'timeoutMs', 'requestTimeout'];
+const TIMEOUT_KEYS = [
+  'timeout',
+  'abortSignal',
+  'signal',
+  'timeoutMs',
+  'requestTimeout',
+];

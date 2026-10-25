@@ -1,0 +1,627 @@
+{
+  "browser-security/no-eval": {
+    "builtin": "eslint/no-eval",
+    "verdict": "differs",
+    "note": "ours adds CWE-95 context and browser sinks; keep for the security mapping"
+  },
+  "conventions/consistent-existence-index-check": {
+    "builtin": "unicorn/consistent-existence-index-check",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "conventions/filename-case": {
+    "builtin": "unicorn/filename-case",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "conventions/no-console-spaces": {
+    "builtin": "unicorn/no-console-spaces",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "conventions/no-magic-numbers": {
+    "builtin": "eslint/no-magic-numbers",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "conventions/prefer-code-point": {
+    "builtin": "unicorn/prefer-code-point",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "conventions/prefer-dom-node-text-content": {
+    "builtin": "unicorn/prefer-dom-node-text-content",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/consistent-type-specifier-style": {
+    "builtin": "import/consistent-type-specifier-style",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/default": {
+    "builtin": "import/default",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/export": {
+    "builtin": "import/export",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/exports-last": {
+    "builtin": "import/exports-last",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/extensions": {
+    "builtin": "import/extensions",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/first": {
+    "builtin": "import/first",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/group-exports": {
+    "builtin": "import/group-exports",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/max-dependencies": {
+    "builtin": "import/max-dependencies",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/named": {
+    "builtin": "import/named",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/namespace": {
+    "builtin": "import/namespace",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/newline-after-import": {
+    "builtin": "import/newline-after-import",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-absolute-path": {
+    "builtin": "import/no-absolute-path",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-amd": {
+    "builtin": "import/no-amd",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-anonymous-default-export": {
+    "builtin": "import/no-anonymous-default-export",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-barrel-file": {
+    "builtin": "oxc/no-barrel-file",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-commonjs": {
+    "builtin": "import/no-commonjs",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-cycle": {
+    "builtin": "import/no-cycle",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-default-export": {
+    "builtin": "import/no-default-export",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-deprecated": {
+    "builtin": "typescript/no-deprecated",
+    "verdict": "differs",
+    "note": "native rule is type-aware and flags any deprecated API use; ours flags imports of deprecated modules/exports"
+  },
+  "import-next/no-duplicates": {
+    "builtin": "import/no-duplicates",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-dynamic-require": {
+    "builtin": "import/no-dynamic-require",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-empty-named-blocks": {
+    "builtin": "import/no-empty-named-blocks",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-mutable-exports": {
+    "builtin": "import/no-mutable-exports",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-named-as-default": {
+    "builtin": "import/no-named-as-default",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-named-as-default-member": {
+    "builtin": "import/no-named-as-default-member",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-named-default": {
+    "builtin": "import/no-named-default",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-named-export": {
+    "builtin": "import/no-named-export",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-namespace": {
+    "builtin": "import/no-namespace",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-nodejs-modules": {
+    "builtin": "import/no-nodejs-modules",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-relative-parent-imports": {
+    "builtin": "import/no-relative-parent-imports",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-self-import": {
+    "builtin": "import/no-self-import",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/no-unassigned-import": {
+    "builtin": "import/no-unassigned-import",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/prefer-default-export": {
+    "builtin": "import/prefer-default-export",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/prefer-node-protocol": {
+    "builtin": "unicorn/prefer-node-protocol",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "import-next/unambiguous": {
+    "builtin": "import/unambiguous",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "maintainability/consistent-function-scoping": {
+    "builtin": "unicorn/consistent-function-scoping",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "maintainability/error-message": {
+    "builtin": "unicorn/error-message",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "maintainability/no-lonely-if": {
+    "builtin": "eslint/no-lonely-if",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "maintainability/no-nested-ternary": {
+    "builtin": "eslint/no-nested-ternary",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "maintainability/no-unreadable-iife": {
+    "builtin": "unicorn/no-unreadable-iife",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "modernization/no-instanceof-array": {
+    "builtin": "unicorn/no-instanceof-array",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "modernization/prefer-at": {
+    "builtin": "unicorn/prefer-at",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "modernization/prefer-event-target": {
+    "builtin": "unicorn/prefer-event-target",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "modularity/no-mutable-exports": {
+    "builtin": "import/no-mutable-exports",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "node-security/no-dynamic-require": {
+    "builtin": "import/no-dynamic-require",
+    "verdict": "differs",
+    "note": "ours is a security rule (CWE-706 / code loading from input); native is a module-hygiene rule"
+  },
+  "operability/no-process-exit": {
+    "builtin": "unicorn/no-process-exit",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/alt-text": {
+    "builtin": "jsx_a11y/alt-text",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/anchor-ambiguous-text": {
+    "builtin": "jsx_a11y/anchor-ambiguous-text",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/anchor-has-content": {
+    "builtin": "jsx_a11y/anchor-has-content",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/anchor-is-valid": {
+    "builtin": "jsx_a11y/anchor-is-valid",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/aria-activedescendant-has-tabindex": {
+    "builtin": "jsx_a11y/aria-activedescendant-has-tabindex",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/aria-props": {
+    "builtin": "jsx_a11y/aria-props",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/aria-role": {
+    "builtin": "jsx_a11y/aria-role",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/aria-unsupported-elements": {
+    "builtin": "jsx_a11y/aria-unsupported-elements",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/autocomplete-valid": {
+    "builtin": "jsx_a11y/autocomplete-valid",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/click-events-have-key-events": {
+    "builtin": "jsx_a11y/click-events-have-key-events",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/control-has-associated-label": {
+    "builtin": "jsx_a11y/control-has-associated-label",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/heading-has-content": {
+    "builtin": "jsx_a11y/heading-has-content",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/html-has-lang": {
+    "builtin": "jsx_a11y/html-has-lang",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/iframe-has-title": {
+    "builtin": "jsx_a11y/iframe-has-title",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/img-redundant-alt": {
+    "builtin": "jsx_a11y/img-redundant-alt",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/interactive-supports-focus": {
+    "builtin": "jsx_a11y/interactive-supports-focus",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/label-has-associated-control": {
+    "builtin": "jsx_a11y/label-has-associated-control",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/lang": {
+    "builtin": "jsx_a11y/lang",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/media-has-caption": {
+    "builtin": "jsx_a11y/media-has-caption",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/mouse-events-have-key-events": {
+    "builtin": "jsx_a11y/mouse-events-have-key-events",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/no-access-key": {
+    "builtin": "jsx_a11y/no-access-key",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/no-aria-hidden-on-focusable": {
+    "builtin": "jsx_a11y/no-aria-hidden-on-focusable",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/no-autofocus": {
+    "builtin": "jsx_a11y/no-autofocus",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/no-distracting-elements": {
+    "builtin": "jsx_a11y/no-distracting-elements",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/no-interactive-element-to-noninteractive-role": {
+    "builtin": "jsx_a11y/no-interactive-element-to-noninteractive-role",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/no-noninteractive-element-interactions": {
+    "builtin": "jsx_a11y/no-noninteractive-element-interactions",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/no-noninteractive-element-to-interactive-role": {
+    "builtin": "jsx_a11y/no-noninteractive-element-to-interactive-role",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/no-noninteractive-tabindex": {
+    "builtin": "jsx_a11y/no-noninteractive-tabindex",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/no-redundant-roles": {
+    "builtin": "jsx_a11y/no-redundant-roles",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/no-static-element-interactions": {
+    "builtin": "jsx_a11y/no-static-element-interactions",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/prefer-tag-over-role": {
+    "builtin": "jsx_a11y/prefer-tag-over-role",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/role-has-required-aria-props": {
+    "builtin": "jsx_a11y/role-has-required-aria-props",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/role-supports-aria-props": {
+    "builtin": "jsx_a11y/role-supports-aria-props",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/scope": {
+    "builtin": "jsx_a11y/scope",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-a11y/tabindex-no-positive": {
+    "builtin": "jsx_a11y/tabindex-no-positive",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/checked-requires-onchange-or-readonly": {
+    "builtin": "react/checked-requires-onchange-or-readonly",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/display-name": {
+    "builtin": "react/display-name",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/jsx-handler-names": {
+    "builtin": "react/jsx-handler-names",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/jsx-key": {
+    "builtin": "react/jsx-key",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/jsx-max-depth": {
+    "builtin": "react/jsx-max-depth",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/jsx-no-duplicate-props": {
+    "builtin": "react/jsx-no-duplicate-props",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/jsx-no-literals": {
+    "builtin": "react/jsx-no-literals",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/jsx-no-script-url": {
+    "builtin": "react/jsx-no-script-url",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/jsx-no-target-blank": {
+    "builtin": "react/jsx-no-target-blank",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-children-prop": {
+    "builtin": "react/no-children-prop",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-danger": {
+    "builtin": "react/no-danger",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-danger-with-children": {
+    "builtin": "react/no-danger-with-children",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-deprecated": {
+    "builtin": "typescript/no-deprecated",
+    "verdict": "differs",
+    "note": "ours targets deprecated React APIs; native is type-aware over any @deprecated symbol"
+  },
+  "react-features/no-did-mount-set-state": {
+    "builtin": "react/no-did-mount-set-state",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-did-update-set-state": {
+    "builtin": "react/no-did-update-set-state",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-direct-mutation-state": {
+    "builtin": "react/no-direct-mutation-state",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-find-dom-node": {
+    "builtin": "react/no-find-dom-node",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-is-mounted": {
+    "builtin": "react/no-is-mounted",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-multi-comp": {
+    "builtin": "react/no-multi-comp",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-namespace": {
+    "builtin": "react/no-namespace",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-object-type-as-default-prop": {
+    "builtin": "react/no-object-type-as-default-prop",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-redundant-should-component-update": {
+    "builtin": "react/no-redundant-should-component-update",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-render-return-value": {
+    "builtin": "react/no-render-return-value",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-set-state": {
+    "builtin": "react/no-set-state",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-string-refs": {
+    "builtin": "react/no-string-refs",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-this-in-sfc": {
+    "builtin": "react/no-this-in-sfc",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-typos": {
+    "builtin": "nextjs/no-typos",
+    "verdict": "false-positive",
+    "note": "ours checks React component/prop-type typos; native checks Next.js data-fetching export names"
+  },
+  "react-features/no-unescaped-entities": {
+    "builtin": "react/no-unescaped-entities",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-unknown-property": {
+    "builtin": "react/no-unknown-property",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/no-unsafe": {
+    "builtin": "react/no-unsafe",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/prefer-es6-class": {
+    "builtin": "react/prefer-es6-class",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/react-in-jsx-scope": {
+    "builtin": "react/react-in-jsx-scope",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/require-render-return": {
+    "builtin": "react/require-render-return",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/state-in-constructor": {
+    "builtin": "react/state-in-constructor",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "react-features/void-dom-elements-no-children": {
+    "builtin": "react/void-dom-elements-no-children",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "reliability/error-message": {
+    "builtin": "unicorn/error-message",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  },
+  "reliability/no-await-in-loop": {
+    "builtin": "eslint/no-await-in-loop",
+    "verdict": "equivalent",
+    "note": "same rule name in the matching oxlint plugin; behaviour not diffed"
+  }
+}

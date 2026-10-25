@@ -12,7 +12,11 @@
  * object values and `cn()`/`clsx()` arguments to minimize false positives.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 
 type MessageIds = 'rawColor';
 type RuleOptions = [];
@@ -35,10 +39,12 @@ const reportIfColorLiteral = (
 export const noRawColorLiteral = createRule<RuleOptions, MessageIds>({
   name: 'no-raw-color-literal',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-raw-color-literal.md',
-      description: 'No raw hex / rgb / hsl / oklch color literals in source — use design tokens (R19)',
+      description:
+        'No raw hex / rgb / hsl / oklch color literals in source — use design tokens (R19)',
     },
     schema: [],
     messages: {
@@ -48,12 +54,13 @@ export const noRawColorLiteral = createRule<RuleOptions, MessageIds>({
         description: 'Raw color literal in source — use a design token (R19)',
         severity: 'MEDIUM',
         fix: 'Replace with a CSS custom property (`var(--your-token)`) or a Tailwind theme class wired to it.',
-        documentationLink: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-raw-color-literal.md',
+        documentationLink:
+          'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-raw-color-literal.md',
       }),
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       // Color inside JSX attribute string values (className="text-[#fff]", style="...")
       'JSXAttribute > Literal'(node: TSESTree.Literal) {
@@ -69,7 +76,13 @@ export const noRawColorLiteral = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         if (node.callee.type !== 'Identifier') return;
         const name = node.callee.name;
-        if (name !== 'cn' && name !== 'clsx' && name !== 'twMerge' && name !== 'classNames') return;
+        if (
+          name !== 'cn' &&
+          name !== 'clsx' &&
+          name !== 'twMerge' &&
+          name !== 'classNames'
+        )
+          return;
         for (const arg of node.arguments) {
           if (arg.type === 'Literal') {
             reportIfColorLiteral(context, arg, arg.value);

@@ -96,6 +96,7 @@ function propertyKeyName(prop: TSESTree.Property): string | null {
 export const noDisabledHelmetProtections = createRule<RuleOptions, MessageIds>({
   name: 'no-disabled-helmet-protections',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     hasSuggestions: true,
     docs: {
@@ -136,15 +137,11 @@ export const noDisabledHelmetProtections = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const { allowDisabled } = options as Options;
-    const allowed = new Set(allowDisabled ?? []);
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let allowed: Set<string>;
 
     /** Removes `option: false` along with whichever comma keeps the object valid. */
     function removeProperty(
@@ -164,6 +161,18 @@ export const noDisabledHelmetProtections = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        const { allowDisabled } = options as Options;
+        allowed = new Set(allowDisabled ?? []);
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (!isHelmetCall(node)) return;
         const config = node.arguments[0];

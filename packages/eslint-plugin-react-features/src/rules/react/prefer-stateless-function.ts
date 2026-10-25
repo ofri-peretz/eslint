@@ -21,6 +21,7 @@ export interface Options {
 export const preferStatelessFunction = createRule<[Options], MessageIds>({
   name: 'prefer-stateless-function',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/prefer-stateless-function.md',
@@ -49,40 +50,26 @@ export const preferStatelessFunction = createRule<[Options], MessageIds>({
     ],
   },
   defaultOptions: [{ ignorePureComponents: false }],
-  create(context: TSESLint.RuleContext<MessageIds, [Options]>) {
-    const [options] = context.options;
-    const ignorePureComponents = options?.ignorePureComponents ?? false;
-
-    return {
-      ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        if (!isReactComponent(node)) return;
-
-        // Skip if it's a PureComponent and we're ignoring them
-        if (ignorePureComponents && isPureComponent(node)) return;
-
-        // Check if class has state or lifecycle methods
-        if (!hasState(node) && !hasLifecycleMethods(node)) {
-          context.report({
-            node: node.id || node,
-            messageId: 'preferStatelessFunction',
-          });
-        }
-      },
-    };
+  createOnce(context: TSESLint.RuleContext<MessageIds, [Options]>) {
+    let ignorePureComponents: boolean;
 
     // oxlint-disable-next-line consistent-function-scoping
     function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
       if (!node.superClass) return false;
 
       if (node.superClass.type === 'Identifier') {
-        return node.superClass.name === 'Component' || node.superClass.name === 'PureComponent';
+        return (
+          node.superClass.name === 'Component' ||
+          node.superClass.name === 'PureComponent'
+        );
       }
 
       if (node.superClass.type === 'MemberExpression') {
         return (
           node.superClass.object.type === 'Identifier' &&
           node.superClass.object.name === 'React' &&
-          (propertyName(node.superClass) === 'Component' || propertyName(node.superClass) === 'PureComponent')
+          (propertyName(node.superClass) === 'Component' ||
+            propertyName(node.superClass) === 'PureComponent')
         );
       }
 
@@ -147,10 +134,18 @@ export const preferStatelessFunction = createRule<[Options], MessageIds>({
     // oxlint-disable-next-line consistent-function-scoping
     function hasLifecycleMethods(node: TSESTree.ClassDeclaration): boolean {
       const lifecycleMethods = new Set([
-        'componentDidMount', 'componentDidUpdate', 'componentWillUnmount',
-        'componentWillMount', 'componentWillReceiveProps', 'componentWillUpdate',
-        'shouldComponentUpdate', 'getDerivedStateFromProps', 'getSnapshotBeforeUpdate',
-        'UNSAFE_componentWillMount', 'UNSAFE_componentWillReceiveProps', 'UNSAFE_componentWillUpdate',
+        'componentDidMount',
+        'componentDidUpdate',
+        'componentWillUnmount',
+        'componentWillMount',
+        'componentWillReceiveProps',
+        'componentWillUpdate',
+        'shouldComponentUpdate',
+        'getDerivedStateFromProps',
+        'getSnapshotBeforeUpdate',
+        'UNSAFE_componentWillMount',
+        'UNSAFE_componentWillReceiveProps',
+        'UNSAFE_componentWillUpdate',
       ]);
 
       for (const member of node.body.body) {
@@ -164,5 +159,26 @@ export const preferStatelessFunction = createRule<[Options], MessageIds>({
       }
       return false;
     }
+
+    return {
+      before() {
+        const [options] = context.options;
+        ignorePureComponents = options?.ignorePureComponents ?? false;
+      },
+      ClassDeclaration(node: TSESTree.ClassDeclaration) {
+        if (!isReactComponent(node)) return;
+
+        // Skip if it's a PureComponent and we're ignoring them
+        if (ignorePureComponents && isPureComponent(node)) return;
+
+        // Check if class has state or lifecycle methods
+        if (!hasState(node) && !hasLifecycleMethods(node)) {
+          context.report({
+            node: node.id || node,
+            messageId: 'preferStatelessFunction',
+          });
+        }
+      },
+    };
   },
 });

@@ -20,7 +20,10 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-cookie-auth-tokens', noCookieAuthTokens, {
   valid: [
     { name: 'a preference cookie', code: `document.cookie = 'theme=dark';` },
-    { code: `document.cookie = 'locale=en-US';` },
+    {
+      name: 'a locale cookie is not an auth token',
+      code: `document.cookie = 'locale=en-US';`,
+    },
     { code: `document.cookie = 'preference=compact';` },
     { code: `const cookie = document.cookie;` },
     { code: `document.cookie = 'token=abc';`, filename: 'auth.test.ts' },
@@ -43,7 +46,9 @@ ruleTester.run('no-cookie-auth-tokens', noCookieAuthTokens, {
 
     // Deletion is the remediation, not the defect.
     { code: `document.cookie = 'sid=; Max-Age=0';` },
-    { code: `document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT';` },
+    {
+      code: `document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT';`,
+    },
 
     // A cookie name we cannot read statically.
     { code: `document.cookie = name + '=' + value;` },
@@ -72,7 +77,9 @@ ruleTester.run('no-cookie-auth-tokens', noCookieAuthTokens, {
     },
     {
       code: `document.cookie = 'accessToken=' + token;`,
-      errors: [{ messageId: 'authTokenInCookie', data: { key: 'accessToken' } }],
+      errors: [
+        { messageId: 'authTokenInCookie', data: { key: 'accessToken' } },
+      ],
     },
     {
       code: `document.cookie = \`auth=\${value}\`;`,
@@ -149,25 +156,31 @@ ruleTester.run('lock: sink spellings', noCookieAuthTokens, {
  * cookie collided with the list could not remove it. The default still
  * reproduces the old behaviour exactly.
  */
-ruleTester.run('lock: bearerPatterns replaces the default vocabulary', noCookieAuthTokens, {
-  valid: [
-    // `token` is gone from the vocabulary the user supplied.
-    {
-      code: `document.cookie = 'access_token=' + t;`,
-      options: [{ bearerPatterns: ['handle'] }],
-    },
-  ],
-  invalid: [
-    // …and a word the default list never had now reports.
-    {
-      code: `document.cookie = 'handle=' + h;`,
-      options: [{ bearerPatterns: ['handle'] }],
-      errors: [{ messageId: 'authTokenInCookie', data: { key: 'handle' } }],
-    },
-    // The default is unchanged.
-    {
-      code: `document.cookie = 'access_token=' + t;`,
-      errors: [{ messageId: 'authTokenInCookie', data: { key: 'access_token' } }],
-    },
-  ],
-});
+ruleTester.run(
+  'lock: bearerPatterns replaces the default vocabulary',
+  noCookieAuthTokens,
+  {
+    valid: [
+      // `token` is gone from the vocabulary the user supplied.
+      {
+        code: `document.cookie = 'access_token=' + t;`,
+        options: [{ bearerPatterns: ['handle'] }],
+      },
+    ],
+    invalid: [
+      // …and a word the default list never had now reports.
+      {
+        code: `document.cookie = 'handle=' + h;`,
+        options: [{ bearerPatterns: ['handle'] }],
+        errors: [{ messageId: 'authTokenInCookie', data: { key: 'handle' } }],
+      },
+      // The default is unchanged.
+      {
+        code: `document.cookie = 'access_token=' + t;`,
+        errors: [
+          { messageId: 'authTokenInCookie', data: { key: 'access_token' } },
+        ],
+      },
+    ],
+  },
+);

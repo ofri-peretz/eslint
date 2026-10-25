@@ -105,6 +105,7 @@ function isProvablyNotACredential(node: TSESTree.Node | undefined): boolean {
 export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
   name: 'no-jwt-in-storage',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-jwt-in-storage.md',
@@ -151,17 +152,12 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     { allowInTests: true, bearerPatterns: [...BEARER_CREDENTIAL_TERMS] },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = true, bearerPatterns = BEARER_CREDENTIAL_TERMS } =
-      options as Options;
-    const isTestFile = isTestFilePath(context.filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
+    let allowInTests: boolean;
+    let bearerPatterns: readonly string[];
 
     /**
      * Report when the key names a bearer credential OR the value is provably a
@@ -198,6 +194,17 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({ allowInTests = true, bearerPatterns = BEARER_CREDENTIAL_TERMS } =
+          options as Options);
+        const isTestFile = isTestFilePath(context.filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
         if (callee.type !== AST_NODE_TYPES.MemberExpression) return;

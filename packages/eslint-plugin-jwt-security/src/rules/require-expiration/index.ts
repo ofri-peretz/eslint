@@ -48,6 +48,7 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
    */
   skipTestFiles: true,
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt-security/docs/rules/require-expiration.md',
@@ -122,13 +123,10 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    /*
-     * Opt-in. It was declared with a 24h default and never read, so turning
-     * that default on now would report every `expiresIn: '7d'` refresh token —
-     * this page's own ✅ example — in a patch release. Unset means no limit.
-     */
-    const maxExpirationSeconds = context.options[0]?.maxExpirationSeconds;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let maxExpirationSeconds: number | undefined;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let JWS_ONLY_BUILDERS: Set<string>;
 
     /**
      * Report a lifetime the file states that exceeds the configured limit.
@@ -227,15 +225,23 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
         : null;
     };
 
-    const sourceCode = context.sourceCode;
-
-    const JWS_ONLY_BUILDERS = new Set([
-      'FlattenedSign',
-      'CompactSign',
-      'GeneralSign',
-    ]);
-
     return {
+      before() {
+        /*
+         * Opt-in. It was declared with a 24h default and never read, so turning
+         * that default on now would report every `expiresIn: '7d'` refresh token —
+         * this page's own ✅ example — in a patch release. Unset means no limit.
+         */
+        maxExpirationSeconds = context.options[0]?.maxExpirationSeconds;
+
+        sourceCode = context.sourceCode;
+
+        JWS_ONLY_BUILDERS = new Set([
+          'FlattenedSign',
+          'CompactSign',
+          'GeneralSign',
+        ]);
+      },
       CallExpression(node: TSESTree.CallExpression) {
         // Only check sign operations
         if (!isSignOperation(node, sourceCode)) {

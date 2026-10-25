@@ -1231,6 +1231,7 @@ function bindParameters(
 export const noSqlInjection = createRule<[Options?], MessageIds>({
   name: 'no-sql-injection',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-sql-injection.md',
@@ -1334,48 +1335,21 @@ export const noSqlInjection = createRule<[Options?], MessageIds>({
       queryTextProperties: QUERY_TEXT_PROPERTIES,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, [Options?]>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      reportUnattributedInterpolation = false,
-      treatParametersAsUntrusted = true,
-      requestRoots = REQUEST_ROOTS,
-      requestProperties = REQUEST_PROPERTIES,
-      sinkMethods = SQL_SINK_METHODS,
-      transparentCalls = TRANSPARENT_CALLS,
-      queryTextProperties = QUERY_TEXT_PROPERTIES,
-    } = options;
-    const attribution: Attribution = {
-      substitutions: NO_SUBSTITUTIONS,
-      untrustedParameters: treatParametersAsUntrusted,
-      requestRoots: new Set(requestRoots),
-      // The shape path is only consulted when the consumer has NOT narrowed
-      // `requestRoots`. Saying "only `ctx` is a request here" is a decision,
-      // and a structural fallback that reinstated `req` behind their back
-      // would make the option a lie — caught by this rule's own
-      // option-overrides suite.
-      // Compared by CONTENT, not by `=== undefined`: typescript-eslint merges
-      // `defaultOptions` in, so the key is always present and the absence test
-      // silently disabled the shape path everywhere.
-      trustRequestShape:
-        requestRoots.length === REQUEST_ROOTS.length &&
-        REQUEST_ROOTS.every((name, index) => requestRoots[index] === name),
-      requestProperties: new Set(requestProperties),
-      transparentCalls: new Set(transparentCalls),
-      queryTextProperties: new Set(queryTextProperties),
-      sourceCode: context.sourceCode,
-    };
-    const sinks = new Set(sinkMethods);
-    /**
-     * Findings are held until `Program:exit` so a `require('pg')` anywhere in
-     * the file — including below the sink, or inside a function — still hands
-     * the site to the driver-specific rule. Deciding at the call site would
-     * make the partition depend on statement order.
-     */
-    const pending: { node: TSESTree.Node; source: string }[] = [];
-    let importsSqlDriver = false;
+    let reportUnattributedInterpolation: boolean;
+    let treatParametersAsUntrusted: boolean;
+    let requestRoots: readonly string[];
+    let requestProperties: readonly string[];
+    let sinkMethods: readonly string[];
+    let transparentCalls: readonly string[];
+    let queryTextProperties: readonly string[];
+    let attribution: Attribution;
+    let sinks: Set<string>;
+    let pending: { node: TSESTree.Node; source: string }[];
+    let importsSqlDriver: boolean;
 
     const noteSpecifier = (specifier: string | null): void => {
       if (specifier !== null && isSqlDriverSpecifier(specifier)) {
@@ -1384,6 +1358,47 @@ export const noSqlInjection = createRule<[Options?], MessageIds>({
     };
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          reportUnattributedInterpolation = false,
+          treatParametersAsUntrusted = true,
+          requestRoots = REQUEST_ROOTS,
+          requestProperties = REQUEST_PROPERTIES,
+          sinkMethods = SQL_SINK_METHODS,
+          transparentCalls = TRANSPARENT_CALLS,
+          queryTextProperties = QUERY_TEXT_PROPERTIES,
+        } = options);
+        attribution = {
+          substitutions: NO_SUBSTITUTIONS,
+          untrustedParameters: treatParametersAsUntrusted,
+          requestRoots: new Set(requestRoots),
+          // The shape path is only consulted when the consumer has NOT narrowed
+          // `requestRoots`. Saying "only `ctx` is a request here" is a decision,
+          // and a structural fallback that reinstated `req` behind their back
+          // would make the option a lie — caught by this rule's own
+          // option-overrides suite.
+          // Compared by CONTENT, not by `=== undefined`: typescript-eslint merges
+          // `defaultOptions` in, so the key is always present and the absence test
+          // silently disabled the shape path everywhere.
+          trustRequestShape:
+            requestRoots.length === REQUEST_ROOTS.length &&
+            REQUEST_ROOTS.every((name, index) => requestRoots[index] === name),
+          requestProperties: new Set(requestProperties),
+          transparentCalls: new Set(transparentCalls),
+          queryTextProperties: new Set(queryTextProperties),
+          sourceCode: context.sourceCode,
+        };
+        sinks = new Set(sinkMethods);
+        /**
+         * Findings are held until `Program:exit` so a `require('pg')` anywhere in
+         * the file — including below the sink, or inside a function — still hands
+         * the site to the driver-specific rule. Deciding at the call site would
+         * make the partition depend on statement order.
+         */
+        pending = [];
+        importsSqlDriver = false;
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         noteSpecifier(node.source.value);
       },

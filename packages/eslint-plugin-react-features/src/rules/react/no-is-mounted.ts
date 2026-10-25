@@ -24,6 +24,10 @@ type RuleOptions = [];
 export const noIsMounted = createRule<RuleOptions, MessageIds>({
   name: 'no-is-mounted',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/no-is-mounted',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-is-mounted.md',
@@ -43,13 +47,11 @@ export const noIsMounted = createRule<RuleOptions, MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       // Check for isMounted property access (covers both property access and method calls)
       MemberExpression(node: TSESTree.MemberExpression) {
-        if (
-          propertyName(node) === 'isMounted'
-        ) {
+        if (propertyName(node) === 'isMounted') {
           context.report({
             node: node.property,
             messageId: 'noIsMounted',

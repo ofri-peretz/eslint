@@ -626,6 +626,9 @@ export function createSystemPromptInjectionRule(
   return createRule<[], MessageIds>({
     name: config.ruleName,
     meta: {
+      // Shared detection, shared runtimes: oxlint only if every plugin's rule
+      // from this factory passes its own suite there.
+      interop: { runtimes: ['eslint', 'oxlint'] },
       type: 'problem',
       docs: {
         url: config.docsUrl,
@@ -651,14 +654,9 @@ export function createSystemPromptInjectionRule(
       schema: [],
     },
     defaultOptions: [],
-    create(context) {
-      // Asked once, up front, over the whole AST — so the verdict cannot depend
-      // on whether the import is written above or below the call, which is what
-      // the old two-visitor gate needed a `Program:exit` pass to survive.
-      if (!usesSdk(context.sourceCode.ast)) return {};
-      const sourceCode = context.sourceCode;
-      // A request object held in a const and sent twice is one finding.
-      const reported = new Set<TSESTree.Node>();
+    createOnce(context) {
+      let sourceCode: Readonly<TSESLint.SourceCode>;
+      let reported: Set<TSESTree.Node>;
 
       /** Report the value of any system-prompt option that is not static. */
       function inspectRequest(
@@ -840,6 +838,16 @@ export function createSystemPromptInjectionRule(
         list.some((p) => path === p || path.endsWith(`.${p}`));
 
       return {
+        before() {
+          // Asked once, up front, over the whole AST — so the verdict cannot depend
+          // on whether the import is written above or below the call, which is what
+          // the old two-visitor gate needed a `Program:exit` pass to survive.
+          if (!usesSdk(context.sourceCode.ast)) return false;
+          sourceCode = context.sourceCode;
+          // A request object held in a const and sent twice is one finding.
+          reported = new Set<TSESTree.Node>();
+          return true;
+        },
         CallExpression(node: TSESTree.CallExpression) {
           // A member call whose path ends in one of this SDK's request paths.
           const path = calleePath(node.callee);

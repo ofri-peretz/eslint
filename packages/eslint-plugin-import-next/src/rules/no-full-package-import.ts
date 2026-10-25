@@ -84,12 +84,14 @@ const DEFAULT_BLOCKED_PACKAGES: BlockedPackage[] = [
   {
     name: '@fortawesome/free-solid-svg-icons',
     suggestion: 'Import individual icons',
-    example: "import { faUser } from '@fortawesome/free-solid-svg-icons/faUser';",
+    example:
+      "import { faUser } from '@fortawesome/free-solid-svg-icons/faUser';",
   },
   {
     name: '@fortawesome/free-regular-svg-icons',
     suggestion: 'Import individual icons',
-    example: "import { faCircle } from '@fortawesome/free-regular-svg-icons/faCircle';",
+    example:
+      "import { faCircle } from '@fortawesome/free-regular-svg-icons/faCircle';",
   },
   {
     name: 'aws-sdk',
@@ -111,7 +113,8 @@ function isFullPackageImport(importPath: string, packageName: string): boolean {
  */
 function hasNamespaceImport(node: TSESTree.ImportDeclaration): boolean {
   return node.specifiers.some(
-    (spec: TSESTree.ImportClause) => spec.type === AST_NODE_TYPES.ImportNamespaceSpecifier,
+    (spec: TSESTree.ImportClause) =>
+      spec.type === AST_NODE_TYPES.ImportNamespaceSpecifier,
   );
 }
 
@@ -120,13 +123,15 @@ function hasNamespaceImport(node: TSESTree.ImportDeclaration): boolean {
  */
 function hasDefaultImport(node: TSESTree.ImportDeclaration): boolean {
   return node.specifiers.some(
-    (spec: TSESTree.ImportClause) => spec.type === AST_NODE_TYPES.ImportDefaultSpecifier,
+    (spec: TSESTree.ImportClause) =>
+      spec.type === AST_NODE_TYPES.ImportDefaultSpecifier,
   );
 }
 
 export const noFullPackageImport = createRule<RuleOptions, MessageIds>({
   name: 'no-full-package-import',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-full-package-import.md',
@@ -173,15 +178,17 @@ export const noFullPackageImport = createRule<RuleOptions, MessageIds>({
       blockedPackages: DEFAULT_BLOCKED_PACKAGES,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      blockedPackages = DEFAULT_BLOCKED_PACKAGES,
-    }: NoFullPackageImportOptions = options || {};
+    let blockedPackages: BlockedPackage[];
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({ blockedPackages = DEFAULT_BLOCKED_PACKAGES } = options || {});
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const importPath = node.source.value;
         if (typeof importPath !== 'string') return;

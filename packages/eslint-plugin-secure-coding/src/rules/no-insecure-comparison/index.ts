@@ -88,6 +88,7 @@ type RuleOptions = [Options?];
 export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
   name: 'no-insecure-comparison',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     // NOT deprecated, and the pointer that said otherwise was losing users a
     // whole weakness class.
@@ -219,29 +220,16 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       reportLooseEquality: true,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      allowInTests = false,
-      ignorePatterns = [],
-      reportLooseEquality = true,
-    } = options as Options;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-    const sourceCode = context.sourceCode;
-
-    // Codemods and AST-walker tools legitimately compare AST identifiers
-    // (`node.key === 'foo'`, `node.name === 'bar'`) — those keys aren't
-    // secrets, they're AST property names that happen to share the word
-    // "key". Detect codemod context once per file.
-    const isCodemodFile = (() => {
-      if (/\/codemod[s]?\//i.test(filename)) return true;
-      if (/codemod\.[mc]?[jt]sx?$/i.test(filename)) return true;
-      return fileUsesAstTooling(sourceCode.ast);
-    })();
+    let allowInTests: boolean;
+    let ignorePatterns: string[];
+    let reportLooseEquality: boolean;
+    let isTestFile: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let isCodemodFile: boolean;
 
     /**
      * Check if a string matches any ignore pattern
@@ -687,6 +675,28 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          allowInTests = false,
+          ignorePatterns = [],
+          reportLooseEquality = true,
+        } = options as Options);
+
+        const filename = context.filename;
+        isTestFile = allowInTests && isTestFilePath(filename);
+        sourceCode = context.sourceCode;
+
+        // Codemods and AST-walker tools legitimately compare AST identifiers
+        // (`node.key === 'foo'`, `node.name === 'bar'`) — those keys aren't
+        // secrets, they're AST property names that happen to share the word
+        // "key". Detect codemod context once per file.
+        isCodemodFile = (() => {
+          if (/\/codemod[s]?\//i.test(filename)) return true;
+          if (/codemod\.[mc]?[jt]sx?$/i.test(filename)) return true;
+          return fileUsesAstTooling(sourceCode.ast);
+        })();
+      },
       BinaryExpression: checkBinaryExpression,
     };
   },

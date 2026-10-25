@@ -167,6 +167,7 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
    */
   skipTestFiles: true,
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-shell-injection.md',
@@ -207,13 +208,18 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ requireModuleEvidence: true }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const isLiteralConstant = makeIsLiteralConstant(context.sourceCode);
-    const { requireModuleEvidence = true } = options;
+    let isLiteralConstant: (node: TSESTree.Node) => boolean;
+    let requireModuleEvidence: boolean;
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        isLiteralConstant = makeIsLiteralConstant(context.sourceCode);
+        ({ requireModuleEvidence = true } = options);
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
         let fnName: string | null = null;

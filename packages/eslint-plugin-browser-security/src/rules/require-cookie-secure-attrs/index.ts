@@ -35,7 +35,12 @@
  * @see https://cwe.mitre.org/data/definitions/614.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+} from '@interlace/eslint-devkit';
 
 import {
   cookieNameFrom,
@@ -56,10 +61,12 @@ type RuleOptions = [Options?];
 export const requireCookieSecureAttrs = createRule<RuleOptions, MessageIds>({
   name: 'require-cookie-secure-attrs',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/require-cookie-secure-attrs.md',
-      description: 'Require Secure and SameSite attributes when setting cookies',
+      description:
+        'Require Secure and SameSite attributes when setting cookies',
       cwe: 'CWE-614',
       cvss: 6.5,
     },
@@ -100,18 +107,21 @@ export const requireCookieSecureAttrs = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = true } = options as Options;
-    const isTestFile = isTestFilePath(context.filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = true } = options as Options;
+        const isTestFile = isTestFilePath(context.filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+        return true;
+      },
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         if (!isDocumentCookieTarget(node.left)) return;
 

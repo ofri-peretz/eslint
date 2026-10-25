@@ -11,7 +11,11 @@
  * `looped` reads naturally; `isLooped` is MUI-flagged noise.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 
 type MessageIds = 'isPrefix' | 'renameSuggestion';
 type RuleOptions = [];
@@ -35,6 +39,7 @@ const stripIsPrefix = (name: string): string => {
 export const noIsPrefixProp = createRule<RuleOptions, MessageIds>({
   name: 'no-is-prefix-prop',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-is-prefix-prop.md',
@@ -46,16 +51,19 @@ export const noIsPrefixProp = createRule<RuleOptions, MessageIds>({
       isPrefix: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: '`is` prefix on boolean prop',
-        description: 'Boolean prop `{{name}}` should be renamed to `{{suggested}}` (R8)',
+        description:
+          'Boolean prop `{{name}}` should be renamed to `{{suggested}}` (R8)',
         severity: 'MEDIUM',
         fix: 'Rename to `{{suggested}}` — booleans describe the true state directly.',
-        documentationLink: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-is-prefix-prop.md',
+        documentationLink:
+          'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-is-prefix-prop.md',
       }),
-      renameSuggestion: 'Rename to `{{suggested}}` (also rename consumer call sites manually)',
+      renameSuggestion:
+        'Rename to `{{suggested}}` (also rename consumer call sites manually)',
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       TSPropertySignature(node: TSESTree.TSPropertySignature) {
         if (node.key.type !== 'Identifier') return;

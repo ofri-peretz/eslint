@@ -24,6 +24,7 @@ export type RuleOptions = [Options?];
 export const named = createRule<RuleOptions, MessageIds>({
   name: 'named',
   meta: {
+    interop: { runtimes: ['eslint'], nativeEquivalent: 'import/named' },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/named.md',
@@ -62,18 +63,18 @@ export const named = createRule<RuleOptions, MessageIds>({
         let symbol = checker?.getSymbolAtLocation?.(tsNode);
 
         // Resolve alias if needed
-        if (symbol && (symbol.flags & aliasSymbolFlag())) {
-            try {
-                symbol = checker?.getAliasedSymbol?.(symbol);
-            } catch {
-                // If resolving alias fails, symbol implies broken import
-                symbol = undefined;
-            }
+        if (symbol && symbol.flags & aliasSymbolFlag()) {
+          try {
+            symbol = checker?.getAliasedSymbol?.(symbol);
+          } catch {
+            // If resolving alias fails, symbol implies broken import
+            symbol = undefined;
+          }
         }
 
         // Check if symbol is "unknown" or broken
         if (symbol && symbol.escapedName === 'unknown') {
-            symbol = undefined;
+          symbol = undefined;
         }
 
         if (!symbol) {
@@ -82,7 +83,7 @@ export const named = createRule<RuleOptions, MessageIds>({
           if (!source) return;
           const moduleNode = services.esTreeNodeToTSNodeMap.get(source);
           const moduleSymbol = checker?.getSymbolAtLocation?.(moduleNode);
-          
+
           if (!moduleSymbol) return;
 
           context.report({

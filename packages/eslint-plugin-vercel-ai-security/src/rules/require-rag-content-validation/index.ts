@@ -10,8 +10,18 @@
  * @see OWASP ASI07: Poisoned RAG Pipeline
  */
 
-import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons, nameHasWord } from '@interlace/eslint-devkit';
-import { isSystemPromptProp, getStaticPropName } from '../../utils/prompt-props';
+import {
+  AST_NODE_TYPES,
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  nameHasWord,
+} from '@interlace/eslint-devkit';
+import {
+  isSystemPromptProp,
+  getStaticPropName,
+} from '../../utils/prompt-props';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 import { calleeChain, sdkCallName } from '../../utils/sdk';
 import { derivesFrom, isDerivationCall } from '../../utils/flow';
@@ -30,10 +40,12 @@ type RuleOptions = [Options?];
 export const requireRagContentValidation = createRule<RuleOptions, MessageIds>({
   name: 'require-rag-content-validation',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-rag-content-validation.md',
-      description: 'Require validation of RAG content before including in AI prompts',
+      description:
+        'Require validation of RAG content before including in AI prompts',
       cwe: 'CWE-74',
       cvss: 6,
     },
@@ -44,11 +56,13 @@ export const requireRagContentValidation = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-74',
         owasp: 'A03:2021',
         cvss: 6.0,
-        description: 'RAG content from "{{source}}" used directly in prompt without validation. Poisoned documents can inject malicious instructions.',
+        description:
+          'RAG content from "{{source}}" used directly in prompt without validation. Poisoned documents can inject malicious instructions.',
         severity: 'MEDIUM',
         compliance: ['SOC2'],
         fix: 'Validate RAG content: prompt: buildPrompt(validateRagContent(docs))',
-        documentationLink: 'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
+        documentationLink:
+          'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
       }),
     },
     schema: [
@@ -73,16 +87,31 @@ export const requireRagContentValidation = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       ragPatterns: [
-        'search', 'retrieve', 'query', 'vectorStore', 'embeddings',
-        'similaritySearch', 'findSimilar', 'getDocuments', 'fetchDocs',
+        'search',
+        'retrieve',
+        'query',
+        'vectorStore',
+        'embeddings',
+        'similaritySearch',
+        'findSimilar',
+        'getDocuments',
+        'fetchDocs',
         // `context` was dropped: `getRequestContext()`, `createContext()` and
         // friends retrieve no documents, and with the defaults finally applied
         // (they never were — see the audit) it would have tracked them as RAG.
-        'documents', 'chunks', 'passages',
+        'documents',
+        'chunks',
+        'passages',
       ],
       validatorFunctions: [
-        'validate', 'sanitize', 'filter', 'clean', 'verify',
-        'validateRag', 'sanitizeContent', 'filterDocs',
+        'validate',
+        'sanitize',
+        'filter',
+        'clean',
+        'verify',
+        'validateRag',
+        'sanitizeContent',
+        'filterDocs',
       ],
     },
   ],
@@ -104,10 +133,12 @@ export const requireRagContentValidation = createRule<RuleOptions, MessageIds>({
      * derivation (`.map`, `.join`) is followed instead of matched.
      */
     function isRagCall(node: TSESTree.Node): boolean {
-      if (node.type !== 'CallExpression' || isDerivationCall(node)) return false;
+      if (node.type !== 'CallExpression' || isDerivationCall(node))
+        return false;
       const chain = calleeChain(node.callee);
       return (
-        ragPatterns.some((pattern: string) => nameHasWord(chain, pattern)) && !isValidated(node)
+        ragPatterns.some((pattern: string) => nameHasWord(chain, pattern)) &&
+        !isValidated(node)
       );
     }
 
@@ -121,7 +152,9 @@ export const requireRagContentValidation = createRule<RuleOptions, MessageIds>({
       sourceCode,
       isSource: isRagCall,
       isBarrier: (node: TSESTree.Node) =>
-        node.type === 'CallExpression' && !isDerivationCall(node) && isValidated(node),
+        node.type === 'CallExpression' &&
+        !isDerivationCall(node) &&
+        isValidated(node),
     };
 
     /**

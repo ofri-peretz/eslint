@@ -1,18 +1,93 @@
-# oxlint-plugin-import-next
+<p align="center">
+  <a href="https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next" target="blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/interlace-dark.svg"><img src="https://eslint.interlace.tools/logos/interlace-light.svg" alt="Interlace" height="90" /></picture></a>
+  &nbsp;&nbsp;
+  <a href="https://oxc.rs" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/oxlint-dark.svg"><img src="https://eslint.interlace.tools/logos/oxlint-light.svg" alt="oxlint" height="90" /></picture></a>
+</p>
 
-The `import-next` rules for [oxlint](https://oxc.rs/docs/guide/usage/linter) and
-[Vite+](https://viteplus.dev). This package is the oxlint name for
-[`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next): the same rules, the same
-rule IDs (`import-next/<rule>`), and the same version. It contains no rule code of its own, and it
-does not install ESLint.
+<p align="center">
+  Next-generation import sorting, validation, and architectural boundaries.
+</p>
 
-## Install
+<p align="center">
+  <a href="https://www.npmjs.com/package/oxlint-plugin-import-next" target="_blank"><img src="https://img.shields.io/npm/v/oxlint-plugin-import-next.svg" alt="NPM Version" /></a>
+  <a href="https://www.npmjs.com/package/oxlint-plugin-import-next" target="_blank"><img src="https://img.shields.io/npm/dm/oxlint-plugin-import-next.svg" alt="NPM Downloads" /></a>
+  <a href="https://packagephobia.com/result?p=oxlint-plugin-import-next" target="_blank"><img src="https://badgen.net/packagephobia/install/oxlint-plugin-import-next" alt="Install Size" /></a>
+  <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-import-next" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-import-next" alt="Codecov" /></a>
+  <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
+</p>
+
+> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
+
+## Description
+
+**Fills the gaps in oxlint's import plugin.** oxlint's native `import` plugin already covers 34 of these rules (listed below; use those natively). This package adds the 22 it does not have: `dynamic-import-chunkname`, `enforce-dependency-direction`, `enforce-import-order`, `enforce-team-boundaries`, `no-barrel-import`, `no-cross-domain-imports`, `no-deprecated`, `no-extraneous-dependencies`, `no-full-package-import`, `no-import-module-exports`, `no-internal-modules`, `no-legacy-imports`, `no-relative-packages`, `no-restricted-paths`, `no-unresolved`, `no-unused-modules`, `no-useless-path-segments`, `order`, `prefer-direct-import`, `prefer-modern-api`, `prefer-tree-shakeable-imports`, `require-import-approval`.
+
+`oxlint-plugin-import-next` is the [oxlint](https://oxc.rs/docs/guide/usage/linter/js-plugins) and [Vite+](https://viteplus.dev/guide/lint) name for [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next). It carries the same rules under the same IDs (`import-next/<rule>`), always at the same version, because it re-exports that package rather than copying it. Installing it does not install ESLint.
+
+## Covered natively by oxlint
+
+oxlint already ships 34 of these 56 rules as built-ins. Enable the built-in instead: it is the same check, runs natively, and running both would report every finding twice. Each rule carries the mapping as `meta.interop.nativeEquivalent`.
+
+| This plugin                                   | oxlint built-in                          |
+| :-------------------------------------------- | :--------------------------------------- |
+| `import-next/consistent-type-specifier-style` | `import/consistent-type-specifier-style` |
+| `import-next/default`                         | `import/default`                         |
+| `import-next/export`                          | `import/export`                          |
+| `import-next/exports-last`                    | `import/exports-last`                    |
+| `import-next/extensions`                      | `import/extensions`                      |
+| `import-next/first`                           | `import/first`                           |
+| `import-next/group-exports`                   | `import/group-exports`                   |
+| `import-next/max-dependencies`                | `import/max-dependencies`                |
+| `import-next/named`                           | `import/named`                           |
+| `import-next/namespace`                       | `import/namespace`                       |
+| `import-next/newline-after-import`            | `import/newline-after-import`            |
+| `import-next/no-absolute-path`                | `import/no-absolute-path`                |
+| `import-next/no-amd`                          | `import/no-amd`                          |
+| `import-next/no-anonymous-default-export`     | `import/no-anonymous-default-export`     |
+| `import-next/no-barrel-file`                  | `oxc/no-barrel-file`                     |
+| `import-next/no-commonjs`                     | `import/no-commonjs`                     |
+| `import-next/no-cycle`                        | `import/no-cycle`                        |
+| `import-next/no-default-export`               | `import/no-default-export`               |
+| `import-next/no-duplicates`                   | `import/no-duplicates`                   |
+| `import-next/no-dynamic-require`              | `import/no-dynamic-require`              |
+| `import-next/no-empty-named-blocks`           | `import/no-empty-named-blocks`           |
+| `import-next/no-mutable-exports`              | `import/no-mutable-exports`              |
+| `import-next/no-named-as-default`             | `import/no-named-as-default`             |
+| `import-next/no-named-as-default-member`      | `import/no-named-as-default-member`      |
+| `import-next/no-named-default`                | `import/no-named-default`                |
+| `import-next/no-named-export`                 | `import/no-named-export`                 |
+| `import-next/no-namespace`                    | `import/no-namespace`                    |
+| `import-next/no-nodejs-modules`               | `import/no-nodejs-modules`               |
+| `import-next/no-relative-parent-imports`      | `import/no-relative-parent-imports`      |
+| `import-next/no-self-import`                  | `import/no-self-import`                  |
+| `import-next/no-unassigned-import`            | `import/no-unassigned-import`            |
+| `import-next/prefer-default-export`           | `import/prefer-default-export`           |
+| `import-next/prefer-node-protocol`            | `unicorn/prefer-node-protocol`           |
+| `import-next/unambiguous`                     | `import/unambiguous`                     |
+
+What this package adds to oxlint is the other 22: every rule in the table below that is not listed here.
+
+- **Why** — a linter nobody reads protects nothing. We would rather miss a finding
+  than spend your attention on one that was never real.
+- **How** — evidence, not names. A rule fires on what the code _does_, resolved
+  through the AST and ESLint's own scope analysis.
+- **What** — every finding carries its fix, in prose for a human and as structured
+  JSON for an agent. Security rules add a CWE mapping and, where assigned, a CVSS score.
+
+That trade costs recall, and we measure it:
+[methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
+· [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md)
+· [a false positive is a bug](https://github.com/ofri-peretz/eslint/issues).
+
+## Getting Started
 
 ```bash
-npm install --save-dev oxlint-plugin-import-next
+npm install oxlint-plugin-import-next --save-dev
 ```
 
-## Vite+
+### Vite+
 
 ```ts
 // vite.config.ts
@@ -22,33 +97,125 @@ export default defineConfig({
   lint: {
     jsPlugins: ['oxlint-plugin-import-next'],
     rules: {
-      'import-next/<rule>': 'error',
+      'import-next/no-unresolved': 'error',
     },
   },
 });
 ```
 
-## oxlint
+### oxlint
 
 ```json
 {
   "jsPlugins": ["oxlint-plugin-import-next"],
   "rules": {
-    "import-next/<rule>": "error"
+    "import-next/no-unresolved": "error"
   }
 }
 ```
 
+These are the rules the plugin recommends (💼 in the table below), minus the ones oxlint already ships natively.
+
+### ESLint
+
+Install [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) instead. It has the same rules, plus presets for ESLint's flat config.
+
+## 📦 Compatibility
+
+| Package | Version                                                          |
+| :------ | :--------------------------------------------------------------- |
+| oxlint  | verified on `1.88.0`: CI loads every rule ID through `jsPlugins` |
+| Vite+   | `lint.jsPlugins` in `vite.config.ts`                             |
+| Node.js | `>=18.0.0`                                                       |
+
 ## Rules
 
-Every rule, its options and its docs are listed in the
-[`eslint-plugin-import-next` README](https://www.npmjs.com/package/eslint-plugin-import-next#rules). Using ESLint
-instead? Install `eslint-plugin-import-next` directly.
+**Legend**
 
-## License
+| Icon | Description                                                               |
+| :--: | :------------------------------------------------------------------------ |
+|  💼  | **Recommended**: Included in the recommended preset.                      |
+|  ⚠️  | **Warns**: Set to warn in recommended preset.                             |
+|  🔧  | **Auto-fixable**: Automatically fixable by the `--fix` CLI option.        |
+|  💡  | **Suggestions**: Providing code suggestions in IDE.                       |
+|  🚫  | **Deprecated**: This rule is deprecated.                                  |
+|  🟢  | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier.                |
+|  🟡  | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+|  🟠  | **Type-aware (graceful)**: requires TS program; silent without it.        |
 
-MIT
+| Rule                                                                                                                                                                                                                 | CWE |  OWASP   | CVSS | Description | 🧠  | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-: | :------: | :--: | :---------- | :-: | :-: | :-: | :-: | :-: | :-: |
+| [consistent-type-specifier-style](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/consistent-type-specifier-style?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next) |     |          |      |             | 🟢  |     |     |     |     |     |
+| [default](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/default?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                                 |     |          |      |             | 🟡  | 💼  |     |     |     |     |
+| [dynamic-import-chunkname](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/dynamic-import-chunkname?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)               |     |          |      |             | 🟢  |     |     |     |     |     |
+| [enforce-dependency-direction](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-dependency-direction?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)       |     |          |      |             | 🟢  |     |     |     |     |     |
+| [enforce-import-order](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-import-order?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                       |     |          |      |             | 🟢  |     |     |     |     |     |
+| [enforce-team-boundaries](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-team-boundaries?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                 |     |          |      |             | 🟢  |     |     |     |     |     |
+| [export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/export?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                                   |     |          |      |             | 🟢  | 💼  |     |     |     |     |
+| [exports-last](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/exports-last?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                       |     |          |      |             | 🟢  |     |     |     |     |     |
+| [extensions](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/extensions?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                           |     |          |      |             | 🟢  |     |     |     |     |     |
+| [first](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/first?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                                     |     |          |      |             | 🟢  |     |     |     |     |     |
+| [group-exports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/group-exports?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                     |     |          |      |             | 🟢  |     |     |     |     |     |
+| [max-dependencies](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/max-dependencies?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                               |     |          |      |             | 🟢  |     |     |     |     |     |
+| [named](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/named?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                                     |     |          |      |             | 🟡  | 💼  |     |     |     |     |
+| [namespace](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/namespace?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                             |     |          |      |             | 🟡  |     | ⚠️  |     |     |     |
+| [newline-after-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/newline-after-import?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                       |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-absolute-path](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-absolute-path?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                               |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-amd](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-amd?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                                   |     |          |      |             | 🟢  |     | ⚠️  |     |     |     |
+| [no-anonymous-default-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-anonymous-default-export?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)         |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-barrel-file](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-barrel-file?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                   |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-barrel-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-barrel-import?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                               |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-commonjs](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-commonjs?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                         |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-cross-domain-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-cross-domain-imports?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                 |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-cycle](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-cycle?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                               |     | A05:2021 |      |             | 🟢  | 💼  |     |     |     |     |
+| [no-default-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-default-export?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                             |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-deprecated](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-deprecated?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                     |     | A09:2021 |      |             | 🟢  |     |     |     |     |     |
+| [no-duplicates](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-duplicates?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                     |     |          |      |             | 🟢  | 💼  |     |     |     |     |
+| [no-dynamic-require](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-dynamic-require?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                           |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-empty-named-blocks](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-empty-named-blocks?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                     |     |          |      |             | 🟢  |     | ⚠️  |     |     |     |
+| [no-extraneous-dependencies](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-extraneous-dependencies?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)           |     |          |      |             | 🟢  |     | ⚠️  |     |     |     |
+| [no-full-package-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-full-package-import?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                   |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-import-module-exports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-import-module-exports?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)               |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-internal-modules](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-internal-modules?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                         |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-legacy-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-legacy-imports?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                             |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-mutable-exports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-mutable-exports?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                           |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-named-as-default](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-as-default?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                         |     |          |      |             | 🟢  |     | ⚠️  |     |     |     |
+| [no-named-as-default-member](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-as-default-member?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)           |     |          |      |             | 🟢  |     | ⚠️  |     |     |     |
+| [no-named-default](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-default?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                               |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-named-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-export?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                 |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-namespace](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-namespace?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                       |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-nodejs-modules](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-nodejs-modules?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                             |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-relative-packages](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-relative-packages?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                       |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-relative-parent-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-relative-parent-imports?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)           |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-restricted-paths](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-restricted-paths?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                         |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-self-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-self-import?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                   |     |          |      |             | 🟢  | 💼  |     |     |     |     |
+| [no-unassigned-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-unassigned-import?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                       |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-unresolved](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-unresolved?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                     |     | A03:2021 |      |             | 🟢  | 💼  |     |     |     |     |
+| [no-unused-modules](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-unused-modules?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                             |     |          |      |             | 🟢  |     |     |     |     |     |
+| [no-useless-path-segments](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-useless-path-segments?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)               |     |          |      |             | 🟢  |     |     |     |     |     |
+| [order](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/order?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                                     |     |          |      |             | 🟢  |     |     |     |     |     |
+| [prefer-default-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-default-export?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                     |     |          |      |             | 🟢  |     |     |     |     |     |
+| [prefer-direct-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-direct-import?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                       |     |          |      |             | 🟢  |     |     |     |     |     |
+| [prefer-modern-api](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-modern-api?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                             |     |          |      |             | 🟢  |     |     |     |     |     |
+| [prefer-node-protocol](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-node-protocol?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                       |     |          |      |             | 🟢  |     |     |     |     |     |
+| [prefer-tree-shakeable-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-tree-shakeable-imports?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)     |     |          |      |             | 🟢  |     |     |     |     |     |
+| [require-import-approval](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/require-import-approval?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                 |     |          |      |             | 🟢  |     |     |     |     |     |
+| [unambiguous](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/unambiguous?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                         |     |          |      |             | 🟢  |     |     |     |     |     |
+
+## ⭐ Support & follow
+
+If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+
+[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+
+## 📄 License
+
+MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
   <a href="https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next"><img src="https://eslint.interlace.tools/images/og-import-next.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+</p>
+
+<p align="center">
+  <a href="https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next" target="blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/interlace-dark.svg"><img src="https://eslint.interlace.tools/logos/interlace-light.svg" alt="Interlace" height="70" /></picture></a>
 </p>

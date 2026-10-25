@@ -197,6 +197,7 @@ function enablesShell(node: TSESTree.Node | undefined): boolean {
 export const noCommandInjectionInTool = createRule<[], MessageIds>({
   name: 'no-command-injection-in-tool',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mcp-sdk-security/docs/rules/no-command-injection-in-tool.md',
@@ -224,18 +225,9 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    // Asked once, up front, over the whole AST. The two-visitor gate this
-    // replaces saw ESM and `require()` only, so import-equals and dynamic
-    // `import()` files ran no rule at all.
-    if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
-    // Names in a legacy params shape resolve through consts and relative
-    // imports, so `{ path: PathSchema }` reads as the schema it is.
-    const resolve = valueResolverFor(context);
-
-    /** Tool handler functions → the argument object their first parameter gets. */
-    const handlers = createHandlerCollector(context, resolve, 'arguments');
-    const candidates: Array<{ node: TSESTree.Node; sink: string }> = [];
+  createOnce(context) {
+    let handlers: ReturnType<typeof createHandlerCollector>;
+    let candidates: { node: TSESTree.Node; sink: string }[];
 
     /** The `child_process` / `execa` export this callee resolves to. */
     function sinkOf(
@@ -343,6 +335,20 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
     }
 
     return {
+      before() {
+        // Asked once, up front, over the whole AST. The two-visitor gate this
+        // replaces saw ESM and `require()` only, so import-equals and dynamic
+        // `import()` files ran no rule at all.
+        if (!fileUsesMcpSdk(context.sourceCode.ast)) return false;
+        // Names in a legacy params shape resolve through consts and relative
+        // imports, so `{ path: PathSchema }` reads as the schema it is.
+        const resolve = valueResolverFor(context);
+
+        /** Tool handler functions → the argument object their first parameter gets. */
+        handlers = createHandlerCollector(context, resolve, 'arguments');
+        candidates = [];
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const scope = context.sourceCode.getScope(node);
 

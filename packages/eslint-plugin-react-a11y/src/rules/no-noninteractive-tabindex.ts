@@ -138,6 +138,10 @@ export function getRoleValue(
 export const noNoninteractiveTabindex = createRule<RuleOptions, MessageIds>({
   name: 'no-noninteractive-tabindex',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/no-noninteractive-tabindex',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-noninteractive-tabindex.md',
@@ -177,20 +181,26 @@ export const noNoninteractiveTabindex = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [DEFAULT_OPTIONS],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
-    const {
-      tags = DEFAULT_OPTIONS.tags,
-      roles = DEFAULT_OPTIONS.roles,
-      allowExpressionValues = DEFAULT_OPTIONS.allowExpressionValues,
-    } = {
-      ...DEFAULT_OPTIONS,
-      ...options,
-    };
+    let tags: string[];
+    let roles: string[];
+    let allowExpressionValues: boolean;
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        ({
+          tags = DEFAULT_OPTIONS.tags,
+          roles = DEFAULT_OPTIONS.roles,
+          allowExpressionValues = DEFAULT_OPTIONS.allowExpressionValues,
+        } = {
+          ...DEFAULT_OPTIONS,
+          ...options,
+        });
+      },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier') return;
 

@@ -93,6 +93,7 @@ function endsWithIndex(importPath: string): boolean {
 export const noBarrelImport = createRule<RuleOptions, MessageIds>({
   name: 'no-barrel-import',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-barrel-import.md',
@@ -149,24 +150,28 @@ export const noBarrelImport = createRule<RuleOptions, MessageIds>({
       ignoredPackages: [],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      knownBarrels = [],
-      ignoreNodeModules = true,
-      ignoredPackages = [],
-    }: NoBarrelImportOptions = options || {};
+    let knownBarrels: string[];
+    let ignoreNodeModules: boolean;
+    let ignoredPackages: string[];
 
     function checkImportPath(
-      node: TSESTree.ImportDeclaration | TSESTree.ExportAllDeclaration | TSESTree.ExportNamedDeclaration,
+      node:
+        | TSESTree.ImportDeclaration
+        | TSESTree.ExportAllDeclaration
+        | TSESTree.ExportNamedDeclaration,
       importPath: string,
     ) {
       // Skip node_modules if configured
       if (ignoreNodeModules && isNodeModulesImport(importPath)) {
         // Check if it's an ignored package
-        if (ignoredPackages.length > 0 && matchesPattern(importPath, ignoredPackages)) {
+        if (
+          ignoredPackages.length > 0 &&
+          matchesPattern(importPath, ignoredPackages)
+        ) {
           return;
         }
 
@@ -202,6 +207,14 @@ export const noBarrelImport = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          knownBarrels = [],
+          ignoreNodeModules = true,
+          ignoredPackages = [],
+        } = options || {});
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const importPath = node.source.value;
         if (typeof importPath === 'string') {

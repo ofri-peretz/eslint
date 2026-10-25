@@ -113,6 +113,7 @@ export function destructuredArgNames(
 export const noUnvalidatedToolArgs = createRule<[], MessageIds>({
   name: 'no-unvalidated-tool-args',
   meta: {
+    interop: { runtimes: ['eslint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mcp-sdk-security/docs/rules/no-unvalidated-tool-args.md',
@@ -154,22 +155,27 @@ export const noUnvalidatedToolArgs = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    // Asked once, up front, over the whole AST. The two-visitor gate this
-    // replaces saw ESM and `require()` only, so import-equals and dynamic
-    // `import()` files ran no rule at all.
-    if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
-    // Names in a legacy params shape resolve through consts and relative
-    // imports, so `{ path: PathSchema }` reads as the schema it is.
-    const resolve = valueResolverFor(context);
-    const candidates: Array<{
+  createOnce(context) {
+    let resolve: (node: TSESTree.Node) => TSESTree.Node | undefined;
+    let candidates: {
       node: TSESTree.Node;
       tool: string;
       arg: string;
       messageId: MessageIds;
-    }> = [];
+    }[];
 
     return {
+      before() {
+        // Asked once, up front, over the whole AST. The two-visitor gate this
+        // replaces saw ESM and `require()` only, so import-equals and dynamic
+        // `import()` files ran no rule at all.
+        if (!fileUsesMcpSdk(context.sourceCode.ast)) return false;
+        // Names in a legacy params shape resolve through consts and relative
+        // imports, so `{ path: PathSchema }` reads as the schema it is.
+        resolve = valueResolverFor(context);
+        candidates = [];
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const registration = readRegistration(node, resolve);
         // No readable schema means no contract to check against. That is

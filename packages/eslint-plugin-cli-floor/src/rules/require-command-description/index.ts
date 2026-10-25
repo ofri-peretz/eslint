@@ -30,6 +30,7 @@ type MessageIds = 'missingDescription';
 export const requireCommandDescription = createRule<[], MessageIds>({
   name: 'require-command-description',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-cli-floor/docs/rules/require-command-description.md',
@@ -50,10 +51,12 @@ export const requireCommandDescription = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    if (!fileUsesCliHost(context.sourceCode.ast)) return {};
-
+  createOnce(context) {
     return {
+      before() {
+        if (!fileUsesCliHost(context.sourceCode.ast)) return false;
+        return true;
+      },
       'Program:exit'(): void {
         for (const command of programModel(context.sourceCode).commands) {
           // A hidden command is not in help; what it would say there is moot.

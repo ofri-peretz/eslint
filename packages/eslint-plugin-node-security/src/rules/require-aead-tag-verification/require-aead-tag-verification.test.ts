@@ -103,15 +103,22 @@ describe('require-aead-tag-verification', () => {
         `,
       },
       // A computed algorithm belongs to no-dynamic-algorithm-selection.
-      { code: `const d = crypto.createDecipheriv(algorithm, key, iv); d.update(ct);` },
-      { code: `const d = crypto.createDecipheriv(256, key, iv); d.update(ct);` },
+      {
+        code: `const d = crypto.createDecipheriv(algorithm, key, iv); d.update(ct);`,
+        name: 'a cipher algorithm held in a variable cannot be judged to be AEAD',
+      },
+      {
+        code: `const d = crypto.createDecipheriv(256, key, iv); d.update(ct);`,
+      },
       { code: `const d = crypto.createDecipheriv();` },
       // Not a decipher factory at all.
       { code: `const d = crypto.createHash('sha256');` },
       { code: `const d = makeThing('aes-256-gcm');` },
       { code: `const d = crypto[make]('aes-256-gcm', key, iv);` },
       // Not a plain `const x = call()` binding.
-      { code: `const { d } = crypto.createDecipheriv('aes-256-gcm', key, iv);` },
+      {
+        code: `const { d } = crypto.createDecipheriv('aes-256-gcm', key, iv);`,
+      },
       { code: `let d;` },
       { code: `const d = 42;` },
       // allowInTests bypass.

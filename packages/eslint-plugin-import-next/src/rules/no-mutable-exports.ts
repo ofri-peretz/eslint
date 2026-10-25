@@ -26,6 +26,10 @@ type RuleOptions = [Options?];
 export const noMutableExports = createRule<RuleOptions, MessageIds>({
   name: 'no-mutable-exports',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/no-mutable-exports',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-mutable-exports.md',
@@ -87,14 +91,10 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const { allowInFiles = [], ignoreExports = [] } = options || {};
-
-    const filename = context.filename;
-    if (!filename) {
-      return {};
-    }
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowInFiles: string[];
+    let ignoreExports: string[];
+    let filename: string;
 
     function shouldSkipFile(): boolean {
       return allowInFiles.some((pattern: string) => filename.includes(pattern));
@@ -129,19 +129,23 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
       if (node.type === 'Identifier') {
         reportMutableExport(reportNode, node.name, kind);
       } else if (node.type === 'ObjectPattern') {
-        node.properties.forEach((prop: TSESTree.RestElement | TSESTree.Property) => {
-          if (prop.type === 'Property' && prop.value) {
-            checkPattern(prop.value as TSESTree.BindingName, kind, prop.key);
-          } else if (prop.type === 'RestElement') {
-            checkPattern(prop.argument as TSESTree.BindingName, kind, prop);
-          }
-        });
+        node.properties.forEach(
+          (prop: TSESTree.RestElement | TSESTree.Property) => {
+            if (prop.type === 'Property' && prop.value) {
+              checkPattern(prop.value as TSESTree.BindingName, kind, prop.key);
+            } else if (prop.type === 'RestElement') {
+              checkPattern(prop.argument as TSESTree.BindingName, kind, prop);
+            }
+          },
+        );
       } else if (node.type === 'ArrayPattern') {
-        node.elements.forEach((element: TSESTree.DestructuringPattern | null) => {
-          if (element) {
-            checkPattern(element as TSESTree.BindingName, kind, element);
-          }
-        });
+        node.elements.forEach(
+          (element: TSESTree.DestructuringPattern | null) => {
+            if (element) {
+              checkPattern(element as TSESTree.BindingName, kind, element);
+            }
+          },
+        );
       }
     }
 
@@ -174,6 +178,16 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({ allowInFiles = [], ignoreExports = [] } = options || {});
+
+        filename = context.filename;
+        if (!filename) {
+          return false;
+        }
+        return true;
+      },
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
         if (node.declaration?.type === 'VariableDeclaration') {
           const { kind, declarations } = node.declaration;
@@ -196,7 +210,10 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
         for (const specifier of node.specifiers) {
           // `local` can only be a string literal in a re-export
           // (`export { "a" as b } from './m'`), and those returned above.
-          const declaration = mutableDeclaration(node, (specifier.local as TSESTree.Identifier).name);
+          const declaration = mutableDeclaration(
+            node,
+            (specifier.local as TSESTree.Identifier).name,
+          );
           if (!declaration) continue;
 
           // The option is spelled `ignoreExports`, so it matches the name the

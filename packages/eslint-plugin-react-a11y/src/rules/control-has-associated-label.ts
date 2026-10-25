@@ -240,6 +240,10 @@ function hasInteractiveRole(
 export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
   name: 'control-has-associated-label',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/control-has-associated-label',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/control-has-associated-label.md',
@@ -274,19 +278,27 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
-    const {
-      labelAttributes = [],
-      controlComponents = [],
-      ignoreElements = DEFAULT_IGNORE_ELEMENTS,
-      ignoreRoles = DEFAULT_IGNORE_ROLES,
-      depth = 2,
-    } = options ?? ({} as Options);
+    let labelAttributes: string[];
+    let controlComponents: string[];
+    let ignoreElements: string[];
+    let ignoreRoles: string[];
+    let depth: number;
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        ({
+          labelAttributes = [],
+          controlComponents = [],
+          ignoreElements = DEFAULT_IGNORE_ELEMENTS,
+          ignoreRoles = DEFAULT_IGNORE_ROLES,
+          depth = 2,
+        } = options ?? ({} as Options));
+      },
       JSXElement(node: TSESTree.JSXElement) {
         const openingElement = node.openingElement;
 

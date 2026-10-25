@@ -154,7 +154,9 @@ function hasDeclaration(
   property: string,
   matches: (value: string) => boolean,
 ): boolean {
-  return declarations.some(([prop, value]) => prop === property && matches(value));
+  return declarations.some(
+    ([prop, value]) => prop === property && matches(value),
+  );
 }
 
 /**
@@ -256,14 +258,19 @@ function foldToString(
   }
   if (node.type === 'Identifier') {
     const init = resolveInitializer(node, sourceCode);
-    return init === undefined ? null : foldToString(init, sourceCode, depth + 1);
+    return init === undefined
+      ? null
+      : foldToString(init, sourceCode, depth + 1);
   }
   if (node.type === 'MemberExpression' && node.computed) {
     const index = node.property;
-    if (index.type !== 'Literal' || typeof index.value !== 'number') return null;
+    if (index.type !== 'Literal' || typeof index.value !== 'number')
+      return null;
     const array = foldToArrayExpression(node.object, sourceCode, depth + 1);
     const element = array?.elements[index.value];
-    return element == null ? null : foldToString(element, sourceCode, depth + 1);
+    return element == null
+      ? null
+      : foldToString(element, sourceCode, depth + 1);
   }
   return null;
 }
@@ -284,7 +291,8 @@ function foldToArrayExpression(
   // A nested table — `EMBEDS[0][1]`, one row per environment.
   if (node.type === 'MemberExpression' && node.computed) {
     const index = node.property;
-    if (index.type !== 'Literal' || typeof index.value !== 'number') return null;
+    if (index.type !== 'Literal' || typeof index.value !== 'number')
+      return null;
     const outer = foldToArrayExpression(node.object, sourceCode, depth + 1);
     const element = outer?.elements[index.value];
     return element == null
@@ -384,8 +392,7 @@ function insideFrameBustingGuard(
 ): boolean {
   const crossed: TSESTree.Node[] = [];
   let current: TSESTree.Node | undefined = node.parent as
-    | TSESTree.Node
-    | undefined;
+    TSESTree.Node | undefined;
   while (current) {
     if (FUNCTION_TYPES.has(current.type)) crossed.push(current);
     // Both forms of the test, not just one.
@@ -411,6 +418,7 @@ function insideFrameBustingGuard(
 export const noClickjacking = createRule<RuleOptions, MessageIds>({
   name: 'no-clickjacking',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     deprecated: true,
     replacedBy: ['@see eslint-plugin-express-security/require-helmet'],
@@ -509,71 +517,33 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const {
-      trustedSources = ['self', 'same-origin'],
-      requireFrameBusting = true,
-      detectTransparentOverlays = true,
-      trustedAnnotations = [],
-      strictMode = false,
-    }: Options = options;
-
-    const sourceCode = context.sourceCode;
-    const filename = context.filename;
-
-    // Create safety checker for false positive detection.
-    //
-    // `trustedSanitizers` is deliberately absent. It only marks a node safe
-    // when that node IS a sanitisation call (or an identifier initialised from
-    // one) — and every node this rule reports is a JSXElement, a
-    // MemberExpression, a Literal or a TemplateLiteral. The option could never
-    // change a verdict here, so it was removed from the schema rather than
-    // left in place looking configurable.
-    const safetyChecker = createSafetyChecker({
-      trustedAnnotations,
-      trustedOrmPatterns: [],
-      strictMode,
-    });
-
-    // Track if frame-busting code is present
-    let hasFrameBusting = false;
-
-    /**
-     * Does this file build the document that could be framed?
-     *
-     * The question `requireFrameBusting` needs, and the one the rule used to
-     * answer with a FILENAME REGEX over `index|app|main|page|layout` plus a
-     * substring scan over the printed text of the whole file, looking for
-     * `<button`. Two consequences, both measured:
-     *
-     * - Identical bytes reported in `src/app/layout.tsx` and stayed silent in
-     *   `src/components/Toolbar.tsx`. A rule whose verdict moves when you
-     *   rename the file has not looked at the code.
-     * - A file that already set `frame-ancestors 'none'` still reported,
-     *   because nothing except JavaScript frame-busting could clear the check.
-     *
-     * A document shell — `<html>`, `<head>`, `<body>` — is real AST evidence
-     * that this file decides what the browser renders as a top-level document.
-     * `Toolbar.tsx` renders a fragment inside somebody else's document and has
-     * no say in whether that document can be framed.
-     */
-    let buildsDocumentShell = false;
-
-    /** Does the file establish frame protection by header or meta tag? */
-    let hasDeclaredFrameProtection = false;
-
-    /**
-     * @protocol-constant The three HTML elements that make a document a
-     * document. Fixed by the HTML specification — a page cannot declare a fourth
-     * — and it is what distinguishes a full document shell (which can be framed,
-     * so must bust out) from a component fragment (which cannot be framed alone).
-     */
-    const DOCUMENT_SHELL_TAGS: ReadonlySet<string> = new Set([
-      'html',
-      'head',
-      'body',
-    ]);
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let trustedSources: string[];
+    let requireFrameBusting: boolean;
+    let detectTransparentOverlays: boolean;
+    let trustedAnnotations: string[];
+    let strictMode: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let filename: string;
+    let safetyChecker: {
+      isSafe(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      isSanitized(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      hasAnnotation(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+    };
+    let hasFrameBusting: boolean;
+    let buildsDocumentShell: boolean;
+    let hasDeclaredFrameProtection: boolean;
+    let DOCUMENT_SHELL_TAGS: ReadonlySet<string>;
+    let HEADER_SETTERS: Set<string>;
 
     /**
      * `frame-ancestors <something other than *>` or an X-Frame-Options value.
@@ -611,19 +581,6 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Methods that actually SET a response header. `res.setHeader(...)` and
-     * `res.header(...)` are Express/Node; `headers.set/append` is the Fetch
-     * `Headers` API; `setRequestHeader` is XHR.
-     */
-    const HEADER_SETTERS = new Set([
-      'setheader',
-      'setrequestheader',
-      'header',
-      'set',
-      'append',
-    ]);
-
-    /**
      * Is this string literal the VALUE of an X-Frame-Options header?
      *
      * Three spellings carry one meaning, and the rule must read all three or
@@ -640,7 +597,10 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
         const key = objectKeyName(parent)?.toLowerCase() ?? '';
         if (key === 'x-frame-options') return true;
         // The `{ key, value }` pair shape: look across at the sibling `key`.
-        if (key === 'value' && parent.parent.type === AST_NODE_TYPES.ObjectExpression) {
+        if (
+          key === 'value' &&
+          parent.parent.type === AST_NODE_TYPES.ObjectExpression
+        ) {
           return parent.parent.properties.some(
             (sibling) =>
               sibling.type === AST_NODE_TYPES.Property &&
@@ -665,8 +625,11 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
       // `setHeader(name, value)`. Position alone does not do it; a logger call
       // has the same shape.
       if (parent.type === AST_NODE_TYPES.CallExpression) {
-        if (parent.callee.type !== AST_NODE_TYPES.MemberExpression) return false;
-        if (!HEADER_SETTERS.has(propertyName(parent.callee)?.toLowerCase() ?? ''))
+        if (parent.callee.type !== AST_NODE_TYPES.MemberExpression)
+          return false;
+        if (
+          !HEADER_SETTERS.has(propertyName(parent.callee)?.toLowerCase() ?? '')
+        )
           return false;
         const index = parent.arguments.indexOf(node);
         if (index < 1) return false;
@@ -751,7 +714,9 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
       return (
         // Fully transparent — `0`, `0.0`, `0%`. NOT `0.5`, which the old
         // substring test also matched, and NOT a fade-in on its way up.
-        (hasDeclaration(declarations, 'opacity', (v) => /^0(?:\.0+)?%?$/.test(v)) &&
+        (hasDeclaration(declarations, 'opacity', (v) =>
+          /^0(?:\.0+)?%?$/.test(v),
+        ) &&
           !animatesProperty(declarations, 'opacity')) ||
         (hasDeclaration(declarations, 'visibility', (v) => v === 'hidden') &&
           !animatesProperty(declarations, 'visibility')) ||
@@ -761,6 +726,81 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({
+          trustedSources = ['self', 'same-origin'],
+          requireFrameBusting = true,
+          detectTransparentOverlays = true,
+          trustedAnnotations = [],
+          strictMode = false,
+        } = options);
+
+        sourceCode = context.sourceCode;
+        filename = context.filename;
+
+        // Create safety checker for false positive detection.
+        //
+        // `trustedSanitizers` is deliberately absent. It only marks a node safe
+        // when that node IS a sanitisation call (or an identifier initialised from
+        // one) — and every node this rule reports is a JSXElement, a
+        // MemberExpression, a Literal or a TemplateLiteral. The option could never
+        // change a verdict here, so it was removed from the schema rather than
+        // left in place looking configurable.
+        safetyChecker = createSafetyChecker({
+          trustedAnnotations,
+          trustedOrmPatterns: [],
+          strictMode,
+        });
+
+        // Track if frame-busting code is present
+        hasFrameBusting = false;
+
+        /**
+         * Does this file build the document that could be framed?
+         *
+         * The question `requireFrameBusting` needs, and the one the rule used to
+         * answer with a FILENAME REGEX over `index|app|main|page|layout` plus a
+         * substring scan over the printed text of the whole file, looking for
+         * `<button`. Two consequences, both measured:
+         *
+         * - Identical bytes reported in `src/app/layout.tsx` and stayed silent in
+         *   `src/components/Toolbar.tsx`. A rule whose verdict moves when you
+         *   rename the file has not looked at the code.
+         * - A file that already set `frame-ancestors 'none'` still reported,
+         *   because nothing except JavaScript frame-busting could clear the check.
+         *
+         * A document shell — `<html>`, `<head>`, `<body>` — is real AST evidence
+         * that this file decides what the browser renders as a top-level document.
+         * `Toolbar.tsx` renders a fragment inside somebody else's document and has
+         * no say in whether that document can be framed.
+         */
+        buildsDocumentShell = false;
+
+        /** Does the file establish frame protection by header or meta tag? */
+        hasDeclaredFrameProtection = false;
+
+        /**
+         * @protocol-constant The three HTML elements that make a document a
+         * document. Fixed by the HTML specification — a page cannot declare a fourth
+         * — and it is what distinguishes a full document shell (which can be framed,
+         * so must bust out) from a component fragment (which cannot be framed alone).
+         */
+        DOCUMENT_SHELL_TAGS = new Set(['html', 'head', 'body']);
+
+        /**
+         * Methods that actually SET a response header. `res.setHeader(...)` and
+         * `res.header(...)` are Express/Node; `headers.set/append` is the Fetch
+         * `Headers` API; `setRequestHeader` is XHR.
+         */
+        HEADER_SETTERS = new Set([
+          'setheader',
+          'setrequestheader',
+          'header',
+          'set',
+          'append',
+        ]);
+      },
       // Check for frame-busting code
       IfStatement(node: TSESTree.IfStatement) {
         if (isFrameBustingCode(node)) {
@@ -844,7 +884,8 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
           !(node.object.type === 'Identifier' && node.object.name === 'self')
         ) {
           if (
-            (propertyName(node) === 'location' || propertyName(node) === 'top')
+            propertyName(node) === 'location' ||
+            propertyName(node) === 'top'
           ) {
             // Check if this is being assigned or compared
             let current: TSESTree.Node | undefined = node;

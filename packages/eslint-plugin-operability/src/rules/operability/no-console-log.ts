@@ -101,6 +101,7 @@ type RuleOptions = [Options?];
 export const noConsoleLog = createRule<RuleOptions, MessageIds>({
   name: 'no-console-log',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-operability/docs/rules/no-console-log.md',
@@ -232,78 +233,20 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
       sourcePatterns: ['console'],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const {
-      strategy = 'remove',
-      ignorePaths = [],
-      ignoreNonProductionPaths = true,
-      loggerName,
-      maxOccurrences,
-      severityMap = {},
-      autoDetectLogger = true,
-      sourcePatterns = ['console'],
-    } = options;
-
-    /** Merge user's severityMap with defaults to determine method mappings */
-    const effectiveSeverityMap = { ...DEFAULT_SEVERITY_MAP, ...severityMap };
-
-    const filename = context.filename;
-    // oxlint-disable-next-line no-shadow
-    const sourceCode = context.sourceCode;
-    const occurrences: number[] = [];
-
-    /**
-     * Auto-detect logger in file by scanning imports.
-     * Uses strict pattern matching to avoid false positives (e.g., 'reactLogo').
-     */
-    let detectedLogger: string | null = null;
-
-    if (autoDetectLogger) {
-      const ast = sourceCode.ast;
-      const loggerPatterns = /^(logger|log|winston|bunyan|pino|console)$/i;
-
-      for (const statement of ast.body) {
-        if (statement.type === 'ImportDeclaration') {
-          for (const specifier of statement.specifiers) {
-            if (
-              specifier.type === 'ImportDefaultSpecifier' ||
-              specifier.type === 'ImportSpecifier'
-            ) {
-              const name = specifier.local.name;
-              if (loggerPatterns.test(name)) {
-                detectedLogger = name;
-                break;
-              }
-            }
-          }
-        }
-        // Look for require() calls
-        if (statement.type === 'VariableDeclaration') {
-          for (const declarator of statement.declarations) {
-            if (
-              declarator.init?.type === 'CallExpression' &&
-              declarator.init.callee.type === 'Identifier' &&
-              declarator.init.callee.name === 'require' &&
-              declarator.id.type === 'Identifier'
-            ) {
-              const name = declarator.id.name;
-              if (loggerPatterns.test(name)) {
-                detectedLogger = name;
-                break;
-              }
-            }
-          }
-        }
-        if (detectedLogger) break;
-      }
-    }
-
-    /**
-     * Determine the effective logger to use.
-     * Priority: explicit loggerName from config > auto-detected logger > default 'logger'
-     */
-    const effectiveLogger = loggerName || detectedLogger || 'logger';
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let strategy: Strategy;
+    let ignorePaths: string[];
+    let ignoreNonProductionPaths: boolean;
+    let loggerName: string | undefined;
+    let maxOccurrences: number | 'all' | undefined;
+    let severityMap: SeverityMapping;
+    let autoDetectLogger: boolean;
+    let sourcePatterns: string[];
+    let effectiveSeverityMap: { [x: string]: string };
+    let filename: string;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let occurrences: number[];
+    let effectiveLogger: string;
 
     /**
      * Whether `name` resolves to a binding visible from `node` — walking the
@@ -363,11 +306,85 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
       });
     };
 
-    if (shouldIgnoreFile()) {
-      return {};
-    }
-
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({
+          strategy = 'remove',
+          ignorePaths = [],
+          ignoreNonProductionPaths = true,
+          loggerName,
+          maxOccurrences,
+          severityMap = {},
+          autoDetectLogger = true,
+          sourcePatterns = ['console'],
+        } = options);
+
+        /** Merge user's severityMap with defaults to determine method mappings */
+        effectiveSeverityMap = { ...DEFAULT_SEVERITY_MAP, ...severityMap };
+
+        filename = context.filename;
+        // oxlint-disable-next-line no-shadow
+        sourceCode = context.sourceCode;
+        occurrences = [];
+
+        /**
+         * Auto-detect logger in file by scanning imports.
+         * Uses strict pattern matching to avoid false positives (e.g., 'reactLogo').
+         */
+        let detectedLogger: string | null = null;
+
+        if (autoDetectLogger) {
+          const ast = sourceCode.ast;
+          const loggerPatterns = /^(logger|log|winston|bunyan|pino|console)$/i;
+
+          for (const statement of ast.body) {
+            if (statement.type === 'ImportDeclaration') {
+              for (const specifier of statement.specifiers) {
+                if (
+                  specifier.type === 'ImportDefaultSpecifier' ||
+                  specifier.type === 'ImportSpecifier'
+                ) {
+                  const name = specifier.local.name;
+                  if (loggerPatterns.test(name)) {
+                    detectedLogger = name;
+                    break;
+                  }
+                }
+              }
+            }
+            // Look for require() calls
+            if (statement.type === 'VariableDeclaration') {
+              for (const declarator of statement.declarations) {
+                if (
+                  declarator.init?.type === 'CallExpression' &&
+                  declarator.init.callee.type === 'Identifier' &&
+                  declarator.init.callee.name === 'require' &&
+                  declarator.id.type === 'Identifier'
+                ) {
+                  const name = declarator.id.name;
+                  if (loggerPatterns.test(name)) {
+                    detectedLogger = name;
+                    break;
+                  }
+                }
+              }
+            }
+            if (detectedLogger) break;
+          }
+        }
+
+        /**
+         * Determine the effective logger to use.
+         * Priority: explicit loggerName from config > auto-detected logger > default 'logger'
+         */
+        effectiveLogger = loggerName || detectedLogger || 'logger';
+
+        if (shouldIgnoreFile()) {
+          return false;
+        }
+        return true;
+      },
       /**
        * CallExpression visitor that checks for member expressions matching source patterns.
        * Handles calls like console.log(), winston.info(), oldLogger.debug(), etc.

@@ -230,6 +230,7 @@ function isRedirectValidated(
 export const noInsecureRedirects = createRule<RuleOptions, MessageIds>({
   name: 'no-insecure-redirects',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-insecure-redirects.md',
@@ -274,20 +275,11 @@ export const noInsecureRedirects = createRule<RuleOptions, MessageIds>({
       allowedDomains: [],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { ignoreInTests = true }: Options = options || {};
-
-    const filename = context.filename;
-    const isTestFile = ignoreInTests && isTestFilePath(filename);
-
-    if (isTestFile) {
-      return {};
-    }
-
-    const sourceCode = context.sourceCode;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /**
      * Check redirect calls and assignments
@@ -348,6 +340,20 @@ export const noInsecureRedirects = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { ignoreInTests = true }: Options = options || {};
+
+        const filename = context.filename;
+        const isTestFile = ignoreInTests && isTestFilePath(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+
+        sourceCode = context.sourceCode;
+        return true;
+      },
       CallExpression: checkCallExpression,
       AssignmentExpression: checkAssignmentExpression,
     };

@@ -27,6 +27,10 @@ type RuleOptions = [Options?];
 export const mediaHasCaption = createRule<RuleOptions, MessageIds>({
   name: 'media-has-caption',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/media-has-caption',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/media-has-caption.md',
@@ -58,16 +62,26 @@ export const mediaHasCaption = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
-    const { audio = [], video = [], track = [] } = options ?? ({} as Options);
-    const audioElements = new Set(['audio', ...audio]);
-    const videoElements = new Set(['video', ...video]);
-    const trackElements = new Set(['track', ...track]);
+    let audioElements: Set<string>;
+    let videoElements: Set<string>;
+    let trackElements: Set<string>;
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        const {
+          audio = [],
+          video = [],
+          track = [],
+        } = options ?? ({} as Options);
+        audioElements = new Set(['audio', ...audio]);
+        videoElements = new Set(['video', ...video]);
+        trackElements = new Set(['track', ...track]);
+      },
       JSXElement(node: TSESTree.JSXElement) {
         const openingElement = node.openingElement;
         if (openingElement.name.type !== 'JSXIdentifier') return;

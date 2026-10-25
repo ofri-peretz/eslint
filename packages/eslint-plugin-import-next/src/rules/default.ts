@@ -21,6 +21,7 @@ type RuleOptions = [];
 export const defaultRule = createRule<RuleOptions, MessageIds>({
   name: 'default',
   meta: {
+    interop: { runtimes: ['eslint'], nativeEquivalent: 'import/default' },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/default.md',

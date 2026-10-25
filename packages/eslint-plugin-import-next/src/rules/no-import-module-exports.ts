@@ -31,6 +31,7 @@ type RuleOptions = [Options?];
 export const noImportModuleExports = createRule<RuleOptions, MessageIds>({
   name: 'no-import-module-exports',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-import-module-exports.md',
@@ -66,12 +67,17 @@ export const noImportModuleExports = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ exceptions: [] }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    let hasImport = false;
-    const importNodes: TSESTree.ImportDeclaration[] = [];
-    const moduleExportsNodes: TSESTree.Node[] = [];
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let hasImport: boolean;
+    let importNodes: TSESTree.ImportDeclaration[];
+    let moduleExportsNodes: TSESTree.Node[];
 
     return {
+      before() {
+        hasImport = false;
+        importNodes = [];
+        moduleExportsNodes = [];
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         hasImport = true;
         importNodes.push(node);

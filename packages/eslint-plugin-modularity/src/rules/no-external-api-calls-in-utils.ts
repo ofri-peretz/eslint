@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: no-external-api-calls-in-utils
  * Detects network calls in utility functions
- * 
+ *
  * @see https://rules.sonarsource.com/javascript/RSPEC-1075/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -86,8 +86,10 @@ const AMBIGUOUS_MODULE_NAMES = new Set(['request', 'got']);
  * Check if file is a utility file
  */
 function isUtilityFile(filename: string, patterns: string[]): boolean {
-  return patterns.some(pattern => {
-    const regex = new RegExp(pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*'));
+  return patterns.some((pattern) => {
+    const regex = new RegExp(
+      pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*'),
+    );
     return regex.test(filename);
   });
 }
@@ -122,6 +124,7 @@ function requiredModule(node: TSESTree.Node): string | null {
 export const noExternalApiCallsInUtils = createRule<RuleOptions, MessageIds>({
   name: 'no-external-api-calls-in-utils',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modularity/docs/rules/no-external-api-calls-in-utils.md',
@@ -135,7 +138,8 @@ export const noExternalApiCallsInUtils = createRule<RuleOptions, MessageIds>({
         description: 'Network call in utility function - breaks testability',
         severity: 'HIGH',
         fix: 'Use dependency injection for network calls',
-        documentationLink: 'https://rules.sonarsource.com/javascript/RSPEC-1075/',
+        documentationLink:
+          'https://rules.sonarsource.com/javascript/RSPEC-1075/',
       }),
       useDependencyInjection: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -151,7 +155,8 @@ export const noExternalApiCallsInUtils = createRule<RuleOptions, MessageIds>({
         description: 'Extract to service layer',
         severity: 'LOW',
         fix: 'Create services/apiService.ts',
-        documentationLink: 'https://martinfowler.com/eaaCatalog/serviceLayer.html',
+        documentationLink:
+          'https://martinfowler.com/eaaCatalog/serviceLayer.html',
       }),
       passApiClient: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -200,53 +205,26 @@ export const noExternalApiCallsInUtils = createRule<RuleOptions, MessageIds>({
       utilityPatterns: DEFAULT_UTILITY_PATTERNS,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const {
-      httpModules = DEFAULT_HTTP_MODULES,
-      ignoreInTests = true,
-      networkMethods = DEFAULT_NETWORK_METHODS,
-      utilityPatterns = DEFAULT_UTILITY_PATTERNS,
-    }: Options = options || {};
-
-    const filename = context.filename;
-    const isTestFile = ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
-
-    if (isTestFile) {
-      return {};
-    }
-
-    const isUtility = isUtilityFile(filename, utilityPatterns);
-
-    if (!isUtility) {
-      return {};
-    }
-
-    const modules = new Set(httpModules);
-    const methods = new Set(networkMethods);
-    // Explicit `object.method` pairs stay name-based — an escape hatch for
-    // in-house clients the import tracking can't know about.
-    const explicitPairs = new Set(networkMethods.filter(method => method.includes('.')));
-
-    /** Identifiers known to hold an HTTP client. */
-    const clients = new Set<string>(GLOBAL_CLIENTS);
-    for (const source of modules) {
-      const bare = source.replace(/^node:/, '');
-      if (/^[A-Za-z_$][\w$]*$/.test(bare) && !AMBIGUOUS_MODULE_NAMES.has(bare)) {
-        clients.add(bare);
-      }
-    }
-
-    // `const api = axios.create()` — resolved to a fixpoint on Program:exit so
-    // declaration order doesn't matter.
-    const aliases: Array<[local: string, root: string]> = [];
-    const calls: TSESTree.CallExpression[] = [];
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let modules: Set<string>;
+    let methods: Set<string>;
+    let explicitPairs: Set<string>;
+    let clients: Set<string>;
+    let aliases: [local: string, root: string][];
+    let calls: TSESTree.CallExpression[];
 
     function trackBinding(id: TSESTree.Node) {
       if (id.type === 'Identifier') {
         clients.add(id.name);
       } else if (id.type === 'ObjectPattern') {
         for (const property of id.properties) {
-          if (property.type === 'Property' && property.value.type === 'Identifier') {
+          if (
+            property.type === 'Property' &&
+            property.value.type === 'Identifier'
+          ) {
             clients.add(property.value.name);
           }
         }
@@ -287,12 +265,64 @@ export const noExternalApiCallsInUtils = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const {
+          httpModules = DEFAULT_HTTP_MODULES,
+          ignoreInTests = true,
+          networkMethods = DEFAULT_NETWORK_METHODS,
+          utilityPatterns = DEFAULT_UTILITY_PATTERNS,
+        }: Options = options || {};
+
+        const filename = context.filename;
+        const isTestFile =
+          ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+
+        const isUtility = isUtilityFile(filename, utilityPatterns);
+
+        if (!isUtility) {
+          return false;
+        }
+
+        modules = new Set(httpModules);
+        methods = new Set(networkMethods);
+        // Explicit `object.method` pairs stay name-based — an escape hatch for
+        // in-house clients the import tracking can't know about.
+        explicitPairs = new Set(
+          networkMethods.filter((method) => method.includes('.')),
+        );
+
+        /** Identifiers known to hold an HTTP client. */
+        clients = new Set<string>(GLOBAL_CLIENTS);
+        for (const source of modules) {
+          const bare = source.replace(/^node:/, '');
+          if (
+            /^[A-Za-z_$][\w$]*$/.test(bare) &&
+            !AMBIGUOUS_MODULE_NAMES.has(bare)
+          ) {
+            clients.add(bare);
+          }
+        }
+
+        // `const api = axios.create()` — resolved to a fixpoint on Program:exit so
+        // declaration order doesn't matter.
+        aliases = [];
+        calls = [];
+        return true;
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         if (node.importKind === 'type' || !modules.has(node.source.value)) {
           return;
         }
         for (const specifier of node.specifiers) {
-          if (specifier.type !== 'ImportSpecifier' || specifier.importKind !== 'type') {
+          if (
+            specifier.type !== 'ImportSpecifier' ||
+            specifier.importKind !== 'type'
+          ) {
             clients.add(specifier.local.name);
           }
         }
@@ -309,7 +339,9 @@ export const noExternalApiCallsInUtils = createRule<RuleOptions, MessageIds>({
           return;
         }
         // `const api = axios.create()` / `const send = axios.post`
-        const root = rootName(node.init.type === 'CallExpression' ? node.init.callee : node.init);
+        const root = rootName(
+          node.init.type === 'CallExpression' ? node.init.callee : node.init,
+        );
         if (root !== null && node.id.type === 'Identifier') {
           aliases.push([node.id.name, root]);
         }
@@ -356,4 +388,3 @@ export const noExternalApiCallsInUtils = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

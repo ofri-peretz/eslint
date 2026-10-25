@@ -97,6 +97,7 @@ const EVENT_PARAM_NAMES = new Set(['event', 'evt', 'e', 'request', 'req']);
 export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-authorization-check',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-missing-authorization-check.md',
@@ -113,10 +114,9 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
         description:
           'Lambda handler performs {{operation}} operation without authorization check. Users may access resources without proper permissions.',
         severity: 'HIGH',
-        fix: "Add authorization check: const claims = event.requestContext.authorizer?.claims; if (!claims?.sub) { return { statusCode: 401 } }",
+        fix: 'Add authorization check: const claims = event.requestContext.authorizer?.claims; if (!claims?.sub) { return { statusCode: 401 } }',
         documentationLink: 'https://cwe.mitre.org/data/definitions/862.html',
       }),
-
     },
     schema: [
       {
@@ -143,35 +143,21 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
       handlerPatterns: [],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    // Every rule here is Lambda-specific, and none of them knew it: over 107,382
-    // files, 98% of this plugin's findings were in files with no AWS anything.
-    // Registering no visitors is both the gate and the cheap path.
-    if (!fileIsLambda(context.sourceCode.ast)) return {};
-
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
-    // Track state within each handler function
     let currentFunctionNode:
       | TSESTree.ArrowFunctionExpression
       | TSESTree.FunctionExpression
       | TSESTree.FunctionDeclaration
-      | null = null;
-    let hasAuthCheck = false;
-    let hasEventParameter = false;
-    const sensitiveOperations: {
+      | null;
+    let hasAuthCheck: boolean;
+    let hasEventParameter: boolean;
+    let sensitiveOperations: {
       node: TSESTree.CallExpression;
       operation: string;
-    }[] = [];
+    }[];
 
     /**
      * Reset state when entering a new function
@@ -289,6 +275,28 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Every rule here is Lambda-specific, and none of them knew it: over 107,382
+        // files, 98% of this plugin's findings were in files with no AWS anything.
+        // Registering no visitors is both the gate and the cheap path.
+        if (!fileIsLambda(context.sourceCode.ast)) return false;
+
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+
+        // Track state within each handler function
+        currentFunctionNode = null;
+        hasAuthCheck = false;
+        hasEventParameter = false;
+        sensitiveOperations = [];
+        return true;
+      },
       'ArrowFunctionExpression, FunctionExpression, FunctionDeclaration'(
         node:
           | TSESTree.ArrowFunctionExpression

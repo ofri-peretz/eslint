@@ -24,8 +24,14 @@ describe('no-ecb-mode', () => {
   ruleTester.run('no-ecb-mode', noEcbMode, {
     valid: [
       { name: 'GCM', code: 'crypto.createCipheriv("aes-256-gcm", key, iv);' },
-      { name: 'AES-256-CBC is not ECB mode and is not reported', code: 'crypto.createCipheriv("aes-256-cbc", key, iv);' },
-      { code: 'crypto.createCipheriv("aes-256-ctr", key, iv);' },
+      {
+        name: 'AES-256-CBC is not ECB mode and is not reported',
+        code: 'crypto.createCipheriv("aes-256-cbc", key, iv);',
+      },
+      {
+        code: 'crypto.createCipheriv("aes-256-ctr", key, iv);',
+        name: 'CTR is a stream mode and is not ECB',
+      },
       { code: 'crypto.createCipheriv(algorithm, key, iv);' },
       { code: 'createCipheriv("aes-256-gcm", key, iv);' },
     ],
@@ -33,31 +39,75 @@ describe('no-ecb-mode', () => {
       {
         name: 'ECB leaks structure — identical blocks encrypt identically',
         code: 'crypto.createCipheriv("aes-256-ecb", key, iv);',
-        errors: [{ messageId: 'ecbMode', suggestions: [
-          { messageId: 'useGcm', output: 'crypto.createCipheriv("aes-256-gcm", key, iv);' },
-          { messageId: 'useCbc', output: 'crypto.createCipheriv("aes-256-cbc", key, iv);' },
-        ] }],
+        errors: [
+          {
+            messageId: 'ecbMode',
+            suggestions: [
+              {
+                messageId: 'useGcm',
+                output: 'crypto.createCipheriv("aes-256-gcm", key, iv);',
+              },
+              {
+                messageId: 'useCbc',
+                output: 'crypto.createCipheriv("aes-256-cbc", key, iv);',
+              },
+            ],
+          },
+        ],
       },
       {
         code: 'crypto.createCipheriv("aes-128-ecb", key, iv);',
-        errors: [{ messageId: 'ecbMode', suggestions: [
-          { messageId: 'useGcm', output: 'crypto.createCipheriv("aes-128-gcm", key, iv);' },
-          { messageId: 'useCbc', output: 'crypto.createCipheriv("aes-128-cbc", key, iv);' },
-        ] }],
+        errors: [
+          {
+            messageId: 'ecbMode',
+            suggestions: [
+              {
+                messageId: 'useGcm',
+                output: 'crypto.createCipheriv("aes-128-gcm", key, iv);',
+              },
+              {
+                messageId: 'useCbc',
+                output: 'crypto.createCipheriv("aes-128-cbc", key, iv);',
+              },
+            ],
+          },
+        ],
       },
       {
         code: 'crypto.createDecipheriv("aes-256-ecb", key, iv);',
-        errors: [{ messageId: 'ecbMode', suggestions: [
-          { messageId: 'useGcm', output: 'crypto.createDecipheriv("aes-256-gcm", key, iv);' },
-          { messageId: 'useCbc', output: 'crypto.createDecipheriv("aes-256-cbc", key, iv);' },
-        ] }],
+        errors: [
+          {
+            messageId: 'ecbMode',
+            suggestions: [
+              {
+                messageId: 'useGcm',
+                output: 'crypto.createDecipheriv("aes-256-gcm", key, iv);',
+              },
+              {
+                messageId: 'useCbc',
+                output: 'crypto.createDecipheriv("aes-256-cbc", key, iv);',
+              },
+            ],
+          },
+        ],
       },
       {
         code: 'createCipheriv("aes-256-ecb", key, iv);',
-        errors: [{ messageId: 'ecbMode', suggestions: [
-          { messageId: 'useGcm', output: 'createCipheriv("aes-256-gcm", key, iv);' },
-          { messageId: 'useCbc', output: 'createCipheriv("aes-256-cbc", key, iv);' },
-        ] }],
+        errors: [
+          {
+            messageId: 'ecbMode',
+            suggestions: [
+              {
+                messageId: 'useGcm',
+                output: 'createCipheriv("aes-256-gcm", key, iv);',
+              },
+              {
+                messageId: 'useCbc',
+                output: 'createCipheriv("aes-256-cbc", key, iv);',
+              },
+            ],
+          },
+        ],
       },
     ],
   });
@@ -79,35 +129,80 @@ describe('no-ecb-mode', () => {
       // A `let` can be reassigned between the declaration and the call, so its
       // initializer proves nothing about the value that arrives. Unresolved,
       // not safe — and unresolved stays quiet by design.
-      { code: 'let mode = "aes-256-ecb"; mode = pickMode(); crypto.createCipheriv(mode, key, iv);' },
+      {
+        code: 'let mode = "aes-256-ecb"; mode = pickMode(); crypto.createCipheriv(mode, key, iv);',
+      },
       // A const holding a safe mode must not start reporting.
-      { code: 'const MODE = "aes-256-gcm"; crypto.createCipheriv(MODE, key, iv);' },
+      {
+        code: 'const MODE = "aes-256-gcm"; crypto.createCipheriv(MODE, key, iv);',
+      },
       // Two definitions — no single provenance to read.
-      { code: 'var MODE = "aes-256-ecb"; var MODE = "aes-256-gcm"; crypto.createCipheriv(MODE, key, iv);' },
+      {
+        code: 'var MODE = "aes-256-ecb"; var MODE = "aes-256-gcm"; crypto.createCipheriv(MODE, key, iv);',
+      },
     ],
     invalid: [
       {
         code: 'const MODE = "aes-256-ecb"; crypto.createCipheriv(MODE, key, iv);',
-        errors: [{ messageId: 'ecbMode', suggestions: [
-          { messageId: 'useGcm', output: 'const MODE = "aes-256-gcm"; crypto.createCipheriv(MODE, key, iv);' },
-          { messageId: 'useCbc', output: 'const MODE = "aes-256-cbc"; crypto.createCipheriv(MODE, key, iv);' },
-        ] }],
+        errors: [
+          {
+            messageId: 'ecbMode',
+            suggestions: [
+              {
+                messageId: 'useGcm',
+                output:
+                  'const MODE = "aes-256-gcm"; crypto.createCipheriv(MODE, key, iv);',
+              },
+              {
+                messageId: 'useCbc',
+                output:
+                  'const MODE = "aes-256-cbc"; crypto.createCipheriv(MODE, key, iv);',
+              },
+            ],
+          },
+        ],
       },
       // Backticks spell the same constant as quotes.
       {
         code: 'const MODE = `aes-128-ecb`; crypto.createDecipheriv(MODE, key, iv);',
-        errors: [{ messageId: 'ecbMode', suggestions: [
-          { messageId: 'useGcm', output: 'const MODE = "aes-128-gcm"; crypto.createDecipheriv(MODE, key, iv);' },
-          { messageId: 'useCbc', output: 'const MODE = "aes-128-cbc"; crypto.createDecipheriv(MODE, key, iv);' },
-        ] }],
+        errors: [
+          {
+            messageId: 'ecbMode',
+            suggestions: [
+              {
+                messageId: 'useGcm',
+                output:
+                  'const MODE = "aes-128-gcm"; crypto.createDecipheriv(MODE, key, iv);',
+              },
+              {
+                messageId: 'useCbc',
+                output:
+                  'const MODE = "aes-128-cbc"; crypto.createDecipheriv(MODE, key, iv);',
+              },
+            ],
+          },
+        ],
       },
       // An inner `const` shadows an outer one; scope analysis, not a name map.
       {
         code: 'const MODE = "aes-256-gcm"; function enc() { const MODE = "aes-256-ecb"; return createCipheriv(MODE, key, iv); }',
-        errors: [{ messageId: 'ecbMode', suggestions: [
-          { messageId: 'useGcm', output: 'const MODE = "aes-256-gcm"; function enc() { const MODE = "aes-256-gcm"; return createCipheriv(MODE, key, iv); }' },
-          { messageId: 'useCbc', output: 'const MODE = "aes-256-gcm"; function enc() { const MODE = "aes-256-cbc"; return createCipheriv(MODE, key, iv); }' },
-        ] }],
+        errors: [
+          {
+            messageId: 'ecbMode',
+            suggestions: [
+              {
+                messageId: 'useGcm',
+                output:
+                  'const MODE = "aes-256-gcm"; function enc() { const MODE = "aes-256-gcm"; return createCipheriv(MODE, key, iv); }',
+              },
+              {
+                messageId: 'useCbc',
+                output:
+                  'const MODE = "aes-256-gcm"; function enc() { const MODE = "aes-256-cbc"; return createCipheriv(MODE, key, iv); }',
+              },
+            ],
+          },
+        ],
       },
     ],
   });

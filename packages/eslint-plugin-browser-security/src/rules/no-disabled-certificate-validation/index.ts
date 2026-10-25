@@ -61,6 +61,7 @@ export const noDisabledCertificateValidation = createRule<
   // `test/`, alongside 20 more from no-self-signed-certs in the same files.
   skipTestFiles: true,
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-disabled-certificate-validation.md',
@@ -93,27 +94,30 @@ export const noDisabledCertificateValidation = createRule<
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  createOnce(context) {
+    let dangerousProperties: Set<string>;
+    let identityChecks: {
+      property: TSESTree.Property;
+      canReportMismatch: boolean;
+    }[];
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
     }
 
-    const dangerousProperties = new Set([
-      'rejectUnauthorized',
-      'strictSSL',
-      'verify',
-    ]);
-
-    /**
-     * Open `checkServerIdentity` block bodies, innermost last. A body is
-     * damning until something in it proves it can report a mismatch.
-     */
-    const identityChecks: Array<{
-      property: TSESTree.Property;
-      canReportMismatch: boolean;
-    }> = [];
-
     return {
+      before() {
+        dangerousProperties = new Set([
+          'rejectUnauthorized',
+          'strictSSL',
+          'verify',
+        ]);
+
+        /**
+         * Open `checkServerIdentity` block bodies, innermost last. A body is
+         * damning until something in it proves it can report a mismatch.
+         */
+        identityChecks = [];
+      },
       Property(node: TSESTree.Property) {
         // Check for dangerous SSL options set to false
         const keyName = objectKeyName(node);

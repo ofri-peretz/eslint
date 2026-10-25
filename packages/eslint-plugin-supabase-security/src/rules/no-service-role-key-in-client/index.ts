@@ -178,6 +178,7 @@ function importsServerOnly(program: TSESTree.Program): boolean {
 export const noServiceRoleKeyInClient = createRule<[], MessageIds>({
   name: 'no-service-role-key-in-client',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-supabase-security/docs/rules/no-service-role-key-in-client.md',

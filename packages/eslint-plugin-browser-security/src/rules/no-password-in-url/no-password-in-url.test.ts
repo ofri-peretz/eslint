@@ -17,7 +17,10 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-password-in-url', noPasswordInUrl, {
   valid: [
     'const x = 42;',
-    'const flag = true;',
+    {
+      name: 'a boolean declaration contains no URL',
+      code: 'const flag = true;',
+    },
     'function noop() {}',
     'const items = [];',
     'const obj = {};',

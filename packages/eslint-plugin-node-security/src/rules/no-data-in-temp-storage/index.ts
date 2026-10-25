@@ -206,6 +206,7 @@ function isPredictableTempPath(node: TSESTree.Node): boolean {
 export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
   name: 'no-data-in-temp-storage',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-data-in-temp-storage.md',
@@ -264,15 +265,8 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context) {
-    const options = context.options[0] || {};
-    const tempPaths = options.tempPaths || DEFAULT_TEMP_PATHS;
-    const ignoreFiles = options.ignoreFiles || [];
-    const filename = context.filename;
-
-    if (ignoreFiles.some((pattern) => filename.includes(pattern))) {
-      return {};
-    }
+  createOnce(context) {
+    let tempPaths: string[];
 
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
@@ -459,6 +453,17 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        tempPaths = options.tempPaths || DEFAULT_TEMP_PATHS;
+        const ignoreFiles = options.ignoreFiles || [];
+        const filename = context.filename;
+
+        if (ignoreFiles.some((pattern) => filename.includes(pattern))) {
+          return false;
+        }
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (!isFsWriteCall(node)) return;
 

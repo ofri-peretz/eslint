@@ -46,10 +46,7 @@ import {
 import type { ResolverSetting } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'moduleSplit'
-  | 'directImport'
-  | 'extractShared'
-  | 'dependencyInjection';
+  'moduleSplit' | 'directImport' | 'extractShared' | 'dependencyInjection';
 
 /**
  * Module-level shared cache for performance optimization
@@ -208,7 +205,6 @@ export interface Options {
 }
 
 export type RuleOptions = [Options?];
-
 
 /**
  * Is every binding this import takes from `target` a TYPE?
@@ -371,6 +367,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
    */
   skipGeneratedFiles: true,
   meta: {
+    interop: { runtimes: ['eslint'], nativeEquivalent: 'import/no-cycle' },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-cycle.md',
@@ -522,70 +519,19 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const maxDepth = options.maxDepth ?? Infinity;
-    const verbatimModuleSyntax = options.verbatimModuleSyntax ?? false;
-    const sharedCache = verbatimModuleSyntax
-      ? verbatimGraphCache
-      : defaultGraphCache;
-    const ignorePatterns = options.ignorePatterns ?? [
-      '**/*.test.ts',
-      '**/*.test.tsx',
-      '**/*.spec.ts',
-      '**/*.spec.tsx',
-      '**/*.stories.tsx',
-      '**/__tests__/**',
-      '**/__mocks__/**',
-    ];
-    const barrelExports = options.barrelExports ?? [
-      'index.ts',
-      'index.tsx',
-      'index.js',
-      'index.jsx',
-    ];
-    const _reportAllCycles = options.reportAllCycles ?? true;
-    const fixStrategy = options.fixStrategy ?? 'auto';
-    const moduleNamingConvention = options.moduleNamingConvention ?? 'semantic';
-    const coreModuleSuffix = options.coreModuleSuffix ?? 'core';
-    const extendedModuleSuffix = options.extendedModuleSuffix ?? 'extended';
-
-    const filename = context.filename;
-    // Normalize once per file — on macOS /tmp is a symlink to /private/tmp.
-    // ESLint provides the symlink path; the resolver returns real paths.
-    // Without normalization, path comparisons always fail on macOS.
-    const normalizedFilename = (() => {
-      try { return realpathSync(filename); } catch { return filename; }
-    })();
-    const workspaceRoot = context.cwd;
-
-    // Get resolver settings from ESLint settings (compatible with eslint-plugin-import)
-    // eslint-plugin-import uses settings['import/resolver']; allow either the
-    // upstream key or our drop-in `import-next/resolver` form for users
-    // migrating off eslint-plugin-import.
-    const settings = context.settings as Record<string, unknown>;
-    const resolverSettings: ResolverSetting | undefined =
-      (settings?.['import/resolver'] as ResolverSetting) ||
-      (settings?.['import-next/resolver'] as ResolverSetting);
-
-    // Skip ignored files early
-    if (
-      shouldIgnoreFile(filename, ignorePatterns, sharedCache.compiledPatterns)
-    ) {
-      return {};
-    }
-
-    // Do NOT clear sharedCache.nonCyclicFiles — it is now populated directly
-    // from SCC results (singleton SCCs → provably non-cyclic) and persists
-    // across all files for the entire lint run. Clearing it per-file would
-    // destroy the O(1) fast path for known non-cyclic files.
-    sharedCache.pendingCycleReports.clear();
-    // sharedCache.sccComputed, sccIndex, sccs, nonCyclicFiles — NOT reset.
-
-    // Per-file dedup set — keyed by import node to ensure each import
-    // statement produces at most one error, even when multiple cycle paths
-    // exist through the same import.
-    const reportedImportNodes = new Set<TSESTree.ImportDeclaration>();
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let maxDepth: number;
+    let verbatimModuleSyntax: boolean;
+    let sharedCache: FileSystemCache;
+    let barrelExports: string[];
+    let fixStrategy: FixStrategy;
+    let moduleNamingConvention: ModuleNamingConvention;
+    let coreModuleSuffix: string;
+    let extendedModuleSuffix: string;
+    let normalizedFilename: string;
+    let workspaceRoot: string;
+    let resolverSettings: ResolverSetting | undefined;
+    let reportedImportNodes: Set<TSESTree.ImportDeclaration>;
 
     /**
      * Select fix strategy based on cycle characteristics
@@ -748,8 +694,82 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        maxDepth = options.maxDepth ?? Infinity;
+        verbatimModuleSyntax = options.verbatimModuleSyntax ?? false;
+        sharedCache = verbatimModuleSyntax
+          ? verbatimGraphCache
+          : defaultGraphCache;
+        const ignorePatterns = options.ignorePatterns ?? [
+          '**/*.test.ts',
+          '**/*.test.tsx',
+          '**/*.spec.ts',
+          '**/*.spec.tsx',
+          '**/*.stories.tsx',
+          '**/__tests__/**',
+          '**/__mocks__/**',
+        ];
+        barrelExports = options.barrelExports ?? [
+          'index.ts',
+          'index.tsx',
+          'index.js',
+          'index.jsx',
+        ];
+        const _reportAllCycles = options.reportAllCycles ?? true;
+        fixStrategy = options.fixStrategy ?? 'auto';
+        moduleNamingConvention = options.moduleNamingConvention ?? 'semantic';
+        coreModuleSuffix = options.coreModuleSuffix ?? 'core';
+        extendedModuleSuffix = options.extendedModuleSuffix ?? 'extended';
+
+        const filename = context.filename;
+        // Normalize once per file — on macOS /tmp is a symlink to /private/tmp.
+        // ESLint provides the symlink path; the resolver returns real paths.
+        // Without normalization, path comparisons always fail on macOS.
+        normalizedFilename = (() => {
+          try {
+            return realpathSync(filename);
+          } catch {
+            return filename;
+          }
+        })();
+        workspaceRoot = context.cwd;
+
+        // Get resolver settings from ESLint settings (compatible with eslint-plugin-import)
+        // eslint-plugin-import uses settings['import/resolver']; allow either the
+        // upstream key or our drop-in `import-next/resolver` form for users
+        // migrating off eslint-plugin-import.
+        const settings = context.settings as Record<string, unknown>;
+        resolverSettings =
+          (settings?.['import/resolver'] as ResolverSetting) ||
+          (settings?.['import-next/resolver'] as ResolverSetting);
+
+        // Skip ignored files early
+        if (
+          shouldIgnoreFile(
+            filename,
+            ignorePatterns,
+            sharedCache.compiledPatterns,
+          )
+        ) {
+          return false;
+        }
+
+        // Do NOT clear sharedCache.nonCyclicFiles — it is now populated directly
+        // from SCC results (singleton SCCs → provably non-cyclic) and persists
+        // across all files for the entire lint run. Clearing it per-file would
+        // destroy the O(1) fast path for known non-cyclic files.
+        sharedCache.pendingCycleReports.clear();
+        // sharedCache.sccComputed, sccIndex, sccs, nonCyclicFiles — NOT reset.
+
+        // Per-file dedup set — keyed by import node to ensure each import
+        // statement produces at most one error, even when multiple cycle paths
+        // exist through the same import.
+        reportedImportNodes = new Set<TSESTree.ImportDeclaration>();
+        return true;
+      },
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      'Program'() {
+      Program() {
         // Program() is now a no-op for SCC — fully lazy SCC extension.
         // SCC is computed on-demand in ImportDeclaration when source or target
         // is not yet covered. This matches eslint-plugin-import's lazy
@@ -862,13 +882,24 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
 
         // Build the relevant cycle starting from normalizedFilename.
         const cycleStart = cyclePath.indexOf(normalizedFilename);
-        const relevantCycle = cycleStart >= 0
-          ? [...cyclePath.slice(cycleStart), ...cyclePath.slice(0, cycleStart)]
-          : cyclePath;
+        const relevantCycle =
+          cycleStart >= 0
+            ? [
+                ...cyclePath.slice(cycleStart),
+                ...cyclePath.slice(0, cycleStart),
+              ]
+            : cyclePath;
 
         const strategy = selectFixStrategy(relevantCycle, fixStrategy);
-        const sourceImport: ImportInfo = { path: resolved, source: importSource };
-        const { messageId, data } = generateMessageData(relevantCycle, strategy, sourceImport);
+        const sourceImport: ImportInfo = {
+          path: resolved,
+          source: importSource,
+        };
+        const { messageId, data } = generateMessageData(
+          relevantCycle,
+          strategy,
+          sourceImport,
+        );
 
         context.report({ node, messageId, data });
       },
@@ -878,10 +909,13 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       // that close through a re-export are invisible to the rule.
       // eslint-disable-next-line @typescript-eslint/naming-convention
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
-        if (!node.source) return;  // no 'from' clause → not a re-export
+        if (!node.source) return; // no 'from' clause → not a re-export
 
         // Reuse the same logic as ImportDeclaration
-        if (reportedImportNodes.has(node as unknown as TSESTree.ImportDeclaration)) return;
+        if (
+          reportedImportNodes.has(node as unknown as TSESTree.ImportDeclaration)
+        )
+          return;
 
         const importSource = node.source.value as string;
 
@@ -910,7 +944,8 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
         }
 
         const srcSCC = sharedCache.sccIndex.get(normalizedFilename);
-        if (srcSCC === undefined || tgtSCC === undefined || srcSCC !== tgtSCC) return;
+        if (srcSCC === undefined || tgtSCC === undefined || srcSCC !== tgtSCC)
+          return;
 
         const cyclePath = findShortestCyclePath(normalizedFilename, resolved, {
           maxDepth,
@@ -926,13 +961,24 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
         reportedImportNodes.add(node as unknown as TSESTree.ImportDeclaration);
 
         const cycleStart = cyclePath.indexOf(normalizedFilename);
-        const relevantCycle = cycleStart >= 0
-          ? [...cyclePath.slice(cycleStart), ...cyclePath.slice(0, cycleStart)]
-          : cyclePath;
+        const relevantCycle =
+          cycleStart >= 0
+            ? [
+                ...cyclePath.slice(cycleStart),
+                ...cyclePath.slice(0, cycleStart),
+              ]
+            : cyclePath;
 
         const strategy = selectFixStrategy(relevantCycle, fixStrategy);
-        const sourceImport: ImportInfo = { path: resolved, source: importSource };
-        const { messageId, data } = generateMessageData(relevantCycle, strategy, sourceImport);
+        const sourceImport: ImportInfo = {
+          path: resolved,
+          source: importSource,
+        };
+        const { messageId, data } = generateMessageData(
+          relevantCycle,
+          strategy,
+          sourceImport,
+        );
 
         context.report({ node, messageId, data });
       },

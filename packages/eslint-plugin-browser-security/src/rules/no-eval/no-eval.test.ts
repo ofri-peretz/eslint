@@ -107,7 +107,10 @@ ruleTester.run('no-eval', noEval, {
     // different API entirely (mathjs, an embedded interpreter, a vm wrapper);
     // the member branch used to accept ANY receiver and reported all of them
     // as CWE-95 / CVSS 9.8.
-    { code: `const result = math.eval(userFormula);` },
+    {
+      name: 'a math library eval method is not the global eval',
+      code: `const result = math.eval(userFormula);`,
+    },
     { code: `interpreter.eval(program);` },
     // A local binding is not the global, however it is spelled.
     { code: `function Function(x) { return x; }\nFunction(userInput);` },
@@ -278,7 +281,11 @@ describe('eval-partition-matrix', () => {
     const messages = linter.verify(
       code,
       {
-        plugins: { bs: { rules: { 'no-eval': noEval, 'no-websocket-eval': noWebsocketEval } } },
+        plugins: {
+          bs: {
+            rules: { 'no-eval': noEval, 'no-websocket-eval': noWebsocketEval },
+          },
+        },
         languageOptions: { ecmaVersion: 2022, sourceType: 'module' },
         rules: { 'bs/no-eval': 'error', 'bs/no-websocket-eval': 'error' },
       },
@@ -393,11 +400,20 @@ describe('eval-partition-matrix', () => {
   // The other direction: shapes NEITHER rule may claim.
   const quiet: Array<{ name: string; code: string }> = [
     { name: 'math.eval', code: `const r = math.eval(formula);` },
-    { name: 'local Function', code: `function Function(x) { return x; }\nFunction(userInput);` },
+    {
+      name: 'local Function',
+      code: `function Function(x) { return x; }\nFunction(userInput);`,
+    },
     { name: 'timer with function', code: `setTimeout(handler, 100);` },
     { name: 'JSON.parse', code: `const d = JSON.parse(raw);` },
-    { name: 'sink in a comment', code: `render(payload); // do not eval(payload)` },
-    { name: 'sink in a string', code: `const help = 'never call eval(x) here';` },
+    {
+      name: 'sink in a comment',
+      code: `render(payload); // do not eval(payload)`,
+    },
+    {
+      name: 'sink in a string',
+      code: `const help = 'never call eval(x) here';`,
+    },
   ];
 
   for (const shape of quiet) {

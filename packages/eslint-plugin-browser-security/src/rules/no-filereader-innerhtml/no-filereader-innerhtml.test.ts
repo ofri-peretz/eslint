@@ -62,6 +62,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     },
     // innerHTML outside handler
     {
+      name: 'an innerHTML write outside any FileReader handler is unrelated',
       code: `
         element.innerHTML = content;
       `,

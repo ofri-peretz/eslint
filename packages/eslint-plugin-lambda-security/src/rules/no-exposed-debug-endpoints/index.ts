@@ -38,6 +38,7 @@ const DEFAULT_DEBUG_PATHS = [
 export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
   name: 'no-exposed-debug-endpoints',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-exposed-debug-endpoints.md',
@@ -76,26 +77,30 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context) {
-    // Every rule here is Lambda-specific, and none of them knew it: over 107,382
-    // files, 98% of this plugin's findings were in files with no AWS anything.
-    // Registering no visitors is both the gate and the cheap path.
-    if (!fileIsLambda(context.sourceCode.ast)) return {};
-
-    const options = context.options[0] || {};
-    const debugPaths = options.endpoints || DEFAULT_DEBUG_PATHS;
-    const ignoreFiles = options.ignoreFiles || [];
-    const filename = context.filename;
-
-    if (ignoreFiles.some((pattern) => filename.includes(pattern))) {
-      return {};
-    }
+  createOnce(context) {
+    let debugPaths: string[];
 
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
     }
 
     return {
+      before() {
+        // Every rule here is Lambda-specific, and none of them knew it: over 107,382
+        // files, 98% of this plugin's findings were in files with no AWS anything.
+        // Registering no visitors is both the gate and the cheap path.
+        if (!fileIsLambda(context.sourceCode.ast)) return false;
+
+        const options = context.options[0] || {};
+        debugPaths = options.endpoints || DEFAULT_DEBUG_PATHS;
+        const ignoreFiles = options.ignoreFiles || [];
+        const filename = context.filename;
+
+        if (ignoreFiles.some((pattern) => filename.includes(pattern))) {
+          return false;
+        }
+        return true;
+      },
       Property(node: TSESTree.Property) {
         const pathText = staticString(node.value);
         if (

@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: jsx-no-duplicate-props
  * Prevent duplicate props in JSX elements
- * 
+ *
  * Bug Prevention: Duplicate props cause silent overwrites
  * @see https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/jsx-no-duplicate-props.md
  */
@@ -26,6 +26,10 @@ type RuleOptions = [Options?];
 export const jsxNoDuplicateProps = createRule<RuleOptions, MessageIds>({
   name: 'jsx-no-duplicate-props',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/jsx-no-duplicate-props',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/jsx-no-duplicate-props.md',
@@ -35,10 +39,12 @@ export const jsxNoDuplicateProps = createRule<RuleOptions, MessageIds>({
       duplicateProp: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Duplicate Prop',
-        description: 'Prop "{{name}}" is duplicated - the last value will be used',
+        description:
+          'Prop "{{name}}" is duplicated - the last value will be used',
         severity: 'HIGH',
         fix: 'Remove the duplicate prop',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/jsx-no-duplicate-props.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/jsx-no-duplicate-props.md',
       }),
     },
     schema: [
@@ -52,10 +58,17 @@ export const jsxNoDuplicateProps = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
-    const { ignoreCase = false } = options ?? {} as Options;
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let ignoreCase: boolean;
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        ({ ignoreCase = false } = options ?? ({} as Options));
+      },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         const seenProps = new Map<string, TSESTree.JSXAttribute>();
 

@@ -110,6 +110,10 @@ const STANDALONE: ReadonlySet<string> = new Set(['on', 'off']);
 export const autocompleteValid = createRule<RuleOptions, MessageIds>({
   name: 'autocomplete-valid',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/autocomplete-valid',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/autocomplete-valid.md',
@@ -138,14 +142,18 @@ export const autocompleteValid = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
-    const { inputComponents = [] } = options ?? ({} as Options);
-    const inputs = new Set(['input', ...inputComponents]);
+    let inputs: Set<string>;
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        const { inputComponents = [] } = options ?? ({} as Options);
+        inputs = new Set(['input', ...inputComponents]);
+      },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier' || !inputs.has(node.name.name))
           return;

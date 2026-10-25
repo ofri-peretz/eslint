@@ -67,6 +67,7 @@ describe('no-privilege-escalation', () => {
             code: 'user.role = getDefaultRole();',
           },
           {
+            name: 'assigning a role behind an authorization check is not reported',
             code: 'if (isAuthorized(user)) { setRole(user, req.body.role); }',
           },
           // Test files (when allowInTests is true)

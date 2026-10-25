@@ -878,6 +878,7 @@ function usesNullishCoalescing(node: TSESTree.Node): boolean {
 export const noMissingNullChecks = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-null-checks',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-reliability/docs/rules/no-missing-null-checks.md',

@@ -11,7 +11,11 @@
  * @see https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-empty-named-blocks.md
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 
 type MessageIds = 'emptyNamedBlock' | 'suggestRemove';
 
@@ -20,6 +24,10 @@ type RuleOptions = [];
 export const noEmptyNamedBlocks = createRule<RuleOptions, MessageIds>({
   name: 'no-empty-named-blocks',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/no-empty-named-blocks',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-empty-named-blocks.md',
@@ -46,16 +54,18 @@ export const noEmptyNamedBlocks = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         // Check if this import has empty named imports: import {} from 'foo'
         // or import Foo, {} from 'foo'
         const hasDefaultImport = node.specifiers.some(
-          (spec: TSESTree.ImportClause) => spec.type === 'ImportDefaultSpecifier',
+          (spec: TSESTree.ImportClause) =>
+            spec.type === 'ImportDefaultSpecifier',
         );
         const hasNamespaceImport = node.specifiers.some(
-          (spec: TSESTree.ImportClause) => spec.type === 'ImportNamespaceSpecifier',
+          (spec: TSESTree.ImportClause) =>
+            spec.type === 'ImportNamespaceSpecifier',
         );
         const namedImports = node.specifiers.filter(
           (spec: TSESTree.ImportClause) => spec.type === 'ImportSpecifier',

@@ -66,6 +66,7 @@ const DEFAULT_TAINT_SOURCES = ['req', 'request', 'ctx', 'event', 'process'];
 export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-dynamic-require',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-unsafe-dynamic-require.md',
@@ -129,25 +130,11 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
       allowDynamicImport: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] ?? {};
-    const readsTaintSource = makeReadsTaintSource(
-      context.sourceCode,
-      new Set(
-        (options.taintSources ?? DEFAULT_TAINT_SOURCES).map((s) =>
-          s.toLowerCase(),
-        ),
-      ),
-    );
-    const reportUnresolvedSpecifiers =
-      options.reportUnresolvedSpecifiers ?? false;
-    const allowDynamicImport = options.allowDynamicImport ?? false;
-
-    /**
-     * Track variables that reference require
-     * Maps variable name to the node where it was assigned
-     */
-    const requireVariables = new Set<string>();
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let readsTaintSource: (node: TSESTree.Node) => boolean;
+    let reportUnresolvedSpecifiers: boolean;
+    let allowDynamicImport: boolean;
+    let requireVariables: Set<string>;
 
     /**
      * Check if a node is a reference to require
@@ -228,6 +215,26 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] ?? {};
+        readsTaintSource = makeReadsTaintSource(
+          context.sourceCode,
+          new Set(
+            (options.taintSources ?? DEFAULT_TAINT_SOURCES).map((s) =>
+              s.toLowerCase(),
+            ),
+          ),
+        );
+        reportUnresolvedSpecifiers =
+          options.reportUnresolvedSpecifiers ?? false;
+        allowDynamicImport = options.allowDynamicImport ?? false;
+
+        /**
+         * Track variables that reference require
+         * Maps variable name to the node where it was assigned
+         */
+        requireVariables = new Set<string>();
+      },
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         // Track when require is assigned to a variable
         if (node.id.type === 'Identifier' && node.init) {

@@ -17,6 +17,10 @@ type MessageIds = 'noDanger';
 export const noDanger = createRule<[], MessageIds>({
   name: 'no-danger',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/no-danger',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-danger.md',
@@ -33,12 +37,13 @@ export const noDanger = createRule<[], MessageIds>({
         description: 'Usage of dangerouslySetInnerHTML detected',
         severity: 'CRITICAL',
         fix: 'Sanitize HTML input or use React elements instead',
-        documentationLink: 'https://react.dev/reference/react-dom/components/common#dangerously-setting-the-inner-html',
+        documentationLink:
+          'https://react.dev/reference/react-dom/components/common#dangerously-setting-the-inner-html',
       }),
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (

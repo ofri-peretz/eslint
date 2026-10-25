@@ -15,9 +15,7 @@ import { readJsonFileSync } from '@interlace/eslint-devkit';
 import { resolvePath } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'expiringTodoComment'
-  | 'invalidTodoCondition'
-  | 'multipleTodoConditions';
+  'expiringTodoComment' | 'invalidTodoCondition' | 'multipleTodoConditions';
 
 export interface Options {
   /** Terms to check for (default: ['TODO', 'FIXME', 'XXX']) */
@@ -247,7 +245,12 @@ export function checkParsedCondition(
     case 'engine-version': {
       const [engine, version] = parsed.value.split('@');
       return parsed.operator
-        ? checkEngineVersionCondition(getPkg(), engine, parsed.operator, version)
+        ? checkEngineVersionCondition(
+            getPkg(),
+            engine,
+            parsed.operator,
+            version,
+          )
         : false;
     }
     case 'dependency':
@@ -264,6 +267,7 @@ export function checkParsedCondition(
 export const expiringTodoComments = createRule<RuleOptions, MessageIds>({
   name: 'expiring-todo-comments',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/expiring-todo-comments.md',
@@ -322,12 +326,9 @@ export const expiringTodoComments = createRule<RuleOptions, MessageIds>({
     { terms: ['TODO', 'FIXME', 'XXX'], dateFormat: 'YYYY-MM-DD' },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const { terms = ['TODO', 'FIXME', 'XXX'] } = options || {};
-
-    // Cache package.json data
-    let packageJson: PackageJson | null = null;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let terms: string[];
+    let packageJson: PackageJson | null;
 
     function loadPackageJson(): PackageJson | null {
       if (packageJson !== null) {
@@ -396,6 +397,13 @@ export const expiringTodoComments = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({ terms = ['TODO', 'FIXME', 'XXX'] } = options || {});
+
+        // Cache package.json data
+        packageJson = null;
+      },
       Program() {
         const sourceCode = context.sourceCode;
         const comments = sourceCode.getAllComments();

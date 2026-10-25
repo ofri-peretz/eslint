@@ -56,6 +56,7 @@ function hasChainedSelect(node: TSESTree.CallExpression): boolean {
 export const requireProjection = createRule<RuleOptions, MessageIds>({
   name: 'require-projection',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-projection.md',
@@ -86,31 +87,35 @@ export const requireProjection = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    // Every rule here is MongoDB-specific, and none of them could ask the
-    // file-level question: over the corpus, 47% of this plugin's findings were
-    // in files with no Mongo in them. `receiver.ts` discriminates by receiver
-    // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
-    // well as in a Mongoose one. Registering no visitors is both the gate and
-    // the cheap path.
-    if (!fileUsesMongo(context.sourceCode.ast)) return {};
-
-    const [options = {}] = context.options;
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const inTestFile = isTestFilePath(filename);
-
-    if (allowInTests && inTestFile) {
-      return {};
-    }
-
-    // `find` is also Array.prototype.find. Without this the rule reported
-    // every `.find()` in every codebase — measured at 115 findings on this
-    // repo alone, which contains no MongoDB. The receiver has to look like
-    // a Mongo handle before a method name means anything.
-    const mongo = analyzeMongoScope(context.sourceCode.ast);
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let mongo: ReturnType<typeof analyzeMongoScope>;
 
     return {
+      before() {
+        // Every rule here is MongoDB-specific, and none of them could ask the
+        // file-level question: over the corpus, 47% of this plugin's findings were
+        // in files with no Mongo in them. `receiver.ts` discriminates by receiver
+        // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
+        // well as in a Mongoose one. Registering no visitors is both the gate and
+        // the cheap path.
+        if (!fileUsesMongo(context.sourceCode.ast)) return false;
+
+        const [options = {}] = context.options;
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const inTestFile = isTestFilePath(filename);
+
+        if (allowInTests && inTestFile) {
+          return false;
+        }
+
+        // `find` is also Array.prototype.find. Without this the rule reported
+        // every `.find()` in every codebase — measured at 115 findings on this
+        // repo alone, which contains no MongoDB. The receiver has to look like
+        // a Mongo handle before a method name means anything.
+        mongo = analyzeMongoScope(context.sourceCode.ast);
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
           return;

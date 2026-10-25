@@ -39,7 +39,10 @@ describe('no-env-injection', () => {
         name: 'assigning a literal to a fixed env var name is not reported',
         code: `process.env.NODE_ENV = 'production';`,
       },
-      `process.env['NODE_ENV'] = 'production';`,
+      {
+        code: `process.env['NODE_ENV'] = 'production';`,
+        name: 'a string-literal key written in bracket notation is a fixed env var name',
+      },
       // A request-derived VALUE under a key the source names is a different
       // (and far weaker) concern — this rule judges the key.
       `function h(req) { process.env.APP_LOCALE = req.body.locale; }`,

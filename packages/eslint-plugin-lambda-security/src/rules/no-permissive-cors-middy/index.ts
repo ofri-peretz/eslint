@@ -13,7 +13,13 @@
  * @see https://middy.js.org/docs/middlewares/http-cors
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+} from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
 type MessageIds = 'permissiveCors';
@@ -28,10 +34,12 @@ type RuleOptions = [Options?];
 export const noPermissiveCorsMidly = createRule<RuleOptions, MessageIds>({
   name: 'no-permissive-cors-middy',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-permissive-cors-middy.md',
-      description: 'Detects @middy/http-cors middleware with permissive origin (*)',
+      description:
+        'Detects @middy/http-cors middleware with permissive origin (*)',
       cwe: 'CWE-942',
       cvss: 7.5,
     },
@@ -40,12 +48,12 @@ export const noPermissiveCorsMidly = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Permissive CORS in Middy',
         cwe: 'CWE-942',
-        description: 'Wildcard CORS origin in @middy/http-cors allows any domain',
+        description:
+          'Wildcard CORS origin in @middy/http-cors allows any domain',
         severity: 'HIGH',
         fix: 'Use specific origins: httpCors({ origins: ["https://your-domain.com"] })',
         documentationLink: 'https://middy.js.org/docs/middlewares/http-cors',
       }),
-
     },
     schema: [
       {
@@ -61,20 +69,10 @@ export const noPermissiveCorsMidly = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    // Every rule here is Lambda-specific, and none of them knew it: over 107,382
-    // files, 98% of this plugin's findings were in files with no AWS anything.
-    // Registering no visitors is both the gate and the cheap path.
-    if (!fileIsLambda(context.sourceCode.ast)) return {};
-
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
     /**
      * Check if a call is to httpCors/cors middleware
      */
@@ -91,7 +89,7 @@ export const noPermissiveCorsMidly = createRule<RuleOptions, MessageIds>({
      */
     function checkCorsOptions(
       node: TSESTree.CallExpression,
-      optionsObj: TSESTree.ObjectExpression
+      optionsObj: TSESTree.ObjectExpression,
     ): void {
       for (const prop of optionsObj.properties) {
         if (prop.type !== AST_NODE_TYPES.Property) continue;
@@ -99,10 +97,13 @@ export const noPermissiveCorsMidly = createRule<RuleOptions, MessageIds>({
         // Check for 'origin' or 'origins' property
         if (prop.key.type === AST_NODE_TYPES.Identifier) {
           const keyName = prop.key.name.toLowerCase();
-          
+
           if (keyName === 'origin' || keyName === 'origins') {
             // Check for wildcard string
-            if (prop.value.type === AST_NODE_TYPES.Literal && prop.value.value === '*') {
+            if (
+              prop.value.type === AST_NODE_TYPES.Literal &&
+              prop.value.value === '*'
+            ) {
               context.report({
                 node: prop,
                 messageId: 'permissiveCors',
@@ -111,7 +112,10 @@ export const noPermissiveCorsMidly = createRule<RuleOptions, MessageIds>({
             // Check for array with wildcard
             else if (prop.value.type === AST_NODE_TYPES.ArrayExpression) {
               for (const element of prop.value.elements) {
-                if (element?.type === AST_NODE_TYPES.Literal && element.value === '*') {
+                if (
+                  element?.type === AST_NODE_TYPES.Literal &&
+                  element.value === '*'
+                ) {
                   context.report({
                     node: element,
                     messageId: 'permissiveCors',
@@ -125,6 +129,22 @@ export const noPermissiveCorsMidly = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Every rule here is Lambda-specific, and none of them knew it: over 107,382
+        // files, 98% of this plugin's findings were in files with no AWS anything.
+        // Registering no visitors is both the gate and the cheap path.
+        if (!fileIsLambda(context.sourceCode.ast)) return false;
+
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (!isCorsMiddlewareCall(node)) return;
 

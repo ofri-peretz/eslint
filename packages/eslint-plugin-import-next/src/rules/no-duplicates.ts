@@ -19,6 +19,10 @@ export type RuleOptions = [Options?];
 export const noDuplicates = createRule<RuleOptions, MessageIds>({
   name: 'no-duplicates',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/no-duplicates',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-duplicates.md',
@@ -39,10 +43,13 @@ export const noDuplicates = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const imports = new Map<string, TSESTree.ImportDeclaration[]>();
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let imports: Map<string, TSESTree.ImportDeclaration[]>;
 
     return {
+      before() {
+        imports = new Map<string, TSESTree.ImportDeclaration[]>();
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         // Keyed by source AND importKind. `import type { T } from 'm'` beside
         // `import { v } from 'm'` is not a duplicate: the type-only form is

@@ -31,7 +31,11 @@
  * reports. It now draws one.
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import { isNonTransmittingUrl } from '../../utils/loopback-hosts';
 import { isWebSocketConstructorUrl } from '../../utils/transport-ownership';
 import { isProtocolInspection } from '../../utils/protocol-inspection';
@@ -57,6 +61,7 @@ type RuleOptions = [Options?];
 export const noInsecureWebsocket = createRule<RuleOptions, MessageIds>({
   name: 'no-insecure-websocket',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-insecure-websocket.md',
@@ -69,20 +74,21 @@ export const noInsecureWebsocket = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Insecure WebSocket',
         cwe: 'CWE-319',
-        description: 'Insecure WebSocket connection (ws://) - data transmitted in clear text',
+        description:
+          'Insecure WebSocket connection (ws://) - data transmitted in clear text',
         severity: 'HIGH',
         fix: 'Use wss:// instead of ws:// for secure WebSocket connections',
         documentationLink: 'https://cwe.mitre.org/data/definitions/319.html',
-      })
+      }),
     },
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  createOnce(context) {
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
     }
-    
+
     return {
       // The `new WebSocket(…)` visitor is gone, not disabled: the constructor
       // argument belongs to `require-websocket-wss`, which reports the same

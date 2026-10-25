@@ -125,6 +125,7 @@ function findWeakCipher(
 export const noWeakCipherAlgorithm = createRule<RuleOptions, MessageIds>({
   name: 'no-weak-cipher-algorithm',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-weak-cipher-algorithm.md',
@@ -190,15 +191,13 @@ export const noWeakCipherAlgorithm = createRule<RuleOptions, MessageIds>({
       allowInTests: false,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { additionalWeakCiphers = [], allowInTests = false } =
-      options as Options;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
+    let additionalWeakCiphers: string[];
+    let allowInTests: boolean;
+    let isTestFile: boolean;
 
     /**
      * Check if a call expression uses a weak cipher
@@ -269,6 +268,14 @@ export const noWeakCipherAlgorithm = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({ additionalWeakCiphers = [], allowInTests = false } =
+          options as Options);
+
+        const filename = context.filename;
+        isTestFile = allowInTests && isTestFilePath(filename);
+      },
       CallExpression: checkCallExpression,
     };
   },

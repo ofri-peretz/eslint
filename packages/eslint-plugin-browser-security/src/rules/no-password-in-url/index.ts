@@ -122,6 +122,7 @@ function hasUserinfoPassword(value: string): boolean {
 export const noPasswordInUrl = createRule<RuleOptions, MessageIds>({
   name: 'no-password-in-url',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-password-in-url.md',
@@ -144,7 +145,7 @@ export const noPasswordInUrl = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  createOnce(context) {
     function report(node: TSESTree.Node) {
       context.report({
         node,

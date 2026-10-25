@@ -36,7 +36,12 @@
  * @see https://cwe.mitre.org/data/definitions/1004.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+} from '@interlace/eslint-devkit';
 
 import {
   cookieNameFrom,
@@ -66,6 +71,7 @@ type RuleOptions = [Options?];
 export const noCookieAuthTokens = createRule<RuleOptions, MessageIds>({
   name: 'no-cookie-auth-tokens',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-cookie-auth-tokens.md',
@@ -108,21 +114,25 @@ export const noCookieAuthTokens = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     { allowInTests: true, bearerPatterns: [...BEARER_CREDENTIAL_TERMS] },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      allowInTests = true,
-      bearerPatterns = BEARER_CREDENTIAL_TERMS,
-    } = options as Options;
-    const isTestFile = isTestFilePath(context.filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
+    let allowInTests: boolean;
+    let bearerPatterns: readonly string[];
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({ allowInTests = true, bearerPatterns = BEARER_CREDENTIAL_TERMS } =
+          options as Options);
+        const isTestFile = isTestFilePath(context.filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+        return true;
+      },
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         if (!isDocumentCookieTarget(node.left)) return;
 

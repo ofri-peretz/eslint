@@ -1,3 +1,4 @@
+import { RuleCreator } from './rule-creator';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -282,8 +283,11 @@ export function createRawIdentifierRule(
   const tags = new Set([...config.tags, ...(config.driverTags ?? [])]);
   const driverTags = new Set(config.driverTags ?? []);
 
-  return {
+  return RuleCreator.withoutDocs<[], RawIdentifierMessageIds>({
     meta: {
+      // Shared detection, shared runtimes: oxlint only if every plugin's rule
+      // from this factory passes its own suite there.
+      interop: { runtimes: ['eslint', 'oxlint'] },
       type: config.meta.type,
       docs: { ...config.meta.docs },
       messages: {
@@ -319,17 +323,10 @@ export function createRawIdentifierRule(
       schema: [],
     },
     defaultOptions: [],
-    create(context) {
-      // BENCHMARK-CRITERIA §B1: test files are not the shipped surface.
-      if (isTestFilePath(context.filename)) return {};
-      const env = envOf(context);
-      const originOf = createOriginClassifier(config.modules);
-      const safety = createSqlSafety({
-        origin: originOf,
-        escapers: new Set<string>(),
-        fragmentFactories: new Set<string>(),
-        modules: config.modules,
-      });
+    createOnce(context) {
+      let env: Env;
+      let originOf: ReturnType<typeof createOriginClassifier>;
+      let safety: ReturnType<typeof createSqlSafety>;
 
       /**
        * The name a tag is matched by: a bare tag imported from the driver is
@@ -476,6 +473,19 @@ export function createRawIdentifierRule(
       };
 
       return {
+        before() {
+          // BENCHMARK-CRITERIA §B1: test files are not the shipped surface.
+          if (isTestFilePath(context.filename)) return false;
+          env = envOf(context);
+          originOf = createOriginClassifier(config.modules);
+          safety = createSqlSafety({
+            origin: originOf,
+            escapers: new Set<string>(),
+            fragmentFactories: new Set<string>(),
+            modules: config.modules,
+          });
+          return true;
+        },
         TaggedTemplateExpression(node: TSESTree.TaggedTemplateExpression) {
           const key = tagKey(node.tag);
           if (key === undefined || !tags.has(key.name)) return;
@@ -520,5 +530,5 @@ export function createRawIdentifierRule(
         },
       };
     },
-  };
+  });
 }

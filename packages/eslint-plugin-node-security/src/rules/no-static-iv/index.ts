@@ -22,7 +22,11 @@ import {
   isTestFilePath,
   staticString,
 } from '@interlace/eslint-devkit';
-import { constInitializerOf, resolveConstant, resolveConstantString } from '../../utils/const-value';
+import {
+  constInitializerOf,
+  resolveConstant,
+  resolveConstantString,
+} from '../../utils/const-value';
 import { findVariable } from '../../utils/provenance';
 
 // `useRandomBytes` used to sit here too: an INFO message with a fix string, on
@@ -44,8 +48,8 @@ type RuleOptions = [Options?];
  * Patterns that indicate a hardcoded IV
  */
 const STATIC_IV_PATTERNS = [
-  /^[0-9a-f]+$/i,  // Hex string
-  /^[A-Za-z0-9+/]+=*$/,  // Base64
+  /^[0-9a-f]+$/i, // Hex string
+  /^[A-Za-z0-9+/]+=*$/, // Base64
 ];
 
 /** The two `crypto` factories that take an explicit IV as their third argument. */
@@ -85,7 +89,11 @@ const TYPED_ARRAY_CONSTRUCTORS = new Set([
  * as a secure fill and silence the rule — the `escapeHtml = (s) => s` failure
  * mode. It is a fixed API surface and must stay closed.
  */
-const RANDOM_FILL_FUNCTIONS = new Set(['randomFill', 'randomFillSync', 'getRandomValues']);
+const RANDOM_FILL_FUNCTIONS = new Set([
+  'randomFill',
+  'randomFillSync',
+  'getRandomValues',
+]);
 
 /**
  * The member being called, whether written `crypto.createCipheriv` or
@@ -109,6 +117,7 @@ function calleeMemberName(callee: TSESTree.Node): string | null {
 export const noStaticIv = createRule<RuleOptions, MessageIds>({
   name: 'no-static-iv',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-static-iv.md',
@@ -122,10 +131,12 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Static IV detected',
         cwe: 'CWE-329',
-        description: 'Hardcoded IV detected. Using static IVs makes encryption deterministic, allowing attackers to detect repeated plaintexts.',
+        description:
+          'Hardcoded IV detected. Using static IVs makes encryption deterministic, allowing attackers to detect repeated plaintexts.',
         severity: 'HIGH',
         fix: 'Generate IV dynamically using crypto.randomBytes(16)',
-        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#initialization-vectors',
+        documentationLink:
+          'https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#initialization-vectors',
       }),
     },
     schema: [
@@ -147,14 +158,11 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
       allowInTests: false,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    currentOptions,
   ) {
-    const { allowInTests = false } = options as Options;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
+    let isTestFile: boolean;
 
     /**
      * Is this call one of the IV-taking `crypto` factories?
@@ -169,11 +177,19 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
      */
     function isCipherivCall(node: TSESTree.CallExpression): boolean {
       const callee = node.callee;
-      const spelled = calleeMemberName(callee) ?? (callee.type === AST_NODE_TYPES.Identifier ? callee.name : null);
-      if (spelled !== null && (CIPHERIV_FACTORIES as readonly string[]).includes(spelled)) return true;
+      const spelled =
+        calleeMemberName(callee) ??
+        (callee.type === AST_NODE_TYPES.Identifier ? callee.name : null);
+      if (
+        spelled !== null &&
+        (CIPHERIV_FACTORIES as readonly string[]).includes(spelled)
+      )
+        return true;
 
       const scope = context.sourceCode.getScope(node);
-      return CIPHERIV_FACTORIES.some((fn) => isModuleBinding(callee, scope, 'crypto', [fn]));
+      return CIPHERIV_FACTORIES.some((fn) =>
+        isModuleBinding(callee, scope, 'crypto', [fn]),
+      );
     }
 
     function checkCallExpression(node: TSESTree.CallExpression) {
@@ -213,7 +229,8 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
       return variable.references.some((ref) => {
         const parent = ref.identifier.parent;
         if (parent?.type !== AST_NODE_TYPES.CallExpression) return false;
-        if (!parent.arguments.includes(ref.identifier as TSESTree.Expression)) return false;
+        if (!parent.arguments.includes(ref.identifier as TSESTree.Expression))
+          return false;
         const callee = parent.callee;
         const name =
           calleeMemberName(callee) ??
@@ -248,7 +265,7 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
       const constant = resolveConstantString(context.sourceCode, value);
       if (constant !== null) {
         const text = constant.value;
-        return STATIC_IV_PATTERNS.some(p => p.test(text)) || text.length >= 8;
+        return STATIC_IV_PATTERNS.some((p) => p.test(text)) || text.length >= 8;
       }
 
       // `new Uint8Array([...])` — the TypeScript spelling of a typed-out IV.
@@ -268,7 +285,8 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
         value.callee.type === AST_NODE_TYPES.MemberExpression &&
         value.callee.object.type === AST_NODE_TYPES.Identifier &&
         value.callee.object.name === 'Buffer' &&
-        (calleeMemberName(value.callee) === 'from' || calleeMemberName(value.callee) === 'alloc')
+        (calleeMemberName(value.callee) === 'from' ||
+          calleeMemberName(value.callee) === 'alloc')
       ) {
         return isStaticBufferSource(value.arguments[0], binding);
       }
@@ -296,7 +314,8 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
 
       // `Buffer.from('00112233…', 'hex')`, including the hex held in a named
       // constant — hoisting the string one level does not make the bytes vary.
-      if (resolveConstantString(context.sourceCode, source) !== null) return true;
+      if (resolveConstantString(context.sourceCode, source) !== null)
+        return true;
 
       if (isStaticByteArray(source)) return true;
 
@@ -370,7 +389,9 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
         // special-casing here — it simply produces no evidence.
         const candidates = ivCandidates(unwrapped, binding);
         if (candidates === null) return;
-        if (candidates.every((c) => isStaticIvValue(unwrapTypeSyntax(c), binding))) {
+        if (
+          candidates.every((c) => isStaticIvValue(unwrapTypeSyntax(c), binding))
+        ) {
           reportStaticIv(unwrapped);
         }
         return;
@@ -386,6 +407,13 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = false } = options as Options;
+
+        const filename = context.filename;
+        isTestFile = allowInTests && isTestFilePath(filename);
+      },
       CallExpression: checkCallExpression,
     };
   },

@@ -10,7 +10,15 @@
  * CWE-200: Information Exposure
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, staticString, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  staticString,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
@@ -33,16 +41,24 @@ export interface Options {
 }
 type RuleOptions = [Options?];
 
-const DEFAULT_SENSITIVE_FIELDS = ['password', 'refreshToken', 'apiKey', 'secret'];
+const DEFAULT_SENSITIVE_FIELDS = [
+  'password',
+  'refreshToken',
+  'apiKey',
+  'secret',
+];
 
 const QUERY_METHODS = new Set(['find', 'findOne', 'findById']);
 
 export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
   name: 'no-select-sensitive-fields',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
-      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-select-sensitive-fields.md', description: 'Prevent returning sensitive fields like password in queries',
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-select-sensitive-fields.md',
+      description:
+        'Prevent returning sensitive fields like password in queries',
       cwe: 'CWE-200',
       cvss: 5.3,
     },
@@ -56,36 +72,42 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
         description: 'Query may return sensitive fields like password or token',
         severity: 'MEDIUM',
         fix: 'Add .select("-password -refreshToken") to exclude sensitive fields',
-        documentationLink: 'https://mongoosejs.com/docs/api/query.html#Query.prototype.select()',
+        documentationLink:
+          'https://mongoosejs.com/docs/api/query.html#Query.prototype.select()',
       }),
     },
-    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true }, sensitiveFields: { type: 'array', items: { type: 'string' }, description: 'Document field names treated as sensitive' }, requireVisibleSensitiveField: { type: 'boolean', default: true, description: 'Only report when a sensitive field is visibly selected' } }, additionalProperties: false }],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          allowInTests: { type: 'boolean', default: true },
+          sensitiveFields: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Document field names treated as sensitive',
+          },
+          requireVisibleSensitiveField: {
+            type: 'boolean',
+            default: true,
+            description:
+              'Only report when a sensitive field is visibly selected',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
-  defaultOptions: [{ allowInTests: true, sensitiveFields: DEFAULT_SENSITIVE_FIELDS, requireVisibleSensitiveField: true }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    // Every rule here is MongoDB-specific, and none of them could ask the
-    // file-level question: over the corpus, 47% of this plugin's findings were
-    // in files with no Mongo in them. `receiver.ts` discriminates by receiver
-    // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
-    // well as in a Mongoose one. Registering no visitors is both the gate and
-    // the cheap path.
-    if (!fileUsesMongo(context.sourceCode.ast)) return {};
-
-    const [options = {}] = context.options;
-    const {
-      allowInTests = true,
-      sensitiveFields,
-      requireVisibleSensitiveField = true,
-    } = options as Options;
-    // One guarded list: the JSON schema rejects `null`, but a mock context can
-    // still hand one in.
-    const fields = sensitiveFields ?? DEFAULT_SENSITIVE_FIELDS;
-    const filename = context.filename;
-    const inTestFile = isTestFilePath(filename);
-
-    if (allowInTests && inTestFile) {
-      return {};
-    }
+  defaultOptions: [
+    {
+      allowInTests: true,
+      sensitiveFields: DEFAULT_SENSITIVE_FIELDS,
+      requireVisibleSensitiveField: true,
+    },
+  ],
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let fields: string[];
+    let mongo: ReturnType<typeof analyzeMongoScope>;
+    let sensitiveVisible: boolean;
 
     /**
      * Native MongoDB driver accepts projection as the 2nd argument:
@@ -93,31 +115,38 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
      * If the projection is an explicit inclusion list (1-valued keys) and
      * does not name any sensitive field, the query is safe.
      */
-    function classifyProjection(node: TSESTree.CallExpression): 'safe' | 'exposes' | 'unknown' {
+    function classifyProjection(
+      node: TSESTree.CallExpression,
+    ): 'safe' | 'exposes' | 'unknown' {
       const arg = node.arguments[1];
-      if (!arg || arg.type !== AST_NODE_TYPES.ObjectExpression) return 'unknown';
+      if (!arg || arg.type !== AST_NODE_TYPES.ObjectExpression)
+        return 'unknown';
       const projProp = arg.properties.find(
         (p): p is TSESTree.Property =>
           p.type === AST_NODE_TYPES.Property &&
           p.key.type === AST_NODE_TYPES.Identifier &&
           p.key.name === 'projection',
       );
-      if (!projProp || projProp.value.type !== AST_NODE_TYPES.ObjectExpression) return 'unknown';
+      if (!projProp || projProp.value.type !== AST_NODE_TYPES.ObjectExpression)
+        return 'unknown';
       const proj = projProp.value;
       let hasInclusion = false;
       for (const p of proj.properties) {
         if (p.type !== AST_NODE_TYPES.Property) continue;
         const keyName =
-          p.key.type === AST_NODE_TYPES.Identifier ? p.key.name :
-          staticString(p.key) !== null ? staticString(p.key) :
-          null;
+          p.key.type === AST_NODE_TYPES.Identifier
+            ? p.key.name
+            : staticString(p.key) !== null
+              ? staticString(p.key)
+              : null;
         if (!keyName) continue;
         if (fields.includes(keyName)) {
           // Sensitive field is named — only safe if explicitly excluded (value 0 / false)
           if (
             p.value.type === AST_NODE_TYPES.Literal &&
             (p.value.value === 0 || p.value.value === false)
-          ) continue;
+          )
+            continue;
           // The projection names a sensitive field and includes it — the
           // query itself is the evidence, no schema lookup needed.
           return 'exposes';
@@ -125,13 +154,12 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
         if (
           p.value.type === AST_NODE_TYPES.Literal &&
           (p.value.value === 1 || p.value.value === true)
-        ) hasInclusion = true;
+        )
+          hasInclusion = true;
       }
       // Inclusion projection that doesn't name sensitive fields → safe.
       return hasInclusion ? 'safe' : 'unknown';
     }
-
-    const mongo = analyzeMongoScope(context.sourceCode.ast);
 
     /**
      * Does this file declare a sensitive field anywhere — a `new Schema({...})`
@@ -143,16 +171,46 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
       // decoration would otherwise crash the rule.
       for (const token of context.sourceCode.ast.tokens ?? []) {
         const name =
-          token.type === 'Identifier' ? token.value :
-          token.type === 'String' ? token.value.slice(1, -1) :
-          null;
+          token.type === 'Identifier'
+            ? token.value
+            : token.type === 'String'
+              ? token.value.slice(1, -1)
+              : null;
         if (name && fields.includes(name)) return true;
       }
       return false;
     };
-    const sensitiveVisible = !requireVisibleSensitiveField || schemaIsSensitive();
 
     return {
+      before() {
+        // Every rule here is MongoDB-specific, and none of them could ask the
+        // file-level question: over the corpus, 47% of this plugin's findings were
+        // in files with no Mongo in them. `receiver.ts` discriminates by receiver
+        // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
+        // well as in a Mongoose one. Registering no visitors is both the gate and
+        // the cheap path.
+        if (!fileUsesMongo(context.sourceCode.ast)) return false;
+
+        const [options = {}] = context.options;
+        const {
+          allowInTests = true,
+          sensitiveFields,
+          requireVisibleSensitiveField = true,
+        } = options as Options;
+        // One guarded list: the JSON schema rejects `null`, but a mock context can
+        // still hand one in.
+        fields = sensitiveFields ?? DEFAULT_SENSITIVE_FIELDS;
+        const filename = context.filename;
+        const inTestFile = isTestFilePath(filename);
+
+        if (allowInTests && inTestFile) {
+          return false;
+        }
+
+        mongo = analyzeMongoScope(context.sourceCode.ast);
+        sensitiveVisible = !requireVisibleSensitiveField || schemaIsSensitive();
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
           return;
@@ -200,8 +258,14 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
               const selectStr = staticText;
               // If field is in select without exclusion prefix, it's included
               for (const field of fields) {
-                if (selectStr.includes(field) && !selectStr.includes(`-${field}`)) {
-                  context.report({ node: selectCall, messageId: 'selectSensitiveFields' });
+                if (
+                  selectStr.includes(field) &&
+                  !selectStr.includes(`-${field}`)
+                ) {
+                  context.report({
+                    node: selectCall,
+                    messageId: 'selectSensitiveFields',
+                  });
                   return;
                 }
               }

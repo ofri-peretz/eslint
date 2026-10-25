@@ -265,6 +265,7 @@ const containsDangerousEntities = (xmlText: string): boolean => {
 export const noXxeInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-xxe-injection',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       description: 'Detect XML External Entity (XXE) injection vulnerabilities',
@@ -401,38 +402,25 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
       entityIncapableModules: PROVEN_NO_EXTERNAL_ENTITIES,
     },
   ],
-  create(
+  createOnce(
     context: Readonly<TSESLint.RuleContext<MessageIds, RuleOptions>>,
-    [options]: readonly [Options?],
+    currentOptions,
   ) {
-    // `options` is guaranteed defined here: createRule's RuleCreator wrapper
-    // (@typescript-eslint/utils applyDefault) always seeds it from
-    // `defaultOptions` above, so it can never be undefined at runtime.
-    const {
-      safeParserOptions = DEFAULT_SAFE_PARSER_OPTIONS,
-      xmlValidationFunctions = DEFAULT_XML_VALIDATION_FUNCTIONS,
-      xmlModules = DEFAULT_XML_MODULES,
-      additionalXmlModules = [],
-      xmlParseMethods = DEFAULT_XML_PARSE_METHODS,
-      additionalXmlParseMethods = [],
-      dangerousParserOptions = DEFAULT_DANGEROUS_PARSER_OPTIONS,
-      additionalDangerousParserOptions = [],
-      entityIncapableModules = PROVEN_NO_EXTERNAL_ENTITIES,
-    } = options!;
-
-    const xmlPackages = new Set([...xmlModules, ...additionalXmlModules]);
-    const incapablePackages = new Set(entityIncapableModules);
-    const parseMethods = new Set([
-      ...xmlParseMethods,
-      ...additionalXmlParseMethods,
-    ]);
-    const dangerousKeys = new Set([
-      ...dangerousParserOptions,
-      ...additionalDangerousParserOptions,
-    ]);
-
-    const filename = context.filename;
-    const sourceCode = context.sourceCode;
+    let safeParserOptions: string[];
+    let xmlValidationFunctions: string[];
+    let xmlModules: string[];
+    let additionalXmlModules: string[];
+    let xmlParseMethods: string[];
+    let additionalXmlParseMethods: string[];
+    let dangerousParserOptions: string[];
+    let additionalDangerousParserOptions: string[];
+    let entityIncapableModules: string[];
+    let xmlPackages: Set<string>;
+    let incapablePackages: Set<string>;
+    let parseMethods: Set<string>;
+    let dangerousKeys: Set<string>;
+    let filename: string;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /**
      * Is this `parseFromString(…, 'text/html')`?
@@ -608,6 +596,37 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
       });
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // `options` is guaranteed defined here: createRule's RuleCreator wrapper
+        // (@typescript-eslint/utils applyDefault) always seeds it from
+        // `defaultOptions` above, so it can never be undefined at runtime.
+        ({
+          safeParserOptions = DEFAULT_SAFE_PARSER_OPTIONS,
+          xmlValidationFunctions = DEFAULT_XML_VALIDATION_FUNCTIONS,
+          xmlModules = DEFAULT_XML_MODULES,
+          additionalXmlModules = [],
+          xmlParseMethods = DEFAULT_XML_PARSE_METHODS,
+          additionalXmlParseMethods = [],
+          dangerousParserOptions = DEFAULT_DANGEROUS_PARSER_OPTIONS,
+          additionalDangerousParserOptions = [],
+          entityIncapableModules = PROVEN_NO_EXTERNAL_ENTITIES,
+        } = options!);
+
+        xmlPackages = new Set([...xmlModules, ...additionalXmlModules]);
+        incapablePackages = new Set(entityIncapableModules);
+        parseMethods = new Set([
+          ...xmlParseMethods,
+          ...additionalXmlParseMethods,
+        ]);
+        dangerousKeys = new Set([
+          ...dangerousParserOptions,
+          ...additionalDangerousParserOptions,
+        ]);
+
+        filename = context.filename;
+        sourceCode = context.sourceCode;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (!isXmlParsingCall(node)) return;
 

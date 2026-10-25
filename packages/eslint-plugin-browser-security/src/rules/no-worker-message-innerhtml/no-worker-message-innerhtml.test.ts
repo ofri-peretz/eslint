@@ -55,6 +55,7 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
     // Not a Worker handler
     // Test files allowed
     {
+      name: 'worker message data in innerHTML is allowed inside a test file',
       code: `
         const worker = new Worker('worker.js');
         worker.onmessage = (e) => {

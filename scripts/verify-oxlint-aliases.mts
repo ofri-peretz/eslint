@@ -8,10 +8,12 @@
  * Per alias, two oxlint runs against one empty file:
  *
  *   1. every `<name>/<rule>` from the plugin's own rule map → must load clean.
- *   2. one `<name>/__no_such_rule__` → must fail with oxlint's
+ *   2. the `.oxlintrc` example in the alias README, verbatim → must load clean,
+ *      so the config a user copies is one oxlint accepts.
+ *   3. one `<name>/__no_such_rule__` → must fail with oxlint's
  *      "Rule '__no_such_rule__' not found in plugin '<name>'".
  *
- * Run 2 is what makes run 1 mean something: it proves oxlint rejects an ID it
+ * Run 3 is what makes runs 1 and 2 mean something: it proves oxlint rejects an ID it
  * does not know, and it names the namespace oxlint actually registered. That
  * namespace comes from the plugin's `meta.name`, not the package name, so this
  * also catches a `meta.name` edit that would silently rename every rule for
@@ -43,8 +45,12 @@ const WORK = fs.mkdtempSync(
 fs.writeFileSync(path.join(WORK, 'empty.js'), '');
 
 function oxlint(rules: Record<string, string>, alias: string) {
+  return oxlintWith({ jsPlugins: [alias], rules }, alias);
+}
+
+function oxlintWith(configObject: unknown, alias: string) {
   const config = path.join(WORK, `${alias}.oxlintrc.json`);
-  fs.writeFileSync(config, JSON.stringify({ jsPlugins: [alias], rules }));
+  fs.writeFileSync(config, JSON.stringify(configObject));
   const run = spawnSync(OXLINT, ['-c', config, path.join(WORK, 'empty.js')], {
     encoding: 'utf8',
   });
@@ -75,6 +81,25 @@ for (const alias of aliases) {
     if (all.status !== 0) {
       failures.push(
         `${alias}: oxlint rejected its own rule IDs\n${all.output}`,
+      );
+      continue;
+    }
+
+    const readme = fs.readFileSync(
+      path.join(PACKAGES_DIR, alias, 'README.md'),
+      'utf8',
+    );
+    const example = /```json\n(\{\n  "jsPlugins"[\s\S]*?)\n```/.exec(
+      readme,
+    )?.[1];
+    if (!example) {
+      failures.push(`${alias}: README has no .oxlintrc JSON example`);
+      continue;
+    }
+    const documented = oxlintWith(JSON.parse(example), alias);
+    if (documented.status !== 0) {
+      failures.push(
+        `${alias}: the README's oxlint config does not load\n${documented.output}`,
       );
       continue;
     }

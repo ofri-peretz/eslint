@@ -34,6 +34,7 @@ describe('no-unsafe-deserialization', () => {
         },
         // Safe YAML parsing
         {
+          name: 'yaml.safeLoad restricts parsing to plain data',
           code: 'const yaml = require("js-yaml"); const data = yaml.safeLoad(input);',
         },
         // Safe libraries

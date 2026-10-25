@@ -38,7 +38,10 @@ ruleTester.run('no-unsafe-inline-csp', noUnsafeInlineCsp, {
       code: `const csp = "script-src 'self' 'sha256-xxx'";`,
     },
     // No CSP content
-    { code: `const message = "Hello world";` },
+    {
+      name: 'a plain greeting string is not a CSP',
+      code: `const message = "Hello world";`,
+    },
     // Test files allowed
     {
       code: `const csp = "script-src 'unsafe-inline'";`,

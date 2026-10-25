@@ -17,6 +17,10 @@ type MessageIds = 'noNamespace';
 export const noNamespace = createRule<[], MessageIds>({
   name: 'no-namespace',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/no-namespace',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-namespace.md',
@@ -29,13 +33,14 @@ export const noNamespace = createRule<[], MessageIds>({
         description: 'Namespace import detected',
         severity: 'LOW',
         fix: 'Use named imports instead: import { Component } from "react"',
-        documentationLink: 'https://react.dev/learn/importing-and-exporting-components',
+        documentationLink:
+          'https://react.dev/learn/importing-and-exporting-components',
       }),
     },
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       ImportNamespaceSpecifier(node: TSESTree.ImportNamespaceSpecifier) {
         context.report({

@@ -285,6 +285,7 @@ function multerCall(
 export const requireMimeTypeValidation = createRule<RuleOptions, MessageIds>({
   name: 'require-mime-type-validation',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/require-mime-type-validation.md',
@@ -327,10 +328,9 @@ export const requireMimeTypeValidation = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    const sourceCode = context.sourceCode;
-    /** Functions already reported, so one handler yields one finding. */
-    const reportedScopes = new Set<TSESTree.Node>();
+  createOnce(context) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let reportedScopes: Set<TSESTree.Node>;
 
     /**
      * Does this function contain any evidence of a media-type check?
@@ -359,6 +359,11 @@ export const requireMimeTypeValidation = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        sourceCode = context.sourceCode;
+        /** Functions already reported, so one handler yields one finding. */
+        reportedScopes = new Set<TSESTree.Node>();
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
 

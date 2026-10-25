@@ -8,7 +8,7 @@
  * ESLint Rule: react-render-optimization
  * Detects unnecessary re-renders and expensive computations in React
  * Priority 7: Performance & Optimization
- * 
+ *
  * @see https://react.dev/learn/render-and-commit
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -26,16 +26,16 @@ type MessageIds =
 export interface Options {
   /** Detect inline object/array props. Default: true */
   detectInlineProps?: boolean;
-  
+
   /** Detect inline function props. Default: true */
   detectInlineFunctions?: boolean;
-  
+
   /** Detect expensive computations without useMemo. Default: true */
   detectExpensiveComputations?: boolean;
-  
+
   /** Minimum computation complexity to flag. Default: 3 */
   minComputationComplexity?: number;
-  
+
   /** Ignore in test files. Default: true */
   ignoreInTests?: boolean;
 }
@@ -75,23 +75,27 @@ function isInlineFunctionExpression(node: TSESTree.Node): boolean {
  */
 function estimateComplexity(node: TSESTree.Node): number {
   let complexity = 0;
-  
+
   // Count loops
-  if (node.type === 'ForStatement' || node.type === 'ForOfStatement' || 
-      node.type === 'ForInStatement' || node.type === 'WhileStatement') {
+  if (
+    node.type === 'ForStatement' ||
+    node.type === 'ForOfStatement' ||
+    node.type === 'ForInStatement' ||
+    node.type === 'WhileStatement'
+  ) {
     complexity += 3;
   }
-  
+
   // Count conditionals
   if (node.type === 'IfStatement' || node.type === 'ConditionalExpression') {
     complexity += 1;
   }
-  
+
   // Count function calls (heuristic)
   if (node.type === 'CallExpression') {
     complexity += 1;
   }
-  
+
   return complexity;
 }
 
@@ -100,24 +104,24 @@ function estimateComplexity(node: TSESTree.Node): number {
  */
 function isExpensiveComputation(
   node: TSESTree.Node,
-  minComplexity: number
+  minComplexity: number,
 ): boolean {
   // Check if it's a complex expression
   if (node.type === 'BinaryExpression' || node.type === 'LogicalExpression') {
     return false; // Simple operations
   }
-  
+
   // Check for loops or nested structures
   let current: TSESTree.Node | null = node;
   let depth = 0;
   const maxDepth = 5;
-  
+
   while (current && depth < maxDepth) {
     const complexity = estimateComplexity(current);
     if (complexity >= minComplexity) {
       return true;
     }
-    
+
     // Check children
     if ('body' in current && current.body) {
       if (Array.isArray(current.body)) {
@@ -128,21 +132,24 @@ function isExpensiveComputation(
         }
       }
     }
-    
-    current = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent ?? null;
+
+    current =
+      (current as TSESTree.Node & { parent?: TSESTree.Node }).parent ?? null;
     depth++;
   }
-  
+
   return false;
 }
 
 export const reactRenderOptimization = createRule<RuleOptions, MessageIds>({
   name: 'react-render-optimization',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/react-render-optimization.md',
-      description: 'Detects unnecessary re-renders and expensive computations in React',
+      description:
+        'Detects unnecessary re-renders and expensive computations in React',
     },
     hasSuggestions: true,
     messages: {
@@ -165,7 +172,8 @@ export const reactRenderOptimization = createRule<RuleOptions, MessageIds>({
       expensiveComputation: formatLLMMessage({
         icon: MessageIcons.PERFORMANCE,
         issueName: 'Expensive computation',
-        description: 'Complex computation detected (complexity: {{complexity}})',
+        description:
+          'Complex computation detected (complexity: {{complexity}})',
         severity: 'MEDIUM',
         fix: 'Use useMemo to memoize result',
         documentationLink: 'https://react.dev/reference/react/useMemo',
@@ -239,22 +247,15 @@ export const reactRenderOptimization = createRule<RuleOptions, MessageIds>({
       ignoreInTests: true,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const {
-detectInlineProps = true,
-      detectInlineFunctions = true,
-      detectExpensiveComputations = true,
-      minComputationComplexity = 3,
-      ignoreInTests = true,
-    
-}: Options = options || {};
-
-    const filename = context.filename;
-    const isTestFile = ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
-
-    if (isTestFile) {
-      return {};
-    }
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let detectInlineProps: boolean;
+    let detectInlineFunctions: boolean;
+    let detectExpensiveComputations: boolean;
+    let minComputationComplexity: number;
+    let ignoreInTests: boolean;
 
     /**
      * Check JSX attributes for inline props
@@ -278,78 +279,83 @@ detectInlineProps = true,
           return;
         }
 
-      // Check for inline objects
-      if (detectInlineProps && isInlineObject(value)) {
-        context.report({
-          node,
-          messageId: 'unnecessaryRerender',
-          data: {
-            type: 'object',
-          },
-          suggest: [
-            {
-              messageId: 'useMemo',
-              fix: () => null,
+        // Check for inline objects
+        if (detectInlineProps && isInlineObject(value)) {
+          context.report({
+            node,
+            messageId: 'unnecessaryRerender',
+            data: {
+              type: 'object',
             },
-          ],
-        });
-        return;
-      }
+            suggest: [
+              {
+                messageId: 'useMemo',
+                fix: () => null,
+              },
+            ],
+          });
+          return;
+        }
 
-      // Check for inline arrays
-      if (detectInlineProps && isInlineArray(value)) {
-        context.report({
-          node,
-          messageId: 'unnecessaryRerender',
-          data: {
-            type: 'array',
-          },
-          suggest: [
-            {
-              messageId: 'useMemo',
-              fix: () => null,
+        // Check for inline arrays
+        if (detectInlineProps && isInlineArray(value)) {
+          context.report({
+            node,
+            messageId: 'unnecessaryRerender',
+            data: {
+              type: 'array',
             },
-          ],
-        });
-        return;
-      }
+            suggest: [
+              {
+                messageId: 'useMemo',
+                fix: () => null,
+              },
+            ],
+          });
+          return;
+        }
 
-      // Check for inline functions
-      if (detectInlineFunctions && 
-          (isInlineArrowFunction(value) || isInlineFunctionExpression(value))) {
-        context.report({
-          node,
-          messageId: 'unnecessaryRerender',
-          data: {
-            type: 'function',
-          },
-          suggest: [
-            {
-              messageId: 'useCallback',
-              fix: () => null,
+        // Check for inline functions
+        if (
+          detectInlineFunctions &&
+          (isInlineArrowFunction(value) || isInlineFunctionExpression(value))
+        ) {
+          context.report({
+            node,
+            messageId: 'unnecessaryRerender',
+            data: {
+              type: 'function',
             },
-          ],
-        });
-        return;
-      }
+            suggest: [
+              {
+                messageId: 'useCallback',
+                fix: () => null,
+              },
+            ],
+          });
+          return;
+        }
 
-      // Check for expensive computations
-      if (detectExpensiveComputations && isExpensiveComputation(value, minComputationComplexity)) {
-        const complexity = estimateComplexity(value);
-        context.report({
-          node,
-          messageId: 'expensiveComputation',
-          data: {
-            complexity: String(complexity),
-          },
-          suggest: [
-            {
-              messageId: 'useMemo',
-              fix: () => null,
+        // Check for expensive computations
+        if (
+          detectExpensiveComputations &&
+          isExpensiveComputation(value, minComputationComplexity)
+        ) {
+          const complexity = estimateComplexity(value);
+          context.report({
+            node,
+            messageId: 'expensiveComputation',
+            data: {
+              complexity: String(complexity),
             },
-          ],
-        });
-      }
+            suggest: [
+              {
+                messageId: 'useMemo',
+                fix: () => null,
+              },
+            ],
+          });
+        }
       } catch {
         // Silently skip if there's an error processing this attribute
         return;
@@ -357,8 +363,26 @@ detectInlineProps = true,
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          detectInlineProps = true,
+          detectInlineFunctions = true,
+          detectExpensiveComputations = true,
+          minComputationComplexity = 3,
+          ignoreInTests = true,
+        } = options || {});
+
+        const filename = context.filename;
+        const isTestFile =
+          ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+        return true;
+      },
       JSXAttribute: checkJSXAttribute,
     };
   },
 });
-

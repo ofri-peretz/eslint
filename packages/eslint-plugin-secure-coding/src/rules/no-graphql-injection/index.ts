@@ -78,6 +78,7 @@ type RuleOptions = [Options?];
 export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-graphql-injection',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-graphql-injection.md',
@@ -212,34 +213,37 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const {
-      allowIntrospection = false,
-      maxQueryDepth = 10,
-      trustedGraphqlLibraries = [
-        'graphql',
-        'apollo-server',
-        'graphql-tools',
-        'graphql-tag',
-      ],
-      validationFunctions = ['validate', 'sanitize', 'isValid', 'assertValid'],
-      safeTemplateLiteralCallers = [],
-      trustedSanitizers = [],
-      trustedAnnotations = [],
-      strictMode = false,
-    }: Options = options;
-
-    const filename = context.filename;
-    const sourceCode = context.sourceCode;
-
-    // Create safety checker for false positive detection
-    const safetyChecker = createSafetyChecker({
-      trustedSanitizers,
-      trustedAnnotations,
-      trustedOrmPatterns: [],
-      strictMode,
-    });
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowIntrospection: boolean;
+    let maxQueryDepth: number;
+    let trustedGraphqlLibraries: string[];
+    let validationFunctions: string[];
+    let safeTemplateLiteralCallers: string[];
+    let trustedSanitizers: string[];
+    let trustedAnnotations: string[];
+    let strictMode: boolean;
+    let filename: string;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let safetyChecker: {
+      isSafe(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      isSanitized(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      hasAnnotation(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+    };
+    let safeMemberCallers: Set<string>;
+    let safeConstructors: Set<string>;
+    let GRAPHQL_OP_KEYWORDS: string[];
+    let GRAPHQL_SCHEMA_KEYWORDS: string[];
+    let GRAPHQL_TAG_NAMES: Set<string>;
+    let GRAPHQL_SCHEMA_BINDING: RegExp;
 
     /**
      * Check if this is a GraphQL-related operation
@@ -267,40 +271,6 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
 
       return false;
     };
-
-    // ─── AST-based safe caller detection ───────────────────────────────
-    // Hard-coded safe callers that should NEVER contain GraphQL queries.
-    // Users can extend via safeTemplateLiteralCallers option.
-    const BUILTIN_SAFE_MEMBER_CALLERS = new Set([
-      'console.log',
-      'console.warn',
-      'console.error',
-      'console.info',
-      'console.debug',
-      'console.trace',
-      'logger.log',
-      'logger.info',
-      'logger.warn',
-      'logger.error',
-      'logger.debug',
-    ]);
-    const BUILTIN_SAFE_CONSTRUCTORS = new Set([
-      'URL',
-      'Error',
-      'TypeError',
-      'RangeError',
-    ]);
-
-    // Merge user-provided callers
-    const safeMemberCallers = new Set(BUILTIN_SAFE_MEMBER_CALLERS);
-    const safeConstructors = new Set(BUILTIN_SAFE_CONSTRUCTORS);
-    for (const caller of safeTemplateLiteralCallers) {
-      if (caller.includes('.')) {
-        safeMemberCallers.add(caller);
-      } else {
-        safeConstructors.add(caller);
-      }
-    }
 
     /**
      * AST-based check: is this node inside a call that can't be GraphQL?
@@ -369,17 +339,6 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     // oxlint-disable-next-line consistent-function-scoping
     const isWhitespace = (ch: string): boolean =>
       ch === ' ' || ch === '\n' || ch === '\t' || ch === '\r';
-
-    /** Operation keywords that must be followed by optional name + { or ( */
-    const GRAPHQL_OP_KEYWORDS = ['query', 'mutation', 'subscription'];
-    /** Schema keywords that must be followed by a type name */
-    const GRAPHQL_SCHEMA_KEYWORDS = [
-      'type',
-      'interface',
-      'enum',
-      'scalar',
-      'input',
-    ];
 
     /**
      * A GraphQL document declares its operations and type definitions at the
@@ -470,26 +429,6 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         pos = idx + 1;
       }
     };
-
-    /**
-     * Is this string attributed to GraphQL by something other than its own
-     * words?
-     *
-     * `type`, `interface`, `enum`, `scalar` and `input` are GraphQL schema
-     * keywords AND TypeScript/Flow keywords, with the same `keyword Name {`
-     * shape in both languages. Nothing in the text can separate them:
-     *
-     *   return `${types…}\ninterface ShopifyTools {\n${toolRegistrations}\n}\n`
-     *       Shopify CLI .../specifications/type-generation.ts:680
-     *
-     * That is a .d.ts generator, and it was reported as CVSS 9.8 GraphQL
-     * injection. So the schema-keyword path asks for corroboration: a `gql` /
-     * `graphql` tag, a `typeDefs` / `schema` / `sdl` binding, or a call into a
-     * GraphQL library. Operation keywords (`query Name {`), `fragment X on Y`
-     * and standalone selection sets are unambiguous and need none of this.
-     */
-    const GRAPHQL_TAG_NAMES = new Set(['gql', 'graphql']);
-    const GRAPHQL_SCHEMA_BINDING = /typedef|schema|sdl/i;
 
     const hasGraphqlAttribution = (node: TSESTree.Node): boolean => {
       // `'type User {' + fields + '}'` — climb to the whole concatenation
@@ -827,6 +766,105 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({
+          allowIntrospection = false,
+          maxQueryDepth = 10,
+          trustedGraphqlLibraries = [
+            'graphql',
+            'apollo-server',
+            'graphql-tools',
+            'graphql-tag',
+          ],
+          validationFunctions = [
+            'validate',
+            'sanitize',
+            'isValid',
+            'assertValid',
+          ],
+          safeTemplateLiteralCallers = [],
+          trustedSanitizers = [],
+          trustedAnnotations = [],
+          strictMode = false,
+        } = options);
+
+        filename = context.filename;
+        sourceCode = context.sourceCode;
+
+        // Create safety checker for false positive detection
+        safetyChecker = createSafetyChecker({
+          trustedSanitizers,
+          trustedAnnotations,
+          trustedOrmPatterns: [],
+          strictMode,
+        });
+
+        // ─── AST-based safe caller detection ───────────────────────────────
+        // Hard-coded safe callers that should NEVER contain GraphQL queries.
+        // Users can extend via safeTemplateLiteralCallers option.
+        const BUILTIN_SAFE_MEMBER_CALLERS = new Set([
+          'console.log',
+          'console.warn',
+          'console.error',
+          'console.info',
+          'console.debug',
+          'console.trace',
+          'logger.log',
+          'logger.info',
+          'logger.warn',
+          'logger.error',
+          'logger.debug',
+        ]);
+        const BUILTIN_SAFE_CONSTRUCTORS = new Set([
+          'URL',
+          'Error',
+          'TypeError',
+          'RangeError',
+        ]);
+
+        // Merge user-provided callers
+        safeMemberCallers = new Set(BUILTIN_SAFE_MEMBER_CALLERS);
+        safeConstructors = new Set(BUILTIN_SAFE_CONSTRUCTORS);
+        for (const caller of safeTemplateLiteralCallers) {
+          if (caller.includes('.')) {
+            safeMemberCallers.add(caller);
+          } else {
+            safeConstructors.add(caller);
+          }
+        }
+
+        /** Operation keywords that must be followed by optional name + { or ( */
+        GRAPHQL_OP_KEYWORDS = ['query', 'mutation', 'subscription'];
+        /** Schema keywords that must be followed by a type name */
+        GRAPHQL_SCHEMA_KEYWORDS = [
+          'type',
+          'interface',
+          'enum',
+          'scalar',
+          'input',
+        ];
+
+        /**
+         * Is this string attributed to GraphQL by something other than its own
+         * words?
+         *
+         * `type`, `interface`, `enum`, `scalar` and `input` are GraphQL schema
+         * keywords AND TypeScript/Flow keywords, with the same `keyword Name {`
+         * shape in both languages. Nothing in the text can separate them:
+         *
+         *   return `${types…}\ninterface ShopifyTools {\n${toolRegistrations}\n}\n`
+         *       Shopify CLI .../specifications/type-generation.ts:680
+         *
+         * That is a .d.ts generator, and it was reported as CVSS 9.8 GraphQL
+         * injection. So the schema-keyword path asks for corroboration: a `gql` /
+         * `graphql` tag, a `typeDefs` / `schema` / `sdl` binding, or a call into a
+         * GraphQL library. Operation keywords (`query Name {`), `fragment X on Y`
+         * and standalone selection sets are unambiguous and need none of this.
+         */
+        GRAPHQL_TAG_NAMES = new Set(['gql', 'graphql']);
+        GRAPHQL_SCHEMA_BINDING = /typedef|schema|sdl/i;
+      },
       // Check template literals for GraphQL queries
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
         // AST-based context check: skip templates inside safe callers

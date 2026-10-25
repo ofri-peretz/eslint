@@ -248,6 +248,7 @@ function isXpathModuleExport(
 export const noXpathInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-xpath-injection',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-xpath-injection.md',
@@ -405,93 +406,36 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const {
-      reportDangerousConstructs = false,
-      xpathPackages = DEFAULT_XPATH_PACKAGES,
-      additionalXpathPackages = [],
-      xpathFunctions = [
-        'evaluate',
-        'selectSingleNode',
-        'selectNodes',
-        'xpath',
-        'select',
-        'select1',
-      ],
-      xpathValidationFunctions = [
-        'validateXPath',
-        'escapeXPath',
-        'sanitizeXPath',
-        'cleanXPath',
-      ],
-      trustedSanitizers = [],
-      trustedAnnotations = [],
-      strictMode = false,
-    }: Options = options;
-
-    const xpathPackageSet = new Set([
-      ...xpathPackages,
-      ...additionalXpathPackages,
-    ]);
-
-    const sourceCode = context.sourceCode;
-    const filename = context.filename;
-
-    /**
-     * Does this module evaluate XPath at all?
-     *
-     * The call path already established the doctrine — "the import is the
-     * evidence; the name never was" — after `select` and `evaluate` reported
-     * CWE-643 at 9.8 in files containing no XML. The template path never
-     * applied it, and reported on shape alone.
-     *
-     * `<Route path={`/${locale}/*`} />` is a React Router wildcard. `/*` is
-     * also XPath's abbreviated `child::*`, so a router path in a React
-     * component was reported as XPath injection at CVSS 9.8 — twice, in a city
-     * government's application, with no XPath anywhere in the repository.
-     *
-     * Evidence is an import from an XPath package, or a DOM XPath API, which
-     * needs no import at all. Computed once per file: the answer cannot differ
-     * between two templates in the same module.
-     */
-    /**
-     * Does this module evaluate XPath at all?
-     *
-     * The call path already established the doctrine — "the import is the
-     * evidence; the name never was" — after `select` and `evaluate` reported
-     * CWE-643 at 9.8 in files containing no XML. The template path never
-     * applied it and reported on shape alone, so a React Router wildcard
-     * `path={`/${locale}/*`}` was XPath injection at CVSS 9.8.
-     *
-     * Set during traversal rather than by walking the AST up front: a rule that
-     * matches against the whole program text reads comments and string bodies
-     * as if they were code, and the rule-audit ratchet flags it for that.
-     * Templates that need it are therefore held until `Program:exit`, by which
-     * point the answer is known however late in the file the evidence sits.
-     */
-    let moduleEvaluatesXpath = false;
-    /** Nodes only: one messageId is ever deferred, so it is written at the report site. */
-    const wildcardPending: TSESTree.Node[] = [];
-
-    /** Only as a member — `doc.evaluate(x)`. A bare `evaluate(ctx)` is a feature flag. */
-    const DOM_XPATH_MEMBERS = new Set([
-      'evaluate',
-      'selectNodes',
-      'selectSingleNode',
-      'createExpression',
-    ]);
-
-    // Create safety checker for false positive detection
-    const safetyChecker = createSafetyChecker({
-      trustedSanitizers,
-      trustedAnnotations,
-      trustedOrmPatterns: [],
-      strictMode,
-    });
-
-    // Track variables that have been validated/sanitized
-    const validatedVariables = new Set<string>();
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let reportDangerousConstructs: boolean;
+    let xpathPackages: string[];
+    let additionalXpathPackages: string[];
+    let xpathFunctions: string[];
+    let xpathValidationFunctions: string[];
+    let trustedSanitizers: string[];
+    let trustedAnnotations: string[];
+    let strictMode: boolean;
+    let xpathPackageSet: Set<string>;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let filename: string;
+    let moduleEvaluatesXpath: boolean;
+    let wildcardPending: TSESTree.Node[];
+    let DOM_XPATH_MEMBERS: Set<string>;
+    let safetyChecker: {
+      isSafe(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      isSanitized(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      hasAnnotation(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+    };
+    let validatedVariables: Set<string>;
 
     /**
      * Is this expression assigned to a name whose every use is a proven non-sink?
@@ -861,6 +805,94 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({
+          reportDangerousConstructs = false,
+          xpathPackages = DEFAULT_XPATH_PACKAGES,
+          additionalXpathPackages = [],
+          xpathFunctions = [
+            'evaluate',
+            'selectSingleNode',
+            'selectNodes',
+            'xpath',
+            'select',
+            'select1',
+          ],
+          xpathValidationFunctions = [
+            'validateXPath',
+            'escapeXPath',
+            'sanitizeXPath',
+            'cleanXPath',
+          ],
+          trustedSanitizers = [],
+          trustedAnnotations = [],
+          strictMode = false,
+        } = options);
+
+        xpathPackageSet = new Set([
+          ...xpathPackages,
+          ...additionalXpathPackages,
+        ]);
+
+        sourceCode = context.sourceCode;
+        filename = context.filename;
+
+        /**
+         * Does this module evaluate XPath at all?
+         *
+         * The call path already established the doctrine — "the import is the
+         * evidence; the name never was" — after `select` and `evaluate` reported
+         * CWE-643 at 9.8 in files containing no XML. The template path never
+         * applied it, and reported on shape alone.
+         *
+         * `<Route path={`/${locale}/*`} />` is a React Router wildcard. `/*` is
+         * also XPath's abbreviated `child::*`, so a router path in a React
+         * component was reported as XPath injection at CVSS 9.8 — twice, in a city
+         * government's application, with no XPath anywhere in the repository.
+         *
+         * Evidence is an import from an XPath package, or a DOM XPath API, which
+         * needs no import at all. Computed once per file: the answer cannot differ
+         * between two templates in the same module.
+         */
+        /**
+         * Does this module evaluate XPath at all?
+         *
+         * The call path already established the doctrine — "the import is the
+         * evidence; the name never was" — after `select` and `evaluate` reported
+         * CWE-643 at 9.8 in files containing no XML. The template path never
+         * applied it and reported on shape alone, so a React Router wildcard
+         * `path={`/${locale}/*`}` was XPath injection at CVSS 9.8.
+         *
+         * Set during traversal rather than by walking the AST up front: a rule that
+         * matches against the whole program text reads comments and string bodies
+         * as if they were code, and the rule-audit ratchet flags it for that.
+         * Templates that need it are therefore held until `Program:exit`, by which
+         * point the answer is known however late in the file the evidence sits.
+         */
+        moduleEvaluatesXpath = false;
+        /** Nodes only: one messageId is ever deferred, so it is written at the report site. */
+        wildcardPending = [];
+
+        /** Only as a member — `doc.evaluate(x)`. A bare `evaluate(ctx)` is a feature flag. */
+        DOM_XPATH_MEMBERS = new Set([
+          'evaluate',
+          'selectNodes',
+          'selectSingleNode',
+          'createExpression',
+        ]);
+
+        // Create safety checker for false positive detection
+        safetyChecker = createSafetyChecker({
+          trustedSanitizers,
+          trustedAnnotations,
+          trustedOrmPatterns: [],
+          strictMode,
+        });
+
+        // Track variables that have been validated/sanitized
+        validatedVariables = new Set<string>();
+      },
       // Check XPath function calls
       CallExpression(node: TSESTree.CallExpression) {
         if (!isXpathOperation(node)) {

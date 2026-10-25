@@ -22,7 +22,10 @@ ruleTester.run('no-sensitive-data-in-analytics', noSensitiveDataInAnalytics, {
     {
       code: "analytics.track('click', { element: 'button', action: 'submit' })",
     },
-    { code: "gtag('event', 'click', { element: 'button' })" },
+    {
+      name: 'a gtag click event with only an element name carries nothing sensitive',
+      code: "gtag('event', 'click', { element: 'button' })",
+    },
     // Non-analytics code
     { code: 'const x = 1' },
   ],

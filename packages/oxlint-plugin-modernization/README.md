@@ -1,18 +1,102 @@
-# oxlint-plugin-modernization
+<p align="center">
+  <a href="https://eslint.interlace.tools/docs/quality/plugin-modernization?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modernization" target="blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/interlace-dark.svg"><img src="https://eslint.interlace.tools/logos/interlace-light.svg" alt="Interlace" height="90" /></picture></a>
+  &nbsp;&nbsp;
+  <a href="https://oxc.rs" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/oxlint-dark.svg"><img src="https://eslint.interlace.tools/logos/oxlint-light.svg" alt="oxlint" height="90" /></picture></a>
+</p>
 
-The `modernization` rules for [oxlint](https://oxc.rs/docs/guide/usage/linter) and
-[Vite+](https://viteplus.dev). This package is the oxlint name for
-[`eslint-plugin-modernization`](https://www.npmjs.com/package/eslint-plugin-modernization): the same rules, the same
-rule IDs (`modernization/<rule>`), and the same version. It contains no rule code of its own, and it
-does not install ESLint.
+<p align="center">
+  Modernization rules — prefer modern ES idioms over legacy patterns.
+</p>
 
-## Install
+<p align="center">
+  <a href="https://www.npmjs.com/package/oxlint-plugin-modernization" target="_blank"><img src="https://img.shields.io/npm/v/oxlint-plugin-modernization.svg" alt="NPM Version" /></a>
+  <a href="https://www.npmjs.com/package/oxlint-plugin-modernization" target="_blank"><img src="https://img.shields.io/npm/dm/oxlint-plugin-modernization.svg" alt="NPM Downloads" /></a>
+  <a href="https://packagephobia.com/result?p=oxlint-plugin-modernization" target="_blank"><img src="https://badgen.net/packagephobia/install/oxlint-plugin-modernization" alt="Install Size" /></a>
+  <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-modernization" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-modernization" alt="Codecov" /></a>
+  <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
+</p>
 
-```bash
-npm install --save-dev oxlint-plugin-modernization
+> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
+
+## Description
+
+`oxlint-plugin-modernization` is the [oxlint](https://oxc.rs/docs/guide/usage/linter/js-plugins) and [Vite+](https://viteplus.dev/guide/lint) name for [`eslint-plugin-modernization`](https://www.npmjs.com/package/eslint-plugin-modernization). It carries the same rules under the same IDs (`modernization/<rule>`), always at the same version, because it re-exports that package rather than copying it. Installing it does not install ESLint.
+
+## Why These Rules?
+
+### `no-instanceof-array`
+
+`instanceof Array` fails across different realms (iframes, workers). `Array.isArray()` is the correct, reliable check.
+
+```js
+// ❌ Bad: Fails across realms
+if (value instanceof Array) {
+}
+
+// ✅ Good: Works everywhere
+if (Array.isArray(value)) {
+}
 ```
 
-## Vite+
+### `prefer-at`
+
+`Array.at()` provides cleaner negative index access (ES2022+).
+
+```js
+// ❌ Bad: Verbose negative index access
+const last = arr[arr.length - 1];
+
+// ✅ Good: Clean ES2022+ syntax
+const last = arr.at(-1);
+```
+
+### `prefer-event-target`
+
+`EventTarget` is the native browser API and doesn't require Node.js polyfills.
+
+```js
+// ❌ Bad: Requires polyfill in browsers
+import { EventEmitter } from 'events';
+
+// ✅ Good: Native browser API
+const target = new EventTarget();
+```
+
+---
+
+## Covered natively by oxlint
+
+oxlint already ships 3 of these 4 rules as built-ins. Enable the built-in instead: it is the same check, runs natively, and running both would report every finding twice. Each rule carries the mapping as `meta.interop.nativeEquivalent`.
+
+| This plugin                         | oxlint built-in               |
+| :---------------------------------- | :---------------------------- |
+| `modernization/no-instanceof-array` | `unicorn/no-instanceof-array` |
+| `modernization/prefer-at`           | `unicorn/prefer-at`           |
+| `modernization/prefer-event-target` | `unicorn/prefer-event-target` |
+
+What this package adds to oxlint is the other 1: every rule in the table below that is not listed here.
+
+- **Why** — a linter nobody reads protects nothing. We would rather miss a finding
+  than spend your attention on one that was never real.
+- **How** — evidence, not names. A rule fires on what the code _does_, resolved
+  through the AST and ESLint's own scope analysis.
+- **What** — every finding carries its fix, in prose for a human and as structured
+  JSON for an agent. Security rules add a CWE mapping and, where assigned, a CVSS score.
+
+That trade costs recall, and we measure it:
+[methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
+· [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md)
+· [a false positive is a bug](https://github.com/ofri-peretz/eslint/issues).
+
+## Getting Started
+
+```bash
+npm install oxlint-plugin-modernization --save-dev
+```
+
+### Vite+
 
 ```ts
 // vite.config.ts
@@ -22,33 +106,73 @@ export default defineConfig({
   lint: {
     jsPlugins: ['oxlint-plugin-modernization'],
     rules: {
-      'modernization/<rule>': 'error',
+      'modernization/prefer-template-literal': 'error',
     },
   },
 });
 ```
 
-## oxlint
+### oxlint
 
 ```json
 {
   "jsPlugins": ["oxlint-plugin-modernization"],
   "rules": {
-    "modernization/<rule>": "error"
+    "modernization/prefer-template-literal": "error"
   }
 }
 ```
 
+That enables one rule as an example; add the ones you want from the table below.
+
+### ESLint
+
+Install [`eslint-plugin-modernization`](https://www.npmjs.com/package/eslint-plugin-modernization) instead. It has the same rules, plus presets for ESLint's flat config.
+
+## 📦 Compatibility
+
+| Package | Version                                                          |
+| :------ | :--------------------------------------------------------------- |
+| oxlint  | verified on `1.88.0`: CI loads every rule ID through `jsPlugins` |
+| Vite+   | `lint.jsPlugins` in `vite.config.ts`                             |
+| Node.js | `>=18.0.0`                                                       |
+
 ## Rules
 
-Every rule, its options and its docs are listed in the
-[`eslint-plugin-modernization` README](https://www.npmjs.com/package/eslint-plugin-modernization#rules). Using ESLint
-instead? Install `eslint-plugin-modernization` directly.
+**Legend**
 
-## License
+| Icon | Description                                                               |
+| :--: | :------------------------------------------------------------------------ |
+|  💼  | **Recommended**: Included in the recommended preset.                      |
+|  ⚠️  | **Warns**: Set to warn in recommended preset.                             |
+|  🔧  | **Auto-fixable**: Automatically fixable by the `--fix` CLI option.        |
+|  💡  | **Suggestions**: Providing code suggestions in IDE.                       |
+|  🚫  | **Deprecated**: This rule is deprecated.                                  |
+|  🟢  | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier.                |
+|  🟡  | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+|  🟠  | **Type-aware (graceful)**: requires TS program; silent without it.        |
 
-MIT
+| Rule                                                                                                                                                                                                     | CWE | OWASP | CVSS | Description                                                                                                 | 🧠  | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-: | :---: | :--: | :---------------------------------------------------------------------------------------------------------- | :-: | :-: | :-: | :-: | :-: | :-: |
+| [no-instanceof-array](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/no-instanceof-array?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modernization)         |     |       |      | Prefer Array.isArray() over instanceof Array for reliable type checking across different JavaScript realms… | 🟢  | 💼  |     |     | 💡  |     |
+| [prefer-at](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-at?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modernization)                             |     |       |      | Prefer using Array.at() for accessing elements, especially with negative indices                            | 🟢  |     | ⚠️  |     | 💡  |     |
+| [prefer-event-target](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-event-target?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modernization)         |     |       |      | Prefer EventTarget over EventEmitter for isomorphic code                                                    | 🟢  |     | ⚠️  |     | 💡  |     |
+| [prefer-template-literal](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-template-literal?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modernization) |     |       |      | Prefer template literals over string concatenation with runtime values                                      | 🟢  |     | ⚠️  |     |     |     |
+
+## ⭐ Support & follow
+
+If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+
+[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+
+## 📄 License
+
+MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
   <a href="https://eslint.interlace.tools/docs/quality/plugin-modernization?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modernization"><img src="https://eslint.interlace.tools/images/og-modernization.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+</p>
+
+<p align="center">
+  <a href="https://eslint.interlace.tools/docs/quality/plugin-modernization?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modernization" target="blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/interlace-dark.svg"><img src="https://eslint.interlace.tools/logos/interlace-light.svg" alt="Interlace" height="70" /></picture></a>
 </p>

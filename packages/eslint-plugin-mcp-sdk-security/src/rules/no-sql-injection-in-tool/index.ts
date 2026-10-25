@@ -176,6 +176,7 @@ function sqlTextOf(node: TSESTree.CallExpression): TSESTree.Node[] {
 export const noSqlInjectionInTool = createRule<[], MessageIds>({
   name: 'no-sql-injection-in-tool',
   meta: {
+    interop: { runtimes: ['eslint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mcp-sdk-security/docs/rules/no-sql-injection-in-tool.md',
@@ -203,14 +204,20 @@ export const noSqlInjectionInTool = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
-    const resolve = valueResolverFor(context);
-    const builtBy = createInstanceResolver(context);
-    const handlers = createHandlerCollector(context, resolve, 'arguments');
-    const candidates: Array<{ node: TSESTree.Node; sink: string }> = [];
+  createOnce(context) {
+    let builtBy: (node: TSESTree.Node) => Construction | undefined;
+    let handlers: ReturnType<typeof createHandlerCollector>;
+    let candidates: { node: TSESTree.Node; sink: string }[];
 
     return {
+      before() {
+        if (!fileUsesMcpSdk(context.sourceCode.ast)) return false;
+        const resolve = valueResolverFor(context);
+        builtBy = createInstanceResolver(context);
+        handlers = createHandlerCollector(context, resolve, 'arguments');
+        candidates = [];
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         handlers.visit(node);
         const sink = sqlSinkOf(

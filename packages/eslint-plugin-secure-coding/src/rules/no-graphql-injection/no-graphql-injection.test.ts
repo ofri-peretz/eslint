@@ -49,6 +49,7 @@ describe('no-graphql-injection', () => {
         },
         // Non-GraphQL strings
         {
+          name: 'a plain string that is not GraphQL is ignored',
           code: 'const message = "Hello World";',
         },
         // Safe introspection in development (with config)

@@ -133,6 +133,7 @@ const DEFAULT_USER_INPUT_ALIASES = [
 export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-format-string-injection',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-format-string-injection.md',
@@ -286,112 +287,24 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
       ],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const defaultOptions: Options = {
-      formatFunctions: [
-        'util.format',
-        'console.log',
-        'console.error',
-        'console.warn',
-        'sprintf',
-        'printf',
-        'vsprintf',
-      ],
-      formatSpecifiers: ['%s', '%d', '%i', '%f', '%j', '%o', '%O', '%c', '%%'],
-      userInputVariables: [
-        'req',
-        'request',
-        'body',
-        'query',
-        'params',
-        'input',
-        'data',
-        'userInput',
-      ],
-      userInputAliases: DEFAULT_USER_INPUT_ALIASES,
-      additionalUserInputAliases: [],
-      trustedSanitizers: [
-        'validateFormat',
-        'sanitizeFormat',
-        'escapeFormat',
-        'cleanFormat',
-        'sanitizeFormatString',
-        'validate',
-        'sanitize',
-        'escape',
-        'clean',
-      ],
-    };
-
-    const options: Required<Options> = {
-      ...defaultOptions,
-      ...context.options[0],
-    } as Required<Options>;
-    const {
-      formatSpecifiers,
-      userInputVariables,
-      userInputAliases,
-      additionalUserInputAliases,
-      trustedSanitizers,
-    } = options;
-    const filename = context.filename;
-
-    // Create safety checker for false positive detection (simplified implementation)
-    // One defect, one finding. ESLint visits a VariableDeclarator before its own `init`,
-    // so a specifier-bearing template assigned to a variable was reported twice — once by
-    // the VariableDeclarator handler and again by the TemplateLiteral visitor. Mirrors the
-    // `handledMemberExpressions` pattern in detect-object-injection.
-    const reportedTemplates = new WeakSet<TSESTree.Node>();
-
-    const safetyChecker = {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let options: Required<Options>;
+    let formatSpecifiers: string[];
+    let userInputVariables: string[];
+    let userInputAliases: string[];
+    let additionalUserInputAliases: string[];
+    let trustedSanitizers: string[];
+    let filename: string;
+    let reportedTemplates: WeakSet<TSESTree.Node>;
+    let safetyChecker: {
       isSafe: (
         safeNode: TSESTree.Node,
         ruleCtx: TSESLint.RuleContext<MessageIds, RuleOptions>,
-      ) => {
-        // Check for JSDoc @safe-format annotation
-        const comments = ruleCtx.sourceCode.getCommentsBefore(safeNode);
-        for (const comment of comments) {
-          if (
-            comment.type === 'Block' &&
-            comment.value.includes('@safe-format')
-          ) {
-            return true;
-          }
-        }
-
-        // For CallExpression nodes, check if first argument is safe
-        if (
-          safeNode.type === 'CallExpression' &&
-          safeNode.arguments.length > 0
-        ) {
-          const firstArg = safeNode.arguments[0];
-          if (
-            firstArg.type === 'Identifier' &&
-            validatedVariables.has(firstArg.name)
-          ) {
-            return true;
-          }
-        }
-
-        return false;
-      },
+      ) => boolean;
     };
-
-    /**
-     * Is this identifier one the project declared as user input?
-     *
-     * Two vocabularies, both matched as WHOLE NAMES and both configurable:
-     * `userInputVariables` (the project's own declarations) and
-     * `userInputAliases` / `additionalUserInputAliases` (the `user*` family,
-     * documented on `DEFAULT_USER_INPUT_ALIASES` above).
-     */
-    const declaredUserInput: ReadonlySet<string> = new Set(
-      [
-        ...userInputVariables,
-        ...userInputAliases,
-        ...additionalUserInputAliases,
-      ].map((name) => name.toLowerCase()),
-    );
+    let declaredUserInput: ReadonlySet<string>;
+    let validatedVariables: Set<string>;
+    let dangerousVariables: Set<string>;
 
     const isUserInput = (varName: string): boolean =>
       declaredUserInput.has(varName.toLowerCase());
@@ -568,10 +481,6 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
       return false;
     };
 
-    // Track variables that have been validated/sanitized
-    const validatedVariables = new Set<string>();
-    const dangerousVariables = new Set<string>();
-
     /**
      * Is the format string a constant this file can read?
      *
@@ -684,6 +593,127 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const defaultOptions: Options = {
+          formatFunctions: [
+            'util.format',
+            'console.log',
+            'console.error',
+            'console.warn',
+            'sprintf',
+            'printf',
+            'vsprintf',
+          ],
+          formatSpecifiers: [
+            '%s',
+            '%d',
+            '%i',
+            '%f',
+            '%j',
+            '%o',
+            '%O',
+            '%c',
+            '%%',
+          ],
+          userInputVariables: [
+            'req',
+            'request',
+            'body',
+            'query',
+            'params',
+            'input',
+            'data',
+            'userInput',
+          ],
+          userInputAliases: DEFAULT_USER_INPUT_ALIASES,
+          additionalUserInputAliases: [],
+          trustedSanitizers: [
+            'validateFormat',
+            'sanitizeFormat',
+            'escapeFormat',
+            'cleanFormat',
+            'sanitizeFormatString',
+            'validate',
+            'sanitize',
+            'escape',
+            'clean',
+          ],
+        };
+
+        options = {
+          ...defaultOptions,
+          ...context.options[0],
+        } as Required<Options>;
+        ({
+          formatSpecifiers,
+          userInputVariables,
+          userInputAliases,
+          additionalUserInputAliases,
+          trustedSanitizers,
+        } = options);
+        filename = context.filename;
+
+        // Create safety checker for false positive detection (simplified implementation)
+        // One defect, one finding. ESLint visits a VariableDeclarator before its own `init`,
+        // so a specifier-bearing template assigned to a variable was reported twice — once by
+        // the VariableDeclarator handler and again by the TemplateLiteral visitor. Mirrors the
+        // `handledMemberExpressions` pattern in detect-object-injection.
+        reportedTemplates = new WeakSet<TSESTree.Node>();
+
+        safetyChecker = {
+          isSafe: (
+            safeNode: TSESTree.Node,
+            ruleCtx: TSESLint.RuleContext<MessageIds, RuleOptions>,
+          ) => {
+            // Check for JSDoc @safe-format annotation
+            const comments = ruleCtx.sourceCode.getCommentsBefore(safeNode);
+            for (const comment of comments) {
+              if (
+                comment.type === 'Block' &&
+                comment.value.includes('@safe-format')
+              ) {
+                return true;
+              }
+            }
+
+            // For CallExpression nodes, check if first argument is safe
+            if (
+              safeNode.type === 'CallExpression' &&
+              safeNode.arguments.length > 0
+            ) {
+              const firstArg = safeNode.arguments[0];
+              if (
+                firstArg.type === 'Identifier' &&
+                validatedVariables.has(firstArg.name)
+              ) {
+                return true;
+              }
+            }
+
+            return false;
+          },
+        };
+
+        /**
+         * Is this identifier one the project declared as user input?
+         *
+         * Two vocabularies, both matched as WHOLE NAMES and both configurable:
+         * `userInputVariables` (the project's own declarations) and
+         * `userInputAliases` / `additionalUserInputAliases` (the `user*` family,
+         * documented on `DEFAULT_USER_INPUT_ALIASES` above).
+         */
+        declaredUserInput = new Set(
+          [
+            ...userInputVariables,
+            ...userInputAliases,
+            ...additionalUserInputAliases,
+          ].map((name) => name.toLowerCase()),
+        );
+
+        // Track variables that have been validated/sanitized
+        validatedVariables = new Set<string>();
+        dangerousVariables = new Set<string>();
+      },
       // Check call expressions for format function usage
       CallExpression: function (node: TSESTree.CallExpression) {
         if (!isFormatFunctionCall(node)) {

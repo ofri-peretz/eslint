@@ -72,6 +72,7 @@ type RuleOptions = [Options?];
 export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-validation-pipe',
   meta: {
+    interop: { runtimes: ['eslint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/no-missing-validation-pipe.md',
@@ -112,7 +113,6 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
         fix: 'Decorate the DTO properties (@IsString() name: string;) AND apply a ValidationPipe — app.useGlobalPipes(new ValidationPipe()) or @UsePipes(new ValidationPipe()). Neither half validates anything on its own.',
         documentationLink: 'https://docs.nestjs.com/techniques/validation',
       }),
-
     },
     schema: [
       {

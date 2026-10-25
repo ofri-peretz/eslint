@@ -80,6 +80,7 @@ export const preferDependencyVersionStrategy = createRule<
 >({
   name: 'prefer-dependency-version-strategy',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/prefer-dependency-version-strategy.md',
@@ -155,37 +156,12 @@ export const preferDependencyVersionStrategy = createRule<
       overrides: {},
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const {
-      strategy = 'caret',
-      allowWorkspace = true,
-      allowFile = true,
-      allowLink = true,
-      overrides = {},
-    } = options;
-
-    // Validate strategy
-    const validStrategies: VersionStrategy[] = [
-      'caret',
-      'tilde',
-      'exact',
-      'range',
-      'any',
-    ];
-    if (!validStrategies.includes(strategy)) {
-      context.report({
-        loc: { line: 1, column: 0 },
-        messageId: 'invalidStrategy',
-        data: { strategy },
-      });
-      return {};
-    }
-
-    // If strategy is 'any', allow all versions
-    if (strategy === 'any') {
-      return {};
-    }
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let strategy: VersionStrategy;
+    let allowWorkspace: boolean;
+    let allowFile: boolean;
+    let allowLink: boolean;
+    let overrides: Record<string, VersionStrategy>;
 
     function checkVersion(
       node: TSESTree.Property,
@@ -330,6 +306,39 @@ export const preferDependencyVersionStrategy = createRule<
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({
+          strategy = 'caret',
+          allowWorkspace = true,
+          allowFile = true,
+          allowLink = true,
+          overrides = {},
+        } = options);
+
+        // Validate strategy
+        const validStrategies: VersionStrategy[] = [
+          'caret',
+          'tilde',
+          'exact',
+          'range',
+          'any',
+        ];
+        if (!validStrategies.includes(strategy)) {
+          context.report({
+            loc: { line: 1, column: 0 },
+            messageId: 'invalidStrategy',
+            data: { strategy },
+          });
+          return false;
+        }
+
+        // If strategy is 'any', allow all versions
+        if (strategy === 'any') {
+          return false;
+        }
+        return true;
+      },
       Property: checkDependencyBlock,
       // `jsonc-eslint-parser`, which the docs configure for `**/package.json`.
       JSONProperty: checkDependencyBlock,

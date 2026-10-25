@@ -24,9 +24,18 @@ const EXAMPLE_JWT =
 ruleTester.run('no-jwt-in-storage', noJwtInStorage, {
   valid: [
     // Non-sensitive storage
-    { name: 'a theme preference', code: `localStorage.setItem('theme', 'dark');` },
-    { name: 'a locale is not a credential', code: `sessionStorage.setItem('locale', 'en-US');` },
-    { code: `localStorage.setItem('preference', 'compact');` },
+    {
+      name: 'a theme preference',
+      code: `localStorage.setItem('theme', 'dark');`,
+    },
+    {
+      name: 'a locale is not a credential',
+      code: `sessionStorage.setItem('locale', 'en-US');`,
+    },
+    {
+      name: 'a layout preference is not a JWT',
+      code: `localStorage.setItem('preference', 'compact');`,
+    },
     // Reading storage is fine
     { code: `const theme = localStorage.getItem('theme');` },
     // Not the storage API

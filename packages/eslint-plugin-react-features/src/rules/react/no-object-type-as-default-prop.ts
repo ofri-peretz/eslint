@@ -52,6 +52,10 @@ const isInParameterPosition = (node: TSESTree.AssignmentPattern): boolean => {
 export const noObjectTypeAsDefaultProp = createRule<[], MessageIds>({
   name: 'no-object-type-as-default-prop',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/no-object-type-as-default-prop',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-object-type-as-default-prop.md',
@@ -64,19 +68,25 @@ export const noObjectTypeAsDefaultProp = createRule<[], MessageIds>({
         description: 'Object used as default prop value',
         severity: 'MEDIUM',
         fix: 'Create object outside component or use factory function',
-        documentationLink: 'https://react.dev/learn/passing-props-to-a-component#default-props',
+        documentationLink:
+          'https://react.dev/learn/passing-props-to-a-component#default-props',
       }),
     },
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       // Check defaultProps assignments (PropertyDefinition is used by TypeScript parser)
-      'PropertyDefinition[key.name="defaultProps"]'(node: TSESTree.PropertyDefinition) {
+      'PropertyDefinition[key.name="defaultProps"]'(
+        node: TSESTree.PropertyDefinition,
+      ) {
         if (node.value && node.value.type === 'ObjectExpression') {
           for (const prop of node.value.properties) {
-            if (prop.type === 'Property' && prop.value.type === 'ObjectExpression') {
+            if (
+              prop.type === 'Property' &&
+              prop.value.type === 'ObjectExpression'
+            ) {
               context.report({
                 node: prop.key,
                 messageId: 'noObjectTypeAsDefaultProp',
@@ -93,7 +103,11 @@ export const noObjectTypeAsDefaultProp = createRule<[], MessageIds>({
         const inDestructuring =
           node.parent.type === AST_NODE_TYPES.Property ||
           node.parent.type === AST_NODE_TYPES.RestElement;
-        if (node.right.type === 'ObjectExpression' && inDestructuring && isInParameterPosition(node)) {
+        if (
+          node.right.type === 'ObjectExpression' &&
+          inDestructuring &&
+          isInParameterPosition(node)
+        ) {
           context.report({
             node: node.left,
             messageId: 'noObjectTypeAsDefaultProp',

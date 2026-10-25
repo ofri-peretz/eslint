@@ -17,6 +17,7 @@ type MessageIds = 'jsxNoBind';
 export const jsxNoBind = createRule<[], MessageIds>({
   name: 'jsx-no-bind',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/jsx-no-bind.md',
@@ -27,15 +28,17 @@ export const jsxNoBind = createRule<[], MessageIds>({
       jsxNoBind: formatLLMMessage({
         icon: MessageIcons.PERFORMANCE,
         issueName: 'Bind in JSX',
-        description: 'Using .bind() in JSX creates new function on every render',
+        description:
+          'Using .bind() in JSX creates new function on every render',
         severity: 'HIGH',
         fix: 'Use arrow function or bind in constructor/class field',
-        documentationLink: 'https://react.dev/learn/render-and-commit#should-you-add-eslint-rules',
+        documentationLink:
+          'https://react.dev/learn/render-and-commit#should-you-add-eslint-rules',
       }),
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (node.value && node.value.type === 'JSXExpressionContainer') {

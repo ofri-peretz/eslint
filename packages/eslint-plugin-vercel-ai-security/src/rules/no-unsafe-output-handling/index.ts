@@ -24,7 +24,12 @@ import {
   resolveModuleBinding,
 } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
-import { calleeName, isSdkHookCall, isSdkTypedParameter, lookupVariable } from '../../utils/sdk';
+import {
+  calleeName,
+  isSdkHookCall,
+  isSdkTypedParameter,
+  lookupVariable,
+} from '../../utils/sdk';
 import { derivesFrom } from '../../utils/flow';
 
 type MessageIds =
@@ -43,10 +48,12 @@ type RuleOptions = [Options?];
 export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-output-handling',
   meta: {
+    interop: { runtimes: ['eslint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/no-unsafe-output-handling.md',
-      description: 'Prevent using AI output directly in dangerous operations (eval, SQL, HTML)',
+      description:
+        'Prevent using AI output directly in dangerous operations (eval, SQL, HTML)',
       cwe: 'CWE-94',
       cvss: 9.8,
       confidence: 'medium',
@@ -58,11 +65,13 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-94',
         owasp: 'A03:2021',
         cvss: 9.8,
-        description: 'AI-generated content "{{variable}}" passed to {{function}}. This can lead to Remote Code Execution.',
+        description:
+          'AI-generated content "{{variable}}" passed to {{function}}. This can lead to Remote Code Execution.',
         severity: 'CRITICAL',
         compliance: ['SOC2', 'PCI-DSS'],
         fix: 'Never execute AI-generated code directly. Use sandboxed execution with validation.',
-        documentationLink: 'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
+        documentationLink:
+          'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
       }),
       unsafeOutputInSQL: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -70,11 +79,13 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-89',
         owasp: 'A03:2021',
         cvss: 9.0,
-        description: 'AI-generated content used in SQL query. Use parameterized queries instead.',
+        description:
+          'AI-generated content used in SQL query. Use parameterized queries instead.',
         severity: 'CRITICAL',
         compliance: ['SOC2', 'PCI-DSS'],
         fix: 'Use parameterized queries: db.query("SELECT * FROM users WHERE id = ?", [aiOutput])',
-        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html',
+        documentationLink:
+          'https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html',
       }),
       unsafeOutputInHTML: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -82,11 +93,13 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-79',
         owasp: 'A03:2021',
         cvss: 7.5,
-        description: 'AI-generated content assigned to innerHTML. This can lead to XSS attacks.',
+        description:
+          'AI-generated content assigned to innerHTML. This can lead to XSS attacks.',
         severity: 'HIGH',
         compliance: ['SOC2'],
         fix: 'Use textContent or sanitize HTML: element.textContent = aiOutput',
-        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html',
+        documentationLink:
+          'https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html',
       }),
       unsafeOutputInRequest: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -94,11 +107,13 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-918',
         owasp: 'A10:2021',
         cvss: 8.6,
-        description: 'Model-controlled value chooses the URL passed to fetch(). This can lead to Server-Side Request Forgery.',
+        description:
+          'Model-controlled value chooses the URL passed to fetch(). This can lead to Server-Side Request Forgery.',
         severity: 'HIGH',
         compliance: ['SOC2'],
         fix: 'Fix the host and pass model input only as a path or query value, or check the URL against an allow-list',
-        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html',
+        documentationLink:
+          'https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html',
       }),
     },
     schema: [
@@ -131,45 +146,29 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
       ],
     },
   ],
-  create(context, [options]) {
-    // Every rule in this plugin is Vercel-AI-specific, and none of them knew
-    // it: over 107,384 files, 91% of this plugin's findings were in files with
-    // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
-    // the cheap path — a file without the SDK does no work.
-    if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
-
-    // Merged with `defaultOptions` before `create` runs.
-    const { aiOutputPatterns } = options as Required<Options>;
-
-    const sourceCode = context.sourceCode;
-
-    const AI_SDK_CALLS = new Set(['generateText', 'streamText', 'generateObject', 'streamObject']);
+  createOnce(context, currentOptions) {
+    let aiOutputPatterns: string[];
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let AI_SDK_CALLS: Set<string>;
+    let outputFlow: {
+      sourceCode: Readonly<TSESLint.SourceCode>;
+      isSource: (node: TSESTree.Node) => boolean;
+      isSourceParameter: (
+        variable: TSESLint.Scope.Variable,
+        fn: TSESTree.FunctionLike,
+      ) => boolean;
+    };
 
     /** generateText(...) | ai.generateText(...) | sdk['generateText'](...) */
     function isAISDKCall(call: TSESTree.CallExpression): boolean {
       const callee = call.callee;
       if (callee.type === 'Identifier') return AI_SDK_CALLS.has(callee.name);
       // `has(null)` is already false for a runtime-keyed member.
-      return callee.type === 'MemberExpression' && namesOneOf(propertyName(callee), AI_SDK_CALLS);
+      return (
+        callee.type === 'MemberExpression' &&
+        namesOneOf(propertyName(callee), AI_SDK_CALLS)
+      );
     }
-
-    /**
-     * Where model output enters a file: an AI SDK call's result, a UI hook's
-     * result (`useChat()` / `useCompletion()` from the SDK), a tool's
-     * `execute` parameters (filled from the model's tool call), and a
-     * parameter typed with an SDK message type (`{ m }: { m: UIMessage }`).
-     */
-    const outputFlow = {
-      sourceCode,
-      isSource: (node: TSESTree.Node) =>
-        (node.type === 'CallExpression' && isAISDKCall(node)) || isSdkHookCall(node, sourceCode),
-      isSourceParameter: (
-        variable: TSESLint.Scope.Variable,
-        fn: TSESTree.FunctionLike,
-      ) =>
-        (fn.parent.type === 'Property' && isToolExecute(fn.parent)) ||
-        isSdkTypedParameter(variable, sourceCode),
-    };
 
     /**
      * Structurally model output: followed back through declarations,
@@ -190,7 +189,8 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
      */
     function isLikelyAIOutput(node: TSESTree.Node): boolean {
       if (isBoundOutput(node)) return true;
-      if (node.type !== 'Identifier' && node.type !== 'MemberExpression') return false;
+      if (node.type !== 'Identifier' && node.type !== 'MemberExpression')
+        return false;
       const text = sourceCode.getText(node);
       return aiOutputPatterns.some((pattern: string) => text.includes(pattern));
     }
@@ -257,7 +257,8 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
       }
       return definition.properties.some(
         (prop) =>
-          prop.type === 'Property' && SCHEMA_KEYS.has(objectKeyName(prop) as string),
+          prop.type === 'Property' &&
+          SCHEMA_KEYS.has(objectKeyName(prop) as string),
       );
     }
 
@@ -265,14 +266,17 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
     function choosesRequestTarget(node: TSESTree.Node): boolean {
       if (node.type === 'TemplateLiteral') {
         return (
-          node.quasis[0].value.raw === '' &&
-          isBoundOutput(node.expressions[0])
+          node.quasis[0].value.raw === '' && isBoundOutput(node.expressions[0])
         );
       }
       return isBoundOutput(node);
     }
 
-    function reportExecution(node: TSESTree.Node, callee: TSESTree.Node, args: TSESTree.CallExpressionArgument[]) {
+    function reportExecution(
+      node: TSESTree.Node,
+      callee: TSESTree.Node,
+      args: TSESTree.CallExpressionArgument[],
+    ) {
       for (const arg of args) {
         if (containsAIOutput(arg)) {
           context.report({
@@ -288,11 +292,57 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule in this plugin is Vercel-AI-specific, and none of them knew
+        // it: over 107,384 files, 91% of this plugin's findings were in files with
+        // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
+        // the cheap path — a file without the SDK does no work.
+        if (!fileUsesVercelAi(context.sourceCode.ast)) return false;
+
+        // Merged with `defaultOptions` before `create` runs.
+        ({ aiOutputPatterns } = options as Required<Options>);
+
+        sourceCode = context.sourceCode;
+
+        AI_SDK_CALLS = new Set([
+          'generateText',
+          'streamText',
+          'generateObject',
+          'streamObject',
+        ]);
+
+        /**
+         * Where model output enters a file: an AI SDK call's result, a UI hook's
+         * result (`useChat()` / `useCompletion()` from the SDK), a tool's
+         * `execute` parameters (filled from the model's tool call), and a
+         * parameter typed with an SDK message type (`{ m }: { m: UIMessage }`).
+         */
+        outputFlow = {
+          sourceCode,
+          isSource: (node: TSESTree.Node) =>
+            (node.type === 'CallExpression' && isAISDKCall(node)) ||
+            isSdkHookCall(node, sourceCode),
+          isSourceParameter: (
+            variable: TSESLint.Scope.Variable,
+            fn: TSESTree.FunctionLike,
+          ) =>
+            (fn.parent.type === 'Property' && isToolExecute(fn.parent)) ||
+            isSdkTypedParameter(variable, sourceCode),
+        };
+        return true;
+      },
       NewExpression(node: TSESTree.NewExpression) {
         // `new Function(code)`, `new vm.Script(code)`
         const isFunction = isGlobal(node.callee, 'Function');
-        const binding = resolveModuleBinding(node.callee, sourceCode.getScope(node));
-        if (isFunction || (binding?.module === 'vm' && binding.path[0] === 'Script')) {
+        const binding = resolveModuleBinding(
+          node.callee,
+          sourceCode.getScope(node),
+        );
+        if (
+          isFunction ||
+          (binding?.module === 'vm' && binding.path[0] === 'Script')
+        ) {
           reportExecution(node, node.callee, node.arguments);
         }
       },
@@ -308,7 +358,10 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
         if (isGlobal(node.callee, 'fetch')) {
           const [target] = node.arguments;
           if (target && choosesRequestTarget(target)) {
-            context.report({ node: target, messageId: 'unsafeOutputInRequest' });
+            context.report({
+              node: target,
+              messageId: 'unsafeOutputInRequest',
+            });
           }
           return;
         }
@@ -352,7 +405,10 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
             objectKeyName(prop) === '__html' &&
             isLikelyAIOutput(prop.value)
           ) {
-            context.report({ node: prop.value, messageId: 'unsafeOutputInHTML' });
+            context.report({
+              node: prop.value,
+              messageId: 'unsafeOutputInHTML',
+            });
           }
         }
       },
@@ -362,15 +418,32 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
 
 /** `child_process` functions that run a command or file. */
 const CHILD_PROCESS_SINKS = new Set([
-  'exec', 'execSync', 'execFile', 'execFileSync', 'spawn', 'spawnSync', 'fork',
+  'exec',
+  'execSync',
+  'execFile',
+  'execFileSync',
+  'spawn',
+  'spawnSync',
+  'fork',
 ]);
 
 /** `vm` functions that compile or run source text. */
-const VM_SINKS = new Set(['runInNewContext', 'runInThisContext', 'runInContext', 'compileFunction']);
+const VM_SINKS = new Set([
+  'runInNewContext',
+  'runInThisContext',
+  'runInContext',
+  'compileFunction',
+]);
 
 /** Query methods that take raw SQL as their first argument. */
 const SQL_SINKS = new Set([
-  'query', 'execute', 'raw', 'run', 'unsafe', '$queryRawUnsafe', '$executeRawUnsafe',
+  'query',
+  'execute',
+  'raw',
+  'run',
+  'unsafe',
+  '$queryRawUnsafe',
+  '$executeRawUnsafe',
 ]);
 
 /** Factories that wrap a tool definition. */

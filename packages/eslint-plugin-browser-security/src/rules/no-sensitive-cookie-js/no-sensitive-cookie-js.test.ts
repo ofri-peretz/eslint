@@ -20,7 +20,10 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-sensitive-cookie-js', noSensitiveCookieJs, {
   valid: [
     { name: 'a theme preference', code: `document.cookie = 'theme=dark';` },
-    { code: `document.cookie = 'locale=en-US';` },
+    {
+      name: 'a locale cookie is not sensitive',
+      code: `document.cookie = 'locale=en-US';`,
+    },
     { code: `const all = document.cookie;` },
     { code: `myObj.cookie = 'password=abc';` },
     { code: `document.cookie = 'password=abc';`, filename: 'auth.test.ts' },

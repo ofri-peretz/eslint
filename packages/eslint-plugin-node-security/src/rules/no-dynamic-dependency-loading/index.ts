@@ -39,11 +39,15 @@ function isLoaderMember(node: TSESTree.MemberExpression): boolean {
 
   const { object } = node;
   // module.require(x)
-  if (object.type === AST_NODE_TYPES.Identifier) return object.name === 'module';
+  if (object.type === AST_NODE_TYPES.Identifier)
+    return object.name === 'module';
   // require.main.require(x)
   if (object.type !== AST_NODE_TYPES.MemberExpression) return false;
   if (propertyName(object) !== 'main') return false;
-  return object.object.type === AST_NODE_TYPES.Identifier && object.object.name === 'require';
+  return (
+    object.object.type === AST_NODE_TYPES.Identifier &&
+    object.object.name === 'require'
+  );
 }
 
 /**
@@ -56,9 +60,12 @@ function isLoaderMember(node: TSESTree.MemberExpression): boolean {
 function isLoaderExpression(node: TSESTree.Node): boolean {
   const target = unwrapTypeSyntax(node);
   if (target.type === AST_NODE_TYPES.SequenceExpression) {
-    return isLoaderExpression(target.expressions[target.expressions.length - 1]);
+    return isLoaderExpression(
+      target.expressions[target.expressions.length - 1],
+    );
   }
-  if (target.type === AST_NODE_TYPES.MemberExpression) return isLoaderMember(target);
+  if (target.type === AST_NODE_TYPES.MemberExpression)
+    return isLoaderMember(target);
   return target.type === AST_NODE_TYPES.Identifier && target.name === 'require';
 }
 
@@ -72,6 +79,7 @@ type RuleOptions = [Options?];
 export const noDynamicDependencyLoading = createRule<RuleOptions, MessageIds>({
   name: 'no-dynamic-dependency-loading',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-dynamic-dependency-loading.md',
@@ -84,16 +92,17 @@ export const noDynamicDependencyLoading = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'violation Detected',
         cwe: 'CWE-1104',
-        description: 'Dynamic import/require detected - use static imports for security',
+        description:
+          'Dynamic import/require detected - use static imports for security',
         severity: 'HIGH',
         fix: 'Review and apply secure practices',
         documentationLink: 'https://cwe.mitre.org/data/definitions/1104.html',
-      })
+      }),
     },
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  createOnce(context) {
     /**
      * "Not a string literal" is not the same question as "can an attacker steer it".
      * `require(`b`)`, `require(`lodash/${d}`)` with `const d = 'debounce'`, and
@@ -128,17 +137,28 @@ export const noDynamicDependencyLoading = createRule<RuleOptions, MessageIds>({
       if (target.type !== AST_NODE_TYPES.Identifier) return false;
       const init = constInitializerOf(context.sourceCode, target);
       if (init === null) return false;
-      if (init.type !== AST_NODE_TYPES.CallExpression) return isLoaderExpression(init);
+      if (init.type !== AST_NODE_TYPES.CallExpression)
+        return isLoaderExpression(init);
 
-      const binding = resolveModuleBinding(init.callee, context.sourceCode.getScope(init));
-      return binding?.module === 'module' && binding.path.join('.') === 'createRequire';
+      const binding = resolveModuleBinding(
+        init.callee,
+        context.sourceCode.getScope(init),
+      );
+      return (
+        binding?.module === 'module' &&
+        binding.path.join('.') === 'createRequire'
+      );
     };
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Dynamic require
         const specifier = node.arguments[0];
-        if (specifier !== undefined && isModuleLoader(node.callee) && isSteerable(specifier)) {
+        if (
+          specifier !== undefined &&
+          isModuleLoader(node.callee) &&
+          isSteerable(specifier)
+        ) {
           context.report({ node, messageId: 'violationDetected' });
         }
       },
@@ -149,7 +169,6 @@ export const noDynamicDependencyLoading = createRule<RuleOptions, MessageIds>({
           context.report({ node, messageId: 'violationDetected' });
         }
       },
-   };
+    };
   },
 });
-

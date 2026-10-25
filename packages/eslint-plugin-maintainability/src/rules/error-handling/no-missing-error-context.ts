@@ -249,6 +249,7 @@ function hasErrorStack(node: TSESTree.ThrowStatement): boolean {
 export const noMissingErrorContext = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-error-context',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/no-missing-error-context.md',
@@ -324,23 +325,13 @@ export const noMissingErrorContext = createRule<RuleOptions, MessageIds>({
       ignoreInTests: true,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      requireMessage = true,
-      requireStackTrace = false,
-      ignoreInTests = true,
-    }: Options = options || {};
-
-    const filename = context.filename;
-    const isTestFile =
-      ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
-
-    if (isTestFile) {
-      return {};
-    }
+    let requireMessage: boolean;
+    let requireStackTrace: boolean;
+    let ignoreInTests: boolean;
 
     /**
      * Check throw statements
@@ -384,6 +375,23 @@ export const noMissingErrorContext = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          requireMessage = true,
+          requireStackTrace = false,
+          ignoreInTests = true,
+        } = options || {});
+
+        const filename = context.filename;
+        const isTestFile =
+          ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+        return true;
+      },
       ThrowStatement: checkThrowStatement,
     };
   },

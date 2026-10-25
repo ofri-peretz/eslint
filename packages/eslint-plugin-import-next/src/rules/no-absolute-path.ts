@@ -11,7 +11,11 @@
  * @see https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-absolute-path.md
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import * as path from 'node:path';
 
 type MessageIds = 'absolutePath';
@@ -30,6 +34,10 @@ type RuleOptions = [Options?];
 export const noAbsolutePath = createRule<RuleOptions, MessageIds>({
   name: 'no-absolute-path',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/no-absolute-path',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-absolute-path.md',
@@ -64,10 +72,11 @@ export const noAbsolutePath = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ esmodule: true, commonjs: true, amd: false }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const { esmodule = true, commonjs = true, amd = false } = options;
-    const filename = context.filename;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let esmodule: boolean;
+    let commonjs: boolean;
+    let amd: boolean;
+    let filename: string;
 
     function isAbsolutePath(importPath: string): boolean {
       return path.isAbsolute(importPath);
@@ -103,6 +112,11 @@ export const noAbsolutePath = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({ esmodule = true, commonjs = true, amd = false } = options);
+        filename = context.filename;
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         if (esmodule) {
           checkImport(node, node.source);

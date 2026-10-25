@@ -37,6 +37,7 @@ type RuleOptions = [Options?];
 export const noDeprecated = createRule<RuleOptions, MessageIds>({
   name: 'no-deprecated',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-deprecated.md',
@@ -113,29 +114,15 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const {
-      allow = [],
-      deprecationMarkers = ['@deprecated'],
-      checkJSDoc = true,
-      checkDecorators = true,
-    } = options || {};
-
-    const filename = context.filename;
-    if (!filename) {
-      return {};
-    }
-
-    // Track deprecated items found in the current file
-    const deprecatedItems = new Map<
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allow: string[];
+    let deprecationMarkers: string[];
+    let checkJSDoc: boolean;
+    let checkDecorators: boolean;
+    let deprecatedItems: Map<
       string,
-      {
-        location: TSESTree.Node;
-        reason?: string;
-        replacement?: string;
-      }
-    >();
+      { location: TSESTree.Node; reason?: string; replacement?: string }
+    >;
 
     function isAllowed(name: string): boolean {
       return allow.includes(name);
@@ -291,6 +278,31 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({
+          allow = [],
+          deprecationMarkers = ['@deprecated'],
+          checkJSDoc = true,
+          checkDecorators = true,
+        } = options || {});
+
+        const filename = context.filename;
+        if (!filename) {
+          return false;
+        }
+
+        // Track deprecated items found in the current file
+        deprecatedItems = new Map<
+          string,
+          {
+            location: TSESTree.Node;
+            reason?: string;
+            replacement?: string;
+          }
+        >();
+        return true;
+      },
       // Check for deprecated declarations in the current file
       VariableDeclaration(node: TSESTree.VariableDeclaration) {
         node.declarations.forEach((decl: TSESTree.VariableDeclarator) => {

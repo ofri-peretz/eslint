@@ -44,7 +44,9 @@ function isCreateRequireCall(
   node: TSESTree.Node | null | undefined,
 ): boolean {
   if (!node || node.type !== AST_NODE_TYPES.CallExpression) return false;
-  return isModuleBinding(node.callee, sourceCode.getScope(node), 'module', ['createRequire']);
+  return isModuleBinding(node.callee, sourceCode.getScope(node), 'module', [
+    'createRequire',
+  ]);
 }
 
 /**
@@ -60,11 +62,18 @@ function isCreateRequireCall(
  * declaration in the file, so "the name resolves to nothing" is the normal
  * positive case.
  */
-function isRequireCallee(sourceCode: SourceCode, callee: TSESTree.Node): boolean {
+function isRequireCallee(
+  sourceCode: SourceCode,
+  callee: TSESTree.Node,
+): boolean {
   if (callee.type !== AST_NODE_TYPES.Identifier) return false;
   const def = findVariable(sourceCode, callee)?.defs[0];
 
-  if (def?.type === 'Variable' && isCreateRequireCall(sourceCode, def.node.init)) return true;
+  if (
+    def?.type === 'Variable' &&
+    isCreateRequireCall(sourceCode, def.node.init)
+  )
+    return true;
 
   if (callee.name !== 'require') return false;
   if (def === undefined) return true;
@@ -97,14 +106,18 @@ function moduleSpecifierListener(
   };
 
   return {
-    ImportDeclaration: (node: TSESTree.ImportDeclaration) => fromExpression(node, node.source),
-    ImportExpression: (node: TSESTree.ImportExpression) => fromExpression(node, node.source),
+    ImportDeclaration: (node: TSESTree.ImportDeclaration) =>
+      fromExpression(node, node.source),
+    ImportExpression: (node: TSESTree.ImportExpression) =>
+      fromExpression(node, node.source),
     ExportNamedDeclaration: (node: TSESTree.ExportNamedDeclaration) =>
       fromExpression(node, node.source),
     ExportAllDeclaration: (node: TSESTree.ExportAllDeclaration) =>
       fromExpression(node, node.source),
     TSImportEqualsDeclaration: (node: TSESTree.TSImportEqualsDeclaration) => {
-      if (node.moduleReference.type === AST_NODE_TYPES.TSExternalModuleReference) {
+      if (
+        node.moduleReference.type === AST_NODE_TYPES.TSExternalModuleReference
+      ) {
         fromExpression(node, node.moduleReference.expression);
       }
     },
@@ -116,9 +129,7 @@ function moduleSpecifierListener(
   };
 }
 
-type MessageIds =
-  | 'preferNative'
-  | 'preferNativePasswordHash';
+type MessageIds = 'preferNative' | 'preferNativePasswordHash';
 
 /**
  * No options.
@@ -140,8 +151,8 @@ type RuleOptions = [Options?];
 const THIRD_PARTY_CRYPTO_LIBS = new Set([
   'crypto-js',
   'cryptojs',
-  'sjcl',           // Stanford JavaScript Crypto Library
-  'forge',          // node-forge
+  'sjcl', // Stanford JavaScript Crypto Library
+  'forge', // node-forge
   'node-forge',
   'jsencrypt',
   'js-sha256',
@@ -179,14 +190,12 @@ const THIRD_PARTY_CRYPTO_LIBS = new Set([
  * Both are third-party by necessity, so the message says so instead of
  * pretending the platform covers it.
  */
-const PURE_JS_PASSWORD_HASH_LIBS = new Set([
-  'bcryptjs',
-  'bcrypt-nodejs',
-]);
+const PURE_JS_PASSWORD_HASH_LIBS = new Set(['bcryptjs', 'bcrypt-nodejs']);
 
 export const preferNativeCrypto = createRule<RuleOptions, MessageIds>({
   name: 'prefer-native-crypto',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/prefer-native-crypto.md',
@@ -199,7 +208,8 @@ export const preferNativeCrypto = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.WARNING,
         issueName: 'Third-party crypto library',
         cwe: 'CWE-1104',
-        description: '{{library}} is a third-party crypto library. Native crypto (Node.js crypto or Web Crypto API) is faster, more secure, and always maintained.',
+        description:
+          '{{library}} is a third-party crypto library. Native crypto (Node.js crypto or Web Crypto API) is faster, more secure, and always maintained.',
         severity: 'MEDIUM',
         fix: 'Migrate to native crypto module',
         documentationLink: 'https://nodejs.org/api/crypto.html',
@@ -208,10 +218,12 @@ export const preferNativeCrypto = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.WARNING,
         issueName: 'Pure-JS password hashing library',
         cwe: 'CWE-1104',
-        description: '{{library}} is a pure-JavaScript password hash. It is orders of magnitude slower than a native implementation, so the same cost factor buys far less protection, and its maintenance has repeatedly lagged the native bindings.',
+        description:
+          '{{library}} is a pure-JavaScript password hash. It is orders of magnitude slower than a native implementation, so the same cost factor buys far less protection, and its maintenance has repeatedly lagged the native bindings.',
         severity: 'MEDIUM',
-        fix: 'Use the native `bcrypt` binding, or `argon2` (Argon2id) for new code. Do NOT reach for node:crypto\'s createHash here — it has no bcrypt, and a general-purpose digest is not a password hash (CWE-916). crypto.scrypt is the only node:crypto function in this category.',
-        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html',
+        fix: "Use the native `bcrypt` binding, or `argon2` (Argon2id) for new code. Do NOT reach for node:crypto's createHash here — it has no bcrypt, and a general-purpose digest is not a password hash (CWE-916). crypto.scrypt is the only node:crypto function in this category.",
+        documentationLink:
+          'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html',
       }),
     },
     schema: [],

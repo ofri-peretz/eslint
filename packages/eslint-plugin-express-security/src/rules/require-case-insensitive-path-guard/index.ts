@@ -111,6 +111,7 @@ export const requireCaseInsensitivePathGuard = createRule<
 >({
   name: 'require-case-insensitive-path-guard',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     hasSuggestions: true,
     docs: {
@@ -155,19 +156,13 @@ export const requireCaseInsensitivePathGuard = createRule<
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const { protectedPaths, checkAllPaths } = options as Options;
-    const patterns = (protectedPaths ?? DEFAULT_PROTECTED_PATHS).map((p) =>
-      p.toLowerCase(),
-    );
-    const flagAll = checkAllPaths ?? false;
-    const sourceCode = context.sourceCode;
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let patterns: string[];
+    let flagAll: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     function isRequestIdent(name: string): boolean {
       const lower = name.toLowerCase();
@@ -227,6 +222,22 @@ export const requireCaseInsensitivePathGuard = createRule<
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        const { protectedPaths, checkAllPaths } = options as Options;
+        patterns = (protectedPaths ?? DEFAULT_PROTECTED_PATHS).map((p) =>
+          p.toLowerCase(),
+        );
+        flagAll = checkAllPaths ?? false;
+        sourceCode = context.sourceCode;
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
         if (callee.type !== AST_NODE_TYPES.MemberExpression) return;

@@ -1,0 +1,21 @@
+{
+  "$comment": "Rules still authored with ESLint create() instead of oxlint createOnce(). This list may only shrink: scripts/__tests__/create-once-ratchet.lock.test.ts fails on a create() rule not listed here, and on a listed file that no longer uses create(). See docs/intents/oxlint-native-plugin-names.",
+  "rules": {
+    "packages/eslint-plugin-browser-security/src/rules/no-missing-csrf-protection/index.ts": "a per-file `let` starts undefined on every file and a visitor reads it; resetting it in before() needs a hand-chosen initial value",
+    "packages/eslint-plugin-browser-security/src/rules/require-csp-headers/index.ts": "a per-file `let` starts undefined on every file and a visitor reads it; resetting it in before() needs a hand-chosen initial value",
+    "packages/eslint-plugin-import-next/src/rules/default.ts": "per-file binding `checker` has a type this file cannot name without new imports; migrate by hand",
+    "packages/eslint-plugin-import-next/src/rules/enforce-dependency-direction.ts": "a per-file `let` starts undefined on every file and a visitor reads it; resetting it in before() needs a hand-chosen initial value",
+    "packages/eslint-plugin-import-next/src/rules/named.ts": "per-file binding `checker` has a type this file cannot name without new imports; migrate by hand",
+    "packages/eslint-plugin-import-next/src/rules/namespace.ts": "per-file binding `checker` has a type this file cannot name without new imports; migrate by hand",
+    "packages/eslint-plugin-maintainability/src/rules/maintainability/nested-complexity-hotspots.ts": "a visitor function is built from per-file data (options), so the visitor object differs from file to file",
+    "packages/eslint-plugin-nestjs-security/src/rules/no-missing-validation-pipe/index.ts": "per-file binding `services` has a type this file cannot name without new imports; migrate by hand",
+    "packages/eslint-plugin-nestjs-security/src/rules/require-guards/index.ts": "per-file binding `project` has a type this file cannot name without new imports; migrate by hand",
+    "packages/eslint-plugin-node-security/src/rules/no-cryptojs/index.ts": "create returns a listener built by a helper (moduleSpecifierListener), so its visitor keys are only known once a file is open",
+    "packages/eslint-plugin-node-security/src/rules/prefer-native-crypto/index.ts": "create returns a listener built by a helper (moduleSpecifierListener), so its visitor keys are only known once a file is open",
+    "packages/eslint-plugin-reliability/src/rules/reliability/no-missing-null-checks.ts": "per-file binding `services` has a type this file cannot name without new imports; migrate by hand",
+    "packages/eslint-plugin-secure-coding/src/rules/no-privilege-escalation/index.ts": "per-file binding `userInputPatterns` has a type this file cannot name without new imports; migrate by hand",
+    "packages/eslint-plugin-supabase-security/src/rules/no-service-role-key-in-client/index.ts": "setup returns a non-empty visitor set early, so the visitor object differs from file to file",
+    "packages/eslint-plugin-vercel-ai-security/src/rules/no-sensitive-in-prompt/index.ts": "per-file binding `recordFlow` has a type this file cannot name without new imports; migrate by hand",
+    "packages/eslint-plugin-vercel-ai-security/src/rules/require-rag-content-validation/index.ts": "per-file binding `ragFlow` has a type this file cannot name without new imports; migrate by hand"
+  }
+}

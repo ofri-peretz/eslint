@@ -1,18 +1,92 @@
-# oxlint-plugin-react-features
+<p align="center">
+  <a href="https://eslint.interlace.tools/docs/quality/plugin-react-features?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features" target="blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/interlace-dark.svg"><img src="https://eslint.interlace.tools/logos/interlace-light.svg" alt="Interlace" height="90" /></picture></a>
+  &nbsp;&nbsp;
+  <a href="https://react.dev" target="_blank"><img src="https://eslint.interlace.tools/logos/react.svg" alt="React" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://oxc.rs" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/oxlint-dark.svg"><img src="https://eslint.interlace.tools/logos/oxlint-light.svg" alt="oxlint" height="90" /></picture></a>
+</p>
 
-The `react-features` rules for [oxlint](https://oxc.rs/docs/guide/usage/linter) and
-[Vite+](https://viteplus.dev). This package is the oxlint name for
-[`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features): the same rules, the same
-rule IDs (`react-features/<rule>`), and the same version. It contains no rule code of its own, and it
-does not install ESLint.
+<p align="center">
+  Advanced React patterns, hook usage, and best practices enforcement.
+</p>
 
-## Install
+<p align="center">
+  <a href="https://www.npmjs.com/package/oxlint-plugin-react-features" target="_blank"><img src="https://img.shields.io/npm/v/oxlint-plugin-react-features.svg" alt="NPM Version" /></a>
+  <a href="https://www.npmjs.com/package/oxlint-plugin-react-features" target="_blank"><img src="https://img.shields.io/npm/dm/oxlint-plugin-react-features.svg" alt="NPM Downloads" /></a>
+  <a href="https://packagephobia.com/result?p=oxlint-plugin-react-features" target="_blank"><img src="https://badgen.net/packagephobia/install/oxlint-plugin-react-features" alt="Install Size" /></a>
+  <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-react-features" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-react-features" alt="Codecov" /></a>
+  <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
+</p>
+
+> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
+
+## Description
+
+`oxlint-plugin-react-features` is the [oxlint](https://oxc.rs/docs/guide/usage/linter/js-plugins) and [Vite+](https://viteplus.dev/guide/lint) name for [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features). It carries the same rules under the same IDs (`react-features/<rule>`), always at the same version, because it re-exports that package rather than copying it. Installing it does not install ESLint.
+
+## Covered natively by oxlint
+
+oxlint already ships 33 of these 61 rules as built-ins. Enable the built-in instead: it is the same check, runs natively, and running both would report every finding twice. Each rule carries the mapping as `meta.interop.nativeEquivalent`.
+
+| This plugin                                            | oxlint built-in                               |
+| :----------------------------------------------------- | :-------------------------------------------- |
+| `react-features/checked-requires-onchange-or-readonly` | `react/checked-requires-onchange-or-readonly` |
+| `react-features/display-name`                          | `react/display-name`                          |
+| `react-features/jsx-handler-names`                     | `react/jsx-handler-names`                     |
+| `react-features/jsx-key`                               | `react/jsx-key`                               |
+| `react-features/jsx-max-depth`                         | `react/jsx-max-depth`                         |
+| `react-features/jsx-no-duplicate-props`                | `react/jsx-no-duplicate-props`                |
+| `react-features/jsx-no-literals`                       | `react/jsx-no-literals`                       |
+| `react-features/jsx-no-script-url`                     | `react/jsx-no-script-url`                     |
+| `react-features/jsx-no-target-blank`                   | `react/jsx-no-target-blank`                   |
+| `react-features/no-children-prop`                      | `react/no-children-prop`                      |
+| `react-features/no-danger`                             | `react/no-danger`                             |
+| `react-features/no-danger-with-children`               | `react/no-danger-with-children`               |
+| `react-features/no-did-mount-set-state`                | `react/no-did-mount-set-state`                |
+| `react-features/no-did-update-set-state`               | `react/no-did-update-set-state`               |
+| `react-features/no-direct-mutation-state`              | `react/no-direct-mutation-state`              |
+| `react-features/no-find-dom-node`                      | `react/no-find-dom-node`                      |
+| `react-features/no-is-mounted`                         | `react/no-is-mounted`                         |
+| `react-features/no-multi-comp`                         | `react/no-multi-comp`                         |
+| `react-features/no-namespace`                          | `react/no-namespace`                          |
+| `react-features/no-object-type-as-default-prop`        | `react/no-object-type-as-default-prop`        |
+| `react-features/no-redundant-should-component-update`  | `react/no-redundant-should-component-update`  |
+| `react-features/no-render-return-value`                | `react/no-render-return-value`                |
+| `react-features/no-set-state`                          | `react/no-set-state`                          |
+| `react-features/no-string-refs`                        | `react/no-string-refs`                        |
+| `react-features/no-this-in-sfc`                        | `react/no-this-in-sfc`                        |
+| `react-features/no-unescaped-entities`                 | `react/no-unescaped-entities`                 |
+| `react-features/no-unknown-property`                   | `react/no-unknown-property`                   |
+| `react-features/no-unsafe`                             | `react/no-unsafe`                             |
+| `react-features/prefer-es6-class`                      | `react/prefer-es6-class`                      |
+| `react-features/react-in-jsx-scope`                    | `react/react-in-jsx-scope`                    |
+| `react-features/require-render-return`                 | `react/require-render-return`                 |
+| `react-features/state-in-constructor`                  | `react/state-in-constructor`                  |
+| `react-features/void-dom-elements-no-children`         | `react/void-dom-elements-no-children`         |
+
+What this package adds to oxlint is the other 28: every rule in the table below that is not listed here.
+
+- **Why** — a linter nobody reads protects nothing. We would rather miss a finding
+  than spend your attention on one that was never real.
+- **How** — evidence, not names. A rule fires on what the code _does_, resolved
+  through the AST and ESLint's own scope analysis.
+- **What** — every finding carries its fix, in prose for a human and as structured
+  JSON for an agent. Security rules add a CWE mapping and, where assigned, a CVSS score.
+
+That trade costs recall, and we measure it:
+[methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
+· [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md)
+· [a false positive is a bug](https://github.com/ofri-peretz/eslint/issues).
+
+## Getting Started
 
 ```bash
-npm install --save-dev oxlint-plugin-react-features
+npm install oxlint-plugin-react-features --save-dev
 ```
 
-## Vite+
+### Vite+
 
 ```ts
 // vite.config.ts
@@ -22,33 +96,130 @@ export default defineConfig({
   lint: {
     jsPlugins: ['oxlint-plugin-react-features'],
     rules: {
-      'react-features/<rule>': 'error',
+      'react-features/default-props-match-prop-types': 'error',
     },
   },
 });
 ```
 
-## oxlint
+### oxlint
 
 ```json
 {
   "jsPlugins": ["oxlint-plugin-react-features"],
   "rules": {
-    "react-features/<rule>": "error"
+    "react-features/default-props-match-prop-types": "error"
   }
 }
 ```
 
+That enables one rule as an example; add the ones you want from the table below.
+
+### ESLint
+
+Install [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) instead. It has the same rules, plus presets for ESLint's flat config.
+
+## 📦 Compatibility
+
+| Package | Version                                                          |
+| :------ | :--------------------------------------------------------------- |
+| oxlint  | verified on `1.88.0`: CI loads every rule ID through `jsPlugins` |
+| Vite+   | `lint.jsPlugins` in `vite.config.ts`                             |
+| Node.js | `>=18.0.0`                                                       |
+
 ## Rules
 
-Every rule, its options and its docs are listed in the
-[`eslint-plugin-react-features` README](https://www.npmjs.com/package/eslint-plugin-react-features#rules). Using ESLint
-instead? Install `eslint-plugin-react-features` directly.
+**Legend**
 
-## License
+| Icon | Description                                                               |
+| :--: | :------------------------------------------------------------------------ |
+|  💼  | **Recommended**: Included in the recommended preset.                      |
+|  ⚠️  | **Warns**: Set to warn in recommended preset.                             |
+|  🔧  | **Auto-fixable**: Automatically fixable by the `--fix` CLI option.        |
+|  💡  | **Suggestions**: Providing code suggestions in IDE.                       |
+|  🚫  | **Deprecated**: This rule is deprecated.                                  |
+|  🟢  | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier.                |
+|  🟡  | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+|  🟠  | **Type-aware (graceful)**: requires TS program; silent without it.        |
 
-MIT
+| Rule                                                                                                                                                                                                                                   |  CWE   | OWASP | CVSS | Description                                                                                                  | 🧠  | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----: | :---: | :--: | :----------------------------------------------------------------------------------------------------------- | :-: | :-: | :-: | :-: | :-: | :-: |
+| [checked-requires-onchange-or-readonly](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/checked-requires-onchange-or-readonly?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features) |        |       |      | checked-requires-onchange-or-readonly rule                                                                   | 🟢  |     |     |     | 💡  |     |
+| [default-props-match-prop-types](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/default-props-match-prop-types?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)               |        |       |      | default-props-match-prop-types rule                                                                          | 🟢  |     |     |     | 💡  |     |
+| [display-name](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/display-name?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                   |        |       |      | display-name rule                                                                                            | 🟢  |     |     |     | 💡  |     |
+| [hooks-exhaustive-deps](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/hooks-exhaustive-deps?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                 |        |       |      | hooks-exhaustive-deps rule                                                                                   | 🟢  |     | ⚠️  |     | 💡  |     |
+| [jsx-handler-names](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-handler-names?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                         |        |       |      | jsx-handler-names rule                                                                                       | 🟢  |     |     |     | 💡  |     |
+| [jsx-key](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-key?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                             |        |       |      | jsx-key rule                                                                                                 | 🟢  | 💼  |     |     | 💡  |     |
+| [jsx-max-depth](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-max-depth?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                 |        |       |      | jsx-max-depth rule                                                                                           | 🟢  |     |     |     | 💡  |     |
+| [jsx-no-bind](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-bind?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                     |        |       |      | jsx-no-bind rule                                                                                             | 🟢  |     |     |     | 💡  |     |
+| [jsx-no-duplicate-props](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-duplicate-props?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                               |        |       |      | Prevent duplicate props in JSX elements. This rule is part of eslint-plugin-react-features and provides LLM… | 🟢  | 💼  |     |     | 💡  |     |
+| [jsx-no-literals](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-literals?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                             |        |       |      | jsx-no-literals rule                                                                                         | 🟢  |     |     |     | 💡  |     |
+| [jsx-no-script-url](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-script-url?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                         |        |       |      | Prevent javascript: URLs in JSX. This rule is part of eslint-plugin-react-features and provides LLM-optimiz… | 🟢  | 💼  |     |     | 💡  |     |
+| [jsx-no-target-blank](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-target-blank?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                     |        |       |      | Require rel='noopener noreferrer' with target='_blank'. This rule is part of eslint-plugin-react-features a… | 🟢  | 💼  |     |     | 💡  |     |
+| [no-access-state-in-setstate](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-access-state-in-setstate?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                     |        |       |      | no-access-state-in-setstate rule                                                                             | 🟢  |     |     |     | 💡  |     |
+| [no-adjacent-inline-elements](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-adjacent-inline-elements?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                     |        |       |      | no-adjacent-inline-elements rule                                                                             | 🟢  |     |     |     | 💡  |     |
+| [no-arbitrary-token-class](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-arbitrary-token-class?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                           |        |       |      |                                                                                                              | 🟢  |     |     |     |     |     |
+| [no-arrow-function-lifecycle](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-arrow-function-lifecycle?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                     |        |       |      | no-arrow-function-lifecycle rule                                                                             | 🟢  |     |     |     | 💡  |     |
+| [no-children-prop](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-children-prop?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                           |        |       |      | no-children-prop rule                                                                                        | 🟢  |     | ⚠️  |     | 💡  |     |
+| [no-danger](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-danger?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                         | CWE-79 |       |      | no-danger rule                                                                                               | 🟢  |     | ⚠️  |     | 💡  |     |
+| [no-danger-with-children](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-danger-with-children?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                             |        |       |      | Prevent using children and dangerouslySetInnerHTML together. This rule is part of eslint-plugin-react-featu… | 🟢  | 💼  |     |     | 💡  |     |
+| [no-default-test-id](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-default-test-id?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                       |        |       |      |                                                                                                              | 🟢  |     |     |     |     |     |
+| [no-deprecated](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-deprecated?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                 |        |       |      | Warn about using deprecated React APIs. This rule is part of eslint-plugin-react-features and provides LLM-… | 🟢  |     | ⚠️  |     | 💡  |     |
+| [no-did-mount-set-state](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-did-mount-set-state?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                               |        |       |      | no-did-mount-set-state rule                                                                                  | 🟢  |     |     |     | 💡  |     |
+| [no-did-update-set-state](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-did-update-set-state?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                             |        |       |      | no-did-update-set-state rule                                                                                 | 🟢  |     |     |     | 💡  |     |
+| [no-direct-mutation-state](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-direct-mutation-state?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                           |        |       |      | no-direct-mutation-state rule                                                                                | 🟢  |     |     |     | 💡  |     |
+| [no-find-dom-node](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-find-dom-node?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                           |        |       |      | Prevent using findDOMNode. This rule is part of eslint-plugin-react-features and provides LLM-optimized err… | 🟢  |     |     |     | 💡  |     |
+| [no-inline-style](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-inline-style?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                             |        |       |      |                                                                                                              | 🟢  |     |     |     |     |     |
+| [no-invalid-html-attribute](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-invalid-html-attribute?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                         |        |       |      | no-invalid-html-attribute rule                                                                               | 🟢  |     |     |     | 💡  |     |
+| [no-is-mounted](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-is-mounted?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                 |        |       |      | no-is-mounted rule                                                                                           | 🟢  |     |     |     | 💡  |     |
+| [no-is-prefix-prop](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-is-prefix-prop?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                         |        |       |      |                                                                                                              | 🟢  |     |     |     |     |     |
+| [no-kind-prop-discriminator](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-kind-prop-discriminator?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                       |        |       |      |                                                                                                              | 🟢  |     |     |     |     |     |
+| [no-multi-comp](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-multi-comp?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                 |        |       |      | no-multi-comp rule                                                                                           | 🟢  |     |     |     | 💡  |     |
+| [no-namespace](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-namespace?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                   |        |       |      | no-namespace rule                                                                                            | 🟢  |     |     |     | 💡  |     |
+| [no-object-type-as-default-prop](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-object-type-as-default-prop?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)               |        |       |      | no-object-type-as-default-prop rule                                                                          | 🟢  |     |     |     | 💡  |     |
+| [no-raw-color-literal](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-raw-color-literal?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                   |        |       |      |                                                                                                              | 🟢  |     |     |     |     |     |
+| [no-redundant-should-component-update](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-redundant-should-component-update?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)   |        |       |      | no-redundant-should-component-update rule                                                                    | 🟢  |     |     |     | 💡  |     |
+| [no-render-return-value](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-render-return-value?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                               |        |       |      | no-render-return-value rule                                                                                  | 🟢  |     |     |     | 💡  |     |
+| [no-set-state](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-set-state?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                   |        |       |      | no-set-state rule                                                                                            | 🟢  |     |     |     | 💡  |     |
+| [no-string-refs](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-string-refs?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                               |        |       |      | no-string-refs rule                                                                                          | 🟢  | 💼  |     |     | 💡  |     |
+| [no-this-in-sfc](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-this-in-sfc?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                               |        |       |      | no-this-in-sfc rule                                                                                          | 🟢  |     |     |     | 💡  |     |
+| [no-typos](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-typos?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                           |        |       |      | no-typos rule                                                                                                | 🟢  |     |     |     | 💡  |     |
+| [no-unescaped-entities](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-unescaped-entities?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                 |        |       |      | no-unescaped-entities rule                                                                                   | 🟢  |     |     |     | 💡  |     |
+| [no-unknown-property](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-unknown-property?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                     |        |       |      | no-unknown-property rule                                                                                     | 🟢  | 💼  |     |     | 💡  |     |
+| [no-unnecessary-rerenders](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-unnecessary-rerenders?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                           |        |       |      | no-unnecessary-rerenders rule                                                                                | 🟢  |     |     |     | 💡  |     |
+| [no-unsafe](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-unsafe?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                         |        |       |      | Warn about UNSAFE_ lifecycle methods. This rule is part of eslint-plugin-react-features and provides LLM-op… | 🟢  |     |     |     | 💡  |     |
+| [no-wrapper-sub-component](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-wrapper-sub-component?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                           |        |       |      |                                                                                                              | 🟢  |     |     |     |     |     |
+| [prefer-es6-class](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/prefer-es6-class?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                           |        |       |      | prefer-es6-class rule                                                                                        | 🟢  |     |     |     | 💡  |     |
+| [prefer-stateless-function](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/prefer-stateless-function?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                         |        |       |      | prefer-stateless-function rule                                                                               | 🟢  |     |     |     | 💡  |     |
+| [prop-types](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/prop-types?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                       |        |       |      | prop-types rule                                                                                              | 🟢  |     |     |     | 💡  |     |
+| [react-class-to-hooks](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/react-class-to-hooks?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                   |        |       |      | react-class-to-hooks rule                                                                                    | 🟢  |     |     |     | 💡  |     |
+| [react-in-jsx-scope](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/react-in-jsx-scope?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                       |        |       |      | react-in-jsx-scope rule                                                                                      | 🟢  |     |     |     | 💡  |     |
+| [react-no-inline-functions](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/react-no-inline-functions?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                         |        |       |      | react-no-inline-functions rule                                                                               | 🟢  |     |     |     | 💡  |     |
+| [react-render-optimization](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/react-render-optimization?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                         |        |       |      | react-render-optimization rule                                                                               | 🟢  |     |     |     | 💡  |     |
+| [require-data-slot](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/require-data-slot?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                         |        |       |      |                                                                                                              | 🟢  |     |     |     |     |     |
+| [require-default-props](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/require-default-props?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                 |        |       |      | require-default-props rule                                                                                   | 🟢  |     |     |     | 💡  |     |
+| [require-optimization](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/require-optimization?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                   |        |       |      | require-optimization rule                                                                                    | 🟢  |     |     |     | 💡  |     |
+| [require-render-return](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/require-render-return?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                 |        |       |      | require-render-return rule                                                                                   | 🟢  |     |     |     | 💡  |     |
+| [required-attributes](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/required-attributes?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                     |        |       |      | required-attributes rule                                                                                     | 🟢  |     |     |     | 💡  |     |
+| [sort-comp](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/sort-comp?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                         |        |       |      | sort-comp rule                                                                                               | 🟢  |     |     |     | 💡  |     |
+| [state-in-constructor](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/state-in-constructor?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                   |        |       |      | state-in-constructor rule                                                                                    | 🟢  |     |     |     | 💡  |     |
+| [static-property-placement](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/static-property-placement?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                         |        |       |      | static-property-placement rule                                                                               | 🟢  |     |     |     | 💡  |     |
+| [void-dom-elements-no-children](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/void-dom-elements-no-children?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                 |        |       |      | Prevent void DOM elements from receiving children. This rule is part of eslint-plugin-react-features and pr… | 🟢  |     |     |     | 💡  |     |
+
+## ⭐ Support & follow
+
+If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+
+[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+
+## 📄 License
+
+MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
   <a href="https://eslint.interlace.tools/docs/quality/plugin-react-features?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features"><img src="https://eslint.interlace.tools/images/og-react-features.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+</p>
+
+<p align="center">
+  <a href="https://eslint.interlace.tools/docs/quality/plugin-react-features?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features" target="blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/interlace-dark.svg"><img src="https://eslint.interlace.tools/logos/interlace-light.svg" alt="Interlace" height="70" /></picture></a>
 </p>

@@ -168,6 +168,7 @@ function calleeName(node: TSESTree.CallExpression): string | null {
 export const noWeakDhParameters = createRule<RuleOptions, MessageIds>({
   name: 'no-weak-dh-parameters',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-weak-dh-parameters.md',
@@ -244,18 +245,25 @@ export const noWeakDhParameters = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     { minPrimeBits: 2048, additionalWeakCurves: [], allowInTests: false },
   ],
-  create(context) {
-    const {
-      minPrimeBits = 2048,
-      additionalWeakCurves = [],
-      allowInTests = false,
-    } = context.options[0] ?? {};
-
-    if (allowInTests && isTestFilePath(context.filename)) return {};
-
-    const weakCurves = new Set([...WEAK_CURVES, ...additionalWeakCurves]);
+  createOnce(context) {
+    let minPrimeBits: number;
+    let additionalWeakCurves: string[];
+    let allowInTests: boolean;
+    let weakCurves: Set<string>;
 
     return {
+      before() {
+        ({
+          minPrimeBits = 2048,
+          additionalWeakCurves = [],
+          allowInTests = false,
+        } = context.options[0] ?? {});
+
+        if (allowInTests && isTestFilePath(context.filename)) return false;
+
+        weakCurves = new Set([...WEAK_CURVES, ...additionalWeakCurves]);
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression): void {
         const name = calleeName(node);
         if (name === null) return;

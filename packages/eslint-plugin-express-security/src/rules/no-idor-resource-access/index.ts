@@ -113,6 +113,7 @@ function isRequestKeyArgument(arg: TSESTree.Node): boolean {
 export const noIdorResourceAccess = createRule<RuleOptions, MessageIds>({
   name: 'no-idor-resource-access',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-idor-resource-access.md',
@@ -150,15 +151,11 @@ export const noIdorResourceAccess = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const { lookupMethods } = options as Options;
-    const lookups = new Set(lookupMethods ?? DEFAULT_LOOKUP_METHODS);
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let lookups: Set<string>;
 
     /** Nearest enclosing handler function, if any. */
     function enclosingHandler(node: TSESTree.Node): TSESTree.Node | null {
@@ -171,6 +168,18 @@ export const noIdorResourceAccess = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        const { lookupMethods } = options as Options;
+        lookups = new Set(lookupMethods ?? DEFAULT_LOOKUP_METHODS);
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
         if (callee.type !== AST_NODE_TYPES.MemberExpression) return;

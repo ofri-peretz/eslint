@@ -1,3 +1,4 @@
+import { RuleCreator } from '@interlace/eslint-devkit';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -177,8 +178,9 @@ function handsOutClients(
 export const noTransactionOnPool: TSESLint.RuleModule<
   'noTransactionOnPool',
   NoTransactionOnPoolOptions
-> = {
+> = RuleCreator.withoutDocs<NoTransactionOnPoolOptions, 'noTransactionOnPool'>({
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       description:
@@ -203,22 +205,8 @@ export const noTransactionOnPool: TSESLint.RuleModule<
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    // Every rule here is PostgreSQL-specific, and none of them knew it: over
-    // 108,838 files, 94% of this plugin's findings were in files with no
-    // PostgreSQL client at all. Registering no visitors is both the gate and
-    // the cheap path — a file with no database in it does no work.
-    if (!usesPostgres(context)) return {};
-
-    /**
-     * Properties of `this` that were assigned a pg Pool in this file.
-     *
-     * `this.pool = new Pool()` in a constructor and `this.pool.query('BEGIN')`
-     * in a method is the ordinary repository shape, and the receiver there is a
-     * MemberExpression — which the rule skipped entirely, because it only ever
-     * looked at a bare identifier.
-     */
-    const poolProperties = new Set<string>();
+  createOnce(context) {
+    let poolProperties: Set<string>;
 
     /**
      * Does this receiver resolve to a pg **Pool**?
@@ -274,6 +262,24 @@ export const noTransactionOnPool: TSESLint.RuleModule<
     };
 
     return {
+      before() {
+        // Every rule here is PostgreSQL-specific, and none of them knew it: over
+        // 108,838 files, 94% of this plugin's findings were in files with no
+        // PostgreSQL client at all. Registering no visitors is both the gate and
+        // the cheap path — a file with no database in it does no work.
+        if (!usesPostgres(context)) return false;
+
+        /**
+         * Properties of `this` that were assigned a pg Pool in this file.
+         *
+         * `this.pool = new Pool()` in a constructor and `this.pool.query('BEGIN')`
+         * in a method is the ordinary repository shape, and the receiver there is a
+         * MemberExpression — which the rule skipped entirely, because it only ever
+         * looked at a bare identifier.
+         */
+        poolProperties = new Set<string>();
+        return true;
+      },
       // `this.pool = new Pool()` — record the property, so a method calling
       // `this.pool.query('BEGIN')` is judged on what was actually assigned.
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
@@ -350,4 +356,4 @@ export const noTransactionOnPool: TSESLint.RuleModule<
       },
     };
   },
-};
+});

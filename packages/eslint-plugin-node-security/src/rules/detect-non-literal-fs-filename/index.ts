@@ -514,6 +514,7 @@ export const determineRiskLevel = (
 export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
   name: 'detect-non-literal-fs-filename',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/detect-non-literal-fs-filename.md',
@@ -620,88 +621,19 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       additionalMethods: [],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const { allowLiterals = false, additionalMethods = [] }: Options = options;
-
-    /**
-     * Roots an attacker can actually reach.
-     *
-     * Deliberately `process` ONLY — `argv` and `env`.
-     *
-     * Request-sourced paths (`req`/`request`/`ctx`/`event`) and function
-     * parameters belong to `no-arbitrary-file-access`, which reports them at
-     * `error` and names user input as the cause. Listing them here too would
-     * rebuild the 25-site double-report the two rules were just separated to
-     * avoid: one line, two severities, one underlying fact.
-     *
-     * `process.env` counts: an operator-set variable is not a remote attacker,
-     * but a path named entirely by the environment is externally parameterised
-     * — `twilio-node` `RequestClient.ts:128` reads a CA bundle that way. A
-     * project treating env as trusted can drop it via `taintSources`.
-     */
-    /**
-     * `process` was the whole list, so a REQUEST-derived path was not tainted at
-     * all and `fs.readFileSync(req.query.file)` — the canonical CWE-22 — was
-     * silent. Measured: the rule scored TP 0/6 on its own weakness while
-     * `eslint-plugin-security` scored 6/6.
-     *
-     * Exact membership, never substring: `requestId` and `prerequisites` are not
-     * requests. Roots are further disqualified by `isLocallyConstructed`, so a
-     * `const req = {...}` fixture built in the file does not count.
-     */
-    const DEFAULT_TAINT_ROOTS = [
-      'process',
-      'req',
-      'request',
-      'ctx',
-      'context',
-      'event',
-    ];
-
-    /**
-     * Roots whose whole-value read is NOT traversal.
-     *
-     * `isWholeTaintValue` suppresses a path used entire, on the reasoning that
-     * there is no base directory to escape — correct for
-     * `fs.readFileSync(process.env.TWILIO_CA_BUNDLE)`, because whoever sets the
-     * process environment already chooses which files the process opens.
-     *
-     * That reasoning does NOT transfer to a request. A remote caller who supplies
-     * the ENTIRE path does not need to escape a base — they name
-     * `/etc/passwd` directly, which is arbitrary file read: the most severe form
-     * of this weakness, not the absence of one. Applying one suppression to both
-     * roots conflated "already trusted with the process" with "unauthenticated
-     * and remote".
-     */
-    const WHOLE_VALUE_TRUSTED_ROOTS = new Set(['process']);
-
-    /**
-     * Roots whose NAME is not evidence of anything.
-     *
-     * `req`, `request` and `event` name a request in nearly all code that uses
-     * them, and no measured false positive came from them. `ctx` and `context`
-     * name a build context, a compiler directory, a React context, a canvas
-     * context, an AWS Lambda context — and occasionally a Koa request.
-     */
-    const AMBIGUOUS_ROOTS = new Set(['ctx', 'context']);
-
-    /**
-     * Properties that only a request-like object carries. Exact membership
-     * against a closed surface, never a substring — `ctx.runtimeDir` and
-     * `ctx.plugins` are not in it, and `ctx.query` is.
-     */
-    const REQUEST_SURFACE = new Set([
-      'query',
-      'params',
-      'body',
-      'request',
-      'req',
-      'headers',
-      'cookies',
-      'searchParams',
-      'originalUrl',
-    ]);
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowLiterals: boolean;
+    let additionalMethods: string[];
+    let WHOLE_VALUE_TRUSTED_ROOTS: Set<string>;
+    let AMBIGUOUS_ROOTS: Set<string>;
+    let REQUEST_SURFACE: Set<string>;
+    let taintRoots: Set<string>;
+    let reportUnresolvedPaths: boolean;
+    let PATH_ARGUMENT_INDICES: ReadonlyMap<string, readonly number[]>;
+    let dangerousMethods: Set<string>;
+    let fsNamespaces: Set<string>;
+    let fsNamedMethods: Map<string, string>;
+    let pendingCalls: TSESTree.CallExpression[];
 
     /**
      * Does this `ctx`/`context` binding PROVE it is a request?
@@ -754,99 +686,6 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         ),
       );
     };
-    const taintRoots = new Set(options.taintSources ?? DEFAULT_TAINT_ROOTS);
-    const reportUnresolvedPaths = options.reportUnresolvedPaths ?? false;
-
-    /**
-     * File system methods that can be dangerous with user input
-     */
-    /**
-     * Which ARGUMENTS of each method are paths.
-     *
-     * Only `arguments[0]` was ever examined, so the destination of a copy,
-     * rename, symlink or link was never checked. `Shopify/cli`
-     * `bin/get-graphql-schemas.js:211` does `fs.copyFileSync(sourcePath,
-     * localPath)` and `e2e/setup/auth.ts:51` copies into an env-derived
-     * directory — both were silent.
-     */
-    const PATH_ARGUMENT_INDICES: ReadonlyMap<string, readonly number[]> =
-      new Map([
-        ['copyFile', [0, 1]],
-        ['copyFileSync', [0, 1]],
-        ['cp', [0, 1]],
-        ['cpSync', [0, 1]],
-        ['rename', [0, 1]],
-        ['renameSync', [0, 1]],
-        ['link', [0, 1]],
-        ['linkSync', [0, 1]],
-        ['symlink', [0, 1]],
-        ['symlinkSync', [0, 1]],
-      ]);
-
-    const dangerousMethods = new Set([
-      'readFile',
-      'readFileSync',
-      'writeFile',
-      'writeFileSync',
-      'appendFile',
-      'appendFileSync',
-      'stat',
-      'statSync',
-      'lstat',
-      'lstatSync',
-      'readdir',
-      'readdirSync',
-      'unlink',
-      'unlinkSync',
-      'mkdir',
-      'mkdirSync',
-      'rmdir',
-      'rmdirSync',
-      'access',
-      'accessSync',
-      'createReadStream',
-      'createWriteStream',
-      // Every remaining fs entry point that takes a path as its first argument. The list
-      // previously covered 11 of the ~30, so traversal through rename/copyFile/symlink/chmod
-      // was silently unguarded. Deliberately NOT included: realpath (canonicalisation is the
-      // MITIGATION — `realpathSync(p)` then `startsWith(allowedDir)` is the documented safe
-      // pattern) and exists/watch (probes that neither read content nor mutate).
-      //
-      // Destructive methods that were missing entirely. `update-bugsnag.js:36`
-      // does `fs.cpSync(sourceDirectory, …)` with `sourceDirectory` built from
-      // `process.argv[2]` — a recursive copy driven by argv, unreported, while
-      // the harmless `mkdir` of a temp dir two lines above WAS reported. The
-      // rule flagged the safe thing and missed the dangerous one.
-      'open',
-      'openSync',
-      'rm',
-      'rmSync',
-      'rename',
-      'renameSync',
-      'copyFile',
-      'copyFileSync',
-      'cp',
-      'cpSync',
-      'truncate',
-      'truncateSync',
-      'chmod',
-      'chmodSync',
-      'chown',
-      'chownSync',
-      'lchown',
-      'lchownSync',
-      'utimes',
-      'utimesSync',
-      'readlink',
-      'readlinkSync',
-      'symlink',
-      'symlinkSync',
-      'link',
-      'linkSync',
-      'opendir',
-      'opendirSync',
-      ...additionalMethods,
-    ]);
 
     /**
      * Check if a node is a literal string (safe)
@@ -1656,19 +1495,6 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Names bound to the fs module itself.
-     *
-     * Seeded with `fs`, so a file that never imports it — the shape the rule
-     * has always reported — keeps being reported. Anything else has to be
-     * traced to an import or a require.
-     */
-    const fsNamespaces = new Set<string>(['fs']);
-    /** Local name → fs method, for named imports and destructured requires. */
-    const fsNamedMethods = new Map<string, string>();
-    /** Calls to judge at Program:exit, once every binding in the file is known. */
-    const pendingCalls: TSESTree.CallExpression[] = [];
-
-    /**
      * Record what a destructured / named binding refers to.
      *
      * `promises` is the one member of the fs module that is itself a module
@@ -1786,6 +1612,194 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({ allowLiterals = false, additionalMethods = [] } = options);
+
+        /**
+         * Roots an attacker can actually reach.
+         *
+         * Deliberately `process` ONLY — `argv` and `env`.
+         *
+         * Request-sourced paths (`req`/`request`/`ctx`/`event`) and function
+         * parameters belong to `no-arbitrary-file-access`, which reports them at
+         * `error` and names user input as the cause. Listing them here too would
+         * rebuild the 25-site double-report the two rules were just separated to
+         * avoid: one line, two severities, one underlying fact.
+         *
+         * `process.env` counts: an operator-set variable is not a remote attacker,
+         * but a path named entirely by the environment is externally parameterised
+         * — `twilio-node` `RequestClient.ts:128` reads a CA bundle that way. A
+         * project treating env as trusted can drop it via `taintSources`.
+         */
+        /**
+         * `process` was the whole list, so a REQUEST-derived path was not tainted at
+         * all and `fs.readFileSync(req.query.file)` — the canonical CWE-22 — was
+         * silent. Measured: the rule scored TP 0/6 on its own weakness while
+         * `eslint-plugin-security` scored 6/6.
+         *
+         * Exact membership, never substring: `requestId` and `prerequisites` are not
+         * requests. Roots are further disqualified by `isLocallyConstructed`, so a
+         * `const req = {...}` fixture built in the file does not count.
+         */
+        const DEFAULT_TAINT_ROOTS = [
+          'process',
+          'req',
+          'request',
+          'ctx',
+          'context',
+          'event',
+        ];
+
+        /**
+         * Roots whose whole-value read is NOT traversal.
+         *
+         * `isWholeTaintValue` suppresses a path used entire, on the reasoning that
+         * there is no base directory to escape — correct for
+         * `fs.readFileSync(process.env.TWILIO_CA_BUNDLE)`, because whoever sets the
+         * process environment already chooses which files the process opens.
+         *
+         * That reasoning does NOT transfer to a request. A remote caller who supplies
+         * the ENTIRE path does not need to escape a base — they name
+         * `/etc/passwd` directly, which is arbitrary file read: the most severe form
+         * of this weakness, not the absence of one. Applying one suppression to both
+         * roots conflated "already trusted with the process" with "unauthenticated
+         * and remote".
+         */
+        WHOLE_VALUE_TRUSTED_ROOTS = new Set(['process']);
+
+        /**
+         * Roots whose NAME is not evidence of anything.
+         *
+         * `req`, `request` and `event` name a request in nearly all code that uses
+         * them, and no measured false positive came from them. `ctx` and `context`
+         * name a build context, a compiler directory, a React context, a canvas
+         * context, an AWS Lambda context — and occasionally a Koa request.
+         */
+        AMBIGUOUS_ROOTS = new Set(['ctx', 'context']);
+
+        /**
+         * Properties that only a request-like object carries. Exact membership
+         * against a closed surface, never a substring — `ctx.runtimeDir` and
+         * `ctx.plugins` are not in it, and `ctx.query` is.
+         */
+        REQUEST_SURFACE = new Set([
+          'query',
+          'params',
+          'body',
+          'request',
+          'req',
+          'headers',
+          'cookies',
+          'searchParams',
+          'originalUrl',
+        ]);
+        taintRoots = new Set(options.taintSources ?? DEFAULT_TAINT_ROOTS);
+        reportUnresolvedPaths = options.reportUnresolvedPaths ?? false;
+
+        /**
+         * File system methods that can be dangerous with user input
+         */
+        /**
+         * Which ARGUMENTS of each method are paths.
+         *
+         * Only `arguments[0]` was ever examined, so the destination of a copy,
+         * rename, symlink or link was never checked. `Shopify/cli`
+         * `bin/get-graphql-schemas.js:211` does `fs.copyFileSync(sourcePath,
+         * localPath)` and `e2e/setup/auth.ts:51` copies into an env-derived
+         * directory — both were silent.
+         */
+        PATH_ARGUMENT_INDICES = new Map([
+          ['copyFile', [0, 1]],
+          ['copyFileSync', [0, 1]],
+          ['cp', [0, 1]],
+          ['cpSync', [0, 1]],
+          ['rename', [0, 1]],
+          ['renameSync', [0, 1]],
+          ['link', [0, 1]],
+          ['linkSync', [0, 1]],
+          ['symlink', [0, 1]],
+          ['symlinkSync', [0, 1]],
+        ]);
+
+        dangerousMethods = new Set([
+          'readFile',
+          'readFileSync',
+          'writeFile',
+          'writeFileSync',
+          'appendFile',
+          'appendFileSync',
+          'stat',
+          'statSync',
+          'lstat',
+          'lstatSync',
+          'readdir',
+          'readdirSync',
+          'unlink',
+          'unlinkSync',
+          'mkdir',
+          'mkdirSync',
+          'rmdir',
+          'rmdirSync',
+          'access',
+          'accessSync',
+          'createReadStream',
+          'createWriteStream',
+          // Every remaining fs entry point that takes a path as its first argument. The list
+          // previously covered 11 of the ~30, so traversal through rename/copyFile/symlink/chmod
+          // was silently unguarded. Deliberately NOT included: realpath (canonicalisation is the
+          // MITIGATION — `realpathSync(p)` then `startsWith(allowedDir)` is the documented safe
+          // pattern) and exists/watch (probes that neither read content nor mutate).
+          //
+          // Destructive methods that were missing entirely. `update-bugsnag.js:36`
+          // does `fs.cpSync(sourceDirectory, …)` with `sourceDirectory` built from
+          // `process.argv[2]` — a recursive copy driven by argv, unreported, while
+          // the harmless `mkdir` of a temp dir two lines above WAS reported. The
+          // rule flagged the safe thing and missed the dangerous one.
+          'open',
+          'openSync',
+          'rm',
+          'rmSync',
+          'rename',
+          'renameSync',
+          'copyFile',
+          'copyFileSync',
+          'cp',
+          'cpSync',
+          'truncate',
+          'truncateSync',
+          'chmod',
+          'chmodSync',
+          'chown',
+          'chownSync',
+          'lchown',
+          'lchownSync',
+          'utimes',
+          'utimesSync',
+          'readlink',
+          'readlinkSync',
+          'symlink',
+          'symlinkSync',
+          'link',
+          'linkSync',
+          'opendir',
+          'opendirSync',
+          ...additionalMethods,
+        ]);
+
+        /**
+         * Names bound to the fs module itself.
+         *
+         * Seeded with `fs`, so a file that never imports it — the shape the rule
+         * has always reported — keeps being reported. Anything else has to be
+         * traced to an import or a require.
+         */
+        fsNamespaces = new Set<string>(['fs']);
+        /** Local name → fs method, for named imports and destructured requires. */
+        fsNamedMethods = new Map<string, string>();
+        /** Calls to judge at Program:exit, once every binding in the file is known. */
+        pendingCalls = [];
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         if (!isFsModule(node.source.value)) return;
         for (const spec of node.specifiers) {

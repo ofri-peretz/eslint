@@ -65,6 +65,7 @@ const STREAM_METHODS: ReadonlySet<string> = new Set([
 export const requireAeadTagVerification = createRule<RuleOptions, MessageIds>({
   name: 'require-aead-tag-verification',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/require-aead-tag-verification.md',
@@ -117,13 +118,11 @@ export const requireAeadTagVerification = createRule<RuleOptions, MessageIds>({
       allowInTests: false,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = false } = options as Options;
-
-    const isTestFile = allowInTests && isTestFilePath(context.filename);
+    let isTestFile: boolean;
 
     /** `crypto.createDecipheriv(...)` or a bare `createDecipheriv(...)`. */
     function isCreateDecipheriv(
@@ -219,6 +218,12 @@ export const requireAeadTagVerification = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = false } = options as Options;
+
+        isTestFile = allowInTests && isTestFilePath(context.filename);
+      },
       VariableDeclarator: checkVariableDeclarator,
     };
   },

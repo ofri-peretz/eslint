@@ -25,6 +25,10 @@ type RuleOptions = [];
 export const ariaProps = createRule<RuleOptions, MessageIds>({
   name: 'aria-props',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/aria-props',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/aria-props.md',
@@ -46,7 +50,7 @@ export const ariaProps = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (node.name.type !== 'JSXIdentifier') {

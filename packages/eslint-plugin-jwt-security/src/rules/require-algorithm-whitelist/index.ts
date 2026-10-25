@@ -35,6 +35,7 @@ type RuleOptions = [RequireAlgorithmWhitelistOptions?];
 export const requireAlgorithmWhitelist = createRule<RuleOptions, MessageIds>({
   name: 'require-algorithm-whitelist',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt-security/docs/rules/require-algorithm-whitelist.md',
@@ -102,9 +103,12 @@ export const requireAlgorithmWhitelist = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const sourceCode = context.sourceCode;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
     return {
+      before() {
+        sourceCode = context.sourceCode;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         // Only check verify operations
         if (!isSignatureVerifyOperation(node, sourceCode)) {

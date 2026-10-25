@@ -145,6 +145,7 @@ const QUERY_METHODS = new Set([
 export const noUnsafeRegexQuery = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-regex-query',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-unsafe-regex-query.md',
@@ -176,47 +177,7 @@ export const noUnsafeRegexQuery = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    // Every rule here is MongoDB-specific, and none of them could ask the
-    // file-level question: over the corpus, 47% of this plugin's findings were
-    // in files with no Mongo in them. `receiver.ts` discriminates by receiver
-    // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
-    // well as in a Mongoose one. Registering no visitors is both the gate and
-    // the cheap path.
-    if (!fileUsesMongo(context.sourceCode.ast)) return {};
-
-    const [options = {}] = context.options;
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const inTestFile = isTestFilePath(filename);
-
-    if (allowInTests && inTestFile) {
-      return {};
-    }
-
-    return {
-      CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
-          return;
-        }
-
-        // `User['find'](...)` calls the same method the dotted form does.
-        const methodName = propertyName(node.callee);
-
-        if (!methodName || !QUERY_METHODS.has(methodName)) {
-          return;
-        }
-
-        // Check first argument (the query object)
-        const queryArg = node.arguments[0];
-        if (!queryArg || queryArg.type !== AST_NODE_TYPES.ObjectExpression) {
-          return;
-        }
-
-        checkFilter(queryArg, node);
-      },
-    };
-
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     /** Every property of a filter document, recursing into `$or`/`$and`/`$nor`. */
     function checkFilter(
       filter: TSESTree.ObjectExpression,
@@ -275,6 +236,48 @@ export const noUnsafeRegexQuery = createRule<RuleOptions, MessageIds>({
         }
       }
     }
+
+    return {
+      before() {
+        // Every rule here is MongoDB-specific, and none of them could ask the
+        // file-level question: over the corpus, 47% of this plugin's findings were
+        // in files with no Mongo in them. `receiver.ts` discriminates by receiver
+        // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
+        // well as in a Mongoose one. Registering no visitors is both the gate and
+        // the cheap path.
+        if (!fileUsesMongo(context.sourceCode.ast)) return false;
+
+        const [options = {}] = context.options;
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const inTestFile = isTestFilePath(filename);
+
+        if (allowInTests && inTestFile) {
+          return false;
+        }
+        return true;
+      },
+      CallExpression(node: TSESTree.CallExpression) {
+        if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
+          return;
+        }
+
+        // `User['find'](...)` calls the same method the dotted form does.
+        const methodName = propertyName(node.callee);
+
+        if (!methodName || !QUERY_METHODS.has(methodName)) {
+          return;
+        }
+
+        // Check first argument (the query object)
+        const queryArg = node.arguments[0];
+        if (!queryArg || queryArg.type !== AST_NODE_TYPES.ObjectExpression) {
+          return;
+        }
+
+        checkFilter(queryArg, node);
+      },
+    };
   },
 });
 

@@ -43,6 +43,7 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
    */
   skipTestFiles: true,
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt-security/docs/rules/no-hardcoded-secret.md',
@@ -110,8 +111,8 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const sourceCode = context.sourceCode;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /**
      * Report each key position that can receive a hardcoded string.
@@ -155,6 +156,9 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        sourceCode = context.sourceCode;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (checkConfig(node)) {
           return;

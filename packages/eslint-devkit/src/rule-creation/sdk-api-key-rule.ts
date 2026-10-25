@@ -170,6 +170,9 @@ export function createSdkApiKeyRule(config: SdkApiKeyRuleConfig) {
   return createRule<[], MessageIds>({
     name: config.ruleName,
     meta: {
+      // Shared detection, shared runtimes: oxlint only if every plugin's rule
+      // from this factory passes its own suite there.
+      interop: { runtimes: ['eslint', 'oxlint'] },
       type: 'problem',
       docs: {
         url: config.docsUrl,
@@ -195,12 +198,8 @@ export function createSdkApiKeyRule(config: SdkApiKeyRuleConfig) {
       schema: [],
     },
     defaultOptions: [],
-    create(context) {
-      // Asked once, up front, over the whole AST — so the verdict cannot depend
-      // on whether the import is written above or below the client, which is
-      // what the old two-visitor gate needed a `Program:exit` pass to survive.
-      if (!usesSdk(context.sourceCode.ast)) return {};
-      const sourceCode = context.sourceCode;
+    createOnce(context) {
+      let sourceCode: typeof context.sourceCode;
 
       /**
        * A literal this file commits — directly, through consts, or as a
@@ -263,6 +262,14 @@ export function createSdkApiKeyRule(config: SdkApiKeyRuleConfig) {
       }
 
       return {
+        before() {
+          // Asked once, up front, over the whole AST — so the verdict cannot depend
+          // on whether the import is written above or below the client, which is
+          // what the old two-visitor gate needed a `Program:exit` pass to survive.
+          if (!usesSdk(context.sourceCode.ast)) return false;
+          sourceCode = context.sourceCode;
+          return true;
+        },
         NewExpression: inspect,
         CallExpression: inspect,
       };

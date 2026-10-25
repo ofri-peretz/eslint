@@ -28,6 +28,7 @@ type RuleOptions = [RequireAudienceValidationOptions?];
 export const requireAudienceValidation = createRule<RuleOptions, MessageIds>({
   name: 'require-audience-validation',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt-security/docs/rules/require-audience-validation.md',
@@ -87,9 +88,12 @@ export const requireAudienceValidation = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const sourceCode = context.sourceCode;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
     return {
+      before() {
+        sourceCode = context.sourceCode;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (!isVerifyOperation(node, sourceCode)) {
           return;

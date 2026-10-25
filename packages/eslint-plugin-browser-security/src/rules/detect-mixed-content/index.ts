@@ -45,7 +45,11 @@
  * called by both sides of the deferral rather than restated per rule.
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import { isTrustworthyLocalUrl } from '../../utils/namespace-uris';
 import { isSubresourcePosition } from '../../utils/transport-ownership';
 import type { TSESTree } from '@interlace/eslint-devkit';
@@ -69,6 +73,7 @@ type RuleOptions = [Options?];
 export const detectMixedContent = createRule<RuleOptions, MessageIds>({
   name: 'detect-mixed-content',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/detect-mixed-content.md',
@@ -81,18 +86,18 @@ export const detectMixedContent = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'violation Detected',
         cwe: 'CWE-311',
-        description: 'Detect HTTP resources in HTTPS pages detected - Literal containing http:// in HTTPS context',
+        description:
+          'Detect HTTP resources in HTTPS pages detected - Literal containing http:// in HTTPS context',
         severity: 'MEDIUM',
         fix: 'Review and apply secure practices',
         documentationLink: 'https://cwe.mitre.org/data/definitions/311.html',
-      })
+      }),
     },
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  createOnce(context) {
     return {
-      
       // A template literal in a subresource position is the same load with a
       // runtime path — `` <img src={`http://cdn.acme.io/${id}.png`} /> ``. It
       // is read here because `no-http-urls` declines a template whose authority
@@ -123,7 +128,10 @@ export const detectMixedContent = createRule<RuleOptions, MessageIds>({
       },
 
       Literal(node: TSESTree.Literal) {
-        if (typeof node.value !== 'string' || !CLEARTEXT_SCHEME.test(node.value)) {
+        if (
+          typeof node.value !== 'string' ||
+          !CLEARTEXT_SCHEME.test(node.value)
+        ) {
           return;
         }
         // --- family partition -------------------------------------------------

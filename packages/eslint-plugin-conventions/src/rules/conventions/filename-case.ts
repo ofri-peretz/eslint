@@ -55,6 +55,10 @@ type RuleOptions = [Options?];
 export const filenameCase = createRule<RuleOptions, MessageIds>({
   name: 'filename-case',
   meta: {
+    interop: {
+      runtimes: ['eslint'],
+      nativeEquivalent: 'unicorn/filename-case',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/filename-case.md',
@@ -65,10 +69,12 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
       filenameCase: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Filename Case Convention',
-        description: 'Filename "{{current}}" violates {{case}} naming convention',
+        description:
+          'Filename "{{current}}" violates {{case}} naming convention',
         severity: 'MEDIUM',
         fix: 'Rename file from "{{current}}" to "{{suggested}}" following {{case}} convention',
-        documentationLink: 'https://github.com/sindresorhus/eslint-plugin-unicorn/blob/main/docs/rules/filename-case.md',
+        documentationLink:
+          'https://github.com/sindresorhus/eslint-plugin-unicorn/blob/main/docs/rules/filename-case.md',
       }),
     },
     schema: [
@@ -83,40 +89,42 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
           ignore: {
             type: 'array',
             items: {
-              anyOf: [
-                { type: 'string' },
-                { type: 'object' },
-              ],
+              anyOf: [{ type: 'string' }, { type: 'object' }],
             },
             default: [],
           },
           allowedUppercaseFiles: {
             type: 'array',
             items: { type: 'string' },
-            description: 'List of uppercase filenames to allow (without extension). Defaults to common files like README, LICENSE, etc.',
+            description:
+              'List of uppercase filenames to allow (without extension). Defaults to common files like README, LICENSE, etc.',
           },
           allowedKebabCase: {
             type: 'array',
             items: { type: 'string' },
-            description: 'List of filenames allowed to use kebab-case regardless of the global case setting.',
+            description:
+              'List of filenames allowed to use kebab-case regardless of the global case setting.',
             default: [],
           },
           allowedSnakeCase: {
             type: 'array',
             items: { type: 'string' },
-            description: 'List of filenames allowed to use snake_case regardless of the global case setting.',
+            description:
+              'List of filenames allowed to use snake_case regardless of the global case setting.',
             default: [],
           },
           allowedCamelCase: {
             type: 'array',
             items: { type: 'string' },
-            description: 'List of filenames allowed to use camelCase regardless of the global case setting.',
+            description:
+              'List of filenames allowed to use camelCase regardless of the global case setting.',
             default: [],
           },
           allowedPascalCase: {
             type: 'array',
             items: { type: 'string' },
-            description: 'List of filenames allowed to use PascalCase regardless of the global case setting.',
+            description:
+              'List of filenames allowed to use PascalCase regardless of the global case setting.',
             default: [],
           },
         },
@@ -124,27 +132,26 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
       },
     ],
   },
-  defaultOptions: [{
-    case: 'kebabCase',
-    ignore: [],
-    allowedUppercaseFiles: DEFAULT_ALLOWED_UPPERCASE_FILES,
-    allowedKebabCase: [],
-    allowedSnakeCase: [],
-    allowedCamelCase: [],
-    allowedPascalCase: [],
-  }],
+  defaultOptions: [
+    {
+      case: 'kebabCase',
+      ignore: [],
+      allowedUppercaseFiles: DEFAULT_ALLOWED_UPPERCASE_FILES,
+      allowedKebabCase: [],
+      allowedSnakeCase: [],
+      allowedCamelCase: [],
+      allowedPascalCase: [],
+    },
+  ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const {
-      case: caseType = 'kebabCase',
-      ignore = [],
-      allowedUppercaseFiles = DEFAULT_ALLOWED_UPPERCASE_FILES,
-      allowedKebabCase = [],
-      allowedSnakeCase = [],
-      allowedCamelCase = [],
-      allowedPascalCase = [],
-    } = options || {};
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let caseType: CaseType;
+    let ignore: (string | RegExp)[];
+    let allowedUppercaseFiles: string[];
+    let allowedKebabCase: string[];
+    let allowedSnakeCase: string[];
+    let allowedCamelCase: string[];
+    let allowedPascalCase: string[];
 
     // Convert to different case formats
     // oxlint-disable-next-line consistent-function-scoping
@@ -217,7 +224,11 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
     }
 
     // Generate suggested filename
-    function getSuggestedName(basename: string, nameWithoutExt: string, targetCase: CaseType): string {
+    function getSuggestedName(
+      basename: string,
+      nameWithoutExt: string,
+      targetCase: CaseType,
+    ): string {
       // Initialized to the untransformed name; every valid CaseType below
       // overwrites it. (An unknown case never reaches here — matchesCase
       // returns true for unknown cases, so no rename is ever suggested.)
@@ -243,6 +254,18 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({
+          case: caseType = 'kebabCase',
+          ignore = [],
+          allowedUppercaseFiles = DEFAULT_ALLOWED_UPPERCASE_FILES,
+          allowedKebabCase = [],
+          allowedSnakeCase = [],
+          allowedCamelCase = [],
+          allowedPascalCase = [],
+        } = options || {});
+      },
       Program(node: TSESTree.Program) {
         // Get filename from context
         const filename = context.filename;
@@ -254,7 +277,10 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
         const basename = getBasename(filename);
 
         // Remove all extensions for checking (handles .spec.ts, .test.tsx, etc.)
-        const nameWithoutExt = basename.replace(/(\.(spec|test|stories|story|e2e|d))*\.[^.]+$/, '');
+        const nameWithoutExt = basename.replace(
+          /(\.(spec|test|stories|story|e2e|d))*\.[^.]+$/,
+          '',
+        );
 
         // Skip if no name part (e.g., just extension or dotfile)
         if (!nameWithoutExt) {
@@ -286,22 +312,38 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
 
         // Check if filename is allowed via case-specific overrides
         // These allow specific files to use a different case than the global setting
-        if (allowedKebabCase.includes(nameWithoutExt) && matchesCase(nameWithoutExt, 'kebabCase')) {
+        if (
+          allowedKebabCase.includes(nameWithoutExt) &&
+          matchesCase(nameWithoutExt, 'kebabCase')
+        ) {
           return;
         }
-        if (allowedSnakeCase.includes(nameWithoutExt) && matchesCase(nameWithoutExt, 'snakeCase')) {
+        if (
+          allowedSnakeCase.includes(nameWithoutExt) &&
+          matchesCase(nameWithoutExt, 'snakeCase')
+        ) {
           return;
         }
-        if (allowedCamelCase.includes(nameWithoutExt) && matchesCase(nameWithoutExt, 'camelCase')) {
+        if (
+          allowedCamelCase.includes(nameWithoutExt) &&
+          matchesCase(nameWithoutExt, 'camelCase')
+        ) {
           return;
         }
-        if (allowedPascalCase.includes(nameWithoutExt) && matchesCase(nameWithoutExt, 'pascalCase')) {
+        if (
+          allowedPascalCase.includes(nameWithoutExt) &&
+          matchesCase(nameWithoutExt, 'pascalCase')
+        ) {
           return;
         }
 
         // Check if filename matches the expected case
         if (!matchesCase(nameWithoutExt, caseType)) {
-          const suggestedName = getSuggestedName(basename, nameWithoutExt, caseType);
+          const suggestedName = getSuggestedName(
+            basename,
+            nameWithoutExt,
+            caseType,
+          );
 
           context.report({
             node, // Report on the Program node

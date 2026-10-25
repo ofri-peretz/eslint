@@ -15,9 +15,15 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-tracking-without-consent', noTrackingWithoutConsent, {
   valid: [
     // Tracking inside consent check
-    { name: 'the call is behind a consent check', code: "if (hasConsent) { analytics.track('event') }" },
-    { code: "if (userConsent) { gtag('event', 'click') }" },
-    { code: "if (consentGiven) { analytics.identify(userId) }" },
+    {
+      name: 'the call is behind a consent check',
+      code: "if (hasConsent) { analytics.track('event') }",
+    },
+    {
+      name: 'a gtag call inside a userConsent check is allowed',
+      code: "if (userConsent) { gtag('event', 'click') }",
+    },
+    { code: 'if (consentGiven) { analytics.identify(userId) }' },
     // Consent read off an object, and through a call.
     { code: "if (prefs.consent) { analytics.track('event') }" },
     { code: "if (hasCookieConsent()) { gtag('event', 'click') }" },
@@ -26,15 +32,21 @@ ruleTester.run('no-tracking-without-consent', noTrackingWithoutConsent, {
     { code: "hasConsent && analytics.track('event')" },
     { code: "hasConsent ? analytics.track('event') : null" },
     { code: "if (!hasConsent) { return; } analytics.track('event');" },
-    { code: "function boot() { if (!gdprAccepted) throw new Error('no'); gtag('event', 'x'); }" },
+    {
+      code: "function boot() { if (!gdprAccepted) throw new Error('no'); gtag('event', 'x'); }",
+    },
     // The refusal branch of an inverted test still grants on the else side.
-    { code: "if (!hasConsent) { showBanner(); } else { analytics.track('event'); }" },
-    { code: "if (hasConsent === false) { showBanner(); } else { gtag('event', 'x'); }" },
+    {
+      code: "if (!hasConsent) { showBanner(); } else { analytics.track('event'); }",
+    },
+    {
+      code: "if (hasConsent === false) { showBanner(); } else { gtag('event', 'x'); }",
+    },
     // Non-tracking calls
     { code: 'const x = 1' },
     { code: "console.log('test')" },
-    { code: "analytics.flush()" },
-    { code: "if (isMobile) { renderApp(); }" },
+    { code: 'analytics.flush()' },
+    { code: 'if (isMobile) { renderApp(); }' },
     // Consent proven by one operand of a compound test.
     { code: "if (isReady && hasConsent) { analytics.track('event') }" },
     { code: "if (allowed && !gdprBlocked) { analytics.track('event') }" },
@@ -43,11 +55,25 @@ ruleTester.run('no-tracking-without-consent', noTrackingWithoutConsent, {
 
   invalid: [
     // Unconditional analytics.track
-    { name: 'a tracking call on no consent path', code: "analytics.track('page_view')", errors: [{ messageId: 'violationDetected' }] },
-    { name: 'an identify call with no consent check', code: 'analytics.identify(user)', errors: [{ messageId: 'violationDetected' }] },
-    { code: "analytics.page('/home')", errors: [{ messageId: 'violationDetected' }] },
+    {
+      name: 'a tracking call on no consent path',
+      code: "analytics.track('page_view')",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'an identify call with no consent check',
+      code: 'analytics.identify(user)',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: "analytics.page('/home')",
+      errors: [{ messageId: 'violationDetected' }],
+    },
     // Unconditional gtag
-    { code: "gtag('event', 'purchase')", errors: [{ messageId: 'violationDetected' }] },
+    {
+      code: "gtag('event', 'purchase')",
+      errors: [{ messageId: 'violationDetected' }],
+    },
 
     // ---- Fixture correction ----------------------------------------------
     // The old rule counted ANY enclosing `if` or ternary as protection without
@@ -207,43 +233,47 @@ ruleTester.run('option: consentIdentifiers', noTrackingWithoutConsent, {
 // ungated tracking call through vendors it could not see. The sink surface is
 // now shared with `no-sensitive-data-in-analytics` — a complementary pair with
 // different sink lists is just two rules with different blind spots.
-ruleTester.run('no-tracking-without-consent — adversarial', noTrackingWithoutConsent, {
-  valid: [
-    // The gate reached through a call, and through a nested property — the two
-    // shapes every consent-management platform actually produces.
-    "if (hasAnalyticsConsent()) { analytics.track('Signup'); }",
-    "if (preferences.gdpr.analytics) { gtag('event', 'page_view'); }",
-    // A shipment tracker is not an analytics client.
-    "shipment.track('parcel-993');",
-    // The gated GTM push.
-    "if (cookiesAccepted) { window.dataLayer.push({ event: 'page_view' }); }",
-  ],
-  invalid: [
-    // `window.analytics` is the spelling Segment's own snippet installs.
-    {
-      code: "window.analytics.track('Signup Completed');",
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    // GTM's transport is `dataLayer.push`, which is neither `analytics.*` nor
-    // `gtag` — the rule's docs called this a known FN with no mitigation.
-    {
-      code: "window.dataLayer.push({ event: 'page_view', page: location.pathname });",
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    // The consent flag is READ and never branched on.
-    {
-      code: "const hasConsent = readConsentCookie(); log(hasConsent); analytics.track('Signup');",
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    // The early-return guard with its sense backwards.
-    {
-      code: "function boot() { if (gdprConsent) return; analytics.track('Booted'); }",
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    // FALSE-NEGATIVE DIRECTION: innocuous identifiers, same ungated call.
-    {
-      code: "function z9() { analytics.track('e7'); } z9();",
-      errors: [{ messageId: 'violationDetected' }],
-    },
-  ],
-});
+ruleTester.run(
+  'no-tracking-without-consent — adversarial',
+  noTrackingWithoutConsent,
+  {
+    valid: [
+      // The gate reached through a call, and through a nested property — the two
+      // shapes every consent-management platform actually produces.
+      "if (hasAnalyticsConsent()) { analytics.track('Signup'); }",
+      "if (preferences.gdpr.analytics) { gtag('event', 'page_view'); }",
+      // A shipment tracker is not an analytics client.
+      "shipment.track('parcel-993');",
+      // The gated GTM push.
+      "if (cookiesAccepted) { window.dataLayer.push({ event: 'page_view' }); }",
+    ],
+    invalid: [
+      // `window.analytics` is the spelling Segment's own snippet installs.
+      {
+        code: "window.analytics.track('Signup Completed');",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // GTM's transport is `dataLayer.push`, which is neither `analytics.*` nor
+      // `gtag` — the rule's docs called this a known FN with no mitigation.
+      {
+        code: "window.dataLayer.push({ event: 'page_view', page: location.pathname });",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // The consent flag is READ and never branched on.
+      {
+        code: "const hasConsent = readConsentCookie(); log(hasConsent); analytics.track('Signup');",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // The early-return guard with its sense backwards.
+      {
+        code: "function boot() { if (gdprConsent) return; analytics.track('Booted'); }",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // FALSE-NEGATIVE DIRECTION: innocuous identifiers, same ungated call.
+      {
+        code: "function z9() { analytics.track('e7'); } z9();",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+    ],
+  },
+);

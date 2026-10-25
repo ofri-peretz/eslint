@@ -1,3 +1,4 @@
+import { RuleCreator } from '@interlace/eslint-devkit';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -1369,8 +1370,12 @@ type FragmentKey = TSESLint.Scope.Variable | string;
 export const noUnsafeQuery: TSESLint.RuleModule<
   'noUnsafeQuery' | 'unsafeTemplateLiteral',
   NoUnsafeQueryOptions
-> = {
+> = RuleCreator.withoutDocs<
+  NoUnsafeQueryOptions,
+  'noUnsafeQuery' | 'unsafeTemplateLiteral'
+>({
   meta: {
+    interop: { runtimes: ['eslint'] },
     type: 'problem',
     // CWE / CVSS lifted to meta.docs (Interlace extension) so
     // @interlace/eslint-formatter renders them inline. Previously these
@@ -1414,29 +1419,10 @@ export const noUnsafeQuery: TSESLint.RuleModule<
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    const { sourceCode } = context;
-    const env = envOf(context);
-
-    // Every rule here is PostgreSQL-specific, and none of them knew it: over
-    // 108,838 files, 94% of this plugin's findings were in files with no
-    // PostgreSQL client at all. Registering no visitors is both the gate and
-    // the cheap path — a file with no database in it does no work. A file that
-    // reaches PostgreSQL only through a local `./db` wrapper is deliberately
-    // left to `secure-coding`: the SDK-evidence gate is a contract shared with
-    // the sibling SQL plugins (benchmarks/__tests__/sdk-gate-coverage.lock).
-    if (!usesPostgres(context)) return {};
-
-    /**
-     * Every string-valued fragment written into a local binding, in source
-     * order, keyed by the BINDING (not its name — `sql` declared in one
-     * function used to taint a `sql` parameter in the next).
-     *
-     *   let q = "SELECT * FROM products WHERE 1=1";
-     *   q += ` AND name = '${name}'`;      // ← alone, not a SQL statement
-     *   db.query(q);                       // ← together, plainly one
-     */
-    const fragments = new Map<FragmentKey, TSESTree.Node[]>();
+  createOnce(context) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let env: Env;
+    let fragments: Map<FragmentKey, TSESTree.Node[]>;
 
     /** The binding an identifier names, or its bare name when it names none. */
     const keyFor = (id: TSESTree.Identifier): FragmentKey =>
@@ -1506,6 +1492,31 @@ export const noUnsafeQuery: TSESLint.RuleModule<
     };
 
     return {
+      before() {
+        ({ sourceCode } = context);
+        env = envOf(context);
+
+        // Every rule here is PostgreSQL-specific, and none of them knew it: over
+        // 108,838 files, 94% of this plugin's findings were in files with no
+        // PostgreSQL client at all. Registering no visitors is both the gate and
+        // the cheap path — a file with no database in it does no work. A file that
+        // reaches PostgreSQL only through a local `./db` wrapper is deliberately
+        // left to `secure-coding`: the SDK-evidence gate is a contract shared with
+        // the sibling SQL plugins (benchmarks/__tests__/sdk-gate-coverage.lock).
+        if (!usesPostgres(context)) return false;
+
+        /**
+         * Every string-valued fragment written into a local binding, in source
+         * order, keyed by the BINDING (not its name — `sql` declared in one
+         * function used to taint a `sql` parameter in the next).
+         *
+         *   let q = "SELECT * FROM products WHERE 1=1";
+         *   q += ` AND name = '${name}'`;      // ← alone, not a SQL statement
+         *   db.query(q);                       // ← together, plainly one
+         */
+        fragments = new Map<FragmentKey, TSESTree.Node[]>();
+        return true;
+      },
       // const query = "SELECT..." + userId;   let query = "SELECT ...";
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (
@@ -1612,4 +1623,4 @@ export const noUnsafeQuery: TSESLint.RuleModule<
       },
     };
   },
-};
+});

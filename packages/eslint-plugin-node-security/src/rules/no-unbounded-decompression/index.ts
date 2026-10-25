@@ -70,6 +70,7 @@ const SYNC_DECOMPRESSORS: ReadonlySet<string> = new Set([
 export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
   name: 'no-unbounded-decompression',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-unbounded-decompression.md',
@@ -110,13 +111,11 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
       allowInTests: false,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = false } = options as Options;
-
-    const isTestFile = allowInTests && isTestFilePath(context.filename);
+    let isTestFile: boolean;
 
     function isZlibSpecifier(node: TSESTree.Node | undefined): boolean {
       return (
@@ -294,6 +293,12 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = false } = options as Options;
+
+        isTestFile = allowInTests && isTestFilePath(context.filename);
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (isTestFile) return;
         judge(node);

@@ -31,7 +31,9 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     },
     // benchmarks/corpus/CWE-248/safe/pipe-with-error-listener.js — named, and
     // the name carries an 'error' listener.
-    `
+    {
+      name: 'a named stream with an error listener may be piped',
+      code: `
       function download(req, res) {
         const stream = fs.createReadStream('./uploads/' + req.params.id);
         stream.on('error', () => {
@@ -40,6 +42,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
         stream.pipe(res);
       }
     `,
+    },
     // benchmarks/corpus/CWE-248/safe/pipeline-promises.js — pipeline() destroys
     // every stream and rejects. This is the fix the rule recommends, so
     // reporting it would be reporting the mitigation.

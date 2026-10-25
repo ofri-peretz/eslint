@@ -43,8 +43,14 @@ export const noRawIdentifierInterpolation = createRawIdentifierRule({
   // Drizzle's composition surface, all of which produce SQL chunks rather than
   // spliced text. `sql.raw` is pointedly absent: it is the one member of this
   // family that does splice, so `${sql.raw(table)}` stays a finding.
-  identifierHelpers: ['sql.identifier', 'sql.join', 'sql.fromList', 'sql.placeholder'],
+  identifierHelpers: [
+    'sql.identifier',
+    'sql.join',
+    'sql.fromList',
+    'sql.placeholder',
+  ],
   fix: 'Wrap the identifier in `sql.identifier(name)`, which quotes and escapes it, or map the input through a fixed allowlist first.',
-  sortDirectionFix: 'Use Drizzle\'s `asc()` / `desc()` helpers on a known column, or resolve the direction to a literal: `input === "desc" ? "desc" : "asc"`.',
+  sortDirectionFix:
+    'Use Drizzle\'s `asc()` / `desc()` helpers on a known column, or resolve the direction to a literal: `input === "desc" ? "desc" : "asc"`.',
   documentationLink: 'https://orm.drizzle.team/docs/sql',
 });

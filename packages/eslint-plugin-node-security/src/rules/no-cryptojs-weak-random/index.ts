@@ -12,7 +12,11 @@
  * CVE-2020-36732: crypto-js < 3.2.1 used Math.random() for crypto operations
  * @see https://nvd.nist.gov/vuln/detail/CVE-2020-36732
  */
-import type { ModuleBinding, TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import type {
+  ModuleBinding,
+  TSESLint,
+  TSESTree,
+} from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -25,8 +29,7 @@ import {
 import { resolveConstantString } from '../../utils/const-value';
 import { findVariable } from '../../utils/provenance';
 
-type MessageIds =
-  | 'weakRandom';
+type MessageIds = 'weakRandom';
 
 type SourceCode = TSESLint.SourceCode;
 
@@ -55,7 +58,9 @@ function isCryptoJs(module: string): boolean {
  * covers every way a file can carry the generator to its call site.
  */
 function endsWithWordArrayRandom(path: readonly string[]): boolean {
-  return path.length >= 2 && path.at(-2) === 'WordArray' && path.at(-1) === 'random';
+  return (
+    path.length >= 2 && path.at(-2) === 'WordArray' && path.at(-1) === 'random'
+  );
 }
 
 /**
@@ -121,17 +126,22 @@ function syntacticPath(
  *    whole path must match, so a bare `WordArray.random()` — a name and nothing
  *    else — no longer counts.
  */
-function isWeakRandomCall(sourceCode: SourceCode, callee: TSESTree.Node): boolean {
+function isWeakRandomCall(
+  sourceCode: SourceCode,
+  callee: TSESTree.Node,
+): boolean {
   const binding = resolveBinding(sourceCode, callee);
   if (binding !== undefined) {
     return isCryptoJs(binding.module) && endsWithWordArrayRandom(binding.path);
   }
 
   const spelled = syntacticPath(sourceCode, callee);
-  if (spelled === null || spelled.root.type !== AST_NODE_TYPES.Identifier) return false;
+  if (spelled === null || spelled.root.type !== AST_NODE_TYPES.Identifier)
+    return false;
   // A `/* global */` declaration carries no `defs`; a `const`, a `class` or a
   // parameter of the same name carries one, and that is a different value.
-  if ((findVariable(sourceCode, spelled.root)?.defs.length ?? 0) > 0) return false;
+  if ((findVariable(sourceCode, spelled.root)?.defs.length ?? 0) > 0)
+    return false;
   return (
     spelled.path.length === WEAK_RANDOM_PATH.length &&
     WEAK_RANDOM_PATH.every((segment, i) => spelled.path[i] === segment)
@@ -148,6 +158,7 @@ type RuleOptions = [Options?];
 export const noCryptojsWeakRandom = createRule<RuleOptions, MessageIds>({
   name: 'no-cryptojs-weak-random',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-cryptojs-weak-random.md',
@@ -160,12 +171,12 @@ export const noCryptojsWeakRandom = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Weak random in crypto-js',
         cwe: 'CWE-338',
-        description: 'CryptoJS.lib.WordArray.random() was insecure in versions < 3.2.1 (CVE-2020-36732). Used Math.random() instead of CSPRNG.',
+        description:
+          'CryptoJS.lib.WordArray.random() was insecure in versions < 3.2.1 (CVE-2020-36732). Used Math.random() instead of CSPRNG.',
         severity: 'CRITICAL',
         fix: 'Use crypto.randomBytes() from Node.js or crypto.getRandomValues() in browsers',
         documentationLink: 'https://nvd.nist.gov/vuln/detail/CVE-2020-36732',
       }),
-
     },
     schema: [
       {
@@ -186,14 +197,11 @@ export const noCryptojsWeakRandom = createRule<RuleOptions, MessageIds>({
       allowInTests: false,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    currentOptions,
   ) {
-    const { allowInTests = false } = options as Options;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
+    let isTestFile: boolean;
 
     function checkCallExpression(node: TSESTree.CallExpression) {
       if (isTestFile) return;
@@ -205,6 +213,13 @@ export const noCryptojsWeakRandom = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = false } = options as Options;
+
+        const filename = context.filename;
+        isTestFile = allowInTests && isTestFilePath(filename);
+      },
       CallExpression: checkCallExpression,
     };
   },

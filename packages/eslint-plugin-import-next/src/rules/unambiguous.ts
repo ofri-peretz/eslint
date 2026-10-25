@@ -25,6 +25,10 @@ type RuleOptions = [];
 export const unambiguous = createRule<RuleOptions, MessageIds>({
   name: 'unambiguous',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/unambiguous',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/unambiguous.md',
@@ -38,8 +42,7 @@ export const unambiguous = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.ARCHITECTURE,
         issueName: 'Ambiguous Module',
         cwe: 'CWE-1078',
-        description:
-          'This file could be parsed as either a script or a module',
+        description: 'This file could be parsed as either a script or a module',
         severity: 'LOW',
         fix: 'Add an import, export, or "use strict" directive to clarify the parse goal',
         documentationLink:
@@ -50,10 +53,13 @@ export const unambiguous = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    let hasModuleSyntax = false;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let hasModuleSyntax: boolean;
 
     return {
+      before() {
+        hasModuleSyntax = false;
+      },
       ImportDeclaration() {
         hasModuleSyntax = true;
       },

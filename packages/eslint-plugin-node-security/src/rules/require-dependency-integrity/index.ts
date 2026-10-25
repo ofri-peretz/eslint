@@ -8,7 +8,11 @@
  * @fileoverview Require integrity hashes for external resources
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 import { resolveConstantString } from '../../utils/const-value';
@@ -34,7 +38,8 @@ type MessageIds = 'violationDetected';
 const RESOURCE_TAG = /<(script|link)\b(?:"[^"]*"|'[^']*'|[^>"'])*>/gi;
 
 /** `name="value"`, `name='value'` or `name=value` inside one tag. */
-const TAG_ATTRIBUTE = /(?:^|[\s/])([a-z][a-z0-9-]*)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi;
+const TAG_ATTRIBUTE =
+  /(?:^|[\s/])([a-z][a-z0-9-]*)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi;
 
 /** Host fragments that mark a URL as third-party-delivered. */
 const CDN_HOSTS = ['cdn.', 'cdnjs.', 'unpkg.', 'jsdelivr.'] as const;
@@ -94,7 +99,9 @@ function linkTakesIntegrity(attributes: Map<string, string>): boolean {
   const relations = rel.split(/\s+/);
   if (relations.some((value) => SRI_LINK_RELS.has(value))) return true;
   if (!relations.includes('preload')) return false;
-  return SRI_PRELOAD_DESTINATIONS.has((attributes.get('as') ?? '').toLowerCase());
+  return SRI_PRELOAD_DESTINATIONS.has(
+    (attributes.get('as') ?? '').toLowerCase(),
+  );
 }
 
 /**
@@ -144,6 +151,7 @@ type RuleOptions = [Options?];
 export const requireDependencyIntegrity = createRule<RuleOptions, MessageIds>({
   name: 'require-dependency-integrity',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/require-dependency-integrity.md',
@@ -156,16 +164,17 @@ export const requireDependencyIntegrity = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Missing SRI',
         cwe: 'CWE-494',
-        description: 'External resource loaded without integrity hash - supply chain risk',
+        description:
+          'External resource loaded without integrity hash - supply chain risk',
         severity: 'HIGH',
         fix: 'Add integrity="sha384-..." and crossorigin="anonymous" attributes',
         documentationLink: 'https://cwe.mitre.org/data/definitions/494.html',
-      })
+      }),
     },
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  createOnce(context) {
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
     }

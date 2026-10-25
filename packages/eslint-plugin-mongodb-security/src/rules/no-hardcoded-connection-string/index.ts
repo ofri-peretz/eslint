@@ -10,11 +10,18 @@
  * CWE-798: Hardcoded Credentials
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+} from '@interlace/eslint-devkit';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
 type MessageIds = 'hardcodedConnectionString';
-export interface Options { allowInTests?: boolean; }
+export interface Options {
+  allowInTests?: boolean;
+}
 type RuleOptions = [Options?];
 
 const MONGODB_URI_PATTERN = /mongodb(\+srv)?:\/\/.+/i;
@@ -22,9 +29,12 @@ const MONGODB_URI_PATTERN = /mongodb(\+srv)?:\/\/.+/i;
 export const noHardcodedConnectionString = createRule<RuleOptions, MessageIds>({
   name: 'no-hardcoded-connection-string',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
-      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-hardcoded-connection-string.md', description: 'Prevent hardcoded MongoDB connection strings with credentials',
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-hardcoded-connection-string.md',
+      description:
+        'Prevent hardcoded MongoDB connection strings with credentials',
       cwe: 'CWE-798',
       cvss: 7.5,
     },
@@ -40,29 +50,21 @@ export const noHardcodedConnectionString = createRule<RuleOptions, MessageIds>({
         documentationLink: 'https://cwe.mitre.org/data/definitions/798.html',
       }),
     },
-    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
+    schema: [
+      {
+        type: 'object',
+        properties: { allowInTests: { type: 'boolean', default: true } },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    // Every rule here is MongoDB-specific, and none of them could ask the
-    // file-level question: over the corpus, 47% of this plugin's findings were
-    // in files with no Mongo in them. `receiver.ts` discriminates by receiver
-    // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
-    // well as in a Mongoose one. Registering no visitors is both the gate and
-    // the cheap path.
-    if (!fileUsesMongo(context.sourceCode.ast)) return {};
-
-    const [options = {}] = context.options;
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const inTestFile = isTestFilePath(filename);
-
-    if (allowInTests && inTestFile) {
-      return {};
-    }
-
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     function checkLiteral(node: TSESTree.Literal) {
-      if (typeof node.value === 'string' && MONGODB_URI_PATTERN.test(node.value)) {
+      if (
+        typeof node.value === 'string' &&
+        MONGODB_URI_PATTERN.test(node.value)
+      ) {
         context.report({
           node,
           messageId: 'hardcodedConnectionString',
@@ -71,6 +73,25 @@ export const noHardcodedConnectionString = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        // Every rule here is MongoDB-specific, and none of them could ask the
+        // file-level question: over the corpus, 47% of this plugin's findings were
+        // in files with no Mongo in them. `receiver.ts` discriminates by receiver
+        // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
+        // well as in a Mongoose one. Registering no visitors is both the gate and
+        // the cheap path.
+        if (!fileUsesMongo(context.sourceCode.ast)) return false;
+
+        const [options = {}] = context.options;
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const inTestFile = isTestFilePath(filename);
+
+        if (allowInTests && inTestFile) {
+          return false;
+        }
+        return true;
+      },
       Literal: checkLiteral,
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
         if (node.quasis.length > 0) {

@@ -42,6 +42,7 @@ const reportedRoots = new Set<string>();
 export const lockFile = createRule<RuleOptions, MessageIds>({
   name: 'lock-file',
   meta: {
+    interop: { runtimes: ['eslint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/lock-file.md',
@@ -85,32 +86,12 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context) {
-    const fs = require('node:fs');
-    const path = require('node:path');
-
-    const options = context.options[0] || {};
-    // Omitting the option and writing `'any'` mean the same thing, so the
-    // schema's `default: 'any'` and this line agree by construction.
-    const packageManager: string = options.packageManager ?? 'any';
-
-    const lockFiles: Record<string, string> = {
-      npm: 'package-lock.json',
-      yarn: 'yarn.lock',
-      pnpm: 'pnpm-lock.yaml',
-    };
-
-    // Under `any`, accept ANY of the three common lock files; otherwise look
-    // only for the configured one. This avoids firing on every file in a
-    // pnpm/yarn monorepo just because the rule defaulted to package-lock.json.
-    const specific = packageManager !== 'any';
-    const targetLockFiles = specific
-      ? [lockFiles[packageManager]]
-      : Object.values(lockFiles);
-    const targetLockFile = specific
-      ? lockFiles[packageManager]
-      : 'package-lock.json | yarn.lock | pnpm-lock.yaml';
-    const reportedManager = packageManager;
+  createOnce(context) {
+    let fs: ReturnType<typeof require>;
+    let path: ReturnType<typeof require>;
+    let targetLockFiles: string[];
+    let targetLockFile: string;
+    let reportedManager: string;
 
     /**
      * The nearest ancestor directory containing any of `names`.
@@ -142,6 +123,33 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        fs = require('node:fs');
+        path = require('node:path');
+
+        const options = context.options[0] || {};
+        // Omitting the option and writing `'any'` mean the same thing, so the
+        // schema's `default: 'any'` and this line agree by construction.
+        const packageManager: string = options.packageManager ?? 'any';
+
+        const lockFiles: Record<string, string> = {
+          npm: 'package-lock.json',
+          yarn: 'yarn.lock',
+          pnpm: 'pnpm-lock.yaml',
+        };
+
+        // Under `any`, accept ANY of the three common lock files; otherwise look
+        // only for the configured one. This avoids firing on every file in a
+        // pnpm/yarn monorepo just because the rule defaulted to package-lock.json.
+        const specific = packageManager !== 'any';
+        targetLockFiles = specific
+          ? [lockFiles[packageManager]]
+          : Object.values(lockFiles);
+        targetLockFile = specific
+          ? lockFiles[packageManager]
+          : 'package-lock.json | yarn.lock | pnpm-lock.yaml';
+        reportedManager = packageManager;
+      },
       Program(node: TSESTree.Program) {
         const start = path.dirname(context.filename);
         // The lock-file search stops at the repository root: the nearest

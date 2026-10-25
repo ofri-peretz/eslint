@@ -93,8 +93,7 @@ this way, and no rule logic is copied to do it.
   search for `oxlint-plugin-*`. Our rules have run on oxlint since the
   `./oxlint` sub-export, but nothing is published under a name those people look
   for.
-- **An alias would already get the right IDs.** In oxlint@1.74.0 (the version
-  installed here), `getPluginName` reads the prefix from the plugin's
+- **An alias would already get the right IDs.** In oxlint (1.74.0 in the main checkout, and 1.88.0 in this branch's lockfile, with the same code in both), `getPluginName` reads the prefix from the plugin's
   `meta.name`, not from the package name. It then passes it through
   `normalizePluginName`, which strips `eslint-plugin-` and `oxlint-plugin-` the
   same way (`node_modules/oxlint/dist/lint.js`). Our `./oxlint` export sets

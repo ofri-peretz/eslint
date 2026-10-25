@@ -36,6 +36,7 @@ const DEPRECATED_METHODS = new Set(['createCipher', 'createDecipher']);
 export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
   name: 'no-deprecated-cipher-method',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-deprecated-cipher-method.md',
@@ -87,14 +88,11 @@ export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
       allowInTests: false,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = false } = options as Options;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
+    let isTestFile: boolean;
 
     function checkCallExpression(node: TSESTree.CallExpression) {
       if (isTestFile) return;
@@ -180,6 +178,13 @@ export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = false } = options as Options;
+
+        const filename = context.filename;
+        isTestFile = allowInTests && isTestFilePath(filename);
+      },
       CallExpression: checkCallExpression,
     };
   },

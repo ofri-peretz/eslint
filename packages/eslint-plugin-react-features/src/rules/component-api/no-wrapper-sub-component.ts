@@ -72,6 +72,7 @@ const isPascalCaseJsxName = (
 export const noWrapperSubComponent = createRule<RuleOptions, MessageIds>({
   name: 'no-wrapper-sub-component',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-wrapper-sub-component.md',
@@ -93,7 +94,7 @@ export const noWrapperSubComponent = createRule<RuleOptions, MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const checkFn = (
       node:
         | TSESTree.FunctionDeclaration

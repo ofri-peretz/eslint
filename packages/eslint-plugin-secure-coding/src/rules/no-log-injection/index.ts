@@ -440,6 +440,7 @@ function receiverName(
 export const noLogInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-log-injection',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-log-injection.md',
@@ -521,25 +522,11 @@ export const noLogInjection = createRule<RuleOptions, MessageIds>({
       additionalRequestProperties: [],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    // Read the raw user options rather than the defaults-merged second
-    // parameter: the merge always produces both keys, so a `?? []` on the
-    // merged object would have one arm no configuration can reach.
-    const options: Options = context.options[0] ?? {};
-
-    const receivers = new Set([
-      ...(options.loggerReceivers ?? DEFAULT_LOGGER_RECEIVERS),
-      ...(options.loggerNames ?? []),
-    ]);
-    const roots = new Set([
-      ...(options.requestRootNames ?? DEFAULT_REQUEST_ROOTS),
-      ...(options.requestRoots ?? []),
-    ]);
-    const requestProperties = new Set([
-      ...(options.requestProperties ?? DEFAULT_REQUEST_PROPERTIES),
-      ...(options.additionalRequestProperties ?? []),
-    ]);
-    const sourceCode = context.sourceCode;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let receivers: Set<string>;
+    let roots: Set<string>;
+    let requestProperties: Set<string>;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /** `console.info(…)`, `this.logger.warn(…)`, `fastify.log.error(…)`. */
     function isLoggingCall(node: TSESTree.CallExpression): boolean {
@@ -551,6 +538,26 @@ export const noLogInjection = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        // Read the raw user options rather than the defaults-merged second
+        // parameter: the merge always produces both keys, so a `?? []` on the
+        // merged object would have one arm no configuration can reach.
+        const options: Options = context.options[0] ?? {};
+
+        receivers = new Set([
+          ...(options.loggerReceivers ?? DEFAULT_LOGGER_RECEIVERS),
+          ...(options.loggerNames ?? []),
+        ]);
+        roots = new Set([
+          ...(options.requestRootNames ?? DEFAULT_REQUEST_ROOTS),
+          ...(options.requestRoots ?? []),
+        ]);
+        requestProperties = new Set([
+          ...(options.requestProperties ?? DEFAULT_REQUEST_PROPERTIES),
+          ...(options.additionalRequestProperties ?? []),
+        ]);
+        sourceCode = context.sourceCode;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (!isLoggingCall(node)) return;
 

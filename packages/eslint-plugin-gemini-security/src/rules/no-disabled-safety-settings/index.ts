@@ -74,6 +74,7 @@ function isSafetySetting(property: TSESTree.Property): boolean {
 export const noDisabledSafetySettings = createRule<[], MessageIds>({
   name: 'no-disabled-safety-settings',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-gemini-security/docs/rules/no-disabled-safety-settings.md',
@@ -100,11 +101,8 @@ export const noDisabledSafetySettings = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    // Asked once, up front, over the whole AST, so the verdict no longer
-    // depends on the SDK being loaded in one of two spellings.
-    if (!fileUsesGemini(context.sourceCode.ast)) return {};
-    const sourceCode = context.sourceCode;
+  createOnce(context) {
+    let sourceCode: typeof context.sourceCode;
 
     /**
      * The disabling constant a threshold resolves to, and whether that
@@ -133,6 +131,13 @@ export const noDisabledSafetySettings = createRule<[], MessageIds>({
     }
 
     return {
+      before() {
+        // Asked once, up front, over the whole AST, so the verdict no longer
+        // depends on the SDK being loaded in one of two spellings.
+        if (!fileUsesGemini(context.sourceCode.ast)) return false;
+        sourceCode = context.sourceCode;
+        return true;
+      },
       Property(node: TSESTree.Property) {
         if (objectKeyName(node) !== THRESHOLD_PROP) return;
         if (node.parent.type !== 'ObjectExpression') return;

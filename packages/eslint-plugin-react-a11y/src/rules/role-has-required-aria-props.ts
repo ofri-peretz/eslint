@@ -25,6 +25,10 @@ type RuleOptions = [];
 export const roleHasRequiredAriaProps = createRule<RuleOptions, MessageIds>({
   name: 'role-has-required-aria-props',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/role-has-required-aria-props',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/role-has-required-aria-props.md',
@@ -47,7 +51,7 @@ export const roleHasRequiredAriaProps = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         const roleAttr = node.attributes.find(

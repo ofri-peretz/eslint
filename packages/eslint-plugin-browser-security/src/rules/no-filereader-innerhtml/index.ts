@@ -69,6 +69,7 @@ function readsFileReaderResult(node: TSESTree.Node): boolean {
 export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
   name: 'no-filereader-innerhtml',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-filereader-innerhtml.md',
@@ -106,24 +107,29 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
-    // Ownership gate: this rule reports only what the resolver attributes
-    // to the filereader source. Everything it cannot identify belongs to the
-    // generic sink rule, so no value is ever reported by both.
-    const payloadSource = createPayloadResolver(context.sourceCode);
+    let payloadSource: ReturnType<typeof createPayloadResolver>;
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+
+        // Ownership gate: this rule reports only what the resolver attributes
+        // to the filereader source. Everything it cannot identify belongs to the
+        // generic sink rule, so no value is ever reported by both.
+        payloadSource = createPayloadResolver(context.sourceCode);
+        return true;
+      },
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         // No `inFileReaderHandler` gate. A nested handler overwrote the single
         // mutable `eventParamName`, and its exit cleared the OUTER handler's

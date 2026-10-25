@@ -34,15 +34,30 @@ const threshold = args.includes('--threshold')
   : 80;
 
 const SECURITY_PLUGINS = [
-  'browser-security', 'crypto', 'express-security', 'jwt',
-  'lambda-security', 'mongodb-security', 'nestjs-security',
-  'node-security', 'pg', 'secure-coding', 'vercel-ai-security',
+  'browser-security',
+  'crypto',
+  'express-security',
+  'jwt',
+  'lambda-security',
+  'mongodb-security',
+  'nestjs-security',
+  'node-security',
+  'pg',
+  'secure-coding',
+  'vercel-ai-security',
 ];
 
 // ── Static Analysis Engine ───────────────────────────────────────────
 
 function auditRule(pluginName: string, ruleName: string): any {
-  const ruleDir = path.join(ROOT, 'packages', `eslint-plugin-${pluginName}`, 'src', 'rules', ruleName);
+  const ruleDir = path.join(
+    ROOT,
+    'packages',
+    `eslint-plugin-${pluginName}`,
+    'src',
+    'rules',
+    ruleName,
+  );
   const ruleFile = path.join(ruleDir, 'index.ts');
   const testFileCandidates = [
     path.join(ruleDir, `${ruleName}.test.ts`),
@@ -58,8 +73,10 @@ function auditRule(pluginName: string, ruleName: string): any {
   const lines = source.split('\n');
 
   // Merge ALL test files — rules may have both .test.ts (scaffold) and .spec.ts (comprehensive)
-  const existingTestFiles = testFileCandidates.filter(f => fs.existsSync(f));
-  const testSource = existingTestFiles.map(f => fs.readFileSync(f, 'utf-8')).join('\n');
+  const existingTestFiles = testFileCandidates.filter((f) => fs.existsSync(f));
+  const testSource = existingTestFiles
+    .map((f) => fs.readFileSync(f, 'utf-8'))
+    .join('\n');
 
   const result = {
     rule: `${pluginName}/${ruleName}`,
@@ -102,7 +119,8 @@ function analyzeMeta(source, result) {
     result.violations.push({
       id: 'META_NO_SUGGESTIONS',
       severity: 'ERROR',
-      message: 'Missing hasSuggestions: true — rule provides no IDE remediation guidance',
+      message:
+        'Missing hasSuggestions: true — rule provides no IDE remediation guidance',
       fix: 'Add hasSuggestions: true to meta and a suggestion messageId',
     });
     result.score -= 10;
@@ -161,7 +179,10 @@ function analyzeGuards(lines, testSource, result) {
     const lineNum = i + 1;
 
     // Early returns that bail out of detection
-    if (line.match(/^\s*(if\s*\(|return\s*;|return\s*\{|continue\s*;)/) && isInsideCreate(lines, i)) {
+    if (
+      line.match(/^\s*(if\s*\(|return\s*;|return\s*\{|continue\s*;)/) &&
+      isInsideCreate(lines, i)
+    ) {
       // Check if it's a guard (return/continue after condition check)
       const context = lines.slice(Math.max(0, i - 2), i + 3).join('\n');
 
@@ -184,7 +205,7 @@ function analyzeGuards(lines, testSource, result) {
       severity: 'WARN',
       message: `${guards.length} guard conditions but only ${validCases} valid test cases — some safe patterns may not be recognized (FP risk)`,
       fix: `Add valid test cases that exercise each guard. ${guards.length - validCases} guards may be untested.`,
-      details: guards.slice(0, 5).map(g => `L${g.line}: ${g.code}`),
+      details: guards.slice(0, 5).map((g) => `L${g.line}: ${g.code}`),
     });
     result.score -= Math.min(15, (guards.length - validCases) * 3);
   }
@@ -203,7 +224,11 @@ function analyzeDetections(lines, testSource, result) {
     const line = lines[i].trim();
     const lineNum = i + 1;
 
-    if (line.includes('context.report') || line.includes('report({') || line.includes("report(node")) {
+    if (
+      line.includes('context.report') ||
+      line.includes('report({') ||
+      line.includes('report(node')
+    ) {
       // Find the messageId
       const ctx = lines.slice(i, Math.min(lines.length, i + 5)).join('\n');
       const msgMatch = ctx.match(/messageId:\s*['"]([^'"]+)['"]/);
@@ -249,13 +274,16 @@ function analyzeDetections(lines, testSource, result) {
 }
 
 function analyzeVisitors(source, testSource, result) {
-  const createMatch = source.match(/create\s*\([^)]*\)\s*\{[\s\S]*?return\s*\{([\s\S]*?)\};/);
+  const createMatch = source.match(
+    /create(?:Once)?\s*\([^)]*\)\s*\{[\s\S]*?return\s*\{([\s\S]*?)\};/,
+  );
 
   if (!createMatch) {
     result.info.push({
       id: 'VISITOR_PARSE_FAIL',
       severity: 'INFO',
-      message: 'Could not parse visitor map — rule may use non-standard structure',
+      message:
+        'Could not parse visitor map — rule may use non-standard structure',
     });
     return;
   }
@@ -336,20 +364,60 @@ function analyzeEdgeCases(testSource, result) {
   if (!testSource) return;
 
   const EDGE_CATEGORIES = [
-    { name: 'Aliased imports', patterns: ['require(', 'as ', 'import {'], risk: 'FN', id: 'EDGE_ALIAS' },
-    { name: 'Destructured APIs', patterns: ['const {', 'const ['], risk: 'FN', id: 'EDGE_DESTRUCTURE' },
-    { name: 'Variable indirection', patterns: ['const cmd =', 'const query =', 'const url =', 'let '], risk: 'FN', id: 'EDGE_INDIRECTION' },
-    { name: 'Template literals', patterns: ['`${', '\\`\\${'], risk: 'FN', id: 'EDGE_TEMPLATE' },
-    { name: 'Async/await', patterns: ['async ', 'await '], risk: 'FN', id: 'EDGE_ASYNC' },
-    { name: 'TypeScript generics', patterns: ['<T>', '<User>', '<any>'], risk: 'FP', id: 'EDGE_GENERICS' },
-    { name: 'Nullish/optional', patterns: ['?.', '??', 'undefined', 'null'], risk: 'FP', id: 'EDGE_NULLISH' },
-    { name: 'Empty arguments', patterns: ['()', 'args.length === 0', '.length === 0'], risk: 'FP', id: 'EDGE_EMPTY' },
+    {
+      name: 'Aliased imports',
+      patterns: ['require(', 'as ', 'import {'],
+      risk: 'FN',
+      id: 'EDGE_ALIAS',
+    },
+    {
+      name: 'Destructured APIs',
+      patterns: ['const {', 'const ['],
+      risk: 'FN',
+      id: 'EDGE_DESTRUCTURE',
+    },
+    {
+      name: 'Variable indirection',
+      patterns: ['const cmd =', 'const query =', 'const url =', 'let '],
+      risk: 'FN',
+      id: 'EDGE_INDIRECTION',
+    },
+    {
+      name: 'Template literals',
+      patterns: ['`${', '\\`\\${'],
+      risk: 'FN',
+      id: 'EDGE_TEMPLATE',
+    },
+    {
+      name: 'Async/await',
+      patterns: ['async ', 'await '],
+      risk: 'FN',
+      id: 'EDGE_ASYNC',
+    },
+    {
+      name: 'TypeScript generics',
+      patterns: ['<T>', '<User>', '<any>'],
+      risk: 'FP',
+      id: 'EDGE_GENERICS',
+    },
+    {
+      name: 'Nullish/optional',
+      patterns: ['?.', '??', 'undefined', 'null'],
+      risk: 'FP',
+      id: 'EDGE_NULLISH',
+    },
+    {
+      name: 'Empty arguments',
+      patterns: ['()', 'args.length === 0', '.length === 0'],
+      risk: 'FP',
+      id: 'EDGE_EMPTY',
+    },
   ];
 
   const missing = [];
 
   for (const cat of EDGE_CATEGORIES) {
-    const found = cat.patterns.some(p => testSource.includes(p));
+    const found = cat.patterns.some((p) => testSource.includes(p));
     if (!found) {
       missing.push(cat);
     }
@@ -359,8 +427,14 @@ function analyzeEdgeCases(testSource, result) {
     result.warnings.push({
       id: 'EDGE_MISSING',
       severity: 'WARN',
-      message: `${missing.length}/8 edge case categories not tested: ${missing.map(m => m.name).join(', ')}`,
-      fix: `Add test cases for: ${missing.filter(m => m.risk === 'FN').map(m => m.name).join(', ')} (FN risk) and ${missing.filter(m => m.risk === 'FP').map(m => m.name).join(', ')} (FP risk)`,
+      message: `${missing.length}/8 edge case categories not tested: ${missing.map((m) => m.name).join(', ')}`,
+      fix: `Add test cases for: ${missing
+        .filter((m) => m.risk === 'FN')
+        .map((m) => m.name)
+        .join(', ')} (FN risk) and ${missing
+        .filter((m) => m.risk === 'FP')
+        .map((m) => m.name)
+        .join(', ')} (FP risk)`,
     });
     result.score -= missing.length;
   }
@@ -408,7 +482,13 @@ function getRulesToAudit() {
 
   if (fleetMode) {
     for (const plugin of SECURITY_PLUGINS) {
-      const rulesDir = path.join(ROOT, 'packages', `eslint-plugin-${plugin}`, 'src', 'rules');
+      const rulesDir = path.join(
+        ROOT,
+        'packages',
+        `eslint-plugin-${plugin}`,
+        'src',
+        'rules',
+      );
       if (!fs.existsSync(rulesDir)) continue;
       for (const dir of fs.readdirSync(rulesDir)) {
         if (fs.existsSync(path.join(rulesDir, dir, 'index.ts'))) {
@@ -419,9 +499,11 @@ function getRulesToAudit() {
     return rules;
   }
 
-  const target = args.find(a => !a.startsWith('--'));
+  const target = args.find((a) => !a.startsWith('--'));
   if (!target) {
-    console.error('Usage: tsx scripts/audit-rule.ts <plugin>/<rule> | <plugin> --all | --fleet');
+    console.error(
+      'Usage: tsx scripts/audit-rule.ts <plugin>/<rule> | <plugin> --all | --fleet',
+    );
     process.exit(1);
   }
 
@@ -431,8 +513,17 @@ function getRulesToAudit() {
   }
 
   if (allMode) {
-    const rulesDir = path.join(ROOT, 'packages', `eslint-plugin-${target}`, 'src', 'rules');
-    if (!fs.existsSync(rulesDir)) { console.error(`Plugin not found: ${target}`); process.exit(1); }
+    const rulesDir = path.join(
+      ROOT,
+      'packages',
+      `eslint-plugin-${target}`,
+      'src',
+      'rules',
+    );
+    if (!fs.existsSync(rulesDir)) {
+      console.error(`Plugin not found: ${target}`);
+      process.exit(1);
+    }
     for (const dir of fs.readdirSync(rulesDir)) {
       if (fs.existsSync(path.join(rulesDir, dir, 'index.ts'))) {
         rules.push({ plugin: target, rule: dir });
@@ -467,7 +558,7 @@ for (const { plugin, rule } of rulesToAudit) {
       for (const v of result.violations) {
         console.log(`    ❌ [${v.id}] ${v.message}`);
         if (v.fix) console.log(`       Fix: ${v.fix}`);
-        if (v.details) v.details.forEach(d => console.log(`       · ${d}`));
+        if (v.details) v.details.forEach((d) => console.log(`       · ${d}`));
       }
       console.log();
     }
@@ -477,7 +568,7 @@ for (const { plugin, rule } of rulesToAudit) {
       for (const w of result.warnings) {
         console.log(`    ⚠️  [${w.id}] ${w.message}`);
         if (w.fix) console.log(`       Fix: ${w.fix}`);
-        if (w.details) w.details.forEach(d => console.log(`       · ${d}`));
+        if (w.details) w.details.forEach((d) => console.log(`       · ${d}`));
       }
       console.log();
     }
@@ -497,7 +588,14 @@ if (!jsonOutput && (fleetMode || allMode)) {
   const byPlugin = {};
   for (const r of allResults) {
     const plugin = r.rule.split('/')[0];
-    if (!byPlugin[plugin]) byPlugin[plugin] = { total: 0, passing: 0, violations: 0, warnings: 0, scores: [] };
+    if (!byPlugin[plugin])
+      byPlugin[plugin] = {
+        total: 0,
+        passing: 0,
+        violations: 0,
+        warnings: 0,
+        scores: [],
+      };
     byPlugin[plugin].total++;
     byPlugin[plugin].scores.push(r.score);
     byPlugin[plugin].violations += r.violations?.length || 0;
@@ -505,54 +603,94 @@ if (!jsonOutput && (fleetMode || allMode)) {
     if (r.score >= 70) byPlugin[plugin].passing++;
   }
 
-  for (const [plugin, stats] of (Object.entries(byPlugin) as Array<[string, any]>).sort((a, b) => {
-    const avgA = a[1].scores.reduce((s: number, v: number) => s + v, 0) / a[1].scores.length;
-    const avgB = b[1].scores.reduce((s: number, v: number) => s + v, 0) / b[1].scores.length;
+  for (const [plugin, stats] of (
+    Object.entries(byPlugin) as Array<[string, any]>
+  ).sort((a, b) => {
+    const avgA =
+      a[1].scores.reduce((s: number, v: number) => s + v, 0) /
+      a[1].scores.length;
+    const avgB =
+      b[1].scores.reduce((s: number, v: number) => s + v, 0) /
+      b[1].scores.length;
     return avgA - avgB;
   })) {
-    const avg = Math.round(stats.scores.reduce((s, v) => s + v, 0) / stats.scores.length);
+    const avg = Math.round(
+      stats.scores.reduce((s, v) => s + v, 0) / stats.scores.length,
+    );
     const icon = avg >= 90 ? '✅' : avg >= 70 ? '🟡' : '🔴';
-    console.log(`  ${icon} ${plugin}: avg=${avg} | ${stats.passing}/${stats.total} passing | ${stats.violations} violations | ${stats.warnings} warnings`);
+    console.log(
+      `  ${icon} ${plugin}: avg=${avg} | ${stats.passing}/${stats.total} passing | ${stats.violations} violations | ${stats.warnings} warnings`,
+    );
 
     // Show worst rules
     const worstRules = [...allResults]
-      .filter(r => r.rule.startsWith(plugin + '/'))
+      .filter((r) => r.rule.startsWith(plugin + '/'))
       .sort((a, b) => a.score - b.score)
       .slice(0, 3)
-      .filter(r => r.score < 80);
+      .filter((r) => r.score < 80);
 
     for (const wr of worstRules) {
       const ruleName = wr.rule.split('/')[1];
       const topViolation = wr.violations[0];
-      console.log(`     └─ ${ruleName}: ${wr.score}/100 ${topViolation ? `— ${topViolation.id}` : ''}`);
+      console.log(
+        `     └─ ${ruleName}: ${wr.score}/100 ${topViolation ? `— ${topViolation.id}` : ''}`,
+      );
     }
   }
 
-  const totalViolations = allResults.reduce((s, r) => s + (r.violations?.length || 0), 0);
-  const totalWarnings = allResults.reduce((s, r) => s + (r.warnings?.length || 0), 0);
-  const avgScore = Math.round(allResults.reduce((s, r) => s + r.score, 0) / allResults.length);
+  const totalViolations = allResults.reduce(
+    (s, r) => s + (r.violations?.length || 0),
+    0,
+  );
+  const totalWarnings = allResults.reduce(
+    (s, r) => s + (r.warnings?.length || 0),
+    0,
+  );
+  const avgScore = Math.round(
+    allResults.reduce((s, r) => s + r.score, 0) / allResults.length,
+  );
 
   console.log(`\n${'─'.repeat(60)}`);
-  console.log(`  Fleet: ${allResults.length} rules | avg score: ${avgScore}/100`);
+  console.log(
+    `  Fleet: ${allResults.length} rules | avg score: ${avgScore}/100`,
+  );
   console.log(`  Violations: ${totalViolations} | Warnings: ${totalWarnings}`);
   console.log(`${'─'.repeat(60)}\n`);
 }
 
 if (jsonOutput) {
-  console.log(JSON.stringify({
-    timestamp: new Date().toISOString(),
-    rulesAudited: allResults.length,
-    avgScore: Math.round(allResults.reduce((s, r) => s + r.score, 0) / allResults.length),
-    totalViolations: allResults.reduce((s, r) => s + (r.violations?.length || 0), 0),
-    totalWarnings: allResults.reduce((s, r) => s + (r.warnings?.length || 0), 0),
-    results: allResults,
-  }, null, 2));
+  console.log(
+    JSON.stringify(
+      {
+        timestamp: new Date().toISOString(),
+        rulesAudited: allResults.length,
+        avgScore: Math.round(
+          allResults.reduce((s, r) => s + r.score, 0) / allResults.length,
+        ),
+        totalViolations: allResults.reduce(
+          (s, r) => s + (r.violations?.length || 0),
+          0,
+        ),
+        totalWarnings: allResults.reduce(
+          (s, r) => s + (r.warnings?.length || 0),
+          0,
+        ),
+        results: allResults,
+      },
+      null,
+      2,
+    ),
+  );
 }
 
 if (ciMode) {
-  const avgScore = Math.round(allResults.reduce((s, r) => s + r.score, 0) / allResults.length);
+  const avgScore = Math.round(
+    allResults.reduce((s, r) => s + r.score, 0) / allResults.length,
+  );
   if (avgScore < threshold) {
-    console.error(`\n❌ Average audit score ${avgScore} is below threshold ${threshold}`);
+    console.error(
+      `\n❌ Average audit score ${avgScore} is below threshold ${threshold}`,
+    );
     process.exit(1);
   }
 }

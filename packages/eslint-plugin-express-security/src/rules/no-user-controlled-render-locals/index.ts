@@ -91,6 +91,7 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
   {
     name: 'no-user-controlled-render-locals',
     meta: {
+      interop: { runtimes: ['eslint', 'oxlint'] },
       type: 'problem',
       hasSuggestions: true,
       docs: {
@@ -140,22 +141,12 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
       ],
     },
     defaultOptions: [{}],
-    create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-      // Every rule here is Express-specific, and none of them knew it: over
-      // 107,382 files, 75% of this plugin's findings were in files with no
-      // Express import. Registering no visitors is both the gate and the cheap
-      // path — a file with no Express in it does no work.
-      if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-      const { allowSanitizers } = options as Options;
-      const sanitizers = new Set(allowSanitizers ?? []);
-
-      /**
-       * Single-assignment tracking keyed by the RESOLVED scope variable, not by
-       * name — two handlers in the same file can each declare `locals`, and a
-       * name-keyed map would leak the first one's origin into the second.
-       */
-      const trackedVars = new Map<TSESLint.Scope.Variable, TrackedSource>();
+    createOnce(
+      context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+      currentOptions,
+    ) {
+      let sanitizers: Set<string>;
+      let trackedVars: Map<TSESLint.Scope.Variable, TrackedSource>;
 
       /** The scope variable an identifier resolves to, or null if unresolved. */
       function resolveVariable(
@@ -381,6 +372,25 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
       }
 
       return {
+        before() {
+          const [options] = currentOptions();
+          // Every rule here is Express-specific, and none of them knew it: over
+          // 107,382 files, 75% of this plugin's findings were in files with no
+          // Express import. Registering no visitors is both the gate and the cheap
+          // path — a file with no Express in it does no work.
+          if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+          const { allowSanitizers } = options as Options;
+          sanitizers = new Set(allowSanitizers ?? []);
+
+          /**
+           * Single-assignment tracking keyed by the RESOLVED scope variable, not by
+           * name — two handlers in the same file can each declare `locals`, and a
+           * name-keyed map would leak the first one's origin into the second.
+           */
+          trackedVars = new Map<TSESLint.Scope.Variable, TrackedSource>();
+          return true;
+        },
         VariableDeclarator(node: TSESTree.VariableDeclarator) {
           // Destructuring (const { title } = req.body) IS field-picking — safe.
           if (node.id.type !== AST_NODE_TYPES.Identifier) return;

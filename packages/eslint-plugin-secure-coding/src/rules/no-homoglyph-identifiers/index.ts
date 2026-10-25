@@ -240,6 +240,7 @@ function invisibleIn(
 export const noHomoglyphIdentifiers = createRule<RuleOptions, MessageIds>({
   name: 'no-homoglyph-identifiers',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-homoglyph-identifiers.md',
@@ -293,12 +294,9 @@ export const noHomoglyphIdentifiers = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ checkIdentifiers: true, checkStrings: true }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    // Raw user options, not the defaults-merged copy: the merge always fills
-    // both keys, which would leave one arm of each `??` unreachable.
-    const options: Options = context.options[0] ?? {};
-    const checkIdentifiers = options.checkIdentifiers ?? true;
-    const checkStrings = options.checkStrings ?? true;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let checkIdentifiers: boolean;
+    let checkStrings: boolean;
 
     function checkName(
       node: TSESTree.Identifier | TSESTree.PrivateIdentifier,
@@ -333,6 +331,13 @@ export const noHomoglyphIdentifiers = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        // Raw user options, not the defaults-merged copy: the merge always fills
+        // both keys, which would leave one arm of each `??` unreachable.
+        const options: Options = context.options[0] ?? {};
+        checkIdentifiers = options.checkIdentifiers ?? true;
+        checkStrings = options.checkStrings ?? true;
+      },
       Identifier: checkName,
       PrivateIdentifier: checkName,
 

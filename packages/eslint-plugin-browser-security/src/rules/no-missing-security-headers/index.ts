@@ -671,6 +671,7 @@ function isResponseInit(init: TSESTree.ObjectExpression): boolean {
 export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-security-headers',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     deprecated: true,
     replacedBy: ['@see eslint-plugin-express-security/require-helmet'],
@@ -716,23 +717,13 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
       ignoreInTests: true,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      requiredHeaders = DEFAULT_REQUIRED_HEADERS,
-      ignoreInTests = true,
-    }: Options = options || {};
-
-    const filename = context.filename;
-    const isTestFile = ignoreInTests && isTestFilePath(filename);
-
-    if (isTestFile) {
-      return {};
-    }
-
-    const reportedScopes = new Set<string>();
+    let requiredHeaders: string[];
+    let ignoreInTests: boolean;
+    let reportedScopes: Set<string>;
 
     /**
      * Get a unique key for the current scope
@@ -825,6 +816,21 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({ requiredHeaders = DEFAULT_REQUIRED_HEADERS, ignoreInTests = true } =
+          options || {});
+
+        const filename = context.filename;
+        const isTestFile = ignoreInTests && isTestFilePath(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+
+        reportedScopes = new Set<string>();
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const block = writeHeadHeaders(node);
         if (block !== null) {

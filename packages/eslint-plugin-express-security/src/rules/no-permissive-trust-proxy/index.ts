@@ -30,10 +30,7 @@
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
-import {
-  APP_RECEIVER_SCHEMA,
-  isAppReceiver,
-} from '../../utils/app-receiver';
+import { APP_RECEIVER_SCHEMA, isAppReceiver } from '../../utils/app-receiver';
 import {
   AST_NODE_TYPES,
   createRule,
@@ -65,7 +62,6 @@ const TRUST_PROXY = 'trust proxy';
 
 /** Receivers that are an Express application/router in practice. */
 
-
 function isAppMethodCall(
   node: TSESTree.CallExpression,
   method: string,
@@ -90,6 +86,7 @@ function isTrustProxyLiteral(node: TSESTree.Node | undefined): boolean {
 export const noPermissiveTrustProxy = createRule<RuleOptions, MessageIds>({
   name: 'no-permissive-trust-proxy',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     hasSuggestions: true,
     docs: {
@@ -130,15 +127,13 @@ export const noPermissiveTrustProxy = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const { hopCount, appReceiverNames } = options as Options;
-    const hops = hopCount ?? 1;
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let hopCount: number | undefined;
+    let appReceiverNames: string[] | undefined;
+    let hops: number;
 
     function report(node: TSESTree.Node, replacement: string): void {
       context.report({
@@ -157,6 +152,18 @@ export const noPermissiveTrustProxy = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        ({ hopCount, appReceiverNames } = options as Options);
+        hops = hopCount ?? 1;
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         // app.enable('trust proxy')
         if (isAppMethodCall(node, 'enable', appReceiverNames)) {

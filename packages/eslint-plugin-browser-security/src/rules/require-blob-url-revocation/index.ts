@@ -138,6 +138,7 @@ type RuleOptions = [Options?];
 export const requireBlobUrlRevocation = createRule<RuleOptions, MessageIds>({
   name: 'require-blob-url-revocation',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/require-blob-url-revocation.md',
@@ -169,29 +170,16 @@ export const requireBlobUrlRevocation = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
-    const sourceCode = context.sourceCode;
-
-    /** Handles owned by a binding (or, for an implicit global, by its name). */
-    const byOwner = new Map<HandleOwner, TSESTree.Node>();
-    /** Handles parked on a property path — `img.src`, `this.previewUrl`. */
-    const byPath = new Map<string, TSESTree.Node>();
-    /** Handles nothing in this file can ever reach again. */
-    const unreachable: TSESTree.Node[] = [];
-
-    const revokedOwners = new Set<HandleOwner>();
-    const revokedPaths = new Set<string>();
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let byOwner: Map<HandleOwner, TSESTree.Node>;
+    let byPath: Map<string, TSESTree.Node>;
+    let unreachable: TSESTree.Node[];
+    let revokedOwners: Set<HandleOwner>;
+    let revokedPaths: Set<string>;
 
     /** Record where a freshly created object URL was stored, if anywhere. */
     function trackCreation(node: TSESTree.CallExpression): void {
@@ -237,6 +225,29 @@ export const requireBlobUrlRevocation = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+
+        sourceCode = context.sourceCode;
+
+        /** Handles owned by a binding (or, for an implicit global, by its name). */
+        byOwner = new Map<HandleOwner, TSESTree.Node>();
+        /** Handles parked on a property path — `img.src`, `this.previewUrl`. */
+        byPath = new Map<string, TSESTree.Node>();
+        /** Handles nothing in this file can ever reach again. */
+        unreachable = [];
+
+        revokedOwners = new Set<HandleOwner>();
+        revokedPaths = new Set<string>();
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (isUrlMethod(node, 'createObjectURL')) trackCreation(node);
         if (isUrlMethod(node, 'revokeObjectURL')) trackRevocation(node);

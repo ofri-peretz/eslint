@@ -30,6 +30,10 @@ type RuleOptions = [Options?];
 export const ariaRole = createRule<RuleOptions, MessageIds>({
   name: 'aria-role',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/aria-role',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/aria-role.md',
@@ -65,13 +69,17 @@ export const ariaRole = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
-    const { allowedInvalidRoles = [] } = options ?? ({} as Options);
+    let allowedInvalidRoles: string[];
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        ({ allowedInvalidRoles = [] } = options ?? ({} as Options));
+      },
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (node.name.type !== 'JSXIdentifier' || node.name.name !== 'role') {
           return;

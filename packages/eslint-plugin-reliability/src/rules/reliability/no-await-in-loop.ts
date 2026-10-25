@@ -69,6 +69,10 @@ function onceEvaluatedSlot(loop: TSESTree.Node): string | null {
 export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
   name: 'no-await-in-loop',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'eslint/no-await-in-loop',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-reliability/docs/rules/no-await-in-loop.md',
@@ -147,9 +151,9 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
     { allowForOf: false, allowWhile: false, checkConcurrency: true },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const { allowForOf = false, allowWhile = false } = options || {};
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowForOf: boolean;
+    let allowWhile: boolean;
 
     function analyzeLoop(node: TSESTree.Node, loopType: string) {
       // Skip allowed loop types
@@ -348,6 +352,10 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({ allowForOf = false, allowWhile = false } = options || {});
+      },
       ForStatement(node: TSESTree.ForStatement) {
         analyzeLoop(node, 'ForStatement');
       },

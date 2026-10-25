@@ -30,7 +30,10 @@ ruleTester.run('no-weak-cipher-algorithm', noWeakCipherAlgorithm, {
       name: 'a modern cipher',
       code: `const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);`,
     },
-    `const cipher = crypto.createCipheriv('aes-128-gcm', key, iv);`,
+    {
+      code: `const cipher = crypto.createCipheriv('aes-128-gcm', key, iv);`,
+      name: 'AES-128-GCM is a modern authenticated cipher',
+    },
     `const cipher = crypto.createCipheriv('chacha20-poly1305', key, iv);`,
     `const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);`,
     // Non-crypto calls
@@ -48,35 +51,79 @@ ruleTester.run('no-weak-cipher-algorithm', noWeakCipherAlgorithm, {
     {
       name: 'DES',
       code: `const cipher = crypto.createCipheriv('des', key, iv);`,
-      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
-        { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
-        { messageId: 'useChaCha20', output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);` },
-      ]}],
+      errors: [
+        {
+          messageId: 'weakCipherAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useAes256Gcm',
+              output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);`,
+            },
+            {
+              messageId: 'useChaCha20',
+              output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);`,
+            },
+          ],
+        },
+      ],
     },
     {
       name: 'DES uppercase — the algorithm name is matched case-insensitively',
       code: `const cipher = crypto.createCipheriv('DES', key, iv);`,
-      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
-        { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
-        { messageId: 'useChaCha20', output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);` },
-      ]}],
+      errors: [
+        {
+          messageId: 'weakCipherAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useAes256Gcm',
+              output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);`,
+            },
+            {
+              messageId: 'useChaCha20',
+              output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);`,
+            },
+          ],
+        },
+      ],
     },
     // 3DES / Triple DES
     {
       name: 'des-ede3 is graded 3DES, not DES — the (?!-ede) lookahead keeps the two arms apart',
       code: `const cipher = crypto.createCipheriv('des-ede3', key, iv);`,
-      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
-        { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
-        { messageId: 'useChaCha20', output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);` },
-      ]}],
+      errors: [
+        {
+          messageId: 'weakCipherAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useAes256Gcm',
+              output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);`,
+            },
+            {
+              messageId: 'useChaCha20',
+              output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);`,
+            },
+          ],
+        },
+      ],
     },
     {
       name: '3des is reported even though Node rejects the spelling, so the arm stays wide',
       code: `const cipher = crypto.createCipheriv('3des', key, iv);`,
-      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
-        { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
-        { messageId: 'useChaCha20', output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);` },
-      ]}],
+      errors: [
+        {
+          messageId: 'weakCipherAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useAes256Gcm',
+              output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);`,
+            },
+            {
+              messageId: 'useChaCha20',
+              output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);`,
+            },
+          ],
+        },
+      ],
     },
     // `des3` is the spelling Node ACTUALLY accepts: it is in `crypto.getCiphers()`
     // and `createCipheriv('des3', …)` encrypts. The two spellings pinned above
@@ -88,100 +135,232 @@ ruleTester.run('no-weak-cipher-algorithm', noWeakCipherAlgorithm, {
     {
       name: 'des3 — the Triple-DES alias Node actually accepts — is reported',
       code: `const cipher = crypto.createCipheriv('des3', key, iv);`,
-      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
-        { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
-        { messageId: 'useChaCha20', output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);` },
-      ]}],
+      errors: [
+        {
+          messageId: 'weakCipherAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useAes256Gcm',
+              output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);`,
+            },
+            {
+              messageId: 'useChaCha20',
+              output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);`,
+            },
+          ],
+        },
+      ],
     },
     {
       name: 'DES3 uppercase is reported',
       code: `const cipher = crypto.createCipheriv('DES3', key, iv);`,
-      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
-        { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
-        { messageId: 'useChaCha20', output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);` },
-      ]}],
+      errors: [
+        {
+          messageId: 'weakCipherAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useAes256Gcm',
+              output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);`,
+            },
+            {
+              messageId: 'useChaCha20',
+              output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);`,
+            },
+          ],
+        },
+      ],
     },
     {
       name: 'des3-wrap, also a real Node Triple-DES cipher, is reported',
       code: `const cipher = crypto.createCipheriv('des3-wrap', key, iv);`,
-      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
-        { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
-        { messageId: 'useChaCha20', output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);` },
-      ]}],
+      errors: [
+        {
+          messageId: 'weakCipherAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useAes256Gcm',
+              output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);`,
+            },
+            {
+              messageId: 'useChaCha20',
+              output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);`,
+            },
+          ],
+        },
+      ],
     },
     // RC4
     {
       name: 'RC4',
       code: `const cipher = crypto.createCipheriv('rc4', key, iv);`,
-      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
-        { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
-        { messageId: 'useChaCha20', output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);` },
-      ]}],
+      errors: [
+        {
+          messageId: 'weakCipherAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useAes256Gcm',
+              output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);`,
+            },
+            {
+              messageId: 'useChaCha20',
+              output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);`,
+            },
+          ],
+        },
+      ],
     },
     // Blowfish
     {
       code: `const cipher = crypto.createCipheriv('blowfish', key, iv);`,
-      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
-        { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
-        { messageId: 'useChaCha20', output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);` },
-      ]}],
+      errors: [
+        {
+          messageId: 'weakCipherAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useAes256Gcm',
+              output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);`,
+            },
+            {
+              messageId: 'useChaCha20',
+              output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);`,
+            },
+          ],
+        },
+      ],
     },
     {
       code: `const cipher = crypto.createCipheriv('bf', key, iv);`,
-      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
-        { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
-        { messageId: 'useChaCha20', output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);` },
-      ]}],
+      errors: [
+        {
+          messageId: 'weakCipherAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useAes256Gcm',
+              output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);`,
+            },
+            {
+              messageId: 'useChaCha20',
+              output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);`,
+            },
+          ],
+        },
+      ],
     },
     // RC2
     {
       code: `const cipher = crypto.createCipheriv('rc2', key, iv);`,
-      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
-        { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
-        { messageId: 'useChaCha20', output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);` },
-      ]}],
+      errors: [
+        {
+          messageId: 'weakCipherAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useAes256Gcm',
+              output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);`,
+            },
+            {
+              messageId: 'useChaCha20',
+              output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);`,
+            },
+          ],
+        },
+      ],
     },
     // IDEA
     {
       code: `const cipher = crypto.createCipheriv('idea', key, iv);`,
-      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
-        { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
-        { messageId: 'useChaCha20', output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);` },
-      ]}],
+      errors: [
+        {
+          messageId: 'weakCipherAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useAes256Gcm',
+              output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);`,
+            },
+            {
+              messageId: 'useChaCha20',
+              output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);`,
+            },
+          ],
+        },
+      ],
     },
     // createCipher (deprecated)
     {
       code: `const cipher = crypto.createCipher('des', password);`,
-      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
-        { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipher("aes-256-gcm", password);` },
-        { messageId: 'useChaCha20', output: `const cipher = crypto.createCipher("chacha20-poly1305", password);` },
-      ]}],
+      errors: [
+        {
+          messageId: 'weakCipherAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useAes256Gcm',
+              output: `const cipher = crypto.createCipher("aes-256-gcm", password);`,
+            },
+            {
+              messageId: 'useChaCha20',
+              output: `const cipher = crypto.createCipher("chacha20-poly1305", password);`,
+            },
+          ],
+        },
+      ],
     },
     // createDecipher
     {
       code: `const decipher = crypto.createDecipheriv('rc4', key, iv);`,
-      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
-        { messageId: 'useAes256Gcm', output: `const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);` },
-        { messageId: 'useChaCha20', output: `const decipher = crypto.createDecipheriv("chacha20-poly1305", key, iv);` },
-      ]}],
+      errors: [
+        {
+          messageId: 'weakCipherAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useAes256Gcm',
+              output: `const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);`,
+            },
+            {
+              messageId: 'useChaCha20',
+              output: `const decipher = crypto.createDecipheriv("chacha20-poly1305", key, iv);`,
+            },
+          ],
+        },
+      ],
     },
     // Standalone calls
     {
       code: `const cipher = createCipheriv('des', key, iv);`,
-      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
-        { messageId: 'useAes256Gcm', output: `const cipher = createCipheriv("aes-256-gcm", key, iv);` },
-        { messageId: 'useChaCha20', output: `const cipher = createCipheriv("chacha20-poly1305", key, iv);` },
-      ]}],
+      errors: [
+        {
+          messageId: 'weakCipherAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useAes256Gcm',
+              output: `const cipher = createCipheriv("aes-256-gcm", key, iv);`,
+            },
+            {
+              messageId: 'useChaCha20',
+              output: `const cipher = createCipheriv("chacha20-poly1305", key, iv);`,
+            },
+          ],
+        },
+      ],
     },
     // Additional weak ciphers option
     {
       name: 'cast5 is outside the declared family list and is not reported',
       code: `const cipher = crypto.createCipheriv('cast5', key, iv);`,
       options: [{ additionalWeakCiphers: ['cast5'] }],
-      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
-        { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
-        { messageId: 'useChaCha20', output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);` },
-      ]}],
+      errors: [
+        {
+          messageId: 'weakCipherAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useAes256Gcm',
+              output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);`,
+            },
+            {
+              messageId: 'useChaCha20',
+              output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);`,
+            },
+          ],
+        },
+      ],
     },
   ],
 });
@@ -194,32 +373,57 @@ ruleTester.run('no-weak-cipher-algorithm', noWeakCipherAlgorithm, {
  * `firstArg.type === 'Literal'`, so an `Identifier` fell through. Both invalid
  * cases below are QUIET on the pre-fix rule.
  */
-ruleTester.run('no-weak-cipher-algorithm — algorithm held in a const', noWeakCipherAlgorithm, {
-  valid: [
-    // A `let` may be reassigned before the call, so its initializer is not the
-    // value that reaches the sink. Unresolved stays quiet.
-    `let algo = 'rc4'; algo = negotiate(); crypto.createCipheriv(algo, key, iv);`,
-    // A const holding a modern algorithm must not begin reporting.
-    `const CIPHER = 'aes-256-gcm'; crypto.createCipheriv(CIPHER, key, iv);`,
-    // Read from config: no literal anywhere, so no evidence.
-    `const CIPHER = config.cipher; crypto.createCipheriv(CIPHER, key, iv);`,
-  ],
-  invalid: [
-    {
-      name: 'a const-held algorithm name is resolved, so the docs mitigation still reports',
-      code: `const CIPHER_ALGORITHM = 'des-ede3-cbc';\ncrypto.createCipheriv(CIPHER_ALGORITHM, key, iv);`,
-      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
-        { messageId: 'useAes256Gcm', output: `const CIPHER_ALGORITHM = "aes-256-gcm";\ncrypto.createCipheriv(CIPHER_ALGORITHM, key, iv);` },
-        { messageId: 'useChaCha20', output: `const CIPHER_ALGORITHM = "chacha20-poly1305";\ncrypto.createCipheriv(CIPHER_ALGORITHM, key, iv);` },
-      ]}],
-    },
-    {
-      code: `const LEGACY = \`rc4\`;\nconst decipher = createDecipheriv(LEGACY, key, iv);`,
-      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
-        { messageId: 'useAes256Gcm', output: `const LEGACY = "aes-256-gcm";\nconst decipher = createDecipheriv(LEGACY, key, iv);` },
-        { messageId: 'useChaCha20', output: `const LEGACY = "chacha20-poly1305";\nconst decipher = createDecipheriv(LEGACY, key, iv);` },
-      ]}],
-    },
-  ],
-});
-
+ruleTester.run(
+  'no-weak-cipher-algorithm — algorithm held in a const',
+  noWeakCipherAlgorithm,
+  {
+    valid: [
+      // A `let` may be reassigned before the call, so its initializer is not the
+      // value that reaches the sink. Unresolved stays quiet.
+      `let algo = 'rc4'; algo = negotiate(); crypto.createCipheriv(algo, key, iv);`,
+      // A const holding a modern algorithm must not begin reporting.
+      `const CIPHER = 'aes-256-gcm'; crypto.createCipheriv(CIPHER, key, iv);`,
+      // Read from config: no literal anywhere, so no evidence.
+      `const CIPHER = config.cipher; crypto.createCipheriv(CIPHER, key, iv);`,
+    ],
+    invalid: [
+      {
+        name: 'a const-held algorithm name is resolved, so the docs mitigation still reports',
+        code: `const CIPHER_ALGORITHM = 'des-ede3-cbc';\ncrypto.createCipheriv(CIPHER_ALGORITHM, key, iv);`,
+        errors: [
+          {
+            messageId: 'weakCipherAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useAes256Gcm',
+                output: `const CIPHER_ALGORITHM = "aes-256-gcm";\ncrypto.createCipheriv(CIPHER_ALGORITHM, key, iv);`,
+              },
+              {
+                messageId: 'useChaCha20',
+                output: `const CIPHER_ALGORITHM = "chacha20-poly1305";\ncrypto.createCipheriv(CIPHER_ALGORITHM, key, iv);`,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        code: `const LEGACY = \`rc4\`;\nconst decipher = createDecipheriv(LEGACY, key, iv);`,
+        errors: [
+          {
+            messageId: 'weakCipherAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useAes256Gcm',
+                output: `const LEGACY = "aes-256-gcm";\nconst decipher = createDecipheriv(LEGACY, key, iv);`,
+              },
+              {
+                messageId: 'useChaCha20',
+                output: `const LEGACY = "chacha20-poly1305";\nconst decipher = createDecipheriv(LEGACY, key, iv);`,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+);

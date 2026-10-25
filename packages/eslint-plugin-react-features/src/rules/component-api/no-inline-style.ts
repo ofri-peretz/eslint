@@ -11,12 +11,19 @@
  * for genuinely dynamic values. Everything else belongs in Tailwind classes.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  staticString,
+} from '@interlace/eslint-devkit';
 
 type MessageIds = 'inlineStyle';
 type RuleOptions = [];
 
-const isCssVariableKey = (prop: TSESTree.Property | TSESTree.SpreadElement): boolean => {
+const isCssVariableKey = (
+  prop: TSESTree.Property | TSESTree.SpreadElement,
+): boolean => {
   if (prop.type !== 'Property') return false;
   const staticText = staticString(prop.key);
   if (staticText !== null) {
@@ -25,37 +32,47 @@ const isCssVariableKey = (prop: TSESTree.Property | TSESTree.SpreadElement): boo
   return false;
 };
 
-const isStaticLiteralValue = (prop: TSESTree.Property | TSESTree.SpreadElement): boolean => {
+const isStaticLiteralValue = (
+  prop: TSESTree.Property | TSESTree.SpreadElement,
+): boolean => {
   if (prop.type !== 'Property') return false;
   const v = prop.value;
-  return v.type === 'Literal' && (typeof v.value === 'string' || typeof v.value === 'number');
+  return (
+    v.type === 'Literal' &&
+    (typeof v.value === 'string' || typeof v.value === 'number')
+  );
 };
 
 export const noInlineStyle = createRule<RuleOptions, MessageIds>({
   name: 'no-inline-style',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-inline-style.md',
-      description: 'No inline `style={{}}` except for CSS-variable assignment (R18)',
+      description:
+        'No inline `style={{}}` except for CSS-variable assignment (R18)',
     },
     schema: [],
     messages: {
       inlineStyle: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Inline style prop',
-        description: 'Inline `style={{}}` with static value(s) — use Tailwind classes (R18)',
+        description:
+          'Inline `style={{}}` with static value(s) — use Tailwind classes (R18)',
         severity: 'MEDIUM',
         fix: 'Move the static value to a Tailwind class. Reserve inline style for CSS variables and computed dynamic values.',
-        documentationLink: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-inline-style.md',
+        documentationLink:
+          'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-inline-style.md',
       }),
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
-        if (node.name.type !== 'JSXIdentifier' || node.name.name !== 'style') return;
+        if (node.name.type !== 'JSXIdentifier' || node.name.name !== 'style')
+          return;
         if (!node.value || node.value.type !== 'JSXExpressionContainer') return;
         const expr = node.value.expression;
         if (expr.type !== 'ObjectExpression') return;

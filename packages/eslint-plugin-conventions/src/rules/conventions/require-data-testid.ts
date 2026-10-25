@@ -95,9 +95,7 @@ function hasEventHandler(node: TSESTree.JSXOpeningElement): boolean {
   });
 }
 
-function getJsxName(
-  name: TSESTree.JSXTagNameExpression,
-): string | undefined {
+function getJsxName(name: TSESTree.JSXTagNameExpression): string | undefined {
   if (name.type === 'JSXIdentifier') return name.name;
   if (name.type === 'JSXMemberExpression') {
     // Conservative: use the right-most segment. e.g. `<Card.Header />` → "Header"
@@ -108,7 +106,9 @@ function getJsxName(
   return undefined;
 }
 
-function hasDataTestId(node: TSESTree.JSXOpeningElement): TSESTree.JSXAttribute | null {
+function hasDataTestId(
+  node: TSESTree.JSXOpeningElement,
+): TSESTree.JSXAttribute | null {
   for (const attr of node.attributes) {
     if (attr.type !== 'JSXAttribute') continue;
     if (attr.name.type === 'JSXIdentifier' && attr.name.name === 'data-testid')
@@ -126,7 +126,8 @@ function hasSpreadingAllProps(node: TSESTree.JSXOpeningElement): boolean {
 
 function isStableValue(attr: TSESTree.JSXAttribute): boolean {
   if (!attr.value) return false; // <... data-testid />  — boolean shorthand
-  if (attr.value.type === 'Literal') return typeof attr.value.value === 'string';
+  if (attr.value.type === 'Literal')
+    return typeof attr.value.value === 'string';
   if (attr.value.type === 'JSXExpressionContainer') {
     const expr = attr.value.expression;
     if (expr.type === 'Literal') return typeof expr.value === 'string';
@@ -147,6 +148,7 @@ function isStableValue(attr: TSESTree.JSXAttribute): boolean {
 export const requireDataTestId = createRule<RuleOptions, MessageIds>({
   name: 'require-data-testid',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/require-data-testid.md',
@@ -225,22 +227,29 @@ export const requireDataTestId = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [opts],
+    currentOptions,
   ) {
-    const options = opts ?? {};
-    const requireOn = new Set(options.requireOn ?? []);
-    const ignore = new Set(options.ignore ?? []);
-    const componentPatternStr = options.componentPattern ?? '^[A-Z]';
-    const componentPattern = componentPatternStr
-      ? new RegExp(componentPatternStr)
-      : null;
-    const componentRequiresHandler =
-      options.componentRequiresHandler ?? true;
-    const enforceStableValues = options.enforceStableValues ?? true;
+    let requireOn: Set<string>;
+    let ignore: Set<string>;
+    let componentPattern: RegExp | null;
+    let componentRequiresHandler: boolean;
+    let enforceStableValues: boolean;
 
     return {
+      before() {
+        const [opts] = currentOptions();
+        const options = opts ?? {};
+        requireOn = new Set(options.requireOn ?? []);
+        ignore = new Set(options.ignore ?? []);
+        const componentPatternStr = options.componentPattern ?? '^[A-Z]';
+        componentPattern = componentPatternStr
+          ? new RegExp(componentPatternStr)
+          : null;
+        componentRequiresHandler = options.componentRequiresHandler ?? true;
+        enforceStableValues = options.enforceStableValues ?? true;
+      },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         const name = getJsxName(node.name);
         if (!name) return;

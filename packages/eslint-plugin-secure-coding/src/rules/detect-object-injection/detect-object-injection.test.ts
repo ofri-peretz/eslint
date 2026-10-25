@@ -91,7 +91,10 @@ describe('detect-object-injection', () => {
         { code: 'result[dstOffset++] = 1;' },
         { code: 'arr[i--] = 1;' },
         { code: 'const v = buffer[n - 1];' },
-        { code: 'const v = arr[a * b];' },
+        {
+          code: 'const v = arr[a * b];',
+          name: 'a read keyed by a product of numbers cannot pollute',
+        },
         { code: 'const v = arr[idx % len];' },
         { code: 'const v = arr[hi >> 1];' },
         { code: 'const v = arr[-offset];' },

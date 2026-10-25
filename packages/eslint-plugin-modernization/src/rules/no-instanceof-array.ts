@@ -24,20 +24,27 @@ type RuleOptions = [Options?];
 export const noInstanceofArray = createRule<RuleOptions, MessageIds>({
   name: 'no-instanceof-array',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'unicorn/no-instanceof-array',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modernization/docs/rules/no-instanceof-array.md',
-      description: 'Prefer Array.isArray() over instanceof Array for better cross-realm compatibility',
+      description:
+        'Prefer Array.isArray() over instanceof Array for better cross-realm compatibility',
     },
     hasSuggestions: false,
     messages: {
       noInstanceofArray: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Instanceof Array Check',
-        description: 'instanceof Array fails across realms - use Array.isArray() instead',
+        description:
+          'instanceof Array fails across realms - use Array.isArray() instead',
         severity: 'MEDIUM',
         fix: 'Replace "value instanceof Array" with "Array.isArray(value)" for cross-realm compatibility',
-        documentationLink: 'https://github.com/sindresorhus/eslint-plugin-unicorn/blob/main/docs/rules/no-instanceof-array.md',
+        documentationLink:
+          'https://github.com/sindresorhus/eslint-plugin-unicorn/blob/main/docs/rules/no-instanceof-array.md',
       }),
     },
     schema: [
@@ -56,11 +63,8 @@ export const noInstanceofArray = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allow: [] }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const { allow = [] } = options || {};
-
-    const allowedContexts = new Set(allow);
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowedContexts: Set<string>;
 
     // oxlint-disable-next-line consistent-function-scoping
     function isInstanceofArray(node: TSESTree.BinaryExpression): boolean {
@@ -85,6 +89,12 @@ export const noInstanceofArray = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        const { allow = [] } = options || {};
+
+        allowedContexts = new Set(allow);
+      },
       BinaryExpression(node: TSESTree.BinaryExpression) {
         if (isInstanceofArray(node) && !isInAllowedContext()) {
           context.report({

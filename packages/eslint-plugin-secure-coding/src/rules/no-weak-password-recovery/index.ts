@@ -85,6 +85,7 @@ const CREDENTIAL_GENERATORS: ReadonlySet<string> = new Set([
 export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
   name: 'no-weak-password-recovery',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-weak-password-recovery.md',
@@ -198,30 +199,27 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const {
-      secureTokenFunctions = [
-        'crypto.randomBytes',
-        'crypto.randomUUID',
-        'randomBytes',
-        'generateSecureToken',
-      ],
-      trustedSanitizers = [],
-      trustedAnnotations = ['secure-recovery', 'rate-limited'],
-      strictMode = false,
-    }: Options = options;
-
-    const sourceCode = context.sourceCode;
-    const filename = context.filename;
-
-    // Create safety checker for false positive detection
-    const safetyChecker = createSafetyChecker({
-      trustedSanitizers,
-      trustedAnnotations,
-      trustedOrmPatterns: [],
-      strictMode,
-    });
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let secureTokenFunctions: string[];
+    let trustedSanitizers: string[];
+    let trustedAnnotations: string[];
+    let strictMode: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let filename: string;
+    let safetyChecker: {
+      isSafe(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      isSanitized(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      hasAnnotation(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+    };
 
     /**
      * Check if code is specifically related to password recovery
@@ -448,6 +446,31 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({
+          secureTokenFunctions = [
+            'crypto.randomBytes',
+            'crypto.randomUUID',
+            'randomBytes',
+            'generateSecureToken',
+          ],
+          trustedSanitizers = [],
+          trustedAnnotations = ['secure-recovery', 'rate-limited'],
+          strictMode = false,
+        } = options);
+
+        sourceCode = context.sourceCode;
+        filename = context.filename;
+
+        // Create safety checker for false positive detection
+        safetyChecker = createSafetyChecker({
+          trustedSanitizers,
+          trustedAnnotations,
+          trustedOrmPatterns: [],
+          strictMode,
+        });
+      },
       // Check variable declarations for recovery tokens
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (!node.init || node.id.type !== 'Identifier') {

@@ -61,10 +61,7 @@ import {
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesNestjs } from '../../utils/nestjs-evidence';
-import {
-  expressionName,
-  objectProperties,
-} from '../../utils/nest-ast';
+import { expressionName, objectProperties } from '../../utils/nest-ast';
 
 type MessageIds = 'configNotInherited';
 
@@ -78,6 +75,7 @@ type RuleOptions = [Options?];
 export const noHybridAppConfigLoss = createRule<RuleOptions, MessageIds>({
   name: 'no-hybrid-app-config-loss',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/no-hybrid-app-config-loss.md',
@@ -113,14 +111,7 @@ export const noHybridAppConfigLoss = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context, [options = {}]) {
-    // Registering no visitors is both the gate and the cheap path: a file
-    // that does not use this SDK does no work at all.
-    if (!fileUsesNestjs(context.sourceCode.ast)) return {};
-
-    const { allowInTests = true } = options;
-    if (allowInTests && isTestFilePath(context.filename)) return {};
-
+  createOnce(context, currentOptions) {
     /**
      * Whether the hybrid options argument opts into inheritance.
      *
@@ -146,6 +137,16 @@ export const noHybridAppConfigLoss = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Registering no visitors is both the gate and the cheap path: a file
+        // that does not use this SDK does no work at all.
+        if (!fileUsesNestjs(context.sourceCode.ast)) return false;
+
+        const { allowInTests = true } = options;
+        if (allowInTests && isTestFilePath(context.filename)) return false;
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return;
         if (expressionName(node.callee) !== 'connectMicroservice') return;

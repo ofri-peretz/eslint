@@ -257,6 +257,7 @@ const DEFAULT_MIN_ITERATIONS = 100000;
 export const noInsecureKeyDerivation = createRule<RuleOptions, MessageIds>({
   name: 'no-insecure-key-derivation',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-insecure-key-derivation.md',
@@ -306,13 +307,12 @@ export const noInsecureKeyDerivation = createRule<RuleOptions, MessageIds>({
       minIterations: DEFAULT_MIN_ITERATIONS,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { minIterations = DEFAULT_MIN_ITERATIONS } = options as Options;
-
-    const sourceCode = context.sourceCode;
+    let minIterations: number;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /** Report at the count, raise the number where it is written. */
     function judgeIterations(iterationsArg: TSESTree.Node | undefined | null) {
@@ -387,6 +387,12 @@ export const noInsecureKeyDerivation = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({ minIterations = DEFAULT_MIN_ITERATIONS } = options as Options);
+
+        sourceCode = context.sourceCode;
+      },
       CallExpression: checkCallExpression,
     };
   },

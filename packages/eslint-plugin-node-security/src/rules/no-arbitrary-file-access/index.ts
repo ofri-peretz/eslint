@@ -47,6 +47,7 @@ type RuleOptions = [Options?];
 export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
   name: 'no-arbitrary-file-access',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-arbitrary-file-access.md',
@@ -68,45 +69,92 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    const sourceCode = context.sourceCode;
+  createOnce(context) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let fsMethods: Set<string>;
+    let userInputSources: Set<string>;
+    let bindings: Map<TSESLint.Scope.Variable, TSESTree.Node>;
+    let allCalls: TSESTree.CallExpression[];
+    let sanitizedVariables: Set<TSESLint.Scope.Variable | null>;
+
+    /**
+     * The export path a callee names on the `fs` module, `fs/promises` folded
+     * in as `['promises', …]`, or null.
+     *
+     * A receiver spelled `fs` still counts whatever it is bound to — the rule
+     * has always read that name, and a file that calls `fs.readFileSync`
+     * without importing it is still reading files. Beyond that the callee is
+     * RESOLVED: `import fsp from 'fs/promises'`, `require('fs').promises`,
+     * `import fileSystem from 'node:fs'` and a named `readFile` from
+     * `fs/promises` all reach the file system, and all were silent.
+     */
+    function fsExportPath(callee: TSESTree.Node): string[] | null {
+      const spelled = memberPath(callee);
+      if (spelled?.[0] === 'fs') {
+        return spelled.slice(1);
+      }
+      const binding = resolveModuleBinding(callee, sourceCode.getScope(callee));
+      if (binding?.module === 'fs') return binding.path;
+      if (binding?.module === 'fs/promises') {
+        return ['promises', ...binding.path];
+      }
+      return null;
+    }
+
+    /** `fs.readFile`, `fs.promises.readFile`, and every spelling of them. */
+    function isFsSink(callee: TSESTree.Node): boolean {
+      const exportPath = fsExportPath(callee);
+      if (exportPath === null) return false;
+      const method =
+        exportPath.length === 2 && exportPath[0] === 'promises'
+          ? exportPath[1]
+          : exportPath.length === 1
+            ? exportPath[0]
+            : null;
+      return fsMethods.has(method ?? '');
+    }
+
+    function checkFsCall(node: TSESTree.CallExpression) {
+      // Detect fs.* with user input
+      if (isFsSink(node.callee)) {
+        const pathArg = node.arguments[0];
+
+        // Skip if path is a literal (safe)
+        if (pathArg && pathArg.type === 'Literal') {
+          return;
+        }
+
+        // Check if path is a variable
+        if (pathArg && pathArg.type === 'Identifier') {
+          // Skip if variable is sanitized or validated
+          if (isVariableSafe(pathArg, node)) {
+            return;
+          }
+
+          // This rule's message names user input as the cause. Without
+          // evidence of a request it is both wrong and a duplicate of
+          // detect-non-literal-fs-filename, which owns unattributable paths.
+          if (!variableTracesToUserInput(pathArg, node)) {
+            return;
+          }
+
+          report(node);
+          return;
+        }
+
+        // Flag if path is from a member expression (user input sources)
+        // `fs.readFile(req.query.file)` — the direct shape. Now walks the
+        // whole chain, so `req.body.upload.path` is caught too; the old
+        // check read only the immediate object and missed anything deeper.
+        if (pathArg !== undefined && readsUserInput(pathArg)) {
+          report(node);
+        }
+      }
+    }
 
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
     }
-
-    const fsReadMethods = [
-      'readFile',
-      'readFileSync',
-      'readdir',
-      'readdirSync',
-      'stat',
-      'statSync',
-    ];
-    const fsWriteMethods = [
-      'writeFile',
-      'writeFileSync',
-      'appendFile',
-      'appendFileSync',
-    ];
-    const fsMethods = new Set([...fsReadMethods, ...fsWriteMethods]);
-    const userInputSources = new Set([
-      'req',
-      'request',
-      'params',
-      'query',
-      'body',
-    ]);
-
-    /**
-     * `name = <expr>` bindings, so a request can be followed one hop back
-     * through a local even when the local is buried inside an expression.
-     *
-     * Keyed on the scope Variable, not the name: `const p` in one function is
-     * not `const p` in the next, and a name-keyed map let the last declaration
-     * in the file answer for every same-named local.
-     */
-    const bindings = new Map<TSESLint.Scope.Variable, TSESTree.Node>();
     const resolve = (id: TSESTree.Identifier) => findVariable(sourceCode, id);
 
     /**
@@ -260,9 +308,6 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
           return false;
       }
     }
-
-    /** Every call in the file, so a parameter can be judged by what callers pass. */
-    const allCalls: TSESTree.CallExpression[] = [];
 
     /**
      * The name this function is reachable by, when it has one.
@@ -428,10 +473,6 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
       // request, so the generic rule owns it.
       return false;
     }
-
-    // Track variables that have been sanitized with path.basename()
-    // `| null` so an unresolvable name can be looked up and simply miss.
-    const sanitizedVariables = new Set<TSESLint.Scope.Variable | null>();
 
     /**
      * Record the binding, and whether it is a path.basename() result
@@ -636,6 +677,49 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        sourceCode = context.sourceCode;
+
+        const fsReadMethods = [
+          'readFile',
+          'readFileSync',
+          'readdir',
+          'readdirSync',
+          'stat',
+          'statSync',
+        ];
+        const fsWriteMethods = [
+          'writeFile',
+          'writeFileSync',
+          'appendFile',
+          'appendFileSync',
+        ];
+        fsMethods = new Set([...fsReadMethods, ...fsWriteMethods]);
+        userInputSources = new Set([
+          'req',
+          'request',
+          'params',
+          'query',
+          'body',
+        ]);
+
+        /**
+         * `name = <expr>` bindings, so a request can be followed one hop back
+         * through a local even when the local is buried inside an expression.
+         *
+         * Keyed on the scope Variable, not the name: `const p` in one function is
+         * not `const p` in the next, and a name-keyed map let the last declaration
+         * in the file answer for every same-named local.
+         */
+        bindings = new Map<TSESLint.Scope.Variable, TSESTree.Node>();
+
+        /** Every call in the file, so a parameter can be judged by what callers pass. */
+        allCalls = [];
+
+        // Track variables that have been sanitized with path.basename()
+        // `| null` so an unresolvable name can be looked up and simply miss.
+        sanitizedVariables = new Set<TSESLint.Scope.Variable | null>();
+      },
       // Track variable declarations for sanitization patterns
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         checkVariableDeclaration(node);
@@ -651,80 +735,5 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         for (const node of allCalls) checkFsCall(node);
       },
     };
-
-    /**
-     * The export path a callee names on the `fs` module, `fs/promises` folded
-     * in as `['promises', …]`, or null.
-     *
-     * A receiver spelled `fs` still counts whatever it is bound to — the rule
-     * has always read that name, and a file that calls `fs.readFileSync`
-     * without importing it is still reading files. Beyond that the callee is
-     * RESOLVED: `import fsp from 'fs/promises'`, `require('fs').promises`,
-     * `import fileSystem from 'node:fs'` and a named `readFile` from
-     * `fs/promises` all reach the file system, and all were silent.
-     */
-    function fsExportPath(callee: TSESTree.Node): string[] | null {
-      const spelled = memberPath(callee);
-      if (spelled?.[0] === 'fs') {
-        return spelled.slice(1);
-      }
-      const binding = resolveModuleBinding(callee, sourceCode.getScope(callee));
-      if (binding?.module === 'fs') return binding.path;
-      if (binding?.module === 'fs/promises') {
-        return ['promises', ...binding.path];
-      }
-      return null;
-    }
-
-    /** `fs.readFile`, `fs.promises.readFile`, and every spelling of them. */
-    function isFsSink(callee: TSESTree.Node): boolean {
-      const exportPath = fsExportPath(callee);
-      if (exportPath === null) return false;
-      const method =
-        exportPath.length === 2 && exportPath[0] === 'promises'
-          ? exportPath[1]
-          : exportPath.length === 1
-            ? exportPath[0]
-            : null;
-      return fsMethods.has(method ?? '');
-    }
-
-    function checkFsCall(node: TSESTree.CallExpression) {
-      // Detect fs.* with user input
-      if (isFsSink(node.callee)) {
-        const pathArg = node.arguments[0];
-
-        // Skip if path is a literal (safe)
-        if (pathArg && pathArg.type === 'Literal') {
-          return;
-        }
-
-        // Check if path is a variable
-        if (pathArg && pathArg.type === 'Identifier') {
-          // Skip if variable is sanitized or validated
-          if (isVariableSafe(pathArg, node)) {
-            return;
-          }
-
-          // This rule's message names user input as the cause. Without
-          // evidence of a request it is both wrong and a duplicate of
-          // detect-non-literal-fs-filename, which owns unattributable paths.
-          if (!variableTracesToUserInput(pathArg, node)) {
-            return;
-          }
-
-          report(node);
-          return;
-        }
-
-        // Flag if path is from a member expression (user input sources)
-        // `fs.readFile(req.query.file)` — the direct shape. Now walks the
-        // whole chain, so `req.body.upload.path` is caught too; the old
-        // check read only the immediate object and missed anything deeper.
-        if (pathArg !== undefined && readsUserInput(pathArg)) {
-          report(node);
-        }
-      }
-    }
   },
 });

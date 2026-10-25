@@ -56,6 +56,10 @@ const KNOWN_EXTENSIONS = new Set([
 export const extensions = createRule<Options, MessageIds>({
   name: 'extensions',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/extensions',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/extensions.md',
@@ -130,36 +134,14 @@ export const extensions = createRule<Options, MessageIds>({
    * defaults fill the rest — which is also what makes the local fallback map
    * unnecessary rather than merely stale.
    */
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options]: Readonly<Options>,
+    currentOptions,
   ) {
-    // `Required` rather than `??` on each read: the merge above always supplies
-    // both keys, so a fallback here would be a branch no input can reach — a
-    // permanent hole in a package at a 100% coverage threshold.
-    const { default: defaultBehavior, pattern } = options as Required<
-      Options[0]
-    >;
-
-    /**
-     * The user's OWN options, before the declared defaults were merged in.
-     *
-     * The merged view cannot answer "did the user NAME this extension?", and
-     * that is the question `{ default: 'always' }` has to be resolved against.
-     * It was a documented escape hatch that did nothing: the rule took
-     * `pattern` as a whole object, so a user who set only `default` got the
-     * package's own map, whose `js: 'never'` then beat their `default`. The only
-     * configuration that worked was `{ pattern: { js: 'always' } }` — which no
-     * documentation asks for, and which nobody reaching for "always" would
-     * guess.
-     */
-    const [userOptions = {}] = context.options;
-    const userPattern = userOptions.pattern ?? {};
-    // A comparison, not a fallback: `defaultBehavior` above already carries the
-    // user's `default` when they set one (`applyDefault` merges that key too).
-    // What is needed here is only whether they set it, to place it correctly in
-    // the precedence ladder below.
-    const userSetDefault = userOptions.default !== undefined;
+    let defaultBehavior: 'always' | 'never';
+    let pattern: Record<string, 'always' | 'never'>;
+    let userPattern: Record<string, 'always' | 'never'>;
+    let userSetDefault: boolean;
 
     /**
      * Would removing the extension change, or break, what the specifier
@@ -279,6 +261,35 @@ export const extensions = createRule<Options, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // `Required` rather than `??` on each read: the merge above always supplies
+        // both keys, so a fallback here would be a branch no input can reach — a
+        // permanent hole in a package at a 100% coverage threshold.
+        ({ default: defaultBehavior, pattern } = options as Required<
+          Options[0]
+        >);
+
+        /**
+         * The user's OWN options, before the declared defaults were merged in.
+         *
+         * The merged view cannot answer "did the user NAME this extension?", and
+         * that is the question `{ default: 'always' }` has to be resolved against.
+         * It was a documented escape hatch that did nothing: the rule took
+         * `pattern` as a whole object, so a user who set only `default` got the
+         * package's own map, whose `js: 'never'` then beat their `default`. The only
+         * configuration that worked was `{ pattern: { js: 'always' } }` — which no
+         * documentation asks for, and which nobody reaching for "always" would
+         * guess.
+         */
+        const [userOptions = {}] = context.options;
+        userPattern = userOptions.pattern ?? {};
+        // A comparison, not a fallback: `defaultBehavior` above already carries the
+        // user's `default` when they set one (`applyDefault` merges that key too).
+        // What is needed here is only whether they set it, to place it correctly in
+        // the precedence ladder below.
+        userSetDefault = userOptions.default !== undefined;
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         checkSource(node.source);
       },

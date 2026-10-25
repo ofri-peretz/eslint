@@ -11,7 +11,12 @@
  * @see OWASP LLM10: Unbounded Consumption
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 import { declaresOption, sdkCallName } from '../../utils/sdk';
 
@@ -27,10 +32,12 @@ type RuleOptions = [Options?];
 export const requireAbortSignal = createRule<RuleOptions, MessageIds>({
   name: 'require-abort-signal',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-abort-signal.md',
-      description: 'Require AbortSignal for streaming AI calls to enable proper cleanup',
+      description:
+        'Require AbortSignal for streaming AI calls to enable proper cleanup',
       cwe: 'CWE-404',
       cvss: 4,
     },
@@ -41,10 +48,12 @@ export const requireAbortSignal = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-404',
         owasp: 'A05:2021',
         cvss: 4.0,
-        description: '{{function}} call without abortSignal. Users cannot cancel long-running streams.',
+        description:
+          '{{function}} call without abortSignal. Users cannot cancel long-running streams.',
         severity: 'LOW',
         fix: 'Add abortSignal option: {{function}}({ ..., abortSignal: controller.signal })',
-        documentationLink: 'https://sdk.vercel.ai/docs/ai-sdk-core/generating-text',
+        documentationLink:
+          'https://sdk.vercel.ai/docs/ai-sdk-core/generating-text',
       }),
     },
     schema: [
@@ -66,17 +75,22 @@ export const requireAbortSignal = createRule<RuleOptions, MessageIds>({
       targetFunctions: ['streamText', 'streamObject'],
     },
   ],
-  create(context, [options]) {
-    // Every rule in this plugin is Vercel-AI-specific, and none of them knew
-    // it: over 107,384 files, 91% of this plugin's findings were in files with
-    // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
-    // the cheap path — a file without the SDK does no work.
-    if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
-
-    // Merged with `defaultOptions` before `create` runs.
-    const { targetFunctions } = options as Required<Options>;
+  createOnce(context, currentOptions) {
+    let targetFunctions: string[];
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule in this plugin is Vercel-AI-specific, and none of them knew
+        // it: over 107,384 files, 91% of this plugin's findings were in files with
+        // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
+        // the cheap path — a file without the SDK does no work.
+        if (!fileUsesVercelAi(context.sourceCode.ast)) return false;
+
+        // Merged with `defaultOptions` before `create` runs.
+        ({ targetFunctions } = options as Required<Options>);
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const matchedFunction = sdkCallName(node, targetFunctions);
         if (!matchedFunction) return;

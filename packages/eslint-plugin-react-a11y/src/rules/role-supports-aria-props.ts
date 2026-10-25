@@ -69,6 +69,10 @@ const IMPLICIT_ROLES: Record<string, string> = {
 export const roleSupportsAriaProps = createRule<RuleOptions, MessageIds>({
   name: 'role-supports-aria-props',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/role-supports-aria-props',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/role-supports-aria-props.md',
@@ -91,7 +95,7 @@ export const roleSupportsAriaProps = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier') return;

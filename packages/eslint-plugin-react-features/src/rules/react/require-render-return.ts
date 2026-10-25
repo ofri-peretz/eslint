@@ -9,7 +9,11 @@
  * Require render methods to return
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, objectKeyName, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'requireRenderReturn';
@@ -17,6 +21,10 @@ type MessageIds = 'requireRenderReturn';
 export const requireRenderReturn = createRule<[], MessageIds>({
   name: 'require-render-return',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/require-render-return',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/require-render-return.md',
@@ -35,27 +43,7 @@ export const requireRenderReturn = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
-    return {
-      MethodDefinition(node: TSESTree.MethodDefinition) {
-        if (
-          objectKeyName(node) === 'render' &&
-          node.value.type === 'FunctionExpression' &&
-          isInReactComponent(node)
-        ) {
-          const body = node.value.body;
-
-          // Check if render method has a return statement
-          if (!hasReturnStatement(body)) {
-            context.report({
-              node: node.key,
-              messageId: 'requireRenderReturn',
-            });
-          }
-        }
-      },
-    };
-
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     /**
      * `render` is not a React word. Matching the method name alone made every
      * class with a `render` method a React component — a terminal painter, a
@@ -176,5 +164,24 @@ export const requireRenderReturn = createRule<[], MessageIds>({
 
       return false;
     }
+    return {
+      MethodDefinition(node: TSESTree.MethodDefinition) {
+        if (
+          objectKeyName(node) === 'render' &&
+          node.value.type === 'FunctionExpression' &&
+          isInReactComponent(node)
+        ) {
+          const body = node.value.body;
+
+          // Check if render method has a return statement
+          if (!hasReturnStatement(body)) {
+            context.report({
+              node: node.key,
+              messageId: 'requireRenderReturn',
+            });
+          }
+        }
+      },
+    };
   },
 });

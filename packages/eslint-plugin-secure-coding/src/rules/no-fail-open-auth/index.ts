@@ -160,6 +160,7 @@ export const noFailOpenAuth = createRule<RuleOptions, MessageIds>({
    */
   skipTestFiles: true,
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-fail-open-auth.md',
@@ -218,18 +219,11 @@ export const noFailOpenAuth = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ securityDecisions: [] }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const { securityDecisions = [] }: Options = context.options[0] ?? {};
-
-    /** Try statements whose `try` block contains a security decision. */
-    const decisionTries = new WeakSet<TSESTree.TryStatement>();
-    /** Catch clauses that return an unambiguous grant. */
-    const grantingCatches = new WeakSet<TSESTree.CatchClause>();
-    /**
-     * Catch clauses (and try statements, via their `finally`) that stop
-     * falling through: a throw, a return, a break/continue, or a denial call.
-     */
-    const handledScopes = new WeakSet<TSESTree.Node>();
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let securityDecisions: string[];
+    let decisionTries: WeakSet<TSESTree.TryStatement>;
+    let grantingCatches: WeakSet<TSESTree.CatchClause>;
+    let handledScopes: WeakSet<TSESTree.Node>;
 
     /**
      * The try statement whose *try block* contains this node, stopping at
@@ -511,6 +505,19 @@ export const noFailOpenAuth = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        ({ securityDecisions = [] } = context.options[0] ?? {});
+
+        /** Try statements whose `try` block contains a security decision. */
+        decisionTries = new WeakSet<TSESTree.TryStatement>();
+        /** Catch clauses that return an unambiguous grant. */
+        grantingCatches = new WeakSet<TSESTree.CatchClause>();
+        /**
+         * Catch clauses (and try statements, via their `finally`) that stop
+         * falling through: a throw, a return, a break/continue, or a denial call.
+         */
+        handledScopes = new WeakSet<TSESTree.Node>();
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const name = calleeName(node);
         if (name === null) return;

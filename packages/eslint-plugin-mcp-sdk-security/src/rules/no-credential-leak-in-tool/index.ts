@@ -121,6 +121,7 @@ function children(node: TSESTree.Node): TSESTree.Node[] {
 export const noCredentialLeakInTool = createRule<[], MessageIds>({
   name: 'no-credential-leak-in-tool',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mcp-sdk-security/docs/rules/no-credential-leak-in-tool.md',
@@ -154,14 +155,12 @@ export const noCredentialLeakInTool = createRule<[], MessageIds>({
   defaultOptions: [],
   // A test fixture server reporting its own environment ships nothing.
   skipTestFiles: true,
-  create(context) {
-    if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
-    const sourceCode = context.sourceCode;
-    const resolve = valueResolverFor(context);
-    const builtBy = createInstanceResolver(context);
-    const argumentRoots = createHandlerCollector(context, resolve, 'arguments');
-    const contextRoots = createHandlerCollector(context, resolve, 'context');
-    const outbound: Array<{ node: TSESTree.Node; client: string }> = [];
+  createOnce(context) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let builtBy: ReturnType<typeof createInstanceResolver>;
+    let argumentRoots: ReturnType<typeof createHandlerCollector>;
+    let contextRoots: ReturnType<typeof createHandlerCollector>;
+    let outbound: { node: TSESTree.Node; client: string }[];
 
     /** Is this `process.env` — the global, or `node:process`'s? */
     function isProcessEnv(
@@ -195,6 +194,16 @@ export const noCredentialLeakInTool = createRule<[], MessageIds>({
     }
 
     return {
+      before() {
+        if (!fileUsesMcpSdk(context.sourceCode.ast)) return false;
+        sourceCode = context.sourceCode;
+        const resolve = valueResolverFor(context);
+        builtBy = createInstanceResolver(context);
+        argumentRoots = createHandlerCollector(context, resolve, 'arguments');
+        contextRoots = createHandlerCollector(context, resolve, 'context');
+        outbound = [];
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         argumentRoots.visit(node);
         contextRoots.visit(node);

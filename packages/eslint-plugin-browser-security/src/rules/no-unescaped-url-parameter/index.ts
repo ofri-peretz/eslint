@@ -123,6 +123,7 @@ const HTTP_CLIENT_MODULES: ReadonlySet<string> = new Set(['axios', 'ky']);
 export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
   name: 'no-unescaped-url-parameter',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-unescaped-url-parameter.md',
@@ -175,28 +176,13 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
       ignorePatterns: [],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      allowInTests = false,
-      trustedLibraries = DEFAULT_TRUSTED_LIBRARIES,
-      ignorePatterns = [],
-    } = options;
-
-    const isTestFile = allowInTests && isTestFilePath(context.filename);
-    if (isTestFile) return {};
-
-    const sourceCode = context.sourceCode;
-    const trusted: ReadonlySet<string> = new Set(trustedLibraries);
-    // `compileUserPattern`, not a bare `new RegExp`. The try/catch that used to
-    // sit here handled an INVALID pattern but not a pathological one: a user
-    // ignorePattern like `(a+)+$` compiles fine and then stalls the whole lint
-    // run on a long identifier. The devkit helper screens the shape first,
-    // degrades to a substring match instead of throwing, and resets `lastIndex`
-    // per call so a /g pattern cannot answer differently on its second use.
-    const ignoreRegexes = compileUserPatterns(ignorePatterns, 'i');
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let trusted: ReadonlySet<string>;
+    let ignoreRegexes: ReturnType<typeof compileUserPatterns>;
 
     /**
      * Was this value produced by a module the user declared trusted?
@@ -351,6 +337,28 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const {
+          allowInTests = false,
+          trustedLibraries = DEFAULT_TRUSTED_LIBRARIES,
+          ignorePatterns = [],
+        } = options;
+
+        const isTestFile = allowInTests && isTestFilePath(context.filename);
+        if (isTestFile) return false;
+
+        sourceCode = context.sourceCode;
+        trusted = new Set(trustedLibraries);
+        // `compileUserPattern`, not a bare `new RegExp`. The try/catch that used to
+        // sit here handled an INVALID pattern but not a pathological one: a user
+        // ignorePattern like `(a+)+$` compiles fine and then stalls the whole lint
+        // run on a long identifier. The devkit helper screens the shape first,
+        // degrades to a substring match instead of throwing, and resets `lastIndex`
+        // per call so a /g pattern cannot answer differently on its second use.
+        ignoreRegexes = compileUserPatterns(ignorePatterns, 'i');
+        return true;
+      },
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
         // A template inside a `+` chain is analysed as part of that chain, so
         // its holes are not offered twice.

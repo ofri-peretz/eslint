@@ -29,7 +29,13 @@
  *      import of a server-only module.
  */
 
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  staticString,
+} from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -137,16 +143,21 @@ const DEFAULT_SERVER_MODULES = [
  * variable is not knowable, and `this.#role` names a private field that no
  * authorization claim arrives through.
  */
-const memberPropertyName = (node: TSESTree.MemberExpression): string | undefined => {
+const memberPropertyName = (
+  node: TSESTree.MemberExpression,
+): string | undefined => {
   if (node.computed) {
     return staticString(node.property) ?? undefined;
   }
-  return node.property.type === AST_NODE_TYPES.Identifier ? node.property.name : undefined;
+  return node.property.type === AST_NODE_TYPES.Identifier
+    ? node.property.name
+    : undefined;
 };
 
 export const requireBackendAuthorization = createRule<RuleOptions, MessageIds>({
   name: 'require-backend-authorization',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/require-backend-authorization.md',
@@ -163,7 +174,7 @@ export const requireBackendAuthorization = createRule<RuleOptions, MessageIds>({
         severity: 'CRITICAL',
         fix: 'Move authorization checks to server-side API endpoints',
         documentationLink: 'https://cwe.mitre.org/data/definitions/602.html',
-      })
+      }),
     },
     schema: [
       {
@@ -180,7 +191,8 @@ export const requireBackendAuthorization = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra claim property names, on top of `authProperties`.',
+            description:
+              'Extra claim property names, on top of `authProperties`.',
           },
           browserGlobals: {
             type: 'array',
@@ -193,7 +205,8 @@ export const requireBackendAuthorization = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra browser-only globals, on top of `browserGlobals`.',
+            description:
+              'Extra browser-only globals, on top of `browserGlobals`.',
           },
           serverModules: {
             type: 'array',
@@ -206,7 +219,8 @@ export const requireBackendAuthorization = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra server-only module specifiers, on top of `serverModules`.',
+            description:
+              'Extra server-only module specifiers, on top of `serverModules`.',
           },
         },
         additionalProperties: false,
@@ -223,36 +237,22 @@ export const requireBackendAuthorization = createRule<RuleOptions, MessageIds>({
       additionalServerModules: [],
     },
   ],
-  create(context, [options = {}]) {
-    const {
-      authProperties = DEFAULT_AUTH_PROPERTIES,
-      additionalAuthProperties = [],
-      browserGlobals = DEFAULT_BROWSER_GLOBALS,
-      additionalBrowserGlobals = [],
-      serverModules = DEFAULT_SERVER_MODULES,
-      additionalServerModules = [],
-    } = options as Options;
-
-    const authNames = new Set([...authProperties, ...additionalAuthProperties]);
-    const browserNames = new Set([...browserGlobals, ...additionalBrowserGlobals]);
-    const serverSpecifiers = new Set([...serverModules, ...additionalServerModules]);
-
-    const sourceCode = context.sourceCode;
-
-    /** Findings held back until `Program:exit` can say where the file runs. */
-    const candidates: TSESTree.Node[] = [];
-
-    /** Variables whose initialiser reads an authorization claim. */
-    const claimBackedVariables = new Set<TSESLint.Scope.Variable>();
-
-    /** `if (canExport)` / `switch (level)` — resolved once the file is walked. */
-    const indirectTests: { node: TSESTree.Node; identifier: TSESTree.Identifier }[] = [];
-
-    /** Set by the JSX visitors; JSX in a file means a rendered user interface. */
-    let hasJsx = false;
+  createOnce(context, currentOptions) {
+    let authNames: Set<string>;
+    let browserNames: Set<string>;
+    let serverSpecifiers: Set<string>;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let candidates: TSESTree.Node[];
+    let claimBackedVariables: Set<TSESLint.Scope.Variable>;
+    let indirectTests: {
+      node: TSESTree.Node;
+      identifier: TSESTree.Identifier;
+    }[];
+    let hasJsx: boolean;
 
     const noteIndirect = (test: TSESTree.Node, node: TSESTree.Node) => {
-      if (test.type === AST_NODE_TYPES.Identifier) indirectTests.push({ node, identifier: test });
+      if (test.type === AST_NODE_TYPES.Identifier)
+        indirectTests.push({ node, identifier: test });
     };
 
     /**
@@ -268,17 +268,55 @@ export const requireBackendAuthorization = createRule<RuleOptions, MessageIds>({
       identifier: TSESTree.Identifier,
     ): TSESLint.Scope.Variable | undefined => {
       for (
-        let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(identifier);
+        let scope: TSESLint.Scope.Scope | null =
+          sourceCode.getScope(identifier);
         scope;
         scope = scope.upper
       ) {
-        const reference = scope.references.find((entry) => entry.identifier === identifier);
+        const reference = scope.references.find(
+          (entry) => entry.identifier === identifier,
+        );
         if (reference) return reference.resolved ?? undefined;
       }
       return undefined;
     };
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const {
+          authProperties = DEFAULT_AUTH_PROPERTIES,
+          additionalAuthProperties = [],
+          browserGlobals = DEFAULT_BROWSER_GLOBALS,
+          additionalBrowserGlobals = [],
+          serverModules = DEFAULT_SERVER_MODULES,
+          additionalServerModules = [],
+        } = options as Options;
+
+        authNames = new Set([...authProperties, ...additionalAuthProperties]);
+        browserNames = new Set([
+          ...browserGlobals,
+          ...additionalBrowserGlobals,
+        ]);
+        serverSpecifiers = new Set([
+          ...serverModules,
+          ...additionalServerModules,
+        ]);
+
+        sourceCode = context.sourceCode;
+
+        /** Findings held back until `Program:exit` can say where the file runs. */
+        candidates = [];
+
+        /** Variables whose initialiser reads an authorization claim. */
+        claimBackedVariables = new Set<TSESLint.Scope.Variable>();
+
+        /** `if (canExport)` / `switch (level)` — resolved once the file is walked. */
+        indirectTests = [];
+
+        /** Set by the JSX visitors; JSX in a file means a rendered user interface. */
+        hasJsx = false;
+      },
       JSXElement() {
         hasJsx = true;
       },
@@ -309,17 +347,26 @@ export const requireBackendAuthorization = createRule<RuleOptions, MessageIds>({
           parent;
           current = parent, parent = parent.parent
         ) {
-          if (parent.type === AST_NODE_TYPES.IfStatement && parent.test === current) {
+          if (
+            parent.type === AST_NODE_TYPES.IfStatement &&
+            parent.test === current
+          ) {
             candidates.push(parent);
             return;
           }
-          if (parent.type === AST_NODE_TYPES.SwitchStatement && parent.discriminant === current) {
+          if (
+            parent.type === AST_NODE_TYPES.SwitchStatement &&
+            parent.discriminant === current
+          ) {
             candidates.push(parent);
             return;
           }
           // `const canExport = user.role === 'owner'` — every codebase that
           // runs a complexity lint lifts the comparison out of the branch.
-          if (parent.type === AST_NODE_TYPES.VariableDeclarator && parent.init === current) {
+          if (
+            parent.type === AST_NODE_TYPES.VariableDeclarator &&
+            parent.init === current
+          ) {
             for (const variable of sourceCode.getDeclaredVariables(parent)) {
               claimBackedVariables.add(variable);
             }
@@ -344,7 +391,11 @@ export const requireBackendAuthorization = createRule<RuleOptions, MessageIds>({
           if (!resolved || !claimBackedVariables.has(resolved)) continue;
           // A rebound binding may hold something else by the time the branch
           // runs, so only a single-assignment binding carries the claim.
-          if (resolved.references.filter((reference) => reference.isWrite()).length !== 1) continue;
+          if (
+            resolved.references.filter((reference) => reference.isWrite())
+              .length !== 1
+          )
+            continue;
           candidates.push(node);
         }
 
@@ -367,7 +418,9 @@ export const requireBackendAuthorization = createRule<RuleOptions, MessageIds>({
 
         const touchesBrowserGlobal = sourceCode
           .getScope(program)
-          .through.some((reference) => browserNames.has(reference.identifier.name));
+          .through.some((reference) =>
+            browserNames.has(reference.identifier.name),
+          );
 
         if (!hasUseClient && !hasJsx && !touchesBrowserGlobal) return;
 

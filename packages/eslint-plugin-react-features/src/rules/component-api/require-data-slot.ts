@@ -11,7 +11,11 @@
  * `data-testid` is a named part and must also carry `data-slot`.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingDataSlot';
 type RuleOptions = [];
@@ -30,6 +34,7 @@ const hasNamedAttribute = (
 export const requireDataSlot = createRule<RuleOptions, MessageIds>({
   name: 'require-data-slot',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/require-data-slot.md',
@@ -43,12 +48,13 @@ export const requireDataSlot = createRule<RuleOptions, MessageIds>({
         description: 'JSX element has data-testid but no data-slot (R6)',
         severity: 'MEDIUM',
         fix: 'Add `data-slot="<part-name>"` so consumers can style by slot.',
-        documentationLink: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/require-data-slot.md',
+        documentationLink:
+          'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/require-data-slot.md',
       }),
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (!hasNamedAttribute(node, 'data-testid')) return;

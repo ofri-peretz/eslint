@@ -115,6 +115,7 @@ const OPAQUE = 'x';
 export const noSsrfInTool = createRule<[], MessageIds>({
   name: 'no-ssrf-in-tool',
   meta: {
+    interop: { runtimes: ['eslint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mcp-sdk-security/docs/rules/no-ssrf-in-tool.md',
@@ -142,17 +143,16 @@ export const noSsrfInTool = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
-    const sourceCode = context.sourceCode;
-    const resolve = valueResolverFor(context);
-    const builtBy = createInstanceResolver(context);
-    const handlers = createHandlerCollector(context, resolve, 'arguments');
-    const candidates: Array<{
+  createOnce(context) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let resolve: (node: TSESTree.Node) => TSESTree.Node | undefined;
+    let builtBy: ReturnType<typeof createInstanceResolver>;
+    let handlers: ReturnType<typeof createHandlerCollector>;
+    let candidates: {
       call: TSESTree.CallExpression;
       target: TSESTree.Node;
       client: string;
-    }> = [];
+    }[];
 
     /** `new URL(...)` — the WHATWG global, not a local class. */
     const isUrlConstructor = (
@@ -164,6 +164,15 @@ export const noSsrfInTool = createRule<[], MessageIds>({
       !lookupVariable('URL', sourceCode.getScope(node))?.defs.length;
 
     return {
+      before() {
+        if (!fileUsesMcpSdk(context.sourceCode.ast)) return false;
+        sourceCode = context.sourceCode;
+        resolve = valueResolverFor(context);
+        builtBy = createInstanceResolver(context);
+        handlers = createHandlerCollector(context, resolve, 'arguments');
+        candidates = [];
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         handlers.visit(node);
         const request = httpRequestOf(node, sourceCode.getScope(node), builtBy);

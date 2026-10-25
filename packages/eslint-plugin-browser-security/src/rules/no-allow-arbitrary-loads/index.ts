@@ -80,6 +80,7 @@ type RuleOptions = [Options?];
 export const noAllowArbitraryLoads = createRule<RuleOptions, MessageIds>({
   name: 'no-allow-arbitrary-loads',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-allow-arbitrary-loads.md',
@@ -116,11 +117,15 @@ export const noAllowArbitraryLoads = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ insecureLoadKeys: ATS_OPT_OUT_KEYS }],
-  create(context, [options = {}]) {
-    const { insecureLoadKeys = ATS_OPT_OUT_KEYS } = options as Options;
-    const optOutKeys = new Set(insecureLoadKeys);
+  createOnce(context, currentOptions) {
+    let optOutKeys: Set<string>;
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { insecureLoadKeys = ATS_OPT_OUT_KEYS } = options as Options;
+        optOutKeys = new Set(insecureLoadKeys);
+      },
       Property(node: TSESTree.Property) {
         const key = propertyKeyName(node);
         if (

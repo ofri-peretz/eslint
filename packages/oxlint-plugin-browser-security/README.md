@@ -1,18 +1,54 @@
-# oxlint-plugin-browser-security
+<p align="center">
+  <a href="https://eslint.interlace.tools/docs/security/plugin-browser-security?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security" target="blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/interlace-dark.svg"><img src="https://eslint.interlace.tools/logos/interlace-light.svg" alt="Interlace" height="90" /></picture></a>
+  &nbsp;&nbsp;
+  <a href="https://www.chromium.org" target="_blank"><img src="https://eslint.interlace.tools/logos/chromium.svg" alt="Chromium" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://oxc.rs" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/oxlint-dark.svg"><img src="https://eslint.interlace.tools/logos/oxlint-light.svg" alt="oxlint" height="90" /></picture></a>
+</p>
 
-The `browser-security` rules for [oxlint](https://oxc.rs/docs/guide/usage/linter) and
-[Vite+](https://viteplus.dev). This package is the oxlint name for
-[`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security): the same rules, the same
-rule IDs (`browser-security/<rule>`), and the same version. It contains no rule code of its own, and it
-does not install ESLint.
+<p align="center">
+  Browser-specific security rules to prevent XSS and other client-side attacks.
+</p>
 
-## Install
+<p align="center">
+  <a href="https://www.npmjs.com/package/oxlint-plugin-browser-security" target="_blank"><img src="https://img.shields.io/npm/v/oxlint-plugin-browser-security.svg" alt="NPM Version" /></a>
+  <a href="https://www.npmjs.com/package/oxlint-plugin-browser-security" target="_blank"><img src="https://img.shields.io/npm/dm/oxlint-plugin-browser-security.svg" alt="NPM Downloads" /></a>
+  <a href="https://packagephobia.com/result?p=oxlint-plugin-browser-security" target="_blank"><img src="https://badgen.net/packagephobia/install/oxlint-plugin-browser-security" alt="Install Size" /></a>
+  <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-browser-security" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-browser-security" alt="Codecov" /></a>
+  <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
+</p>
+
+> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
+
+## Description
+
+`oxlint-plugin-browser-security` is the [oxlint](https://oxc.rs/docs/guide/usage/linter/js-plugins) and [Vite+](https://viteplus.dev/guide/lint) name for [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security). It carries the same rules under the same IDs (`browser-security/<rule>`), always at the same version, because it re-exports that package rather than copying it. Installing it does not install ESLint.
+
+## Covered natively by oxlint
+
+None of these 46 rules has an oxlint built-in equivalent. Every rule here is new to oxlint.
+
+- **Why** — a linter nobody reads protects nothing. We would rather miss a finding
+  than spend your attention on one that was never real.
+- **How** — evidence, not names. A rule fires on what the code _does_, resolved
+  through the AST and ESLint's own scope analysis.
+- **What** — every finding carries its fix, in prose for a human and as structured
+  JSON for an agent. Security rules add a CWE mapping and, where assigned, a CVSS score.
+
+That trade costs recall, and we measure it:
+[methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
+· [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md)
+· [a false positive is a bug](https://github.com/ofri-peretz/eslint/issues).
+
+## Getting Started
 
 ```bash
-npm install --save-dev oxlint-plugin-browser-security
+npm install oxlint-plugin-browser-security --save-dev
 ```
 
-## Vite+
+### Vite+
 
 ```ts
 // vite.config.ts
@@ -22,33 +58,177 @@ export default defineConfig({
   lint: {
     jsPlugins: ['oxlint-plugin-browser-security'],
     rules: {
-      'browser-security/<rule>': 'error',
+      'browser-security/detect-mixed-content': 'error',
+      'browser-security/no-allow-arbitrary-loads': 'error',
+      'browser-security/no-client-side-auth-logic': 'error',
+      'browser-security/no-cookie-auth-tokens': 'error',
+      'browser-security/no-credentials-in-query-params': 'error',
+      'browser-security/no-disabled-certificate-validation': 'error',
+      'browser-security/no-dynamic-service-worker-url': 'error',
+      'browser-security/no-eval': 'error',
+      'browser-security/no-filereader-innerhtml': 'error',
+      'browser-security/no-http-urls': 'error',
+      'browser-security/no-incomplete-url-sanitization': 'error',
+      'browser-security/no-innerhtml': 'error',
+      'browser-security/no-insecure-redirects': 'error',
+      'browser-security/no-insecure-websocket': 'error',
+      'browser-security/no-jwt-in-storage': 'error',
+      'browser-security/no-postmessage-innerhtml': 'error',
+      'browser-security/no-postmessage-wildcard-origin': 'error',
+      'browser-security/no-sensitive-cookie-js': 'error',
+      'browser-security/no-sensitive-indexeddb': 'error',
+      'browser-security/no-sensitive-localstorage': 'error',
+      'browser-security/no-sensitive-sessionstorage': 'error',
+      'browser-security/no-unencrypted-transmission': 'error',
+      'browser-security/no-unsafe-eval-csp': 'error',
+      'browser-security/no-unsafe-inline-csp': 'error',
+      'browser-security/no-unvalidated-deeplinks': 'error',
+      'browser-security/no-websocket-eval': 'error',
+      'browser-security/no-websocket-innerhtml': 'error',
+      'browser-security/no-worker-message-innerhtml': 'error',
+      'browser-security/require-cookie-secure-attrs': 'error',
+      'browser-security/require-https-only': 'error',
+      'browser-security/require-postmessage-origin-check': 'error',
+      'browser-security/require-websocket-wss': 'error',
     },
   },
 });
 ```
 
-## oxlint
+### oxlint
 
 ```json
 {
   "jsPlugins": ["oxlint-plugin-browser-security"],
   "rules": {
-    "browser-security/<rule>": "error"
+    "browser-security/detect-mixed-content": "error",
+    "browser-security/no-allow-arbitrary-loads": "error",
+    "browser-security/no-client-side-auth-logic": "error",
+    "browser-security/no-cookie-auth-tokens": "error",
+    "browser-security/no-credentials-in-query-params": "error",
+    "browser-security/no-disabled-certificate-validation": "error",
+    "browser-security/no-dynamic-service-worker-url": "error",
+    "browser-security/no-eval": "error",
+    "browser-security/no-filereader-innerhtml": "error",
+    "browser-security/no-http-urls": "error",
+    "browser-security/no-incomplete-url-sanitization": "error",
+    "browser-security/no-innerhtml": "error",
+    "browser-security/no-insecure-redirects": "error",
+    "browser-security/no-insecure-websocket": "error",
+    "browser-security/no-jwt-in-storage": "error",
+    "browser-security/no-postmessage-innerhtml": "error",
+    "browser-security/no-postmessage-wildcard-origin": "error",
+    "browser-security/no-sensitive-cookie-js": "error",
+    "browser-security/no-sensitive-indexeddb": "error",
+    "browser-security/no-sensitive-localstorage": "error",
+    "browser-security/no-sensitive-sessionstorage": "error",
+    "browser-security/no-unencrypted-transmission": "error",
+    "browser-security/no-unsafe-eval-csp": "error",
+    "browser-security/no-unsafe-inline-csp": "error",
+    "browser-security/no-unvalidated-deeplinks": "error",
+    "browser-security/no-websocket-eval": "error",
+    "browser-security/no-websocket-innerhtml": "error",
+    "browser-security/no-worker-message-innerhtml": "error",
+    "browser-security/require-cookie-secure-attrs": "error",
+    "browser-security/require-https-only": "error",
+    "browser-security/require-postmessage-origin-check": "error",
+    "browser-security/require-websocket-wss": "error"
   }
 }
 ```
 
+These are the rules the plugin recommends (💼 in the table below).
+
+### ESLint
+
+Install [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) instead. It has the same rules, plus presets for ESLint's flat config.
+
+## 📦 Compatibility
+
+| Package | Version                                                          |
+| :------ | :--------------------------------------------------------------- |
+| oxlint  | verified on `1.88.0`: CI loads every rule ID through `jsPlugins` |
+| Vite+   | `lint.jsPlugins` in `vite.config.ts`                             |
+| Node.js | `>=18.0.0`                                                       |
+
 ## Rules
 
-Every rule, its options and its docs are listed in the
-[`eslint-plugin-browser-security` README](https://www.npmjs.com/package/eslint-plugin-browser-security#rules). Using ESLint
-instead? Install `eslint-plugin-browser-security` directly.
+**Legend**
 
-## License
+| Icon | Description                                                               |
+| :--: | :------------------------------------------------------------------------ |
+|  💼  | **Recommended**: Included in the recommended preset.                      |
+|  ⚠️  | **Warns**: Set to warn in recommended preset.                             |
+|  🔧  | **Auto-fixable**: Automatically fixable by the `--fix` CLI option.        |
+|  💡  | **Suggestions**: Providing code suggestions in IDE.                       |
+|  🚫  | **Deprecated**: This rule is deprecated.                                  |
+|  🟢  | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier.                |
+|  🟡  | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+|  🟠  | **Type-aware (graceful)**: requires TS program; silent without it.        |
 
-MIT
+| Rule                                                                                                                                                                                                                                  |   CWE    |  OWASP   | CVSS | Description                                                                                                   | 🧠  | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------: | :------: | :--: | :------------------------------------------------------------------------------------------------------------ | :-: | :-: | :-: | :-: | :-: | :-: |
+| [detect-mixed-content](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/detect-mixed-content?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                             | CWE-311  |          |      | Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities.                    | 🟢  | 💼  |     |     |     |     |
+| [no-allow-arbitrary-loads](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-allow-arbitrary-loads?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                     | CWE-295  |          |      | Prevents disabling App Transport Security (ATS) by detecting NSAllowsArbitraryLoads: true in an Expo/React…   | 🟢  | 💼  |     |     |     |     |
+| [no-clickjacking](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-clickjacking?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                                       | CWE-1021 |          |      | Detects clickjacking vulnerabilities and missing frame protections                                            | 🟢  |     |     |     |     |     |
+| [no-client-side-auth-logic](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-client-side-auth-logic?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                   |          |          |      | Prevent client-side authentication logic that can be bypassed. This rule is part of eslint-plugin-browser-s…  | 🟢  | 💼  |     |     |     |     |
+| [no-cookie-auth-tokens](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-cookie-auth-tokens?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                           | CWE-1004 | A02:2021 |      | Prevent storing authentication tokens in JavaScript-accessible cookies.                                       | 🟢  | 💼  |     |     |     |     |
+| [no-credentials-in-query-params](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-credentials-in-query-params?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)         | CWE-598  |          |      | CWE: [CWE-598](https://cwe.mitre.org/data/definitions/598.html)                                               | 🟢  | 💼  |     |     |     |     |
+| [no-disabled-certificate-validation](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-disabled-certificate-validation?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security) | CWE-295  |          |      | CWE: [CWE-295](https://cwe.mitre.org/data/definitions/295.html)                                               | 🟢  | 💼  |     |     |     |     |
+| [no-dynamic-service-worker-url](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-dynamic-service-worker-url?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)           | CWE-829  | A08:2021 |      | Prevent dynamic URLs in service worker registration.                                                          | 🟢  | 💼  |     |     |     |     |
+| [no-eval](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-eval?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                                                       |  CWE-94  |          |      | Detects dangerous eval() and similar code execution patterns                                                  | 🟢  | 💼  |     |     |     |     |
+| [no-filereader-innerhtml](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-filereader-innerhtml?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                       | CWE-693  | A03:2021 |      | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:     | 🟢  | 💼  |     |     |     |     |
+| [no-http-urls](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-http-urls?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                                             | CWE-319  |          |      | CWE: [CWE-319](https://cwe.mitre.org/data/definitions/319.html)                                               | 🟢  | 💼  |     |     |     |     |
+| [no-incomplete-url-sanitization](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-incomplete-url-sanitization?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)         | CWE-020  | A01:2021 |      | Disallow URL substring tests and partial scheme denylists as security decisions                               | 🟢  | 💼  |     |     |     |     |
+| [no-innerhtml](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-innerhtml?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                                             |  CWE-79  |          |      | Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Scripting (XSS)                 | 🟢  | 💼  |     |     |     |     |
+| [no-insecure-redirects](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-insecure-redirects?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                           | CWE-601  |          |      | ESLint Rule: no-insecure-redirects                                                                            | 🟢  | 💼  |     |     |     |     |
+| [no-insecure-websocket](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-insecure-websocket?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                           | CWE-319  |          |      | CWE: [CWE-319](https://cwe.mitre.org/data/definitions/319.html)                                               | 🟢  | 💼  |     |     |     |     |
+| [no-jwt-in-storage](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-jwt-in-storage?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                                   | CWE-311  | A02:2021 |      | This rule prevents storing JWT tokens in browser storage (localStorage/sessionStorage)                        | 🟢  | 💼  |     |     |     |     |
+| [no-missing-cors-check](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-missing-cors-check?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                           | CWE-346  |          |      | Detects missing CORS validation (wildcard CORS, missing origin check) that can allow unauthorized cross-ori…  | 🟢  |     |     |     |     |     |
+| [no-missing-csrf-protection](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-missing-csrf-protection?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                 | CWE-352  |          |      | Detects missing CSRF token validation in POST/PUT/DELETE requests                                             | 🟢  |     |     |     |     |     |
+| [no-missing-security-headers](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-missing-security-headers?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)               | CWE-693  |          |      | ESLint Rule: no-missing-security-headers                                                                      | 🟢  |     |     |     |     |     |
+| [no-password-in-url](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-password-in-url?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                                 | CWE-521  |          |      | This rule detects when URLs contain password-related query parameters or URL fragments                        | 🟢  |     |     |     |     |     |
+| [no-permissive-cors](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-permissive-cors?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                                 | CWE-942  |          |      | CWE: [CWE-942](https://cwe.mitre.org/data/definitions/942.html)                                               | 🟢  |     |     |     |     |     |
+| [no-postmessage-innerhtml](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-postmessage-innerhtml?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                     | CWE-693  | A03:2021 |      | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:     | 🟢  | 💼  |     |     |     |     |
+| [no-postmessage-wildcard-origin](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-postmessage-wildcard-origin?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)         | CWE-693  | A01:2021 |      | This rule prevents using \\"\\" as the targetOrigin parameter in postMessage() calls                          | 🟢  | 💼  |     |     |     |     |
+| [no-sensitive-cookie-js](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-sensitive-cookie-js?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                         | CWE-359  | A02:2021 |      | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:     | 🟢  | 💼  |     |     |     |     |
+| [no-sensitive-data-in-analytics](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-sensitive-data-in-analytics?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)         | CWE-359  |          |      | This rule detects when sensitive user data (email, SSN, credit card, password, phone, address) is passed to…  | 🟢  |     |     |     |     |     |
+| [no-sensitive-data-in-cache](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-sensitive-data-in-cache?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                 | CWE-200  |          |      | CWE: [CWE-200](https://cwe.mitre.org/data/definitions/200.html)                                               | 🟢  |     |     |     |     |     |
+| [no-sensitive-indexeddb](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-sensitive-indexeddb?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                         | CWE-922  | A02:2021 |      | Prevent storing sensitive data in IndexedDB.                                                                  | 🟢  | 💼  |     |     |     |     |
+| [no-sensitive-localstorage](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-sensitive-localstorage?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                   | CWE-922  |          |      | Detects storage of sensitive data (tokens, passwords, PII) in localStorage                                    | 🟢  | 💼  |     |     |     |     |
+| [no-sensitive-sessionstorage](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-sensitive-sessionstorage?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)               | CWE-922  | A02:2021 |      | Prevent storing sensitive data in sessionStorage.                                                             | 🟢  | 💼  |     |     |     |     |
+| [no-tracking-without-consent](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-tracking-without-consent?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)               | CWE-359  |          |      | CWE: [CWE-359](https://cwe.mitre.org/data/definitions/359.html)                                               | 🟢  |     |     |     |     |     |
+| [no-unencrypted-transmission](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-unencrypted-transmission?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)               | CWE-319  |          |      | Detects unencrypted data transmission (HTTP vs HTTPS, plain text protocols)                                   | 🟢  | 💼  |     |     |     |     |
+| [no-unescaped-url-parameter](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-unescaped-url-parameter?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                 |  CWE-79  |          |      | Detects unescaped URL parameters that can lead to Cross-Site Scripting (XSS) or open redirect vulnerabilities | 🟢  |     |     |     |     |     |
+| [no-unsafe-eval-csp](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-unsafe-eval-csp?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                                 |  CWE-95  | A03:2021 |      | Disallow 'unsafe-eval' in Content Security Policy directives.                                                 | 🟢  | 💼  |     |     |     |     |
+| [no-unsafe-inline-csp](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-unsafe-inline-csp?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                             |  CWE-79  | A03:2021 |      | Disallow 'unsafe-inline' in Content Security Policy directives.                                               | 🟢  | 💼  |     |     |     |     |
+| [no-unvalidated-deeplinks](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-unvalidated-deeplinks?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                     | CWE-939  |          |      | This rule detects when deep link URLs are opened without validation in React Native or mobile web apps        | 🟢  | 💼  |     |     |     |     |
+| [no-websocket-eval](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-websocket-eval?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                                   | CWE-319  | A03:2021 |      | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:     | 🟢  | 💼  |     |     |     |     |
+| [no-websocket-innerhtml](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-websocket-innerhtml?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                         | CWE-319  | A03:2021 |      | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:     | 🟢  | 💼  |     |     |     |     |
+| [no-worker-message-innerhtml](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-worker-message-innerhtml?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)               |  CWE-79  | A03:2021 |      | Disallow using innerHTML with Web Worker message data.                                                        | 🟢  | 💼  |     |     |     |     |
+| [require-blob-url-revocation](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/require-blob-url-revocation?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)               | CWE-401  | A04:2021 |      | Require revoking Blob URLs after use to prevent memory leaks.                                                 | 🟢  |     | ⚠️  |     |     |     |
+| [require-cookie-secure-attrs](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/require-cookie-secure-attrs?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)               | CWE-614  | A05:2021 |      | Require Secure and SameSite attributes on cookies.                                                            | 🟢  | 💼  |     |     |     |     |
+| [require-csp-headers](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/require-csp-headers?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                               | CWE-1021 |          |      | CWE: [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html)                                             | 🟢  |     |     |     |     |     |
+| [require-https-only](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/require-https-only?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                                 | CWE-319  |          |      | This rule detects HTTP (unencrypted) URLs in fetch() and axios requests                                       | 🟢  | 💼  |     |     |     |     |
+| [require-mime-type-validation](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/require-mime-type-validation?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)             | CWE-434  |          |      | CWE: [CWE-434](https://cwe.mitre.org/data/definitions/434.html)                                               | 🟢  |     |     |     |     |     |
+| [require-postmessage-origin-check](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/require-postmessage-origin-check?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)     | CWE-346  |          |      | Detects postMessage event handlers without origin validation                                                  | 🟢  | 💼  |     |     |     |     |
+| [require-url-validation](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/require-url-validation?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                         | CWE-601  |          |      | CWE: [CWE-601](https://cwe.mitre.org/data/definitions/601.html)                                               | 🟢  |     |     |     |     |     |
+| [require-websocket-wss](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/require-websocket-wss?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security)                           | CWE-319  | A02:2021 |      | This rule enforces the use of wss:// (WebSocket Secure) protocol instead of ws:// (unencrypted WebSocket)     | 🟢  | 💼  |     |     |     |     |
+
+## ⭐ Support & follow
+
+If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+
+[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+
+## 📄 License
+
+MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
   <a href="https://eslint.interlace.tools/docs/security/plugin-browser-security?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security"><img src="https://eslint.interlace.tools/images/og-browser-security.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+</p>
+
+<p align="center">
+  <a href="https://eslint.interlace.tools/docs/security/plugin-browser-security?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-browser-security" target="blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/interlace-dark.svg"><img src="https://eslint.interlace.tools/logos/interlace-light.svg" alt="Interlace" height="70" /></picture></a>
 </p>

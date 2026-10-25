@@ -21,6 +21,10 @@ type RuleOptions = [];
 export const mouseEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
   name: 'mouse-events-have-key-events',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/mouse-events-have-key-events',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/mouse-events-have-key-events.md',
@@ -53,7 +57,7 @@ export const mouseEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         const attributes = node.attributes.filter(

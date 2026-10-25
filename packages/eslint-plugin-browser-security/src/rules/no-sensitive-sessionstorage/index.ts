@@ -63,6 +63,7 @@ type RuleOptions = [Options?];
 export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
   name: 'no-sensitive-sessionstorage',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-sensitive-sessionstorage.md',
@@ -102,16 +103,12 @@ export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true, additionalPatterns: [] }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = true, additionalPatterns = [] } = options as Options;
-    const isTestFile = isTestFilePath(context.filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
+    let allowInTests: boolean;
+    let additionalPatterns: string[];
 
     function check(
       node: TSESTree.Node,
@@ -128,7 +125,13 @@ export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      if (!namesNonBearerSecret(key, [...NON_BEARER_SECRET_TERMS, ...additionalPatterns])) return;
+      if (
+        !namesNonBearerSecret(key, [
+          ...NON_BEARER_SECRET_TERMS,
+          ...additionalPatterns,
+        ])
+      )
+        return;
 
       context.report({
         node,
@@ -138,11 +141,28 @@ export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({ allowInTests = true, additionalPatterns = [] } = options as Options);
+        const isTestFile = isTestFilePath(context.filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
         if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
         if (memberName(callee, context.sourceCode) !== 'setItem') return;
-        if (resolveStorageArea(callee.object, context.sourceCode, SESSION_STORAGE) === null) return;
+        if (
+          resolveStorageArea(
+            callee.object,
+            context.sourceCode,
+            SESSION_STORAGE,
+          ) === null
+        )
+          return;
 
         const keyArg = node.arguments[0];
         const valueArg = node.arguments[1];
@@ -153,7 +173,13 @@ export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
 
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         if (node.left.type !== AST_NODE_TYPES.MemberExpression) return;
-        if (resolveStorageArea(node.left.object, context.sourceCode, SESSION_STORAGE) === null) {
+        if (
+          resolveStorageArea(
+            node.left.object,
+            context.sourceCode,
+            SESSION_STORAGE,
+          ) === null
+        ) {
           return;
         }
 

@@ -1,18 +1,52 @@
-# oxlint-plugin-mcp-sdk-security
+<p align="center">
+  <a href="https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security" target="blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/interlace-dark.svg"><img src="https://eslint.interlace.tools/logos/interlace-light.svg" alt="Interlace" height="90" /></picture></a>
+  &nbsp;&nbsp;
+  <a href="https://modelcontextprotocol.io" target="_blank"><img src="https://eslint.interlace.tools/logos/mcp.svg" alt="Model Context Protocol" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://oxc.rs" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/oxlint-dark.svg"><img src="https://eslint.interlace.tools/logos/oxlint-light.svg" alt="oxlint" height="90" /></picture></a>
+</p>
 
-The `mcp-sdk-security` rules for [oxlint](https://oxc.rs/docs/guide/usage/linter) and
-[Vite+](https://viteplus.dev). This package is the oxlint name for
-[`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security): the same rules, the same
-rule IDs (`mcp-sdk-security/<rule>`), and the same version. It contains no rule code of its own, and it
-does not install ESLint.
+<p align="center">
+  Security rules for <a href="https://www.npmjs.com/package/@modelcontextprotocol/sdk">@modelcontextprotocol/sdk</a> — the Model Context Protocol SDK.
+</p>
 
-## Install
+<p align="center">
+  <a href="https://www.npmjs.com/package/oxlint-plugin-mcp-sdk-security" target="_blank"><img src="https://img.shields.io/npm/v/oxlint-plugin-mcp-sdk-security.svg" alt="NPM Version" /></a>
+  <a href="https://www.npmjs.com/package/oxlint-plugin-mcp-sdk-security" target="_blank"><img src="https://img.shields.io/npm/dm/oxlint-plugin-mcp-sdk-security.svg" alt="NPM Downloads" /></a>
+  <a href="https://packagephobia.com/result?p=oxlint-plugin-mcp-sdk-security" target="_blank"><img src="https://badgen.net/packagephobia/install/oxlint-plugin-mcp-sdk-security" alt="Install Size" /></a>
+  <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
+</p>
+
+> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
+
+## Description
+
+`oxlint-plugin-mcp-sdk-security` is the [oxlint](https://oxc.rs/docs/guide/usage/linter/js-plugins) and [Vite+](https://viteplus.dev/guide/lint) name for [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security). It carries the same rules under the same IDs (`mcp-sdk-security/<rule>`), always at the same version, because it re-exports that package rather than copying it. Installing it does not install ESLint.
+
+## Covered natively by oxlint
+
+None of these 15 rules has an oxlint built-in equivalent. Every rule here is new to oxlint.
+
+- **Why** — a linter nobody reads protects nothing. We would rather miss a finding
+  than spend your attention on one that was never real.
+- **How** — evidence, not names. A rule fires on what the code _does_, resolved
+  through the AST and ESLint's own scope analysis.
+- **What** — every finding carries its fix, in prose for a human and as structured
+  JSON for an agent. Security rules add a CWE mapping and, where assigned, a CVSS score.
+
+That trade costs recall, and we measure it:
+[methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
+· [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md)
+· [a false positive is a bug](https://github.com/ofri-peretz/eslint/issues).
+
+## Getting Started
 
 ```bash
-npm install --save-dev oxlint-plugin-mcp-sdk-security
+npm install oxlint-plugin-mcp-sdk-security --save-dev
 ```
 
-## Vite+
+### Vite+
 
 ```ts
 // vite.config.ts
@@ -22,33 +56,110 @@ export default defineConfig({
   lint: {
     jsPlugins: ['oxlint-plugin-mcp-sdk-security'],
     rules: {
-      'mcp-sdk-security/<rule>': 'error',
+      'mcp-sdk-security/no-code-injection-in-tool': 'error',
+      'mcp-sdk-security/no-command-injection-in-tool': 'error',
+      'mcp-sdk-security/no-credential-leak-in-tool': 'error',
+      'mcp-sdk-security/no-path-traversal-in-tool': 'error',
+      'mcp-sdk-security/no-predictable-session-id': 'error',
+      'mcp-sdk-security/no-shared-stateless-transport': 'error',
+      'mcp-sdk-security/no-sql-injection-in-tool': 'error',
+      'mcp-sdk-security/no-ssrf-in-tool': 'error',
+      'mcp-sdk-security/no-tool-description-injection': 'error',
+      'mcp-sdk-security/no-untrusted-stdio-command': 'error',
+      'mcp-sdk-security/no-untrusted-tool-metadata-in-prompt': 'error',
+      'mcp-sdk-security/no-unvalidated-tool-args': 'error',
+      'mcp-sdk-security/require-http-transport-hardening': 'error',
+      'mcp-sdk-security/require-tool-input-schema': 'error',
     },
   },
 });
 ```
 
-## oxlint
+### oxlint
 
 ```json
 {
   "jsPlugins": ["oxlint-plugin-mcp-sdk-security"],
   "rules": {
-    "mcp-sdk-security/<rule>": "error"
+    "mcp-sdk-security/no-code-injection-in-tool": "error",
+    "mcp-sdk-security/no-command-injection-in-tool": "error",
+    "mcp-sdk-security/no-credential-leak-in-tool": "error",
+    "mcp-sdk-security/no-path-traversal-in-tool": "error",
+    "mcp-sdk-security/no-predictable-session-id": "error",
+    "mcp-sdk-security/no-shared-stateless-transport": "error",
+    "mcp-sdk-security/no-sql-injection-in-tool": "error",
+    "mcp-sdk-security/no-ssrf-in-tool": "error",
+    "mcp-sdk-security/no-tool-description-injection": "error",
+    "mcp-sdk-security/no-untrusted-stdio-command": "error",
+    "mcp-sdk-security/no-untrusted-tool-metadata-in-prompt": "error",
+    "mcp-sdk-security/no-unvalidated-tool-args": "error",
+    "mcp-sdk-security/require-http-transport-hardening": "error",
+    "mcp-sdk-security/require-tool-input-schema": "error"
   }
 }
 ```
 
+These are the rules the plugin recommends (💼 in the table below).
+
+### ESLint
+
+Install [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security) instead. It has the same rules, plus presets for ESLint's flat config.
+
+## 📦 Compatibility
+
+| Package | Version                                                          |
+| :------ | :--------------------------------------------------------------- |
+| oxlint  | verified on `1.88.0`: CI loads every rule ID through `jsPlugins` |
+| Vite+   | `lint.jsPlugins` in `vite.config.ts`                             |
+| Node.js | `>=18.0.0`                                                       |
+
 ## Rules
 
-Every rule, its options and its docs are listed in the
-[`eslint-plugin-mcp-sdk-security` README](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security#rules). Using ESLint
-instead? Install `eslint-plugin-mcp-sdk-security` directly.
+**Legend**
 
-## License
+| Icon | Description                                                               |
+| :--: | :------------------------------------------------------------------------ |
+|  💼  | **Recommended**: Included in the recommended preset.                      |
+|  ⚠️  | **Warns**: Set to warn in recommended preset.                             |
+|  🔧  | **Auto-fixable**: Automatically fixable by the `--fix` CLI option.        |
+|  💡  | **Suggestions**: Providing code suggestions in IDE.                       |
+|  🚫  | **Deprecated**: This rule is deprecated.                                  |
+|  🟢  | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier.                |
+|  🟡  | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+|  🟠  | **Type-aware (graceful)**: requires TS program; silent without it.        |
 
-MIT
+| Rule                                                                                                                                                                                                                                      |   CWE    |  OWASP   | CVSS | Description                                                                                                  | 🧠  | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------: | :------: | :--: | :----------------------------------------------------------------------------------------------------------- | :-: | :-: | :-: | :-: | :-: | :-: |
+| [no-code-injection-in-tool](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-code-injection-in-tool?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security)                       |  CWE-95  | A03:2021 |      | Disallow an MCP tool argument reaching eval, new Function or a vm context as code.                           | 🟢  | 💼  |     |     |     |     |
+| [no-command-injection-in-tool](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-command-injection-in-tool?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security)                 |  CWE-78  | A03:2021 |      | Disallow an MCP tool argument choosing the command a child_process call runs.                                | 🟢  | 💼  |     |     |     |     |
+| [no-credential-leak-in-tool](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-credential-leak-in-tool?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security)                     | CWE-200  | A01:2021 |      | Disallow an MCP tool returning the server's environment or the caller's token, or forwarding that token ups… | 🟢  | 💼  |     |     |     |     |
+| [no-duplicate-tool-name](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-duplicate-tool-name?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security)                             | CWE-694  | A04:2021 |      | Disallow registering or listing two MCP tools with the same name on one server.                              | 🟢  |     | ⚠️  |     |     |     |
+| [no-path-traversal-in-tool](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-path-traversal-in-tool?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security)                       |  CWE-22  | A01:2021 |      | Disallow an MCP tool argument choosing the file an fs call reads, writes or deletes without a containment c… | 🟢  | 💼  |     |     |     |     |
+| [no-predictable-session-id](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-predictable-session-id?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security)                       | CWE-330  | A02:2021 |      | Disallow an MCP sessionIdGenerator that returns a counter, a timestamp, Math.random() or a constant.         | 🟢  | 💼  |     |     |     |     |
+| [no-shared-stateless-transport](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-shared-stateless-transport?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security)               | CWE-488  | A04:2021 |      | Disallow sharing one stateless Streamable HTTP transport or one MCP server across requests.                  | 🟢  | 💼  |     |     |     |     |
+| [no-sql-injection-in-tool](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-sql-injection-in-tool?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security)                         |  CWE-89  | A03:2021 |      | Disallow an MCP tool argument reaching the text of a SQL query instead of its parameters.                    | 🟢  | 💼  |     |     |     |     |
+| [no-ssrf-in-tool](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-ssrf-in-tool?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security)                                           | CWE-918  | A10:2021 |      | Disallow an MCP tool argument choosing the host an outbound HTTP request is sent to.                         | 🟢  | 💼  |     |     |     |     |
+| [no-tool-description-injection](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-tool-description-injection?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security)               | CWE-1427 | A03:2021 |      | Disallow MCP tool, prompt and resource descriptions built from text a client, a remote service or a file co… | 🟢  | 💼  |     |     |     |     |
+| [no-untrusted-stdio-command](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-untrusted-stdio-command?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security)                     |  CWE-78  | A03:2021 |      | Disallow an MCP client spawning a stdio server whose command comes from a tool argument, a network response… | 🟢  | 💼  |     |     |     |     |
+| [no-untrusted-tool-metadata-in-prompt](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-untrusted-tool-metadata-in-prompt?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security) | CWE-1427 | A03:2021 |      | Disallow an MCP client writing a server's tool, prompt or resource metadata into an LLM prompt instead of i… | 🟢  | 💼  |     |     |     |     |
+| [no-unvalidated-tool-args](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-unvalidated-tool-args?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security)                         |  CWE-20  | A03:2021 |      | Disallow a tool handler reading an argument its declared input schema does not include.                      | 🟢  | 💼  |     |     |     |     |
+| [require-http-transport-hardening](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/require-http-transport-hardening?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security)         | CWE-346  | A05:2021 |      | Require an MCP HTTP server transport to validate the Host header and a network-reachable MCP server to auth… | 🟢  | 💼  |     |     |     |     |
+| [require-tool-input-schema](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/require-tool-input-schema?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security)                       |  CWE-20  | A03:2021 |      | Require an input schema when an MCP tool handler reads arguments.                                            | 🟢  | 💼  |     |     |     |     |
+
+## ⭐ Support & follow
+
+If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+
+[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+
+## 📄 License
+
+MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
   <a href="https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security"><img src="https://eslint.interlace.tools/images/og-mcp-sdk-security.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+</p>
+
+<p align="center">
+  <a href="https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security" target="blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/interlace-dark.svg"><img src="https://eslint.interlace.tools/logos/interlace-light.svg" alt="Interlace" height="70" /></picture></a>
 </p>

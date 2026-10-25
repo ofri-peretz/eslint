@@ -40,6 +40,7 @@ const DANGEROUS_METHODS = new Set(['insertAdjacentHTML', 'write', 'writeln']);
 export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
   name: 'no-worker-message-innerhtml',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-worker-message-innerhtml.md',
@@ -71,24 +72,29 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
-    // Ownership gate: this rule reports only what the resolver attributes
-    // to the worker source. Everything it cannot identify belongs to the
-    // generic sink rule, so no value is ever reported by both.
-    const payloadSource = createPayloadResolver(context.sourceCode);
+    let payloadSource: ReturnType<typeof createPayloadResolver>;
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+
+        // Ownership gate: this rule reports only what the resolver attributes
+        // to the worker source. Everything it cannot identify belongs to the
+        // generic sink rule, so no value is ever reported by both.
+        payloadSource = createPayloadResolver(context.sourceCode);
+        return true;
+      },
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         // Check for innerHTML/outerHTML assignment within handler
         // The resolver is the sole sink condition. A mutable in-handler

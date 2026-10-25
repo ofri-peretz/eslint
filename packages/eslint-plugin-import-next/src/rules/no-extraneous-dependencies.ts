@@ -69,6 +69,7 @@ interface PackageJson {
 export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
   name: 'no-extraneous-dependencies',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-extraneous-dependencies.md',
@@ -206,95 +207,19 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const {
-      devDependencies = true,
-      optionalDependencies = true,
-      peerDependencies = true,
-      bundledDependencies = true,
-      packageJsonPath,
-      packageJson,
-      resolutionStrategy = 'strict',
-      allowPatterns = [],
-      ignore = [],
-      verbatimModuleSyntax = false,
-    } = options || {};
-
-    const filename = context.filename;
-    if (!filename) {
-      return {};
-    }
-
-    // Use provided package.json if available (for testing)
-    let resolvedPackageJson: PackageJson | null = null;
-    if (packageJson) {
-      // Use directly provided package.json (for testing)
-      resolvedPackageJson = packageJson;
-    } else if (packageJsonPath) {
-      // Use specified package.json file
-      resolvedPackageJson = readJsonFileSync<PackageJson>(packageJsonPath);
-      if (!resolvedPackageJson) {
-        // Invalid package.json - skip
-        return {};
-      }
-    } else {
-      // Find package.json automatically
-      const packageJsonFile = findFileUpward(
-        'package.json',
-        getDirname(filename),
-      );
-
-      if (!packageJsonFile) {
-        // No package.json found - skip this rule
-        return {};
-      }
-
-      // Read and parse package.json
-      resolvedPackageJson = readJsonFileSync<PackageJson>(packageJsonFile);
-      if (!resolvedPackageJson) {
-        // Invalid package.json - skip
-        return {};
-      }
-    }
-
-    // Build allowed packages map
-    const allowedPackages = new Set<string>();
-
-    // Add dependencies
-    if (resolvedPackageJson?.dependencies) {
-      Object.keys(resolvedPackageJson.dependencies).forEach((pkg) =>
-        allowedPackages.add(pkg),
-      );
-    }
-
-    // Add dev dependencies if allowed
-    if (devDependencies && resolvedPackageJson?.devDependencies) {
-      Object.keys(resolvedPackageJson.devDependencies).forEach((pkg) =>
-        allowedPackages.add(pkg),
-      );
-    }
-
-    // Add optional dependencies if allowed
-    if (optionalDependencies && resolvedPackageJson?.optionalDependencies) {
-      Object.keys(resolvedPackageJson.optionalDependencies).forEach((pkg) =>
-        allowedPackages.add(pkg),
-      );
-    }
-
-    // Add peer dependencies if allowed
-    if (peerDependencies && resolvedPackageJson?.peerDependencies) {
-      Object.keys(resolvedPackageJson.peerDependencies).forEach((pkg) =>
-        allowedPackages.add(pkg),
-      );
-    }
-
-    // Add bundled dependencies if allowed
-    if (bundledDependencies && resolvedPackageJson?.bundledDependencies) {
-      resolvedPackageJson.bundledDependencies.forEach((pkg) =>
-        allowedPackages.add(pkg),
-      );
-    }
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let devDependencies: boolean;
+    let optionalDependencies: boolean;
+    let peerDependencies: boolean;
+    let bundledDependencies: boolean;
+    let packageJsonPath: string | undefined;
+    let packageJson: PackageJson | undefined;
+    let resolutionStrategy: 'strict' | 'workspace' | 'monorepo';
+    let allowPatterns: string[];
+    let ignore: string[];
+    let verbatimModuleSyntax: boolean;
+    let resolvedPackageJson: PackageJson | null;
+    let allowedPackages: Set<string>;
 
     // oxlint-disable-next-line consistent-function-scoping
     function isExternalPackage(importPath: string): string | null {
@@ -539,6 +464,97 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({
+          devDependencies = true,
+          optionalDependencies = true,
+          peerDependencies = true,
+          bundledDependencies = true,
+          packageJsonPath,
+          packageJson,
+          resolutionStrategy = 'strict',
+          allowPatterns = [],
+          ignore = [],
+          verbatimModuleSyntax = false,
+        } = options || {});
+
+        const filename = context.filename;
+        if (!filename) {
+          return false;
+        }
+
+        // Use provided package.json if available (for testing)
+        resolvedPackageJson = null;
+        if (packageJson) {
+          // Use directly provided package.json (for testing)
+          resolvedPackageJson = packageJson;
+        } else if (packageJsonPath) {
+          // Use specified package.json file
+          resolvedPackageJson = readJsonFileSync<PackageJson>(packageJsonPath);
+          if (!resolvedPackageJson) {
+            // Invalid package.json - skip
+            return false;
+          }
+        } else {
+          // Find package.json automatically
+          const packageJsonFile = findFileUpward(
+            'package.json',
+            getDirname(filename),
+          );
+
+          if (!packageJsonFile) {
+            // No package.json found - skip this rule
+            return false;
+          }
+
+          // Read and parse package.json
+          resolvedPackageJson = readJsonFileSync<PackageJson>(packageJsonFile);
+          if (!resolvedPackageJson) {
+            // Invalid package.json - skip
+            return false;
+          }
+        }
+
+        // Build allowed packages map
+        allowedPackages = new Set<string>();
+
+        // Add dependencies
+        if (resolvedPackageJson?.dependencies) {
+          Object.keys(resolvedPackageJson.dependencies).forEach((pkg) =>
+            allowedPackages.add(pkg),
+          );
+        }
+
+        // Add dev dependencies if allowed
+        if (devDependencies && resolvedPackageJson?.devDependencies) {
+          Object.keys(resolvedPackageJson.devDependencies).forEach((pkg) =>
+            allowedPackages.add(pkg),
+          );
+        }
+
+        // Add optional dependencies if allowed
+        if (optionalDependencies && resolvedPackageJson?.optionalDependencies) {
+          Object.keys(resolvedPackageJson.optionalDependencies).forEach((pkg) =>
+            allowedPackages.add(pkg),
+          );
+        }
+
+        // Add peer dependencies if allowed
+        if (peerDependencies && resolvedPackageJson?.peerDependencies) {
+          Object.keys(resolvedPackageJson.peerDependencies).forEach((pkg) =>
+            allowedPackages.add(pkg),
+          );
+        }
+
+        // Add bundled dependencies if allowed
+        if (bundledDependencies && resolvedPackageJson?.bundledDependencies) {
+          resolvedPackageJson.bundledDependencies.forEach((pkg) =>
+            allowedPackages.add(pkg),
+          );
+        }
+        return true;
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         // Type imports are erased at compile time, so they cannot pull in a
         // runtime dependency. Upstream ignores them by default: `import type`,

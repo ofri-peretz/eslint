@@ -89,6 +89,8 @@ function renderManifest(short: string, plugin: PluginManifest): string {
     main: './index.js',
     types: './index.d.ts',
     files: ['index.js', 'index.d.ts', 'README.md', 'LICENSE'],
+    // release.yml publishes every package from its dist/; this produces it.
+    scripts: { build: 'tsx ../../scripts/build-package.ts' },
     keywords: [...new Set(keywords)],
     homepage,
     repository: plugin.repository && {
@@ -116,50 +118,201 @@ const renderIndex = (plugin: string) =>
 const renderTypes = (plugin: string) =>
   `${HEADER(plugin)}import plugin = require('${plugin}/oxlint');\n\nexport = plugin;\n`;
 
+/** The oxlint the READMEs say they were verified on — the one CI installs. */
+const OXLINT_VERSION = (
+  JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT, 'node_modules', 'oxlint', 'package.json'),
+      'utf8',
+    ),
+  ) as { version: string }
+).version;
+
+const FENCE = '```';
+
 /**
- * The plugin README's OG banner block, re-attributed to the alias. Every
- * published README carries exactly one (apps/docs readme-og-banner-lock).
+ * Our rules that share a name with an oxlint built-in, with a human verdict
+ * (scripts/oxlint-builtin-overlap.ts). An `equivalent` one is better run as
+ * the native rule: same check, Rust speed, no double report.
  */
-function banner(dir: string, plugin: PluginManifest, alias: string): string {
-  const readme = fs.readFileSync(
-    path.join(PACKAGES_DIR, dir, 'README.md'),
-    'utf8',
-  );
-  const block =
-    /<p align="center">\s*<a [^>]*><img src="https:\/\/eslint\.interlace\.tools\/images\/og-[^"]+"[^>]*\/><\/a>\s*<\/p>/.exec(
-      readme,
-    );
-  if (!block)
-    throw new Error(`${plugin.name} README has no OG banner to reuse`);
-  return block[0].replaceAll(
-    `utm_campaign=${plugin.name}`,
-    `utm_campaign=${alias}`,
-  );
+const OVERLAP = (
+  JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT, 'docs', 'oxlint-builtin-overlap.json'),
+      'utf8',
+    ),
+  ) as {
+    overlap: {
+      plugin: string;
+      rule: string;
+      builtin: string;
+      verdict: string;
+      note?: string;
+    }[];
+  }
+).overlap;
+
+/** A level-2 section, heading included, up to the next level-2 heading. */
+function section(readme: string, heading: RegExp): string {
+  const match = heading.exec(readme);
+  if (!match) return '';
+  const rest = readme.slice(match.index);
+  const next = rest.slice(3).search(/^## /m);
+  return (next < 0 ? rest : rest.slice(0, next + 3)).trimEnd();
 }
 
+/**
+ * Drop the plugin README's sync markers: the alias copy is owned by this
+ * generator, and a marker would invite the plugin's sync scripts to rewrite it.
+ */
+const unmark = (text: string) =>
+  text.replace(/^<!-- (?:AUTO-GENERATED|INTERLACE):[^>]*-->\n?/gm, '');
+
+/** Rules marked 💼 (and whether ⚠️) in the plugin README's rules table. */
+function recommendedRules(readme: string): { rule: string; warn: boolean }[] {
+  const rows = readme.split('\n').filter((l) => l.startsWith('| '));
+  const header = rows.find((l) => /^\| Rule\b/.test(l) && l.includes('💼'));
+  if (!header) return [];
+  const cells = (l: string) =>
+    l
+      .slice(1, -1)
+      .split(/(?<!\\)\|/)
+      .map((c) => c.trim());
+  const head = cells(header);
+  const rec = head.indexOf('💼');
+  const warn = head.indexOf('⚠️');
+  if (rec < 0) return [];
+  return rows.flatMap((l) => {
+    const name = /^\| \[([a-z0-9-]+)\]\(/.exec(l)?.[1];
+    const c = cells(l);
+    return name && c[rec] === '💼'
+      ? [{ rule: name, warn: warn >= 0 && c[warn] === '⚠️' }]
+      : [];
+  });
+}
+
+/**
+ * The alias README is derived from the plugin's own, so the two never drift:
+ * same header, badges, doctrine, rules table and footer — re-pointed at the
+ * alias, led by the Vite+ / oxlint setup, with ESLint as the alternative.
+ */
 function renderReadme(
   dir: string,
   short: string,
   plugin: PluginManifest,
 ): string {
   const alias = `oxlint-plugin-${short}`;
-  return `# ${alias}
+  const src = fs.readFileSync(
+    path.join(PACKAGES_DIR, dir, 'README.md'),
+    'utf8',
+  );
+  const centered = [...src.matchAll(/<p align="center">[\s\S]*?<\/p>/g)].map(
+    (m) => m[0],
+  );
+  const ogBanner = centered.find((b) => b.includes('/images/og-'));
+  if (centered.length < 3 || !ogBanner) {
+    throw new Error(
+      `${plugin.name} README lacks the header, badge and banner blocks to derive from`,
+    );
+  }
+  const [logos, tagline, badges] = centered;
+  const footerLogo = centered[centered.length - 1];
 
-The \`${short}\` rules for [oxlint](https://oxc.rs/docs/guide/usage/linter) and
-[Vite+](https://viteplus.dev). This package is the oxlint name for
-[\`${plugin.name}\`](https://www.npmjs.com/package/${plugin.name}): the same rules, the same
-rule IDs (\`${short}/<rule>\`), and the same version. It contains no rule code of its own, and it
-does not install ESLint.
+  // The ESLint mark gives way in an oxlint package's header; oxlint's is there.
+  const header = logos.replace(
+    /\s*&nbsp;&nbsp;\s*<a href="https:\/\/eslint\.org"[\s\S]*?<\/a>/,
+    '',
+  );
+  let aliasBadges = badges;
+  for (const prefix of [
+    'npmjs.com/package/',
+    '/npm/v/',
+    '/npm/dm/',
+    'packagephobia.com/result?p=',
+    'packagephobia/install/',
+  ]) {
+    aliasBadges = aliasBadges.replaceAll(
+      `${prefix}${plugin.name}`,
+      `${prefix}${alias}`,
+    );
+  }
+  const cta = /^> ⭐.*$/m.exec(src)?.[0] ?? '';
+  // Some plugins keep the doctrine inside "Why"; it is placed once, below.
+  const why = section(src, /^## Why[^\n]*$/m)
+    .replace(/<!-- AUTO-GENERATED:DOCTRINE:START[\s\S]*?DOCTRINE:END -->/, '')
+    .trim();
+  const doctrine =
+    /<!-- AUTO-GENERATED:DOCTRINE:START[^>]*-->\n([\s\S]*?)<!-- AUTO-GENERATED:DOCTRINE:END -->/
+      .exec(src)?.[1]
+      ?.trim() ?? '';
+  const rules = section(src, /^## Rules$/m);
+  const support = section(src, /^## ⭐ Support & follow$/m);
 
-## Install
+  const allRules = [...rules.matchAll(/^\| \[([a-z0-9-]+)\]\(/gm)].map(
+    (m) => m[1],
+  );
+  const native = new Map(
+    OVERLAP.filter((o) => o.plugin === short && o.verdict === 'equivalent').map(
+      (o) => [o.rule, o.builtin],
+    ),
+  );
+  const added = allRules.filter((r) => !native.has(r));
+  // The oxlint configs leave out rules oxlint already ships natively.
+  const recommended = recommendedRules(src).filter((r) => !native.has(r.rule));
+  // No recommended set: show the first added rule as a working example.
+  const firstRule = added[0] ?? allRules[0] ?? '<rule>';
+  const enabled = recommended.length
+    ? recommended
+    : [{ rule: firstRule, warn: false }];
+  const level = (warn: boolean) => (warn ? 'warn' : 'error');
+  const rulesTs = enabled
+    .map(({ rule, warn }) => `      '${short}/${rule}': '${level(warn)}',`)
+    .join('\n');
+  const rulesJson = enabled
+    .map(({ rule, warn }) => `    "${short}/${rule}": "${level(warn)}"`)
+    .join(',\n');
+  const which = recommended.length
+    ? `These are the rules the plugin recommends (💼 in the table below)${native.size ? ', minus the ones oxlint already ships natively' : ''}.`
+    : 'That enables one rule as an example; add the ones you want from the table below.';
+  const nativeSection = native.size
+    ? `## Covered natively by oxlint
 
-\`\`\`bash
-npm install --save-dev ${alias}
-\`\`\`
+oxlint already ships ${native.size} of these ${allRules.length} rules as built-ins. Enable the built-in instead: it is the same check, runs natively, and running both would report every finding twice. Each rule carries the mapping as \`meta.interop.nativeEquivalent\`.
 
-## Vite+
+| This plugin | oxlint built-in |
+| :--- | :--- |
+${[...native].map(([rule, builtin]) => `| \`${short}/${rule}\` | \`${builtin}\` |`).join('\n')}
 
-\`\`\`ts
+What this package adds to oxlint is the other ${added.length}: every rule in the table below that is not listed here.`
+    : `## Covered natively by oxlint
+
+None of these ${allRules.length} rules has an oxlint built-in equivalent. Every rule here is new to oxlint.`;
+  const lead =
+    short === 'import-next'
+      ? `**Fills the gaps in oxlint's import plugin.** oxlint's native \`import\` plugin already covers ${native.size} of these rules (listed below; use those natively). This package adds the ${added.length} it does not have: ${added.map((r) => `\`${r}\``).join(', ')}.\n\n`
+      : '';
+  const node = (plugin.engines as { node?: string } | undefined)?.node;
+
+  const doc = [
+    header,
+    tagline,
+    aliasBadges,
+    cta,
+    `## Description
+
+${lead}\`${alias}\` is the [oxlint](https://oxc.rs/docs/guide/usage/linter/js-plugins) and [Vite+](https://viteplus.dev/guide/lint) name for [\`${plugin.name}\`](https://www.npmjs.com/package/${plugin.name}). It carries the same rules under the same IDs (\`${short}/<rule>\`), always at the same version, because it re-exports that package rather than copying it. Installing it does not install ESLint.`,
+    why,
+    nativeSection,
+    doctrine,
+    `## Getting Started
+
+${FENCE}bash
+npm install ${alias} --save-dev
+${FENCE}
+
+### Vite+
+
+${FENCE}ts
 // vite.config.ts
 import { defineConfig } from 'vite-plus';
 
@@ -167,35 +320,47 @@ export default defineConfig({
   lint: {
     jsPlugins: ['${alias}'],
     rules: {
-      '${short}/<rule>': 'error',
+${rulesTs}
     },
   },
 });
-\`\`\`
+${FENCE}
 
-## oxlint
+### oxlint
 
-\`\`\`json
+${FENCE}json
 {
   "jsPlugins": ["${alias}"],
   "rules": {
-    "${short}/<rule>": "error"
+${rulesJson}
   }
 }
-\`\`\`
+${FENCE}
 
-## Rules
+${which}
 
-Every rule, its options and its docs are listed in the
-[\`${plugin.name}\` README](https://www.npmjs.com/package/${plugin.name}#rules). Using ESLint
-instead? Install \`${plugin.name}\` directly.
+### ESLint
 
-## License
+Install [\`${plugin.name}\`](https://www.npmjs.com/package/${plugin.name}) instead. It has the same rules, plus presets for ESLint's flat config.`,
+    `## 📦 Compatibility
 
-${plugin.license ?? 'MIT'}
+| Package | Version |
+| :--- | :--- |
+| oxlint | verified on \`${OXLINT_VERSION}\`: CI loads every rule ID through \`jsPlugins\` |
+| Vite+ | \`lint.jsPlugins\` in \`vite.config.ts\` |${node ? `\n| Node.js | \`${node}\` |` : ''}`,
+    unmark(rules),
+    unmark(support),
+    `## 📄 License
 
-${banner(dir, plugin, alias)}
-`;
+${plugin.license ?? 'MIT'} © [Ofri Peretz](https://github.com/ofri-peretz)`,
+    ogBanner,
+    footerLogo,
+  ].filter(Boolean);
+
+  return `${doc.join('\n\n')}\n`.replaceAll(
+    `utm_campaign=${plugin.name}`,
+    `utm_campaign=${alias}`,
+  );
 }
 
 // ── Plan every file, then write or compare ────────────────────────────
@@ -252,7 +417,9 @@ for (const dir of fs.readdirSync(PACKAGES_DIR)) {
   if (!dir.startsWith('oxlint-plugin-')) continue;
   for (const file of fs.readdirSync(path.join(PACKAGES_DIR, dir))) {
     const full = path.join(PACKAGES_DIR, dir, file);
-    if (file === 'node_modules' || file === 'CHANGELOG.md') continue;
+    // Build output and installs, not generated sources.
+    if (['node_modules', 'dist', '.turbo', 'CHANGELOG.md'].includes(file))
+      continue;
     if (!planned.has(full)) drift.push(`extra    ${path.relative(ROOT, full)}`);
   }
 }

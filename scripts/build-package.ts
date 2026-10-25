@@ -72,10 +72,15 @@ const tsconfig = existsSync(resolve(pkgDir, 'tsconfig.lib.json'))
     : null;
 
 if (tsconfig === null) {
-  cpSync(resolve(pkgDir, 'src'), join(distDir, 'src'), {
-    recursive: true,
-    filter: (p) => !/\.(test|spec)\.[cm]?js$/.test(p),
-  });
+  // A package with no src/ at all (the oxlint-plugin-* aliases: a manifest and
+  // a one-line index.js) ships only root files named in `files`, which step 3
+  // copies. Nothing to produce here.
+  if (existsSync(resolve(pkgDir, 'src'))) {
+    cpSync(resolve(pkgDir, 'src'), join(distDir, 'src'), {
+      recursive: true,
+      filter: (p) => !/\.(test|spec)\.[cm]?js$/.test(p),
+    });
+  }
 } else {
   // Compile TypeScript. Use `tsc --build` so cross-package project
   // references resolve correctly (each plugin's tsconfig.lib.json
@@ -396,7 +401,12 @@ const collectJsFiles = (dir: string, into: string[] = []): string[] => {
   return into;
 };
 
-if (existsSync(emittedSrcDir)) {
+// Root-level .js named in `files` ships too (the oxlint-plugin-* aliases are
+// nothing else), so it gets the same treatment as compiled output.
+const rootJs = readdirSync(distDir)
+  .filter((f) => f.endsWith('.js'))
+  .map((f) => join(distDir, f));
+if (existsSync(emittedSrcDir) || rootJs.length > 0) {
   // Transform everything BEFORE writing anything. Transforming and writing in
   // one pass looks equivalent and is not: a throw on file N leaves files 1..N-1
   // already written in stripped form, so `dist` ends up half-stripped while the
@@ -404,7 +414,10 @@ if (existsSync(emittedSrcDir)) {
   // flag the unstripped remainder and contradict the build log. Buffering costs
   // ~2 MB for the largest package and makes the pass all-or-nothing.
   try {
-    const files = collectJsFiles(emittedSrcDir);
+    const files = [
+      ...(existsSync(emittedSrcDir) ? collectJsFiles(emittedSrcDir) : []),
+      ...rootJs,
+    ];
     let before = 0;
     let after = 0;
     const pending: { path: string; code: string }[] = [];

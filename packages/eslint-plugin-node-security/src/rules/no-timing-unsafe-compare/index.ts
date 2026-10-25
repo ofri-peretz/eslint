@@ -567,6 +567,7 @@ function isNonSecretMember(node: TSESTree.MemberExpression): boolean {
 export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
   name: 'no-timing-unsafe-compare',
   meta: {
+    interop: { runtimes: ['eslint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-timing-unsafe-compare.md',
@@ -637,47 +638,20 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       nonSecretTails: [...DEFAULT_NON_SECRET_TAILS],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      secretPatterns = DEFAULT_SECRET_PATTERNS,
-      untrustedSources = DEFAULT_UNTRUSTED_SOURCES,
-      reportUnverifiedComparisons = false,
-      nonSecretWords = [...DEFAULT_NON_SECRET_WORDS],
-      nonSecretTails = [...DEFAULT_NON_SECRET_TAILS],
-    } = options as Options;
-    // Lower-cased once. `identifierWords` already lower-cases what it returns,
-    // so a user who writes `['Author']` must still match `postAuthorId` — the
-    // built-ins are lower-case and the option has to behave identically.
-    const nonSecretWordSet: ReadonlySet<string> = new Set(
-      nonSecretWords.map((word) => word.toLowerCase()),
-    );
-    const nonSecretTailSet: ReadonlySet<string> = new Set(
-      nonSecretTails.map((word) => word.toLowerCase()),
-    );
-    const sourceCode = context.sourceCode;
-    const readsUntrusted = makeReadsTaintSource(
-      sourceCode,
-      new Set(untrustedSources.map((source) => source.toLowerCase())),
-    );
-    // Substring-matched on purpose: `auth` has to match `authorization`, and
-    // `token` has to match `accessTokenValue`. Anchoring to word boundaries was
-    // tried and dropped — it fixed `firstKey` but stopped matching
-    // `req.headers.authorization`, trading one false positive for a worse false
-    // negative.
-    //
-    // Under the DEFAULT patterns `firstKey` never reaches the guard at all,
-    // because `key` is not among them. The existence-check guard below is what
-    // handles the same shape when a project adds `key` back through
-    // `secretPatterns` — two separate mechanisms, not one.
-    // Guarded: a user pattern reaches `new RegExp` here. Measured before this
-    // change: `(a+)+$` took 45-58s on a single file, and `[` threw
-    // "Invalid regular expression" out of create(), killing the whole lint
-    // run rather than just this rule. compileUserPattern degrades both to a
-    // substring match.
-    const patterns = compileUserPatterns(secretPatterns as string[], 'i');
+    let secretPatterns: string[];
+    let untrustedSources: string[];
+    let reportUnverifiedComparisons: boolean;
+    let nonSecretWords: string[];
+    let nonSecretTails: string[];
+    let nonSecretWordSet: ReadonlySet<string>;
+    let nonSecretTailSet: ReadonlySet<string>;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let readsUntrusted: (node: TSESTree.Node) => boolean;
+    let patterns: ReturnType<typeof compileUserPatterns>;
 
     function nameLooksSecret(name: string): boolean {
       if (BOOLEAN_PREDICATE_NAME.test(name)) return false;
@@ -1120,6 +1094,46 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          secretPatterns = DEFAULT_SECRET_PATTERNS,
+          untrustedSources = DEFAULT_UNTRUSTED_SOURCES,
+          reportUnverifiedComparisons = false,
+          nonSecretWords = [...DEFAULT_NON_SECRET_WORDS],
+          nonSecretTails = [...DEFAULT_NON_SECRET_TAILS],
+        } = options as Options);
+        // Lower-cased once. `identifierWords` already lower-cases what it returns,
+        // so a user who writes `['Author']` must still match `postAuthorId` — the
+        // built-ins are lower-case and the option has to behave identically.
+        nonSecretWordSet = new Set(
+          nonSecretWords.map((word) => word.toLowerCase()),
+        );
+        nonSecretTailSet = new Set(
+          nonSecretTails.map((word) => word.toLowerCase()),
+        );
+        sourceCode = context.sourceCode;
+        readsUntrusted = makeReadsTaintSource(
+          sourceCode,
+          new Set(untrustedSources.map((source) => source.toLowerCase())),
+        );
+        // Substring-matched on purpose: `auth` has to match `authorization`, and
+        // `token` has to match `accessTokenValue`. Anchoring to word boundaries was
+        // tried and dropped — it fixed `firstKey` but stopped matching
+        // `req.headers.authorization`, trading one false positive for a worse false
+        // negative.
+        //
+        // Under the DEFAULT patterns `firstKey` never reaches the guard at all,
+        // because `key` is not among them. The existence-check guard below is what
+        // handles the same shape when a project adds `key` back through
+        // `secretPatterns` — two separate mechanisms, not one.
+        // Guarded: a user pattern reaches `new RegExp` here. Measured before this
+        // change: `(a+)+$` took 45-58s on a single file, and `[` threw
+        // "Invalid regular expression" out of create(), killing the whole lint
+        // run rather than just this rule. compileUserPattern degrades both to a
+        // substring match.
+        patterns = compileUserPatterns(secretPatterns as string[], 'i');
+      },
       BinaryExpression: checkBinaryExpression,
       CallExpression: checkCallExpression,
     };

@@ -25,6 +25,10 @@ type RuleOptions = [];
 export const exportsLast = createRule<RuleOptions, MessageIds>({
   name: 'exports-last',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/exports-last',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/exports-last.md',
@@ -48,7 +52,7 @@ export const exportsLast = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       'Program:exit'(node: TSESTree.Program) {
         const body = node.body;

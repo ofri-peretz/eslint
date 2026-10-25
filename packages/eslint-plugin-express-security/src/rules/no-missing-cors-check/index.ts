@@ -53,6 +53,7 @@ function matchesIgnorePattern(text: string, ignorePatterns: string[]): boolean {
 export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-cors-check',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     deprecated: true,
     replacedBy: ['@see eslint-plugin-express-security/no-permissive-cors'],
@@ -117,24 +118,16 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
       ignorePatterns: [],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const {
-      allowInTests = false,
-      trustedLibraries: corsTrustedLibraries = [],
-      ignorePatterns = [],
-    } = options as Options;
-
-    const trustedLibraries = corsTrustedLibraries;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-    const sourceCode = context.sourceCode;
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let allowInTests: boolean;
+    let corsTrustedLibraries: string[];
+    let ignorePatterns: string[];
+    let trustedLibraries: string[];
+    let isTestFile: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     function checkLiteral(node: TSESTree.Literal) {
       if (isTestFile) {
@@ -473,6 +466,27 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        ({
+          allowInTests = false,
+          trustedLibraries: corsTrustedLibraries = [],
+          ignorePatterns = [],
+        } = options as Options);
+
+        trustedLibraries = corsTrustedLibraries;
+
+        const filename = context.filename;
+        isTestFile = allowInTests && isTestFilePath(filename);
+        sourceCode = context.sourceCode;
+        return true;
+      },
       Literal: checkLiteral,
       CallExpression: checkCallExpression,
       MemberExpression: checkMemberExpression,

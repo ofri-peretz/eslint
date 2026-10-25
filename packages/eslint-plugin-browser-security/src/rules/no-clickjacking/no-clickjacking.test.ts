@@ -35,7 +35,10 @@ describe('no-clickjacking', () => {
         // rule reported it as `frameManipulation` — flagging its own fix. All
         // four spellings are the same program; the old check matched printed
         // source, so spacing changed the verdict.
-        `if (top != self) { top.location = self.location; }`,
+        {
+          name: 'a frame-buster that navigates the top frame is the remediation, not a finding',
+          code: `if (top != self) { top.location = self.location; }`,
+        },
         `if (top !=  self) { top.location = self.location; }`,
         `if (top!==self) { top.location = self.location; }`,
         `if (window.top !== window.self) { window.top.location = window.self.location; }`,
@@ -330,8 +333,10 @@ describe('no-clickjacking', () => {
  * stayed silent in `src/components/Toolbar.tsx`. It now asks whether the file
  * builds a document shell, which is a fact about the code.
  */
-const TOOLBAR = 'export default function T() { return <div><button onClick={go}>Go</button></div>; }';
-const SHELL = 'export default function Root() { return <html><body><button onClick={go}>Go</button></body></html>; }';
+const TOOLBAR =
+  'export default function T() { return <div><button onClick={go}>Go</button></div>; }';
+const SHELL =
+  'export default function Root() { return <html><body><button onClick={go}>Go</button></body></html>; }';
 
 ruleTester.run('lock: no verdict depends on the filename', noClickjacking, {
   valid: [
@@ -370,73 +375,77 @@ ruleTester.run('lock: no verdict depends on the filename', noClickjacking, {
  * layout serving `frame-ancestors 'none'` was still told it had no clickjacking
  * defence.
  */
-ruleTester.run('lock: declared frame protection silences the rule', noClickjacking, {
-  valid: [
-    // CSP in a string constant next to the shell.
-    {
-      name: 'a CSP frame-ancestors in a string constant beside the shell',
-      code: `const csp = "default-src 'self'; frame-ancestors 'none'";\nexport default function Root() { return <html><head><meta httpEquiv="Content-Security-Policy" content={csp} /></head><body /></html>; }`,
-    },
-    // CSP written straight into the meta tag.
-    {
-      name: 'a CSP written straight into the meta tag',
-      code: `export default function Root() { return <html><head><meta httpEquiv="Content-Security-Policy" content="frame-ancestors 'self'" /></head><body /></html>; }`,
-    },
-    // A template literal builds the policy.
-    {
-      name: 'a template literal builds the policy',
-      code: 'export default function Root() { const csp = `default-src \'self\'; frame-ancestors \'none\'`; return <html><body>{csp}</body></html>; }',
-    },
-    // X-Frame-Options instead of CSP.
-    {
-      name: 'X-Frame-Options DENY instead of a CSP',
-      code: `export default function Root() { const h = { "X-Frame-Options": "DENY" }; return <html><body>{JSON.stringify(h)}</body></html>; }`,
-    },
-    // Frame-busting JavaScript, the original remediation.
-    {
-      name: 'frame-busting JavaScript, the original remediation',
-      code: 'export default function Root() { if (top !== self) { top.location = self.location; } return <html><body /></html>; }',
-    },
-  ],
-  invalid: [
-    // `frame-ancestors *` allows every framer — that is not protection.
-    {
-      name: 'frame-ancestors * allows every framer, so it is not protection',
-      code: `export default function Root() { return <html><head><meta httpEquiv="Content-Security-Policy" content="frame-ancestors *" /></head><body /></html>; }`,
-      errors: [{ messageId: 'missingFrameBusting' }],
-    },
-    {
-      name: 'a CSP carrying no frame-ancestors directive at all',
-      code: `export default function Root() { return <html><head><meta httpEquiv="Content-Security-Policy" content="default-src 'self'" /></head><body /></html>; }`,
-      errors: [{ messageId: 'missingFrameBusting' }],
-    },
-    /*
-     * `ALLOWALL` is the X-Frame-Options twin of `frame-ancestors *`, which is
-     * pinned as invalid above. The docs list it under Incorrect ("Allowing
-     * framing from any origin").
-     * @found burgee FP/FN sweep 2026-09-20, apps/docs/src/app/layout.tsx:1
-     */
-    {
-      name: 'FN: X-Frame-Options ALLOWALL permits every framer, so it is not protection',
-      code: `export default function Root() { return <html><head><meta httpEquiv="X-Frame-Options" content="ALLOWALL" /></head><body /></html>; }`,
-      errors: [{ messageId: 'missingFrameBusting' }],
-    },
-    // ALLOW-FROM is obsolete in every modern browser — no protection in practice.
-    {
-      // @found reasoned from the ALLOWALL finding (burgee FP/FN sweep 2026-09-20), not seen in real code
-      name: 'FN: X-Frame-Options ALLOW-FROM is obsolete and does not protect',
-      code: `export default function Root() { return <html><head><meta httpEquiv="X-Frame-Options" content="ALLOW-FROM https://evil.example" /></head><body /></html>; }`,
-      errors: [{ messageId: 'missingFrameBusting' }],
-    },
-    // Prose naming the header is the author's phrasing, not evidence of a header.
-    {
-      // @found reasoned from the ALLOWALL finding (burgee FP/FN sweep 2026-09-20), not seen in real code
-      name: 'FN: prose mentioning x-frame-options does not declare frame protection',
-      code: `export default function Root() { const note = "see the x-frame-options ticket"; return <html><body>{note}</body></html>; }`,
-      errors: [{ messageId: 'missingFrameBusting' }],
-    },
-  ],
-});
+ruleTester.run(
+  'lock: declared frame protection silences the rule',
+  noClickjacking,
+  {
+    valid: [
+      // CSP in a string constant next to the shell.
+      {
+        name: 'a CSP frame-ancestors in a string constant beside the shell',
+        code: `const csp = "default-src 'self'; frame-ancestors 'none'";\nexport default function Root() { return <html><head><meta httpEquiv="Content-Security-Policy" content={csp} /></head><body /></html>; }`,
+      },
+      // CSP written straight into the meta tag.
+      {
+        name: 'a CSP written straight into the meta tag',
+        code: `export default function Root() { return <html><head><meta httpEquiv="Content-Security-Policy" content="frame-ancestors 'self'" /></head><body /></html>; }`,
+      },
+      // A template literal builds the policy.
+      {
+        name: 'a template literal builds the policy',
+        code: "export default function Root() { const csp = `default-src 'self'; frame-ancestors 'none'`; return <html><body>{csp}</body></html>; }",
+      },
+      // X-Frame-Options instead of CSP.
+      {
+        name: 'X-Frame-Options DENY instead of a CSP',
+        code: `export default function Root() { const h = { "X-Frame-Options": "DENY" }; return <html><body>{JSON.stringify(h)}</body></html>; }`,
+      },
+      // Frame-busting JavaScript, the original remediation.
+      {
+        name: 'frame-busting JavaScript, the original remediation',
+        code: 'export default function Root() { if (top !== self) { top.location = self.location; } return <html><body /></html>; }',
+      },
+    ],
+    invalid: [
+      // `frame-ancestors *` allows every framer — that is not protection.
+      {
+        name: 'frame-ancestors * allows every framer, so it is not protection',
+        code: `export default function Root() { return <html><head><meta httpEquiv="Content-Security-Policy" content="frame-ancestors *" /></head><body /></html>; }`,
+        errors: [{ messageId: 'missingFrameBusting' }],
+      },
+      {
+        name: 'a CSP carrying no frame-ancestors directive at all',
+        code: `export default function Root() { return <html><head><meta httpEquiv="Content-Security-Policy" content="default-src 'self'" /></head><body /></html>; }`,
+        errors: [{ messageId: 'missingFrameBusting' }],
+      },
+      /*
+       * `ALLOWALL` is the X-Frame-Options twin of `frame-ancestors *`, which is
+       * pinned as invalid above. The docs list it under Incorrect ("Allowing
+       * framing from any origin").
+       * @found burgee FP/FN sweep 2026-09-20, apps/docs/src/app/layout.tsx:1
+       */
+      {
+        name: 'FN: X-Frame-Options ALLOWALL permits every framer, so it is not protection',
+        code: `export default function Root() { return <html><head><meta httpEquiv="X-Frame-Options" content="ALLOWALL" /></head><body /></html>; }`,
+        errors: [{ messageId: 'missingFrameBusting' }],
+      },
+      // ALLOW-FROM is obsolete in every modern browser — no protection in practice.
+      {
+        // @found reasoned from the ALLOWALL finding (burgee FP/FN sweep 2026-09-20), not seen in real code
+        name: 'FN: X-Frame-Options ALLOW-FROM is obsolete and does not protect',
+        code: `export default function Root() { return <html><head><meta httpEquiv="X-Frame-Options" content="ALLOW-FROM https://evil.example" /></head><body /></html>; }`,
+        errors: [{ messageId: 'missingFrameBusting' }],
+      },
+      // Prose naming the header is the author's phrasing, not evidence of a header.
+      {
+        // @found reasoned from the ALLOWALL finding (burgee FP/FN sweep 2026-09-20), not seen in real code
+        name: 'FN: prose mentioning x-frame-options does not declare frame protection',
+        code: `export default function Root() { const note = "see the x-frame-options ticket"; return <html><body>{note}</body></html>; }`,
+        errors: [{ messageId: 'missingFrameBusting' }],
+      },
+    ],
+  },
+);
 
 /**
  * Regression lock — the trustedSources allowlist compares ORIGINS.
@@ -648,7 +657,9 @@ ruleTester.run('edge shapes', noClickjacking, {
       options: [{ trustedSources: ['//cdn.example'] }],
     },
     // A JSX tag that is a member expression is not a document shell.
-    { code: 'const f = <Layout.Html><button onClick={go}>x</button></Layout.Html>;' },
+    {
+      code: 'const f = <Layout.Html><button onClick={go}>x</button></Layout.Html>;',
+    },
     // A tagged template whose cooked value is undefined (invalid escape).
     { code: 'const t = tag`\\unicode and more`;' },
   ],
@@ -671,8 +682,12 @@ ruleTester.run('edge shapes', noClickjacking, {
 ruleTester.run('frame-busting is read from the AST', noClickjacking, {
   valid: [
     // Location comparison, in spellings the substring matcher missed.
-    { code: 'if (top.location != self.location) { x(); } const f = <html><body /></html>;' },
-    { code: 'if (window.top.location!==window.self.location) { x(); } const f = <html><body /></html>;' },
+    {
+      code: 'if (top.location != self.location) { x(); } const f = <html><body /></html>;',
+    },
+    {
+      code: 'if (window.top.location!==window.self.location) { x(); } const f = <html><body /></html>;',
+    },
     { code: 'if (!self.location) { x(); } const f = <html><body /></html>;' },
   ],
   invalid: [
@@ -787,13 +802,21 @@ ruleTester.run('edge shapes: src folding', noClickjacking, {
     { code: `const el = <iframe src={a + b} />;` },
     { code: `const N = 42; const el = <iframe src={N} />;` },
     // A re-assigned binding has no single knowable value.
-    { code: `let u = '/a'; u = 'https://evil.example'; const el = <iframe src={u} />;` },
+    {
+      code: `let u = '/a'; u = 'https://evil.example'; const el = <iframe src={u} />;`,
+    },
     // A computed index that is not a number.
-    { code: `const A = ['https://evil.example']; const el = <iframe src={A[k]} />;` },
+    {
+      code: `const A = ['https://evil.example']; const el = <iframe src={A[k]} />;`,
+    },
     // An index past the end of the array.
-    { code: `const A = ['https://evil.example']; const el = <iframe src={A[5]} />;` },
+    {
+      code: `const A = ['https://evil.example']; const el = <iframe src={A[5]} />;`,
+    },
     // A hole in the array.
-    { code: `const A = [, 'https://evil.example']; const el = <iframe src={A[0]} />;` },
+    {
+      code: `const A = [, 'https://evil.example']; const el = <iframe src={A[0]} />;`,
+    },
     // The array reached through an unresolvable name.
     { code: `const el = <iframe src={unknownTable[0]} />;` },
     // A member expression that is not computed.
@@ -911,9 +934,15 @@ ruleTester.run('array folding shapes', noClickjacking, {
 /** The nested-table fold, in both directions. */
 ruleTester.run('nested table folding', noClickjacking, {
   valid: [
-    { code: `const T = [['https://evil.example/w']]; const el = <iframe src={T[0][k]} />;` },
-    { code: `const T = [['https://evil.example/w']]; const el = <iframe src={T[9][0]} />;` },
-    { code: `const T = [[, 'https://evil.example/w']]; const el = <iframe src={T[0][0]} />;` },
+    {
+      code: `const T = [['https://evil.example/w']]; const el = <iframe src={T[0][k]} />;`,
+    },
+    {
+      code: `const T = [['https://evil.example/w']]; const el = <iframe src={T[9][0]} />;`,
+    },
+    {
+      code: `const T = [[, 'https://evil.example/w']]; const el = <iframe src={T[0][0]} />;`,
+    },
     { code: `const T = [['/preview']]; const el = <iframe src={T[0][0]} />;` },
   ],
   invalid: [],
@@ -921,7 +950,11 @@ ruleTester.run('nested table folding', noClickjacking, {
 
 /** A nested table indexed by something unreadable. */
 ruleTester.run('unreadable nested index', noClickjacking, {
-  valid: [{ code: `const T = [['https://evil.example/w']]; const el = <iframe src={T[k][0]} />;` }],
+  valid: [
+    {
+      code: `const T = [['https://evil.example/w']]; const el = <iframe src={T[k][0]} />;`,
+    },
+  ],
   invalid: [],
 });
 

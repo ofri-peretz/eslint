@@ -1,3 +1,4 @@
+import { RuleCreator } from './rule-creator';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -181,8 +182,11 @@ export function createMassAssignmentRule(
   const usesModule = createModuleEvidence({ packages: config.modules });
   const originOf = createOriginClassifier(config.modules);
 
-  return {
+  return RuleCreator.withoutDocs<[], MassAssignmentMessageIds>({
     meta: {
+      // Shared detection, shared runtimes: oxlint only if every plugin's rule
+      // from this factory passes its own suite there.
+      interop: { runtimes: ['eslint', 'oxlint'] },
       type: config.meta.type,
       docs: { ...config.meta.docs },
       messages: {
@@ -218,12 +222,9 @@ export function createMassAssignmentRule(
       schema: [],
     },
     defaultOptions: [],
-    create(context) {
-      // BENCHMARK-CRITERIA §B1: a test fixture building a row from a fake
-      // request is not the shipped attack surface.
-      if (isTestFilePath(context.filename)) return {};
-      const env = envOf(context);
-      let ownsFile = false;
+    createOnce(context) {
+      let env: Env;
+      let ownsFile: boolean;
       const isOurs = (node: TSESTree.Node): boolean =>
         originOf(valueAt(node, env)) === 'ours';
 
@@ -256,6 +257,14 @@ export function createMassAssignmentRule(
       };
 
       return {
+        before() {
+          // BENCHMARK-CRITERIA §B1: a test fixture building a row from a fake
+          // request is not the shipped attack surface.
+          if (isTestFilePath(context.filename)) return false;
+          env = envOf(context);
+          ownsFile = false;
+          return true;
+        },
         Program(program: TSESTree.Program) {
           ownsFile = usesModule(program);
         },
@@ -332,5 +341,5 @@ export function createMassAssignmentRule(
         },
       };
     },
-  };
+  });
 }

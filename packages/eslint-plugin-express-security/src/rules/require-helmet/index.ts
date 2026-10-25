@@ -118,6 +118,7 @@ function isAlternativeMiddleware(
 export const requireHelmet = createRule<RuleOptions, MessageIds>({
   name: 'require-helmet',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/require-helmet.md',
@@ -173,71 +174,86 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
       assumeHelmetMiddleware: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    // Rule partition — exactly one rule owns any given site.
-    //
-    // `require-rate-limiting` used to report the identical `express()` node
-    // this rule reports: all six of its corpus findings were at the same
-    // file:line:column as all six of this rule's. Two problem-severity
-    // findings on one character, with two unrelated fixes, is the shape the
-    // deprecated `no-missing-security-headers` was removed from `recommended`
-    // for (see src/index.ts). The partition is now by *meaning*:
-    //
-    //   this rule            → the app renders documents to a browser, and the
-    //                          document-directed header set is absent.
-    //   require-rate-limiting → a specific credential-accepting endpoint is
-    //                          unthrottled; it reports at that route, never at
-    //                          `express()`.
-    //
-    // Helmet is inert on a response nothing renders, so document evidence is
-    // this rule's precondition rather than a heuristic filter.
-    if (!servesBrowserDocuments(context.sourceCode.ast)) return {};
-
-    const {
-      allowInTests = false,
-      alternativeMiddleware = [],
-      assumeHelmetMiddleware = false,
-    } = options as Options;
-
-    // Skip entirely if helmet/security headers are assumed to be provided elsewhere
-    if (assumeHelmetMiddleware) {
-      return {};
-    }
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-
-    if (isTestFile) {
-      return {};
-    }
-
-    // Track if we've seen express() call and helmet usage
-    let hasExpressApp = false;
-    let hasHelmet = false;
-    let expressAppNode: TSESTree.CallExpression | null = null;
-    /** The binding `express()` was assigned to, so we can see where it travels. */
-    let appBinding: string | null = null;
-    /**
-     * The app was handed to another function, which means the middleware stack
-     * is assembled somewhere this rule cannot see.
-     *
-     * Splitting setup into `setAppConfigurations(app)` is the normal shape for
-     * any non-toy Express app. ToniR7/express-typescript-starter creates the app
-     * in `app.ts` and calls `app.use(helmet())` in `utils/appInitialization.ts`,
-     * with `helmet` in `dependencies` — and this rule reported it anyway.
-     *
-     * Absence of evidence is not evidence of absence: once the binding leaves
-     * the file, "no helmet here" says nothing about the application.
-     */
-    let appEscapes = false;
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let allowInTests: boolean;
+    let alternativeMiddleware: string[];
+    let assumeHelmetMiddleware: boolean;
+    let hasExpressApp: boolean;
+    let hasHelmet: boolean;
+    let expressAppNode: TSESTree.CallExpression | null;
+    let appBinding: string | null;
+    let appEscapes: boolean;
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        // Rule partition — exactly one rule owns any given site.
+        //
+        // `require-rate-limiting` used to report the identical `express()` node
+        // this rule reports: all six of its corpus findings were at the same
+        // file:line:column as all six of this rule's. Two problem-severity
+        // findings on one character, with two unrelated fixes, is the shape the
+        // deprecated `no-missing-security-headers` was removed from `recommended`
+        // for (see src/index.ts). The partition is now by *meaning*:
+        //
+        //   this rule            → the app renders documents to a browser, and the
+        //                          document-directed header set is absent.
+        //   require-rate-limiting → a specific credential-accepting endpoint is
+        //                          unthrottled; it reports at that route, never at
+        //                          `express()`.
+        //
+        // Helmet is inert on a response nothing renders, so document evidence is
+        // this rule's precondition rather than a heuristic filter.
+        if (!servesBrowserDocuments(context.sourceCode.ast)) return false;
+
+        ({
+          allowInTests = false,
+          alternativeMiddleware = [],
+          assumeHelmetMiddleware = false,
+        } = options as Options);
+
+        // Skip entirely if helmet/security headers are assumed to be provided elsewhere
+        if (assumeHelmetMiddleware) {
+          return false;
+        }
+
+        const filename = context.filename;
+        const isTestFile = allowInTests && isTestFilePath(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+
+        // Track if we've seen express() call and helmet usage
+        hasExpressApp = false;
+        hasHelmet = false;
+        expressAppNode = null;
+        /** The binding `express()` was assigned to, so we can see where it travels. */
+        appBinding = null;
+        /**
+         * The app was handed to another function, which means the middleware stack
+         * is assembled somewhere this rule cannot see.
+         *
+         * Splitting setup into `setAppConfigurations(app)` is the normal shape for
+         * any non-toy Express app. ToniR7/express-typescript-starter creates the app
+         * in `app.ts` and calls `app.use(helmet())` in `utils/appInitialization.ts`,
+         * with `helmet` in `dependencies` — and this rule reported it anyway.
+         *
+         * Absence of evidence is not evidence of absence: once the binding leaves
+         * the file, "no helmet here" says nothing about the application.
+         */
+        appEscapes = false;
+        return true;
+      },
       // `module.exports = app`, `export default app`, `return app` — the three
       // non-call ways the app leaves the file. Two of the six corpus findings
       // were `const app = express(); module.exports = app;`.

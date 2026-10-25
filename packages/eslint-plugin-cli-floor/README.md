@@ -57,9 +57,35 @@ That trade costs recall, and we measure it:
 
 - To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-cli-floor?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-cli-floor), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-cli-floor). 📚
 
+<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
+
+**oxlint / Vite+** — the same rules under the same `cli-floor/<rule>` IDs, without ESLint:
+
+```bash
+npm install oxlint-plugin-cli-floor --save-dev
+```
+
+```jsonc
+// .oxlintrc.json
+{ "jsPlugins": ["oxlint-plugin-cli-floor"] }
+```
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite-plus';
+
+export default defineConfig({
+  lint: { jsPlugins: ['oxlint-plugin-cli-floor'] },
+});
+```
+
+**ESLint:**
+
 ```bash
 npm install eslint-plugin-cli-floor --save-dev
 ```
+
+<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## ⚙️ Configuration Presets
 

@@ -17,6 +17,10 @@ type MessageIds = 'stateInConstructor';
 export const stateInConstructor = createRule<[], MessageIds>({
   name: 'state-in-constructor',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/state-in-constructor',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/state-in-constructor.md',
@@ -30,33 +34,30 @@ export const stateInConstructor = createRule<[], MessageIds>({
         description: 'State should be initialized in constructor',
         severity: 'MEDIUM',
         fix: 'Move state initialization to constructor method',
-        documentationLink: 'https://react.dev/reference/react/Component#constructor',
+        documentationLink:
+          'https://react.dev/reference/react/Component#constructor',
       }),
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
-    return {
-      ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        if (isReactComponent(node)) {
-          checkStateInitialization(node);
-        }
-      },
-    };
-
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     // oxlint-disable-next-line consistent-function-scoping
     function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
       if (!node.superClass) return false;
 
       if (node.superClass.type === 'Identifier') {
-        return node.superClass.name === 'Component' || node.superClass.name === 'PureComponent';
+        return (
+          node.superClass.name === 'Component' ||
+          node.superClass.name === 'PureComponent'
+        );
       }
 
       if (node.superClass.type === 'MemberExpression') {
         return (
           node.superClass.object.type === 'Identifier' &&
           node.superClass.object.name === 'React' &&
-          (propertyName(node.superClass) === 'Component' || propertyName(node.superClass) === 'PureComponent')
+          (propertyName(node.superClass) === 'Component' ||
+            propertyName(node.superClass) === 'PureComponent')
         );
       }
 
@@ -107,7 +108,9 @@ export const stateInConstructor = createRule<[], MessageIds>({
     }
 
     // oxlint-disable-next-line consistent-function-scoping
-    function hasStateInitializationInConstructor(constructor: TSESTree.MethodDefinition): boolean {
+    function hasStateInitializationInConstructor(
+      constructor: TSESTree.MethodDefinition,
+    ): boolean {
       if (constructor.value.type === 'FunctionExpression') {
         const body = constructor.value.body;
         for (const statement of body.body) {
@@ -124,5 +127,12 @@ export const stateInConstructor = createRule<[], MessageIds>({
       }
       return false;
     }
+    return {
+      ClassDeclaration(node: TSESTree.ClassDeclaration) {
+        if (isReactComponent(node)) {
+          checkStateInitialization(node);
+        }
+      },
+    };
   },
 });

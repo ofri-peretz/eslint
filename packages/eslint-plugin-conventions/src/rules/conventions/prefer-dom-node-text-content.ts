@@ -19,6 +19,10 @@ type RuleOptions = [];
 export const preferDomNodeTextContent = createRule<RuleOptions, MessageIds>({
   name: 'prefer-dom-node-text-content',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'unicorn/prefer-dom-node-text-content',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/prefer-dom-node-text-content.md',
@@ -47,7 +51,7 @@ export const preferDomNodeTextContent = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     // oxlint-disable-next-line consistent-function-scoping
     function isInAllowedContext(): boolean {
       // For simplicity, we'll skip the allow option for now
@@ -80,9 +84,7 @@ export const preferDomNodeTextContent = createRule<RuleOptions, MessageIds>({
 
     function isInnerTextAccess(node: TSESTree.MemberExpression): boolean {
       // Check if this is accessing .innerText property
-      if (
-        propertyName(node) === 'innerText'
-      ) {
+      if (propertyName(node) === 'innerText') {
         return true;
       }
       // `propertyName` above already resolves `element['innerText']`, so the
@@ -92,10 +94,7 @@ export const preferDomNodeTextContent = createRule<RuleOptions, MessageIds>({
 
     return {
       MemberExpression(node: TSESTree.MemberExpression) {
-        if (
-          isInnerTextAccess(node) &&
-          !isInAllowedContext()
-        ) {
+        if (isInnerTextAccess(node) && !isInAllowedContext()) {
           context.report({
             node,
             messageId: 'preferDomNodeTextContent',

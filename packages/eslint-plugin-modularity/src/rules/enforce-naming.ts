@@ -24,10 +24,10 @@ interface DomainTerm {
 export interface Options {
   /** Domain context for naming conventions (e.g., 'ecommerce', 'healthcare') */
   domain?: string;
-  
+
   /** Array of domain-specific terminology rules */
   terms?: DomainTerm[];
-  
+
   /** URL to domain glossary documentation */
   glossaryUrl?: string;
 }
@@ -37,10 +37,12 @@ type RuleOptions = [Options?];
 export const enforceNaming = createRule<RuleOptions, MessageIds>({
   name: 'enforce-naming',
   meta: {
+    interop: { runtimes: ['eslint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modularity/docs/rules/enforce-naming.md',
-      description: 'Enforce domain-specific naming conventions with business context',
+      description:
+        'Enforce domain-specific naming conventions with business context',
       cwe: 'CWE-216',
       cvss: 5,
     },
@@ -63,7 +65,8 @@ export const enforceNaming = createRule<RuleOptions, MessageIds>({
         description: 'Replace with domain terminology',
         severity: 'LOW',
         fix: 'Use "{{correctTerm}}" instead',
-        documentationLink: 'https://martinfowler.com/bliki/UbiquitousLanguage.html',
+        documentationLink:
+          'https://martinfowler.com/bliki/UbiquitousLanguage.html',
       }),
       viewGlossary: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -71,7 +74,8 @@ export const enforceNaming = createRule<RuleOptions, MessageIds>({
         description: 'View domain glossary',
         severity: 'LOW',
         fix: 'Reference domain glossary for correct terminology',
-        documentationLink: 'https://martinfowler.com/bliki/UbiquitousLanguage.html',
+        documentationLink:
+          'https://martinfowler.com/bliki/UbiquitousLanguage.html',
       }),
     },
     schema: [
@@ -113,18 +117,9 @@ export const enforceNaming = createRule<RuleOptions, MessageIds>({
       glossaryUrl: undefined,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    // `context.options[0] || {}` guarantees a truthy object, so no extra
-    // `|| {}` fallback is needed on the destructure below.
-    const options = context.options[0] || {};
-    const {
-domain = 'general', terms = []
-}: Options = options;
-
-    // Early return if no terms configured
-    if (!terms || terms.length === 0) {
-      return {};
-    }
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let domain: string;
+    let terms: DomainTerm[];
 
     /**
      * Check if identifier violates domain terms
@@ -165,9 +160,12 @@ domain = 'general', terms = []
     const generateReplacement = (name: string, term: DomainTerm): string => {
       if (typeof term.incorrect === 'string') {
         // Case-preserving replacement
-        return name.replace(new RegExp(`(${term.incorrect})`, 'gi'), (match) => {
-          return preserveCase(match, term.correct);
-        });
+        return name.replace(
+          new RegExp(`(${term.incorrect})`, 'gi'),
+          (match) => {
+            return preserveCase(match, term.correct);
+          },
+        );
       }
       // For regex, just suggest the correct term
       return term.correct;
@@ -178,7 +176,7 @@ domain = 'general', terms = []
      */
     const reportViolation = (
       node: TSESTree.Identifier,
-      violatedTerm: DomainTerm
+      violatedTerm: DomainTerm,
     ) => {
       const replacement = generateReplacement(node.name, violatedTerm);
 
@@ -204,6 +202,18 @@ domain = 'general', terms = []
     };
 
     return {
+      before() {
+        // `context.options[0] || {}` guarantees a truthy object, so no extra
+        // `|| {}` fallback is needed on the destructure below.
+        const options = context.options[0] || {};
+        ({ domain = 'general', terms = [] } = options);
+
+        // Early return if no terms configured
+        if (!terms || terms.length === 0) {
+          return false;
+        }
+        return true;
+      },
       // Check variable declarations
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (node.id.type !== 'Identifier') return;
@@ -256,4 +266,3 @@ domain = 'general', terms = []
     };
   },
 });
-

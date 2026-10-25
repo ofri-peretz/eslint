@@ -113,6 +113,7 @@ function isSensitive(
 export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
   name: 'no-sensitive-indexeddb',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-sensitive-indexeddb.md',
@@ -163,22 +164,29 @@ export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true, additionalPatterns: [] }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      allowInTests = true,
-      additionalPatterns = [],
-      sensitiveTerms = NON_BEARER_SECRET_TERMS,
-    } = options as Options;
-    const isTestFile = isTestFilePath(context.filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
+    let allowInTests: boolean;
+    let additionalPatterns: string[];
+    let sensitiveTerms: readonly string[];
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          allowInTests = true,
+          additionalPatterns = [],
+          sensitiveTerms = NON_BEARER_SECRET_TERMS,
+        } = options as Options);
+        const isTestFile = isTestFilePath(context.filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return;
         const method = memberName(node.callee, context.sourceCode);

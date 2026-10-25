@@ -60,7 +60,10 @@ describe('no-xxe-injection', () => {
         // `parse` is not an XML-only method name. Ungated, this rule reported
         // CWE-611 on JSON — measured across this monorepo, on lines like
         // `JSON.parse(fs.readFileSync(file, 'utf-8'))`.
-        `const data = JSON.parse(fs.readFileSync(file, 'utf-8'));`,
+        {
+          name: 'JSON.parse is not an XML parser',
+          code: `const data = JSON.parse(fs.readFileSync(file, 'utf-8'));`,
+        },
         `const cfg = JSON.parse(req.body);`,
         `const when = Date.parse(input);`,
         `const parts = path.parse(userPath);`,
@@ -123,13 +126,15 @@ describe('no-xxe-injection', () => {
         // input cannot change. The old rule reported the construction alone.
         {
           code: [
-            "const SPRITE = '<svg xmlns=\"http://www.w3.org/2000/svg\"/>';",
+            'const SPRITE = \'<svg xmlns="http://www.w3.org/2000/svg"/>\';',
             "export const sheet = new DOMParser().parseFromString(SPRITE, 'image/svg+xml');",
           ].join('\n'),
         },
         // XMLHttpRequest parses nothing. Every browser application that posts
         // JSON with upload progress used to get a CRITICAL here.
-        { code: "const xhr = new XMLHttpRequest(); xhr.open('POST', '/api/avatar'); xhr.send(payload);" },
+        {
+          code: "const xhr = new XMLHttpRequest(); xhr.open('POST', '/api/avatar'); xhr.send(payload);",
+        },
         { code: "new ActiveXObject('Microsoft.XMLDOM');" },
 
         // ---- parsers that cannot resolve an external entity ---------------
@@ -327,56 +332,72 @@ describe('no-xxe-injection', () => {
  * source whose verdicts disagree; a case that set the option and reproduced the
  * default answer would execute `hasSecureParserOptions` without testing it.
  */
-ruleTester.run('option: safeParserOptions recognises a parser key the defaults miss', noXxeInjection, {
-  valid: [
-    // `externalEntities` is the kill switch in several parsers but is absent from
-    // the default list, so declaring it is what makes the call read as configured.
-    {
-      code: 'const libxml = require("libxmljs"); const doc = libxml.parseXmlString(userXml, { externalEntities: false });',
-      options: [{ safeParserOptions: ['externalEntities'] }],
-    },
-  ],
-  invalid: [
-    // Identical source with the stock list: the rule cannot tell that this parser
-    // was hardened, so untrusted XML still reaches an unconfigured parse.
-    {
-      code: 'const libxml = require("libxmljs"); const doc = libxml.parseXmlString(userXml, { externalEntities: false });',
-      errors: [{ messageId: 'untrustedXmlSource' }],
-    },
-  ],
-});
+ruleTester.run(
+  'option: safeParserOptions recognises a parser key the defaults miss',
+  noXxeInjection,
+  {
+    valid: [
+      // `externalEntities` is the kill switch in several parsers but is absent from
+      // the default list, so declaring it is what makes the call read as configured.
+      {
+        code: 'const libxml = require("libxmljs"); const doc = libxml.parseXmlString(userXml, { externalEntities: false });',
+        options: [{ safeParserOptions: ['externalEntities'] }],
+      },
+    ],
+    invalid: [
+      // Identical source with the stock list: the rule cannot tell that this parser
+      // was hardened, so untrusted XML still reaches an unconfigured parse.
+      {
+        code: 'const libxml = require("libxmljs"); const doc = libxml.parseXmlString(userXml, { externalEntities: false });',
+        errors: [{ messageId: 'untrustedXmlSource' }],
+      },
+    ],
+  },
+);
 
-ruleTester.run('option: safeParserOptions REPLACES the defaults, it does not extend them', noXxeInjection, {
-  valid: [
-    // `noent` is in the stock list, so this is quiet with no options at all.
-    { code: 'const libxml = require("libxmljs"); const doc = libxml.parseXmlString(userXml, { noent: false });' },
-  ],
-  invalid: [
-    // Same source, but a caller-supplied list drops `noent` — the option overwrites
-    // rather than appends. Locking the direction matters: a project that narrows the
-    // list to one key silently loses the recognition of every other secure flag.
-    {
-      code: 'const libxml = require("libxmljs"); const doc = libxml.parseXmlString(userXml, { noent: false });',
-      options: [{ safeParserOptions: ['entityResolver'] }],
-      errors: [{ messageId: 'untrustedXmlSource' }],
-    },
-  ],
-});
+ruleTester.run(
+  'option: safeParserOptions REPLACES the defaults, it does not extend them',
+  noXxeInjection,
+  {
+    valid: [
+      // `noent` is in the stock list, so this is quiet with no options at all.
+      {
+        code: 'const libxml = require("libxmljs"); const doc = libxml.parseXmlString(userXml, { noent: false });',
+      },
+    ],
+    invalid: [
+      // Same source, but a caller-supplied list drops `noent` — the option overwrites
+      // rather than appends. Locking the direction matters: a project that narrows the
+      // list to one key silently loses the recognition of every other secure flag.
+      {
+        code: 'const libxml = require("libxmljs"); const doc = libxml.parseXmlString(userXml, { noent: false });',
+        options: [{ safeParserOptions: ['entityResolver'] }],
+        errors: [{ messageId: 'untrustedXmlSource' }],
+      },
+    ],
+  },
+);
 
-ruleTester.run('option: xmlValidationFunctions REPLACES the defaults', noXxeInjection, {
-  valid: [
-    // `sanitizeXml` is in the stock list.
-    { code: 'const libxml = require("libxmljs"); libxml.parseXmlString(sanitizeXml(req.body));' },
-  ],
-  invalid: [
-    // A caller-supplied list that does not name it drops the recognition.
-    {
-      code: 'const libxml = require("libxmljs"); libxml.parseXmlString(sanitizeXml(req.body));',
-      options: [{ xmlValidationFunctions: ['scrubXml'] }],
-      errors: [{ messageId: 'untrustedXmlSource' }],
-    },
-  ],
-});
+ruleTester.run(
+  'option: xmlValidationFunctions REPLACES the defaults',
+  noXxeInjection,
+  {
+    valid: [
+      // `sanitizeXml` is in the stock list.
+      {
+        code: 'const libxml = require("libxmljs"); libxml.parseXmlString(sanitizeXml(req.body));',
+      },
+    ],
+    invalid: [
+      // A caller-supplied list that does not name it drops the recognition.
+      {
+        code: 'const libxml = require("libxmljs"); libxml.parseXmlString(sanitizeXml(req.body));',
+        options: [{ xmlValidationFunctions: ['scrubXml'] }],
+        errors: [{ messageId: 'untrustedXmlSource' }],
+      },
+    ],
+  },
+);
 
 /**
  * The three sink vocabularies — packages, XML-only method names, and the
@@ -394,7 +415,9 @@ ruleTester.run('options: sink vocabularies are configurable', noXxeInjection, {
     // XML package, and `parseXml` is no longer an XML-only method name.
     {
       code: 'const libxml = require("libxmljs"); libxml.parseXml(req.body);',
-      options: [{ xmlModules: ['node-expat'], xmlParseMethods: ['parseFromString'] }],
+      options: [
+        { xmlModules: ['node-expat'], xmlParseMethods: ['parseFromString'] },
+      ],
     },
     // The method list replaced on its own: an unresolvable receiver was only
     // ever a sink because of the method name.

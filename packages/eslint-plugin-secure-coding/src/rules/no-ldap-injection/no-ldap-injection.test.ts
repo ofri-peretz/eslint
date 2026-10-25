@@ -58,6 +58,7 @@ describe('no-ldap-injection', () => {
       valid: [
         // Safe LDAP filters with escaping
         {
+          name: 'a filter value escaped with the ldap escape helper is safe',
           code: 'const filter = `(uid=${ldap.escape.filterValue(userId)})`;',
         },
         /*
@@ -732,7 +733,10 @@ const inputType = \`(\${intentKey})\`;`,
   return Array.isArray(header) ? header.join(', ') : header
 })`,
       // A variable called `ldapQuery` is a naming guess, not evidence.
-      'const ldapQuery = req.query.filter;',
+      {
+        name: 'a request-derived string in a file with no LDAP client is not a filter',
+        code: 'const ldapQuery = req.query.filter;',
+      },
       // An import of something that is not an LDAP client is not evidence —
       // the shape most web handlers have.
       {

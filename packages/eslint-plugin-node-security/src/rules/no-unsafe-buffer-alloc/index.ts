@@ -535,6 +535,7 @@ function declaredName(node: TSESTree.Node): string | null {
 export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-buffer-alloc',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     hasSuggestions: true,
     docs: {
@@ -616,57 +617,16 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context, [options = {}]) {
-    const sourceCode = context.sourceCode;
-
-    // Three name lists decide part of this rule's verdict, and all three are
-    // guesses at what somebody else calls their own bindings — `message` and
-    // `raw` are in WIRE_NAMES, and `n` is in COUNT_NAMES. A project whose
-    // `message` is a log line, or whose `raw` is a template string, cannot
-    // make the rule stop, and an additive option would not help: it can grow
-    // the list, never remove the word we guessed wrong about.
-    //
-    // So each REPLACES its default. Passing `wireNames: []` turns that arm off
-    // entirely, which is the only honest way to let a consumer disagree with a
-    // vocabulary we invented.
-    const vocab = {
-      wireNames: toLowerSet(options.wireNames ?? [...WIRE_NAMES]),
-      requestRoots: toLowerSet(options.requestRootNames ?? [...REQUEST_ROOTS]),
-      countNames: toLowerSet(options.countNames ?? [...COUNT_NAMES]),
+  createOnce(context, currentOptions) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let vocab: {
+      wireNames: ReadonlySet<string>;
+      requestRoots: ReadonlySet<string>;
+      countNames: ReadonlySet<string>;
     };
-
-    // ── CWE-789: allocation sized by a length field off the wire ──────────
-    //
-    // `redis/ioredis` `lib/resp/decoder.ts:669` is the archetype:
-    //
-    // ```ts
-    // #decodeArray(typeMapping, chunk) {
-    //   return this.#decodeArrayWithLength(this.#decodeUnsingedNumber(0, chunk), typeMapping, chunk);
-    // }
-    // #decodeArrayWithLength(length, typeMapping, chunk) {
-    //   return … : this.#decodeArrayItems(new Array(length), 0, typeMapping, chunk);
-    // }
-    // ```
-    //
-    // `length` is a RESP length prefix — a number the peer chose. Nothing in
-    // the file bounds it, and `#decodeArrayItems` then loops to `array.length`.
-    //
-    // Catching it needs one hop between functions: at `new Array(length)` the
-    // size is just a parameter. So call sites are collected first, and a
-    // parameter counts as wire-derived when some call in the same file passes a
-    // wire-derived argument in that position. One hop, not a fixpoint — it is
-    // what this shape needs, and a deeper walk would trade precision for
-    // decoder shapes nobody writes.
-
-    /** Function name → parameter indices fed a wire-derived argument. */
-    const wireParams = new Map<string, Set<number>>();
-    /** Allocations to judge at Program:exit, once every call site is known. */
-    const pendingAllocations: { node: TSESTree.Node; size: TSESTree.Node }[] =
-      [];
-    /** Call sites to record at Program:exit, once every binding is known. */
-    const pendingCallSites: (
-      TSESTree.CallExpression | TSESTree.NewExpression
-    )[] = [];
+    let wireParams: Map<string, Set<number>>;
+    let pendingAllocations: { node: TSESTree.Node; size: TSESTree.Node }[];
+    let pendingCallSites: (TSESTree.CallExpression | TSESTree.NewExpression)[];
 
     // A size is almost never used where it is produced: it is parsed into a
     // local and allocated from the local one line later, and following that hop
@@ -1307,6 +1267,58 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        sourceCode = context.sourceCode;
+
+        // Three name lists decide part of this rule's verdict, and all three are
+        // guesses at what somebody else calls their own bindings — `message` and
+        // `raw` are in WIRE_NAMES, and `n` is in COUNT_NAMES. A project whose
+        // `message` is a log line, or whose `raw` is a template string, cannot
+        // make the rule stop, and an additive option would not help: it can grow
+        // the list, never remove the word we guessed wrong about.
+        //
+        // So each REPLACES its default. Passing `wireNames: []` turns that arm off
+        // entirely, which is the only honest way to let a consumer disagree with a
+        // vocabulary we invented.
+        vocab = {
+          wireNames: toLowerSet(options.wireNames ?? [...WIRE_NAMES]),
+          requestRoots: toLowerSet(
+            options.requestRootNames ?? [...REQUEST_ROOTS],
+          ),
+          countNames: toLowerSet(options.countNames ?? [...COUNT_NAMES]),
+        };
+
+        // ── CWE-789: allocation sized by a length field off the wire ──────────
+        //
+        // `redis/ioredis` `lib/resp/decoder.ts:669` is the archetype:
+        //
+        // ```ts
+        // #decodeArray(typeMapping, chunk) {
+        //   return this.#decodeArrayWithLength(this.#decodeUnsingedNumber(0, chunk), typeMapping, chunk);
+        // }
+        // #decodeArrayWithLength(length, typeMapping, chunk) {
+        //   return … : this.#decodeArrayItems(new Array(length), 0, typeMapping, chunk);
+        // }
+        // ```
+        //
+        // `length` is a RESP length prefix — a number the peer chose. Nothing in
+        // the file bounds it, and `#decodeArrayItems` then loops to `array.length`.
+        //
+        // Catching it needs one hop between functions: at `new Array(length)` the
+        // size is just a parameter. So call sites are collected first, and a
+        // parameter counts as wire-derived when some call in the same file passes a
+        // wire-derived argument in that position. One hop, not a fixpoint — it is
+        // what this shape needs, and a deeper walk would trade precision for
+        // decoder shapes nobody writes.
+
+        /** Function name → parameter indices fed a wire-derived argument. */
+        wireParams = new Map<string, Set<number>>();
+        /** Allocations to judge at Program:exit, once every call site is known. */
+        pendingAllocations = [];
+        /** Call sites to record at Program:exit, once every binding is known. */
+        pendingCallSites = [];
+      },
       NewExpression(node: TSESTree.NewExpression) {
         pendingCallSites.push(node);
         const size = allocationSize(node);

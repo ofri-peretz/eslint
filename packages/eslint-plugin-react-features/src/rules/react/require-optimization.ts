@@ -36,6 +36,7 @@ type RuleOptions = [Options?];
 export const requireOptimization = createRule<RuleOptions, MessageIds>({
   name: 'require-optimization',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/require-optimization.md',
@@ -127,22 +128,17 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const {
-      suggestMemo = true,
-      suggestUseMemo = true,
-      suggestUseCallback = true,
-      minPropsForMemo = 3,
-    } = options || {};
-
-    // Track component information
-    const components: Map<
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let suggestMemo: boolean;
+    let suggestUseMemo: boolean;
+    let suggestUseCallback: boolean;
+    let minPropsForMemo: number;
+    let components: Map<
       string,
       {
         name: string;
         type: 'function' | 'class' | 'arrow';
-        node: TSESTree.Node; // Store the AST node for reporting
+        node: TSESTree.Node;
         propsCount: number;
         hasExpensiveComputations: boolean;
         hasEventHandlers: boolean;
@@ -150,7 +146,7 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
         renderStatements: number;
         linesOfCode: number;
       }
-    > = new Map();
+    >;
 
     function analyzeFunctionComponent(
       node:
@@ -349,8 +345,7 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
           node.superClass.object.type === 'Identifier' &&
           node.superClass.object.name === 'React'
         ) {
-          extendsComponent =
-            propertyName(node.superClass) === 'Component';
+          extendsComponent = propertyName(node.superClass) === 'Component';
           extendsPureComponent =
             propertyName(node.superClass) === 'PureComponent';
         }
@@ -596,6 +591,18 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({
+          suggestMemo = true,
+          suggestUseMemo = true,
+          suggestUseCallback = true,
+          minPropsForMemo = 3,
+        } = options || {});
+
+        // Track component information
+        components = new Map();
+      },
       FunctionDeclaration(node: TSESTree.FunctionDeclaration) {
         // Check if it's a React component (simple heuristic)
         if (node.id?.name && /^[A-Z]/.test(node.id.name)) {

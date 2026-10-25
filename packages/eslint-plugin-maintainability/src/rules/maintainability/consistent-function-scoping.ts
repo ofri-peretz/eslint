@@ -61,6 +61,10 @@ const LITERAL_CONTAINERS: ReadonlySet<string> = new Set([
 export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
   name: 'consistent-function-scoping',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'unicorn/consistent-function-scoping',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/consistent-function-scoping.md',
@@ -105,12 +109,10 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ checkArrowFunctions: true }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const { checkArrowFunctions = true } = options || {};
-
-    // Track variables declared in each scope
-    const scopeStack: Set<string>[] = [new Set()];
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let checkArrowFunctions: boolean;
+    let scopeStack: Set<string>[];
+    let MODULE_SCOPE_DEPTH: number;
 
     function enterScope() {
       scopeStack.push(new Set());
@@ -199,13 +201,6 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
         // reachable path.
       }
     }
-
-    /**
-     * scopeStack[0] is the vestigial set created by the initializer and
-     * scopeStack[1] is the module scope pushed by `Program()`; real function
-     * scopes start at index 2.
-     */
-    const MODULE_SCOPE_DEPTH = 2;
 
     function getOuterScopeVariables(): Set<string> {
       /*
@@ -534,6 +529,20 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({ checkArrowFunctions = true } = options || {});
+
+        // Track variables declared in each scope
+        scopeStack = [new Set()];
+
+        /**
+         * scopeStack[0] is the vestigial set created by the initializer and
+         * scopeStack[1] is the module scope pushed by `Program()`; real function
+         * scopes start at index 2.
+         */
+        MODULE_SCOPE_DEPTH = 2;
+      },
       Program() {
         /*
          * Deliberately NOT hoisting here. Module scope is the destination the

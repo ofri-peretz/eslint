@@ -31,6 +31,7 @@ describe('no-sensitive-data-exposure', () => {
           code: `console.log('User logged in');`,
         },
         {
+          name: 'logging a literal message exposes nothing',
           code: `console.log('Hello world');`,
         },
         // Logger methods without sensitive data
@@ -124,240 +125,264 @@ describe('no-sensitive-data-exposure', () => {
   });
 
   describe('Invalid Code - Console Log', () => {
-    ruleTester.run('invalid - console.log with sensitive data', noSensitiveDataExposure, {
-      valid: [],
-      invalid: [
-        // String literal with password
-        {
-          name: 'a password in a log line',
-          code: `console.log('password: 123456');`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // Property access — the shape this rule most exists for, and it was
-        // silent: the logging path read Literal, `+` and Identifier arguments
-        // only, so every `user.password` walked straight through.
-        {
-          name: 'logging a user password',
-          code: `console.log(user.password);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        {
-          code: `logger.info(config['apiKey']);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // Interpolation is the evidence: unlike a constant, a template splices
-        // a runtime value into the log line. Named by the surrounding text…
-        {
-          code: 'console.log(`token=${t}`);',
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // …and named by the interpolated expression itself.
-        {
-          code: 'console.log(`value is ${apiKey}`);',
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        {
-          code: 'console.log(`got ${user.password} back`);',
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // String literal with token
-        {
-          code: `console.log('API token: abc123');`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // String literal with key
-        {
-          code: `console.log('secret key: sk_live_9f2a');`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // String literal with SSN
-        {
-          code: `console.log('SSN: 123-45-6789');`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // String literal with credit
-        {
-          code: `console.log('credit card: 4111111111111111');`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // Identifier with password in name
-        {
-          code: `console.log(userPassword);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // Identifier with token in name
-        {
-          code: `console.log(apiToken);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // Identifier with key in name
-        {
-          code: `console.log(secretKey);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - console.log with sensitive data',
+      noSensitiveDataExposure,
+      {
+        valid: [],
+        invalid: [
+          // String literal with password
+          {
+            name: 'a password in a log line',
+            code: `console.log('password: 123456');`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // Property access — the shape this rule most exists for, and it was
+          // silent: the logging path read Literal, `+` and Identifier arguments
+          // only, so every `user.password` walked straight through.
+          {
+            name: 'logging a user password',
+            code: `console.log(user.password);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          {
+            code: `logger.info(config['apiKey']);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // Interpolation is the evidence: unlike a constant, a template splices
+          // a runtime value into the log line. Named by the surrounding text…
+          {
+            code: 'console.log(`token=${t}`);',
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // …and named by the interpolated expression itself.
+          {
+            code: 'console.log(`value is ${apiKey}`);',
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          {
+            code: 'console.log(`got ${user.password} back`);',
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // String literal with token
+          {
+            code: `console.log('API token: abc123');`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // String literal with key
+          {
+            code: `console.log('secret key: sk_live_9f2a');`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // String literal with SSN
+          {
+            code: `console.log('SSN: 123-45-6789');`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // String literal with credit
+          {
+            code: `console.log('credit card: 4111111111111111');`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // Identifier with password in name
+          {
+            code: `console.log(userPassword);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // Identifier with token in name
+          {
+            code: `console.log(apiToken);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // Identifier with key in name
+          {
+            code: `console.log(secretKey);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Logger Methods', () => {
-    ruleTester.run('invalid - logger with sensitive data', noSensitiveDataExposure, {
-      valid: [],
-      invalid: [
-        // logger.info
-        {
-          code: `logger.info('password: ' + password);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // logger.warn
-        {
-          code: `logger.warn('api_key: xyz');`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // logger.error
-        {
-          code: `logger.error('token=eyJhbGciOiJIUzI1NiJ9');`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // logger.debug with identifier
-        {
-          code: `logger.debug(password);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // console.warn
-        {
-          code: `console.warn('secret: ' + apiSecret);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // console.error
-        {
-          code: `console.error('apikey=AKIA1234567890');`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // console.debug
-        {
-          code: `console.debug(apiKey);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // console.trace
-        {
-          code: `console.trace('token: eyJhbGciOi');`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - logger with sensitive data',
+      noSensitiveDataExposure,
+      {
+        valid: [],
+        invalid: [
+          // logger.info
+          {
+            code: `logger.info('password: ' + password);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // logger.warn
+          {
+            code: `logger.warn('api_key: xyz');`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // logger.error
+          {
+            code: `logger.error('token=eyJhbGciOiJIUzI1NiJ9');`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // logger.debug with identifier
+          {
+            code: `logger.debug(password);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // console.warn
+          {
+            code: `console.warn('secret: ' + apiSecret);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // console.error
+          {
+            code: `console.error('apikey=AKIA1234567890');`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // console.debug
+          {
+            code: `console.debug(apiKey);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // console.trace
+          {
+            code: `console.trace('token: eyJhbGciOi');`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Identifier-based Logging', () => {
-    ruleTester.run('invalid - log() function with sensitive data', noSensitiveDataExposure, {
-      valid: [],
-      invalid: [
-        // Direct log() function call
-        {
-          code: `log('password: 123');`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // customLogger() function
-        {
-          code: `customLogger('token: ' + accessToken);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - log() function with sensitive data',
+      noSensitiveDataExposure,
+      {
+        valid: [],
+        invalid: [
+          // Direct log() function call
+          {
+            code: `log('password: 123');`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // customLogger() function
+          {
+            code: `customLogger('token: ' + accessToken);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Error Messages', () => {
-    ruleTester.run('invalid - Error with sensitive data', noSensitiveDataExposure, {
-      valid: [],
-      invalid: [
-        // String literal with password
-        {
-          code: `throw new Error('password: ' + password);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // String literal with token
-        {
-          code: `new Error('token=' + refreshToken);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // String literal with secret
-        {
-          code: `throw new Error('secret: ' + clientSecret);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // BinaryExpression with sensitive left side
-        {
-          code: `throw new Error('password: ' + value);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // BinaryExpression with sensitive right identifier
-        {
-          code: `throw new Error('Error: ' + userPassword);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // BinaryExpression with token identifier
-        {
-          code: `throw new Error('Invalid ' + apiToken);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // BinaryExpression with key identifier
-        {
-          code: `throw new Error('Missing ' + secretKey);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - Error with sensitive data',
+      noSensitiveDataExposure,
+      {
+        valid: [],
+        invalid: [
+          // String literal with password
+          {
+            code: `throw new Error('password: ' + password);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // String literal with token
+          {
+            code: `new Error('token=' + refreshToken);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // String literal with secret
+          {
+            code: `throw new Error('secret: ' + clientSecret);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // BinaryExpression with sensitive left side
+          {
+            code: `throw new Error('password: ' + value);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // BinaryExpression with sensitive right identifier
+          {
+            code: `throw new Error('Error: ' + userPassword);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // BinaryExpression with token identifier
+          {
+            code: `throw new Error('Invalid ' + apiToken);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // BinaryExpression with key identifier
+          {
+            code: `throw new Error('Missing ' + secretKey);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Options - Custom Patterns', () => {
-    ruleTester.run('options - custom sensitive patterns', noSensitiveDataExposure, {
-      valid: [],
-      invalid: [
-        // Custom pattern: email
-        {
-          code: `console.log('user email: test@example.com');`,
-          options: [{ sensitivePatterns: ['email'] }],
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        // Custom pattern: phone
-        {
-          code: `logger.info('phone number: 555-0142');`,
-          options: [{ sensitivePatterns: ['phone'] }],
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'options - custom sensitive patterns',
+      noSensitiveDataExposure,
+      {
+        valid: [],
+        invalid: [
+          // Custom pattern: email
+          {
+            code: `console.log('user email: test@example.com');`,
+            options: [{ sensitivePatterns: ['email'] }],
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          // Custom pattern: phone
+          {
+            code: `logger.info('phone number: 555-0142');`,
+            options: [{ sensitivePatterns: ['phone'] }],
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('isLoggingCall - MemberExpression branch permutations', () => {
-    ruleTester.run('a computed member call is still a logging call', noSensitiveDataExposure, {
-      valid: [
-        // A genuinely dynamic method cannot be named, so it is not a log call
-        // this rule can identify. That is the real line, and it is where the
-        // case below used to sit by mistake.
-        {
-          code: `console[m]('password: 123456');`,
-        },
-        {
-          // The receiver is a CALL, so it is neither an identifier this rule
-          // knows nor a member it can name — there is nothing to match against
-          // LOGGER_RECEIVERS. Covers the last arm of `isLoggerReceiver`.
-          name: 'a call-expression receiver is not a known logger',
-          code: `getLogger()['log']('password: 123456');`,
-        },
-      ],
-      invalid: [
-        {
-          // FN: this was `valid`, described as "a computed member call is not a
-          // logging call". It reaches `console.log` exactly as the dotted form
-          // does — a minifier writes it, and so does anyone indexing by a
-          // constant. Asserting it was fine made the blind spot look chosen.
-          // @found computed-key blind-spot probe
-          name: 'FN: a secret logged through a string subscript',
-          code: `console['log']('password: 123456');`,
-          errors: 1,
-        },
-      ],
-    });
+    ruleTester.run(
+      'a computed member call is still a logging call',
+      noSensitiveDataExposure,
+      {
+        valid: [
+          // A genuinely dynamic method cannot be named, so it is not a log call
+          // this rule can identify. That is the real line, and it is where the
+          // case below used to sit by mistake.
+          {
+            code: `console[m]('password: 123456');`,
+          },
+          {
+            // The receiver is a CALL, so it is neither an identifier this rule
+            // knows nor a member it can name — there is nothing to match against
+            // LOGGER_RECEIVERS. Covers the last arm of `isLoggerReceiver`.
+            name: 'a call-expression receiver is not a known logger',
+            code: `getLogger()['log']('password: 123456');`,
+          },
+        ],
+        invalid: [
+          {
+            // FN: this was `valid`, described as "a computed member call is not a
+            // logging call". It reaches `console.log` exactly as the dotted form
+            // does — a minifier writes it, and so does anyone indexing by a
+            // constant. Asserting it was fine made the blind spot look chosen.
+            // @found computed-key blind-spot probe
+            name: 'FN: a secret logged through a string subscript',
+            code: `console['log']('password: 123456');`,
+            errors: 1,
+          },
+        ],
+      },
+    );
 
     // THIS CASE USED TO BE ASSERTED AS VALID. It is not: `app.logger.info(...)`
     // writes to a log stream, and the argument is a credential in plain text.
@@ -366,72 +391,92 @@ describe('no-sensitive-data-exposure', () => {
     // correct behaviour. A class-held `this.logger` and a request-bound
     // `req.log` are the same shape, and they are how Nest, winston and pino
     // are actually used.
-    ruleTester.run('invalid - a logger reached through one property hop is still a logger', noSensitiveDataExposure, {
-      valid: [
-        // A property hop whose name is not a logger is still not one.
-        `app.metrics.info('password: 123456');`,
-      ],
-      invalid: [
-        {
-          code: `app.logger.info('password: 123456');`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        {
-          code: `this.logger.debug(payload.apiKey);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-        {
-          code: `req.log.info('token: ' + accessToken);`,
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - a logger reached through one property hop is still a logger',
+      noSensitiveDataExposure,
+      {
+        valid: [
+          // A property hop whose name is not a logger is still not one.
+          `app.metrics.info('password: 123456');`,
+        ],
+        invalid: [
+          {
+            code: `app.logger.info('password: 123456');`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          {
+            code: `this.logger.debug(payload.apiKey);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+          {
+            code: `req.log.info('token: ' + accessToken);`,
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('valid - Identifier object with a name other than console or logger is not a logging call', noSensitiveDataExposure, {
-      valid: [
-        // Exercises the false branch of the receiver membership test. `log` is
-        // a LOG METHOD here, not a receiver, and `myThing` is not a logger.
-        {
-          code: `myThing.warn('password: 123456');`,
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - Identifier object with a name other than console or logger is not a logging call',
+      noSensitiveDataExposure,
+      {
+        valid: [
+          // Exercises the false branch of the receiver membership test. `log` is
+          // a LOG METHOD here, not a receiver, and `myThing` is not a logger.
+          {
+            code: `myThing.warn('password: 123456');`,
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - non-MemberExpression, non-Identifier callee is not a logging call', noSensitiveDataExposure, {
-      valid: [
-        // Exercises the case where node.callee is neither a MemberExpression
-        // nor an Identifier (a CallExpression callee via IIFE-style call).
-        {
-          code: `(getLogger())('password: 123456');`,
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - non-MemberExpression, non-Identifier callee is not a logging call',
+      noSensitiveDataExposure,
+      {
+        valid: [
+          // Exercises the case where node.callee is neither a MemberExpression
+          // nor an Identifier (a CallExpression callee via IIFE-style call).
+          {
+            code: `(getLogger())('password: 123456');`,
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('Error argument shapes that are not flagged', () => {
-    ruleTester.run('valid - Error thrown with a non-"+" BinaryExpression argument is not flagged', noSensitiveDataExposure, {
-      valid: [
-        // Exercises the false branch of `arg.operator === '+'`.
-        {
-          code: `throw new Error('code: ' - 1);`,
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - Error thrown with a non-"+" BinaryExpression argument is not flagged',
+      noSensitiveDataExposure,
+      {
+        valid: [
+          // Exercises the false branch of `arg.operator === '+'`.
+          {
+            code: `throw new Error('code: ' - 1);`,
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - Error with a plus BinaryExpression but no matching literal or identifier sides is not flagged', noSensitiveDataExposure, {
-      valid: [
-        // Left side is a non-string literal (number), right side is a
-        // non-matching identifier: neither the left-literal nor
-        // right-identifier sensitive-data branches fire.
-        {
-          code: `throw new Error(1 + count);`,
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - Error with a plus BinaryExpression but no matching literal or identifier sides is not flagged',
+      noSensitiveDataExposure,
+      {
+        valid: [
+          // Left side is a non-string literal (number), right side is a
+          // non-matching identifier: neither the left-literal nor
+          // right-identifier sensitive-data branches fire.
+          {
+            code: `throw new Error(1 + count);`,
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('Layer 2 - synthetic nodes and defensive fallbacks (mock context)', () => {
@@ -441,9 +486,12 @@ describe('no-sensitive-data-exposure', () => {
       // which a real parser/RuleTester options array cannot produce (schema
       // validation rejects `null` for an object-typed option), so this is
       // exercised directly against a mock context with `options: [null]`.
-      const { listeners, reports } = createWithMockContext(noSensitiveDataExposure, {
-        options: [null],
-      });
+      const { listeners, reports } = createWithMockContext(
+        noSensitiveDataExposure,
+        {
+          options: [null],
+        },
+      );
 
       const node = {
         type: 'CallExpression',
@@ -465,9 +513,12 @@ describe('no-sensitive-data-exposure', () => {
     });
 
     it('skips an Identifier argument with an empty name (arg.name truthiness branch)', () => {
-      const { listeners, reports } = createWithMockContext(noSensitiveDataExposure, {
-        options: [{}],
-      });
+      const { listeners, reports } = createWithMockContext(
+        noSensitiveDataExposure,
+        {
+          options: [{}],
+        },
+      );
 
       const node = {
         type: 'CallExpression',
@@ -485,7 +536,6 @@ describe('no-sensitive-data-exposure', () => {
 
       expect(reports).toHaveLength(0);
     });
-
   });
 
   /**
@@ -493,12 +543,15 @@ describe('no-sensitive-data-exposure', () => {
    * Source: eslint-benchmark-suite/benchmarks/fn-fp-comparison/fixtures/safe/safe-patterns.js
    */
   describe('Benchmark FP Regression', () => {
-    ruleTester.run('benchmark FP: safe_proto_allowlist - Invalid key error', noSensitiveDataExposure, {
-      valid: [
-        // "Invalid key" in error messages is NOT sensitive data exposure
-        // The word "key" here refers to an object property key, not an API key
-        {
-          code: `
+    ruleTester.run(
+      'benchmark FP: safe_proto_allowlist - Invalid key error',
+      noSensitiveDataExposure,
+      {
+        valid: [
+          // "Invalid key" in error messages is NOT sensitive data exposure
+          // The word "key" here refers to an object property key, not an API key
+          {
+            code: `
             function validateKey(obj, key, value) {
               const VALID_KEYS = ['name', 'email', 'age', 'status'];
               if (!VALID_KEYS.includes(key)) {
@@ -507,18 +560,19 @@ describe('no-sensitive-data-exposure', () => {
               obj[key] = value;
             }
           `,
-        },
-        // Generic "key" usage in error context should not trigger
-        {
-          code: `throw new Error('Invalid key format');`,
-        },
-        // "key" as a standalone word in non-sensitive context
-        {
-          code: `console.log('Press any key to continue');`,
-        },
-      ],
-      invalid: [],
-    });
+          },
+          // Generic "key" usage in error context should not trigger
+          {
+            code: `throw new Error('Invalid key format');`,
+          },
+          // "key" as a standalone word in non-sensitive context
+          {
+            code: `console.log('Press any key to continue');`,
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 });
 
@@ -547,15 +601,27 @@ describe('corpus regression — mentioning a credential is not leaking it', () =
   ruleTester.run('prose vs value', noSensitiveDataExposure, {
     valid: [
       { name: 'Token not found', code: `throw new Error('Token not found');` },
-      { name: 'Invalid token type', code: `throw new Error('Invalid token type');` },
+      {
+        name: 'Invalid token type',
+        code: `throw new Error('Invalid token type');`,
+      },
       {
         name: 'password policy quoted back to the user',
         code: `throw new Error('Password must contain at least one letter and one number');`,
       },
       { name: 'prose log line', code: `console.log('User token refreshed');` },
-      { name: 'prose about a secret', code: `logger.info('Rotating secret for tenant');` },
-      { name: 'neutral concatenation', code: `console.log('count is ' + total);` },
-      { name: 'concatenation of two neutral literals', code: `console.log('a' + 'b');` },
+      {
+        name: 'prose about a secret',
+        code: `logger.info('Rotating secret for tenant');`,
+      },
+      {
+        name: 'neutral concatenation',
+        code: `console.log('count is ' + total);`,
+      },
+      {
+        name: 'concatenation of two neutral literals',
+        code: `console.log('a' + 'b');`,
+      },
     ],
     invalid: [
       {
@@ -640,9 +706,15 @@ describe('corpus regression — logger detection and label detection', () => {
         name: 'a descriptor-suffixed name holds a description',
         code: `throw new Error("accountSid must start with AC" + apiKeyMsg);`,
       },
-      { name: 'passwordError names an error', code: `console.log(passwordError);` },
+      {
+        name: 'passwordError names an error',
+        code: `console.log(passwordError);`,
+      },
       { name: 'tokenLabel names a label', code: `console.log(ui.tokenLabel);` },
-      { name: 'secretRegex names a regex', code: 'console.log(`checking ${secretRegex}`);' },
+      {
+        name: 'secretRegex names a regex',
+        code: 'console.log(`checking ${secretRegex}`);',
+      },
       // twilio-node src/jwt/validation/ValidationToken.ts:145 — the literal
       // names the operation that failed; `err` is an exception.
       {
@@ -793,37 +865,47 @@ describe('Regression - argument shapes the sink never looked at', () => {
     ],
   });
 
-  ruleTester.run('valid - the same shapes without the evidence', noSensitiveDataExposure, {
-    valid: [
-      // A credential-named field holding a CONSTANT exposes nothing at
-      // runtime. A hardcoded secret is no-hardcoded-credentials' finding.
-      `logger.info('policy loaded', { passwordPolicy: 'strong', apiKeyRotationDays: 30 });`,
-      ["const REDACTED = '[redacted]';", `logger.info('ok', { apiKey: REDACTED });`].join('\n'),
-      // A computed key names nothing statically.
-      `logger.debug('column', row[column]);`,
-      `logger.info('field', { [field]: value });`,
-      // A spread is not a named property.
-      `logger.info('ctx', { ...context });`,
-      // A property hop whose name is not a logger is not a logger.
-      `app.metrics.info('password: hunter2');`,
-      `metrics.warn(user.password);`,
-      // `Math.log` passes the method test and is not a logger.
-      `Math.log(weight + 1);`,
-      // A local `String` is somebody else's function.
-      ['const String = (x) => x;', `logger.info(String(account.password));`].join('\n'),
-      // A binding written twice determines nothing.
-      [
-        'let submitted = displayName;',
-        'submitted = account.password;',
-        `logger.warn('login failed', submitted);`,
-      ].join('\n'),
-      // A parameter has no initializer to resolve.
-      `export function audit(value) { logger.warn('x', value); }`,
-      // Cyclic initialisers must terminate rather than recurse forever.
-      ['let a = b;', 'let b = a;', `logger.info(a);`].join('\n'),
-    ],
-    invalid: [],
-  });
+  ruleTester.run(
+    'valid - the same shapes without the evidence',
+    noSensitiveDataExposure,
+    {
+      valid: [
+        // A credential-named field holding a CONSTANT exposes nothing at
+        // runtime. A hardcoded secret is no-hardcoded-credentials' finding.
+        `logger.info('policy loaded', { passwordPolicy: 'strong', apiKeyRotationDays: 30 });`,
+        [
+          "const REDACTED = '[redacted]';",
+          `logger.info('ok', { apiKey: REDACTED });`,
+        ].join('\n'),
+        // A computed key names nothing statically.
+        `logger.debug('column', row[column]);`,
+        `logger.info('field', { [field]: value });`,
+        // A spread is not a named property.
+        `logger.info('ctx', { ...context });`,
+        // A property hop whose name is not a logger is not a logger.
+        `app.metrics.info('password: hunter2');`,
+        `metrics.warn(user.password);`,
+        // `Math.log` passes the method test and is not a logger.
+        `Math.log(weight + 1);`,
+        // A local `String` is somebody else's function.
+        [
+          'const String = (x) => x;',
+          `logger.info(String(account.password));`,
+        ].join('\n'),
+        // A binding written twice determines nothing.
+        [
+          'let submitted = displayName;',
+          'submitted = account.password;',
+          `logger.warn('login failed', submitted);`,
+        ].join('\n'),
+        // A parameter has no initializer to resolve.
+        `export function audit(value) { logger.warn('x', value); }`,
+        // Cyclic initialisers must terminate rather than recurse forever.
+        ['let a = b;', 'let b = a;', `logger.info(a);`].join('\n'),
+      ],
+      invalid: [],
+    },
+  );
 });
 
 describe('Regression - a measurement of a secret is not the secret', () => {
@@ -852,36 +934,44 @@ describe('Regression - a label announces a value, a sentence does not', () => {
   // The label-and-separator test cannot tell `'password: 123456'` from
   // `'password: follow the link'`; the number of words after the separator
   // can. Locked in both directions.
-  ruleTester.run('valid - a clause after the separator', noSensitiveDataExposure, {
-    valid: [
-      `console.log('Reset your password: follow the link we just emailed you');`,
-      `throw new Error('api_key: required in production');`,
-      `throw new Error('encryption_key: must be at least 32 bytes');`,
-      `throw new Error('secret: set SESSION_SECRET before starting');`,
-    ],
-    invalid: [],
-  });
+  ruleTester.run(
+    'valid - a clause after the separator',
+    noSensitiveDataExposure,
+    {
+      valid: [
+        `console.log('Reset your password: follow the link we just emailed you');`,
+        `throw new Error('api_key: required in production');`,
+        `throw new Error('encryption_key: must be at least 32 bytes');`,
+        `throw new Error('secret: set SESSION_SECRET before starting');`,
+      ],
+      invalid: [],
+    },
+  );
 
-  ruleTester.run('invalid - one token after the separator', noSensitiveDataExposure, {
-    valid: [],
-    invalid: [
-      {
-        code: `console.log('password: 123456');`,
-        errors: [{ messageId: 'sensitiveDataExposure' }],
-      },
-      {
-        // The camelCase normalization that makes `secretKey` match
-        // `secret key` shreds a JWT into `ey jhb gci`, so the one-token test
-        // has to run on the raw text.
-        code: `logger.error('token=eyJhbGciOiJIUzI1NiJ9');`,
-        errors: [{ messageId: 'sensitiveDataExposure' }],
-      },
-      {
-        code: `console.log('SSN: 123-45-6789');`,
-        errors: [{ messageId: 'sensitiveDataExposure' }],
-      },
-    ],
-  });
+  ruleTester.run(
+    'invalid - one token after the separator',
+    noSensitiveDataExposure,
+    {
+      valid: [],
+      invalid: [
+        {
+          code: `console.log('password: 123456');`,
+          errors: [{ messageId: 'sensitiveDataExposure' }],
+        },
+        {
+          // The camelCase normalization that makes `secretKey` match
+          // `secret key` shreds a JWT into `ey jhb gci`, so the one-token test
+          // has to run on the raw text.
+          code: `logger.error('token=eyJhbGciOiJIUzI1NiJ9');`,
+          errors: [{ messageId: 'sensitiveDataExposure' }],
+        },
+        {
+          code: `console.log('SSN: 123-45-6789');`,
+          errors: [{ messageId: 'sensitiveDataExposure' }],
+        },
+      ],
+    },
+  );
 
   /**
    * Locks for the negative-direction arms: the shapes that decide NOT to
@@ -889,49 +979,53 @@ describe('Regression - a label announces a value, a sentence does not', () => {
    * program, not a synthetic AST.
    */
   describe('coverage - resolution arms that decline to report', () => {
-    ruleTester.run('concatenation and object-key arms', noSensitiveDataExposure, {
-      valid: [
-        // A numeric object key. It is neither an Identifier nor a string
-        // Literal, so no name can be read from it and nothing is claimed. An
-        // error-code map is the ordinary shape.
-        {
-          code: [
-            'const logger = require("pino")();',
-            'const HTTP_REASONS = { 1: "continue", 401: "unauthorized" };',
-            'export function report(status) { logger.info({ 401: HTTP_REASONS[401] }); }',
-          ].join('\n'),
-        },
-        // A binding written twice has no single initializer to trust, so the
-        // resolver declines rather than picking a declaration the author may
-        // not have run.
-        {
-          code: [
-            'var detail = "harmless";',
-            'var detail = "also harmless";',
-            'export function report() { console.log(detail); }',
-          ].join('\n'),
-        },
-        // `new TypeError(...)` is not `new Error(...)`. The error-message path
-        // is keyed to the Error constructor by exact name, so a different
-        // constructor takes the other arm.
-        {
-          code: `export function reject() { throw new TypeError('argument must be a string'); }`,
-        },
-      ],
-      invalid: [
-        // The credential sits on the LEFT of the concatenation, so the left
-        // operand has to be described rather than just the right.
-        {
-          code: [
-            'const logger = require("pino")();',
-            'export function audit(account) {',
-            '  logger.info(account.password + " was rotated");',
-            '}',
-          ].join('\n'),
-          errors: [{ messageId: 'sensitiveDataExposure' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'concatenation and object-key arms',
+      noSensitiveDataExposure,
+      {
+        valid: [
+          // A numeric object key. It is neither an Identifier nor a string
+          // Literal, so no name can be read from it and nothing is claimed. An
+          // error-code map is the ordinary shape.
+          {
+            code: [
+              'const logger = require("pino")();',
+              'const HTTP_REASONS = { 1: "continue", 401: "unauthorized" };',
+              'export function report(status) { logger.info({ 401: HTTP_REASONS[401] }); }',
+            ].join('\n'),
+          },
+          // A binding written twice has no single initializer to trust, so the
+          // resolver declines rather than picking a declaration the author may
+          // not have run.
+          {
+            code: [
+              'var detail = "harmless";',
+              'var detail = "also harmless";',
+              'export function report() { console.log(detail); }',
+            ].join('\n'),
+          },
+          // `new TypeError(...)` is not `new Error(...)`. The error-message path
+          // is keyed to the Error constructor by exact name, so a different
+          // constructor takes the other arm.
+          {
+            code: `export function reject() { throw new TypeError('argument must be a string'); }`,
+          },
+        ],
+        invalid: [
+          // The credential sits on the LEFT of the concatenation, so the left
+          // operand has to be described rather than just the right.
+          {
+            code: [
+              'const logger = require("pino")();',
+              'export function audit(account) {',
+              '  logger.info(account.password + " was rotated");',
+              '}',
+            ].join('\n'),
+            errors: [{ messageId: 'sensitiveDataExposure' }],
+          },
+        ],
+      },
+    );
   });
 });
 
@@ -947,37 +1041,41 @@ describe('Regression - a label announces a value, a sentence does not', () => {
  *
  * Every QUIET case is paired with a positive control on the SAME snippet.
  */
-ruleTester.run('descriptorSegments and its additional variant', noSensitiveDataExposure, {
-  valid: [
-    {
-      name: 'DEFAULT: `msg` is a built-in descriptor segment, so apiKeyMsg is silent',
-      code: 'export function f(apiKeyMsg) { console.log(apiKeyMsg); }',
-    },
-    {
-      name: 'additionalDescriptorSegments extends the built-ins: `blurb` now suppresses',
-      code: 'export function f(apiKeyBlurb) { console.log(apiKeyBlurb); }',
-      options: [{ additionalDescriptorSegments: ['blurb'] }],
-    },
-  ],
-  invalid: [
-    {
-      name: 'positive control: the same sink reports when the name is not a descriptor',
-      code: 'export function f(apiKey) { console.log(apiKey); }',
-      errors: [{ messageId: 'sensitiveDataExposure' }],
-    },
-    {
-      name: 'descriptorSegments REPLACES the built-ins: an empty list suppresses nothing',
-      code: 'export function f(apiKeyMsg) { console.log(apiKeyMsg); }',
-      options: [{ descriptorSegments: [] }],
-      errors: [{ messageId: 'sensitiveDataExposure' }],
-    },
-    {
-      name: 'DEFAULT: `blurb` is not a built-in descriptor segment',
-      code: 'export function f(apiKeyBlurb) { console.log(apiKeyBlurb); }',
-      errors: [{ messageId: 'sensitiveDataExposure' }],
-    },
-  ],
-});
+ruleTester.run(
+  'descriptorSegments and its additional variant',
+  noSensitiveDataExposure,
+  {
+    valid: [
+      {
+        name: 'DEFAULT: `msg` is a built-in descriptor segment, so apiKeyMsg is silent',
+        code: 'export function f(apiKeyMsg) { console.log(apiKeyMsg); }',
+      },
+      {
+        name: 'additionalDescriptorSegments extends the built-ins: `blurb` now suppresses',
+        code: 'export function f(apiKeyBlurb) { console.log(apiKeyBlurb); }',
+        options: [{ additionalDescriptorSegments: ['blurb'] }],
+      },
+    ],
+    invalid: [
+      {
+        name: 'positive control: the same sink reports when the name is not a descriptor',
+        code: 'export function f(apiKey) { console.log(apiKey); }',
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'descriptorSegments REPLACES the built-ins: an empty list suppresses nothing',
+        code: 'export function f(apiKeyMsg) { console.log(apiKeyMsg); }',
+        options: [{ descriptorSegments: [] }],
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'DEFAULT: `blurb` is not a built-in descriptor segment',
+        code: 'export function f(apiKeyBlurb) { console.log(apiKeyBlurb); }',
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+    ],
+  },
+);
 
 /**
  * Prose names a credential, the interpolation names itself an outcome.
@@ -993,94 +1091,94 @@ ruleTester.run('descriptorSegments and its additional variant', noSensitiveDataE
  * below as FN guards, because they are caught by the VALUE path — which runs
  * before the text fallback and is untouched by this gate.
  */
-ruleTester.run('no-sensitive-data-exposure — prose label vs diagnostic value', noSensitiveDataExposure, {
-  valid: [
-    {
-      name: 'twilio: `access token` labels the failed operation, not `error.message`',
-      code: 'export function f(error) { throw new Error(`Failed to fetch access token: ${error.message}`); }',
-    },
-    {
-      name: 'twilio: a status code alongside the same label',
-      code:
-        'export function f(error) { throw new Error(`Error Status Code: ${error.status}\\nFailed to fetch access token: ${error.message}`); }',
-    },
-    {
-      name: 'Shopify: `Token request failed with status ${tokenResponse.status}`',
-      code: 'export function f(tokenResponse) { throw new Error(`Token request failed with status ${tokenResponse.status}`); }',
-    },
-    {
-      name: 'optional chaining reads the same accessor',
-      code: 'export function f(error) { console.log(`access token: ${error?.message}`); }',
-    },
-    {
-      // `${error.message as string}` reads what `${error.message}` reads. A
-      // bare `type ===` test matches neither cast nor non-null assertion, so
-      // without unwrapping first the gate misses the dialect TypeScript users
-      // are forced to write. Raised by CodeRabbit on #589.
-      name: 'a type assertion reads the same accessor',
-      code: 'export function f(error: Error) { console.log(`access token: ${error.message as string}`); }',
-    },
-    {
-      name: 'a non-null assertion reads the same accessor',
-      code: 'export function f(error?: Error) { console.log(`access token: ${error!.message}`); }',
-    },
-    {
-      // The receiver IS a local literal, but nothing was aliased into the key
-      // the template reads — so the accessor is diagnostic after all.
-      name: 'a local literal that does not set the key stays diagnostic',
-      code:
-        'export function f() { const error = { code: 404 }; console.log(`access token: ${error.message}`); }',
-    },
-  ],
-  invalid: [
-    {
-      name: 'FN GUARD: Shopify github-utils really does log the token',
-      code: 'export function f(source, tokenFromEnv) { console.log(`Using token from ${source}: ${tokenFromEnv}`); }',
-      errors: [{ messageId: 'sensitiveDataExposure' }],
-    },
-    {
-      name: 'FN GUARD: Shopify github-utils really does log the password',
-      code: 'export function f(password) { console.log(`Using password from dev: ${password}`); }',
-      errors: [{ messageId: 'sensitiveDataExposure' }],
-    },
-    {
-      name: 'FN GUARD: an opaque hole under the same label still reports',
-      code: 'export function f(t) { console.log(`access token: ${t}`); }',
-      errors: [{ messageId: 'sensitiveDataExposure' }],
-    },
-    {
-      // The opaque hole sits against the separator because `literalCarriesSecret`
-      // independently requires "label, separator, ONE token" — a pre-existing
-      // guard, and the reason a clause-shaped template reports nothing at all.
-      name: 'FN GUARD: EVERY hole must be diagnostic — one opaque hole is enough',
-      code: 'export function f(error, t) { console.log(`status ${error.status} access token: ${t}`); }',
-      errors: [{ messageId: 'sensitiveDataExposure' }],
-    },
-    {
-      // FN GUARD: a name is the DEFAULT answer, not the final one. When the
-      // receiver is an object literal in this file the property's value is
-      // visible, so it is read rather than trusted. Raised by CodeRabbit on
-      // #589 — without this the gate suppressed a real aliased credential.
-      name: 'FN GUARD: a secret aliased into `.message` by a local literal still reports',
-      code:
-        'export function f(accessToken) { const error = { message: accessToken }; console.log(`access token: ${error.message}`); }',
-      errors: [{ messageId: 'sensitiveDataExposure' }],
-    },
-    {
-      name: 'FN GUARD: the same alias through a string key',
-      code:
-        'export function f(apiKey) { const e = { "message": apiKey }; console.log(`api key: ${e.message}`); }',
-      errors: [{ messageId: 'sensitiveDataExposure' }],
-    },
-    {
-      name: 'FN GUARD: `code` is not diagnostic — an auth code is called that too',
-      code: 'export function f(err) { console.log(`access token: ${err.code}`); }',
-      errors: [{ messageId: 'sensitiveDataExposure' }],
-    },
-    {
-      name: 'FN GUARD: a computed read names nothing, so it is not assumed diagnostic',
-      code: 'export function f(error, k) { console.log(`access token: ${error[k]}`); }',
-      errors: [{ messageId: 'sensitiveDataExposure' }],
-    },
-  ],
-});
+ruleTester.run(
+  'no-sensitive-data-exposure — prose label vs diagnostic value',
+  noSensitiveDataExposure,
+  {
+    valid: [
+      {
+        name: 'twilio: `access token` labels the failed operation, not `error.message`',
+        code: 'export function f(error) { throw new Error(`Failed to fetch access token: ${error.message}`); }',
+      },
+      {
+        name: 'twilio: a status code alongside the same label',
+        code: 'export function f(error) { throw new Error(`Error Status Code: ${error.status}\\nFailed to fetch access token: ${error.message}`); }',
+      },
+      {
+        name: 'Shopify: `Token request failed with status ${tokenResponse.status}`',
+        code: 'export function f(tokenResponse) { throw new Error(`Token request failed with status ${tokenResponse.status}`); }',
+      },
+      {
+        name: 'optional chaining reads the same accessor',
+        code: 'export function f(error) { console.log(`access token: ${error?.message}`); }',
+      },
+      {
+        // `${error.message as string}` reads what `${error.message}` reads. A
+        // bare `type ===` test matches neither cast nor non-null assertion, so
+        // without unwrapping first the gate misses the dialect TypeScript users
+        // are forced to write. Raised by CodeRabbit on #589.
+        name: 'a type assertion reads the same accessor',
+        code: 'export function f(error: Error) { console.log(`access token: ${error.message as string}`); }',
+      },
+      {
+        name: 'a non-null assertion reads the same accessor',
+        code: 'export function f(error?: Error) { console.log(`access token: ${error!.message}`); }',
+      },
+      {
+        // The receiver IS a local literal, but nothing was aliased into the key
+        // the template reads — so the accessor is diagnostic after all.
+        name: 'a local literal that does not set the key stays diagnostic',
+        code: 'export function f() { const error = { code: 404 }; console.log(`access token: ${error.message}`); }',
+      },
+    ],
+    invalid: [
+      {
+        name: 'FN GUARD: Shopify github-utils really does log the token',
+        code: 'export function f(source, tokenFromEnv) { console.log(`Using token from ${source}: ${tokenFromEnv}`); }',
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'FN GUARD: Shopify github-utils really does log the password',
+        code: 'export function f(password) { console.log(`Using password from dev: ${password}`); }',
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'FN GUARD: an opaque hole under the same label still reports',
+        code: 'export function f(t) { console.log(`access token: ${t}`); }',
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        // The opaque hole sits against the separator because `literalCarriesSecret`
+        // independently requires "label, separator, ONE token" — a pre-existing
+        // guard, and the reason a clause-shaped template reports nothing at all.
+        name: 'FN GUARD: EVERY hole must be diagnostic — one opaque hole is enough',
+        code: 'export function f(error, t) { console.log(`status ${error.status} access token: ${t}`); }',
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        // FN GUARD: a name is the DEFAULT answer, not the final one. When the
+        // receiver is an object literal in this file the property's value is
+        // visible, so it is read rather than trusted. Raised by CodeRabbit on
+        // #589 — without this the gate suppressed a real aliased credential.
+        name: 'FN GUARD: a secret aliased into `.message` by a local literal still reports',
+        code: 'export function f(accessToken) { const error = { message: accessToken }; console.log(`access token: ${error.message}`); }',
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'FN GUARD: the same alias through a string key',
+        code: 'export function f(apiKey) { const e = { "message": apiKey }; console.log(`api key: ${e.message}`); }',
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'FN GUARD: `code` is not diagnostic — an auth code is called that too',
+        code: 'export function f(err) { console.log(`access token: ${err.code}`); }',
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'FN GUARD: a computed read names nothing, so it is not assumed diagnostic',
+        code: 'export function f(error, k) { console.log(`access token: ${error[k]}`); }',
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+    ],
+  },
+);

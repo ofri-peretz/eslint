@@ -379,6 +379,7 @@ function containsSensitiveData(
 export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
   name: 'no-sensitive-data-exposure',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-sensitive-data-exposure.md',
@@ -476,64 +477,18 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
       additionalDescriptorSegments: [],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      sensitivePatterns = [
-        'password',
-        'passwd',
-        'secret',
-        'token',
-        'access_token',
-        'auth_token',
-        'ssn',
-        'credit_card',
-        'creditcard',
-        'api_key',
-        'apikey',
-        'secret_key',
-        'private_key',
-        'encryption_key',
-      ],
-      checkConsoleLog = true,
-      checkErrorMessages = true,
-      descriptorSegments = DESCRIPTOR_SEGMENTS,
-      additionalDescriptorSegments = [],
-    }: Options = options || {};
-
-    const descriptors: ReadonlySet<string> = new Set([
-      ...descriptorSegments,
-      ...additionalDescriptorSegments,
-    ]);
-
-    /**
-     * Receivers whose log methods write to a log stream. Exact membership on a
-     * closed set, never a substring: `login`, `logout`, `dialog`, `catalog` and
-     * `blog` all contain "log" and none of them is a logger.
-     *
-     * `log` earns its place next to `console` and `logger` because
-     * `const log = rootLogger.child({ requestId })` is how pino is used in
-     * every Node service, and `req.log.info(...)` is what pino-http installs.
-     * Those calls were silent: the receiver check required a bare Identifier
-     * named exactly `console` or `logger`, so a class-held `this.logger` and a
-     * request-bound `log` both walked through with their credentials.
-     */
-    const LOGGER_RECEIVERS = new Set(['console', 'logger', 'log']);
-
-    /** Methods that write a record. Exact membership, closed set. */
-    const LOG_METHODS = new Set([
-      'log',
-      'info',
-      'warn',
-      'error',
-      'debug',
-      'trace',
-      'fatal',
-      'verbose',
-      'silly',
-    ]);
+    let sensitivePatterns: string[];
+    let checkConsoleLog: boolean;
+    let checkErrorMessages: boolean;
+    let descriptorSegments: string[];
+    let additionalDescriptorSegments: string[];
+    let descriptors: ReadonlySet<string>;
+    let LOGGER_RECEIVERS: Set<string>;
+    let LOG_METHODS: Set<string>;
 
     /**
      * Is this receiver a logger? `console`, `logger`, `log` - written bare, or
@@ -929,6 +884,63 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          sensitivePatterns = [
+            'password',
+            'passwd',
+            'secret',
+            'token',
+            'access_token',
+            'auth_token',
+            'ssn',
+            'credit_card',
+            'creditcard',
+            'api_key',
+            'apikey',
+            'secret_key',
+            'private_key',
+            'encryption_key',
+          ],
+          checkConsoleLog = true,
+          checkErrorMessages = true,
+          descriptorSegments = DESCRIPTOR_SEGMENTS,
+          additionalDescriptorSegments = [],
+        } = options || {});
+
+        descriptors = new Set([
+          ...descriptorSegments,
+          ...additionalDescriptorSegments,
+        ]);
+
+        /**
+         * Receivers whose log methods write to a log stream. Exact membership on a
+         * closed set, never a substring: `login`, `logout`, `dialog`, `catalog` and
+         * `blog` all contain "log" and none of them is a logger.
+         *
+         * `log` earns its place next to `console` and `logger` because
+         * `const log = rootLogger.child({ requestId })` is how pino is used in
+         * every Node service, and `req.log.info(...)` is what pino-http installs.
+         * Those calls were silent: the receiver check required a bare Identifier
+         * named exactly `console` or `logger`, so a class-held `this.logger` and a
+         * request-bound `log` both walked through with their credentials.
+         */
+        LOGGER_RECEIVERS = new Set(['console', 'logger', 'log']);
+
+        /** Methods that write a record. Exact membership, closed set. */
+        LOG_METHODS = new Set([
+          'log',
+          'info',
+          'warn',
+          'error',
+          'debug',
+          'trace',
+          'fatal',
+          'verbose',
+          'silly',
+        ]);
+      },
       CallExpression: checkCallExpression,
       NewExpression: checkNewExpression,
     };

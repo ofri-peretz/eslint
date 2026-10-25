@@ -24,7 +24,7 @@ interface AttributeRule {
 export interface Options {
   /** Array of required attribute rules */
   attributes?: AttributeRule[];
-  
+
   /** Component names to ignore for this rule */
   ignoreComponents?: string[];
 }
@@ -34,6 +34,7 @@ type RuleOptions = [Options?];
 export const requiredAttributes = createRule<RuleOptions, MessageIds>({
   name: 'required-attributes',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/required-attributes.md',
@@ -53,7 +54,8 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
         description: '{{element}} missing {{attribute}}',
         severity: 'MEDIUM',
         fix: 'Add {{attribute}}="{{suggestedValue}}" ({{purpose}})',
-        documentationLink: 'https://www.w3.org/WAI/fundamentals/accessibility-intro/',
+        documentationLink:
+          'https://www.w3.org/WAI/fundamentals/accessibility-intro/',
       }),
       addAttribute: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -61,7 +63,8 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
         description: 'Add required attribute',
         severity: 'LOW',
         fix: '{{attribute}}="{{suggestedValue}}"',
-        documentationLink: 'https://www.w3.org/WAI/fundamentals/accessibility-intro/',
+        documentationLink:
+          'https://www.w3.org/WAI/fundamentals/accessibility-intro/',
       }),
     },
     schema: [
@@ -102,29 +105,30 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
       ignoreComponents: [],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    // `options` is always an object here (`|| {}` above), so no second fallback.
-    const {
-attributes = [], ignoreComponents = []
-}: Options = options;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let attributes: AttributeRule[];
+    let ignoreComponents: string[];
 
     /**
      * Get element name from JSX opening element
      */
-    const getElementName = (node: TSESTree.JSXOpeningElement): string | null => {
+    const getElementName = (
+      node: TSESTree.JSXOpeningElement,
+    ): string | null => {
       if (node.name.type === 'JSXIdentifier') {
         return node.name.name;
       }
       if (node.name.type === 'JSXMemberExpression') {
         // Handle cases like <Box.Item>
-        let current: TSESTree.JSXIdentifier | TSESTree.JSXMemberExpression = node.name;
+        let current: TSESTree.JSXIdentifier | TSESTree.JSXMemberExpression =
+          node.name;
         const parts: string[] = [];
         while (current.type === 'JSXMemberExpression') {
           if (current.property.type === 'JSXIdentifier') {
             parts.unshift(current.property.name);
           }
-          current = current.object as TSESTree.JSXIdentifier | TSESTree.JSXMemberExpression;
+          current = current.object as
+            TSESTree.JSXIdentifier | TSESTree.JSXMemberExpression;
         }
         if (current.type === 'JSXIdentifier') {
           parts.unshift(current.name);
@@ -137,12 +141,17 @@ attributes = [], ignoreComponents = []
     /**
      * Check if element has attribute
      */
-    const hasAttribute = (node: TSESTree.JSXOpeningElement, attrName: string): boolean => {
-      return node.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) => {
-        if (attr.type !== 'JSXAttribute') return false;
-        if (attr.name.type !== 'JSXIdentifier') return false;
-        return attr.name.name === attrName;
-      });
+    const hasAttribute = (
+      node: TSESTree.JSXOpeningElement,
+      attrName: string,
+    ): boolean => {
+      return node.attributes.some(
+        (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) => {
+          if (attr.type !== 'JSXAttribute') return false;
+          if (attr.name.type !== 'JSXIdentifier') return false;
+          return attr.name.name === attrName;
+        },
+      );
     };
 
     /**
@@ -155,11 +164,11 @@ attributes = [], ignoreComponents = []
         'aria-label': 'Accessibility for screen readers',
         'aria-describedby': 'Accessibility description',
         'aria-labelledby': 'Accessibility label reference',
-        'role': 'Accessibility role definition',
-        'tabIndex': 'Keyboard navigation order',
-        'alt': 'Image accessibility',
-        'title': 'Tooltip / additional context',
-        'id': 'Element identification',
+        role: 'Accessibility role definition',
+        tabIndex: 'Keyboard navigation order',
+        alt: 'Image accessibility',
+        title: 'Tooltip / additional context',
+        id: 'Element identification',
       };
       return purposes[attribute] || 'Required for consistency';
     };
@@ -172,14 +181,21 @@ attributes = [], ignoreComponents = []
      */
     // oxlint-disable-next-line consistent-function-scoping
     const isFormElement = (elementName: string): boolean => {
-      return ['input', 'button', 'select', 'textarea'].includes(elementName.toLowerCase());
+      return ['input', 'button', 'select', 'textarea'].includes(
+        elementName.toLowerCase(),
+      );
     };
 
     // oxlint-disable-next-line consistent-function-scoping
-    const getDefaultSuggestedValue = (attribute: string, elementName: string): string => {
+    const getDefaultSuggestedValue = (
+      attribute: string,
+      elementName: string,
+    ): string => {
       if (attribute === 'data-testid') {
         // Generate kebab-case testid from element name
-        const kebab = elementName.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+        const kebab = elementName
+          .replace(/([a-z])([A-Z])/g, '$1-$2')
+          .toLowerCase();
         return kebab;
       }
       if (attribute.startsWith('aria-')) {
@@ -192,6 +208,11 @@ attributes = [], ignoreComponents = []
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        // `options` is always an object here (`|| {}` above), so no second fallback.
+        ({ attributes = [], ignoreComponents = [] } = options);
+      },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         const elementName = getElementName(node);
         if (!elementName) return;
@@ -203,7 +224,12 @@ attributes = [], ignoreComponents = []
 
         // Check each required attribute
         for (const attrRule of attributes) {
-          const { attribute, ignoreTags = [], message, suggestedValue } = attrRule;
+          const {
+            attribute,
+            ignoreTags = [],
+            message,
+            suggestedValue,
+          } = attrRule;
 
           // Check if this element should be ignored for this attribute
           if (ignoreTags.includes(elementName)) {
@@ -211,7 +237,10 @@ attributes = [], ignoreComponents = []
           }
 
           // SKIP: type/name attributes only apply to form elements
-          if ((attribute === 'type' || attribute === 'name') && !isFormElement(elementName)) {
+          if (
+            (attribute === 'type' || attribute === 'name') &&
+            !isFormElement(elementName)
+          ) {
             continue;
           }
 
@@ -222,7 +251,8 @@ attributes = [], ignoreComponents = []
 
           // Attribute is missing - report violation
           const purpose = message || getAttributePurpose(attribute);
-          const defaultValue = suggestedValue || getDefaultSuggestedValue(attribute, elementName);
+          const defaultValue =
+            suggestedValue || getDefaultSuggestedValue(attribute, elementName);
 
           context.report({
             node,
@@ -245,7 +275,7 @@ attributes = [], ignoreComponents = []
                   const nameNode = node.name;
                   return fixer.insertTextAfter(
                     nameNode,
-                    ` ${attribute}="${defaultValue}"`
+                    ` ${attribute}="${defaultValue}"`,
                   );
                 },
               },
@@ -256,4 +286,3 @@ attributes = [], ignoreComponents = []
     };
   },
 });
-

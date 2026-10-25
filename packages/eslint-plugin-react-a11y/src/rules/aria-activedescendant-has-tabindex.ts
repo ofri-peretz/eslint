@@ -33,6 +33,10 @@ export const ariaActivedescendantHasTabindex = createRule<
 >({
   name: 'aria-activedescendant-has-tabindex',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/aria-activedescendant-has-tabindex',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/aria-activedescendant-has-tabindex.md',
@@ -55,7 +59,7 @@ export const ariaActivedescendantHasTabindex = createRule<
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier') return;

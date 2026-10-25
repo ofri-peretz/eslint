@@ -171,6 +171,7 @@ function isPiiFieldAccess(
 export const noPiiInLogs = createRule<RuleOptions, MessageIds>({
   name: 'no-pii-in-logs',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-pii-in-logs.md',
@@ -248,30 +249,11 @@ export const noPiiInLogs = createRule<RuleOptions, MessageIds>({
       additionalPiiLabels: [],
     },
   ],
-  create(context, [options = {}]) {
-    const {
-      consoleMethods = DEFAULT_CONSOLE_METHODS,
-      additionalConsoleMethods = [],
-      piiTerms = DEFAULT_PII_TERMS,
-      additionalPiiTerms = [],
-      piiLabels = DEFAULT_PII_LABELS,
-      additionalPiiLabels = [],
-    } = options as Options;
-
-    const logMethods = new Set([
-      ...consoleMethods,
-      ...additionalConsoleMethods,
-    ]);
-    const terms = [...piiTerms, ...additionalPiiTerms];
-    // Normalised the same way the literal being tested is, so a user writing
-    // `'DOB:'` matches `console.log('dob: ', v)` exactly as the built-ins do.
-    const labels = new Set(
-      [...piiLabels, ...additionalPiiLabels].map((label) =>
-        label.trim().toLowerCase(),
-      ),
-    );
-
-    const sourceCode = context.sourceCode;
+  createOnce(context, currentOptions) {
+    let logMethods: Set<string>;
+    let terms: string[];
+    let labels: Set<string>;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     function report(node: TSESTree.Node) {
       context.report({
@@ -323,6 +305,29 @@ export const noPiiInLogs = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const {
+          consoleMethods = DEFAULT_CONSOLE_METHODS,
+          additionalConsoleMethods = [],
+          piiTerms = DEFAULT_PII_TERMS,
+          additionalPiiTerms = [],
+          piiLabels = DEFAULT_PII_LABELS,
+          additionalPiiLabels = [],
+        } = options as Options;
+
+        logMethods = new Set([...consoleMethods, ...additionalConsoleMethods]);
+        terms = [...piiTerms, ...additionalPiiTerms];
+        // Normalised the same way the literal being tested is, so a user writing
+        // `'DOB:'` matches `console.log('dob: ', v)` exactly as the built-ins do.
+        labels = new Set(
+          [...piiLabels, ...additionalPiiLabels].map((label) =>
+            label.trim().toLowerCase(),
+          ),
+        );
+
+        sourceCode = context.sourceCode;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||

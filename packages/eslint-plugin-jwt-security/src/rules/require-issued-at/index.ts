@@ -38,6 +38,7 @@ type RuleOptions = [JwtRuleOptions?];
 export const requireIssuedAt = createRule<RuleOptions, MessageIds>({
   name: 'require-issued-at',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt-security/docs/rules/require-issued-at.md',
@@ -91,8 +92,8 @@ export const requireIssuedAt = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const sourceCode = context.sourceCode;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /**
      * Whether jose builder claims carry `iat` — or may, where this file
@@ -109,6 +110,9 @@ export const requireIssuedAt = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        sourceCode = context.sourceCode;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         // Only check sign operations
         if (!isSignOperation(node, sourceCode)) {

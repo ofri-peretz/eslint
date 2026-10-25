@@ -44,10 +44,12 @@ type RuleOptions = [Options?];
 export const noInsecureHttpParser = createRule<RuleOptions, MessageIds>({
   name: 'no-insecure-http-parser',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-insecure-http-parser.md',
-      description: 'Disallow insecureHTTPParser: true on Node HTTP servers and clients',
+      description:
+        'Disallow insecureHTTPParser: true on Node HTTP servers and clients',
       cwe: 'CWE-444',
       cvss: 7.5,
     },
@@ -93,13 +95,11 @@ export const noInsecureHttpParser = createRule<RuleOptions, MessageIds>({
       allowInTests: false,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = false } = options as Options;
-
-    const isTestFile = allowInTests && isTestFilePath(context.filename);
+    let isTestFile: boolean;
 
     /**
      * `insecureHTTPParser` written as a plain key (`{ insecureHTTPParser: … }`,
@@ -122,9 +122,7 @@ export const noInsecureHttpParser = createRule<RuleOptions, MessageIds>({
      * may well be `false` at runtime, and reporting it would be a guess.
      */
     function enablesLenientParser(value: TSESTree.Node): boolean {
-      return (
-        value.type === AST_NODE_TYPES.Literal && value.value === true
-      );
+      return value.type === AST_NODE_TYPES.Literal && value.value === true;
     }
 
     function report(node: TSESTree.Node, value: TSESTree.Node): void {
@@ -134,13 +132,20 @@ export const noInsecureHttpParser = createRule<RuleOptions, MessageIds>({
         suggest: [
           {
             messageId: 'useStrictParser',
-            fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(value, 'false'),
+            fix: (fixer: TSESLint.RuleFixer) =>
+              fixer.replaceText(value, 'false'),
           },
         ],
       });
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = false } = options as Options;
+
+        isTestFile = allowInTests && isTestFilePath(context.filename);
+      },
       Property(node: TSESTree.Property) {
         if (isTestFile) return;
         if (!isParserKey(node.key, node.computed)) return;

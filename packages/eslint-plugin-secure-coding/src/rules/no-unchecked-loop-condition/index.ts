@@ -55,6 +55,7 @@ type RuleOptions = [Options?];
 export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
   name: 'no-unchecked-loop-condition',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-unchecked-loop-condition.md',
@@ -198,60 +199,35 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const {
-      maxStaticIterations = 10000,
-      userInputVariables = [
-        'req',
-        'request',
-        'body',
-        'query',
-        'params',
-        'input',
-        'data',
-      ],
-      allowWhileTrueWithBreak = true,
-      maxRecursionDepth = 10,
-      trustedSanitizers = [],
-      trustedAnnotations = [],
-      strictMode = false,
-    }: Options = options;
-
-    const sourceCode = context.sourceCode;
-    const filename = context.filename;
-
-    // Create safety checker for false positive detection
-    const safetyChecker = createSafetyChecker({
-      trustedSanitizers,
-      trustedAnnotations,
-      trustedOrmPatterns: [],
-      strictMode,
-    });
-
-    // Track function calls to detect recursion
-    const functionCalls = new Map<string, number>();
-    const reportedRecursion = new Set<string>();
-    const currentFunctionStack: string[] = [];
-
-    // Track tainted variables (assigned from user input)
-    const taintedVariables = new Set<string>();
-
-    /**
-     * Names that actually denote a request. Taint starts here and spreads by
-     * assignment — it is not inferred from what a variable is called.
-     *
-     * The `body`/`query`/`params`/`input`/`data` entries in the default
-     * `userInputVariables` are *properties* of one of these, not standalone
-     * evidence: `req.query` is user input, a local `query` object is not.
-     */
-    const REQUEST_OBJECTS = new Set([
-      'req',
-      'request',
-      'ctx',
-      'context',
-      'event',
-    ]);
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let maxStaticIterations: number;
+    let userInputVariables: string[];
+    let allowWhileTrueWithBreak: boolean;
+    let maxRecursionDepth: number;
+    let trustedSanitizers: string[];
+    let trustedAnnotations: string[];
+    let strictMode: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let filename: string;
+    let safetyChecker: {
+      isSafe(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      isSanitized(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      hasAnnotation(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+    };
+    let functionCalls: Map<string, number>;
+    let reportedRecursion: Set<string>;
+    let currentFunctionStack: string[];
+    let taintedVariables: Set<string>;
+    let REQUEST_OBJECTS: Set<string>;
 
     /**
      * Check if a variable contains user input
@@ -891,6 +867,61 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({
+          maxStaticIterations = 10000,
+          userInputVariables = [
+            'req',
+            'request',
+            'body',
+            'query',
+            'params',
+            'input',
+            'data',
+          ],
+          allowWhileTrueWithBreak = true,
+          maxRecursionDepth = 10,
+          trustedSanitizers = [],
+          trustedAnnotations = [],
+          strictMode = false,
+        } = options);
+
+        sourceCode = context.sourceCode;
+        filename = context.filename;
+
+        // Create safety checker for false positive detection
+        safetyChecker = createSafetyChecker({
+          trustedSanitizers,
+          trustedAnnotations,
+          trustedOrmPatterns: [],
+          strictMode,
+        });
+
+        // Track function calls to detect recursion
+        functionCalls = new Map<string, number>();
+        reportedRecursion = new Set<string>();
+        currentFunctionStack = [];
+
+        // Track tainted variables (assigned from user input)
+        taintedVariables = new Set<string>();
+
+        /**
+         * Names that actually denote a request. Taint starts here and spreads by
+         * assignment — it is not inferred from what a variable is called.
+         *
+         * The `body`/`query`/`params`/`input`/`data` entries in the default
+         * `userInputVariables` are *properties* of one of these, not standalone
+         * evidence: `req.query` is user input, a local `query` object is not.
+         */
+        REQUEST_OBJECTS = new Set([
+          'req',
+          'request',
+          'ctx',
+          'context',
+          'event',
+        ]);
+      },
       // Track variable declarations for tainting
       VariableDeclaration(node: TSESTree.VariableDeclaration) {
         for (const declarator of node.declarations) {

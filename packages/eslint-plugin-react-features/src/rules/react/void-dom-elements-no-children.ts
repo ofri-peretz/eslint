@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: void-dom-elements-no-children
  * Prevent void DOM elements (like <img>, <br>, <input>) from having children
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/void-dom-elements-no-children.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -40,6 +40,10 @@ const VOID_ELEMENTS = new Set([
 export const voidDomElementsNoChildren = createRule<RuleOptions, MessageIds>({
   name: 'void-dom-elements-no-children',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/void-dom-elements-no-children',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/void-dom-elements-no-children.md',
@@ -49,37 +53,41 @@ export const voidDomElementsNoChildren = createRule<RuleOptions, MessageIds>({
       voidNoChildren: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Void Element with Children',
-        description: '<{{element}}> is a void element and cannot have children or dangerouslySetInnerHTML',
+        description:
+          '<{{element}}> is a void element and cannot have children or dangerouslySetInnerHTML',
         severity: 'HIGH',
         fix: 'Remove children from the void element or use a different element',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Glossary/Void_element',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Glossary/Void_element',
       }),
     },
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     function hasChildrenProp(node: TSESTree.JSXOpeningElement): boolean {
       return node.attributes.some(
         (attr): attr is TSESTree.JSXAttribute =>
           attr.type === 'JSXAttribute' &&
           attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'children'
+          attr.name.name === 'children',
       );
     }
 
-    function hasDangerouslySetInnerHTML(node: TSESTree.JSXOpeningElement): boolean {
+    function hasDangerouslySetInnerHTML(
+      node: TSESTree.JSXOpeningElement,
+    ): boolean {
       return node.attributes.some(
         (attr): attr is TSESTree.JSXAttribute =>
           attr.type === 'JSXAttribute' &&
           attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'dangerouslySetInnerHTML'
+          attr.name.name === 'dangerouslySetInnerHTML',
       );
     }
 
     // oxlint-disable-next-line consistent-function-scoping
     function hasJSXChildren(node: TSESTree.JSXElement): boolean {
-      return node.children.some(child => {
+      return node.children.some((child) => {
         if (child.type === 'JSXText') {
           return !/^\s*$/.test(child.value);
         }
@@ -93,7 +101,7 @@ export const voidDomElementsNoChildren = createRule<RuleOptions, MessageIds>({
     return {
       JSXElement(node: TSESTree.JSXElement) {
         const openingElement = node.openingElement;
-        
+
         if (openingElement.name.type !== 'JSXIdentifier') return;
 
         // JSX resolves a capitalized name to a binding, never to a DOM tag, so
@@ -104,9 +112,10 @@ export const voidDomElementsNoChildren = createRule<RuleOptions, MessageIds>({
 
         if (!VOID_ELEMENTS.has(elementName)) return;
 
-        const hasChildren = hasChildrenProp(openingElement) || 
-                           hasDangerouslySetInnerHTML(openingElement) || 
-                           hasJSXChildren(node);
+        const hasChildren =
+          hasChildrenProp(openingElement) ||
+          hasDangerouslySetInnerHTML(openingElement) ||
+          hasJSXChildren(node);
 
         if (hasChildren) {
           context.report({

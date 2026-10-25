@@ -21,16 +21,18 @@
  *   because CVA usage is the dominant case.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 
 type MessageIds = 'kindProp';
 type RuleOptions = [];
 
 const FLAGGED_NAMES = new Set(['type', 'kind']);
 
-const isStringLiteralUnion = (
-  node: TSESTree.TypeNode | undefined,
-): boolean => {
+const isStringLiteralUnion = (node: TSESTree.TypeNode | undefined): boolean => {
   if (!node) return false;
   if (node.type !== 'TSUnionType') return false;
   const members = node.types;
@@ -46,25 +48,29 @@ const isStringLiteralUnion = (
 export const noKindPropDiscriminator = createRule<RuleOptions, MessageIds>({
   name: 'no-kind-prop-discriminator',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-kind-prop-discriminator.md',
-      description: 'Ban `type`/`kind` string-union props that select between rendered trees (R11)',
+      description:
+        'Ban `type`/`kind` string-union props that select between rendered trees (R11)',
     },
     schema: [],
     messages: {
       kindProp: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Kind-prop discriminator',
-        description: 'Prop `{{name}}: "A" | "B"` likely switches the rendered tree — split into sub-components (R11)',
+        description:
+          'Prop `{{name}}: "A" | "B"` likely switches the rendered tree — split into sub-components (R11)',
         severity: 'MEDIUM',
         fix: 'Split into sub-components (`Foo.A`, `Foo.B`). If this is only a CVA contract switch (e.g. role only), rename to `variant` and document the test.',
-        documentationLink: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-kind-prop-discriminator.md',
+        documentationLink:
+          'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-kind-prop-discriminator.md',
       }),
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       TSPropertySignature(node: TSESTree.TSPropertySignature) {
         if (node.key.type !== 'Identifier') return;

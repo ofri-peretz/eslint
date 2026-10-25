@@ -44,7 +44,12 @@
  * resolves to. That shape was previously reported by NOBODY.
  */
 
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import { isNonTransmittingUrl } from '../../utils/loopback-hosts';
 import { isRequestCall } from '../../utils/transport-ownership';
@@ -83,6 +88,7 @@ export const requireHttpsOnly = createRule<RuleOptions, MessageIds>({
   /** Transport rule: it judges where bytes go at runtime, and a test fixture's endpoint is not a runtime endpoint. */
   skipTestFiles: true,
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/require-https-only.md',
@@ -95,23 +101,24 @@ export const requireHttpsOnly = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'violation Detected',
         cwe: 'CWE-319',
-        description: 'Enforce HTTPS for all external requests detected - this is a security risk',
+        description:
+          'Enforce HTTPS for all external requests detected - this is a security risk',
         severity: 'HIGH',
         fix: 'Review and apply secure practices',
         documentationLink: 'https://cwe.mitre.org/data/definitions/319.html',
-      })
+      }),
     },
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  createOnce(context) {
     function report(node: TSESTree.Node) {
       context.report({
         node,
         messageId: 'violationDetected',
       });
     }
-    
+
     /**
      * The `http://` prefix this URL expression writes down, if any.
      *
@@ -141,7 +148,10 @@ export const requireHttpsOnly = createRule<RuleOptions, MessageIds>({
           // template with a bad escape is a parse error.
           return current.quasis[0].value.cooked!;
         }
-        if (current.type === AST_NODE_TYPES.BinaryExpression && current.operator === '+') {
+        if (
+          current.type === AST_NODE_TYPES.BinaryExpression &&
+          current.operator === '+'
+        ) {
           current = current.left;
           continue;
         }

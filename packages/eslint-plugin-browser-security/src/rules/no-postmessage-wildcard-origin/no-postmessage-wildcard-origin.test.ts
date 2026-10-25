@@ -54,6 +54,7 @@ ruleTester.run('no-postmessage-wildcard-origin', noPostmessageWildcardOrigin, {
     },
     // Non-postMessage method with wildcard (false positive check)
     {
+      name: 'a wildcard argument to a non-postMessage method is unrelated',
       code: `myObject.someMethod(data, '*');`,
     },
     // Using "/" for same-origin (allowed)

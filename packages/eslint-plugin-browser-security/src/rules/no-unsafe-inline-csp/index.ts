@@ -34,6 +34,7 @@ type RuleOptions = [Options?];
 export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-inline-csp',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-unsafe-inline-csp.md',
@@ -65,36 +66,12 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
-    // NOT global. `/…/g.test()` advances `lastIndex` on every match and
-    // resumes from there on the next call, so in a file with two CSP strings
-    // the second one was searched from an offset past its own match and came
-    // back false — then reset, so the third reported again. Every second
-    // finding in a file was silently dropped by the flag alone.
-    const UNSAFE_INLINE_PATTERN = /'unsafe-inline'/i;
-
-    /**
-     * Directive names that only appear in a Content-Security-Policy.
-     *
-     * Presence of one is what makes a string a POLICY rather than a string
-     * that happens to contain the token — `["'unsafe-inline'"]` in a table of
-     * CSP keywords, a docs example, a test name. Shape is not meaning: the
-     * rule asserts that inline scripts will execute, which is only true of a
-     * policy that is actually served.
-     */
-    const CSP_DIRECTIVES =
-      /\b(?:default|script|style|img|connect|font|frame|media|object|worker|child|manifest|prefetch|base|form)-(?:src|uri|action)(?:-elem|-attr)?\b/i;
+    let UNSAFE_INLINE_PATTERN: RegExp;
+    let CSP_DIRECTIVES: RegExp;
 
     /** Header and property names that name a Content-Security-Policy. */
     // oxlint-disable-next-line consistent-function-scoping
@@ -180,6 +157,36 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+
+        // NOT global. `/…/g.test()` advances `lastIndex` on every match and
+        // resumes from there on the next call, so in a file with two CSP strings
+        // the second one was searched from an offset past its own match and came
+        // back false — then reset, so the third reported again. Every second
+        // finding in a file was silently dropped by the flag alone.
+        UNSAFE_INLINE_PATTERN = /'unsafe-inline'/i;
+
+        /**
+         * Directive names that only appear in a Content-Security-Policy.
+         *
+         * Presence of one is what makes a string a POLICY rather than a string
+         * that happens to contain the token — `["'unsafe-inline'"]` in a table of
+         * CSP keywords, a docs example, a test name. Shape is not meaning: the
+         * rule asserts that inline scripts will execute, which is only true of a
+         * policy that is actually served.
+         */
+        CSP_DIRECTIVES =
+          /\b(?:default|script|style|img|connect|font|frame|media|object|worker|child|manifest|prefetch|base|form)-(?:src|uri|action)(?:-elem|-attr)?\b/i;
+        return true;
+      },
       // Check string literals
       Literal(node: TSESTree.Literal) {
         if (typeof node.value === 'string') {

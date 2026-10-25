@@ -101,6 +101,7 @@ function generateDirectPath(template: string, importedName: string): string {
 export const preferDirectImport = createRule<RuleOptions, MessageIds>({
   name: 'prefer-direct-import',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/prefer-direct-import.md',
@@ -157,15 +158,20 @@ export const preferDirectImport = createRule<RuleOptions, MessageIds>({
       autoFix: true,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const opts: PreferDirectImportOptions = options || {};
-    const mappings = opts.mappings ?? DEFAULT_MAPPINGS;
-    const autoFix = opts.autoFix ?? true;
+    let mappings: DirectImportMapping[];
+    let autoFix: boolean;
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const opts: PreferDirectImportOptions = options || {};
+        mappings = opts.mappings ?? DEFAULT_MAPPINGS;
+        autoFix = opts.autoFix ?? true;
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const importPath = node.source.value;
         if (typeof importPath !== 'string') return;
@@ -187,10 +193,14 @@ export const preferDirectImport = createRule<RuleOptions, MessageIds>({
 
         // For single named import, we can suggest/fix the direct path
         if (namedImports.length === 1) {
-          const importedName = namedImports[0].imported.type === 'Identifier'
-            ? namedImports[0].imported.name
-            : namedImports[0].imported.value;
-          const suggestedPath = generateDirectPath(mapping.directPath, importedName);
+          const importedName =
+            namedImports[0].imported.type === 'Identifier'
+              ? namedImports[0].imported.name
+              : namedImports[0].imported.value;
+          const suggestedPath = generateDirectPath(
+            mapping.directPath,
+            importedName,
+          );
 
           context.report({
             node,
@@ -216,7 +226,10 @@ export const preferDirectImport = createRule<RuleOptions, MessageIds>({
                       barrelPath: importPath,
                     },
                     fix: (fixer: TSESLint.RuleFixer) => {
-                      return fixer.replaceText(node.source, `'${suggestedPath}'`);
+                      return fixer.replaceText(
+                        node.source,
+                        `'${suggestedPath}'`,
+                      );
                     },
                   },
                 ]
@@ -225,10 +238,14 @@ export const preferDirectImport = createRule<RuleOptions, MessageIds>({
         } else {
           // Multiple named imports - suggest splitting them
           for (const spec of namedImports) {
-            const importedName = spec.imported.type === 'Identifier'
-              ? spec.imported.name
-              : spec.imported.value;
-            const suggestedPath = generateDirectPath(mapping.directPath, importedName);
+            const importedName =
+              spec.imported.type === 'Identifier'
+                ? spec.imported.name
+                : spec.imported.value;
+            const suggestedPath = generateDirectPath(
+              mapping.directPath,
+              importedName,
+            );
 
             context.report({
               node: spec,

@@ -43,7 +43,10 @@ describe('no-ssrf', () => {
           code: 'import needle from "needle";\nneedle.get("https://api.example.com/data");',
         },
         // Template literal without expressions — safe
-        { code: 'fetch(`https://api.example.com/data`);' },
+        {
+          code: 'fetch(`https://api.example.com/data`);',
+          name: 'a template literal with no substitutions is a fixed URL',
+        },
         // Non-HTTP calls — not relevant
         { code: 'console.log(userUrl);' },
         { code: 'db.query(userInput);' },

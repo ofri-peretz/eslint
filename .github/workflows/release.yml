@@ -294,6 +294,30 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Wait for the pinned plugin (oxlint-plugin-* aliases only)
+        # An oxlint-plugin-<name> alias depends on eslint-plugin-<name> at the
+        # exact same version. Published first, it would be uninstallable until
+        # its sibling matrix job lands the plugin, so it waits for that version
+        # on npm. Plugins sort before aliases in the matrix, so they take the
+        # max-parallel slots first. If the plugin's publish fails, this times
+        # out and the alias is not published either.
+        # See docs/intents/oxlint-native-plugin-names.
+        if: startsWith(matrix.name, 'oxlint-plugin-') && inputs.dry-run != true
+        env:
+          PKG_MANIFEST: packages/${{ matrix.dir }}/package.json
+        run: |
+          set -euo pipefail
+          dep=$(node -p "Object.entries(require('./$PKG_MANIFEST').dependencies).map(([n, v]) => n + '@' + v)[0]")
+          for _ in $(seq 1 48); do
+            if npm view "$dep" version >/dev/null 2>&1; then
+              echo "✅ $dep is on npm"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::$dep did not appear on npm within 8 minutes; not publishing its alias."
+          exit 1
+
       - name: Publish ${{ matrix.name }}@${{ matrix.version }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

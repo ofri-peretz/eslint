@@ -15,8 +15,12 @@ pre-commit:
       run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent oxlint:shims:check
     alias-drift:
       # oxlint-plugin-* aliases are generated from each plugin's manifest.
-      glob: '{packages/*/package.json,packages/*/LICENSE,packages/oxlint-plugin-*/**,.changeset/config.json,scripts/generate-oxlint-aliases.mts}'
+      glob: '{packages/*/package.json,packages/*/LICENSE,packages/eslint-plugin-*/README.md,packages/oxlint-plugin-*/**,.changeset/config.json,scripts/generate-oxlint-aliases.mts}'
       run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent oxlint:aliases:check
+    runtimes-report:
+      # docs/oxlint-runtimes.md is generated from the survey evidence.
+      glob: '{.agent/oxlint-runtime-survey.json,.agent/type-awareness-scan.tsv,packages/eslint-plugin-*/src/index.ts,docs/oxlint-runtimes.md,scripts/lib/oxlint-runtimes.mts}'
+      run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent oxlint:runtimes:check
     stale-build-artifacts:
       # Two assertions. (1) No .js/.d.ts/.js.map alongside .ts source in
       # packages/<pkg>/src/ — these shadow current .ts at workspace runtime

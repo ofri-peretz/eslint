@@ -8,12 +8,18 @@
  * ESLint Rule: no-missing-cors-check
  * Detects missing CORS validation (wildcard CORS, missing origin check)
  * CWE-346: Origin Validation Error
- * 
+ *
  * @see https://cwe.mitre.org/data/definitions/346.html
  * @see https://owasp.org/www-community/attacks/CORS_Misconfiguration
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, isTestFilePath, propertyName, objectKeyName } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  propertyName,
+  objectKeyName,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingCorsCheck';
@@ -21,10 +27,10 @@ type MessageIds = 'missingCorsCheck';
 export interface Options {
   /** Allow missing CORS checks in test files. Default: false */
   allowInTests?: boolean;
-  
+
   /** Trusted CORS libraries. Default: ['cors', '@koa/cors', 'express-cors'] */
   trustedLibraries?: string[];
-  
+
   /** Additional safe patterns to ignore. Default: [] */
   ignorePatterns?: string[];
 }
@@ -58,7 +64,7 @@ function describePermissiveOrigin(value: unknown): string | null {
 }
 
 function matchesIgnorePattern(text: string, ignorePatterns: string[]): boolean {
-  return ignorePatterns.some(pattern => {
+  return ignorePatterns.some((pattern) => {
     try {
       const regex = new RegExp(pattern, 'i');
       return regex.test(text);
@@ -71,12 +77,14 @@ function matchesIgnorePattern(text: string, ignorePatterns: string[]): boolean {
 export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-cors-check',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     deprecated: true,
     replacedBy: ['@see eslint-plugin-express-security/no-permissive-cors'],
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-missing-cors-check.md',
-      description: 'Detects missing CORS validation (wildcard CORS, missing origin check)',
+      description:
+        'Detects missing CORS validation (wildcard CORS, missing origin check)',
       cwe: 'CWE-346',
       cvss: 7.5,
     },
@@ -104,7 +112,8 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Custom CORS libraries to trust (wildcard origins in these libraries will not be reported)',
+            description:
+              'Custom CORS libraries to trust (wildcard origins in these libraries will not be reported)',
           },
           ignorePatterns: {
             type: 'array',
@@ -124,35 +133,19 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
       ignorePatterns: [],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    currentOptions,
   ) {
-    const {
-      allowInTests = false,
-      trustedLibraries: corsTrustedLibraries = [],
-      ignorePatterns = [],
-    } = options as Options;
-    
-    const trustedLibraries = corsTrustedLibraries;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-    const sourceCode = context.sourceCode;
-
-    /*
-     * These match SOURCE TEXT, so a dotted-only pattern puts the blind spot in
-     * the PATTERN rather than in a guard: `app['use'](…)` never matched
-     * `\buse\s*\(`, and the wildcard origin inside it went unreported.
-     * Each accepts `.name(` or `['name'](` and nothing else, so a key chosen at
-     * runtime still does not match. Written literally — a rule that assembles
-     * its own patterns at runtime is a shape this repo's rule-audit flags.
-     */
-    const CALLS_USE = /(?:\.\s*use|\[\s*['"]use['"]\s*\])\s*\(/i;
-    const CALLS_USE_OR_CORS =
-      /(?:\.\s*use|\[\s*['"]use['"]\s*\]|\bcors)\s*\(/i;
-    const CALLS_HEADER_SETTER =
-      /(?:\.\s*(?:setHeader|header)|\[\s*['"](?:setHeader|header)['"]\s*\])\s*\(/i;
+    let allowInTests: boolean;
+    let corsTrustedLibraries: string[];
+    let ignorePatterns: string[];
+    let trustedLibraries: string[];
+    let isTestFile: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let CALLS_USE: RegExp;
+    let CALLS_USE_OR_CORS: RegExp;
+    let CALLS_HEADER_SETTER: RegExp;
 
     function checkLiteral(node: TSESTree.Literal) {
       if (isTestFile) {
@@ -162,12 +155,12 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
       // Check for wildcard CORS origin
       if (node.value === '*' && typeof node.value === 'string') {
         const text = sourceCode.getText(node);
-        
+
         // Check if it matches any ignore pattern
         if (matchesIgnorePattern(text, ignorePatterns)) {
           return;
         }
-        
+
         // Check if it's in contexts handled by other checkers
         // 1. setHeader/header calls - checkMemberExpression handles these
         // 2. app.use(cors({ origin: "*" })) - checkCallExpression handles these with suggestions
@@ -183,7 +176,10 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
             // spot in the PATTERN: `res['setHeader'](…)` and `app['use'](…)`
             // never matched `\buse\s*\(`. Each alternation now accepts the
             // bracketed spelling too, and still not a runtime key.
-            if (CALLS_HEADER_SETTER.test(callText) && /\bAccess-Control-Allow-Origin\b/i.test(callText)) {
+            if (
+              CALLS_HEADER_SETTER.test(callText) &&
+              /\bAccess-Control-Allow-Origin\b/i.test(callText)
+            ) {
               shouldSkip = true;
               break;
             }
@@ -201,17 +197,17 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
             }
           }
         }
-        
+
         // Skip if it's in a context handled by another checker
         if (shouldSkip) {
           return;
         }
-        
+
         // Check if it's in a CORS-related context
         // Only report if it's actually in a CORS configuration (app.use(cors(...)), etc.)
         // Not just any object with origin: "*"
         let isActualCorsContext = false;
-        
+
         // Check if it's in app.use(cors(...)) or similar
         current = node;
         while (current && current.parent) {
@@ -219,13 +215,16 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
           if (current.type === 'CallExpression') {
             const callText = sourceCode.getText(current);
             // Check if it's a CORS middleware call
-            if (CALLS_USE_OR_CORS.test(callText) && /\bcors\s*\(/i.test(callText)) {
+            if (
+              CALLS_USE_OR_CORS.test(callText) &&
+              /\bcors\s*\(/i.test(callText)
+            ) {
               isActualCorsContext = true;
               break;
             }
           }
         }
-        
+
         // Also check if it's in an object property with name "origin" or "allowedOrigins"
         // but only if it's in a CORS-related call expression
         if (node.parent && node.parent.type === 'Property') {
@@ -242,14 +241,16 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                 checkNode = checkNode.parent as TSESTree.Node;
                 if (checkNode.type === 'CallExpression') {
                   const callText = sourceCode.getText(checkNode);
-                  if (/\bcors\s*\(/i.test(callText) ||
-                      (CALLS_USE.test(callText) && /\bcors/i.test(callText))) {
+                  if (
+                    /\bcors\s*\(/i.test(callText) ||
+                    (CALLS_USE.test(callText) && /\bcors/i.test(callText))
+                  ) {
                     inCorsCall = true;
                     break;
                   }
                 }
               }
-              
+
               if (inCorsCall) {
                 // Always report wildcard CORS origin - it's never safe
                 context.report({
@@ -257,7 +258,8 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                   messageId: 'missingCorsCheck',
                   data: {
                     issue: 'Wildcard CORS origin (*) allows all origins',
-                    safeAlternative: 'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
+                    safeAlternative:
+                      'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
                   },
                 });
                 return;
@@ -265,7 +267,7 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
             }
           }
         }
-        
+
         // Only report if it's in an actual CORS context
         if (isActualCorsContext) {
           // Always report wildcard CORS origin - it's never safe
@@ -274,7 +276,8 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
             messageId: 'missingCorsCheck',
             data: {
               issue: 'Wildcard CORS origin (*) allows all origins',
-              safeAlternative: 'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
+              safeAlternative:
+                'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
             },
           });
         }
@@ -292,7 +295,7 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
         if (propertyName(node.callee) === 'use') {
           // Check if CORS is being used
           const text = sourceCode.getText(node);
-          
+
           // Check if it matches any ignore pattern
           if (matchesIgnorePattern(text, ignorePatterns)) {
             return;
@@ -302,33 +305,49 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
           // Check for cors() or trusted library calls
           const firstArg = node.arguments.length > 0 ? node.arguments[0] : null;
           let isCorsCall = /\bcors\s*\(/i.test(text);
-          if (!isCorsCall && firstArg && firstArg.type === 'CallExpression' && firstArg.callee.type === 'Identifier') {
+          if (
+            !isCorsCall &&
+            firstArg &&
+            firstArg.type === 'CallExpression' &&
+            firstArg.callee.type === 'Identifier'
+          ) {
             const callee = firstArg.callee;
             const calleeName = callee.name.toLowerCase();
             // Check if it's the standard 'cors' library or a trusted library
-            isCorsCall = calleeName === 'cors' || trustedLibraries.some(lib => {
-              return calleeName.includes(lib.toLowerCase());
-            });
+            isCorsCall =
+              calleeName === 'cors' ||
+              trustedLibraries.some((lib) => {
+                return calleeName.includes(lib.toLowerCase());
+              });
           }
-          
+
           // Check if it's a trusted library - skip if explicitly trusted
           let isTrustedLibrary = false;
-          if (firstArg && firstArg.type === 'CallExpression' && firstArg.callee.type === 'Identifier') {
+          if (
+            firstArg &&
+            firstArg.type === 'CallExpression' &&
+            firstArg.callee.type === 'Identifier'
+          ) {
             const calleeName = firstArg.callee.name.toLowerCase();
-            isTrustedLibrary = trustedLibraries.some(lib => calleeName.includes(lib.toLowerCase()));
+            isTrustedLibrary = trustedLibraries.some((lib) =>
+              calleeName.includes(lib.toLowerCase()),
+            );
           }
-          
+
           if (isTrustedLibrary) {
             return; // Trusted library, skip
           }
-          
+
           // Check if it's a CORS call
           if (/\bcors\s*\(/i.test(text) || isCorsCall) {
             // Check arguments for wildcard origin
             // For app.use(cors({ origin: "*" })), we need to check the arguments to cors(), not app.use()
-            const corsCallArg = firstArg && firstArg.type === 'CallExpression' ? firstArg : null;
-            const argsToCheck = corsCallArg ? corsCallArg.arguments : node.arguments;
-            
+            const corsCallArg =
+              firstArg && firstArg.type === 'CallExpression' ? firstArg : null;
+            const argsToCheck = corsCallArg
+              ? corsCallArg.arguments
+              : node.arguments;
+
             for (const arg of argsToCheck) {
               if (arg.type === 'ObjectExpression') {
                 // Check for origin property with wildcard value
@@ -346,7 +365,8 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                         messageId: 'missingCorsCheck',
                         data: {
                           issue,
-                          safeAlternative: 'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
+                          safeAlternative:
+                            'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
                         },
                       });
                     }
@@ -359,18 +379,31 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                 // Traverse the AST to find the variable declaration
                 let current: TSESTree.Node | null = node;
                 while (current) {
-                  if (current.type === 'Program' || current.type === 'FunctionDeclaration' || current.type === 'FunctionExpression' || current.type === 'ArrowFunctionExpression') {
+                  if (
+                    current.type === 'Program' ||
+                    current.type === 'FunctionDeclaration' ||
+                    current.type === 'FunctionExpression' ||
+                    current.type === 'ArrowFunctionExpression'
+                  ) {
                     // Search for variable declarations in this scope. The
                     // enclosing `if` already narrowed `current` to Program or
                     // one of the three function node types, so a non-Program
                     // node here is always a function.
-                    const scopeBody = current.type === 'Program' ? current.body :
-                                     (current.body.type === 'BlockStatement' ? current.body.body : []);
-                    
+                    const scopeBody =
+                      current.type === 'Program'
+                        ? current.body
+                        : current.body.type === 'BlockStatement'
+                          ? current.body.body
+                          : [];
+
                     for (const stmt of scopeBody) {
                       if (stmt.type === 'VariableDeclaration') {
                         for (const declarator of stmt.declarations) {
-                          if (declarator.id.type === 'Identifier' && declarator.id.name === varName && declarator.init) {
+                          if (
+                            declarator.id.type === 'Identifier' &&
+                            declarator.id.name === varName &&
+                            declarator.init
+                          ) {
                             // Check if init is an object literal with origin: "*"
                             if (declarator.init.type === 'ObjectExpression') {
                               for (const prop of declarator.init.properties) {
@@ -380,14 +413,17 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                                   objectKeyName(prop) === 'origin' &&
                                   prop.value.type === 'Literal'
                                 ) {
-                                  const issue = describePermissiveOrigin(prop.value.value);
+                                  const issue = describePermissiveOrigin(
+                                    prop.value.value,
+                                  );
                                   if (issue !== null) {
                                     context.report({
                                       node: arg,
                                       messageId: 'missingCorsCheck',
                                       data: {
                                         issue,
-                                        safeAlternative: 'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
+                                        safeAlternative:
+                                          'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
                                       },
                                     });
                                     return; // Found and reported, exit
@@ -438,13 +474,18 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
             if (/\bAccess-Control-Allow-Origin\b/i.test(callText)) {
               // Check if the value is a wildcard
               const args = parent.arguments;
-              if (args.length >= 2 && args[1].type === 'Literal' && args[1].value === '*') {
+              if (
+                args.length >= 2 &&
+                args[1].type === 'Literal' &&
+                args[1].value === '*'
+              ) {
                 context.report({
                   node: args[1],
                   messageId: 'missingCorsCheck',
                   data: {
                     issue: 'Wildcard CORS header allows all origins',
-                    safeAlternative: 'Validate origin before setting header: res.setHeader("Access-Control-Allow-Origin", allowedOrigins.includes(origin) ? origin : "null");',
+                    safeAlternative:
+                      'Validate origin before setting header: res.setHeader("Access-Control-Allow-Origin", allowedOrigins.includes(origin) ? origin : "null");',
                   },
                 });
               }
@@ -455,10 +496,36 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          allowInTests = false,
+          trustedLibraries: corsTrustedLibraries = [],
+          ignorePatterns = [],
+        } = options as Options);
+
+        trustedLibraries = corsTrustedLibraries;
+
+        const filename = context.filename;
+        isTestFile = allowInTests && isTestFilePath(filename);
+        sourceCode = context.sourceCode;
+
+        /*
+         * These match SOURCE TEXT, so a dotted-only pattern puts the blind spot in
+         * the PATTERN rather than in a guard: `app['use'](…)` never matched
+         * `\buse\s*\(`, and the wildcard origin inside it went unreported.
+         * Each accepts `.name(` or `['name'](` and nothing else, so a key chosen at
+         * runtime still does not match. Written literally — a rule that assembles
+         * its own patterns at runtime is a shape this repo's rule-audit flags.
+         */
+        CALLS_USE = /(?:\.\s*use|\[\s*['"]use['"]\s*\])\s*\(/i;
+        CALLS_USE_OR_CORS = /(?:\.\s*use|\[\s*['"]use['"]\s*\]|\bcors)\s*\(/i;
+        CALLS_HEADER_SETTER =
+          /(?:\.\s*(?:setHeader|header)|\[\s*['"](?:setHeader|header)['"]\s*\])\s*\(/i;
+      },
       Literal: checkLiteral,
       CallExpression: checkCallExpression,
       MemberExpression: checkMemberExpression,
     };
   },
 });
-

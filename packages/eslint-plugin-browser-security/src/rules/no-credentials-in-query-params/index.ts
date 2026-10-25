@@ -51,6 +51,7 @@ type RuleOptions = [Options?];
 export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
   name: 'no-credentials-in-query-params',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-credentials-in-query-params.md',
@@ -87,34 +88,10 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ bodyProperties: DEFAULT_BODY_PROPERTIES }],
-  create(context) {
-    const { bodyProperties = DEFAULT_BODY_PROPERTIES } =
-      context.options[0] ?? {};
-    const bodyPropertyNames: ReadonlySet<string> = new Set(bodyProperties);
-    const sensitiveParams = [
-      'password=',
-      'token=',
-      'apikey=',
-      'secret=',
-      'auth=',
-    ];
-
-    /**
-     * Path segments of the out-of-band verification flows.
-     *
-     * A password-reset link carries its token in the query because there is no
-     * other channel — the recipient is not authenticated yet, so a header or a
-     * cookie is not available, and the link has to survive being pasted from an
-     * email client. The token is single-use and short-lived, which is what makes
-     * the design acceptable; every mainstream framework ships it this way.
-     *
-     * Reporting it says "use the Authorization header instead", which cannot be
-     * done. This is deliberately narrow: it exempts `token=` only, and only when
-     * the path names one of these flows, so `?apikey=`, `?password=` and a bare
-     * `?token=` on an API endpoint all still report.
-     */
-    const OUT_OF_BAND_FLOWS =
-      /\/(reset|reset-password|forgot|verify|verify-email|confirm|activate|unsubscribe|magic-?link)\b/;
+  createOnce(context) {
+    let bodyPropertyNames: ReadonlySet<string>;
+    let sensitiveParams: string[];
+    let OUT_OF_BAND_FLOWS: RegExp;
 
     /**
      * Does this URL carry a credential we should report?
@@ -188,6 +165,35 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const { bodyProperties = DEFAULT_BODY_PROPERTIES } =
+          context.options[0] ?? {};
+        bodyPropertyNames = new Set(bodyProperties);
+        sensitiveParams = [
+          'password=',
+          'token=',
+          'apikey=',
+          'secret=',
+          'auth=',
+        ];
+
+        /**
+         * Path segments of the out-of-band verification flows.
+         *
+         * A password-reset link carries its token in the query because there is no
+         * other channel — the recipient is not authenticated yet, so a header or a
+         * cookie is not available, and the link has to survive being pasted from an
+         * email client. The token is single-use and short-lived, which is what makes
+         * the design acceptable; every mainstream framework ships it this way.
+         *
+         * Reporting it says "use the Authorization header instead", which cannot be
+         * done. This is deliberately narrow: it exempts `token=` only, and only when
+         * the path names one of these flows, so `?apikey=`, `?password=` and a bare
+         * `?token=` on an API endpoint all still report.
+         */
+        OUT_OF_BAND_FLOWS =
+          /\/(reset|reset-password|forgot|verify|verify-email|confirm|activate|unsubscribe|magic-?link)\b/;
+      },
       Literal(node: TSESTree.Literal) {
         if (typeof node.value === 'string') {
           const url = node.value.toLowerCase();

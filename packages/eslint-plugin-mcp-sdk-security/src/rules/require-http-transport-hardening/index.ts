@@ -198,6 +198,7 @@ const TRANSPORT_SECURITY_DOCS =
 export const requireHttpTransportHardening = createRule<[], MessageIds>({
   name: 'require-http-transport-hardening',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mcp-sdk-security/docs/rules/require-http-transport-hardening.md',
@@ -267,11 +268,25 @@ export const requireHttpTransportHardening = createRule<[], MessageIds>({
   // A server bound for one assertion is not a deployment (the SDK's own
   // test/ and e2e/ suites were 33 of the 2026-10-11 real-code findings).
   skipTestFiles: true,
-  create(context) {
-    if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
-    const sourceCode = context.sourceCode;
-    const resolve = valueResolverFor(context);
-    const builtBy = createInstanceResolver(context);
+  createOnce(context) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let resolve: (node: TSESTree.Node) => TSESTree.Node | undefined;
+    let builtBy: ReturnType<typeof createInstanceResolver>;
+    let unhardened: { node: TSESTree.NewExpression; transport: string }[];
+    let constructsTransport: boolean;
+    let servesV2: boolean;
+    let rawApps: { node: TSESTree.Node; framework: string }[];
+    let validatesHost: boolean;
+    let authenticates: boolean;
+    let customUse: boolean;
+    let binds: { node: TSESTree.Node; host: string }[];
+    let openFactories: {
+      node: TSESTree.CallExpression;
+      factory: string;
+      host: string;
+    }[];
+    let handleRequestCalls: TSESTree.CallExpression[];
+    let serveCalls: TSESTree.Node[];
 
     /**
      * The app variables a bind serves: the `listen` receiver (and the app a
@@ -341,33 +356,6 @@ export const requireHttpTransportHardening = createRule<[], MessageIds>({
         return app.path[app.path.length - 1] === 'createMcpExpressApp';
       return DEFAULT_ALL_INTERFACES[app.module] === app.path.join('.');
     }
-
-    const unhardened: Array<{
-      node: TSESTree.NewExpression;
-      transport: string;
-    }> = [];
-    let constructsTransport = false;
-    /** Serves an SDK v2 transport or `createMcpHandler` — protection is the app's. */
-    let servesV2 = false;
-    /** Apps this file builds by hand, with their framework. */
-    const rawApps: Array<{ node: TSESTree.Node; framework: string }> = [];
-    let validatesHost = false;
-    let authenticates = false;
-    let customUse = false;
-    /** Explicit all-interfaces binds: the node to report and its host. */
-    const binds: Array<{ node: TSESTree.Node; host: string }> = [];
-    /** `createMcpExpressApp({ host: '0.0.0.0' })` with no `allowedHosts`. */
-    const openFactories: Array<{
-      node: TSESTree.CallExpression;
-      factory: string;
-      host: string;
-    }> = [];
-    const handleRequestCalls: TSESTree.CallExpression[] = [];
-    /**
-     * Calls that hand a request to the MCP transport: `transport.handleRequest`
-     * and a node handler built by an SDK adapter (`toNodeHandler(…)`).
-     */
-    const serveCalls: TSESTree.Node[] = [];
 
     /** Is `node` read off the request parameter `request` (`req.headers`, `c.req`)? */
     function rootedAt(
@@ -627,6 +615,33 @@ export const requireHttpTransportHardening = createRule<[], MessageIds>({
     }
 
     return {
+      before() {
+        if (!fileUsesMcpSdk(context.sourceCode.ast)) return false;
+        sourceCode = context.sourceCode;
+        resolve = valueResolverFor(context);
+        builtBy = createInstanceResolver(context);
+
+        unhardened = [];
+        constructsTransport = false;
+        /** Serves an SDK v2 transport or `createMcpHandler` — protection is the app's. */
+        servesV2 = false;
+        /** Apps this file builds by hand, with their framework. */
+        rawApps = [];
+        validatesHost = false;
+        authenticates = false;
+        customUse = false;
+        /** Explicit all-interfaces binds: the node to report and its host. */
+        binds = [];
+        /** `createMcpExpressApp({ host: '0.0.0.0' })` with no `allowedHosts`. */
+        openFactories = [];
+        handleRequestCalls = [];
+        /**
+         * Calls that hand a request to the MCP transport: `transport.handleRequest`
+         * and a node handler built by an SDK adapter (`toNodeHandler(…)`).
+         */
+        serveCalls = [];
+        return true;
+      },
       NewExpression(node: TSESTree.NewExpression) {
         const scope = sourceCode.getScope(node);
         noteRawApp(node, scope);

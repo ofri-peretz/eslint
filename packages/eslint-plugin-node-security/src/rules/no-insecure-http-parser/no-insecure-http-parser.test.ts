@@ -25,12 +25,23 @@ describe('no-insecure-http-parser', () => {
     valid: [
       // benchmarks/corpus/CWE-444/safe/server-default-parser.js and
       // .../request-default-parser.js — the option is simply absent.
-      { name: 'the default parser', code: `http.createServer((req, res) => res.end('ok'));` },
-      { code: `https.request({ host, path, method: 'GET' }, onResponse);` },
+      {
+        name: 'the default parser',
+        code: `http.createServer((req, res) => res.end('ok'));`,
+      },
+      {
+        code: `https.request({ host, path, method: 'GET' }, onResponse);`,
+        name: 'a request that never mentions insecureHTTPParser keeps the strict parser',
+      },
       // Explicitly strict.
-      { name: 'createServer with insecureHTTPParser explicitly false is not reported', code: `http.createServer({ insecureHTTPParser: false }, handler);` },
+      {
+        name: 'createServer with insecureHTTPParser explicitly false is not reported',
+        code: `http.createServer({ insecureHTTPParser: false }, handler);`,
+      },
       // A non-literal value may well be false at runtime — reporting is a guess.
-      { code: `http.createServer({ insecureHTTPParser: allowLegacy }, handler);` },
+      {
+        code: `http.createServer({ insecureHTTPParser: allowLegacy }, handler);`,
+      },
       { code: `opts.insecureHTTPParser = allowLegacy;` },
       { code: `opts.insecureHTTPParser = false;` },
       // A computed identifier key names a variable, not this option.

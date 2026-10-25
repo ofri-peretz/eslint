@@ -75,7 +75,10 @@ describe('no-improper-sanitization', () => {
         // the most common thing to sit next to a message, and a numeric
         // literal was making the whole array unsafe again.
         `res.json([{ id: 1, text: "You don't have permission" }]);`,
-        `res.json([{ ok: true, total: null, text: "That's all" }]);`,
+        {
+          name: 'a boolean and a null beside the string do not make the payload unsafe',
+          code: `res.json([{ ok: true, total: null, text: "That's all" }]);`,
+        },
         // A hole is `undefined`, which carries no markup either.
         `res.json([, { text: "You don't have permission" }]);`,
         // A regex literal is NOT a safe primitive — its source can hold markup.

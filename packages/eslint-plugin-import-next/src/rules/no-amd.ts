@@ -26,6 +26,10 @@ type RuleOptions = [Options?];
 export const noAmd = createRule<RuleOptions, MessageIds>({
   name: 'no-amd',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/no-amd',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-amd.md',
@@ -71,14 +75,9 @@ export const noAmd = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const {
-      allow = [],
-      // suggestES6 = true // Reserved for future use when hasSuggestions is enabled
-    } = options || {};
-
-    const filename = context.filename;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allow: string[];
+    let filename: string;
 
     function shouldAllow(): boolean {
       // Check if the call is in an allowed pattern
@@ -103,6 +102,15 @@ export const noAmd = createRule<RuleOptions, MessageIds>({
     // Note: ES6 suggestion generation could be added here when hasSuggestions is enabled
 
     return {
+      before() {
+        const [options] = context.options;
+        ({
+          allow = [],
+          // suggestES6 = true // Reserved for future use when hasSuggestions is enabled
+        } = options || {});
+
+        filename = context.filename;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (shouldAllow()) {
           return;

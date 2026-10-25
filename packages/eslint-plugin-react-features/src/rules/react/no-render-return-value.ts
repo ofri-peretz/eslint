@@ -17,6 +17,10 @@ type MessageIds = 'noRenderReturnValue';
 export const noRenderReturnValue = createRule<[], MessageIds>({
   name: 'no-render-return-value',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/no-render-return-value',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-render-return-value.md',
@@ -35,7 +39,7 @@ export const noRenderReturnValue = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (

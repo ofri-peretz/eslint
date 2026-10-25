@@ -94,6 +94,10 @@ const keyExpressionForCallback = (
 export const jsxKey = createRule<RuleOptions, MessageIds>({
   name: 'jsx-key',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/jsx-key',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/jsx-key.md',
@@ -163,21 +167,14 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ warnUnstableKeys: true }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const { warnUnstableKeys = true } = options || {};
-
-    // Track keys in current iteration context
-    const keyTracker = new Map<string, TSESTree.JSXElement[]>();
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let warnUnstableKeys: boolean;
+    let keyTracker: Map<string, TSESTree.JSXElement[]>;
+    let ITERATOR_METHODS: Set<string>;
 
     function resetKeyTracker() {
       keyTracker.clear();
     }
-
-    /**
-     * Array iterator methods that produce lists requiring keys
-     */
-    const ITERATOR_METHODS = new Set(['map', 'forEach', 'flatMap']);
 
     /**
      * Check if a CallExpression is an iterator call that produces a list
@@ -547,6 +544,18 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({ warnUnstableKeys = true } = options || {});
+
+        // Track keys in current iteration context
+        keyTracker = new Map<string, TSESTree.JSXElement[]>();
+
+        /**
+         * Array iterator methods that produce lists requiring keys
+         */
+        ITERATOR_METHODS = new Set(['map', 'forEach', 'flatMap']);
+      },
       JSXElement(node: TSESTree.JSXElement) {
         checkJSXElementInIteration(node);
       },

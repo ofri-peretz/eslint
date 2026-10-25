@@ -29,6 +29,10 @@ const DEFAULT_COMPONENTS = ['img'];
 export const imgRedundantAlt = createRule<RuleOptions, MessageIds>({
   name: 'img-redundant-alt',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/img-redundant-alt',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/img-redundant-alt.md',
@@ -59,19 +63,23 @@ export const imgRedundantAlt = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
-    const { components = DEFAULT_COMPONENTS, words = DEFAULT_REDUNDANT_WORDS } =
-      options ?? ({} as Options);
-    // `words` always has a value here: the destructuring default above already
-    // falls back to DEFAULT_REDUNDANT_WORDS when options omit it.
-    const redundantWords: string[] = words.map((word: string) =>
-      word.toLowerCase(),
-    );
+    let components: string[];
+    let words: string[];
+    let redundantWords: string[];
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        ({ components = DEFAULT_COMPONENTS, words = DEFAULT_REDUNDANT_WORDS } =
+          options ?? ({} as Options));
+        // `words` always has a value here: the destructuring default above already
+        // falls back to DEFAULT_REDUNDANT_WORDS when options omit it.
+        redundantWords = words.map((word: string) => word.toLowerCase());
+      },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier') return;
 

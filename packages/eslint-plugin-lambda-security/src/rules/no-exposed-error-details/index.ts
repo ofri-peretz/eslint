@@ -49,6 +49,7 @@ const SENSITIVE_ERROR_PROPERTIES = new Set([
 export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
   name: 'no-exposed-error-details',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-exposed-error-details.md',
@@ -84,25 +85,11 @@ export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    // Every rule here is Lambda-specific, and none of them knew it: over 107,382
-    // files, 98% of this plugin's findings were in files with no AWS anything.
-    // Registering no visitors is both the gate and the cheap path.
-    if (!fileIsLambda(context.sourceCode.ast)) return {};
-
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
-    // Track if we're inside a return statement that looks like API response
-    let insideApiResponse = false;
+    let insideApiResponse: boolean;
 
     /**
      * Check if this return looks like an API Gateway response
@@ -132,6 +119,25 @@ export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Every rule here is Lambda-specific, and none of them knew it: over 107,382
+        // files, 98% of this plugin's findings were in files with no AWS anything.
+        // Registering no visitors is both the gate and the cheap path.
+        if (!fileIsLambda(context.sourceCode.ast)) return false;
+
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+
+        // Track if we're inside a return statement that looks like API response
+        insideApiResponse = false;
+        return true;
+      },
       ReturnStatement(node: TSESTree.ReturnStatement) {
         if (
           node.argument?.type === AST_NODE_TYPES.ObjectExpression &&

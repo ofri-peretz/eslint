@@ -45,6 +45,7 @@ const DEFAULT_MAX_CLOCK_TOLERANCE_SECONDS = 300;
 export const noTimestampManipulation = createRule<RuleOptions, MessageIds>({
   name: 'no-timestamp-manipulation',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt-security/docs/rules/no-timestamp-manipulation.md',
@@ -141,10 +142,9 @@ export const noTimestampManipulation = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const sourceCode = context.sourceCode;
-    const { maxClockToleranceSeconds = DEFAULT_MAX_CLOCK_TOLERANCE_SECONDS } =
-      context.options[0] ?? {};
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let maxClockToleranceSeconds: number;
 
     /** Report `options[name]` when it is the literal `true`. */
     const reportLiteralTrue = (
@@ -177,6 +177,11 @@ export const noTimestampManipulation = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        sourceCode = context.sourceCode;
+        ({ maxClockToleranceSeconds = DEFAULT_MAX_CLOCK_TOLERANCE_SECONDS } =
+          context.options[0] ?? {});
+      },
       CallExpression(node: TSESTree.CallExpression) {
         checkConfig(node);
 

@@ -25,10 +25,15 @@ type RuleOptions = [];
 export const exportRule = createRule<RuleOptions, MessageIds>({
   name: 'export',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/export',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/export.md',
-      description: 'Forbid any invalid exports, i.e. re-export of the same name',
+      description:
+        'Forbid any invalid exports, i.e. re-export of the same name',
       cwe: 'CWE-694',
       cvss: 7.5,
     },
@@ -58,26 +63,11 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    /**
-     * TypeScript has TWO declaration spaces, and a name may occupy both.
-     *
-     *   export type Twilio = ITwilio
-     *   export const Twilio = ITwilio    // legal, and extremely common
-     *
-     * A single name-keyed map called that a duplicate export. On the pinned
-     * corpus it produced 758 findings in twilio-node alone — every one of them
-     * this shape, in a generated SDK where the pattern is deliberate.
-     *
-     * Interfaces are tracked apart from other type declarations because
-     * `interface X {}` twice in one file is declaration MERGING, which is also
-     * legal. `type X` twice is not, and neither is `interface X` beside
-     * `type X`.
-     */
-    const valueNames = new Map<string, TSESTree.Node>();
-    const typeNames = new Map<string, TSESTree.Node>();
-    const mergeableInterfaces = new Set<string>();
-    let hasDefaultExport: TSESTree.Node | null = null;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let valueNames: Map<string, TSESTree.Node>;
+    let typeNames: Map<string, TSESTree.Node>;
+    let mergeableInterfaces: Set<string>;
+    let hasDefaultExport: TSESTree.Node | null;
 
     type Space = 'value' | 'type' | 'interface';
 
@@ -117,7 +107,8 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
             parts.push(context.sourceCode.getText(id));
           }
         }
-        current = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+        current = (current as TSESTree.Node & { parent?: TSESTree.Node })
+          .parent;
       }
       return parts.length > 0 ? `${parts.reverse().join('.')}.` : '';
     }
@@ -133,7 +124,11 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
       if (space === 'interface') {
         const clash = typeNames.get(name);
         if (clash && !mergeableInterfaces.has(name)) {
-          context.report({ node, messageId: 'duplicateExport', data: { name: rawName } });
+          context.report({
+            node,
+            messageId: 'duplicateExport',
+            data: { name: rawName },
+          });
           return;
         }
         mergeableInterfaces.add(name);
@@ -168,6 +163,27 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        /**
+         * TypeScript has TWO declaration spaces, and a name may occupy both.
+         *
+         *   export type Twilio = ITwilio
+         *   export const Twilio = ITwilio    // legal, and extremely common
+         *
+         * A single name-keyed map called that a duplicate export. On the pinned
+         * corpus it produced 758 findings in twilio-node alone — every one of them
+         * this shape, in a generated SDK where the pattern is deliberate.
+         *
+         * Interfaces are tracked apart from other type declarations because
+         * `interface X {}` twice in one file is declaration MERGING, which is also
+         * legal. `type X` twice is not, and neither is `interface X` beside
+         * `type X`.
+         */
+        valueNames = new Map<string, TSESTree.Node>();
+        typeNames = new Map<string, TSESTree.Node>();
+        mergeableInterfaces = new Set<string>();
+        hasDefaultExport = null;
+      },
       ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration) {
         checkDefaultExport(node);
       },
@@ -176,11 +192,13 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
         // Export with declaration: export const foo = 1;
         if (node.declaration) {
           if (node.declaration.type === AST_NODE_TYPES.VariableDeclaration) {
-            node.declaration.declarations.forEach((decl: TSESTree.VariableDeclarator) => {
-              if (decl.id.type === AST_NODE_TYPES.Identifier) {
-                checkAndAddExport(decl.id.name, node);
-              }
-            });
+            node.declaration.declarations.forEach(
+              (decl: TSESTree.VariableDeclarator) => {
+                if (decl.id.type === AST_NODE_TYPES.Identifier) {
+                  checkAndAddExport(decl.id.name, node);
+                }
+              },
+            );
           } else if (
             node.declaration.type === AST_NODE_TYPES.FunctionDeclaration ||
             node.declaration.type === AST_NODE_TYPES.ClassDeclaration
@@ -188,14 +206,20 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
             if (node.declaration.id) {
               checkAndAddExport(node.declaration.id.name, node);
             }
-          } else if (node.declaration.type === AST_NODE_TYPES.TSInterfaceDeclaration) {
+          } else if (
+            node.declaration.type === AST_NODE_TYPES.TSInterfaceDeclaration
+          ) {
             // `id` is required on an interface and on a type alias — neither
             // parses without a name — so no presence check here. Guarding
             // anyway would add a branch no input can take.
             checkAndAddExport(node.declaration.id.name, node, 'interface');
-          } else if (node.declaration.type === AST_NODE_TYPES.TSTypeAliasDeclaration) {
+          } else if (
+            node.declaration.type === AST_NODE_TYPES.TSTypeAliasDeclaration
+          ) {
             checkAndAddExport(node.declaration.id.name, node, 'type');
-          } else if (node.declaration.type === AST_NODE_TYPES.TSEnumDeclaration) {
+          } else if (
+            node.declaration.type === AST_NODE_TYPES.TSEnumDeclaration
+          ) {
             // An enum creates a type AND a value, so it collides with either —
             // but it is ONE declaration and must produce ONE report. Routing it
             // through two `checkAndAddExport` calls made `export enum Foo {}`
@@ -212,7 +236,11 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
             const enumName = node.declaration.id.name;
             const scopedEnum = `${scopeKey(node)}${enumName}`;
             if (valueNames.has(scopedEnum) || typeNames.has(scopedEnum)) {
-              context.report({ node, messageId: 'duplicateExport', data: { name: enumName } });
+              context.report({
+                node,
+                messageId: 'duplicateExport',
+                data: { name: enumName },
+              });
             } else {
               valueNames.set(scopedEnum, node);
               typeNames.set(scopedEnum, node);
@@ -233,8 +261,13 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
             // `export type { X }` and `export { type X }` are type-space.
             const isTypeOnly =
               node.exportKind === 'type' ||
-              (spec as TSESTree.ExportSpecifier & { exportKind?: string }).exportKind === 'type';
-            checkAndAddExport(exportedName, spec, isTypeOnly ? 'type' : 'value');
+              (spec as TSESTree.ExportSpecifier & { exportKind?: string })
+                .exportKind === 'type';
+            checkAndAddExport(
+              exportedName,
+              spec,
+              isTypeOnly ? 'type' : 'value',
+            );
           }
         });
       },

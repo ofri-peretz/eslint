@@ -24,6 +24,10 @@ type RuleOptions = [];
 export const groupExports = createRule<RuleOptions, MessageIds>({
   name: 'group-exports',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/group-exports',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/group-exports.md',
@@ -49,12 +53,16 @@ export const groupExports = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    // Track separate export statements (not counting inline exports)
-    const separateExports: TSESTree.ExportNamedDeclaration[] = [];
-    const reExportSources = new Map<string, TSESTree.ExportNamedDeclaration[]>();
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let separateExports: TSESTree.ExportNamedDeclaration[];
+    let reExportSources: Map<string, TSESTree.ExportNamedDeclaration[]>;
 
     return {
+      before() {
+        // Track separate export statements (not counting inline exports)
+        separateExports = [];
+        reExportSources = new Map<string, TSESTree.ExportNamedDeclaration[]>();
+      },
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
         // Only track export specifier lists, not inline declarations
         if (!node.declaration && node.specifiers.length > 0) {

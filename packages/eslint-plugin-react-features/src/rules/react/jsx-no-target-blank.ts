@@ -34,6 +34,10 @@ type RuleOptions = [Options?];
 export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
   name: 'jsx-no-target-blank',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/jsx-no-target-blank',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/jsx-no-target-blank.md',
@@ -84,21 +88,16 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
-    const {
-      allowReferrer = false,
-      enforceDynamicLinks = 'always',
-      warnOnSpreadAttributes = false,
-      links = true,
-      forms = false,
-    } = options ?? ({} as Options);
-
-    const elementsToCheck: string[] = [];
-    if (links) elementsToCheck.push('a');
-    if (forms) elementsToCheck.push('form');
+    let allowReferrer: boolean;
+    let enforceDynamicLinks: 'always' | 'never';
+    let warnOnSpreadAttributes: boolean;
+    let links: boolean;
+    let forms: boolean;
+    let elementsToCheck: string[];
 
     function hasTargetBlank(node: TSESTree.JSXOpeningElement): boolean {
       const targetAttr = node.attributes.find(
@@ -199,6 +198,20 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        ({
+          allowReferrer = false,
+          enforceDynamicLinks = 'always',
+          warnOnSpreadAttributes = false,
+          links = true,
+          forms = false,
+        } = options ?? ({} as Options));
+
+        elementsToCheck = [];
+        if (links) elementsToCheck.push('a');
+        if (forms) elementsToCheck.push('form');
+      },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (
           node.name.type !== 'JSXIdentifier' ||

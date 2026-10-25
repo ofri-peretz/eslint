@@ -48,6 +48,7 @@ const DANGEROUS_WILDCARDS = new Set(['*', 'arn:aws:*', 'arn:*:*:*:*:*']);
 export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
   name: 'no-overly-permissive-iam-policy',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-overly-permissive-iam-policy.md',
@@ -84,23 +85,10 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    // Every rule here is Lambda-specific, and none of them knew it: over 107,382
-    // files, 98% of this plugin's findings were in files with no AWS anything.
-    // Registering no visitors is both the gate and the cheap path.
-    if (!fileIsLambda(context.sourceCode.ast)) return {};
-
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
     /**
      * Check if a value is a dangerous wildcard
      */
@@ -158,6 +146,22 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Every rule here is Lambda-specific, and none of them knew it: over 107,382
+        // files, 98% of this plugin's findings were in files with no AWS anything.
+        // Registering no visitors is both the gate and the cheap path.
+        if (!fileIsLambda(context.sourceCode.ast)) return false;
+
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+        return true;
+      },
       Property(node: TSESTree.Property) {
         // Check for IAM policy properties
         if (node.key.type === AST_NODE_TYPES.Identifier) {

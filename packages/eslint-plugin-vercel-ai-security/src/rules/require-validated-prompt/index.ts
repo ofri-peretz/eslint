@@ -11,20 +11,39 @@
  * @see https://owasp.org/www-project-top-10-for-large-language-model-applications/
  */
 
-import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons, isTestFilePath, memberPath, propertyName } from '@interlace/eslint-devkit';
-import { isSystemPromptProp, getStaticPropName } from '../../utils/prompt-props';
+import {
+  AST_NODE_TYPES,
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  memberPath,
+  propertyName,
+} from '@interlace/eslint-devkit';
+import {
+  isSystemPromptProp,
+  getStaticPropName,
+} from '../../utils/prompt-props';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
-import { calleeName, isRequestDerived, lookupVariable, nameEndsWithWords, sdkCallName, unwrap } from '../../utils/sdk';
+import {
+  calleeName,
+  isRequestDerived,
+  lookupVariable,
+  nameEndsWithWords,
+  sdkCallName,
+  unwrap,
+} from '../../utils/sdk';
 
 type MessageIds = 'unsafePrompt' | 'unsafeSystemPrompt';
 
 export interface Options {
   /** Function names considered as input validators */
   validatorFunctions?: string[];
-  
+
   /** Variable patterns that suggest user input */
   userInputPatterns?: string[];
-  
+
   /** Allow in test files */
   allowInTests?: boolean;
 }
@@ -34,10 +53,12 @@ type RuleOptions = [Options?];
 export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
   name: 'require-validated-prompt',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-validated-prompt.md',
-      description: 'Require validated/sanitized prompts in generateText and streamText calls',
+      description:
+        'Require validated/sanitized prompts in generateText and streamText calls',
       cwe: 'CWE-74',
       cvss: 9,
     },
@@ -48,11 +69,13 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-74',
         owasp: 'A03:2021',
         cvss: 9.0,
-        description: 'User input "{{input}}" passed directly to {{function}} prompt without validation',
+        description:
+          'User input "{{input}}" passed directly to {{function}} prompt without validation',
         severity: 'CRITICAL',
         compliance: ['SOC2', 'GDPR'],
         fix: 'Validate input before use: generateText({ prompt: validateInput(userInput) })',
-        documentationLink: 'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
+        documentationLink:
+          'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
       }),
       unsafeSystemPrompt: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -60,10 +83,12 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-74',
         owasp: 'A03:2021',
         cvss: 8.5,
-        description: 'Dynamic value in system prompt can lead to prompt injection',
+        description:
+          'Dynamic value in system prompt can lead to prompt injection',
         severity: 'HIGH',
         fix: 'Use static system prompts or validate dynamic content',
-        documentationLink: 'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
+        documentationLink:
+          'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
       }),
     },
     schema: [
@@ -114,28 +139,13 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
       allowInTests: false,
     },
   ],
-  create(context, [options]) {
-    // Every rule in this plugin is Vercel-AI-specific, and none of them knew
-    // it: over 107,384 files, 91% of this plugin's findings were in files with
-    // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
-    // the cheap path — a file without the SDK does no work.
-    if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
-
-    // Merged with `defaultOptions` before `create` runs.
-    const { validatorFunctions, userInputPatterns, allowInTests } = options as Required<Options>;
-
-    const sourceCode = context.sourceCode;
-
-    // Skip test files if allowed
-    if (allowInTests && isTestFilePath(context.filename)) {
-      return {};
-    }
-
-    // `req.body` / `request.body` are member PATHS; the rest are name head nouns.
-    const pathPatterns = userInputPatterns
-      .filter((p: string) => p.includes('.'))
-      .map((p: string) => p.split('.'));
-    const namePatterns = userInputPatterns.filter((p: string) => !p.includes('.'));
+  createOnce(context, currentOptions) {
+    let validatorFunctions: string[];
+    let userInputPatterns: string[];
+    let allowInTests: boolean;
+    let sourceCode: typeof context.sourceCode;
+    let pathPatterns: string[][];
+    let namePatterns: string[];
 
     /** A configured validator, or a schema parse (`schema.parse(x)`, `safeParse`, `parseAsync`). */
     function isValidatedCall(node: TSESTree.Node): boolean {
@@ -148,18 +158,26 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
     /** Bound from a validator call: `const safe = validateInput(x)`, `const { q } = schema.parse(...)`. */
     function isValidatedBinding(node: TSESTree.Identifier): boolean {
       const def = lookupVariable(node.name, sourceCode.getScope(node))?.defs[0];
-      return def?.type === 'Variable' && def.node.init !== null && isValidatedCall(def.node.init);
+      return (
+        def?.type === 'Variable' &&
+        def.node.init !== null &&
+        isValidatedCall(def.node.init)
+      );
     }
 
     function nameLooksLikeInput(name: string): boolean {
-      return namePatterns.some((pattern: string) => nameEndsWithWords(name, pattern));
+      return namePatterns.some((pattern: string) =>
+        nameEndsWithWords(name, pattern),
+      );
     }
 
     function pathLooksLikeInput(node: TSESTree.MemberExpression): boolean {
       const path = memberPath(node);
       return (
         path !== null &&
-        pathPatterns.some((pattern: string[]) => pattern.every((part, i) => path[i] === part))
+        pathPatterns.some((pattern: string[]) =>
+          pattern.every((part, i) => path[i] === part),
+        )
       );
     }
 
@@ -194,6 +212,34 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule in this plugin is Vercel-AI-specific, and none of them knew
+        // it: over 107,384 files, 91% of this plugin's findings were in files with
+        // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
+        // the cheap path — a file without the SDK does no work.
+        if (!fileUsesVercelAi(context.sourceCode.ast)) return false;
+
+        // Merged with `defaultOptions` before `create` runs.
+        ({ validatorFunctions, userInputPatterns, allowInTests } =
+          options as Required<Options>);
+
+        sourceCode = context.sourceCode;
+
+        // Skip test files if allowed
+        if (allowInTests && isTestFilePath(context.filename)) {
+          return false;
+        }
+
+        // `req.body` / `request.body` are member PATHS; the rest are name head nouns.
+        pathPatterns = userInputPatterns
+          .filter((p: string) => p.includes('.'))
+          .map((p: string) => p.split('.'));
+        namePatterns = userInputPatterns.filter(
+          (p: string) => !p.includes('.'),
+        );
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const matchedFunction = sdkCallName(node);
         if (!matchedFunction) return;
@@ -211,7 +257,11 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
           if (!input) continue;
           context.report(
             isPrompt
-              ? { node: prop.value, messageId: 'unsafePrompt', data: { input, function: matchedFunction } }
+              ? {
+                  node: prop.value,
+                  messageId: 'unsafePrompt',
+                  data: { input, function: matchedFunction },
+                }
               : { node: prop.value, messageId: 'unsafeSystemPrompt' },
           );
         }
@@ -221,4 +271,10 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
 });
 
 /** Schema-validation methods (Zod, Valibot, Yup, ArkType). */
-const SCHEMA_PARSERS = new Set(['parse', 'safeParse', 'parseAsync', 'safeParseAsync', 'validateSync']);
+const SCHEMA_PARSERS = new Set([
+  'parse',
+  'safeParse',
+  'parseAsync',
+  'safeParseAsync',
+  'validateSync',
+]);

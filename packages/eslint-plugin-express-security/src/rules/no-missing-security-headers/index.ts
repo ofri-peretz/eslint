@@ -156,6 +156,7 @@ function checkFunctionForSecurityHeaders(
 export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-security-headers',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     deprecated: true,
     replacedBy: ['@see eslint-plugin-express-security/require-helmet'],
@@ -200,26 +201,13 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
       ignoreInTests: true,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const {
-      requiredHeaders = DEFAULT_REQUIRED_HEADERS,
-      ignoreInTests = true,
-    }: Options = options as Options;
-
-    const filename = context.filename;
-    const isTestFile = ignoreInTests && isTestFilePath(filename);
-
-    if (isTestFile) {
-      return {};
-    }
-
-    const reportedScopes = new Set<string>();
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let requiredHeaders: string[];
+    let ignoreInTests: boolean;
+    let reportedScopes: Set<string>;
 
     /**
      * Get a unique key for the current scope
@@ -280,6 +268,27 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        ({ requiredHeaders = DEFAULT_REQUIRED_HEADERS, ignoreInTests = true } =
+          options as Options);
+
+        const filename = context.filename;
+        const isTestFile = ignoreInTests && isTestFilePath(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+
+        reportedScopes = new Set<string>();
+        return true;
+      },
       CallExpression: checkCallExpression,
     };
   },

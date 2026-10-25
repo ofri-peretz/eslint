@@ -106,6 +106,7 @@ function containsSubsequence(tokens: string[], term: string[]): boolean {
 export const noSensitiveDataInQuery = createRule<RuleOptions, MessageIds>({
   name: 'no-sensitive-data-in-query',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-sensitive-data-in-query.md',
@@ -154,36 +155,13 @@ export const noSensitiveDataInQuery = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const { sensitiveParams, extraPatterns, allowedParams } =
-      options as Options;
-    const terms = [...DEFAULT_SENSITIVE, ...(sensitiveParams ?? [])].map(
-      (term) => tokenize(term),
-    );
-    // Config-supplied patterns are compiled once and only ever matched against
-    // parameter names, which MAX_PARAM_NAME_LENGTH caps — a catastrophically
-    // backtracking pattern from an inherited config therefore has no input long
-    // enough to amplify against (CWE-1333).
-    // An invalid pattern would throw out of create() and abort the whole lint
-    // run for the file with an opaque error; a bad config entry is skipped
-    // instead, leaving the rest of the rule working.
-    const patterns: RegExp[] = [];
-    for (const pattern of extraPatterns ?? []) {
-      try {
-        patterns.push(new RegExp(pattern, 'i'));
-      } catch {
-        // not a valid regular expression — ignore this entry
-      }
-    }
-    const allowedSet = new Set(
-      (allowedParams ?? []).map((name) => name.toLowerCase()),
-    );
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let terms: string[][];
+    let patterns: RegExp[];
+    let allowedSet: Set<string>;
 
     function isRequestIdent(name: string): boolean {
       const lower = name.toLowerCase();
@@ -229,6 +207,39 @@ export const noSensitiveDataInQuery = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        const { sensitiveParams, extraPatterns, allowedParams } =
+          options as Options;
+        terms = [...DEFAULT_SENSITIVE, ...(sensitiveParams ?? [])].map((term) =>
+          tokenize(term),
+        );
+        // Config-supplied patterns are compiled once and only ever matched against
+        // parameter names, which MAX_PARAM_NAME_LENGTH caps — a catastrophically
+        // backtracking pattern from an inherited config therefore has no input long
+        // enough to amplify against (CWE-1333).
+        // An invalid pattern would throw out of create() and abort the whole lint
+        // run for the file with an opaque error; a bad config entry is skipped
+        // instead, leaving the rest of the rule working.
+        patterns = [];
+        for (const pattern of extraPatterns ?? []) {
+          try {
+            patterns.push(new RegExp(pattern, 'i'));
+          } catch {
+            // not a valid regular expression — ignore this entry
+          }
+        }
+        allowedSet = new Set(
+          (allowedParams ?? []).map((name) => name.toLowerCase()),
+        );
+        return true;
+      },
       // req.query.password / req.query['api_key']
       MemberExpression(node: TSESTree.MemberExpression) {
         if (!isReqQuery(node.object)) return;

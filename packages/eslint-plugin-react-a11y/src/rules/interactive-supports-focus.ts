@@ -45,6 +45,10 @@ const NATIVE_INTERACTIVE_ELEMENTS = new Set([
 export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
   name: 'interactive-supports-focus',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/interactive-supports-focus',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/interactive-supports-focus.md',
@@ -75,13 +79,17 @@ export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
-    const { tabbable = [] } = options ?? ({} as Options);
+    let tabbable: string[];
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        ({ tabbable = [] } = options ?? ({} as Options));
+      },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier') return;
         const element = node.name.name;

@@ -79,6 +79,7 @@ function safeDecode(value: string): string {
 export const utmTaxonomy = createRule<RuleOptions, MessageIds>({
   name: 'utm-taxonomy',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/utm-taxonomy.md',
@@ -113,7 +114,7 @@ export const utmTaxonomy = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     function checkString(node: TSESTree.Node, value: string): void {
       UTM_PARAM_RE.lastIndex = 0;
       let match: RegExpExecArray | null;

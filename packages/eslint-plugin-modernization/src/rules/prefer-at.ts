@@ -104,6 +104,10 @@ function isCalleeOrTag(node: TSESTree.MemberExpression): boolean {
 export const preferAt = createRule<RuleOptions, MessageIds>({
   name: 'prefer-at',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'unicorn/prefer-at',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modernization/docs/rules/prefer-at.md',
@@ -155,7 +159,7 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ checkLastElement: true }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       MemberExpression(node: TSESTree.MemberExpression) {
         if (!node.computed) {

@@ -24,6 +24,10 @@ type RuleOptions = [Options?];
 export const noNestedTernary = createRule<RuleOptions, MessageIds>({
   name: 'no-nested-ternary',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'eslint/no-nested-ternary',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/no-nested-ternary.md',
@@ -57,9 +61,8 @@ export const noNestedTernary = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allow: [] }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const { allow = [] } = options || {};
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allow: string[];
 
     /**
      * Check if node is in an allowed context based on the allow option.
@@ -189,6 +192,10 @@ export const noNestedTernary = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({ allow = [] } = options || {});
+      },
       ConditionalExpression(node: TSESTree.ConditionalExpression) {
         if (hasNestedTernary(node) && !isInAllowedContext(node)) {
           context.report({

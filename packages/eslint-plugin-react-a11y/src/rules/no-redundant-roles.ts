@@ -78,6 +78,10 @@ const IMPLICIT_ROLES: Record<string, string> = {
 export const noRedundantRoles = createRule<RuleOptions, MessageIds>({
   name: 'no-redundant-roles',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/no-redundant-roles',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-redundant-roles.md',
@@ -106,11 +110,15 @@ export const noRedundantRoles = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [DEFAULT_ROLE_EXCEPTIONS],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
+    let options: Options;
     return {
+      before() {
+        [options = {} as Options] = currentOptions();
+      },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier') return;
 

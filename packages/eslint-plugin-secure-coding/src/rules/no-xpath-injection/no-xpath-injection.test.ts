@@ -40,21 +40,21 @@ describe('no-xpath-injection', () => {
           name: 'a workflow annotation without a file is not XPath',
           code: 'function annotate(level, msg) { process.stdout.write(`::${level}::${msg}\\n`); }',
         },
-    // --- a router wildcard is not a location step -------------------------
-    // City-of-Helsinki/haitaton-ui reported CWE-643 at CVSS 9.8 twice on these,
-    // in a repository importing no XPath package and containing no XPath at
-    // all. `/*` is XPath's abbreviated `child::*` and also React Router's
-    // wildcard segment; on its own it is not evidence of either.
-    {
-      name: 'a router wildcard segment is not a location step',
-      code: 'const p = `/${lang}/*`;',
-    },
-    'const routes = LOCALES.map((l) => ({ path: `/${l}/*` }));',
-    // The wildcard gate is corroboration, not amnesty: a module that imports an
-    // XPath package gets the finding, so this one is deliberately NOT valid and
-    // lives in the invalid block below. What is valid is the same shape with a
-    // package that evaluates nothing.
-    "import { format } from 'date-fns'; const p = `/${lang}/*`;",
+        // --- a router wildcard is not a location step -------------------------
+        // City-of-Helsinki/haitaton-ui reported CWE-643 at CVSS 9.8 twice on these,
+        // in a repository importing no XPath package and containing no XPath at
+        // all. `/*` is XPath's abbreviated `child::*` and also React Router's
+        // wildcard segment; on its own it is not evidence of either.
+        {
+          name: 'a router wildcard segment is not a location step',
+          code: 'const p = `/${lang}/*`;',
+        },
+        'const routes = LOCALES.map((l) => ({ path: `/${l}/*` }));',
+        // The wildcard gate is corroboration, not amnesty: a module that imports an
+        // XPath package gets the finding, so this one is deliberately NOT valid and
+        // lives in the invalid block below. What is valid is the same shape with a
+        // package that evaluates nothing.
+        "import { format } from 'date-fns'; const p = `/${lang}/*`;",
 
         // Only args[0] of an evaluator is the XPath expression; a template
         // in the context-node position is not the query.
@@ -79,6 +79,7 @@ describe('no-xpath-injection', () => {
         },
         // reachesXpathSink: declared, but never passed to an evaluator.
         {
+          name: 'an xpath string that never reaches an evaluator is not reported',
           code: 'const q = `//users/..`; console.log(q);',
         },
         // Regression: strings that look like XPath but never reach an
@@ -150,17 +151,17 @@ describe('no-xpath-injection', () => {
         },
       ],
       invalid: [
-    {
-      // FN: was `valid` because the callee's property "is not an Identifier".
-      // Under the same option the DOTTED spelling — `api.evaluate("//users/..")`
-      // — reports, so this excluded one notation of a shape the rule already
-      // flags in the other.
-      // @found computed-key blind-spot probe
-      name: 'FN: a dangerous XPath construct through a string subscript',
-      code: 'api["evaluate"]("//users/..");',
-      options: [{ reportDangerousConstructs: true }],
-      errors: 1,
-    },
+        {
+          // FN: was `valid` because the callee's property "is not an Identifier".
+          // Under the same option the DOTTED spelling — `api.evaluate("//users/..")`
+          // — reports, so this excluded one notation of a shape the rule already
+          // flags in the other.
+          // @found computed-key blind-spot probe
+          name: 'FN: a dangerous XPath construct through a string subscript',
+          code: 'api["evaluate"]("//users/..");',
+          options: [{ reportDangerousConstructs: true }],
+          errors: 1,
+        },
 
         {
           name: 'a request value concatenated into an XPath expression',
@@ -512,7 +513,9 @@ describe('no-xpath-injection', () => {
             // is also NgRx's store operator — `store.pipe(select(selectUser))`
             // reported CWE-643 at CVSS 9.8 in files with no XML in them.
             code: 'import { select } from "xpath"; select("//user")',
-            options: [{ xpathFunctions: ['select'], reportDangerousConstructs: true }],
+            options: [
+              { xpathFunctions: ['select'], reportDangerousConstructs: true },
+            ],
             errors: [{ messageId: 'dangerousXpathExpression' }],
           },
           // Function parameter as input
@@ -589,8 +592,10 @@ describe('no-xpath-injection', () => {
         // id 22: isXpathInputValidated true arm — validation function wraps the template
         { code: 'validateXPath(`/users/user[@id="${userInput}"]`)' },
         // id 31: XPath call with zero args → early return
-        { options: [{ reportDangerousConstructs: true }],
-          code: 'document.evaluate()' },
+        {
+          options: [{ reportDangerousConstructs: true }],
+          code: 'document.evaluate()',
+        },
         // id 35: dangerous literal XPath but @xpath-safe annotation
         {
           options: [{ reportDangerousConstructs: true }],
@@ -610,8 +615,10 @@ document.evaluate(userQuery, document);`,
         // id 49: CSS selector template literal → skip early return
         { code: 'const t = `[data-id="foo"]`' },
         // id 51+52: query-string template literal → skip early return
-        { options: [{ reportDangerousConstructs: true }],
-          code: 'const t = `?id=123`' },
+        {
+          options: [{ reportDangerousConstructs: true }],
+          code: 'const t = `?id=123`',
+        },
         // id 62 true arm: dangerous XPath template but @xpath-safe annotation
         {
           options: [{ reportDangerousConstructs: true }],
@@ -667,9 +674,7 @@ const xpath = \`//users/..\``,
         // parent-axis traversal. Different information, different fixes.
         {
           code: 'document.evaluate(`//users/..` + suffix, doc);',
-          errors: [
-            { messageId: 'xpathInjection' },
-          ],
+          errors: [{ messageId: 'xpathInjection' }],
         },
         // Moved from `valid` (was "id 21: destructured param"). A destructured parameter
         // concatenated into an XPath string and handed to `document.evaluate` IS injection.
@@ -945,7 +950,10 @@ describe('corpus regression — URIs, cache keys and file paths are not XPath', 
         name: 'a relative file path is not a parent axis',
         code: `const OKTA_ENV_SCRIPT_PATH = '../env/index.js';`,
       },
-      { name: 'a relative path in a query-named variable', code: `const queryPath = '../../lib';` },
+      {
+        name: 'a relative path in a query-named variable',
+        code: `const queryPath = '../../lib';`,
+      },
     ],
     invalid: [
       // Real XPath must still report — if any of these go quiet the narrowing
@@ -1004,10 +1012,16 @@ ruleTester.run('lock: evidence, not names', noXpathInjection, {
   ],
   invalid: [
     { code: 'xpath.select("//user[@id=\'" + id + "\']", doc);', errors: 1 },
-    { code: 'const xpathVar = userInput; document.evaluate(xpathVar, document);', errors: 1 },
+    {
+      code: 'const xpathVar = userInput; document.evaluate(xpathVar, document);',
+      errors: 1,
+    },
     // Destructuring bails out of the declaration path, but the sink still recognises the
     // argument — locks the early return without pretending the code is safe.
-    { code: 'const { xpathQuery } = opts; doc.evaluate(xpathQuery, doc);', errors: 1 },
+    {
+      code: 'const { xpathQuery } = opts; doc.evaluate(xpathQuery, doc);',
+      errors: 1,
+    },
   ],
 });
 
@@ -1020,21 +1034,28 @@ ruleTester.run('lock: evidence, not names', noXpathInjection, {
  * this rule after the name-matching fix. `evaluate`, `selectSingleNode` and `selectNodes`
  * name nothing else in common use and stay unconditional.
  */
-ruleTester.run('lock: the select sink needs an xpath receiver', noXpathInjection, {
-  valid: [
-    { code: 'mq.select(projection);' },
-    { code: 'builder().select(field);' },
-    { code: 'knex("users").select(col);' },
-    // A member receiver that is not xpath-shaped.
-    { code: 'db.query.select(userInput);' },
-  ],
-  invalid: [
-    { code: 'xpath.select("//user[@id=\'" + id + "\']", doc);', errors: 1 },
-    // Namespaced receiver: `lib.xpath.select(...)`.
-    { code: 'lib.xpath.select("//user[@id=\'" + id + "\']", doc);', errors: 1 },
-    { code: 'xml.selectNodes(userQuery);', errors: 1 },
-  ],
-});
+ruleTester.run(
+  'lock: the select sink needs an xpath receiver',
+  noXpathInjection,
+  {
+    valid: [
+      { code: 'mq.select(projection);' },
+      { code: 'builder().select(field);' },
+      { code: 'knex("users").select(col);' },
+      // A member receiver that is not xpath-shaped.
+      { code: 'db.query.select(userInput);' },
+    ],
+    invalid: [
+      { code: 'xpath.select("//user[@id=\'" + id + "\']", doc);', errors: 1 },
+      // Namespaced receiver: `lib.xpath.select(...)`.
+      {
+        code: 'lib.xpath.select("//user[@id=\'" + id + "\']", doc);',
+        errors: 1,
+      },
+      { code: 'xml.selectNodes(userQuery);', errors: 1 },
+    ],
+  },
+);
 
 /**
  * Regression lock — two false positives a reviewer found in the rule this branch set out
@@ -1055,8 +1076,12 @@ describe('no-xpath-injection: constants and destinations', () => {
   ruleTester.run('evidence on both halves', noXpathInjection, {
     valid: [
       // A provably constant operand cannot be steered, even at a genuine sink.
-      { code: `const id = '42'; xpath.select("//user[@id='" + id + "']", doc);` },
-      { code: `const ID = '42'; const q = "//user[@id='" + ID + "']"; xpath.select(q, doc);` },
+      {
+        code: `const id = '42'; xpath.select("//user[@id='" + id + "']", doc);`,
+      },
+      {
+        code: `const ID = '42'; const q = "//user[@id='" + ID + "']"; xpath.select(q, doc);`,
+      },
       // Built from a request, then demonstrably handed somewhere harmless.
       { code: `const s = '//u[@id=' + req.params.id + ']'; console.log(s);` },
       { code: `const s = '//u[@id=' + req.params.id + ']'; res.send(s);` },
@@ -1103,29 +1128,33 @@ describe('no-xpath-injection: constants and destinations', () => {
  * reports — including through one variable hop. The valid case below FAILS on
  * the pre-fix rule.
  */
-ruleTester.run('no-xpath-injection-constant-is-not-a-finding', noXpathInjection, {
-  valid: [
-    'xpath.select("//users/user[@active=1]", doc);',
-    'const q = "//catalog/book/title/text()"; doc.evaluate(q);',
-  ],
-  invalid: [
-    {
-      code: 'xpath.select("//users/user[@name=" + req.query.n + "]", doc);',
-      errors: [{ messageId: 'xpathInjection' }],
-    },
-    {
-      // Through one binding hop — the shape a real handler writes.
-      code: 'function q(req) { const x = "//user[name=" + req.query.n + "]"; doc.evaluate(x); }',
-      errors: [{ messageId: 'xpathInjection' }],
-    },
-    {
-      // The old behaviour, restored explicitly by a consumer who wants it.
-      code: 'xpath.select("//users/user[@active=1]", doc);',
-      options: [{ reportDangerousConstructs: true }],
-      errors: [{ messageId: 'dangerousXpathExpression' }],
-    },
-  ],
-});
+ruleTester.run(
+  'no-xpath-injection-constant-is-not-a-finding',
+  noXpathInjection,
+  {
+    valid: [
+      'xpath.select("//users/user[@active=1]", doc);',
+      'const q = "//catalog/book/title/text()"; doc.evaluate(q);',
+    ],
+    invalid: [
+      {
+        code: 'xpath.select("//users/user[@name=" + req.query.n + "]", doc);',
+        errors: [{ messageId: 'xpathInjection' }],
+      },
+      {
+        // Through one binding hop — the shape a real handler writes.
+        code: 'function q(req) { const x = "//user[name=" + req.query.n + "]"; doc.evaluate(x); }',
+        errors: [{ messageId: 'xpathInjection' }],
+      },
+      {
+        // The old behaviour, restored explicitly by a consumer who wants it.
+        code: 'xpath.select("//users/user[@active=1]", doc);',
+        options: [{ reportDangerousConstructs: true }],
+        errors: [{ messageId: 'dangerousXpathExpression' }],
+      },
+    ],
+  },
+);
 
 /**
  * Coverage for `reachesXpathSink`'s final `return false`.
@@ -1346,45 +1375,48 @@ ruleTester.run('lock - corpus-proved defects', noXpathInjection, {
  * reports `unvalidatedXpathInput`; the identical call with the import changed to
  * `@ngrx/store` is QUIET. The import is the only thing that moves.
  */
-ruleTester.run('options: xpathPackages is configurable, default unchanged', noXpathInjection, {
-  valid: [
-    // ---- replacing the list drops the built-in evidence -------------------
-    // `xpath` audited off the list: the bare `select` has nothing left to make
-    // it an evaluator, which is exactly the NgRx shape locked above.
-    {
-      code: 'import { select } from "xpath"; export function f(doc, name) { return select(name, doc); }',
-      options: [{ xpathPackages: ['xpath.js'] }],
-    },
-    // Extending never removes: a package in neither list stays quiet.
-    {
-      code: 'import { select } from "@ngrx/store"; export function f(doc, name) { return select(name, doc); }',
-      options: [{ additionalXpathPackages: ['@acme/xml'] }],
-    },
-  ],
-  invalid: [
+ruleTester.run(
+  'options: xpathPackages is configurable, default unchanged',
+  noXpathInjection,
+  {
+    valid: [
+      // ---- replacing the list drops the built-in evidence -------------------
+      // `xpath` audited off the list: the bare `select` has nothing left to make
+      // it an evaluator, which is exactly the NgRx shape locked above.
+      {
+        code: 'import { select } from "xpath"; export function f(doc, name) { return select(name, doc); }',
+        options: [{ xpathPackages: ['xpath.js'] }],
+      },
+      // Extending never removes: a package in neither list stays quiet.
+      {
+        code: 'import { select } from "@ngrx/store"; export function f(doc, name) { return select(name, doc); }',
+        options: [{ additionalXpathPackages: ['@acme/xml'] }],
+      },
+    ],
+    invalid: [
+      // ---- the default is unchanged ----------------------------------------
+      // Positive control for the replacing case above: with an EMPTY option bag
+      // the same bare call still reports.
+      {
+        code: 'import { select } from "xpath"; export function f(doc, name) { return select(name, doc); }',
+        options: [{}],
+        errors: [{ messageId: 'unvalidatedXpathInput' }],
+      },
 
-    // ---- the default is unchanged ----------------------------------------
-    // Positive control for the replacing case above: with an EMPTY option bag
-    // the same bare call still reports.
-    {
-      code: 'import { select } from "xpath"; export function f(doc, name) { return select(name, doc); }',
-      options: [{}],
-      errors: [{ messageId: 'unvalidatedXpathInput' }],
-    },
-
-    // ---- extending the list adds coverage ---------------------------------
-    // A house wrapper that re-exports `xpath.select`. The sink is identical;
-    // only the specifier differs, and npm can never enumerate it.
-    {
-      code: 'import { select } from "@acme/xml"; export function f(doc, name) { return select(name, doc); }',
-      options: [{ additionalXpathPackages: ['@acme/xml'] }],
-      errors: [{ messageId: 'unvalidatedXpathInput' }],
-    },
-    // Full replacement widens as well as narrows.
-    {
-      code: 'import { select } from "@acme/xml"; export function f(doc, name) { return select(name, doc); }',
-      options: [{ xpathPackages: ['@acme/xml'] }],
-      errors: [{ messageId: 'unvalidatedXpathInput' }],
-    },
-  ],
-});
+      // ---- extending the list adds coverage ---------------------------------
+      // A house wrapper that re-exports `xpath.select`. The sink is identical;
+      // only the specifier differs, and npm can never enumerate it.
+      {
+        code: 'import { select } from "@acme/xml"; export function f(doc, name) { return select(name, doc); }',
+        options: [{ additionalXpathPackages: ['@acme/xml'] }],
+        errors: [{ messageId: 'unvalidatedXpathInput' }],
+      },
+      // Full replacement widens as well as narrows.
+      {
+        code: 'import { select } from "@acme/xml"; export function f(doc, name) { return select(name, doc); }',
+        options: [{ xpathPackages: ['@acme/xml'] }],
+        errors: [{ messageId: 'unvalidatedXpathInput' }],
+      },
+    ],
+  },
+);

@@ -43,9 +43,15 @@ ruleTester.run('require-secure-defaults', requireSecureDefaults, {
     'const flag = true;',
     'function noop() {}',
     'const items = [];',
-    'const obj = {};',
+    {
+      name: 'an empty object literal sets no insecure default',
+      code: 'const obj = {};',
+    },
     'class Foo {}',
-    { name: 'secure and httpOnly both on', code: 'const config = { secure: true, httpOnly: true }' },
+    {
+      name: 'secure and httpOnly both on',
+      code: 'const config = { secure: true, httpOnly: true }',
+    },
 
     // The switch is on, in the shape the rule most exists to police.
     {
@@ -71,7 +77,9 @@ ruleTester.run('require-secure-defaults', requireSecureDefaults, {
     { code: 'const { secure } = options;' },
     // A parameter default of `true` — the property shape is a pattern, not an
     // object literal, and the value is the secure one regardless.
-    { code: 'function connect({ requireTLS = true } = {}) { return requireTLS; }' },
+    {
+      code: 'function connect({ requireTLS = true } = {}) { return requireTLS; }',
+    },
     // The string "false" is truthy in JavaScript, so this switch is ON. A
     // looser value test (`!prop.value.value`) would report it, which would be
     // wrong.
@@ -101,7 +109,9 @@ ruleTester.run('require-secure-defaults', requireSecureDefaults, {
     // A `secure` boolean on something that is not a transport and not a cookie.
     // Nothing in this object is a cookie attribute, so there is no evidence the
     // switch is a security switch at all.
-    { code: 'renderViewer(document, { secure: false, watermark: null, allowPrint: true });' },
+    {
+      code: 'renderViewer(document, { secure: false, watermark: null, allowPrint: true });',
+    },
     // The previous suite asserted this bare shape as a violation too. With no
     // sibling attribute and no enclosing `cookie` key it is indistinguishable
     // from the two cases above.
@@ -110,7 +120,9 @@ ruleTester.run('require-secure-defaults', requireSecureDefaults, {
     // FUNCTION (a signature check, here), and `verify: false` is a
     // Python-requests idiom with no JavaScript API behind it. The old suite
     // asserted `request.get(url, { verify: false }, cb)` as a violation.
-    { code: 'bodyParser.json({ verify: (req, res, buf) => assertSignature(buf) });' },
+    {
+      code: 'bodyParser.json({ verify: (req, res, buf) => assertSignature(buf) });',
+    },
     { code: 'request.get(url, { verify: false }, cb);' },
 
     // ---- checkServerIdentity that actually verifies -----------------------
@@ -118,15 +130,20 @@ ruleTester.run('require-secure-defaults', requireSecureDefaults, {
     { code: 'const o = { checkServerIdentity: verifyPinnedHost };' },
     // A real check — more than one statement in the body.
     {
-      code:
-        'const o = { checkServerIdentity: (host, cert) => { if (cert.subject.CN !== host) { throw new Error("mismatch"); } return undefined; } };',
+      code: 'const o = { checkServerIdentity: (host, cert) => { if (cert.subject.CN !== host) { throw new Error("mismatch"); } return undefined; } };',
     },
     // Delegates to the platform implementation, so the body is a call.
-    { code: 'const o = { checkServerIdentity: (h, c) => tls.checkServerIdentity(h, c) };' },
+    {
+      code: 'const o = { checkServerIdentity: (h, c) => tls.checkServerIdentity(h, c) };',
+    },
     // Returns an Error, which is how the callback signals failure.
-    { code: 'const o = { checkServerIdentity: function (h, c) { return new Error("bad host"); } };' },
+    {
+      code: 'const o = { checkServerIdentity: function (h, c) { return new Error("bad host"); } };',
+    },
     // A single statement that is not a return at all.
-    { code: 'const o = { checkServerIdentity: (h, c) => { assertPinned(h, c); } };' },
+    {
+      code: 'const o = { checkServerIdentity: (h, c) => { assertPinned(h, c); } };',
+    },
 
     // ---- keys the rule cannot read ---------------------------------------
     // A computed key is not statically knowable; abstaining is correct.
@@ -136,11 +153,15 @@ ruleTester.run('require-secure-defaults', requireSecureDefaults, {
     // A spread element carries no key at all.
     { code: 'const o = { ...defaults, port: 587 };' },
     // Positive-boolean keys at their SECURE value.
-    { code: 'mongoose.connect(url, { tls: true, tlsAllowInvalidCertificates: false });' },
+    {
+      code: 'mongoose.connect(url, { tls: true, tlsAllowInvalidCertificates: false });',
+    },
     { code: 'browser.newContext({ ignoreHTTPSErrors: false });' },
     // Corroboration is read from the object's OWN properties, so a cookie
     // attribute in a sibling object does not lend evidence across the boundary.
-    { code: 'const o = { transport: { secure: false }, cookie: { httpOnly: true } };' },
+    {
+      code: 'const o = { transport: { secure: false }, cookie: { httpOnly: true } };',
+    },
     // A spread sibling carries no key, and a computed one carries no knowable
     // key — neither can corroborate.
     { code: 'const o = { ...defaults, secure: false };' },
@@ -153,7 +174,10 @@ ruleTester.run('require-secure-defaults', requireSecureDefaults, {
     // key set ever stopped defaulting to its built-in list, these two would
     // start reporting nothing while the un-optioned cases above still passed.
     { code: 'const config = { secure: true, httpOnly: true }', options: [{}] },
-    { code: 'renderViewer(document, { secure: false, watermark: null });', options: [{}] },
+    {
+      code: 'renderViewer(document, { secure: false, watermark: null });',
+      options: [{}],
+    },
 
     // ---- OPTIONS: replacing a default silences the built-ins --------------
     // The consumer's domain uses `httpOnly` for something else. Replacing the
@@ -184,7 +208,9 @@ ruleTester.run('require-secure-defaults', requireSecureDefaults, {
     },
     {
       code: 'const o = { secure: false, sameParty: true };',
-      options: [{ cookieAttributes: [], additionalCookieAttributes: ['priority'] }],
+      options: [
+        { cookieAttributes: [], additionalCookieAttributes: ['priority'] },
+      ],
     },
   ],
 
@@ -215,7 +241,10 @@ ruleTester.run('require-secure-defaults', requireSecureDefaults, {
     // ---- tier 2: `true` is the value that accepts the insecure thing ------
     {
       code: 'mongoose.connect(url, { tls: true, tlsAllowInvalidCertificates: true, tlsAllowInvalidHostnames: true });',
-      errors: [{ messageId: 'violationDetected' }, { messageId: 'violationDetected' }],
+      errors: [
+        { messageId: 'violationDetected' },
+        { messageId: 'violationDetected' },
+      ],
     },
     {
       code: 'const context = await browser.newContext({ ignoreHTTPSErrors: true });',
@@ -304,12 +333,18 @@ ruleTester.run('require-secure-defaults', requireSecureDefaults, {
     {
       code: 'const o = { verifyPeer: false, strictSSL: false };',
       options: [{ additionalInsecureWhenFalse: ['verifyPeer'] }],
-      errors: [{ messageId: 'violationDetected' }, { messageId: 'violationDetected' }],
+      errors: [
+        { messageId: 'violationDetected' },
+        { messageId: 'violationDetected' },
+      ],
     },
     {
       code: 'const o = { acceptAnyCert: true, ignoreHTTPSErrors: true };',
       options: [{ additionalInsecureWhenTrue: ['acceptAnyCert'] }],
-      errors: [{ messageId: 'violationDetected' }, { messageId: 'violationDetected' }],
+      errors: [
+        { messageId: 'violationDetected' },
+        { messageId: 'violationDetected' },
+      ],
     },
     // A custom cookie serialiser's own attribute, corroborating `secure: false`
     // where no built-in attribute is present.

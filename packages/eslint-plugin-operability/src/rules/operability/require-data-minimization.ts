@@ -89,6 +89,7 @@ function isStaticValue(
 export const requireDataMinimization = createRule<RuleOptions, MessageIds>({
   name: 'require-data-minimization',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-operability/docs/rules/require-data-minimization.md',
@@ -132,20 +133,26 @@ export const requireDataMinimization = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ piiFields: [], maxProperties: 10 }],
-  create(context, [options]) {
-    // No `??` fallbacks: `defaultOptions` supplies both, so a fallback here
-    // would be a branch no test could reach.
-    const piiFields = new Set(options.piiFields);
-    const { maxProperties } = options;
+  createOnce(context, currentOptions) {
+    let piiFields: Set<string>;
+    let maxProperties: number;
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
     }
 
-    // Nothing named as personal means nothing to be excessive ABOUT. The rule
-    // is inert rather than guessing, and says so in its documentation.
-    if (piiFields.size === 0) return {};
-
     return {
+      before() {
+        const [options] = currentOptions();
+        // No `??` fallbacks: `defaultOptions` supplies both, so a fallback here
+        // would be a branch no test could reach.
+        piiFields = new Set(options.piiFields);
+        ({ maxProperties } = options);
+
+        // Nothing named as personal means nothing to be excessive ABOUT. The rule
+        // is inert rather than guessing, and says so in its documentation.
+        if (piiFields.size === 0) return false;
+        return true;
+      },
       ObjectExpression(node: TSESTree.ObjectExpression) {
         if (node.properties.length <= maxProperties) return;
         const carriesPersonalData = node.properties.some((p) => {

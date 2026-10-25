@@ -11,6 +11,9 @@
     "README.md",
     "LICENSE"
   ],
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts"
+  },
   "keywords": [
     "oxlint",
     "oxlint-plugin",

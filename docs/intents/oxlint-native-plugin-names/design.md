@@ -126,7 +126,7 @@ repo-wide gates.
    `opts = applyDefault(defaults, context.options)`, and then calls the author's `before`.
    For ESLint it emits `create(context)`. That calls the same `createOnce` per file, runs
    `before` (a `false` result means `{}`), and chains `after` onto `Program:exit`. This is
-   what `eslintCompatPlugin` does. oxlint 1.74 reads `createOnce` when it is present
+   what `eslintCompatPlugin` does. oxlint 1.88 reads `createOnce` when it is present
    (`lint.js` `registerRule`), and calls `before` once per file per enabled rule that has
    at least one visitor key (`lintFileImpl`).
 7. **Migration codemod (R9).** `scripts/codemod-create-once.ts` uses the TypeScript AST. It
@@ -166,6 +166,90 @@ repo-wide gates.
 | `.changeset/*.md`                                                              | one patch changeset for the 33 peer edits            |
 | whatever step 5 surfaces                                                       | skips or participation                               |
 | `docs/oxlint-integration.md`                                                   | one paragraph: install by the `oxlint-plugin-*` name |
+
+## As built (2026-10-25)
+
+- **Scope.** 586 rule IDs across 32 plugins, from 473 rule definitions. Some
+  IDs are legacy aliases, such as `maintainability/<rule>` beside `<rule>`.
+- **createOnce (R9).** The codemod migrated 457 of the 473 definitions. That
+  includes the nine devkit factories, which carry the 33 factory-built rules.
+  The other 16 are in `.agent/create-rule-allowlist.json`, each with a reason:
+  - helper-built visitors (`moduleSpecifierListener`);
+  - a per-file `let` with no initial value;
+  - a visitor built from options;
+  - a per-file binding whose type the file cannot name without new imports.
+
+  The codemod was then deleted, and `create-once-ratchet.lock.test.ts` holds
+  the line. Two things carry the behaviour check: the existing suites, all
+  green, and oxlint parity on the corpus, still 100% (3,932 shared findings,
+  none on one engine only).
+
+- **Dual-engine tests (R10).** `vitest.dual-rule-tester.ts` translates cases
+  into oxlint's RuleTester in `eslintCompat` mode:
+  - It drops a numeric `suggestions` count, which oxlint cannot express; the
+    ESLint run still checks it.
+  - It maps an array `output` to the final output plus `recursive`.
+  - It runs cases that differ only in `name`, `errors` or `output` once.
+  - It gives a case with no filename typescript-eslint's default name.
+  - It marks a case oxc refuses to parse as **skipped**, never passed. One
+    example is duplicate exports, a spec early error.
+
+  Type-aware cases run on ESLint only.
+
+- **Runtimes (R11).** The evidence lives in two files:
+  `.agent/oxlint-runtime-survey.json` (`npm run oxlint:runtimes:survey`) and
+  `.agent/type-awareness-scan.tsv`. One rule maps that evidence to a value, in
+  `scripts/lib/oxlint-runtimes.mts`. `npm run oxlint:runtimes` writes the
+  values and `docs/oxlint-runtimes.md`. `interop-runtimes.lock.test.ts`
+  requires every rule's value to equal the evidence.
+
+  On oxlint 1.88.0, 565 of 586 rules run on both engines. The 21 that don't are:
+  - 5 type-aware;
+  - 1 with no RuleTester cases;
+  - 15 whose own cases diverge.
+
+  The divergences are worth their own fixes: a crash in
+  `postgresql-security/no-unsafe-query` on numeric enums; `require-guards` on
+  namespaced decorators; `ddd-anemic-domain-model` on accessors; and
+  cross-file helpers in five `mcp-sdk-security` rules.
+
+- **Alias READMEs (R2, extended at Ofri's request, 2026-10-25).** Each one is
+  derived from its plugin's README, so the two cannot drift: the logo header
+  (oxlint in ESLint's slot), the alias badges, the "Why" section, the
+  doctrine, the full rules table, support and the footer banner. On top of
+  that it gets generated Vite+ and oxlint configs that enable the plugin's
+  recommended rules, and a compatibility table. `oxlint:aliases:verify`
+  loads each README's oxlint config in real oxlint.
+- **Survey method.** Survey cases run as real vitest tests, so each suite's
+  `beforeAll`/`beforeEach` fixtures exist exactly as they do on the ESLint
+  run. A first version ran cases at collection time and wrongly passed
+  `node-security/lock-file`, whose cases need temp-dir fixtures.
+- **Native equivalents.** The overlap map lives in `docs/oxlint-builtin-overlap.json`:
+  125 name overlaps, 120 of them `equivalent`. Every `equivalent` row sets
+  `interop.nativeEquivalent` on the rule, and `interop-runtimes.lock` holds the
+  two together. The alias READMEs leave those rules out of their oxlint
+  configs and list them under "Covered natively by oxlint".
+  `oxlint-plugin-import-next` leads with "Fills the gaps in oxlint's import
+  plugin". There is no `oxlint-plugin-import`: the name collides with oxlint's
+  native `import` plugin.
+- **Release.** Each alias builds its `dist/` with `scripts/build-package.ts`,
+  which now accepts a package with no `src/` and whitespace-strips root-level
+  JavaScript. The three release gates all pass, with size baselines for the
+  31 new packages. In `release.yml`, an alias's publish job waits until its
+  exact-pinned plugin version is on npm, so an alias can never be live while
+  its plugin version is missing. If the plugin's publish fails, the alias's
+  publish fails with it.
+- **First alias versions.** The parent session published 31 aliases by hand
+  at each plugin's npm version (`cli-floor` excluded). `release.yml` reports
+  them as "same" and skips them, so **those first versions have no git tag and
+  no GitHub release.** Tags begin at the first lockstep bump.
+- **Not in this PR.** The `oxlint-plugin-security` facade
+  (`docs/intents/oxlint-plugin-security-drop-in`, ADR-0008). Its R1–R12 include
+  new rules and a gate runner, so it gets its own PR, and stays private until
+  its parity gate holds.
+- **Docs (R12).** The parent session wrote the plugin READMEs' oxlint-first
+  install block (`AUTO-GENERATED:INSTALL` in `scripts/sync-readme-rules.ts`).
+  The docs session wrote `apps/docs`. Both are committed in this branch.
 
 ## Verification
 

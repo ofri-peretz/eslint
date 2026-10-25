@@ -91,17 +91,21 @@ function findForbiddenTags(
 function getSuggestionText(tag: string): string {
   const suggestions: Record<string, string> = {
     minimum: 'Include range in description, e.g. "(min: 1)" or "Range: 1-100"',
-    maximum: 'Include range in description, e.g. "(max: 100)" or "Range: 1-100"',
+    maximum:
+      'Include range in description, e.g. "(max: 100)" or "Range: 1-100"',
     exclusiveMinimum: 'Include constraint in description, e.g. "(> 0)"',
     exclusiveMaximum: 'Include constraint in description, e.g. "(< 100)"',
-    minLength: 'Include length constraint in description, e.g. "(min length: 1)"',
-    maxLength: 'Include length constraint in description, e.g. "(max length: 255)"',
+    minLength:
+      'Include length constraint in description, e.g. "(min length: 1)"',
+    maxLength:
+      'Include length constraint in description, e.g. "(max length: 255)"',
     minItems: 'Include item count in description, e.g. "(at least 1 item)"',
     maxItems: 'Include item count in description, e.g. "(at most 10 items)"',
     pattern: 'Include the expected format in description text',
     enum: 'Use @typedef or list allowed values in description',
     const: 'Use @default instead, or document the fixed value in description',
-    format: 'Describe the expected format in description, e.g. "(ISO 8601 date)"',
+    format:
+      'Describe the expected format in description, e.g. "(ISO 8601 date)"',
   };
 
   return (
@@ -113,6 +117,7 @@ function getSuggestionText(tag: string): string {
 export const noJsonSchemaTags = createRule<RuleOptions, MessageIds>({
   name: 'no-json-schema-tags',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/no-json-schema-tags.md',
@@ -156,21 +161,26 @@ export const noJsonSchemaTags = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ additionalForbiddenTags: [] }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { additionalForbiddenTags = [] } = options as Options;
-
-    // Build the full set of forbidden tags
-    const forbiddenTags = new Set(DEFAULT_FORBIDDEN_TAGS);
-    for (const tag of additionalForbiddenTags) {
-      forbiddenTags.add(tag);
-    }
-
-    const sourceCode = context.sourceCode;
+    let forbiddenTags: Set<string>;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { additionalForbiddenTags = [] } = options as Options;
+
+        // Build the full set of forbidden tags
+        forbiddenTags = new Set(DEFAULT_FORBIDDEN_TAGS);
+        for (const tag of additionalForbiddenTags) {
+          forbiddenTags.add(tag);
+        }
+
+        sourceCode = context.sourceCode;
+      },
       Program() {
         const comments = sourceCode.getAllComments();
 
@@ -214,7 +224,10 @@ export const noJsonSchemaTags = createRule<RuleOptions, MessageIds>({
                     // Find the line boundaries
                     const fullSource = sourceCode.getText();
                     let lineStart = absoluteStart;
-                    while (lineStart > 0 && fullSource[lineStart - 1] !== '\n') {
+                    while (
+                      lineStart > 0 &&
+                      fullSource[lineStart - 1] !== '\n'
+                    ) {
                       lineStart--;
                     }
                     let lineEnd = absoluteEnd;
@@ -225,7 +238,10 @@ export const noJsonSchemaTags = createRule<RuleOptions, MessageIds>({
                       lineEnd++;
                     }
                     // Include the trailing newline if present
-                    if (lineEnd < fullSource.length && fullSource[lineEnd] === '\n') {
+                    if (
+                      lineEnd < fullSource.length &&
+                      fullSource[lineEnd] === '\n'
+                    ) {
                       lineEnd++;
                     }
                     return fixer.removeRange([lineStart, lineEnd]);

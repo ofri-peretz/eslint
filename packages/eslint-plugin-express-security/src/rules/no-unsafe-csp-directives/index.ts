@@ -130,6 +130,7 @@ function isHelmetCall(node: TSESTree.CallExpression): boolean {
 export const noUnsafeCspDirectives = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-csp-directives',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     hasSuggestions: true,
     docs: {
@@ -214,15 +215,11 @@ export const noUnsafeCspDirectives = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const { checkStyleSrc } = options as Options;
-    const withStyle = checkStyleSrc ?? true;
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let withStyle: boolean;
 
     /** Removes one source string (and its comma) from a directive array. */
     function removeElement(
@@ -363,6 +360,18 @@ export const noUnsafeCspDirectives = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        const { checkStyleSrc } = options as Options;
+        withStyle = checkStyleSrc ?? true;
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (isCspFactory(node)) {
           const config = node.arguments[0];

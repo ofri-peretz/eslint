@@ -13,7 +13,11 @@
  * @see https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/11-Testing_for_Code_Injection
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createPayloadResolver, isTestFilePath, staticString } from '@interlace/eslint-devkit';
+import {
+  createPayloadResolver,
+  isTestFilePath,
+  staticString,
+} from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -130,14 +134,13 @@ function isDeferrableToNodeSecurity(sink: DynamicCodeSink): boolean {
 }
 
 function hasStaticPayload(sink: DynamicCodeSink): boolean {
-  return sink.codeArguments.every(
-    (arg) => staticString(arg) !== null,
-  );
+  return sink.codeArguments.every((arg) => staticString(arg) !== null);
 }
 
 export const noEval = createRule<RuleOptions, MessageIds>({
   name: 'no-eval',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-eval.md',
@@ -158,7 +161,6 @@ export const noEval = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://owasp.org/www-community/attacks/Code_Injection',
       }),
-
     },
     schema: [
       {
@@ -194,25 +196,14 @@ export const noEval = createRule<RuleOptions, MessageIds>({
       allowFunctionConstructor: false,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      allowInTests = false,
-      allowFunctionConstructor = false,
-      deferDynamicPayloads = false,
-    } =
-      options as Options;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-
-    if (isTestFile) {
-      return {};
-    }
-
-    const payloadSource = createPayloadResolver(context.sourceCode);
+    let allowInTests: boolean;
+    let allowFunctionConstructor: boolean;
+    let deferDynamicPayloads: boolean;
+    let payloadSource: ReturnType<typeof createPayloadResolver>;
 
     /**
      * Is this site ours under the node-security partition documented above?
@@ -246,7 +237,9 @@ export const noEval = createRule<RuleOptions, MessageIds>({
       // WebSocket only, and via the SAME sink model the sibling claims with —
       // see the first partition note. Skipping every resolved source would drop
       // Worker, SharedWorker and FileReader payloads entirely.
-      if (sink.codeArguments.some((arg) => payloadSource(arg) === 'websocket')) {
+      if (
+        sink.codeArguments.some((arg) => payloadSource(arg) === 'websocket')
+      ) {
         return;
       }
 
@@ -268,6 +261,24 @@ export const noEval = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          allowInTests = false,
+          allowFunctionConstructor = false,
+          deferDynamicPayloads = false,
+        } = options as Options);
+
+        const filename = context.filename;
+        const isTestFile = allowInTests && isTestFilePath(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+
+        payloadSource = createPayloadResolver(context.sourceCode);
+        return true;
+      },
       CallExpression: inspect,
       NewExpression: inspect,
     };

@@ -378,6 +378,7 @@ export const requireCspHeaders = createRule<RuleOptions, MessageIds>({
   // hmpps-arns-assessment-platform-ui were in `*.test.ts`.
   skipTestFiles: true,
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/require-csp-headers.md',

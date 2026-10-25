@@ -33,6 +33,7 @@ const LIFECYCLE_METHODS = new Set([
 export const noArrowFunctionLifecycle = createRule<[], MessageIds>({
   name: 'no-arrow-function-lifecycle',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-arrow-function-lifecycle.md',
@@ -45,13 +46,14 @@ export const noArrowFunctionLifecycle = createRule<[], MessageIds>({
         description: 'Arrow function used in lifecycle method',
         severity: 'HIGH',
         fix: 'Use regular method syntax for lifecycle methods',
-        documentationLink: 'https://react.dev/reference/react/Component#defining-a-class-component',
+        documentationLink:
+          'https://react.dev/reference/react/Component#defining-a-class-component',
       }),
     },
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       // PropertyDefinition is used by TypeScript parser for class properties
       // Only report on arrow function properties, NOT regular method definitions

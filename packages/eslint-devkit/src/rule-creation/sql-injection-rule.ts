@@ -1,3 +1,4 @@
+import { RuleCreator } from './rule-creator';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -323,8 +324,11 @@ export function createSqlInjectionRule(
     escaperModules: config.escaperModules,
   });
 
-  return {
+  return RuleCreator.withoutDocs<[], SqlInjectionMessageIds>({
     meta: {
+      // Shared detection, shared runtimes: oxlint only if every plugin's rule
+      // from this factory passes its own suite there.
+      interop: { runtimes: ['eslint', 'oxlint'] },
       type: config.meta.type,
       // CWE / CVSS surface in @interlace/eslint-formatter (devkit augments
       // RuleMetaDataDocs) and are locked against the emitted message by
@@ -370,44 +374,14 @@ export function createSqlInjectionRule(
       schema: [],
     },
     defaultOptions: [],
-    create(context) {
-      // BENCHMARK-CRITERIA §B1: a security rule self-skips test files. A test
-      // that wipes a fixture table or builds a throwaway statement is not the
-      // shipped attack surface.
-      if (isTestFilePath(context.filename)) return {};
-
-      const env: Env = envOf(context);
-      // Same-file query helpers: name -> index of the parameter this file was
-      // observed handing to a real sink. `pool.query(sql, params)` inside
-      // `const q = (sql, params) => …` makes `q` a sink at argument 0.
-      const wrappers = new Map<string, number>();
-      // Every named callable defined in this file, and the subset of those
-      // proven to forward a parameter into a sink. A name is only usable as a
-      // wrapper when *every* definition of it is one: matching is by bare
-      // name, so a file holding both `PgRepo.run` (wraps `pool.query`) and
-      // `CacheRepo.run` (does not) cannot tell the two apart, and reporting
-      // `new CacheRepo().run(...)` would be exactly the false positive this
-      // rule is being fixed for. Ambiguous name -> no wrapper finding.
-      const definitions = new Map<string, number>();
-      // Keyed by function node so a body calling the sink twice counts once;
-      // the value is the name, already resolved at detection.
-      const wrapperFns = new Map<TSESTree.FunctionLike, string>();
-      // Calls that would be findings *if* their callee turns out to be a
-      // wrapper. Deferred to Program:exit because a helper may be declared
-      // below its call site (hoisted `function`, or a class used top-down).
-      const pending: {
-        name: string;
-        index: number;
-        arg: TSESTree.Node;
-      }[] = [];
-
-      /**
-       * Whether this file imports the SDK these sinks belong to.
-       *
-       * Set once from the Program node — which ESLint visits before any of its
-       * children — so every visitor below can read it.
-       */
-      let ownsFile = false;
+    createOnce(context) {
+      let env: Env;
+      let wrappers: Map<string, number>;
+      let definitions: Map<string, number>;
+      let wrapperFns: Map<TSESTree.FunctionLike, string>;
+      let pending: { name: string; index: number; arg: TSESTree.Node }[];
+      let ownsFile: boolean;
+      let requestTextSink: boolean;
 
       /**
        * Is `node` — a sink's SQL argument — an unproven value spliced into
@@ -525,14 +499,6 @@ export function createSqlInjectionRule(
       };
 
       /**
-       * Whether the sink being judged is called on the handle itself
-       * (`pool.query(…)`), not on a builder or prepared statement one call
-       * further down (`db.prepare(sql).get(id)`, `db.insert(t).values(row)`),
-       * whose arguments are bound values rather than SQL text.
-       */
-      let requestTextSink = true;
-
-      /**
        * Is this receiver a prepared statement or a query builder — the result
        * of `db.prepare(sql)` / `db.insert(t)` — whose methods take bound
        * values rather than SQL text?
@@ -607,6 +573,50 @@ export function createSqlInjectionRule(
       };
 
       return {
+        before() {
+          // BENCHMARK-CRITERIA §B1: a security rule self-skips test files. A test
+          // that wipes a fixture table or builds a throwaway statement is not the
+          // shipped attack surface.
+          if (isTestFilePath(context.filename)) return false;
+
+          env = envOf(context);
+          // Same-file query helpers: name -> index of the parameter this file was
+          // observed handing to a real sink. `pool.query(sql, params)` inside
+          // `const q = (sql, params) => …` makes `q` a sink at argument 0.
+          wrappers = new Map<string, number>();
+          // Every named callable defined in this file, and the subset of those
+          // proven to forward a parameter into a sink. A name is only usable as a
+          // wrapper when *every* definition of it is one: matching is by bare
+          // name, so a file holding both `PgRepo.run` (wraps `pool.query`) and
+          // `CacheRepo.run` (does not) cannot tell the two apart, and reporting
+          // `new CacheRepo().run(...)` would be exactly the false positive this
+          // rule is being fixed for. Ambiguous name -> no wrapper finding.
+          definitions = new Map<string, number>();
+          // Keyed by function node so a body calling the sink twice counts once;
+          // the value is the name, already resolved at detection.
+          wrapperFns = new Map<TSESTree.FunctionLike, string>();
+          // Calls that would be findings *if* their callee turns out to be a
+          // wrapper. Deferred to Program:exit because a helper may be declared
+          // below its call site (hoisted `function`, or a class used top-down).
+          pending = [];
+
+          /**
+           * Whether this file imports the SDK these sinks belong to.
+           *
+           * Set once from the Program node — which ESLint visits before any of its
+           * children — so every visitor below can read it.
+           */
+          ownsFile = false;
+
+          /**
+           * Whether the sink being judged is called on the handle itself
+           * (`pool.query(…)`), not on a builder or prepared statement one call
+           * further down (`db.prepare(sql).get(id)`, `db.insert(t).values(row)`),
+           * whose arguments are bound values rather than SQL text.
+           */
+          requestTextSink = true;
+          return true;
+        },
         Program(program: TSESTree.Program) {
           ownsFile = usesModule(program);
         },
@@ -732,5 +742,5 @@ export function createSqlInjectionRule(
         },
       };
     },
-  };
+  });
 }

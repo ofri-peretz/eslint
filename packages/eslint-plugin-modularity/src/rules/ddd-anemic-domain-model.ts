@@ -8,7 +8,7 @@
  * ESLint Rule: ddd-anemic-domain-model
  * Detects entities with only getters/setters and no business logic
  * Priority 1: Domain-Driven Design
- * 
+ *
  * @see https://martinfowler.com/bliki/AnemicDomainModel.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -24,10 +24,10 @@ type MessageIds =
 export interface Options {
   /** Minimum methods required to not be considered anemic. Default: 1 */
   minBusinessMethods?: number;
-  
+
   /** Ignore DTOs and data transfer objects. Default: true */
   ignoreDtos?: boolean;
-  
+
   /** Patterns for DTO identification. Default: ['DTO', 'Dto', 'Data', 'Request', 'Response'] */
   dtoPatterns?: string[];
 
@@ -85,14 +85,14 @@ function isSimpleGetterSetter(member: TSESTree.MethodDefinition): boolean {
   if (member.value.type !== 'FunctionExpression') {
     return false;
   }
-  
+
   const methodName = member.key.type === 'Identifier' ? member.key.name : '';
   const body = member.value.body;
-  
+
   if (body.type !== 'BlockStatement' || body.body.length === 0) {
     return false;
   }
-  
+
   // Check if it's a simple getter (getName() { return this.name; })
   if (methodName.startsWith('get') && body.body.length === 1) {
     const statement = body.body[0];
@@ -101,17 +101,19 @@ function isSimpleGetterSetter(member: TSESTree.MethodDefinition): boolean {
       return true;
     }
   }
-  
+
   // Check if it's a simple setter (setName(name) { this.name = name; })
   if (methodName.startsWith('set') && body.body.length === 1) {
     const statement = body.body[0];
-    if (statement.type === 'ExpressionStatement' && 
-        statement.expression.type === 'AssignmentExpression') {
+    if (
+      statement.type === 'ExpressionStatement' &&
+      statement.expression.type === 'AssignmentExpression'
+    ) {
       // Simple assignment
       return true;
     }
   }
-  
+
   return false;
 }
 
@@ -124,46 +126,80 @@ function isPureDelegation(member: TSESTree.MethodDefinition): boolean {
   if (member.value.type !== 'FunctionExpression') {
     return false;
   }
-  
+
   const body = member.value.body;
-  
+
   if (body.type !== 'BlockStatement' || body.body.length !== 1) {
     return false;
   }
-  
+
   const statement = body.body[0];
-  
+
   // Array/collection methods that are business logic, not delegation
   const builtInMethods = new Set([
-    'map', 'filter', 'reduce', 'forEach', 'find', 'findIndex', 'some', 'every',
-    'includes', 'indexOf', 'slice', 'concat', 'join', 'sort', 'reverse',
-    'push', 'pop', 'shift', 'unshift', 'splice', 'flat', 'flatMap',
-    'toString', 'valueOf', 'toJSON'
+    'map',
+    'filter',
+    'reduce',
+    'forEach',
+    'find',
+    'findIndex',
+    'some',
+    'every',
+    'includes',
+    'indexOf',
+    'slice',
+    'concat',
+    'join',
+    'sort',
+    'reverse',
+    'push',
+    'pop',
+    'shift',
+    'unshift',
+    'splice',
+    'flat',
+    'flatMap',
+    'toString',
+    'valueOf',
+    'toJSON',
   ]);
-  
-  // Check: return someService.method(...) or return this.service.method(...) 
+
+  // Check: return someService.method(...) or return this.service.method(...)
   if (statement.type === 'ReturnStatement' && statement.argument) {
     const arg = statement.argument;
-    if (arg.type === 'CallExpression' && arg.callee.type === 'MemberExpression') {
+    if (
+      arg.type === 'CallExpression' &&
+      arg.callee.type === 'MemberExpression'
+    ) {
       const callee = arg.callee;
-      const methodName = callee.property.type === 'Identifier' ? callee.property.name : '';
-      
+      const methodName =
+        callee.property.type === 'Identifier' ? callee.property.name : '';
+
       // Skip if it's a built-in method (not delegation)
       if (builtInMethods.has(methodName)) {
         return false;
       }
-      
+
       // It's a delegation call, check if it's to an external service
       const object = callee.object;
-      if (object.type === 'MemberExpression' && 
-          object.object.type === 'ThisExpression') {
+      if (
+        object.type === 'MemberExpression' &&
+        object.object.type === 'ThisExpression'
+      ) {
         // this.service.method() pattern - but only if not a built-in
-        const propName = object.property.type === 'Identifier' ? object.property.name : '';
+        const propName =
+          object.property.type === 'Identifier' ? object.property.name : '';
         // Common service patterns: repository, service, api, client, dao
-        if (propName.includes('repository') || propName.includes('service') || 
-            propName.includes('api') || propName.includes('client') ||
-            propName.includes('dao') || propName.includes('Repository') ||
-            propName.includes('Service') || propName.includes('Api')) {
+        if (
+          propName.includes('repository') ||
+          propName.includes('service') ||
+          propName.includes('api') ||
+          propName.includes('client') ||
+          propName.includes('dao') ||
+          propName.includes('Repository') ||
+          propName.includes('Service') ||
+          propName.includes('Api')
+        ) {
           return true;
         }
         return false; // this.items.method() is business logic
@@ -174,34 +210,47 @@ function isPureDelegation(member: TSESTree.MethodDefinition): boolean {
       }
     }
   }
-  
+
   // Check: this.service.method(...) without return (void delegation)
   if (statement.type === 'ExpressionStatement') {
     const expr = statement.expression;
-    if (expr.type === 'CallExpression' && expr.callee.type === 'MemberExpression') {
+    if (
+      expr.type === 'CallExpression' &&
+      expr.callee.type === 'MemberExpression'
+    ) {
       const callee = expr.callee;
-      const methodName = callee.property.type === 'Identifier' ? callee.property.name : '';
-      
+      const methodName =
+        callee.property.type === 'Identifier' ? callee.property.name : '';
+
       // Skip built-in methods
       if (builtInMethods.has(methodName)) {
         return false;
       }
-      
+
       const object = callee.object;
-      if (object.type === 'MemberExpression' && 
-          object.object.type === 'ThisExpression') {
-        const propName = object.property.type === 'Identifier' ? object.property.name : '';
-        if (propName.includes('repository') || propName.includes('service') || 
-            propName.includes('api') || propName.includes('client') ||
-            propName.includes('dao') || propName.includes('Repository') ||
-            propName.includes('Service') || propName.includes('Api')) {
+      if (
+        object.type === 'MemberExpression' &&
+        object.object.type === 'ThisExpression'
+      ) {
+        const propName =
+          object.property.type === 'Identifier' ? object.property.name : '';
+        if (
+          propName.includes('repository') ||
+          propName.includes('service') ||
+          propName.includes('api') ||
+          propName.includes('client') ||
+          propName.includes('dao') ||
+          propName.includes('Repository') ||
+          propName.includes('Service') ||
+          propName.includes('Api')
+        ) {
           return true;
         }
         return false;
       }
     }
   }
-  
+
   return false;
 }
 
@@ -209,37 +258,41 @@ function isPureDelegation(member: TSESTree.MethodDefinition): boolean {
  * Count business logic methods (non-getter/setter/delegation)
  */
 function countBusinessMethods(
-  node: TSESTree.ClassDeclaration | TSESTree.ClassExpression
+  node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
 ): number {
   let count = 0;
-  
+
   for (const member of node.body.body) {
     if (member.type === 'MethodDefinition') {
-      const methodName = member.key.type === 'Identifier' ? member.key.name : '';
-      
+      const methodName =
+        member.key.type === 'Identifier' ? member.key.name : '';
+
       // Skip getters and setters
       if (member.kind === 'get' || member.kind === 'set') {
         continue;
       }
-      
+
       // Skip constructor
       if (methodName === 'constructor') {
         continue;
       }
-      
+
       // Skip simple getter/setter methods in disguise
       if (isSimpleGetterSetter(member)) {
         continue;
       }
-      
+
       // Skip pure delegation methods (just calls external service)
       if (isPureDelegation(member)) {
         continue;
       }
-      
+
       // Count methods (any method that's not a getter/setter/constructor/delegation is business logic)
       const valueType = member.value.type as string;
-      if (valueType === 'FunctionExpression' || valueType === 'ArrowFunctionExpression') {
+      if (
+        valueType === 'FunctionExpression' ||
+        valueType === 'ArrowFunctionExpression'
+      ) {
         count++;
       }
     } else if (member.type === 'PropertyDefinition') {
@@ -247,7 +300,7 @@ function countBusinessMethods(
       continue;
     }
   }
-  
+
   return count;
 }
 
@@ -281,20 +334,24 @@ function isDomainFile(filename: string, segments: string[]): boolean {
 export const dddAnemicDomainModel = createRule<RuleOptions, MessageIds>({
   name: 'ddd-anemic-domain-model',
   meta: {
+    interop: { runtimes: ['eslint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modularity/docs/rules/ddd-anemic-domain-model.md',
-      description: 'Detects entities with only getters/setters and no business logic',
+      description:
+        'Detects entities with only getters/setters and no business logic',
     },
     hasSuggestions: true,
     messages: {
       anemicDomainModel: formatLLMMessage({
         icon: MessageIcons.ARCHITECTURE,
         issueName: 'Anemic domain model',
-        description: 'Class {{className}} has no business logic (only getters/setters)',
+        description:
+          'Class {{className}} has no business logic (only getters/setters)',
         severity: 'MEDIUM',
         fix: 'Add business logic methods to create a rich domain model',
-        documentationLink: 'https://martinfowler.com/bliki/AnemicDomainModel.html',
+        documentationLink:
+          'https://martinfowler.com/bliki/AnemicDomainModel.html',
       }),
       addBusinessLogic: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -302,7 +359,8 @@ export const dddAnemicDomainModel = createRule<RuleOptions, MessageIds>({
         description: 'Add business logic methods',
         severity: 'LOW',
         fix: 'Add domain behavior methods to {{className}}',
-        documentationLink: 'https://martinfowler.com/bliki/AnemicDomainModel.html',
+        documentationLink:
+          'https://martinfowler.com/bliki/AnemicDomainModel.html',
       }),
       migrateToRichModel: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -310,7 +368,8 @@ export const dddAnemicDomainModel = createRule<RuleOptions, MessageIds>({
         description: 'Migrate to rich domain model',
         severity: 'LOW',
         fix: 'Encapsulate behavior with data',
-        documentationLink: 'https://martinfowler.com/bliki/AnemicDomainModel.html',
+        documentationLink:
+          'https://martinfowler.com/bliki/AnemicDomainModel.html',
       }),
       identifyAggregateRoot: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -361,24 +420,22 @@ export const dddAnemicDomainModel = createRule<RuleOptions, MessageIds>({
       domainPaths: DEFAULT_DOMAIN_PATHS,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const {
-minBusinessMethods = 1,
-      ignoreDtos = true,
-      dtoPatterns = ['DTO', 'Dto', 'Data', 'Request', 'Response', 'Payload'],
-      domainPaths = DEFAULT_DOMAIN_PATHS,
-    }: Options = options || {};
-
-    // An anemic domain model is a defect of a DOMAIN LAYER. Outside one, a
-    // class with fields and no methods is a transport object, an options bag
-    // or an error shape — which is what a client library ships. Measured on
-    // okta-auth-js: 38 findings, not one of them under a domain directory.
-    const inDomain = isDomainFile(context.filename, domainPaths);
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let minBusinessMethods: number;
+    let ignoreDtos: boolean;
+    let dtoPatterns: string[];
+    let domainPaths: string[];
+    let inDomain: boolean;
 
     /**
      * Check class declarations
      */
-    function checkClass(node: TSESTree.ClassDeclaration | TSESTree.ClassExpression) {
+    function checkClass(
+      node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
+    ) {
       if (!inDomain) {
         return;
       }
@@ -424,9 +481,30 @@ minBusinessMethods = 1,
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          minBusinessMethods = 1,
+          ignoreDtos = true,
+          dtoPatterns = [
+            'DTO',
+            'Dto',
+            'Data',
+            'Request',
+            'Response',
+            'Payload',
+          ],
+          domainPaths = DEFAULT_DOMAIN_PATHS,
+        } = options || {});
+
+        // An anemic domain model is a defect of a DOMAIN LAYER. Outside one, a
+        // class with fields and no methods is a transport object, an options bag
+        // or an error shape — which is what a client library ships. Measured on
+        // okta-auth-js: 38 findings, not one of them under a domain directory.
+        inDomain = isDomainFile(context.filename, domainPaths);
+      },
       ClassDeclaration: checkClass,
       ClassExpression: checkClass,
     };
   },
 });
-

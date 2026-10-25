@@ -8,7 +8,7 @@
     "@cyclonedx/cyclonedx-npm": "6.0.1"
   },
   "overrides": {
-    "fast-uri": "^3.1.6",
+    "fast-uri": "^3.1.9",
     "@humanfs/node": "^0.16.8",
     "qs": "^6.16.0"
   }

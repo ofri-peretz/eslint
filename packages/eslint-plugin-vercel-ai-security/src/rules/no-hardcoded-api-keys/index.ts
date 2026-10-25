@@ -10,7 +10,16 @@
  * @see OWASP ASI03: Identity & Privilege Abuse
  */
 
-import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons, nameHasWord, objectKeyName, staticString } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  nameHasWord,
+  objectKeyName,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 
 type MessageIds = 'hardcodedApiKey';
@@ -25,6 +34,7 @@ type RuleOptions = [Options?];
 export const noHardcodedApiKeys = createRule<RuleOptions, MessageIds>({
   name: 'no-hardcoded-api-keys',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/no-hardcoded-api-keys.md',
@@ -39,7 +49,8 @@ export const noHardcodedApiKeys = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-798',
         owasp: 'A02:2021',
         cvss: 8.5,
-        description: 'Hardcoded API key "{{key}}" detected. Use environment variables instead.',
+        description:
+          'Hardcoded API key "{{key}}" detected. Use environment variables instead.',
         severity: 'CRITICAL',
         compliance: ['SOC2', 'PCI-DSS', 'GDPR'],
         fix: 'Use environment variable: apiKey: process.env.OPENAI_API_KEY',
@@ -62,18 +73,18 @@ export const noHardcodedApiKeys = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      apiKeyPatterns: ['apiKey', 'api_key', 'token', 'secret', 'credentials', 'authorization'],
+      apiKeyPatterns: [
+        'apiKey',
+        'api_key',
+        'token',
+        'secret',
+        'credentials',
+        'authorization',
+      ],
     },
   ],
-  create(context, [options]) {
-    // Every rule in this plugin is Vercel-AI-specific, and none of them knew
-    // it: over 107,384 files, 91% of this plugin's findings were in files with
-    // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
-    // the cheap path — a file without the SDK does no work.
-    if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
-
-    // Merged with `defaultOptions` before `create` runs.
-    const { apiKeyPatterns } = options as Required<Options>;
+  createOnce(context, currentOptions) {
+    let apiKeyPatterns: string[];
 
     /** The name a string is stored under: a property key or a declared variable. */
     function holderName(node: TSESTree.Node): string | null {
@@ -100,7 +111,9 @@ export const noHardcodedApiKeys = createRule<RuleOptions, MessageIds>({
       const isKey =
         PROVIDER_KEY_SHAPES.some((shape) => shape.test(value)) ||
         (holder !== null &&
-          apiKeyPatterns.some((pattern: string) => nameHasWord(holder, pattern)) &&
+          apiKeyPatterns.some((pattern: string) =>
+            nameHasWord(holder, pattern),
+          ) &&
           isGenericSecret(value));
       if (!isKey) return;
 
@@ -112,6 +125,18 @@ export const noHardcodedApiKeys = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule in this plugin is Vercel-AI-specific, and none of them knew
+        // it: over 107,384 files, 91% of this plugin's findings were in files with
+        // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
+        // the cheap path — a file without the SDK does no work.
+        if (!fileUsesVercelAi(context.sourceCode.ast)) return false;
+
+        // Merged with `defaultOptions` before `create` runs.
+        ({ apiKeyPatterns } = options as Required<Options>);
+        return true;
+      },
       Literal: check,
       TemplateLiteral: check,
     };

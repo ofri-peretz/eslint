@@ -39,7 +39,10 @@ describe('detect-eval-with-expression', () => {
           name: 'an eval method on a local object is not the global eval',
           code: 'const obj = { eval: () => {} }; obj.eval("code");',
         },
-        'function myFunction(data) { return data; }',
+        {
+          name: 'a plain function returning its argument evaluates nothing',
+          code: 'function myFunction(data) { return data; }',
+        },
         'const result = calculateValue();',
       ],
       invalid: [],

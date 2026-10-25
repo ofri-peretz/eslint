@@ -10,7 +10,14 @@
  * CWE-400: Resource Exhaustion
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
 import {
   fileUsesMongo,
@@ -18,7 +25,9 @@ import {
 } from '../../utils/mongo-evidence';
 
 type MessageIds = 'useLean' | 'suggestionAddLean';
-export interface Options { allowInTests?: boolean; }
+export interface Options {
+  allowInTests?: boolean;
+}
 type RuleOptions = [Options?];
 
 const READ_METHODS = new Set(['find', 'findOne', 'findById']);
@@ -26,7 +35,10 @@ const READ_METHODS = new Set(['find', 'findOne', 'findById']);
 /**
  * Check if any chained call in the parent chain includes .lean()
  */
-function hasChainedMethod(node: TSESTree.CallExpression, methodName: string): boolean {
+function hasChainedMethod(
+  node: TSESTree.CallExpression,
+  methodName: string,
+): boolean {
   let current: TSESTree.Node | undefined = node.parent;
   while (current) {
     if (
@@ -50,9 +62,11 @@ function hasChainedMethod(node: TSESTree.CallExpression, methodName: string): bo
 export const requireLeanQueries = createRule<RuleOptions, MessageIds>({
   name: 'require-lean-queries',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
-      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-lean-queries.md', description: 'Suggest .lean() for read-only Mongoose queries',
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-lean-queries.md',
+      description: 'Suggest .lean() for read-only Mongoose queries',
       cwe: 'CWE-400',
       cvss: 4.3,
     },
@@ -64,41 +78,52 @@ export const requireLeanQueries = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-400',
         owasp: 'A04:2021',
         cvss: 4.3,
-        description: 'Full Mongoose documents use more memory than plain objects',
+        description:
+          'Full Mongoose documents use more memory than plain objects',
         severity: 'LOW',
         fix: 'Add .lean() for read-only queries to improve performance',
         documentationLink: 'https://mongoosejs.com/docs/tutorials/lean.html',
       }),
       suggestionAddLean: 'Append .lean() to the query',
     },
-    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
+    schema: [
+      {
+        type: 'object',
+        properties: { allowInTests: { type: 'boolean', default: true } },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    // Every rule here is MongoDB-specific, and none of them could ask the
-    // file-level question: over the corpus, 47% of this plugin's findings were
-    // in files with no Mongo in them. `receiver.ts` discriminates by receiver
-    // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
-    // well as in a Mongoose one. Registering no visitors is both the gate and
-    // the cheap path.
-    if (!fileUsesMongo(context.sourceCode.ast)) return {};
-
-    const [options = {}] = context.options;
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const inTestFile = isTestFilePath(filename);
-
-    if (allowInTests && inTestFile) {
-      return {};
-    }
-
-    // `find` is also Array.prototype.find. Without this the rule reported
-    // every `.find()` in every codebase — measured at 115 findings on this
-    // repo alone, which contains no MongoDB. The receiver has to look like
-    // a Mongo handle before a method name means anything.
-    const mongo = analyzeMongoScope(context.sourceCode.ast);
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let mongo: ReturnType<typeof analyzeMongoScope>;
 
     return {
+      before() {
+        // Every rule here is MongoDB-specific, and none of them could ask the
+        // file-level question: over the corpus, 47% of this plugin's findings were
+        // in files with no Mongo in them. `receiver.ts` discriminates by receiver
+        // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
+        // well as in a Mongoose one. Registering no visitors is both the gate and
+        // the cheap path.
+        if (!fileUsesMongo(context.sourceCode.ast)) return false;
+
+        const [options = {}] = context.options;
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const inTestFile = isTestFilePath(filename);
+
+        if (allowInTests && inTestFile) {
+          return false;
+        }
+
+        // `find` is also Array.prototype.find. Without this the rule reported
+        // every `.find()` in every codebase — measured at 115 findings on this
+        // repo alone, which contains no MongoDB. The receiver has to look like
+        // a Mongo handle before a method name means anything.
+        mongo = analyzeMongoScope(context.sourceCode.ast);
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
           return;
@@ -136,7 +161,8 @@ export const requireLeanQueries = createRule<RuleOptions, MessageIds>({
             suggest: [
               {
                 messageId: 'suggestionAddLean',
-                fix: (fixer: TSESLint.RuleFixer) => fixer.insertTextAfter(node, '.lean()'),
+                fix: (fixer: TSESLint.RuleFixer) =>
+                  fixer.insertTextAfter(node, '.lean()'),
               },
             ],
           });

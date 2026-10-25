@@ -111,10 +111,7 @@ function annotatedTypeName(
   annotation: TSESTree.TSTypeAnnotation | undefined,
 ): string | undefined {
   const type = annotation?.typeAnnotation;
-  if (
-    type?.type === 'TSTypeReference' &&
-    type.typeName.type === 'Identifier'
-  ) {
+  if (type?.type === 'TSTypeReference' && type.typeName.type === 'Identifier') {
     return type.typeName.name;
   }
   return undefined;
@@ -151,6 +148,7 @@ export const requirePostmessageOriginCheck = createRule<
 >({
   name: 'require-postmessage-origin-check',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/require-postmessage-origin-check.md',
@@ -170,7 +168,6 @@ export const requirePostmessageOriginCheck = createRule<
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage#security_concerns',
       }),
-
     },
     schema: [
       {
@@ -190,52 +187,19 @@ export const requirePostmessageOriginCheck = createRule<
       allowInTests: false,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = false } = options as Options;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-
-    if (isTestFile) {
-      return {};
-    }
-
-    const sourceCode = context.sourceCode;
-
-    /**
-     * Handlers the text patterns above found no origin check in, held back
-     * until `Program:exit`.
-     *
-     * `ALLOWED_ORIGIN.test(event.origin)` is an origin check that spells the
-     * word `origin` only as a property read, so none of the `origin ===` text
-     * patterns match it and every regexp-guarded listener was reported. The
-     * check may also be written after the point ESLint visits the listener, so
-     * the verdict has to wait until the whole program has been walked.
-     */
-    const unverified: Array<{
-      handler: TSESTree.Node;
-      /** Name of the object `addEventListener` was called on, when nameable. */
-      receiver: string | undefined;
-    }> = [];
-
-    /**
-     * Receiver names this file proves are not a window — see
-     * NON_WINDOW_RECEIVERS. Collected across the whole program because the
-     * `new WebSocket(…)` that answers for `this.connection` sits 39 lines
-     * BELOW the listener in Shopify's ExtensionServerClient.
-     */
-    const nonWindowReceivers = new Set<string>();
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let unverified: { handler: TSESTree.Node; receiver: string | undefined }[];
+    let nonWindowReceivers: Set<string>;
+    let anchoredOriginTests: (readonly [number, number])[];
 
     function rememberIfNonWindow(key: string | undefined, typeName?: string) {
       if (key === undefined || typeName === undefined) return;
       if (NON_WINDOW_RECEIVERS.has(typeName)) nonWindowReceivers.add(key);
     }
-
-    /** Ranges of `ALLOWED.test(x.origin)` calls with a fully anchored pattern. */
-    const anchoredOriginTests: Array<readonly [number, number]> = [];
 
     /** Is this argument an `.origin` read — `event.origin`, `e.origin`? */
     function isOriginRead(node: TSESTree.Node): boolean {
@@ -247,6 +211,43 @@ export const requirePostmessageOriginCheck = createRule<
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = false } = options as Options;
+
+        const filename = context.filename;
+        const isTestFile = allowInTests && isTestFilePath(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+
+        sourceCode = context.sourceCode;
+
+        /**
+         * Handlers the text patterns above found no origin check in, held back
+         * until `Program:exit`.
+         *
+         * `ALLOWED_ORIGIN.test(event.origin)` is an origin check that spells the
+         * word `origin` only as a property read, so none of the `origin ===` text
+         * patterns match it and every regexp-guarded listener was reported. The
+         * check may also be written after the point ESLint visits the listener, so
+         * the verdict has to wait until the whole program has been walked.
+         */
+        unverified = [];
+
+        /**
+         * Receiver names this file proves are not a window — see
+         * NON_WINDOW_RECEIVERS. Collected across the whole program because the
+         * `new WebSocket(…)` that answers for `this.connection` sits 39 lines
+         * BELOW the listener in Shopify's ExtensionServerClient.
+         */
+        nonWindowReceivers = new Set<string>();
+
+        /** Ranges of `ALLOWED.test(x.origin)` calls with a fully anchored pattern. */
+        anchoredOriginTests = [];
+        return true;
+      },
       // `class C { connection!: WebSocket }` — the declared type names the
       // receiver even when the assignment is out of reach.
       PropertyDefinition(node: TSESTree.PropertyDefinition) {
@@ -259,7 +260,10 @@ export const requirePostmessageOriginCheck = createRule<
       // `const ws: WebSocket = …`
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (node.id.type !== 'Identifier') return;
-        rememberIfNonWindow(node.id.name, annotatedTypeName(node.id.typeAnnotation));
+        rememberIfNonWindow(
+          node.id.name,
+          annotatedTypeName(node.id.typeAnnotation),
+        );
       },
 
       // `const ws = new WebSocket(url)` / `this.connection = new WebSocket(url)`

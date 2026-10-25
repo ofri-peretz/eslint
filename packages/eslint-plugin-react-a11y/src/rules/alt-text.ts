@@ -69,6 +69,10 @@ export const getAltInsertionAnchor = (
 export const altText = createRule<RuleOptions, MessageIds>({
   name: 'alt-text',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/alt-text',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/alt-text.md',
@@ -184,38 +188,17 @@ export const altText = createRule<RuleOptions, MessageIds>({
       inputImage: [],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const {
-      allowAriaLabel = false,
-      allowAriaLabelledby = false,
-      img: imgComponents = [],
-      object: objectComponents = [],
-      area: areaComponents = [],
-      inputImage: inputImageComponents = [],
-    }: Options = options;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowAriaLabel: boolean;
+    let allowAriaLabelledby: boolean;
+    let imgComponents: string[];
+    let objectComponents: string[];
+    let areaComponents: string[];
+    let inputImageComponents: string[];
+    let importedImageComponents: Set<string>;
+    let IMAGE_MODULE: RegExp;
 
     type Kind = 'img' | 'object' | 'area' | 'inputImage';
-
-    /**
-     * Map a JSX element name to a logical kind based on its tag and the
-     * user's custom-component configuration. Mirrors jsx-a11y's element
-     * classification — without this we miss every framework-specific image
-     * component (next/image's <Image>, Chakra <Image>, MUI <Avatar>, etc.).
-     */
-    /**
-     * Local names imported from a module whose specifier names an image component.
-     *
-     * `next/image` is the dominant image component in every Next.js app, and until now it
-     * was invisible unless the consumer happened to configure `{ img: ['Image'] }` — a
-     * default nobody sets, on the framework most likely to need it. Resolving the IMPORT
-     * rather than trusting the local name means `import Pic from 'next/image'` is caught
-     * too, while an unrelated `<Image>` from a charting library is not.
-     */
-    const importedImageComponents = new Set<string>();
-
-    const IMAGE_MODULE =
-      /^(next\/image|next\/legacy\/image|next\/future\/image)$/;
 
     const collectImageImports = (program: TSESTree.Program): void => {
       for (const statement of program.body) {
@@ -404,6 +387,37 @@ export const altText = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({
+          allowAriaLabel = false,
+          allowAriaLabelledby = false,
+          img: imgComponents = [],
+          object: objectComponents = [],
+          area: areaComponents = [],
+          inputImage: inputImageComponents = [],
+        } = options);
+
+        /**
+         * Map a JSX element name to a logical kind based on its tag and the
+         * user's custom-component configuration. Mirrors jsx-a11y's element
+         * classification — without this we miss every framework-specific image
+         * component (next/image's <Image>, Chakra <Image>, MUI <Avatar>, etc.).
+         */
+        /**
+         * Local names imported from a module whose specifier names an image component.
+         *
+         * `next/image` is the dominant image component in every Next.js app, and until now it
+         * was invisible unless the consumer happened to configure `{ img: ['Image'] }` — a
+         * default nobody sets, on the framework most likely to need it. Resolving the IMPORT
+         * rather than trusting the local name means `import Pic from 'next/image'` is caught
+         * too, while an unrelated `<Image>` from a charting library is not.
+         */
+        importedImageComponents = new Set<string>();
+
+        IMAGE_MODULE =
+          /^(next\/image|next\/legacy\/image|next\/future\/image)$/;
+      },
       Program(node: TSESTree.Program) {
         importedImageComponents.clear();
         collectImageImports(node);

@@ -81,11 +81,16 @@ type RuleOptions = [Options?];
  * consumer remedy this check exists to protect — a domain whose words collide
  * with the rule's — does not apply to a fixed method surface.
  */
-const CACHE_WRITE_METHODS: ReadonlySet<string> = new Set(['put', 'add', 'addAll']);
+const CACHE_WRITE_METHODS: ReadonlySet<string> = new Set([
+  'put',
+  'add',
+  'addAll',
+]);
 
 export const noSensitiveDataInCache = createRule<RuleOptions, MessageIds>({
   name: 'no-sensitive-data-in-cache',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-sensitive-data-in-cache.md',
@@ -117,17 +122,10 @@ export const noSensitiveDataInCache = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = true } = options as Options;
-    const isTestFile = isTestFilePath(context.filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
     /**
      * The URL a cache-write argument names, or `null`.
      *
@@ -165,6 +163,16 @@ export const noSensitiveDataInCache = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = true } = options as Options;
+        const isTestFile = isTestFilePath(context.filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return;
 

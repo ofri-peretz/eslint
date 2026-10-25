@@ -8,7 +8,7 @@
  * ESLint Rule: no-unnecessary-rerenders
  * Detects prevented re-renders in React
  * React-specific performance rule
- * 
+ *
  * @see https://react.dev/reference/react/useMemo
  * @see https://react.dev/reference/react/useCallback
  */
@@ -17,15 +17,12 @@ import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'unnecessaryRerender'
-  | 'useMemo'
-  | 'useCallback'
-  | 'extractToVariable';
+  'unnecessaryRerender' | 'useMemo' | 'useCallback' | 'extractToVariable';
 
 export interface Options {
   /** Ignore in test files. Default: true */
   ignoreInTests?: boolean;
-  
+
   /** Minimum array/object size to warn. Default: 5 */
   minSize?: number;
 }
@@ -44,7 +41,9 @@ function isInReactRenderContext(node: TSESTree.Node): boolean {
   const maxDepth = 15;
 
   while (depth < maxDepth) {
-    const parent: TSESTree.Node | undefined = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+    const parent: TSESTree.Node | undefined = (
+      current as TSESTree.Node & { parent?: TSESTree.Node }
+    ).parent;
     if (!parent) break;
 
     // Check if we're in JSX
@@ -58,27 +57,35 @@ function isInReactRenderContext(node: TSESTree.Node): boolean {
     }
 
     // Check if we're in a function that's likely a React component
-    if (parent.type === 'FunctionDeclaration' || parent.type === 'FunctionExpression' ||
-        parent.type === 'ArrowFunctionExpression') {
-
+    if (
+      parent.type === 'FunctionDeclaration' ||
+      parent.type === 'FunctionExpression' ||
+      parent.type === 'ArrowFunctionExpression'
+    ) {
       // Check function name patterns (Component, useCallback, etc.)
       if (parent.type === 'FunctionDeclaration' && parent.id) {
         const name = parent.id.name;
-        if (name && /^[A-Z]/.test(name)) { // PascalCase suggests React component
+        if (name && /^[A-Z]/.test(name)) {
+          // PascalCase suggests React component
           return true;
         }
       }
 
       // Check for JSX return statement
-      const body = parent.type === 'FunctionDeclaration' ? parent.body :
-                   parent.type === 'FunctionExpression' ? parent.body :
-                   parent.body;
+      const body =
+        parent.type === 'FunctionDeclaration'
+          ? parent.body
+          : parent.type === 'FunctionExpression'
+            ? parent.body
+            : parent.body;
 
       if (body && body.type === 'BlockStatement') {
-        const hasJSX = body.body.some((stmt: TSESTree.Statement) =>
-          stmt.type === 'ReturnStatement' &&
-          stmt.argument &&
-          (stmt.argument.type === 'JSXElement' || stmt.argument.type === 'JSXFragment')
+        const hasJSX = body.body.some(
+          (stmt: TSESTree.Statement) =>
+            stmt.type === 'ReturnStatement' &&
+            stmt.argument &&
+            (stmt.argument.type === 'JSXElement' ||
+              stmt.argument.type === 'JSXFragment'),
         );
         if (hasJSX) {
           return true;
@@ -102,24 +109,30 @@ function shouldBeMemoized(node: TSESTree.Node, minSize = 5): boolean {
     const properties = node.properties.length;
     return properties >= minSize;
   }
-  
+
   // Check for array literals - only if they have at least minSize elements
   if (node.type === 'ArrayExpression') {
-    const elements = node.elements.filter((el: TSESTree.Expression | TSESTree.SpreadElement | null) => el !== null).length;
+    const elements = node.elements.filter(
+      (el: TSESTree.Expression | TSESTree.SpreadElement | null) => el !== null,
+    ).length;
     return elements >= minSize;
   }
-  
+
   // Check for function expressions in JSX props (always report, size doesn't matter)
-  if (node.type === 'ArrowFunctionExpression' || node.type === 'FunctionExpression') {
+  if (
+    node.type === 'ArrowFunctionExpression' ||
+    node.type === 'FunctionExpression'
+  ) {
     return true;
   }
-  
+
   return false;
 }
 
 export const noUnnecessaryRerenders = createRule<RuleOptions, MessageIds>({
   name: 'no-unnecessary-rerenders',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-unnecessary-rerenders.md',
@@ -184,21 +197,13 @@ export const noUnnecessaryRerenders = createRule<RuleOptions, MessageIds>({
       minSize: 5,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const {
-ignoreInTests = true, minSize = 5 
-}: Options = options || {};
-
-    const filename = context.filename;
-    // Only skip if ignoreInTests is true AND filename matches test pattern
-    // If ignoreInTests is explicitly false, always run the rule
-    const isTestFile = ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
-
-    if (isTestFile) {
-      return {};
-    }
-
-    const sourceCode = context.sourceCode;
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let ignoreInTests: boolean;
+    let minSize: number;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /**
      * Check JSX attributes for unnecessary re-renders
@@ -209,9 +214,10 @@ ignoreInTests = true, minSize = 5
           return;
         }
 
-        const value = node.value.type === 'JSXExpressionContainer'
-          ? node.value.expression
-          : null;
+        const value =
+          node.value.type === 'JSXExpressionContainer'
+            ? node.value.expression
+            : null;
 
         if (!value) {
           return;
@@ -242,8 +248,12 @@ ignoreInTests = true, minSize = 5
           }
 
           // Determine which suggestion to use based on node type
-          const isFunction = value.type === 'ArrowFunctionExpression' || value.type === 'FunctionExpression';
-          const firstSuggestionMessageId = isFunction ? 'useCallback' : 'useMemo';
+          const isFunction =
+            value.type === 'ArrowFunctionExpression' ||
+            value.type === 'FunctionExpression';
+          const firstSuggestionMessageId = isFunction
+            ? 'useCallback'
+            : 'useMemo';
 
           context.report({
             node: value,
@@ -270,8 +280,24 @@ ignoreInTests = true, minSize = 5
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({ ignoreInTests = true, minSize = 5 } = options || {});
+
+        const filename = context.filename;
+        // Only skip if ignoreInTests is true AND filename matches test pattern
+        // If ignoreInTests is explicitly false, always run the rule
+        const isTestFile =
+          ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+
+        sourceCode = context.sourceCode;
+        return true;
+      },
       JSXAttribute: checkJSXAttribute,
     };
   },
 });
-

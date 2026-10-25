@@ -29,7 +29,10 @@ ruleTester.run('no-innerhtml', noInnerhtml, {
       name: 'writing to stdout is not the DOM',
       code: 'process.stdout.write(`Preview URL: ${previewUrl}`)',
     },
-    { code: 'process.stderr.write(`${message}\n`)' },
+    {
+      name: 'writing to stderr is not the DOM',
+      code: 'process.stderr.write(`${message}\n`)',
+    },
     { code: 'stdout.write(`Bundling ${extension.localIdentifier}...`)' },
     { code: 'options.stdout.write(`done ${name}`)' },
     {

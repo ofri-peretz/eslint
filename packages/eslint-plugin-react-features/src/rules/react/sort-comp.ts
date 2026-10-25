@@ -25,7 +25,7 @@ const DEFAULT_ORDER = [
   'instance-variables',
   'lifecycle',
   'everything-else',
-  'render'
+  'render',
 ];
 
 const LIFECYCLE_METHODS = new Set([
@@ -48,6 +48,7 @@ const LIFECYCLE_METHODS = new Set([
 export const sortComp = createRule<[Options], MessageIds>({
   name: 'sort-comp',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/sort-comp.md',
@@ -77,40 +78,42 @@ export const sortComp = createRule<[Options], MessageIds>({
     ],
   },
   defaultOptions: [{ order: DEFAULT_ORDER }],
-  create(context: TSESLint.RuleContext<MessageIds, [Options]>) {
-    const [options] = context.options;
-    const order = options?.order ?? DEFAULT_ORDER;
-
-    return {
-      ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        if (isReactComponent(node)) {
-          checkMethodOrder(node, order);
-        }
-      },
-    };
+  createOnce(context: TSESLint.RuleContext<MessageIds, [Options]>) {
+    let order: string[];
 
     // oxlint-disable-next-line consistent-function-scoping
     function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
       if (!node.superClass) return false;
 
       if (node.superClass.type === 'Identifier') {
-        return node.superClass.name === 'Component' || node.superClass.name === 'PureComponent';
+        return (
+          node.superClass.name === 'Component' ||
+          node.superClass.name === 'PureComponent'
+        );
       }
 
       if (node.superClass.type === 'MemberExpression') {
         return (
           node.superClass.object.type === 'Identifier' &&
           node.superClass.object.name === 'React' &&
-          (propertyName(node.superClass) === 'Component' || propertyName(node.superClass) === 'PureComponent')
+          (propertyName(node.superClass) === 'Component' ||
+            propertyName(node.superClass) === 'PureComponent')
         );
       }
 
       return false;
     }
 
-    function checkMethodOrder(node: TSESTree.ClassDeclaration, sortOrder: string[]) {
+    function checkMethodOrder(
+      node: TSESTree.ClassDeclaration,
+      sortOrder: string[],
+    ) {
       const members = node.body.body;
-      const methodOrder: Array<{ name: string; index: number; node: TSESTree.ClassBody['body'][0] }> = [];
+      const methodOrder: Array<{
+        name: string;
+        index: number;
+        node: TSESTree.ClassBody['body'][0];
+      }> = [];
 
       // Collect all methods/properties with their order index
       for (let i = 0; i < members.length; i++) {
@@ -118,7 +121,11 @@ export const sortComp = createRule<[Options], MessageIds>({
         const methodName = getMemberName(member);
         if (methodName) {
           const orderIndex = getOrderIndex(methodName, member, sortOrder);
-          methodOrder.push({ name: methodName, index: orderIndex, node: member });
+          methodOrder.push({
+            name: methodName,
+            index: orderIndex,
+            node: member,
+          });
         }
       }
 
@@ -135,30 +142,50 @@ export const sortComp = createRule<[Options], MessageIds>({
     }
 
     // oxlint-disable-next-line consistent-function-scoping
-    function getMemberName(member: TSESTree.ClassBody['body'][0]): string | null {
-      if (member.type === 'MethodDefinition' && member.key.type === 'Identifier') {
+    function getMemberName(
+      member: TSESTree.ClassBody['body'][0],
+    ): string | null {
+      if (
+        member.type === 'MethodDefinition' &&
+        member.key.type === 'Identifier'
+      ) {
         return member.key.name;
       }
       // Handle PropertyDefinition (TypeScript parser)
-      if (member.type === 'PropertyDefinition' && member.key.type === 'Identifier') {
+      if (
+        member.type === 'PropertyDefinition' &&
+        member.key.type === 'Identifier'
+      ) {
         return member.key.name;
       }
       return null;
     }
 
     // oxlint-disable-next-line consistent-function-scoping
-    function getMemberKeyNode(member: TSESTree.ClassBody['body'][0]): TSESTree.Node {
-      if (member.type === 'MethodDefinition' && member.key.type === 'Identifier') {
+    function getMemberKeyNode(
+      member: TSESTree.ClassBody['body'][0],
+    ): TSESTree.Node {
+      if (
+        member.type === 'MethodDefinition' &&
+        member.key.type === 'Identifier'
+      ) {
         return member.key;
       }
       // Handle PropertyDefinition (TypeScript parser)
-      if (member.type === 'PropertyDefinition' && member.key.type === 'Identifier') {
+      if (
+        member.type === 'PropertyDefinition' &&
+        member.key.type === 'Identifier'
+      ) {
         return member.key;
       }
       return member;
     }
 
-    function getOrderIndex(name: string, member: TSESTree.ClassBody['body'][0], sortOrder: string[]): number {
+    function getOrderIndex(
+      name: string,
+      member: TSESTree.ClassBody['body'][0],
+      sortOrder: string[],
+    ): number {
       // Static methods and properties
       if (member.type === 'MethodDefinition' && member.static) {
         if (name === 'render') return sortOrder.indexOf('render');
@@ -188,5 +215,17 @@ export const sortComp = createRule<[Options], MessageIds>({
       // Everything else
       return sortOrder.indexOf('everything-else');
     }
+
+    return {
+      before() {
+        const [options] = context.options;
+        order = options?.order ?? DEFAULT_ORDER;
+      },
+      ClassDeclaration(node: TSESTree.ClassDeclaration) {
+        if (isReactComponent(node)) {
+          checkMethodOrder(node, order);
+        }
+      },
+    };
   },
 });

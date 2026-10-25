@@ -11,7 +11,15 @@
  * @see OWASP LLM06: Excessive Agency
  */
 
-import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons, nameHasWord, objectKeyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  nameHasWord,
+  objectKeyName,
+} from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 import { calleeName, optionValue } from '../../utils/sdk';
 
@@ -27,10 +35,12 @@ type RuleOptions = [Options?];
 export const requireToolConfirmation = createRule<RuleOptions, MessageIds>({
   name: 'require-tool-confirmation',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-tool-confirmation.md',
-      description: 'Require human confirmation for destructive tool operations (delete, transfer, execute)',
+      description:
+        'Require human confirmation for destructive tool operations (delete, transfer, execute)',
       cwe: 'CWE-862',
       cvss: 7,
     },
@@ -41,11 +51,13 @@ export const requireToolConfirmation = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-862',
         owasp: 'A01:2021',
         cvss: 7.0,
-        description: 'Tool "{{toolName}}" performs destructive operation "{{operation}}" without requiring confirmation.',
+        description:
+          'Tool "{{toolName}}" performs destructive operation "{{operation}}" without requiring confirmation.',
         severity: 'HIGH',
         compliance: ['SOC2'],
         fix: 'Add needsApproval: true to the tool (or toolApproval on the call), or omit execute so the client confirms',
-        documentationLink: 'https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling',
+        documentationLink:
+          'https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling',
       }),
     },
     schema: [
@@ -69,27 +81,36 @@ export const requireToolConfirmation = createRule<RuleOptions, MessageIds>({
       // destructive, and with the defaults finally applied (they never were —
       // see the audit) they would have fired on ordinary read/render tools.
       destructivePatterns: [
-        'delete', 'remove', 'drop', 'truncate', 'destroy',
-        'transfer', 'send', 'pay', 'withdraw', 'purchase',
-        'execute', 'exec', 'eval', 'spawn', 'shell',
-        'update', 'modify', 'alter', 'insert', 'write',
+        'delete',
+        'remove',
+        'drop',
+        'truncate',
+        'destroy',
+        'transfer',
+        'send',
+        'pay',
+        'withdraw',
+        'purchase',
+        'execute',
+        'exec',
+        'eval',
+        'spawn',
+        'shell',
+        'update',
+        'modify',
+        'alter',
+        'insert',
+        'write',
       ],
     },
   ],
-  create(context, [options]) {
-    // Every rule in this plugin is Vercel-AI-specific, and none of them knew
-    // it: over 107,384 files, 91% of this plugin's findings were in files with
-    // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
-    // the cheap path — a file without the SDK does no work.
-    if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
-
-    // `defaultOptions` is merged in before `create` runs. Reading
-    // `context.options` instead (as this rule did) silently replaced the
-    // documented defaults with a shorter hard-coded list.
-    const { destructivePatterns } = options as Required<Options>;
+  createOnce(context, currentOptions) {
+    let destructivePatterns: string[];
 
     /** The tool's definition object: `{ ... }` or the argument of `tool({ ... })`. */
-    function toolDefinition(value: TSESTree.Node): TSESTree.ObjectExpression | null {
+    function toolDefinition(
+      value: TSESTree.Node,
+    ): TSESTree.ObjectExpression | null {
       if (value.type === AST_NODE_TYPES.ObjectExpression) return value;
       if (
         value.type === AST_NODE_TYPES.CallExpression &&
@@ -118,6 +139,20 @@ export const requireToolConfirmation = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule in this plugin is Vercel-AI-specific, and none of them knew
+        // it: over 107,384 files, 91% of this plugin's findings were in files with
+        // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
+        // the cheap path — a file without the SDK does no work.
+        if (!fileUsesVercelAi(context.sourceCode.ast)) return false;
+
+        // `defaultOptions` is merged in before `create` runs. Reading
+        // `context.options` instead (as this rule did) silently replaced the
+        // documented defaults with a shorter hard-coded list.
+        ({ destructivePatterns } = options as Required<Options>);
+        return true;
+      },
       Property(node: TSESTree.Property) {
         const toolName = objectKeyName(node);
         if (toolName === null) return;
@@ -125,18 +160,30 @@ export const requireToolConfirmation = createRule<RuleOptions, MessageIds>({
         const def = toolDefinition(node.value);
         if (!def) return;
 
-        const operation = destructivePatterns.find((pattern) => nameHasWord(toolName, pattern));
+        const operation = destructivePatterns.find((pattern) =>
+          nameHasWord(toolName, pattern),
+        );
         if (!operation) return;
 
         // The tool must sit directly in a `tools: { ... }` object.
         const tools = node.parent;
         if (tools?.type !== AST_NODE_TYPES.ObjectExpression) return;
         const toolsProp = tools.parent;
-        if (toolsProp?.type !== AST_NODE_TYPES.Property || objectKeyName(toolsProp) !== 'tools') return;
+        if (
+          toolsProp?.type !== AST_NODE_TYPES.Property ||
+          objectKeyName(toolsProp) !== 'tools'
+        )
+          return;
 
         // A call-level `toolApproval` (AI SDK 6+) gates every tool in the call.
         // A Property holding an object literal always lives in an ObjectExpression.
-        if (optionValue(toolsProp.parent as TSESTree.ObjectExpression, 'toolApproval')) return;
+        if (
+          optionValue(
+            toolsProp.parent as TSESTree.ObjectExpression,
+            'toolApproval',
+          )
+        )
+          return;
 
         if (isConfirmed(def)) return;
 
@@ -156,6 +203,10 @@ const TOOL_FACTORIES = new Set(['tool', 'dynamicTool']);
 /** Keys that mark a tool as gated on a human. `needsApproval` is the SDK's own. */
 const CONFIRMATION_PROPS = new Set([
   'needsApproval',
-  'requiresConfirmation', 'requireConfirmation', 'confirmation',
-  'requiresApproval', 'requireApproval', 'approval',
+  'requiresConfirmation',
+  'requireConfirmation',
+  'confirmation',
+  'requiresApproval',
+  'requireApproval',
+  'approval',
 ]);

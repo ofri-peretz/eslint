@@ -56,7 +56,10 @@ ruleTester.run('no-incomplete-url-sanitization', noIncompleteUrlSanitization, {
     // A path turns it into a prefix check, a different shape.
     { code: "if (url.includes('example.com/login')) { go(); }" },
     // Single label — no host to be fooled about.
-    { code: "if (url.includes('localhost')) { go(); }" },
+    {
+      name: 'a localhost substring test is not a host allowlist check',
+      code: "if (url.includes('localhost')) { go(); }",
+    },
     // Underscores are not host label characters.
     { code: "if (url.includes('exa_mple.com')) { go(); }" },
     // `.json` is a file extension, not a TLD — this is the noise the closed
@@ -70,11 +73,20 @@ ruleTester.run('no-incomplete-url-sanitization', noIncompleteUrlSanitization, {
     // ── Receiver is not known to hold a URL ──────────────────────────────
     { code: "if (body.includes('trusted.com')) { go(); }" },
     // A METHOD chosen at runtime is not provably a substring check.
-    { name: 'a METHOD chosen at runtime is not provably a substring check', code: 'if (url[check](\'trusted.com\')) { go(); }' },
+    {
+      name: 'a METHOD chosen at runtime is not provably a substring check',
+      code: "if (url[check]('trusted.com')) { go(); }",
+    },
     // Nor is a runtime method in the passthrough chain provably a passthrough.
-    { name: 'nor is a runtime method in the passthrough chain provably a passthrough', code: 'if (url[t]().includes(\'trusted.com\')) { go(); }' },
+    {
+      name: 'nor is a runtime method in the passthrough chain provably a passthrough',
+      code: "if (url[t]().includes('trusted.com')) { go(); }",
+    },
     // A key chosen at RUNTIME names no field to recognise.
-    { name: 'a key chosen at RUNTIME names no field to recognise', code: 'if (map[key].includes(\'trusted.com\')) { go(); }' },
+    {
+      name: 'a key chosen at RUNTIME names no field to recognise',
+      code: "if (map[key].includes('trusted.com')) { go(); }",
+    },
     { code: "if (getUrl().includes('trusted.com')) { go(); }" },
     { code: "if (String().includes('trusted.com')) { go(); }" },
     { code: "if ((a + b).includes('trusted.com')) { go(); }" },

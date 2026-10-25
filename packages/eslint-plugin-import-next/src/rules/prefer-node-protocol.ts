@@ -70,6 +70,10 @@ const NODE_BUILT_INS = new Set([
 export const preferNodeProtocol = createRule<RuleOptions, MessageIds>({
   name: 'prefer-node-protocol',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'unicorn/prefer-node-protocol',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/prefer-node-protocol.md',
@@ -104,17 +108,50 @@ export const preferNodeProtocol = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{}],
 
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
-    const { additionalModules = [] } = options || ({} as Options);
-    const allModulesToCheck = new Set([
-      ...NODE_BUILT_INS,
-      ...additionalModules,
-    ]);
+    let allModulesToCheck: Set<string>;
+
+    // oxlint-disable-next-line consistent-function-scoping
+    function isBuiltInModule(
+      moduleName: string,
+      modulesToCheck: Set<string>,
+    ): boolean {
+      // Skip if already using node: protocol
+      if (moduleName.startsWith('node:')) {
+        return false;
+      }
+
+      // Check exact match first
+      if (modulesToCheck.has(moduleName)) {
+        return true;
+      }
+
+      // Check case-insensitive match
+      const lowerCaseModule = moduleName.toLowerCase();
+      if (modulesToCheck.has(lowerCaseModule)) {
+        return true;
+      }
+
+      // Check for sub-path imports like 'fs/promises', 'path/posix', etc.
+      const baseModule = moduleName.split('/')[0];
+      if (modulesToCheck.has(baseModule)) {
+        return true;
+      }
+
+      // Check case-insensitive for base module
+      const lowerCaseBaseModule = baseModule.toLowerCase();
+      return modulesToCheck.has(lowerCaseBaseModule);
+    }
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        const { additionalModules = [] } = options || ({} as Options);
+        allModulesToCheck = new Set([...NODE_BUILT_INS, ...additionalModules]);
+      },
       // Check import declarations
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const moduleName = node.source.value;
@@ -197,37 +234,5 @@ export const preferNodeProtocol = createRule<RuleOptions, MessageIds>({
         }
       },
     };
-
-    // oxlint-disable-next-line consistent-function-scoping
-    function isBuiltInModule(
-      moduleName: string,
-      modulesToCheck: Set<string>,
-    ): boolean {
-      // Skip if already using node: protocol
-      if (moduleName.startsWith('node:')) {
-        return false;
-      }
-
-      // Check exact match first
-      if (modulesToCheck.has(moduleName)) {
-        return true;
-      }
-
-      // Check case-insensitive match
-      const lowerCaseModule = moduleName.toLowerCase();
-      if (modulesToCheck.has(lowerCaseModule)) {
-        return true;
-      }
-
-      // Check for sub-path imports like 'fs/promises', 'path/posix', etc.
-      const baseModule = moduleName.split('/')[0];
-      if (modulesToCheck.has(baseModule)) {
-        return true;
-      }
-
-      // Check case-insensitive for base module
-      const lowerCaseBaseModule = baseModule.toLowerCase();
-      return modulesToCheck.has(lowerCaseBaseModule);
-    }
   },
 });

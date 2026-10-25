@@ -36,6 +36,7 @@ type RuleOptions = [Options?];
 export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
   name: 'no-error-swallowing',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-error-swallowing.md',
@@ -77,7 +78,9 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
           },
           allowWithComment: {
             type: 'boolean',
-            default: true, description: 'Allow an empty catch block that carries an explanatory comment'
+            default: true,
+            description:
+              'Allow an empty catch block that carries an explanatory comment',
           },
         },
         additionalProperties: false,
@@ -85,38 +88,18 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true, allowWithComment: true }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    // Every rule here is Lambda-specific, and none of them knew it: over 107,382
-    // files, 98% of this plugin's findings were in files with no AWS anything.
-    // Registering no visitors is both the gate and the cheap path.
-    if (!fileIsLambda(context.sourceCode.ast)) return {};
-
-    const { allowInTests = true, allowWithComment = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
-    /** Loggers whose methods count as recording the error. */
-    const LOGGER_OBJECTS = /^(console|logger|log|winston|pino|bunyan|sentry|Sentry)$/;
-    const LOGGER_METHODS = /^(log|error|warn|info|debug|captureException|captureMessage)$/;
-    /** Bare calls that record: logError(), reportError(), captureError(), trackError(). */
-    const LOGGING_FUNCTIONS = /^(log|report|capture|track|record|notify)\w*$/i;
-    /**
-     * Callbacks that hand the error onward. Passing the error to one of these
-     * is propagation, not swallowing — it is `throw` spelled asynchronously,
-     * and Express's own error middleware is reached no other way.
-     */
-    const FORWARDING_CALLBACKS = /^(next|reject|callback|cb|done|fail|emit)$/;
-    /** Response objects whose terminal methods answer the request. */
-    const RESPONSE_OBJECTS = /^(res|response|reply|ctx)$/;
-    const RESPONSE_METHODS =
-      /^(status|sendStatus|json|send|end|writeHead|render|redirect)$/;
+    let allowInTests: boolean;
+    let allowWithComment: boolean;
+    let LOGGER_OBJECTS: RegExp;
+    let LOGGER_METHODS: RegExp;
+    let LOGGING_FUNCTIONS: RegExp;
+    let FORWARDING_CALLBACKS: RegExp;
+    let RESPONSE_OBJECTS: RegExp;
+    let RESPONSE_METHODS: RegExp;
 
     /**
      * Does the caught error appear anywhere in these arguments?
@@ -130,12 +113,14 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
       while (stack.length > 0) {
         const node = stack.pop();
         if (!node || typeof node.type !== 'string') continue;
-        if (node.type === AST_NODE_TYPES.Identifier && node.name === name) return true;
+        if (node.type === AST_NODE_TYPES.Identifier && node.name === name)
+          return true;
         for (const key of Object.keys(node)) {
           if (key === 'parent') continue;
           const value = (node as unknown as Record<string, unknown>)[key];
           if (Array.isArray(value)) stack.push(...(value as TSESTree.Node[]));
-          else if (value && typeof value === 'object') stack.push(value as TSESTree.Node);
+          else if (value && typeof value === 'object')
+            stack.push(value as TSESTree.Node);
         }
       }
       return false;
@@ -144,8 +129,11 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
     /** The root identifier of a member chain: `a.b.c()` → `a`. */
     function rootName(node: TSESTree.Node): string | undefined {
       let current: TSESTree.Node = node;
-      while (current.type === AST_NODE_TYPES.MemberExpression) current = current.object;
-      return current.type === AST_NODE_TYPES.Identifier ? current.name : undefined;
+      while (current.type === AST_NODE_TYPES.MemberExpression)
+        current = current.object;
+      return current.type === AST_NODE_TYPES.Identifier
+        ? current.name
+        : undefined;
     }
 
     /** Every property name in a member chain: `a.b.c()` → ['b','c']. */
@@ -180,7 +168,8 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
         // negative this exemption was supposed to avoid creating. A catch with
         // no binding at all has nothing to forward, so it cannot qualify.
         if (FORWARDING_CALLBACKS.test(callee.name)) {
-          return caughtName !== undefined && mentions(call.arguments, caughtName)
+          return caughtName !== undefined &&
+            mentions(call.arguments, caughtName)
             ? 'forward'
             : undefined;
         }
@@ -206,10 +195,14 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
       const root = rootName(callee);
       if (root === undefined) return undefined;
 
-      if (LOGGER_OBJECTS.test(root) && LOGGER_METHODS.test(method)) return 'log';
+      if (LOGGER_OBJECTS.test(root) && LOGGER_METHODS.test(method))
+        return 'log';
       // res.status(500).json(...) — the terminal method is what answers, so
       // check the whole chain rather than only its last link.
-      if (RESPONSE_OBJECTS.test(root) && names.some((n) => RESPONSE_METHODS.test(n))) {
+      if (
+        RESPONSE_OBJECTS.test(root) &&
+        names.some((n) => RESPONSE_METHODS.test(n))
+      ) {
         return 'respond';
       }
       return undefined;
@@ -315,13 +308,18 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
         if (value === null) return false;
 
         // No signal at all.
-        if (value.type === AST_NODE_TYPES.Literal && value.value === null) return false;
-        if (value.type === AST_NODE_TYPES.Identifier && value.name === 'undefined') {
+        if (value.type === AST_NODE_TYPES.Literal && value.value === null)
+          return false;
+        if (
+          value.type === AST_NODE_TYPES.Identifier &&
+          value.name === 'undefined'
+        ) {
           return false;
         }
 
         // Permissive: grants whatever the caller was asking permission for.
-        if (value.type === AST_NODE_TYPES.Literal && value.value === true) return false;
+        if (value.type === AST_NODE_TYPES.Literal && value.value === true)
+          return false;
 
         // An object literal claiming a 2xx status is failure dressed as success.
         if (value.type === AST_NODE_TYPES.ObjectExpression) {
@@ -333,7 +331,9 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
           );
           if (status) {
             const literal =
-              status.value.type === AST_NODE_TYPES.Literal ? status.value.value : undefined;
+              status.value.type === AST_NODE_TYPES.Literal
+                ? status.value.value
+                : undefined;
             if (literal === true) return false;
             const code = Number(literal);
             if (code >= 200 && code < 300) return false;
@@ -345,6 +345,40 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Every rule here is Lambda-specific, and none of them knew it: over 107,382
+        // files, 98% of this plugin's findings were in files with no AWS anything.
+        // Registering no visitors is both the gate and the cheap path.
+        if (!fileIsLambda(context.sourceCode.ast)) return false;
+
+        ({ allowInTests = true, allowWithComment = true } = options as Options);
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+
+        /** Loggers whose methods count as recording the error. */
+        LOGGER_OBJECTS =
+          /^(console|logger|log|winston|pino|bunyan|sentry|Sentry)$/;
+        LOGGER_METHODS =
+          /^(log|error|warn|info|debug|captureException|captureMessage)$/;
+        /** Bare calls that record: logError(), reportError(), captureError(), trackError(). */
+        LOGGING_FUNCTIONS = /^(log|report|capture|track|record|notify)\w*$/i;
+        /**
+         * Callbacks that hand the error onward. Passing the error to one of these
+         * is propagation, not swallowing — it is `throw` spelled asynchronously,
+         * and Express's own error middleware is reached no other way.
+         */
+        FORWARDING_CALLBACKS = /^(next|reject|callback|cb|done|fail|emit)$/;
+        /** Response objects whose terminal methods answer the request. */
+        RESPONSE_OBJECTS = /^(res|response|reply|ctx)$/;
+        RESPONSE_METHODS =
+          /^(status|sendStatus|json|send|end|writeHead|render|redirect)$/;
+        return true;
+      },
       CatchClause(node: TSESTree.CatchClause) {
         const body = node.body;
 
@@ -392,7 +426,9 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
         // /500|error|fail/, so `return false` from a hostname validator read
         // as swallowing while `return errorish` did not.
         const caughtName =
-          node.param?.type === AST_NODE_TYPES.Identifier ? node.param.name : undefined;
+          node.param?.type === AST_NODE_TYPES.Identifier
+            ? node.param.name
+            : undefined;
         const { logs, forwards, responds } = analyze(body, caughtName);
         if (logs || forwards || responds || returnsFallback(body)) {
           return;

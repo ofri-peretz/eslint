@@ -178,6 +178,7 @@ type RuleOptions = [Options?];
 export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
   name: 'no-electron-security-issues',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-electron-security-issues.md',
@@ -320,25 +321,27 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const {
-      allowedIpcChannels = [],
-      trustedSanitizers = [],
-      trustedAnnotations = [],
-      strictMode = false,
-    }: Options = options;
-    const filename = context.filename;
-    // Computed once per file, at create() time, from the shared devkit probe.
-    const usesElectron = fileUsesElectron(context.sourceCode.ast);
-
-    // Create safety checker for false positive detection
-    const safetyChecker = createSafetyChecker({
-      trustedSanitizers,
-      trustedAnnotations,
-      trustedOrmPatterns: [],
-      strictMode,
-    });
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowedIpcChannels: string[];
+    let trustedSanitizers: string[];
+    let trustedAnnotations: string[];
+    let strictMode: boolean;
+    let filename: string;
+    let usesElectron: boolean;
+    let safetyChecker: {
+      isSafe(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      isSanitized(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      hasAnnotation(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+    };
 
     /**
      * Check if this is an Electron BrowserWindow creation
@@ -525,6 +528,26 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({
+          allowedIpcChannels = [],
+          trustedSanitizers = [],
+          trustedAnnotations = [],
+          strictMode = false,
+        } = options);
+        filename = context.filename;
+        // Computed once per file, at create() time, from the shared devkit probe.
+        usesElectron = fileUsesElectron(context.sourceCode.ast);
+
+        // Create safety checker for false positive detection
+        safetyChecker = createSafetyChecker({
+          trustedSanitizers,
+          trustedAnnotations,
+          trustedOrmPatterns: [],
+          strictMode,
+        });
+      },
       // Check BrowserWindow creation
       NewExpression(node: TSESTree.NewExpression) {
         try {

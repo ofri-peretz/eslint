@@ -29,6 +29,10 @@ type RuleOptions = [Options?];
 export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
   name: 'no-direct-mutation-state',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/no-direct-mutation-state',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-direct-mutation-state.md',
@@ -80,14 +84,11 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allowInLifecycleMethods: false }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const { allowInLifecycleMethods = false } = options || {};
-
-    // Track if we're in a class component
-    let inClassComponent = false;
-    let inLifecycleMethod = false;
-    const classStack: boolean[] = [];
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowInLifecycleMethods: boolean;
+    let inClassComponent: boolean;
+    let inLifecycleMethod: boolean;
+    let classStack: boolean[];
 
     // oxlint-disable-next-line consistent-function-scoping
     function isLifecycleMethod(methodName: string): boolean {
@@ -203,6 +204,15 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({ allowInLifecycleMethods = false } = options || {});
+
+        // Track if we're in a class component
+        inClassComponent = false;
+        inLifecycleMethod = false;
+        classStack = [];
+      },
       ClassDeclaration(node: TSESTree.ClassDeclaration) {
         // Check if this is a React component class
         if (node.superClass) {
