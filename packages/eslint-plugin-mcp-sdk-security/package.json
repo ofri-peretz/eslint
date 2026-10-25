@@ -71,6 +71,9 @@
     "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    },
     "@modelcontextprotocol/sdk": {
       "optional": true
     }

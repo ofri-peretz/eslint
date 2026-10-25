@@ -1,0 +1,66 @@
+{
+  "name": "oxlint-plugin-mcp-sdk-security",
+  "version": "1.0.1",
+  "description": "The mcp-sdk-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-mcp-sdk-security.",
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
+    "interlace-security",
+    "mcp",
+    "mcp-security",
+    "mcp-server",
+    "model-context-protocol",
+    "modelcontextprotocol",
+    "tool-calling",
+    "tool-poisoning",
+    "ai-security",
+    "llm",
+    "llm-security",
+    "agentic",
+    "typescript"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-mcp-sdk-security",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-mcp-sdk-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/ofri-peretz/eslint"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-mcp-sdk-security": "1.0.1"
+  }
+}

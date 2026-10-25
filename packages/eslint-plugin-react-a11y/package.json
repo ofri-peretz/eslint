@@ -101,6 +101,9 @@
     "url": "git+https://github.com/ofri-peretz/eslint.git"
   },
   "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    },
     "react": {
       "optional": true
     }

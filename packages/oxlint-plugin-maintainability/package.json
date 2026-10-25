@@ -1,0 +1,60 @@
+{
+  "name": "oxlint-plugin-maintainability",
+  "version": "3.2.17",
+  "description": "The maintainability rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-maintainability.",
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "interlace-quality",
+    "maintainability",
+    "cognitive-complexity",
+    "complexity",
+    "readability",
+    "clean-code",
+    "refactoring",
+    "error-handling",
+    "nested-ternary",
+    "duplicate-code",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/quality/plugin-maintainability?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-maintainability",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-maintainability"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-maintainability": "3.2.17"
+  }
+}

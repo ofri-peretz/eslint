@@ -1,0 +1,71 @@
+{
+  "name": "oxlint-plugin-vercel-ai-security",
+  "version": "2.3.0",
+  "description": "The vercel-ai-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-vercel-ai-security.",
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
+    "interlace-security",
+    "vercel",
+    "vercel-ai",
+    "vercel-ai-sdk",
+    "ai-sdk",
+    "ai-security",
+    "llm",
+    "llm-security",
+    "generative-ai",
+    "prompt-injection",
+    "owasp-llm-top-10",
+    "rag",
+    "tool-calling",
+    "generateText",
+    "streamText",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-vercel-ai-security",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-vercel-ai-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-vercel-ai-security": "2.3.0"
+  }
+}

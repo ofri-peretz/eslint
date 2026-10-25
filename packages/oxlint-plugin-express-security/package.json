@@ -1,0 +1,73 @@
+{
+  "name": "oxlint-plugin-express-security",
+  "version": "3.2.4",
+  "description": "The express-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-express-security.",
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
+    "interlace-security",
+    "express",
+    "expressjs",
+    "node",
+    "nodejs",
+    "web-security",
+    "api-security",
+    "cors",
+    "csrf",
+    "cwe-352",
+    "cookies",
+    "helmet",
+    "security-headers",
+    "graphql",
+    "rate-limiting",
+    "redos",
+    "open-redirect",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-express-security?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-express-security",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-express-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-express-security": "3.2.4"
+  }
+}

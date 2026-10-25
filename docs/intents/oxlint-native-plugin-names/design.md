@@ -1,6 +1,6 @@
 # Design — an oxlint user installs our rules by an oxlint name, and gets no ESLint
 
-Intent: [`intent.md`](./intent.md). **Status:** draft.
+Intent: [`intent.md`](./intent.md). **Status:** accepted 2026-10-25. Scope widened at acceptance to include R7–R12.
 
 ---
 
@@ -29,7 +29,7 @@ Intent: [`intent.md`](./intent.md). **Status:** draft.
     `.oxlintrc.json` snippet and a `vite.config.ts` `lint` snippet, plus a link
     to the plugin's README for the rule list. It does not copy the rule list.
   - `LICENSE`: copied from the plugin.
-- **R3** One generator writes all of R2: `scripts/generate-oxlint-aliases.ts`.
+- **R3** One generator writes all of R2: `scripts/generate-oxlint-aliases.mts`.
   `--check` exits non-zero and names every file that is missing, extra or
   differs. It is wired as `oxlint:aliases` / `oxlint:aliases:check` and added to
   `quality` next to `oxlint:shims:check`.
@@ -40,9 +40,34 @@ Intent: [`intent.md`](./intent.md). **Status:** draft.
   `<name>/<rule>`, and its rule set equals the plugin's `rules` keys. The IDs
   come from `meta.name`, so this lock also catches a future edit to `meta.name`
   in a plugin. That edit would silently rename every rule for oxlint users.
-- **R6** The aliases land with `"private": true` until Ofri flips them (open
-  question 1). The generator takes this as one constant, so flipping it is a
-  one-line diff that regenerates 32 manifests.
+- **R6** The aliases land **public** (intent, decision 1). The generator still keeps a
+  `PRIVATE` set: `cli-floor` is in it until its plugin reaches npm, and so is any future
+  plugin that is unpublished at the time.
+- **R7** devkit `createRule` accepts oxlint's rule shape, `createOnce(context, options)`
+  returning visitors plus optional `before()`/`after()`, as an alternative to
+  `create`. One rule object exposes `createOnce` to oxlint and a derived `create` to ESLint.
+  The second argument, `options`, is a function. It returns the defaulted options for the
+  current file, and is valid inside `before` and the visitors.
+  `skipTestFiles`/`skipGeneratedFiles`/`skipMinifiedFiles` become a `before()` that
+  returns `false`. No `@oxlint/plugins` (decision 2).
+- **R8** A lock fails when a rule is authored with `create` and is not on
+  `.agent/create-rule-allowlist.json`. The lock also fails when an allowlisted rule no
+  longer uses `create`, so the list can only shrink.
+- **R9** Every rule that migrates cleanly uses `createOnce`. Per-file state is assigned in
+  `before()`. A rule that does not migrate cleanly stays on the allowlist, and the reason is
+  written next to it. Gates: `npm run ilb:oxlint-parity` keeps `parityRate` at 1, and every
+  existing rule test passes.
+- **R10** Every rule test file runs on both engines: ESLint's `RuleTester`, and oxlint's
+  `RuleTester` from `oxlint/plugins-dev`.
+- **R11** Every rule declares `meta.interop.runtimes`. The value is `['eslint','oxlint']`
+  only if the rule's own suite passes on oxlint (R10). Otherwise it is `['eslint']`, and
+  type-aware rules always are (decision 4). A lock fails when `runtimes` is missing.
+  `docs/oxlint-runtimes.md` is generated and lists every rule that is not
+  `[eslint, oxlint]`, with the reason.
+- **R12** The plugin READMEs and `docs/oxlint-integration.md` lead with the oxlint / Vite+
+  install (`oxlint-plugin-<name>`, `vite.config.ts` `lint.jsPlugins`). ESLint comes second,
+  as the compatibility floor. No speed claim appears unless a benchmark in this PR measures
+  one. Oxc says `createOnce` "isn't faster yet".
 
 ## Design
 
@@ -94,12 +119,44 @@ repo-wide gates.
    No shared predicate module unless three or more gates need it. Each skip
    carries a one-line comment naming this intent.
 
+6. **createOnce in the devkit (R7).** `createRuleInternal` checks for `createOnce`. For
+   oxlint it emits `createOnce(context)`. That calls the author's
+   `createOnce(context, () => opts)` once, and wraps the author's `before` in a `before`
+   of its own. The wrapper's `before` runs the skip predicates, computes
+   `opts = applyDefault(defaults, context.options)`, and then calls the author's `before`.
+   For ESLint it emits `create(context)`. That calls the same `createOnce` per file, runs
+   `before` (a `false` result means `{}`), and chains `after` onto `Program:exit`. This is
+   what `eslintCompatPlugin` does. oxlint 1.74 reads `createOnce` when it is present
+   (`lint.js` `registerRule`), and calls `before` once per file per enabled rule that has
+   at least one visitor key (`lintFileImpl`).
+7. **Migration codemod (R9).** `scripts/codemod-create-once.ts` uses the TypeScript AST. It
+   accepts a `create` body only when it is one or more setup statements followed by
+   `return { …visitors }`. Every earlier `return` must be `return {}`, and the visitors may
+   contain no spread and no key that is computed from setup bindings. It rewrites the body
+   like this:
+   - Function declarations and arrow-function consts stay in `createOnce` scope. They run
+     nothing when defined.
+   - Every other setup binding, including the old options parameter, is hoisted as a typed
+     `let` and assigned in `before()`.
+   - `return {}` becomes `return false`.
+   - Visitors are left exactly as they were.
+
+   Anything else is reported and goes on the allowlist. The codemod runs once and is then
+   deleted; the allowlist lock replaces it.
+
+8. **Dual-engine tests (R10).** A vitest `resolve.alias` points
+   `@typescript-eslint/rule-tester` at `packages/eslint-devkit/src/testing/dual-rule-tester.ts`.
+   That file calls the real `RuleTester` first, then runs the same cases through oxlint's
+   `RuleTester` with `eslintCompat: true`. The ts parser maps to `parserOptions.lang`, and
+   a type-aware case (`parserOptions.project`) runs only on ESLint. The 771 test files stay
+   as they are.
+
 **Files:**
 
 | Path                                                                           | Change                                               |
 | :----------------------------------------------------------------------------- | :--------------------------------------------------- |
 | `packages/oxlint-plugin-*/`                                                    | 32 directories, 5 generated files each               |
-| `scripts/generate-oxlint-aliases.ts`                                           | new                                                  |
+| `scripts/generate-oxlint-aliases.mts`                                          | new                                                  |
 | `scripts/__tests__/oxlint-aliases.lock.test.ts`                                | new                                                  |
 | `scripts/__tests__/eslint-peer-floor.test.ts`                                  | one new case                                         |
 | `packages/eslint-plugin-*/package.json`, `packages/eslint-devkit/package.json` | `peerDependenciesMeta.eslint`                        |
@@ -139,10 +196,13 @@ repo-wide gates.
   would guess from the `eslint-plugin-<name>` they already know.
 - **Copy `dist/` into each alias with no dependency.** That duplicates the logic
   and breaks version lockstep.
-- **Migrate rules to `createOnce` / `eslintCompatPlugin` from
-  `@oxlint/plugins` now.** No measurement says the `create` path is slow. Reopen it
-  only if the parity benchmarks show that.
-- **Hand-write 32 READMEs.** They drift. The generator plus `--check` is cheaper
+- **Depend on `@oxlint/plugins` for `eslintCompatPlugin`.** That is a runtime dependency
+  for about 30 lines of adapter (PRINCIPLES #2).
+- **A dispatcher shim**, where `createOnce` returns stubs that forward to a per-file
+  `create()`. It is mechanical and always correct, but it is `create` in disguise. State
+  never moves into `before`, and a reviewer can't see what is per-file.
+- **Heuristic rewrites of type-aware rules for oxlint.** They would be a different rule
+  under the same ID (decision 4).
   than reviewing 32 copies.
 - **Put the aliases outside `packages/`.** That would dodge the 24 enumerating
   gates, but `release.yml` only publishes `packages/*`. It would fork the release
@@ -156,10 +216,8 @@ repo-wide gates.
 
 ## Out of scope
 
-- Publishing to npm, and flipping `private`. That happens at the Deploy gate, by
-  Ofri.
-- Trusted Publishing setup for the 32 new names (intent, open question 2).
+- Running `npm publish`. The parent session does the first publish by hand (decision 1).
 - Docs-site pages, logos, or comparison-table entries for the aliases.
-- Vite+-specific presets, such as a `vite-plus` config export. Add them when a user
-  asks.
-- `createOnce` migration and performance work.
+- Vite+-specific presets, such as a `vite-plus` config export. Add them when a user asks.
+- Any speed claim for `createOnce`. Make one only once a benchmark measures it.
+- `meta.interop` fields other than `runtimes` (`tier`, `typeAware`, `parityFixture`).

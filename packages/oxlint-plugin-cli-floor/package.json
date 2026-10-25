@@ -1,0 +1,61 @@
+{
+  "name": "oxlint-plugin-cli-floor",
+  "version": "0.1.1",
+  "description": "The cli-floor rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-cli-floor.",
+  "private": true,
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "interlace-quality",
+    "cli",
+    "command-line",
+    "commander",
+    "yargs",
+    "burgee",
+    "agent-ready",
+    "ai-agents",
+    "prompts",
+    "non-interactive",
+    "json-output",
+    "llm-optimized",
+    "typescript"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/quality/plugin-cli-floor?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-cli-floor",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-cli-floor"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/ofri-peretz/eslint"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-cli-floor": "0.1.1"
+  }
+}

@@ -73,6 +73,9 @@
     "mysql2": "^2.0.0 || ^3.0.0"
   },
   "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    },
     "mysql2": {
       "optional": true
     }

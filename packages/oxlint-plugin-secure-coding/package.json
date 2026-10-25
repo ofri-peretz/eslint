@@ -1,0 +1,74 @@
+{
+  "name": "oxlint-plugin-secure-coding",
+  "version": "5.4.17",
+  "description": "The secure-coding rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-secure-coding.",
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
+    "interlace-security",
+    "secure-coding",
+    "nodesecurity",
+    "owasp-top-10",
+    "injection",
+    "ldap-injection",
+    "xpath-injection",
+    "xxe",
+    "graphql-injection",
+    "template-injection",
+    "object-injection",
+    "redos",
+    "deserialization",
+    "hardcoded-credentials",
+    "pii",
+    "authentication",
+    "authorization",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript",
+    "auto-fix"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-secure-coding?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-secure-coding",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-secure-coding"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-secure-coding": "5.4.17"
+  }
+}

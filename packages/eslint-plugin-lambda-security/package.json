@@ -85,6 +85,9 @@
     "@middy/validator": "^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0"
   },
   "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    },
     "@aws-sdk/client-lambda": {
       "optional": true
     },

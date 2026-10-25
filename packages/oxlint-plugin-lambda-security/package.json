@@ -1,0 +1,72 @@
+{
+  "name": "oxlint-plugin-lambda-security",
+  "version": "2.1.5",
+  "description": "The lambda-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-lambda-security.",
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
+    "interlace-security",
+    "aws",
+    "lambda",
+    "aws-lambda",
+    "aws-security",
+    "middy",
+    "api-gateway",
+    "serverless",
+    "serverless-security",
+    "iam",
+    "cors",
+    "security-headers",
+    "validation",
+    "secrets",
+    "node",
+    "nodejs",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-lambda-security?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-lambda-security",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-lambda-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-lambda-security": "2.1.5"
+  }
+}

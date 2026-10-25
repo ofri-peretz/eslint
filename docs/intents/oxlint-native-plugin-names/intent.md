@@ -72,11 +72,13 @@ cases: []
 
 # Intent — an oxlint user installs our rules by an oxlint name, and gets no ESLint
 
-**Status:** review · **Opened:** 2026-10-25 · **Owner:** @ofri-peretz
+**Status:** approved · **Opened:** 2026-10-25 · **Owner:** @ofri-peretz
 
 ---
 
 ## What is wanted
+
+**oxlint comes first. There is one copy of the business logic.**
 
 A Vite+ or oxlint user can run `npm i -D oxlint-plugin-<name>`, add it to
 `jsPlugins`, and get the same `<name>/<rule>` rule IDs that `eslint-plugin-<name>`
@@ -151,15 +153,29 @@ this way, and no rule logic is copied to do it.
 - After the aliases are published, `npm install oxlint-plugin-postgresql-security
 --dry-run` in an empty project adds no `eslint` package.
 
-## Open questions
+## Decisions
 
-1. **Publish on merge, or later?** `release.yml` will publish all 32 aliases as
-   first releases on the first push to `main` after merge. The recommendation is
-   to land them with `"private": true`, which makes auto-merge safe. Flipping that
-   field is then a one-line follow-up PR when Ofri decides to go live.
-2. **How does the first publish authenticate?** npm Trusted Publishing is set per
-   package, and a package has to exist before you can set it. The first release of
-   each new name falls back to `NPM_TOKEN`, so that token has to be able to create
-   new packages. **Needs checking before the flip.**
-3. ~~19 packages~~: `origin/main` has **32** rule plugins (as of 2026-10-25). The
-   intent covers all of them.
+Accepted 2026-10-25. Ofri's words: "Lets build 1 PR for all" and "You should make the smartest
+decisions for both of us". Each decision is listed with the reason for it.
+
+1. **Publishing.** The parent session publishes the first version of 31 aliases by hand, each
+   at its plugin's npm version, before this merges. That reserves the names and lets Trusted
+   Publishing be configured for each one. The aliases land **public**. `release.yml` skips
+   versions that are already on npm, and publishes the lockstep bumps after that.
+   `cli-floor` is skipped because its plugin isn't on npm. The generator keeps a `PRIVATE`
+   constant for future plugins.
+   _Why:_ a name that only exists once this merges can't get Trusted Publishing until after
+   its first, token-authenticated release.
+2. **Compatibility adapter.** We write our own in the devkit and do not depend on
+   `@oxlint/plugins`.
+   _Why:_ PRINCIPLES #2, zero external dependencies, and the adapter is about 30 lines.
+3. **Pace.** Everything goes in one PR, gated by oxlint parity and by the existing tests.
+   _Why:_ Ofri expects Vite+ and oxlint to replace most ESLint use, so oxlint-first is the
+   default, not an experiment.
+4. **Type-aware rules stay ESLint-only**, with `runtimes: ['eslint']`. No heuristic rewrites.
+   _Why:_ oxlint has no parser services. A heuristic version would be a different rule
+   shipped under the same ID.
+5. **`eslint-plugin-*` stays the source and `oxlint-plugin-*` stays the alias.** Revisit
+   when npm downloads show `oxlint-plugin-*` ahead.
+   _Why:_ every existing user, doc and link points at the `eslint-plugin-*` names.
+6. **Scope.** The intent covers all **32** rule plugins on `origin/main` (2026-10-25), not 19.

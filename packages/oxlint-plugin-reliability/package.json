@@ -1,0 +1,60 @@
+{
+  "name": "oxlint-plugin-reliability",
+  "version": "4.1.12",
+  "description": "The reliability rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-reliability.",
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "interlace-quality",
+    "reliability",
+    "error-handling",
+    "exception-handling",
+    "fault-tolerance",
+    "resilience",
+    "type-safety",
+    "null-safety",
+    "timeout",
+    "async",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/quality/plugin-reliability?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-reliability",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-reliability"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-reliability": "4.1.12"
+  }
+}

@@ -34,6 +34,9 @@ on:
       - 'tools/oxlint-plugins/**'
       - 'scripts/audit-rule-portability.ts'
       - 'scripts/generate-oxlint-shims.ts'
+      - 'scripts/generate-oxlint-aliases.mts'
+      - 'scripts/verify-oxlint-aliases.mts'
+      - 'packages/oxlint-plugin-*/**'
       - 'scripts/verify-oxlint-shims.ts'
       - 'scripts/__tests__/oxlint-export-lock.test.ts'
       - 'scripts/__tests__/vitest.config.mts'
@@ -110,6 +113,8 @@ jobs:
         run: npm run audit:portability:ci
       - name: Shim/manifest file-drift check
         run: npm run oxlint:shims:check
+      - name: oxlint-plugin-* alias drift check
+        run: npm run oxlint:aliases:check
 
   # Cron / dispatch only. The cheap `static-audit` job above is the per-change
   # correctness check — it catches shim drift and portability regressions, which
@@ -151,6 +156,8 @@ jobs:
         # JS-plugin host and exposes the rule-name set the manifest declares.
         # Catches the "shims point at stale dist" class of bug.
         run: npm run oxlint:shims:verify
+      - name: Alias smoke — every oxlint-plugin-* loads with its plugin's rule IDs
+        run: npm run oxlint:aliases:verify
       - name: Finding-level parity bench
         # `--ci`, not `--cached`. `--cached` trusted a committed, locally
         # written cache, and until 2026-10 it also never exited non-zero: run

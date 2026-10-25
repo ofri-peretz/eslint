@@ -25,15 +25,27 @@ interface Manifest {
   name?: string;
   private?: boolean;
   peerDependencies?: Record<string, string>;
+  peerDependenciesMeta?: Record<string, { optional?: boolean }>;
 }
 
-function manifests(): { name: string; peer: string | undefined }[] {
+function manifests(): {
+  name: string;
+  peer: string | undefined;
+  optional: boolean;
+}[] {
   return readdirSync(PACKAGES_DIR)
     .map((dir) => join(PACKAGES_DIR, dir, 'package.json'))
     .filter((p) => existsSync(p))
     .map((p) => JSON.parse(readFileSync(p, 'utf8')) as Manifest)
     .filter((m) => m.private !== true && m.name)
-    .map((m) => ({ name: m.name!, peer: m.peerDependencies?.eslint }));
+    // `oxlint-plugin-*` aliases declare no peer of their own: the range travels
+    // with the `eslint-plugin-*` they depend on (docs/intents/oxlint-native-plugin-names).
+    .filter((m) => !m.name!.startsWith('oxlint-plugin-'))
+    .map((m) => ({
+      name: m.name!,
+      peer: m.peerDependencies?.eslint,
+      optional: m.peerDependenciesMeta?.eslint?.optional === true,
+    }));
 }
 
 /**
@@ -82,6 +94,23 @@ describe('declared ESLint peer floor', () => {
       .map((m) => m.name);
 
     expect(missing).toEqual([]);
+  });
+
+  /**
+   * npm 7+ installs a REQUIRED peer automatically, so a required `eslint` peer
+   * puts ESLint into every oxlint / Vite+ project that installs our rules.
+   * Measured 2026-10-25: `npm i eslint-plugin-postgresql-security` added 79
+   * packages, eslint@10.13.0 among them; with `--omit=peer`, 2. An optional peer
+   * is still range-checked whenever ESLint IS installed, so ESLint users lose
+   * nothing. Formatters are exempt: they only ever run inside ESLint.
+   */
+  it('marks the eslint peer optional on everything oxlint can load', () => {
+    const required = manifests()
+      .filter((m) => m.peer && !m.optional)
+      .filter((m) => !m.name.includes('formatter'))
+      .map((m) => m.name);
+
+    expect(required).toEqual([]);
   });
 
   it(`never claims support below ESLint ${MIN_ESLINT}`, () => {

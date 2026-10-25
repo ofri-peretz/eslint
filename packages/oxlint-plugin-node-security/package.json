@@ -1,0 +1,75 @@
+{
+  "name": "oxlint-plugin-node-security",
+  "version": "5.6.12",
+  "description": "The node-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-node-security.",
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
+    "interlace-security",
+    "node",
+    "nodejs",
+    "node-security",
+    "nodesecurity",
+    "command-injection",
+    "cwe-78",
+    "path-traversal",
+    "cwe-22",
+    "ssrf",
+    "zip-slip",
+    "child-process",
+    "crypto",
+    "cryptography",
+    "weak-hash",
+    "md5",
+    "sha1",
+    "timing-attack",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript",
+    "auto-fix"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-node-security?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-node-security",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-node-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-node-security": "5.6.12"
+  }
+}

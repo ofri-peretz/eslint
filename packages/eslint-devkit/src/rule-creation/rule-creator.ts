@@ -113,14 +113,53 @@ export type NamedCreateRuleMeta<
   docs: PluginDocs & TSESLint.RuleMetaDataDocs;
 } & Omit<TSESLint.RuleMetaData<MessageIds, PluginDocs, Options>, 'docs'>;
 
-export interface RuleCreateAndOptions<
+/**
+ * oxlint's rule shape: a visitor built ONCE per lint run, with per-file hooks.
+ *
+ * `before` runs before each file and is where per-file state is (re)set;
+ * returning `false` skips the file. `after` runs once the file is walked.
+ * The context's file-scoped members (`filename`, `sourceCode`, `options`,
+ * `report`) are only valid inside `before`, `after` and the visitors — oxlint
+ * throws if `createOnce`'s own body reads them.
+ */
+export type RuleVisitorWithHooks = TSESLint.RuleListener & {
+  before?: () => boolean | void;
+  after?: () => void;
+};
+
+export type RuleCreateOnce<
   Options extends readonly unknown[],
   MessageIds extends string,
-> {
-  create: (
-    context: Readonly<TSESLint.RuleContext<MessageIds, Options>>,
-    optionsWithDefault: Readonly<Options>,
-  ) => TSESLint.RuleListener;
+> = (
+  context: Readonly<TSESLint.RuleContext<MessageIds, Options>>,
+  /** The current file's options, defaults applied. Call it in `before` or a visitor. */
+  options: () => Readonly<Options>,
+) => RuleVisitorWithHooks;
+
+export type RuleCreate<
+  Options extends readonly unknown[],
+  MessageIds extends string,
+> = (
+  context: Readonly<TSESLint.RuleContext<MessageIds, Options>>,
+  optionsWithDefault: Readonly<Options>,
+) => TSESLint.RuleListener;
+
+/**
+ * A rule supplies exactly one of `createOnce` (oxlint's shape, preferred) or
+ * `create` (ESLint's). A `createOnce` rule still runs on ESLint: the creator
+ * derives `create` from it. New rules use `createOnce`; `create` survives only
+ * for rules on `.agent/create-rule-allowlist.json`.
+ */
+export type RuleCreateAndOptions<
+  Options extends readonly unknown[],
+  MessageIds extends string,
+> = RuleOptionsAndSkips<Options> &
+  (
+    | { create: RuleCreate<Options, MessageIds>; createOnce?: never }
+    | { createOnce: RuleCreateOnce<Options, MessageIds>; create?: never }
+  );
+
+interface RuleOptionsAndSkips<Options extends readonly unknown[]> {
   defaultOptions?: Readonly<Options>;
   /**
    * BENCHMARK-CRITERIA.md §B1: "self-skips test files — by path and by filename
@@ -174,23 +213,23 @@ export interface RuleCreateAndOptions<
   skipMinifiedFiles?: boolean;
 }
 
-export interface RuleWithMeta<
+export type RuleWithMeta<
   Options extends readonly unknown[],
   MessageIds extends string,
   Docs = unknown,
-> extends RuleCreateAndOptions<Options, MessageIds> {
+> = RuleCreateAndOptions<Options, MessageIds> & {
   meta: TSESLint.RuleMetaData<MessageIds, Docs, Options>;
   name?: string;
-}
+};
 
-export interface RuleWithMetaAndName<
+export type RuleWithMetaAndName<
   Options extends readonly unknown[],
   MessageIds extends string,
   Docs = unknown,
-> extends RuleCreateAndOptions<Options, MessageIds> {
+> = RuleCreateAndOptions<Options, MessageIds> & {
   meta: NamedCreateRuleMeta<MessageIds, Docs, Options>;
   name: string;
-}
+};
 
 export type RuleModuleWithName<
   MessageIds extends string,
@@ -301,39 +340,81 @@ function createRuleInternal<
   Options extends readonly unknown[],
   MessageIds extends string,
   Docs = unknown,
->({
-  create,
-  defaultOptions,
-  meta,
-  name,
-  skipTestFiles,
-  skipGeneratedFiles,
-  skipMinifiedFiles,
-}: Readonly<RuleWithMeta<Options, MessageIds, Docs>>): RuleModuleWithName<
-  MessageIds,
-  Options,
-  Docs
-> {
+>(
+  rule: Readonly<RuleWithMeta<Options, MessageIds, Docs>>,
+): RuleModuleWithName<MessageIds, Options, Docs> {
+  const { defaultOptions, meta, name } = rule;
+  const { skipTestFiles, skipGeneratedFiles, skipMinifiedFiles } = rule;
   const resolvedDefaultOptions = (defaultOptions ?? []) as Options;
-  return {
-    create(context) {
-      // Returning an empty listener object, not `undefined`: ESLint treats a
-      // rule that visits nothing as a rule with no findings, which is exactly
-      // the intent, and it costs no traversal.
-      if (skipTestFiles && isTestFilePath(context.filename)) return {};
-      // After the filename test, which is string work, and before anything
-      // that walks the AST.
-      if (skipGeneratedFiles && isGeneratedFile(context.sourceCode)) return {};
-      if (skipMinifiedFiles && isMinifiedFile(context.sourceCode)) return {};
-      return create(
-        context,
-        applyDefault(resolvedDefaultOptions, context.options),
-      );
-    },
+
+  /** The file-level opt-outs, shared by both engines' entry points. */
+  const skipsFile = (
+    context: Readonly<TSESLint.RuleContext<MessageIds, Options>>,
+  ) =>
+    (skipTestFiles && isTestFilePath(context.filename)) ||
+    // After the filename test, which is string work, and before anything
+    // that walks the AST.
+    (skipGeneratedFiles && isGeneratedFile(context.sourceCode)) ||
+    (skipMinifiedFiles && isMinifiedFile(context.sourceCode));
+
+  const module = {
     defaultOptions: resolvedDefaultOptions,
     meta,
     name: name as string,
-  } as RuleModuleWithName<MessageIds, Options, Docs>;
+  } as RuleModuleWithName<MessageIds, Options, Docs> & {
+    createOnce?: (context: unknown) => RuleVisitorWithHooks;
+  };
+
+  const { createOnce } = rule;
+  if (!createOnce) {
+    const { create } = rule as { create: RuleCreate<Options, MessageIds> };
+    module.create = (context) =>
+      // Returning an empty listener object, not `undefined`: ESLint treats a
+      // rule that visits nothing as a rule with no findings, which is exactly
+      // the intent, and it costs no traversal.
+      skipsFile(context)
+        ? {}
+        : create(
+            context,
+            applyDefault(resolvedDefaultOptions, context.options),
+          );
+    return module;
+  }
+
+  // oxlint: build the visitor once, and do the per-file work in `before`.
+  module.createOnce = (raw) => {
+    const context = raw as Readonly<TSESLint.RuleContext<MessageIds, Options>>;
+    let options = resolvedDefaultOptions;
+    const { before, ...visitor } = createOnce(context, () => options);
+    return {
+      ...visitor,
+      before() {
+        if (skipsFile(context)) return false;
+        options = applyDefault(resolvedDefaultOptions, context.options);
+        return before?.();
+      },
+    };
+  };
+
+  // ESLint: the same createOnce, run per file — what @oxlint/plugins'
+  // `eslintCompatPlugin` does, without the dependency (PRINCIPLES #2).
+  module.create = (context) => {
+    if (skipsFile(context)) return {};
+    const options = applyDefault(resolvedDefaultOptions, context.options);
+    const { before, after, ...visitor } = createOnce(context, () => options);
+    if (before?.() === false) return {};
+    if (!after) return visitor;
+    // `after` runs once the walk is done, which in ESLint is `Program:exit`.
+    const exit = visitor['Program:exit'];
+    return {
+      ...visitor,
+      'Program:exit'(node) {
+        exit?.(node);
+        after();
+      },
+    };
+  };
+  return module;
 }
 
 /**
