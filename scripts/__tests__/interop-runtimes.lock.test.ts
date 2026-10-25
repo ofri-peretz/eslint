@@ -1,4 +1,5 @@
 /**
+ * @provenBy {"file":".agent/oxlint-runtime-survey.json","find":"    \"eslint-plugin-jwt-security/no-algorithm-none\": {\n      \"cases\": 56,\n      \"failed\": 0,","replace":"    \"eslint-plugin-jwt-security/no-algorithm-none\": {\n      \"cases\": 56,\n      \"failed\": 1,"}
  * Every rule declares where it runs, and the declaration matches the evidence.
  *
  * `meta.interop.runtimes` is what tells an oxlint or Vite+ user whether a rule

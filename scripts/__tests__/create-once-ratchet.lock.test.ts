@@ -1,4 +1,5 @@
 /**
+ * @provenBy {"file":"packages/eslint-plugin-jwt-security/src/rules/no-algorithm-none/index.ts","find":"  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {","replace":"  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {"}
  * New rules are written in oxlint's `createOnce` shape; `create` only survives
  * where it is grandfathered, and that list can only shrink.
  *

@@ -4845,6 +4845,83 @@
       ],
       "kind": "false-positive",
       "peers": []
+    },
+    {
+      "id": "ILB-0167",
+      "added": "2026-10-26",
+      "title": "A hidden array element behind an invisible Hangul filler",
+      "rationale": "U+3164 HANGUL FILLER is a letter, so JavaScript accepts it as a whole identifier, but every editor draws it as nothing. Placed after the comma it is a third array element that a reviewer cannot see, and in the middle of a name (`adm<U+3164>in`) it mints a second binding that renders as the first. The parser reads it correctly; the weakness is entirely in what the human can see (the published 'invisible backdoor' technique).",
+      "cwe": "CWE-1007",
+      "severity": {
+        "cvss": 5.3,
+        "vector": null,
+        "source": "rule meta (secure-coding/no-invisible-characters)"
+      },
+      "references": [
+        {
+          "id": "Certitude: the invisible backdoor",
+          "url": "https://certitude.consulting/blog/en/invisible-backdoor/",
+          "verified": false
+        },
+        {
+          "id": "CWE-1007",
+          "url": "https://cwe.mitre.org/data/definitions/1007.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "const commands = [\n  'ping -c 1 example.com',\n  'curl -s http://example.com/',\u3164\n];\nfor (const command of commands) run(command);",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-invisible-characters",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/no-invisible-characters/no-invisible-characters.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-invisible-characters",
+          "control": "const adm\u3164in = true;"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0168",
+      "added": "2026-10-26",
+      "title": "Template auto-escaping switched off for the whole engine",
+      "rationale": "`escapeMarkup = false` makes the template engine interpolate every value as raw HTML. The decision is taken once, on one line, far from every template it affects, so no review of an individual template sees it; after it, any user-controlled value rendered through the engine is a stored or reflected XSS sink.",
+      "cwe": "CWE-79",
+      "severity": {
+        "cvss": 6.1,
+        "vector": null,
+        "source": "rule meta (secure-coding/no-disabled-template-escaping)"
+      },
+      "references": [
+        {
+          "id": "CWE-79",
+          "url": "https://cwe.mitre.org/data/definitions/79.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "const view = createView({ templates });\nview.escapeMarkup = false;\nexport const render = (user) => view.render('profile', { name: user.displayName });",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-disabled-template-escaping",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/no-disabled-template-escaping/no-disabled-template-escaping.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-disable-mustache-escape",
+          "control": "view.escapeMarkup = false;"
+        }
+      ]
     }
   ]
 }

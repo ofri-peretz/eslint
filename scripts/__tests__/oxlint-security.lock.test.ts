@@ -1,4 +1,5 @@
 /**
+ * @provenBy {"file":"packages/oxlint-plugin-security/mapping.json","find":"\"version\": \"4.2.0\"","replace":"\"version\": \"4.1.0\""}
  * oxlint-plugin-security — the façade's contract, held before anything ships
  * (docs/intents/oxlint-plugin-security-drop-in, ADR-0008).
  *

@@ -126,7 +126,7 @@ const readme = `# oxlint-plugin-security
 
 > An independent package, not affiliated with eslint-community, eslint-plugin-security or oxc.
 
-A drop-in replacement for [\`eslint-plugin-security\`](https://www.npmjs.com/package/eslint-plugin-security)@${mapping.incumbent.version} on [oxlint](https://oxc.rs/docs/guide/usage/linter/js-plugins) and [Vite+](https://viteplus.dev/guide/lint). It answers to the same \`security/<rule>\` IDs, so your existing rule configuration keeps working, and each ID is backed by an [Interlace](https://eslint.interlace.tools) security rule.
+A drop-in replacement for [\`eslint-plugin-security\`](https://www.npmjs.com/package/eslint-plugin-security)@${mapping.incumbent.version} on [oxlint](https://oxc.rs/docs/guide/usage/linter/js-plugins) and [Vite+](https://viteplus.dev/guide/lint). It answers to the same \`security/<rule>\` IDs, so your existing rule configuration keeps working, and each ID is backed by an [Interlace](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-security) security rule.
 
 ## Install
 

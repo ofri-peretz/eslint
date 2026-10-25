@@ -13,6 +13,10 @@
       {
         "file": "zero-width-in-auth-string.js",
         "description": "Zero-width space (U+200B) inside a group literal used in an equality auth check"
+      },
+      {
+        "file": "hangul-filler-hidden-array-element.js",
+        "description": "Real Hangul filler (U+3164) after a comma in a command array: a third element no reviewer can see (secure-coding/no-invisible-characters)"
       }
     ],
     "safe": [
@@ -23,6 +27,10 @@
       {
         "file": "i18n-ui-copy.js",
         "description": "Legitimate Hebrew/Russian/Japanese translation strings in UI copy (FP lock)"
+      },
+      {
+        "file": "escaped-filler-and-korean-text.js",
+        "description": "The filler written as a visible \\u3164 escape plus ordinary Korean syllables and jamo (FP lock against a range-based check)"
       }
     ]
   }
