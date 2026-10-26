@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-modernization",
-  "version": "3.1.9",
+  "version": "3.2.0",
   "description": "The modernization rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-modernization.",
   "type": "commonjs",
   "main": "./index.js",
@@ -57,6 +57,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-modernization": "3.1.9"
+    "eslint-plugin-modernization": "3.2.0"
   }
 }

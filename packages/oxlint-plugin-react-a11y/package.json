@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-react-a11y",
-  "version": "2.5.3",
+  "version": "2.6.0",
   "description": "The react-a11y rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-react-a11y.",
   "type": "commonjs",
   "main": "./index.js",
@@ -72,6 +72,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-react-a11y": "2.5.3"
+    "eslint-plugin-react-a11y": "2.6.0"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-jwt-security",
-  "version": "3.5.3",
+  "version": "3.6.0",
   "description": "The jwt-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-jwt-security.",
   "type": "commonjs",
   "main": "./index.js",
@@ -74,6 +74,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-jwt-security": "3.5.3"
+    "eslint-plugin-jwt-security": "3.6.0"
   }
 }
