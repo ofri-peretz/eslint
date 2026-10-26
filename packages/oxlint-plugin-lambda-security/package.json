@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-lambda-security",
-  "version": "2.1.5",
+  "version": "2.2.0",
   "description": "The lambda-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-lambda-security.",
   "type": "commonjs",
   "main": "./index.js",
@@ -70,6 +70,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-lambda-security": "2.1.5"
+    "eslint-plugin-lambda-security": "2.2.0"
   }
 }

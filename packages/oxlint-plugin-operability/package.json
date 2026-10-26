@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-operability",
-  "version": "4.1.6",
+  "version": "4.2.0",
   "description": "The operability rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-operability.",
   "type": "commonjs",
   "main": "./index.js",
@@ -57,6 +57,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-operability": "4.1.6"
+    "eslint-plugin-operability": "4.2.0"
   }
 }

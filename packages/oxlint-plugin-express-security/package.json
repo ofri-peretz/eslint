@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-express-security",
-  "version": "3.2.4",
+  "version": "3.3.0",
   "description": "The express-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-express-security.",
   "type": "commonjs",
   "main": "./index.js",
@@ -71,6 +71,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-express-security": "3.2.4"
+    "eslint-plugin-express-security": "3.3.0"
   }
 }

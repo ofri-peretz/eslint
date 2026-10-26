@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-openai-security",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "The openai-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-openai-security.",
   "type": "commonjs",
   "main": "./index.js",
@@ -61,6 +61,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-openai-security": "1.0.0"
+    "eslint-plugin-openai-security": "1.1.0"
   }
 }

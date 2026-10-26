@@ -84,7 +84,7 @@ withCanonicalDocsUrls('plugin-jwt-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-jwt-security',
-    version: '3.5.3',
+    version: '3.6.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

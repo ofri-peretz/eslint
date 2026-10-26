@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-prisma-security",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "The prisma-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-prisma-security.",
   "type": "commonjs",
   "main": "./index.js",
@@ -66,6 +66,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-prisma-security": "1.0.0"
+    "eslint-plugin-prisma-security": "1.1.0"
   }
 }

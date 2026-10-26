@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-reliability",
-  "version": "4.1.12",
+  "version": "4.2.0",
   "description": "The reliability rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-reliability.",
   "type": "commonjs",
   "main": "./index.js",
@@ -58,6 +58,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-reliability": "4.1.12"
+    "eslint-plugin-reliability": "4.2.0"
   }
 }

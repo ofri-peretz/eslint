@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-cli-floor",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "The cli-floor rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-cli-floor.",
   "private": true,
   "type": "commonjs",
@@ -59,6 +59,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-cli-floor": "0.1.1"
+    "eslint-plugin-cli-floor": "0.2.0"
   }
 }

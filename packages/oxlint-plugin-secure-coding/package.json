@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-secure-coding",
-  "version": "5.4.17",
+  "version": "5.5.0",
   "description": "The secure-coding rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-secure-coding.",
   "type": "commonjs",
   "main": "./index.js",
@@ -72,6 +72,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-secure-coding": "5.4.17"
+    "eslint-plugin-secure-coding": "5.5.0"
   }
 }

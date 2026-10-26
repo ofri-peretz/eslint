@@ -5,6 +5,64 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.5.0
+
+### Minor Changes
+
+- **✨ Feature** — every rule runs natively on oxlint and Vite+, published as `oxlint-plugin-<name>` too
+
+  - **`oxlint-plugin-<name>`**: each plugin now has an oxlint-native twin on npm,
+    for installs from oxlint or Vite+ (`lint.jsPlugins: ['oxlint-plugin-<name>']`
+    in `vite.config.ts`). It re-exports the same rules under the same
+    `<name>/<rule>` IDs, at the same version, and does not install ESLint.
+  - **`createOnce`**: 457 of 473 rule definitions are written in oxlint's
+    `createOnce` shape, with per-file state reset in `before()`. ESLint runs the
+    same rule object through a `create` the devkit derives from it, so ESLint
+    behaviour is unchanged: every existing test passes, and oxlint parity on the
+    benchmark corpus stays at 100% (3,932 shared findings, none on one engine
+    only). The remaining 16 are listed, with reasons, in
+    `.agent/create-rule-allowlist.json`.
+  - **`meta.interop.runtimes`**: every rule now states where it is known to
+    behave identically. `['eslint', 'oxlint']` means its own test suite passes
+    on oxlint's RuleTester as well as ESLint's, and the tests enforce that on
+    every run; type-aware rules stay `['eslint']`. The ESLint-only rules and the
+    reason for each are listed in `docs/oxlint-runtimes.md`.
+
+- **✨ Feature** — `no-invisible-characters` and `no-disabled-template-escaping`
+
+  Two new rules, both covering checks `eslint-plugin-security` makes and this plugin
+  did not. Neither is in `recommended`; enable them by name or through `strict`.
+
+  `no-invisible-characters` (CWE-1007) reports the Hangul fillers U+3164 and
+  U+FFA0, plus the same class: U+115F, U+1160, U+17B4 and U+17B5. These are letters
+  that render as nothing, so they can hide anywhere in source: in an identifier
+  (`admin` and a lookalike `admin` become two variables), in a string, in a comment,
+  or alone as a whole identifier. `no-bidi-characters` and `no-homoglyph-identifiers`
+  do not report them, and this rule does not report the characters those rules
+  cover, so no character gets two findings. Each finding offers a suggestion that
+  removes the character. It covers `detect-invisible-characters`, and all of that
+  rule's test cases are ported into this one's suite.
+
+  `no-disabled-template-escaping` (CWE-79) reports `x.escapeMarkup = false`, which
+  turns off a template engine's HTML auto-escaping for every template at once. It
+  also matches `x['escapeMarkup'] = false` and ``x[`escapeMarkup`] = false``, which
+  `detect-disable-mustache-escape` misses. A variable key (`x[name] = false`) does
+  not report.
+
+### Patch Changes
+
+- **🐛 Fix** — ESLint is now an optional peer, so oxlint and Vite+ installs stop pulling it in
+
+  npm 7+ installs a required peer automatically. Every plugin, and the shared
+  devkit, declared `eslint` as a required peer, so installing a plugin for
+  oxlint or Vite+ installed ESLint as well. Measured 2026-10-25:
+  `npm i eslint-plugin-postgresql-security` added 79 packages, eslint@10.13.0
+  among them; with the peer skipped it added 2. The peer is now marked
+  optional. npm still checks the version range whenever ESLint is installed,
+  so ESLint users see no change.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.21.0`
+
 ## 5.4.17
 
 ### Patch Changes
