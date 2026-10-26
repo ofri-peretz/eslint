@@ -42,6 +42,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
 
+import {
+  findStaleHashes,
+  type TaskSnapshot,
+} from './cache-invalidation-findings.ts';
+
 const REPO_ROOT = path.resolve(
   path.dirname(url.fileURLToPath(import.meta.url)),
   '..',
@@ -130,8 +135,14 @@ const TURBO = (() => {
 const turboArgs = (rest: string[]): string[] =>
   TURBO === 'npx' ? ['turbo', ...rest] : rest;
 
-/** Task hashes for `pkgs`, computed without running anything. */
-function hashes(task: string, pkgs: string[]): Map<string, string> {
+/**
+ * Task hashes and commands for `pkgs`, computed without running anything.
+ * The command is carried alongside the hash because a task with no matching
+ * script resolves to turbo's `<NONEXISTENT>` placeholder — see
+ * scripts/cache-invalidation-findings.ts for why that must not count as
+ * a stale-hash finding.
+ */
+function hashes(task: string, pkgs: string[]): Map<string, TaskSnapshot> {
   const out = execFileSync(
     TURBO,
     turboArgs(['run', task, ...pkgs.map((p) => `--filter=${p}`), '--dry=json']),
@@ -148,8 +159,12 @@ function hashes(task: string, pkgs: string[]): Map<string, string> {
       killSignal: 'SIGKILL',
     },
   );
-  const plan = JSON.parse(out) as { tasks: { taskId: string; hash: string }[] };
-  return new Map(plan.tasks.map((t) => [t.taskId, t.hash]));
+  const plan = JSON.parse(out) as {
+    tasks: { taskId: string; hash: string; command: string }[];
+  };
+  return new Map(
+    plan.tasks.map((t) => [t.taskId, { hash: t.hash, command: t.command }]),
+  );
 }
 
 type Workspace = { name: string; dir: string; deps: string[] };
@@ -230,7 +245,7 @@ for (const up of upstreams) {
   // does not, the task is not tracking its own inputs and the dependent
   // comparison below proves nothing.
   const scope = [up.name, ...probed];
-  let before: Map<string, string>;
+  let before: Map<string, TaskSnapshot>;
   try {
     before = hashes(TASK, scope);
   } catch (err) {
@@ -251,15 +266,13 @@ for (const up of upstreams) {
   );
   checked.push(`${up.name} -> ${probed.join(', ')}`);
 
-  for (const [taskId, hash] of before)
-    if (after.get(taskId) === hash)
-      findings.push({
-        probe: `${up.dir}/src/index.ts`,
-        task: taskId,
-        reason: taskId.startsWith(`${up.name}#`)
-          ? 'a package changed its own source and its hash did not move'
-          : `changing ${up.name} did not move its dependent's hash — that task would replay a stale pass`,
-      });
+  const probe = `${up.dir}/src/index.ts`;
+  for (const f of findStaleHashes(before, after, scope, (taskId) =>
+    taskId.startsWith(`${up.name}#`)
+      ? 'a package changed its own source and its hash did not move'
+      : `changing ${up.name} did not move its dependent's hash — that task would replay a stale pass`,
+  ))
+    findings.push({ probe, task: f.task, reason: f.reason });
 }
 
 // Declared global dependencies must move every hash that sees them.
@@ -269,7 +282,7 @@ const turbo = JSON.parse(
 const globalScope = sample(all.map((w) => w.name).sort(), WIDTH, SAMPLE);
 for (const g of turbo.globalDependencies ?? []) {
   if (g.includes('*') || !fs.existsSync(path.join(REPO_ROOT, g))) continue;
-  let before: Map<string, string>;
+  let before: Map<string, TaskSnapshot>;
   try {
     before = hashes(TASK, globalScope);
   } catch (err) {
@@ -286,13 +299,14 @@ for (const g of turbo.globalDependencies ?? []) {
   }
   const after = withPerturbed(g, () => hashes(TASK, globalScope));
   checked.push(`global ${g} -> ${globalScope.join(', ')}`);
-  for (const [taskId, hash] of before)
-    if (after.get(taskId) === hash)
-      findings.push({
-        probe: g,
-        task: taskId,
-        reason: `\`${g}\` is declared a globalDependency but changing it did not move this hash`,
-      });
+  for (const f of findStaleHashes(
+    before,
+    after,
+    globalScope,
+    () =>
+      `\`${g}\` is declared a globalDependency but changing it did not move this hash`,
+  ))
+    findings.push({ probe: g, task: f.task, reason: f.reason });
 }
 
 if (JSON_OUT) {
