@@ -2,7 +2,12 @@
 
 import { useRef } from 'react';
 import Link from 'next/link';
-import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from 'fumadocs-ui/components/tabs';
 import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock';
 
 import { InstallSnippet } from '@/components/mdx/install-snippet';
@@ -19,6 +24,9 @@ import { InstallSnippet } from '@/components/mdx/install-snippet';
 
 export const ENGINE_GROUP = 'lint-engine';
 export const ESLINT_ANCHOR = 'engine-eslint';
+// Labels and values are separate: fumadocs' `items` shorthand derives the
+// value from the label, and `oxlint / Vite+` put a space into Radix's
+// `aria-controls` (axe aria-valid-attr-value).
 const OXLINT_TAB = 'oxlint / Vite+';
 const ESLINT_TAB = 'ESLint';
 
@@ -85,8 +93,12 @@ export function EngineTabs({ plugin, rules, preset }: EngineTabsProps) {
       onKeyUpCapture={syncHash}
       data-testid="engine-tabs"
     >
-      <Tabs items={[OXLINT_TAB, ESLINT_TAB]} groupId={ENGINE_GROUP} persist>
-        <Tab value={OXLINT_TAB} data-engine="oxlint">
+      <Tabs defaultValue="oxlint" groupId={ENGINE_GROUP} persist>
+        <TabsList>
+          <TabsTrigger value="oxlint">{OXLINT_TAB}</TabsTrigger>
+          <TabsTrigger value="eslint">{ESLINT_TAB}</TabsTrigger>
+        </TabsList>
+        <TabsContent value="oxlint" data-engine="oxlint">
           <InstallSnippet packages={alias} dev />
           <DynamicCodeBlock
             lang="json"
@@ -103,15 +115,15 @@ export function EngineTabs({ plugin, rules, preset }: EngineTabsProps) {
             rules under the same IDs, and no ESLint install.{' '}
             <Link href="/docs/oxlint">Why oxlint</Link>.
           </p>
-        </Tab>
-        <Tab value={ESLINT_TAB} id={ESLINT_ANCHOR} data-engine="eslint">
+        </TabsContent>
+        <TabsContent value="eslint" id={ESLINT_ANCHOR} data-engine="eslint">
           <InstallSnippet packages={pkg} dev />
           <DynamicCodeBlock
             lang="js"
             code={eslintConfig}
             codeblock={{ title: 'eslint.config.js' }}
           />
-        </Tab>
+        </TabsContent>
       </Tabs>
     </div>
   );

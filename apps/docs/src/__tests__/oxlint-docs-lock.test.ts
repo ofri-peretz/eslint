@@ -26,12 +26,19 @@ describe('engine tabs', () => {
   const tabs = read('src/components/docs/engine-tabs.tsx');
 
   it('puts oxlint / Vite+ first, so it is the default tab', () => {
-    expect(tabs).toMatch(/items=\{\[OXLINT_TAB, ESLINT_TAB\]\}/);
+    expect(tabs).toMatch(/defaultValue="oxlint"/);
+    expect(tabs).toMatch(
+      /<TabsTrigger value="oxlint">[\s\S]*<TabsTrigger value="eslint">/,
+    );
+    // Values carry no spaces: they become Radix ids (aria-controls).
+    expect(tabs).not.toMatch(/items=\{/);
   });
 
   it('remembers the choice and deep-links ESLint by fragment', () => {
     expect(tabs).toMatch(/groupId=\{ENGINE_GROUP\}\s+persist/);
-    expect(tabs).toMatch(/<Tab value=\{ESLINT_TAB\} id=\{ESLINT_ANCHOR\}/);
+    expect(tabs).toMatch(
+      /<TabsContent\s+value="eslint"\s+id=\{ESLINT_ANCHOR\}/,
+    );
     // The default never appears in the URL: choosing oxlint strips the hash.
     expect(tabs).toMatch(/replaceState\(null, '', pathname \+ search\)/);
   });

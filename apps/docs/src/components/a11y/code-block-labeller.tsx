@@ -24,39 +24,50 @@ export function CodeBlockLabeller() {
   useEffect(() => {
     if (typeof document === 'undefined') return;
 
-    const label = (root: ParentNode) => {
-      const figures = root.querySelectorAll<HTMLElement>('figure.shiki');
+    // Ordinals are document-wide. Numbering per mutated subtree (the old
+    // `label(el)`) restarted at 1 for every client-rendered block — the engine
+    // tabs' DynamicCodeBlocks — and collided with the static blocks' labels.
+    // Labels this component set are rewritten on each pass (`data-cbl`), so a
+    // block mounted mid-page renumbers the ones after it; labels set by anyone
+    // else are left alone.
+    const label = () => {
+      const figures = document.querySelectorAll<HTMLElement>('figure.shiki');
       figures.forEach((fig, idx) => {
         const ordinal = idx + 1;
-        if (!fig.hasAttribute('aria-label')) {
+        if (!fig.hasAttribute('aria-label') || fig.dataset.cbl !== undefined) {
           fig.setAttribute('aria-label', `Code example ${ordinal}`);
+          fig.dataset.cbl = '';
         }
         // The inner scrollable region is its own ARIA landmark — also needs a
         // unique name. We pair it with the figure ordinal so screen-reader
         // users get a sensible "viewport for code example N" affordance.
-        const region = fig.querySelector<HTMLElement>(
-          'div[role="region"]:not([aria-label])',
-        );
-        if (region) {
+        const region = fig.querySelector<HTMLElement>('div[role="region"]');
+        if (
+          region &&
+          (!region.hasAttribute('aria-label') ||
+            region.dataset.cbl !== undefined)
+        ) {
           region.setAttribute(
             'aria-label',
             `Scrollable viewport, code example ${ordinal}`,
           );
+          region.dataset.cbl = '';
         }
       });
     };
 
-    label(document);
+    label();
 
     const observer = new MutationObserver((mutations) => {
-      for (const m of mutations) {
-        for (const node of Array.from(m.addedNodes)) {
-          if (node.nodeType !== Node.ELEMENT_NODE) continue;
-          const el = node as HTMLElement;
-          if (el.matches?.('figure.shiki')) label(el.parentNode ?? document);
-          else if (el.querySelector?.('figure.shiki')) label(el);
-        }
-      }
+      const added = mutations.some((m) =>
+        Array.from(m.addedNodes).some(
+          (node) =>
+            node.nodeType === Node.ELEMENT_NODE &&
+            ((node as HTMLElement).matches?.('figure.shiki') ||
+              (node as HTMLElement).querySelector?.('figure.shiki')),
+        ),
+      );
+      if (added) label();
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
