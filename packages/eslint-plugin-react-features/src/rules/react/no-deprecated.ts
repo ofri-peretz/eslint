@@ -7,12 +7,16 @@
 /**
  * ESLint Rule: no-deprecated
  * Prevent using deprecated React methods
- * 
+ *
  * Maintenance: Helps with React upgrades and migration
  * @see https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/no-deprecated.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'deprecated';
@@ -20,30 +24,62 @@ type MessageIds = 'deprecated';
 type RuleOptions = [];
 
 // Deprecated React APIs (React 16+)
-const DEPRECATED_APIS: Record<string, { replacement: string; since: string }> = {
-  // React methods
-  'React.createClass': { replacement: 'class extends React.Component', since: 'React 16' },
-  'React.PropTypes': { replacement: 'import PropTypes from "prop-types"', since: 'React 15.5' },
-  'React.findDOMNode': { replacement: 'refs', since: 'React 16.3' },
-  
-  // ReactDOM methods
-  'ReactDOM.render': { replacement: 'createRoot().render()', since: 'React 18' },
-  'ReactDOM.hydrate': { replacement: 'hydrateRoot()', since: 'React 18' },
-  'ReactDOM.unmountComponentAtNode': { replacement: 'root.unmount()', since: 'React 18' },
-  'ReactDOM.findDOMNode': { replacement: 'refs', since: 'React 16.3' },
-  
-  // Lifecycle methods (deprecated in strict mode)
-  'componentWillMount': { replacement: 'componentDidMount or constructor', since: 'React 16.3' },
-  'componentWillReceiveProps': { replacement: 'static getDerivedStateFromProps', since: 'React 16.3' },
-  'componentWillUpdate': { replacement: 'getSnapshotBeforeUpdate', since: 'React 16.3' },
-  'UNSAFE_componentWillMount': { replacement: 'componentDidMount or constructor', since: 'React 17' },
-  'UNSAFE_componentWillReceiveProps': { replacement: 'static getDerivedStateFromProps', since: 'React 17' },
-  'UNSAFE_componentWillUpdate': { replacement: 'getSnapshotBeforeUpdate', since: 'React 17' },
-};
+const DEPRECATED_APIS: Record<string, { replacement: string; since: string }> =
+  {
+    // React methods
+    'React.createClass': {
+      replacement: 'class extends React.Component',
+      since: 'React 16',
+    },
+    'React.PropTypes': {
+      replacement: 'import PropTypes from "prop-types"',
+      since: 'React 15.5',
+    },
+    'React.findDOMNode': { replacement: 'refs', since: 'React 16.3' },
+
+    // ReactDOM methods
+    'ReactDOM.render': {
+      replacement: 'createRoot().render()',
+      since: 'React 18',
+    },
+    'ReactDOM.hydrate': { replacement: 'hydrateRoot()', since: 'React 18' },
+    'ReactDOM.unmountComponentAtNode': {
+      replacement: 'root.unmount()',
+      since: 'React 18',
+    },
+    'ReactDOM.findDOMNode': { replacement: 'refs', since: 'React 16.3' },
+
+    // Lifecycle methods (deprecated in strict mode)
+    componentWillMount: {
+      replacement: 'componentDidMount or constructor',
+      since: 'React 16.3',
+    },
+    componentWillReceiveProps: {
+      replacement: 'static getDerivedStateFromProps',
+      since: 'React 16.3',
+    },
+    componentWillUpdate: {
+      replacement: 'getSnapshotBeforeUpdate',
+      since: 'React 16.3',
+    },
+    UNSAFE_componentWillMount: {
+      replacement: 'componentDidMount or constructor',
+      since: 'React 17',
+    },
+    UNSAFE_componentWillReceiveProps: {
+      replacement: 'static getDerivedStateFromProps',
+      since: 'React 17',
+    },
+    UNSAFE_componentWillUpdate: {
+      replacement: 'getSnapshotBeforeUpdate',
+      since: 'React 17',
+    },
+  };
 
 export const noDeprecated = createRule<RuleOptions, MessageIds>({
   name: 'no-deprecated',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-deprecated.md',
@@ -56,15 +92,15 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
         description: '"{{name}}" is deprecated since {{since}}',
         severity: 'MEDIUM',
         fix: 'Use {{replacement}} instead',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/no-deprecated.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/no-deprecated.md',
       }),
     },
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    // Track lifecycle methods in class components
-    let inClassComponent = false;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let inClassComponent: boolean;
 
     function checkMemberExpression(node: TSESTree.MemberExpression): void {
       if (node.object.type !== 'Identifier') return;
@@ -88,7 +124,9 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
       }
     }
 
-    function checkLifecycleMethod(node: TSESTree.MethodDefinition | TSESTree.PropertyDefinition): void {
+    function checkLifecycleMethod(
+      node: TSESTree.MethodDefinition | TSESTree.PropertyDefinition,
+    ): void {
       if (!inClassComponent) return;
       if (node.key.type !== 'Identifier') return;
 
@@ -109,19 +147,28 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        // Track lifecycle methods in class components
+        inClassComponent = false;
+      },
       ClassDeclaration(node: TSESTree.ClassDeclaration) {
         // Check if this extends React.Component or React.PureComponent
         if (!node.superClass) return;
-        
+
         if (node.superClass.type === 'MemberExpression') {
-          if (node.superClass.object.type === 'Identifier' && 
-              node.superClass.object.name === 'React' &&
-              (propertyName(node.superClass) === 'Component' || 
-               propertyName(node.superClass) === 'PureComponent')) {
+          if (
+            node.superClass.object.type === 'Identifier' &&
+            node.superClass.object.name === 'React' &&
+            (propertyName(node.superClass) === 'Component' ||
+              propertyName(node.superClass) === 'PureComponent')
+          ) {
             inClassComponent = true;
           }
         } else if (node.superClass.type === 'Identifier') {
-          if (node.superClass.name === 'Component' || node.superClass.name === 'PureComponent') {
+          if (
+            node.superClass.name === 'Component' ||
+            node.superClass.name === 'PureComponent'
+          ) {
             inClassComponent = true;
           }
         }
@@ -133,16 +180,21 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
 
       ClassExpression(node: TSESTree.ClassExpression) {
         if (!node.superClass) return;
-        
+
         if (node.superClass.type === 'MemberExpression') {
-          if (node.superClass.object.type === 'Identifier' && 
-              node.superClass.object.name === 'React' &&
-              (propertyName(node.superClass) === 'Component' || 
-               propertyName(node.superClass) === 'PureComponent')) {
+          if (
+            node.superClass.object.type === 'Identifier' &&
+            node.superClass.object.name === 'React' &&
+            (propertyName(node.superClass) === 'Component' ||
+              propertyName(node.superClass) === 'PureComponent')
+          ) {
             inClassComponent = true;
           }
         } else if (node.superClass.type === 'Identifier') {
-          if (node.superClass.name === 'Component' || node.superClass.name === 'PureComponent') {
+          if (
+            node.superClass.name === 'Component' ||
+            node.superClass.name === 'PureComponent'
+          ) {
             inClassComponent = true;
           }
         }

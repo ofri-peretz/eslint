@@ -13,42 +13,65 @@ const ruleTester = new RuleTester({
 });
 
 describe('no-dynamic-algorithm-selection', () => {
-  ruleTester.run('no-dynamic-algorithm-selection', noDynamicAlgorithmSelection, {
-    valid: [
-      { name: 'a named algorithm', code: 'crypto.createHash("sha256")' },
-      { name: 'createHmac with a literal sha512 algorithm is not reported', code: 'crypto.createHmac("sha512", secret)' },
-      { code: 'crypto.createCipheriv("aes-256-gcm", key, iv)' },
-      { code: 'crypto.createSign("RSA-SHA256")' },
-      { code: 'crypto.createHash(`sha256`)' },  // static template literal
-      // Not 'crypto' object — not checked
-      { code: 'customCrypto.createHash(algo)' },
-      // Different method — not checked
-      { code: 'crypto.randomBytes(32)' },
-    ],
-    invalid: [
-      {
-        name: 'the hash algorithm chosen at runtime',
-        code: 'crypto.createHash(userAlgorithm)',
-        errors: [{ messageId: 'dynamicAlgorithm', data: { method: 'createHash' } }],
-      },
-      {
-        code: 'crypto.createHash(req.query.algo)',
-        errors: [{ messageId: 'dynamicAlgorithm', data: { method: 'createHash' } }],
-      },
-      {
-        code: 'crypto.createCipheriv(config.algorithm, key, iv)',
-        errors: [{ messageId: 'dynamicAlgorithm', data: { method: 'createCipheriv' } }],
-      },
-      {
-        code: 'crypto.createHmac(`${userChoice}`, secret)',
-        errors: [{ messageId: 'dynamicAlgorithm', data: { method: 'createHmac' } }],
-      },
-      {
-        code: 'crypto.createSign(req.body.signAlgo)',
-        errors: [{ messageId: 'dynamicAlgorithm', data: { method: 'createSign' } }],
-      },
-    ],
-  });
+  ruleTester.run(
+    'no-dynamic-algorithm-selection',
+    noDynamicAlgorithmSelection,
+    {
+      valid: [
+        { name: 'a named algorithm', code: 'crypto.createHash("sha256")' },
+        {
+          name: 'createHmac with a literal sha512 algorithm is not reported',
+          code: 'crypto.createHmac("sha512", secret)',
+        },
+        {
+          name: 'a literal cipher algorithm is not dynamic',
+          code: 'crypto.createCipheriv("aes-256-gcm", key, iv)',
+        },
+        { code: 'crypto.createSign("RSA-SHA256")' },
+        { code: 'crypto.createHash(`sha256`)' }, // static template literal
+        // Not 'crypto' object — not checked
+        { code: 'customCrypto.createHash(algo)' },
+        // Different method — not checked
+        { code: 'crypto.randomBytes(32)' },
+      ],
+      invalid: [
+        {
+          name: 'the hash algorithm chosen at runtime',
+          code: 'crypto.createHash(userAlgorithm)',
+          errors: [
+            { messageId: 'dynamicAlgorithm', data: { method: 'createHash' } },
+          ],
+        },
+        {
+          code: 'crypto.createHash(req.query.algo)',
+          errors: [
+            { messageId: 'dynamicAlgorithm', data: { method: 'createHash' } },
+          ],
+        },
+        {
+          code: 'crypto.createCipheriv(config.algorithm, key, iv)',
+          errors: [
+            {
+              messageId: 'dynamicAlgorithm',
+              data: { method: 'createCipheriv' },
+            },
+          ],
+        },
+        {
+          code: 'crypto.createHmac(`${userChoice}`, secret)',
+          errors: [
+            { messageId: 'dynamicAlgorithm', data: { method: 'createHmac' } },
+          ],
+        },
+        {
+          code: 'crypto.createSign(req.body.signAlgo)',
+          errors: [
+            { messageId: 'dynamicAlgorithm', data: { method: 'createSign' } },
+          ],
+        },
+      ],
+    },
+  );
 
   // ── FP lock: a parameter default nobody overrides ──────────────────────
   //

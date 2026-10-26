@@ -28,6 +28,7 @@ type RuleOptions = [Options?];
 export const requireNetworkTimeout = createRule<RuleOptions, MessageIds>({
   name: 'require-network-timeout',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-reliability/docs/rules/require-network-timeout.md',
@@ -50,7 +51,7 @@ export const requireNetworkTimeout = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  createOnce(context) {
     return {
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;

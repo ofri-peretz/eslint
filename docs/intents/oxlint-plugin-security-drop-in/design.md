@@ -1,7 +1,7 @@
 # Design — `oxlint-plugin-security`, a façade over existing rules, gated by the incumbent's tests
 
 Intent: [`intent.md`](./intent.md). Decision: [ADR 0008](../../adr/0008-oxlint-plugin-security-is-a-parity-gated-facade.md).
-**Status:** draft.
+**Status:** built 2026-10-25 in PR #1299 (with oxlint-native-plugin-names); the package stays `private`.
 
 ---
 
@@ -236,6 +236,43 @@ private.
 | `packages/eslint-plugin-node-security/src/rules/{no-timing-unsafe-compare,detect-eval-with-expression,detect-non-literal-fs-filename}/` | R10                                                     |
 | `.github/workflows/` (gate job), `weekly-benchmark.yml` (R11)                                                                           | CI                                                      |
 | `docs/planning/BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md`                                                                                  | restate §2 against 4.2.0                                |
+
+## As built (2026-10-25)
+
+- **Open questions 1–3** take the recommended answers:
+  - `secure-coding/no-disabled-template-escaping` is a new rule;
+  - the façade pins `reportLiteralComparands: true`;
+  - the stricter-than-incumbent findings are declared in `divergences.json`.
+
+  Question 4, notifying eslint-community before the first publish, stays Ofri's
+  call at Deploy.
+
+- **R10** landed in the same PR:
+  - `secure-coding/no-invisible-characters` and
+    `secure-coding/no-disabled-template-escaping`, both written in `createOnce`;
+  - `node-security/no-timing-unsafe-compare` option `reportLiteralComparands`;
+  - `detect-eval-with-expression` stays silent on a bare `eval()`;
+  - `reportWholeProcessValues`, which came from #1295.
+- **Generator.** `scripts/generate-oxlint-security.mts` (`.mts` rather than
+  `.ts`, because it formats with prettier's async API) writes `package.json`,
+  `index.d.ts` and `README.md`. Its `--check` gates drift. It also pins the
+  façade's dependencies to the current versions of the mapped plugins.
+- **R3, R5 and R9.**
+  - R3 (object identity) is checked inside `drop-in.mjs`, because it needs
+    built code.
+  - R5 on oxlint is in `scripts/verify-oxlint-aliases.mts`: every ID loads, and
+    the sentinel is rejected under the `security` namespace. R5 on ESLint is
+    `drop-in.mjs`.
+  - R4 and R9 are `scripts/__tests__/oxlint-security.lock.test.ts`.
+- **Harness.** `drop-in.mjs` compares oxlint span offsets, which are UTF-8
+  bytes, against ESLint's UTF-16 columns. It applies ECMAScript line
+  terminators (U+2028/U+2029), and passes per-case `languageOptions.globals`
+  through oxlint `overrides`. The control run (R8) against the incumbent
+  detects 107/107, fires on 0/112 valid cases, and the two engines agree on
+  every case.
+- **CI.** The `oxlint-parity.yml` job `security-drop-in` runs the control and
+  the gate on PRs; while the package is private, a red gate is a warning. The
+  weekly benchmark checks incumbent drift and opens an issue (R11).
 
 ## Verification
 

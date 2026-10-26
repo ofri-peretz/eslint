@@ -65,6 +65,7 @@ export const preferTemplateLiteral = createRule<RuleOptions, MessageIds>({
    */
   skipGeneratedFiles: true,
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modernization/docs/rules/prefer-template-literal.md',
@@ -88,7 +89,7 @@ export const preferTemplateLiteral = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     /**
      * Collect the "parts" of a + chain into an array of nodes.
      * `"a" + b + "c"` → [Literal("a"), Identifier(b), Literal("c")]

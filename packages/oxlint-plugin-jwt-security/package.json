@@ -1,0 +1,79 @@
+{
+  "name": "oxlint-plugin-jwt-security",
+  "version": "3.5.3",
+  "description": "The jwt-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-jwt-security.",
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts"
+  },
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
+    "interlace-security",
+    "jwt",
+    "json-web-token",
+    "jwt-security",
+    "jsonwebtoken",
+    "jose",
+    "express-jwt",
+    "nestjs-jwt",
+    "jwks-rsa",
+    "jwt-decode",
+    "algorithm-confusion",
+    "cve-2022-23540",
+    "cwe-347",
+    "cwe-757",
+    "token",
+    "authentication",
+    "authorization",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript",
+    "auto-fix",
+    "auth-security",
+    "token-security"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-jwt-security?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-jwt-security-security",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-jwt-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/ofri-peretz/eslint"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-jwt-security": "3.5.3"
+  }
+}

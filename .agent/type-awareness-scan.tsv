@@ -500,3 +500,5 @@ cli-floor	no-console-in-command	unaware
 cli-floor	no-prompt-without-flag	unaware	
 cli-floor	require-command-description	unaware	
 cli-floor	require-command-example	unaware	
+secure-coding	no-invisible-characters	unaware	
+secure-coding	no-disabled-template-escaping	unaware	

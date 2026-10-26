@@ -30,7 +30,10 @@ describe('no-self-signed-certs', () => {
         name: 'pinning a custom CA keeps verification on',
         code: 'const options = { ca: customCA };',
       },
-      { code: 'process.env.NODE_TLS_REJECT_UNAUTHORIZED = "1";' },
+      {
+        code: 'process.env.NODE_TLS_REJECT_UNAUTHORIZED = "1";',
+        name: 'setting NODE_TLS_REJECT_UNAUTHORIZED to 1 keeps verification on',
+      },
       {
         name: 'a non-literal rejectUnauthorized is not proven false',
         code: 'const x = { rejectUnauthorized: validated };',

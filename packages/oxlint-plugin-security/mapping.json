@@ -1,0 +1,68 @@
+{
+  "$comment": "The only place a security/<rule> ID's source is written (docs/intents/oxlint-plugin-security-drop-in, R2). index.js builds the plugin from this file; scripts/generate-oxlint-security.ts derives the README table and index.d.ts from it.",
+  "incumbent": { "name": "eslint-plugin-security", "version": "4.2.0" },
+  "rules": {
+    "detect-bidi-characters": {
+      "plugin": "secure-coding",
+      "rule": "no-bidi-characters"
+    },
+    "detect-buffer-noassert": {
+      "plugin": "node-security",
+      "rule": "no-buffer-overread"
+    },
+    "detect-child-process": {
+      "plugin": "node-security",
+      "rule": "detect-child-process"
+    },
+    "detect-disable-mustache-escape": {
+      "plugin": "secure-coding",
+      "rule": "no-disabled-template-escaping"
+    },
+    "detect-eval-with-expression": {
+      "plugin": "node-security",
+      "rule": "detect-eval-with-expression"
+    },
+    "detect-invisible-characters": {
+      "plugin": "secure-coding",
+      "rule": "no-invisible-characters"
+    },
+    "detect-new-buffer": {
+      "plugin": "node-security",
+      "rule": "no-deprecated-buffer"
+    },
+    "detect-no-csrf-before-method-override": {
+      "retired": true,
+      "reason": "Matches only express.csrf() and express.methodOverride(), the Express 3 built-ins. On Express 4.22.3 reading express.csrf throws (\"Most middleware (like csrf) is no longer bundled\"); on 5.3.0 both are undefined. The defect cannot be written against a supported Express."
+    },
+    "detect-non-literal-fs-filename": {
+      "plugin": "node-security",
+      "rule": "detect-non-literal-fs-filename",
+      "defaultOptions": [{ "reportWholeProcessValues": true }]
+    },
+    "detect-non-literal-regexp": {
+      "plugin": "secure-coding",
+      "rule": "detect-non-literal-regexp"
+    },
+    "detect-non-literal-require": {
+      "plugin": "node-security",
+      "rule": "no-dynamic-require"
+    },
+    "detect-object-injection": {
+      "plugin": "secure-coding",
+      "rule": "detect-object-injection"
+    },
+    "detect-possible-timing-attacks": {
+      "plugin": "node-security",
+      "rule": "no-timing-unsafe-compare",
+      "defaultOptions": [{ "reportLiteralComparands": true }]
+    },
+    "detect-pseudoRandomBytes": {
+      "retired": true,
+      "reason": "crypto.pseudoRandomBytes === crypto.randomBytes on every supported Node (measured true on 24 versions from 18.16.1 to 26.10.0, 2026-10-25): the API is the CSPRNG, so the defect cannot occur."
+    },
+    "detect-unsafe-regex": {
+      "plugin": "secure-coding",
+      "rule": "no-redos-vulnerable-regex"
+    }
+  }
+}

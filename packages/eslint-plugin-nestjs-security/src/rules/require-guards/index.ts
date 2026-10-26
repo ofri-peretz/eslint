@@ -42,8 +42,7 @@ import { tokenize } from '../../utils/sensitive-names';
 import { getProjectContext } from '../../utils/project-context';
 import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 
-type MessageIds =
-  'missingGuards' | 'emptyGuards' | 'missingRequiredGuard';
+type MessageIds = 'missingGuards' | 'emptyGuards' | 'missingRequiredGuard';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -231,6 +230,7 @@ interface Pending {
 export const requireGuards = createRule<RuleOptions, MessageIds>({
   name: 'require-guards',
   meta: {
+    interop: { runtimes: ['eslint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/require-guards.md',
@@ -287,7 +287,6 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
         fix: 'Add one of the required guards: @UseGuards({{firstRequired}})',
         documentationLink: 'https://docs.nestjs.com/guards',
       }),
-
     },
     schema: [
       {

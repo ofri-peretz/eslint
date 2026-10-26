@@ -45,6 +45,7 @@ type RuleOptions = [Options?];
 export const requireCodeMinification = createRule<RuleOptions, MessageIds>({
   name: 'require-code-minification',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-operability/docs/rules/require-code-minification.md',
@@ -81,10 +82,15 @@ export const requireCodeMinification = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ minificationKeys: [...DEFAULT_MINIFICATION_KEYS] }],
-  create(context, [options = {}]) {
-    const { minificationKeys = DEFAULT_MINIFICATION_KEYS } = options as Options;
-    const keys = new Set(minificationKeys);
+  createOnce(context, currentOptions) {
+    let keys: Set<string>;
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { minificationKeys = DEFAULT_MINIFICATION_KEYS } =
+          options as Options;
+        keys = new Set(minificationKeys);
+      },
       Property(node: TSESTree.Property) {
         if (
           node.key.type === 'Identifier' &&

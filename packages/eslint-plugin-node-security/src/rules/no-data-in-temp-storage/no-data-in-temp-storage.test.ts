@@ -15,11 +15,17 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-data-in-temp-storage', noDataInTempStorage, {
   valid: [
     // Secure storage locations
-    { name: "a path inside the application's own data directory", code: "fs.writeFileSync('/app/data/file.txt', data)" },
-    { code: "fs.writeFile('/secure/path/file.json', data, callback)" },
+    {
+      name: "a path inside the application's own data directory",
+      code: "fs.writeFileSync('/app/data/file.txt', data)",
+    },
+    {
+      name: 'a write to a secure non-temp path is allowed',
+      code: "fs.writeFile('/secure/path/file.json', data, callback)",
+    },
     // Non-path literals
     { code: "console.log('temp data')" },
-    { code: "const x = 1" },
+    { code: 'const x = 1' },
 
     // ── CWE-377 predictable temp path — the accepted safe shapes ──
     // corpus/CWE-377/safe/mkdtemp-write.js: mkdtempSync gets a fresh 0700
@@ -38,7 +44,7 @@ ruleTester.run('no-data-in-temp-storage', noDataInTempStorage, {
     // Not path.join / not os.tmpdir().
     { code: "const file = path.basename(os.tmpdir(), 'x');" },
     { code: "const file = path.join(os.homedir(), 'report-cache.tmp');" },
-    { code: "const file = path.join(os.tmpdir());" },
+    { code: 'const file = path.join(os.tmpdir());' },
     { code: "const file = other.join(os.tmpdir(), 'report-cache.tmp');" },
     { code: "const file = path[method](os.tmpdir(), 'report-cache.tmp');" },
     // A private method — a non-computed member whose property is not an
@@ -48,7 +54,7 @@ ruleTester.run('no-data-in-temp-storage', noDataInTempStorage, {
     },
     { code: "const file = path.join(fs.tmpdir(), 'report-cache.tmp');" },
     { code: "const file = path.join(os[fn](), 'report-cache.tmp');" },
-    { code: "const file = path.join(os.tmpdir(), 42);" },
+    { code: 'const file = path.join(os.tmpdir(), 42);' },
     { code: "const file = join(os.tmpdir(), 'report-cache.tmp');" },
     // Built but never bound to a name and never written through — no site.
     { code: "log(path.join(os.tmpdir(), 'report-cache.tmp'));" },
@@ -82,7 +88,9 @@ ruleTester.run('no-data-in-temp-storage', noDataInTempStorage, {
     // the match is now segment-anchored AND the name has to be written through.
     //
     // Each of these reports on the old predicate.
-    { code: "const TEMPLATE_JSON_URL = 'https://cdn.shopify.com/static/cli/extensions/templates.json'" },
+    {
+      code: "const TEMPLATE_JSON_URL = 'https://cdn.shopify.com/static/cli/extensions/templates.json'",
+    },
     { code: "const dir = '/templates/partials'" },
     { code: "const label = 'attempted'" },
     { code: "const tpl = 'temporary-holder'" },
@@ -123,7 +131,9 @@ ruleTester.run('no-data-in-temp-storage', noDataInTempStorage, {
     },
     // safe/13-project-temp-not-shared.js — path.join literal segments are
     // matched by segment, so `templates` is not `temp`.
-    { code: "fs.writeFileSync(path.join(outDir, 'templates', 'build.log'), lines);" },
+    {
+      code: "fs.writeFileSync(path.join(outDir, 'templates', 'build.log'), lines);",
+    },
     // safe/10-temperature-path.js
     { code: "fs.writeFileSync('./data/temperature-log.json', json);" },
     // The receiver resolves to a module that is not fs.
@@ -158,14 +168,21 @@ ruleTester.run('no-data-in-temp-storage', noDataInTempStorage, {
     // path is empty names no entry point.
     { code: "const fs = require('fs');\nfs('/tmp/x', data);" },
     // Concatenation with a non-constant operand is not a constant path.
-    { code: "const p = os.tmpdir() + suffix;" },
+    { code: 'const p = os.tmpdir() + suffix;' },
     { code: "const p = base + '/state.json';" },
   ],
 
   invalid: [
     // Temp path writes
-    { name: 'secrets written under /tmp, which is world-readable on most hosts', code: "fs.writeFileSync('/tmp/secrets.json', data)", errors: [{ messageId: 'violationDetected' }] },
-    { code: "fs.writeFile('/var/tmp/auth.txt', data, cb)", errors: [{ messageId: 'violationDetected' }] },
+    {
+      name: 'secrets written under /tmp, which is world-readable on most hosts',
+      code: "fs.writeFileSync('/tmp/secrets.json', data)",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: "fs.writeFile('/var/tmp/auth.txt', data, cb)",
+      errors: [{ messageId: 'violationDetected' }],
+    },
     // Temp path bound to a name and then written through — this is
     // corpus/CWE-377/vulnerable/static-tmp-write.js, and it is what the write
     // sink above must not cost us.
@@ -272,14 +289,23 @@ ruleTester.run('no-data-in-temp-storage', noDataInTempStorage, {
       code: 'fs.writeFileSync(`${os.tmpdir()}/billing-report.csv`, csv);',
       errors: [{ messageId: 'predictableTempPath' }],
     },
-    { code: 'const p = `${os.tmpdir()}/state.json`;', errors: [{ messageId: 'predictableTempPath' }] },
+    {
+      code: 'const p = `${os.tmpdir()}/state.json`;',
+      errors: [{ messageId: 'predictableTempPath' }],
+    },
     {
       code: 'const p = `${os.tmpdir()}/${"cache"}/state.json`;',
       errors: [{ messageId: 'predictableTempPath' }],
     },
     // vulnerable/14 — and so is concatenation.
-    { code: "const p = os.tmpdir() + '/agent-state.json';", errors: [{ messageId: 'predictableTempPath' }] },
-    { code: "const p = '/prefix' + (os.tmpdir() + '/agent-state.json');", errors: [{ messageId: 'predictableTempPath' }] },
+    {
+      code: "const p = os.tmpdir() + '/agent-state.json';",
+      errors: [{ messageId: 'predictableTempPath' }],
+    },
+    {
+      code: "const p = '/prefix' + (os.tmpdir() + '/agent-state.json');",
+      errors: [{ messageId: 'predictableTempPath' }],
+    },
     // The mkdtemp exemption needs a resolvable binding AND the prefix in the
     // first argument. An undeclared target resolves to nothing…
     {

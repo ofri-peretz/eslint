@@ -76,6 +76,7 @@ function matchesIgnorePattern(text: string, patterns: string[]): boolean {
 export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-csrf-protection',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     deprecated: true,
     replacedBy: ['@see eslint-plugin-express-security/require-csrf-protection'],
@@ -146,38 +147,18 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
       ignorePatterns: [],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const {
-      allowInTests = false,
-      csrfMiddlewarePatterns,
-      protectedMethods: customProtectedMethods,
-      ignorePatterns = [],
-    } = options as Options;
-
-    const csrfPatterns =
-      csrfMiddlewarePatterns && csrfMiddlewarePatterns.length > 0
-        ? csrfMiddlewarePatterns
-        : DEFAULT_CSRF_MIDDLEWARE_PATTERNS;
-
-    const protectedMethods =
-      customProtectedMethods && customProtectedMethods.length > 0
-        ? customProtectedMethods
-        : DEFAULT_PROTECTED_METHODS;
-
-    // Pre-compute Set for O(1) lookups (performance optimization)
-    const protectedMethodsSet = new Set(
-      protectedMethods.map((m) => m.toLowerCase()),
-    );
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-    const sourceCode = context.sourceCode;
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let allowInTests: boolean;
+    let csrfMiddlewarePatterns: string[] | undefined;
+    let customProtectedMethods: string[] | undefined;
+    let ignorePatterns: string[];
+    let csrfPatterns: string[];
+    let protectedMethodsSet: Set<string>;
+    let isTestFile: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     function checkCallExpression(node: TSESTree.CallExpression) {
       if (isTestFile) {
@@ -250,6 +231,41 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        ({
+          allowInTests = false,
+          csrfMiddlewarePatterns,
+          protectedMethods: customProtectedMethods,
+          ignorePatterns = [],
+        } = options as Options);
+
+        csrfPatterns =
+          csrfMiddlewarePatterns && csrfMiddlewarePatterns.length > 0
+            ? csrfMiddlewarePatterns
+            : DEFAULT_CSRF_MIDDLEWARE_PATTERNS;
+
+        const protectedMethods =
+          customProtectedMethods && customProtectedMethods.length > 0
+            ? customProtectedMethods
+            : DEFAULT_PROTECTED_METHODS;
+
+        // Pre-compute Set for O(1) lookups (performance optimization)
+        protectedMethodsSet = new Set(
+          protectedMethods.map((m) => m.toLowerCase()),
+        );
+
+        const filename = context.filename;
+        isTestFile = allowInTests && isTestFilePath(filename);
+        sourceCode = context.sourceCode;
+        return true;
+      },
       CallExpression: checkCallExpression,
     };
   },

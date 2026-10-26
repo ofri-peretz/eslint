@@ -32,6 +32,7 @@ type RuleOptions = [Options?];
 export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
   name: 'react-class-to-hooks',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/react-class-to-hooks.md',
@@ -93,12 +94,9 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
       allowComplexLifecycle: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    // `options` is always an object here (`|| {}` above), so no second fallback.
-    const { allowComplexLifecycle = false }: Options = options;
-
-    const sourceCode = context.sourceCode;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowComplexLifecycle: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /**
      * Check if class extends React.Component
@@ -181,6 +179,13 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        // `options` is always an object here (`|| {}` above), so no second fallback.
+        ({ allowComplexLifecycle = false } = options);
+
+        sourceCode = context.sourceCode;
+      },
       ClassDeclaration(node: TSESTree.ClassDeclaration) {
         if (!isReactComponent(node)) return;
         if (!node.id) return;

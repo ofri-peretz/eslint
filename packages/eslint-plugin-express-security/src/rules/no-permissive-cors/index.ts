@@ -147,10 +147,7 @@ function isStandaloneCorsCall(node: TSESTree.CallExpression): boolean {
 function isAppUseCors(node: TSESTree.CallExpression): boolean {
   const callee = node.callee;
 
-  if (
-    callee.type === 'MemberExpression' &&
-    propertyName(callee) === 'use'
-  ) {
+  if (callee.type === 'MemberExpression' && propertyName(callee) === 'use') {
     // Check if first argument is cors() call
     const firstArg = node.arguments[0];
     if (
@@ -169,6 +166,7 @@ function isAppUseCors(node: TSESTree.CallExpression): boolean {
 export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
   name: 'no-permissive-cors',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-permissive-cors.md',
@@ -221,26 +219,36 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
       allowedOrigins: [],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const { allowInTests = false, allowOriginTrue = false } =
-      options as Options;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-
-    if (isTestFile) {
-      return {};
-    }
-
-    const sourceCode = context.sourceCode;
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let allowInTests: boolean;
+    let allowOriginTrue: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        ({ allowInTests = false, allowOriginTrue = false } =
+          options as Options);
+
+        const filename = context.filename;
+        const isTestFile = allowInTests && isTestFilePath(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+
+        sourceCode = context.sourceCode;
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         // Check for cors({...}) call
         if (isStandaloneCorsCall(node) || isAppUseCors(node)) {

@@ -1,3 +1,4 @@
+import { RuleCreator } from '@interlace/eslint-devkit';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -20,7 +21,7 @@ import { usesPostgres } from '../../utils';
  */
 function findAncestor<T extends TSESTree.Node>(
   node: TSESTree.Node | undefined,
-  predicate: (n: TSESTree.Node) => n is T
+  predicate: (n: TSESTree.Node) => n is T,
 ): T | null {
   let current = node?.parent;
   while (current) {
@@ -34,8 +35,9 @@ function findAncestor<T extends TSESTree.Node>(
  * Checks if node is inside a TryStatement's catch block
  */
 function isInCatchBlock(node: TSESTree.Node): TSESTree.CatchClause | null {
-  return findAncestor(node, (n): n is TSESTree.CatchClause =>
-    n.type === AST_NODE_TYPES.CatchClause
+  return findAncestor(
+    node,
+    (n): n is TSESTree.CatchClause => n.type === AST_NODE_TYPES.CatchClause,
   );
 }
 
@@ -43,11 +45,12 @@ function isInCatchBlock(node: TSESTree.Node): TSESTree.CatchClause | null {
  * Checks if node is inside a TryStatement's finally block
  */
 function isInFinallyBlock(node: TSESTree.Node): TSESTree.TryStatement | null {
-  const tryStmt = findAncestor(node, (n): n is TSESTree.TryStatement =>
-    n.type === AST_NODE_TYPES.TryStatement
+  const tryStmt = findAncestor(
+    node,
+    (n): n is TSESTree.TryStatement => n.type === AST_NODE_TYPES.TryStatement,
   );
   if (!tryStmt?.finalizer) return null;
-  
+
   const nodeRange = node.range;
   const finalizerRange = tryStmt.finalizer.range;
   if (nodeRange[0] >= finalizerRange[0] && nodeRange[1] <= finalizerRange[1]) {
@@ -60,11 +63,12 @@ function isInFinallyBlock(node: TSESTree.Node): TSESTree.TryStatement | null {
  * Checks if node is inside a TryStatement's try block
  */
 function isInTryBlock(node: TSESTree.Node): TSESTree.TryStatement | null {
-  const tryStmt = findAncestor(node, (n): n is TSESTree.TryStatement =>
-    n.type === AST_NODE_TYPES.TryStatement
+  const tryStmt = findAncestor(
+    node,
+    (n): n is TSESTree.TryStatement => n.type === AST_NODE_TYPES.TryStatement,
   );
   if (!tryStmt) return null;
-  
+
   const nodeRange = node.range;
   const blockRange = tryStmt.block.range;
   if (nodeRange[0] >= blockRange[0] && nodeRange[1] <= blockRange[1]) {
@@ -77,16 +81,24 @@ function isInTryBlock(node: TSESTree.Node): TSESTree.TryStatement | null {
  * Gets the containing function for a node
  */
 function getContainingFunction(node: TSESTree.Node): TSESTree.Node | null {
-  return findAncestor(node, (n): n is TSESTree.FunctionDeclaration | TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression =>
-    n.type === AST_NODE_TYPES.FunctionDeclaration ||
-    n.type === AST_NODE_TYPES.FunctionExpression ||
-    n.type === AST_NODE_TYPES.ArrowFunctionExpression
+  return findAncestor(
+    node,
+    (
+      n,
+    ): n is
+      | TSESTree.FunctionDeclaration
+      | TSESTree.FunctionExpression
+      | TSESTree.ArrowFunctionExpression =>
+      n.type === AST_NODE_TYPES.FunctionDeclaration ||
+      n.type === AST_NODE_TYPES.FunctionExpression ||
+      n.type === AST_NODE_TYPES.ArrowFunctionExpression,
   );
 }
 
 /** The name a `!flag` / `!obj.flag` test negates, or null. */
 function negatedFlagName(test: TSESTree.Node): string | null {
-  if (test.type !== AST_NODE_TYPES.UnaryExpression || test.operator !== '!') return null;
+  if (test.type !== AST_NODE_TYPES.UnaryExpression || test.operator !== '!')
+    return null;
   const arg = test.argument;
   if (arg.type === AST_NODE_TYPES.Identifier) return arg.name;
   if (
@@ -111,7 +123,8 @@ function assignsTrue(node: TSESTree.Node, flag: string): boolean {
       current.right.value === true
     ) {
       const { left } = current;
-      if (left.type === AST_NODE_TYPES.Identifier && left.name === flag) found = true;
+      if (left.type === AST_NODE_TYPES.Identifier && left.name === flag)
+        found = true;
       if (
         left.type === AST_NODE_TYPES.MemberExpression &&
         propertyName(left) === flag
@@ -124,7 +137,8 @@ function assignsTrue(node: TSESTree.Node, flag: string): boolean {
       const value = (current as unknown as Record<string, unknown>)[key];
       if (Array.isArray(value)) {
         for (const item of value) {
-          if (item && typeof item === 'object' && 'type' in item) walk(item as TSESTree.Node);
+          if (item && typeof item === 'object' && 'type' in item)
+            walk(item as TSESTree.Node);
         }
       } else if (value && typeof value === 'object' && 'type' in value) {
         walk(value as TSESTree.Node);
@@ -156,8 +170,9 @@ function assignsTrue(node: TSESTree.Node, flag: string): boolean {
  * That is the fact; the spelling never was.
  */
 function isGuardedByCondition(node: TSESTree.Node): boolean {
-  const ifStmt = findAncestor(node, (n): n is TSESTree.IfStatement =>
-    n.type === AST_NODE_TYPES.IfStatement
+  const ifStmt = findAncestor(
+    node,
+    (n): n is TSESTree.IfStatement => n.type === AST_NODE_TYPES.IfStatement,
   );
   if (!ifStmt) return false;
 
@@ -170,36 +185,55 @@ function isGuardedByCondition(node: TSESTree.Node): boolean {
 /**
  * Checks if a node is in an else-if/else branch that's mutually exclusive from another
  */
-function areMutuallyExclusiveBranches(nodeA: TSESTree.Node, nodeB: TSESTree.Node): boolean {
-  const ifA = findAncestor(nodeA, (n): n is TSESTree.IfStatement => n.type === AST_NODE_TYPES.IfStatement);
-  const ifB = findAncestor(nodeB, (n): n is TSESTree.IfStatement => n.type === AST_NODE_TYPES.IfStatement);
-  
+function areMutuallyExclusiveBranches(
+  nodeA: TSESTree.Node,
+  nodeB: TSESTree.Node,
+): boolean {
+  const ifA = findAncestor(
+    nodeA,
+    (n): n is TSESTree.IfStatement => n.type === AST_NODE_TYPES.IfStatement,
+  );
+  const ifB = findAncestor(
+    nodeB,
+    (n): n is TSESTree.IfStatement => n.type === AST_NODE_TYPES.IfStatement,
+  );
+
   if (!ifA || !ifB) return false;
-  
+
   // Check if both are in the same if/else chain
   if (ifA === ifB) {
     const nodeARange = nodeA.range;
     const nodeBRange = nodeB.range;
     const consequentRange = ifA.consequent.range;
     const alternateRange = ifA.alternate?.range;
-    
+
     if (!alternateRange) return false;
-    
-    const aInConsequent = nodeARange[0] >= consequentRange[0] && nodeARange[1] <= consequentRange[1];
-    const bInConsequent = nodeBRange[0] >= consequentRange[0] && nodeBRange[1] <= consequentRange[1];
-    const aInAlternate = nodeARange[0] >= alternateRange[0] && nodeARange[1] <= alternateRange[1];
-    const bInAlternate = nodeBRange[0] >= alternateRange[0] && nodeBRange[1] <= alternateRange[1];
-    
+
+    const aInConsequent =
+      nodeARange[0] >= consequentRange[0] &&
+      nodeARange[1] <= consequentRange[1];
+    const bInConsequent =
+      nodeBRange[0] >= consequentRange[0] &&
+      nodeBRange[1] <= consequentRange[1];
+    const aInAlternate =
+      nodeARange[0] >= alternateRange[0] && nodeARange[1] <= alternateRange[1];
+    const bInAlternate =
+      nodeBRange[0] >= alternateRange[0] && nodeBRange[1] <= alternateRange[1];
+
     return (aInConsequent && bInAlternate) || (aInAlternate && bInConsequent);
   }
-  
+
   return false;
 }
 
 /**
  * Checks if there's a return/throw statement between two positions in a block
  */
-function hasExitBetween(block: TSESTree.BlockStatement, startIdx: number, endIdx: number): boolean {
+function hasExitBetween(
+  block: TSESTree.BlockStatement,
+  startIdx: number,
+  endIdx: number,
+): boolean {
   for (let k = startIdx + 1; k < endIdx; k++) {
     const stmt = block.body[k];
     if (stmt.type === AST_NODE_TYPES.ReturnStatement) return true;
@@ -235,58 +269,79 @@ function caseHasExit(switchCase: TSESTree.SwitchCase): boolean {
  * Gets the switch case containing a node
  */
 function getSwitchCase(node: TSESTree.Node): TSESTree.SwitchCase | null {
-  return findAncestor(node, (n): n is TSESTree.SwitchCase =>
-    n.type === AST_NODE_TYPES.SwitchCase
+  return findAncestor(
+    node,
+    (n): n is TSESTree.SwitchCase => n.type === AST_NODE_TYPES.SwitchCase,
   );
 }
 
 /**
  * Gets the if statement directly containing a node (not ancestors)
  */
-function getDirectIfStatement(node: TSESTree.Node): TSESTree.IfStatement | null {
-  return findAncestor(node, (n): n is TSESTree.IfStatement =>
-    n.type === AST_NODE_TYPES.IfStatement
+function getDirectIfStatement(
+  node: TSESTree.Node,
+): TSESTree.IfStatement | null {
+  return findAncestor(
+    node,
+    (n): n is TSESTree.IfStatement => n.type === AST_NODE_TYPES.IfStatement,
   );
 }
 
 /**
  * Checks if the if statement's branch containing the release has a return/throw after it
  */
-function ifBranchHasExitAfterRelease(releaseNode: TSESTree.Node, ifStmt: TSESTree.IfStatement): boolean {
+function ifBranchHasExitAfterRelease(
+  releaseNode: TSESTree.Node,
+  ifStmt: TSESTree.IfStatement,
+): boolean {
   // Find which branch contains the release
   const releaseRange = releaseNode.range;
   const consequentRange = ifStmt.consequent.range;
-  
-  const inConsequent = releaseRange[0] >= consequentRange[0] && releaseRange[1] <= consequentRange[1];
-  
+
+  const inConsequent =
+    releaseRange[0] >= consequentRange[0] &&
+    releaseRange[1] <= consequentRange[1];
+
   let branchBlock: TSESTree.BlockStatement | null = null;
-  
-  if (inConsequent && ifStmt.consequent.type === AST_NODE_TYPES.BlockStatement) {
+
+  if (
+    inConsequent &&
+    ifStmt.consequent.type === AST_NODE_TYPES.BlockStatement
+  ) {
     branchBlock = ifStmt.consequent;
-  } else if (!inConsequent && ifStmt.alternate?.type === AST_NODE_TYPES.BlockStatement) {
+  } else if (
+    !inConsequent &&
+    ifStmt.alternate?.type === AST_NODE_TYPES.BlockStatement
+  ) {
     branchBlock = ifStmt.alternate;
   }
-  
+
   if (!branchBlock) return false;
-  
+
   // Find the release statement index
-  const releaseParentStmt = releaseNode.parent?.type === AST_NODE_TYPES.ExpressionStatement 
-    ? releaseNode.parent 
-    : null;
-  
+  const releaseParentStmt =
+    releaseNode.parent?.type === AST_NODE_TYPES.ExpressionStatement
+      ? releaseNode.parent
+      : null;
+
   if (!releaseParentStmt) return false;
-  
-  const releaseIdx = branchBlock.body.indexOf(releaseParentStmt as TSESTree.Statement);
+
+  const releaseIdx = branchBlock.body.indexOf(
+    releaseParentStmt as TSESTree.Statement,
+  );
   if (releaseIdx === -1) return false;
-  
+
   // Check if there's a return/throw after the release
   for (let i = releaseIdx + 1; i < branchBlock.body.length; i++) {
     const stmt = branchBlock.body[i];
-    if (stmt.type === AST_NODE_TYPES.ReturnStatement || stmt.type === AST_NODE_TYPES.ThrowStatement) {
+    if (
+      stmt.type === AST_NODE_TYPES.ReturnStatement ||
+      stmt.type === AST_NODE_TYPES.ThrowStatement
+    ) {
       return true;
     }
   }
-  
+
   return false;
 }
 
@@ -296,8 +351,13 @@ function ifBranchHasExitAfterRelease(releaseNode: TSESTree.Node, ifStmt: TSESTre
  * `a` can only be in the consequent.
  */
 function inOppositeBranches(a: TSESTree.Node, b: TSESTree.Node): boolean {
-  const within = (node: TSESTree.Node, container: TSESTree.Node | null | undefined): boolean =>
-    container != null && node.range[0] >= container.range[0] && node.range[1] <= container.range[1];
+  const within = (
+    node: TSESTree.Node,
+    container: TSESTree.Node | null | undefined,
+  ): boolean =>
+    container != null &&
+    node.range[0] >= container.range[0] &&
+    node.range[1] <= container.range[1];
   for (let current = a.parent; current; current = current.parent) {
     if (
       current.type !== AST_NODE_TYPES.IfStatement &&
@@ -314,8 +374,14 @@ function inOppositeBranches(a: TSESTree.Node, b: TSESTree.Node): boolean {
 /** Can this returned expression not throw — a value already computed? */
 function cannotThrow(node: TSESTree.Node | null): boolean {
   if (node === null) return true;
-  if (node.type === AST_NODE_TYPES.Identifier || node.type === AST_NODE_TYPES.Literal) return true;
-  return node.type === AST_NODE_TYPES.MemberExpression && cannotThrow(node.object);
+  if (
+    node.type === AST_NODE_TYPES.Identifier ||
+    node.type === AST_NODE_TYPES.Literal
+  )
+    return true;
+  return (
+    node.type === AST_NODE_TYPES.MemberExpression && cannotThrow(node.object)
+  );
 }
 
 /**
@@ -324,7 +390,10 @@ function cannotThrow(node: TSESTree.Node | null): boolean {
  * second release. (A release followed only by `return <value>` is
  * `leavesAfter`'s case.)
  */
-function endsTryBlock(release: TSESTree.Node, tryStatement: TSESTree.TryStatement): boolean {
+function endsTryBlock(
+  release: TSESTree.Node,
+  tryStatement: TSESTree.TryStatement,
+): boolean {
   return tryStatement.block.body.at(-1) === release.parent;
 }
 
@@ -380,7 +449,11 @@ function leavesAfter(release: TSESTree.Node): boolean {
   const rest = block.body.slice(block.body.indexOf(statement) + 1);
   return isCaughtInFunction(statement)
     ? rest.length > 0 &&
-        rest.every((s) => s.type === AST_NODE_TYPES.ReturnStatement && cannotThrow(s.argument))
+        rest.every(
+          (s) =>
+            s.type === AST_NODE_TYPES.ReturnStatement &&
+            cannotThrow(s.argument),
+        )
     : rest.some(
         (s) =>
           s.type === AST_NODE_TYPES.ReturnStatement ||
@@ -391,21 +464,27 @@ function leavesAfter(release: TSESTree.Node): boolean {
 export const preventDoubleRelease: TSESLint.RuleModule<
   'doubleRelease' | 'doubleReleaseCallback',
   PreventDoubleReleaseOptions
-> = {
+> = RuleCreator.withoutDocs<
+  PreventDoubleReleaseOptions,
+  'doubleRelease' | 'doubleReleaseCallback'
+>({
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       description: 'Prevent releasing a pg client multiple times.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/prevent-double-release.md',
       cwe: 'CWE-415',
-      cweJustification: 'CWE-415 (Double Free) — semantic equivalent for connection lifecycle: releasing a pooled client twice corrupts the pool\'s internal accounting and can hand the same connection to two callers.',
+      cweJustification:
+        "CWE-415 (Double Free) — semantic equivalent for connection lifecycle: releasing a pooled client twice corrupts the pool's internal accounting and can hand the same connection to two callers.",
       confidence: 'medium',
     },
     messages: {
       doubleRelease: formatLLMMessage({
         icon: MessageIcons.QUALITY,
         issueName: 'Double Release',
-        description: 'Client release() called multiple times on the same object.',
+        description:
+          'Client release() called multiple times on the same object.',
         severity: 'HIGH',
         effort: 'low',
         fix: 'Ensure client.release() is called exactly once per acquisition, preferably in a finally block.',
@@ -414,7 +493,8 @@ export const preventDoubleRelease: TSESLint.RuleModule<
       doubleReleaseCallback: formatLLMMessage({
         icon: MessageIcons.QUALITY,
         issueName: 'Double Release (Callback)',
-        description: 'Connection release callback (done) called multiple times.',
+        description:
+          'Connection release callback (done) called multiple times.',
         severity: 'HIGH',
         effort: 'low',
         fix: 'Ensure done() or release callback is called exactly once per pool.connect() callback.',
@@ -424,14 +504,16 @@ export const preventDoubleRelease: TSESLint.RuleModule<
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    // Every rule here is PostgreSQL-specific, and none of them knew it: over
-    // 108,838 files, 94% of this plugin's findings were in files with no
-    // PostgreSQL client at all. Registering no visitors is both the gate and
-    // the cheap path — a file with no database in it does no work.
-    if (!usesPostgres(context)) return {};
-
+  createOnce(context) {
     return {
+      before() {
+        // Every rule here is PostgreSQL-specific, and none of them knew it: over
+        // 108,838 files, 94% of this plugin's findings were in files with no
+        // PostgreSQL client at all. Registering no visitors is both the gate and
+        // the cheap path — a file with no database in it does no work.
+        if (!usesPostgres(context)) return false;
+        return true;
+      },
       /**
        * The CALLBACK form: `pool.connect((err, client, done) => { … })`.
        *
@@ -444,7 +526,8 @@ export const preventDoubleRelease: TSESLint.RuleModule<
        * THROUGH to the success path instead of returning.
        */
       'CallExpression > ArrowFunctionExpression, CallExpression > FunctionExpression'(
-        callback: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression,
+        callback:
+          TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression,
       ) {
         const call = callback.parent as TSESTree.CallExpression;
         if (
@@ -457,7 +540,11 @@ export const preventDoubleRelease: TSESLint.RuleModule<
 
         // `(err, client, done)` — the third parameter is the release callback.
         const doneParam = callback.params[2];
-        if (doneParam === undefined || doneParam.type !== AST_NODE_TYPES.Identifier) return;
+        if (
+          doneParam === undefined ||
+          doneParam.type !== AST_NODE_TYPES.Identifier
+        )
+          return;
 
         // Flattened rather than `[0]` with an undefined guard: a function's
         // third parameter always declares a variable, so that guard was
@@ -467,7 +554,9 @@ export const preventDoubleRelease: TSESLint.RuleModule<
           .filter((v) => v.name === doneParam.name)
           .flatMap((v) => v.references.map((ref) => ref.identifier))
           .filter(
-            (id) => id.parent?.type === AST_NODE_TYPES.CallExpression && id.parent.callee === id,
+            (id) =>
+              id.parent?.type === AST_NODE_TYPES.CallExpression &&
+              id.parent.callee === id,
           )
           .map((id) => id.parent as TSESTree.CallExpression)
           .sort((a, b) => a.range[0] - b.range[0]);
@@ -479,11 +568,16 @@ export const preventDoubleRelease: TSESLint.RuleModule<
         const terminated = (node: TSESTree.Node): boolean => {
           // `if (err) return done(err);` releases and leaves in one statement.
           if (node.parent?.type === AST_NODE_TYPES.ReturnStatement) return true;
-          const statement = node.parent?.type === AST_NODE_TYPES.ExpressionStatement
-            ? node.parent
-            : null;
+          const statement =
+            node.parent?.type === AST_NODE_TYPES.ExpressionStatement
+              ? node.parent
+              : null;
           const block = statement?.parent;
-          if (block === undefined || block === null || block.type !== AST_NODE_TYPES.BlockStatement) {
+          if (
+            block === undefined ||
+            block === null ||
+            block.type !== AST_NODE_TYPES.BlockStatement
+          ) {
             return false;
           }
           const index = block.body.indexOf(statement as TSESTree.Statement);
@@ -501,7 +595,9 @@ export const preventDoubleRelease: TSESLint.RuleModule<
         // done();` releases exactly once.
         if (
           calls.every((c, i) =>
-            calls.slice(i + 1).every((later) => terminated(c) || inOppositeBranches(c, later)),
+            calls
+              .slice(i + 1)
+              .every((later) => terminated(c) || inOppositeBranches(c, later)),
           )
         ) {
           return;
@@ -523,7 +619,10 @@ export const preventDoubleRelease: TSESLint.RuleModule<
             def.node.id.type === AST_NODE_TYPES.ObjectPattern &&
             def.name.name === 'release';
 
-          const releaseCalls: { node: TSESTree.CallExpression; guarded: boolean }[] = [];
+          const releaseCalls: {
+            node: TSESTree.CallExpression;
+            guarded: boolean;
+          }[] = [];
 
           variable.references.forEach((ref) => {
             const id = ref.identifier;
@@ -557,12 +656,14 @@ export const preventDoubleRelease: TSESLint.RuleModule<
           // there is only one release call in the source.
           if (releaseCalls.length >= 1 && def?.type === 'Variable') {
             for (const call of releaseCalls) {
-              const loop = findAncestor(call.node, (n): n is TSESTree.Node =>
-                n.type === AST_NODE_TYPES.ForStatement ||
-                n.type === AST_NODE_TYPES.ForOfStatement ||
-                n.type === AST_NODE_TYPES.ForInStatement ||
-                n.type === AST_NODE_TYPES.WhileStatement ||
-                n.type === AST_NODE_TYPES.DoWhileStatement,
+              const loop = findAncestor(
+                call.node,
+                (n): n is TSESTree.Node =>
+                  n.type === AST_NODE_TYPES.ForStatement ||
+                  n.type === AST_NODE_TYPES.ForOfStatement ||
+                  n.type === AST_NODE_TYPES.ForInStatement ||
+                  n.type === AST_NODE_TYPES.WhileStatement ||
+                  n.type === AST_NODE_TYPES.DoWhileStatement,
               );
               // A checkout inside the same loop means each iteration owns its
               // own client, which is correct.
@@ -579,10 +680,17 @@ export const preventDoubleRelease: TSESLint.RuleModule<
               ) {
                 continue;
               }
-              if (loop.range[0] <= def.node.range[0] && def.node.range[1] <= loop.range[1]) {
+              if (
+                loop.range[0] <= def.node.range[0] &&
+                def.node.range[1] <= loop.range[1]
+              ) {
                 continue;
               }
-              if (getContainingFunction(call.node) !== getContainingFunction(def.node)) continue;
+              if (
+                getContainingFunction(call.node) !==
+                getContainingFunction(def.node)
+              )
+                continue;
               // `for (…) { if (bad) { client.release(); return; } }` releases
               // on the pass that leaves, and never comes round again.
               if (leavesAfter(call.node)) continue;
@@ -606,7 +714,8 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                 if (callA.guarded && callB.guarded) continue;
 
                 // Skip if mutually exclusive branches
-                if (areMutuallyExclusiveBranches(callA.node, callB.node)) continue;
+                if (areMutuallyExclusiveBranches(callA.node, callB.node))
+                  continue;
 
                 // Same function scope check
                 const funcA = getContainingFunction(callA.node);
@@ -617,8 +726,12 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                 const tryA = isInTryBlock(callA.node);
                 const catchB = isInCatchBlock(callB.node);
                 if (tryA && catchB && catchB.parent === tryA) {
-                  if (endsTryBlock(callA.node, tryA) || leavesAfter(callA.node)) continue;
-                  context.report({ node: callB.node, messageId: 'doubleRelease' });
+                  if (endsTryBlock(callA.node, tryA) || leavesAfter(callA.node))
+                    continue;
+                  context.report({
+                    node: callB.node,
+                    messageId: 'doubleRelease',
+                  });
                   reported.add(callB.node);
                   continue;
                 }
@@ -627,7 +740,10 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                 const catchA = isInCatchBlock(callA.node);
                 const tryB = isInTryBlock(callB.node);
                 if (catchA && tryB && catchA.parent === tryB) {
-                  context.report({ node: callB.node, messageId: 'doubleRelease' });
+                  context.report({
+                    node: callB.node,
+                    messageId: 'doubleRelease',
+                  });
                   reported.add(callB.node);
                   continue;
                 }
@@ -637,16 +753,23 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                 const switchCaseB = getSwitchCase(callB.node);
                 if (switchCaseA && switchCaseB && switchCaseA !== switchCaseB) {
                   // Check if same switch statement
-                  const switchA = findAncestor(switchCaseA, (n): n is TSESTree.SwitchStatement =>
-                    n.type === AST_NODE_TYPES.SwitchStatement
+                  const switchA = findAncestor(
+                    switchCaseA,
+                    (n): n is TSESTree.SwitchStatement =>
+                      n.type === AST_NODE_TYPES.SwitchStatement,
                   );
-                  const switchB = findAncestor(switchCaseB, (n): n is TSESTree.SwitchStatement =>
-                    n.type === AST_NODE_TYPES.SwitchStatement
+                  const switchB = findAncestor(
+                    switchCaseB,
+                    (n): n is TSESTree.SwitchStatement =>
+                      n.type === AST_NODE_TYPES.SwitchStatement,
                   );
                   if (switchA === switchB && switchA) {
                     // Check if caseA doesn't have break/return/throw (fallthrough)
                     if (!caseHasExit(switchCaseA)) {
-                      context.report({ node: callB.node, messageId: 'doubleRelease' });
+                      context.report({
+                        node: callB.node,
+                        messageId: 'doubleRelease',
+                      });
                       reported.add(callB.node);
                       continue;
                     }
@@ -661,17 +784,26 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                   // B is after the if statement
                   if (callB.node.range[0] > ifA.range[1]) {
                     // Check if B is in same block as the if
-                    const parentBlock = findAncestor(ifA, (n): n is TSESTree.BlockStatement =>
-                      n.type === AST_NODE_TYPES.BlockStatement
+                    const parentBlock = findAncestor(
+                      ifA,
+                      (n): n is TSESTree.BlockStatement =>
+                        n.type === AST_NODE_TYPES.BlockStatement,
                     );
                     if (parentBlock) {
                       // `client.release();` or `return client.release();`
                       const bParentStmt =
-                        callB.node.parent?.type === AST_NODE_TYPES.ExpressionStatement ||
-                        callB.node.parent?.type === AST_NODE_TYPES.ReturnStatement
+                        callB.node.parent?.type ===
+                          AST_NODE_TYPES.ExpressionStatement ||
+                        callB.node.parent?.type ===
+                          AST_NODE_TYPES.ReturnStatement
                           ? callB.node.parent
                           : null;
-                      if (bParentStmt && parentBlock.body.includes(bParentStmt as TSESTree.Statement)) {
+                      if (
+                        bParentStmt &&
+                        parentBlock.body.includes(
+                          bParentStmt as TSESTree.Statement,
+                        )
+                      ) {
                         // Check if the if branch has exit after release — or
                         // the release leaves on its own, e.g. inside a `try`:
                         // `try { …; client.release(); return rows; } catch …`
@@ -679,7 +811,10 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                           !ifBranchHasExitAfterRelease(callA.node, ifA) &&
                           !leavesAfter(callA.node)
                         ) {
-                          context.report({ node: callB.node, messageId: 'doubleRelease' });
+                          context.report({
+                            node: callB.node,
+                            messageId: 'doubleRelease',
+                          });
                           reported.add(callB.node);
                           continue;
                         }
@@ -690,17 +825,29 @@ export const preventDoubleRelease: TSESLint.RuleModule<
 
                 // Case 5: Two sequential if statements (neither has else)
                 const ifB = getDirectIfStatement(callB.node);
-                if (ifA && ifB && ifA !== ifB && !ifA.alternate && !ifB.alternate) {
+                if (
+                  ifA &&
+                  ifB &&
+                  ifA !== ifB &&
+                  !ifA.alternate &&
+                  !ifB.alternate
+                ) {
                   // Both are different if statements at same level
                   const parentBlockA = ifA.parent;
                   const parentBlockB = ifB.parent;
-                  if (parentBlockA === parentBlockB && parentBlockA?.type === AST_NODE_TYPES.BlockStatement) {
+                  if (
+                    parentBlockA === parentBlockB &&
+                    parentBlockA?.type === AST_NODE_TYPES.BlockStatement
+                  ) {
                     // Check if ifA doesn't exit after release
                     if (
                       !ifBranchHasExitAfterRelease(callA.node, ifA) &&
                       !leavesAfter(callA.node)
                     ) {
-                      context.report({ node: callB.node, messageId: 'doubleRelease' });
+                      context.report({
+                        node: callB.node,
+                        messageId: 'doubleRelease',
+                      });
                       reported.add(callB.node);
                       continue;
                     }
@@ -718,10 +865,20 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                   parentA.type === AST_NODE_TYPES.BlockStatement
                 ) {
                   const block = parentA as TSESTree.BlockStatement;
-                  const indexA = block.body.indexOf(callA.node.parent as TSESTree.Statement);
-                  const indexB = block.body.indexOf(callB.node.parent as TSESTree.Statement);
-                  if (indexB > indexA && !hasExitBetween(block, indexA, indexB)) {
-                    context.report({ node: callB.node, messageId: 'doubleRelease' });
+                  const indexA = block.body.indexOf(
+                    callA.node.parent as TSESTree.Statement,
+                  );
+                  const indexB = block.body.indexOf(
+                    callB.node.parent as TSESTree.Statement,
+                  );
+                  if (
+                    indexB > indexA &&
+                    !hasExitBetween(block, indexA, indexB)
+                  ) {
+                    context.report({
+                      node: callB.node,
+                      messageId: 'doubleRelease',
+                    });
                     reported.add(callB.node);
                     continue;
                   }
@@ -733,7 +890,10 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                 if (catchAForFinally && finallyB) {
                   const tryOfCatch = catchAForFinally.parent;
                   if (tryOfCatch === finallyB) {
-                    context.report({ node: callB.node, messageId: 'doubleRelease' });
+                    context.report({
+                      node: callB.node,
+                      messageId: 'doubleRelease',
+                    });
                     reported.add(callB.node);
                     continue;
                   }
@@ -742,8 +902,15 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                 // Case 8: Try block + Finally pattern
                 const tryAForFinally = isInTryBlock(callA.node);
                 const finallyB2 = isInFinallyBlock(callB.node);
-                if (tryAForFinally && finallyB2 && tryAForFinally === finallyB2) {
-                  context.report({ node: callB.node, messageId: 'doubleRelease' });
+                if (
+                  tryAForFinally &&
+                  finallyB2 &&
+                  tryAForFinally === finallyB2
+                ) {
+                  context.report({
+                    node: callB.node,
+                    messageId: 'doubleRelease',
+                  });
                   reported.add(callB.node);
                   continue;
                 }
@@ -753,7 +920,10 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                 if (finallyA) {
                   const tryEndPos = finallyA.range[1];
                   if (callB.node.range[0] > tryEndPos) {
-                    context.report({ node: callB.node, messageId: 'doubleRelease' });
+                    context.report({
+                      node: callB.node,
+                      messageId: 'doubleRelease',
+                    });
                     reported.add(callB.node);
                     continue;
                   }
@@ -769,19 +939,27 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                     !isInFinallyBlock(callB.node) &&
                     !leavesAfter(callA.node)
                   ) {
-                    context.report({ node: callB.node, messageId: 'doubleRelease' });
+                    context.report({
+                      node: callB.node,
+                      messageId: 'doubleRelease',
+                    });
                     reported.add(callB.node);
                     continue;
                   }
                 }
 
                 // Case 11: Early return branch + Finally (without exit)
-                const ifStmtA = findAncestor(callA.node, (n): n is TSESTree.IfStatement =>
-                  n.type === AST_NODE_TYPES.IfStatement
+                const ifStmtA = findAncestor(
+                  callA.node,
+                  (n): n is TSESTree.IfStatement =>
+                    n.type === AST_NODE_TYPES.IfStatement,
                 );
                 if (ifStmtA && finallyB) {
                   if (!ifBranchHasExitAfterRelease(callA.node, ifStmtA)) {
-                    context.report({ node: callB.node, messageId: 'doubleRelease' });
+                    context.report({
+                      node: callB.node,
+                      messageId: 'doubleRelease',
+                    });
                     reported.add(callB.node);
                     continue;
                   }
@@ -796,10 +974,14 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                   !alwaysExits(catchAForAfter.body) &&
                   !leavesAfter(callA.node)
                 ) {
-                  const tryOfCatchA = catchAForAfter.parent as TSESTree.TryStatement;
+                  const tryOfCatchA =
+                    catchAForAfter.parent as TSESTree.TryStatement;
                   const tryEndPos = tryOfCatchA.range[1];
                   if (callB.node.range[0] > tryEndPos) {
-                    context.report({ node: callB.node, messageId: 'doubleRelease' });
+                    context.report({
+                      node: callB.node,
+                      messageId: 'doubleRelease',
+                    });
                     reported.add(callB.node);
                     continue;
                   }
@@ -810,9 +992,12 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                 const isInExpression = (exprNode: TSESTree.Node): boolean => {
                   let current = exprNode.parent;
                   while (current) {
-                    if (current.type === AST_NODE_TYPES.ConditionalExpression) return true;
-                    if (current.type === AST_NODE_TYPES.LogicalExpression) return true;
-                    if (current.type === AST_NODE_TYPES.ExpressionStatement) break;
+                    if (current.type === AST_NODE_TYPES.ConditionalExpression)
+                      return true;
+                    if (current.type === AST_NODE_TYPES.LogicalExpression)
+                      return true;
+                    if (current.type === AST_NODE_TYPES.ExpressionStatement)
+                      break;
                     if (current.type === AST_NODE_TYPES.BlockStatement) break;
                     current = current.parent;
                   }
@@ -823,19 +1008,29 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                   // A is in a conditional/logical expression, B comes after
                   // Find the containing expression statement for A
                   let exprStmtA: TSESTree.Node | null = callA.node;
-                  while (exprStmtA && exprStmtA.type !== AST_NODE_TYPES.ExpressionStatement) {
+                  while (
+                    exprStmtA &&
+                    exprStmtA.type !== AST_NODE_TYPES.ExpressionStatement
+                  ) {
                     exprStmtA = exprStmtA.parent ?? null;
                   }
                   if (exprStmtA && callB.node.range[0] > exprStmtA.range[1]) {
                     // Check they're in the same block
-                    const blockA = findAncestor(exprStmtA, (n): n is TSESTree.BlockStatement =>
-                      n.type === AST_NODE_TYPES.BlockStatement
+                    const blockA = findAncestor(
+                      exprStmtA,
+                      (n): n is TSESTree.BlockStatement =>
+                        n.type === AST_NODE_TYPES.BlockStatement,
                     );
-                    const blockB = findAncestor(callB.node, (n): n is TSESTree.BlockStatement =>
-                      n.type === AST_NODE_TYPES.BlockStatement
+                    const blockB = findAncestor(
+                      callB.node,
+                      (n): n is TSESTree.BlockStatement =>
+                        n.type === AST_NODE_TYPES.BlockStatement,
                     );
                     if (blockA && blockA === blockB) {
-                      context.report({ node: callB.node, messageId: 'doubleRelease' });
+                      context.report({
+                        node: callB.node,
+                        messageId: 'doubleRelease',
+                      });
                       reported.add(callB.node);
                       continue;
                     }
@@ -848,4 +1043,4 @@ export const preventDoubleRelease: TSESLint.RuleModule<
       },
     };
   },
-};
+});

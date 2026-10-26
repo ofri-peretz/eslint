@@ -86,6 +86,7 @@ const DEFAULT_VALIDATION_METHOD_NAMES: readonly string[] = [
 export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
   name: 'no-unvalidated-event-body',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-unvalidated-event-body.md',
@@ -140,41 +141,16 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
       additionalProperties: [],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    // Every rule here is Lambda-specific, and none of them knew it: over 107,382
-    // files, 98% of this plugin's findings were in files with no AWS anything.
-    // Registering no visitors is both the gate and the cheap path.
-    if (!fileIsLambda(context.sourceCode.ast)) return {};
-
-    const {
-      allowInTests = true,
-      additionalProperties = [],
-      validationMethodNames: configuredValidationMethods,
-    } = options as Options;
-    const validationMethodNames = new Set(
-      configuredValidationMethods ?? DEFAULT_VALIDATION_METHOD_NAMES,
-    );
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
-    const dangerousProperties = new Set([
-      ...DANGEROUS_EVENT_PROPERTIES,
-      ...additionalProperties,
-    ]);
-
-    // Track which variables have been validated
-    const validatedVariables = new Set<string>();
-    // Track which event parameters we're monitoring
-    const eventParameters = new Set<string>();
-    // Track if we're inside a handler that uses validation middleware
-    let hasValidationMiddleware = false;
+    let validationMethodNames: Set<string>;
+    let dangerousProperties: Set<string>;
+    let validatedVariables: Set<string>;
+    let eventParameters: Set<string>;
+    let hasValidationMiddleware: boolean;
+    let fileImportsLambda: boolean;
 
     /**
      * Check if an expression indicates validation has occurred
@@ -246,33 +222,6 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
       }
       return parent;
     }
-
-    // NOTE: a dedicated `isJsonParseOfEventBody(parent)` check used to live
-    // here, but it was dead code: `JSON.parse(...)` always satisfies
-    // `isValidationCall` first ('parse' is in the validation names), so the
-    // early return above it made it unreachable for every possible AST.
-
-    // Determine whether THIS file looks like Lambda code at all. We're
-    // strict: a function parameter is only treated as a Lambda event if
-    // (a) it's named `event` AND its sibling is `context` (the AWS
-    // signature `(event, context)` or `(event, context, callback)`),
-    // or (b) the file imports `aws-lambda` types / `@aws-sdk/*` /
-    // `@middy/*`. This eliminates the audit-reported FP class where
-    // Express handlers (`function handler(req, res)` or
-    // `(request, response)`) were misclassified as Lambda. The previous
-    // allowlist of `['event', 'evt', 'e', 'request', 'req']` was too
-    // loose — see benchmarks/AUDIT_PATTERNS.md §2.4.
-    const sourceCode = context.sourceCode;
-    const fileImportsLambda = sourceCode.ast.body.some((n) => {
-      if (n.type !== AST_NODE_TYPES.ImportDeclaration) return false;
-      const src = String((n as TSESTree.ImportDeclaration).source.value);
-      return (
-        src === 'aws-lambda' ||
-        src.startsWith('@aws-sdk/') ||
-        src.startsWith('@middy/') ||
-        src === '@aws-cdk/aws-lambda'
-      );
-    });
 
     // Detect the `export const handler = ...`, `exports.handler = ...`,
     // and `module.exports.handler = ...` Lambda export conventions. A
@@ -357,6 +306,68 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Every rule here is Lambda-specific, and none of them knew it: over 107,382
+        // files, 98% of this plugin's findings were in files with no AWS anything.
+        // Registering no visitors is both the gate and the cheap path.
+        if (!fileIsLambda(context.sourceCode.ast)) return false;
+
+        const {
+          allowInTests = true,
+          additionalProperties = [],
+          validationMethodNames: configuredValidationMethods,
+        } = options as Options;
+        validationMethodNames = new Set(
+          configuredValidationMethods ?? DEFAULT_VALIDATION_METHOD_NAMES,
+        );
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+
+        dangerousProperties = new Set([
+          ...DANGEROUS_EVENT_PROPERTIES,
+          ...additionalProperties,
+        ]);
+
+        // Track which variables have been validated
+        validatedVariables = new Set<string>();
+        // Track which event parameters we're monitoring
+        eventParameters = new Set<string>();
+        // Track if we're inside a handler that uses validation middleware
+        hasValidationMiddleware = false;
+
+        // NOTE: a dedicated `isJsonParseOfEventBody(parent)` check used to live
+        // here, but it was dead code: `JSON.parse(...)` always satisfies
+        // `isValidationCall` first ('parse' is in the validation names), so the
+        // early return above it made it unreachable for every possible AST.
+
+        // Determine whether THIS file looks like Lambda code at all. We're
+        // strict: a function parameter is only treated as a Lambda event if
+        // (a) it's named `event` AND its sibling is `context` (the AWS
+        // signature `(event, context)` or `(event, context, callback)`),
+        // or (b) the file imports `aws-lambda` types / `@aws-sdk/*` /
+        // `@middy/*`. This eliminates the audit-reported FP class where
+        // Express handlers (`function handler(req, res)` or
+        // `(request, response)`) were misclassified as Lambda. The previous
+        // allowlist of `['event', 'evt', 'e', 'request', 'req']` was too
+        // loose — see benchmarks/AUDIT_PATTERNS.md §2.4.
+        const sourceCode = context.sourceCode;
+        fileImportsLambda = sourceCode.ast.body.some((n) => {
+          if (n.type !== AST_NODE_TYPES.ImportDeclaration) return false;
+          const src = String((n as TSESTree.ImportDeclaration).source.value);
+          return (
+            src === 'aws-lambda' ||
+            src.startsWith('@aws-sdk/') ||
+            src.startsWith('@middy/') ||
+            src === '@aws-cdk/aws-lambda'
+          );
+        });
+        return true;
+      },
       // Track arrow function/function parameters that match a Lambda
       // handler signature. Three valid paths (see isLambdaSignature):
       //   (a) (event, context, ...) — classic AWS shape

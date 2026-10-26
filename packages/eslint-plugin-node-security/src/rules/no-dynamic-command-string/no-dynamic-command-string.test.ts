@@ -20,11 +20,20 @@ describe('no-dynamic-command-string', () => {
   ruleTester.run('no-dynamic-command-string', noDynamicCommandString, {
     valid: [
       // THE safe pattern — the program is invoked directly with its own argv
-      { name: 'argv passed as an array', code: `spawn('kill', ['-9', String(pid)]);` },
-      { name: 'execFile with a fixed binary and an argv array is not reported', code: `execFile('git', ['clone', repoUrl]);` },
+      {
+        name: 'argv passed as an array',
+        code: `spawn('kill', ['-9', String(pid)]);`,
+      },
+      {
+        name: 'execFile with a fixed binary and an argv array is not reported',
+        code: `execFile('git', ['clone', repoUrl]);`,
+      },
       { code: `cp.spawnSync('ls', ['-la', dir]);` },
       // A shell with a fully static command line
-      { code: `spawn('bash', ['-c', 'ls -la']);` },
+      {
+        code: `spawn('bash', ['-c', 'ls -la']);`,
+        name: 'a shell given a fully static command line is not reported',
+      },
       { code: `spawn('bash', ['-lc']);` },
       { code: `spawn('bash', ['--login']);` },
       // -e is errexit to a POSIX shell, not a command flag
@@ -38,9 +47,9 @@ describe('no-dynamic-command-string', () => {
       { code: `spawn('bash', args);` },
       { code: `spawn('bash');` },
       // Not a shell interpreter
-      { code: 'spawn(\'git\', [\'-c\', `user.name=${name}`]);' },
-      { code: 'spawn(shellPath, [\'-c\', `kill ${pid}`]);' },
-      { code: 'spawn(42, [\'-c\', `kill ${pid}`]);' },
+      { code: "spawn('git', ['-c', `user.name=${name}`]);" },
+      { code: "spawn(shellPath, ['-c', `kill ${pid}`]);" },
+      { code: "spawn(42, ['-c', `kill ${pid}`]);" },
       // Escaping forms of the command-runner libraries
       { code: 'await $`git clone ${url}`;' },
       { code: 'await execa`git clone ${url}`;' },
@@ -104,7 +113,7 @@ describe('no-dynamic-command-string', () => {
       // bash -c with an interpolated command line
       {
         name: 'bash -c with an interpolated string re-enters the shell',
-        code: 'spawn(\'bash\', [\'-c\', `kill -9 ${pid}`]);',
+        code: "spawn('bash', ['-c', `kill -9 ${pid}`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       // sh -c with concatenation, absolute path spelling
@@ -127,26 +136,26 @@ describe('no-dynamic-command-string', () => {
       },
       // Windows interpreters
       {
-        code: 'spawn(\'cmd.exe\', [\'/c\', `del ${file}`]);',
+        code: "spawn('cmd.exe', ['/c', `del ${file}`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       {
-        code: 'spawn(\'powershell\', [\'-Command\', `Remove-Item ${file}`]);',
+        code: "spawn('powershell', ['-Command', `Remove-Item ${file}`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       // PowerShell really does take -e (-EncodedCommand)
       {
-        code: 'spawn(\'pwsh\', [\'-e\', `Remove-Item ${file}`]);',
+        code: "spawn('pwsh', ['-e', `Remove-Item ${file}`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       // Flag not in the first position
       {
-        code: 'spawn(\'bash\', [\'--login\', \'-c\', `deploy ${env}`]);',
+        code: "spawn('bash', ['--login', '-c', `deploy ${env}`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       // Namespaced child_process import
       {
-        code: 'cp.spawn(\'bash\', [\'-c\', `kill ${pid}`]);',
+        code: "cp.spawn('bash', ['-c', `kill ${pid}`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       // execaCommand does not escape its interpolations
@@ -188,52 +197,52 @@ describe('no-dynamic-command-string', () => {
       // injection is unchanged, only the spelling at the call site moved.
       // The interpreter path behind a `const`.
       {
-        code: 'const SHELL = \'/bin/bash\'; spawn(SHELL, [\'-c\', `.githooks/${hook} ${ref}`]);',
+        code: "const SHELL = '/bin/bash'; spawn(SHELL, ['-c', `.githooks/${hook} ${ref}`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       // The argv vector built one statement above the call.
       {
-        code: 'const argv = [\'-c\', `pkill -TERM -P ${pid}`]; spawnSync(\'sh\', argv);',
+        code: "const argv = ['-c', `pkill -TERM -P ${pid}`]; spawnSync('sh', argv);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       // Clustered POSIX options: `-lc` is `-l` plus `-c`, and CI runners write
       // it that way so nvm/rbenv shims are on PATH.
       {
-        code: 'spawn(\'bash\', [\'-lc\', `nvm use ${version} && ${script}`]);',
+        code: "spawn('bash', ['-lc', `nvm use ${version} && ${script}`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       {
-        code: 'spawn(\'sh\', [\'-euc\', `deploy ${env}`]);',
+        code: "spawn('sh', ['-euc', `deploy ${env}`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       // execa's array form is safe because no shell is involved — unless the
       // program you spawn IS the shell.
       {
-        code: 'execa(\'bash\', [\'-c\', `psql -f migrations/${name}.sql`]);',
+        code: "execa('bash', ['-c', `psql -f migrations/${name}.sql`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       {
-        code: 'execaSync(\'bash\', [\'-c\', `psql -f migrations/${name}.sql`]);',
+        code: "execaSync('bash', ['-c', `psql -f migrations/${name}.sql`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       // The shell inside the argument vector: sudo and docker exec forward the
       // rest verbatim, so the re-parse is identical.
       {
-        code: 'spawn(\'sudo\', [\'bash\', \'-c\', `useradd -m ${username}`]);',
+        code: "spawn('sudo', ['bash', '-c', `useradd -m ${username}`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       {
-        code: 'spawnSync(\'docker\', [\'exec\', \'-i\', box, \'sh\', \'-c\', `tail /var/log/${svc}.log`]);',
+        code: "spawnSync('docker', ['exec', '-i', box, 'sh', '-c', `tail /var/log/${svc}.log`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       // `promisify(execFile)` is the form Node's own docs show; a plain alias is
       // the same hop without the wrapper.
       {
-        code: 'const run = promisify(execFile); run(\'bash\', [\'-c\', `aws s3 sync s3://${bucket} .`]);',
+        code: "const run = promisify(execFile); run('bash', ['-c', `aws s3 sync s3://${bucket} .`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       {
-        code: 'const run = execFile; run(\'bash\', [\'-c\', `aws s3 sync s3://${bucket} .`]);',
+        code: "const run = execFile; run('bash', ['-c', `aws s3 sync s3://${bucket} .`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       {
@@ -294,19 +303,19 @@ describe('no-dynamic-command-string', () => {
       },
       // Alias resolution stops where the evidence stops, too.
       {
-        code: 'const run = makeRunner(); run(\'bash\', [\'-c\', `x ${y}`]); spawn(\'bash\', [\'-c\', `x ${y}`]);',
+        code: "const run = makeRunner(); run('bash', ['-c', `x ${y}`]); spawn('bash', ['-c', `x ${y}`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       {
-        code: 'const run = promisify(); run(\'bash\', [\'-c\', `x ${y}`]); spawn(\'bash\', [\'-c\', `x ${y}`]);',
+        code: "const run = promisify(); run('bash', ['-c', `x ${y}`]); spawn('bash', ['-c', `x ${y}`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       {
-        code: 'const run = promisify(unrelated); run(\'bash\', [\'-c\', `x ${y}`]); spawn(\'bash\', [\'-c\', `x ${y}`]);',
+        code: "const run = promisify(unrelated); run('bash', ['-c', `x ${y}`]); spawn('bash', ['-c', `x ${y}`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       {
-        code: 'const run = promisify(obj[method]); run(\'bash\', [\'-c\', `x ${y}`]); spawn(\'bash\', [\'-c\', `x ${y}`]);',
+        code: "const run = promisify(obj[method]); run('bash', ['-c', `x ${y}`]); spawn('bash', ['-c', `x ${y}`]);",
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
     ],

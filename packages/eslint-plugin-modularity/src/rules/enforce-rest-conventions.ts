@@ -8,11 +8,16 @@
  * ESLint Rule: enforce-rest-conventions
  * Validates REST endpoint design against best practices
  * Priority 6: API Design & Evolution
- * 
+ *
  * @see https://restfulapi.net/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, staticString, propertyName } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  staticString,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -24,10 +29,10 @@ type MessageIds =
 export interface Options {
   /** Check HTTP methods. Default: true */
   checkHttpMethods?: boolean;
-  
+
   /** Check status codes. Default: true */
   checkStatusCodes?: boolean;
-  
+
   /** Check resource naming. Default: true */
   checkResourceNaming?: boolean;
 }
@@ -37,6 +42,7 @@ type RuleOptions = [Options?];
 export const enforceRestConventions = createRule<RuleOptions, MessageIds>({
   name: 'enforce-rest-conventions',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modularity/docs/rules/enforce-rest-conventions.md',
@@ -108,13 +114,12 @@ export const enforceRestConventions = createRule<RuleOptions, MessageIds>({
       checkResourceNaming: true,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const {
-      checkStatusCodes = true,
-      checkResourceNaming = true,
-
-}: Options = options || {};
-
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let checkStatusCodes: boolean;
+    let checkResourceNaming: boolean;
 
     /**
      * Check CallExpression for REST API patterns
@@ -127,8 +132,16 @@ export const enforceRestConventions = createRule<RuleOptions, MessageIds>({
 
         if (method !== null) {
           const methodName = method.toLowerCase();
-          const httpMethods = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'];
-          
+          const httpMethods = [
+            'get',
+            'post',
+            'put',
+            'patch',
+            'delete',
+            'head',
+            'options',
+          ];
+
           if (httpMethods.includes(methodName)) {
             // NOTE: every name in `httpMethods` is by construction a valid REST
             // HTTP method, so a "checkHttpMethods" validation here was dead
@@ -144,7 +157,11 @@ export const enforceRestConventions = createRule<RuleOptions, MessageIds>({
                 if (path.startsWith('/') && path.length > 1) {
                   const resource = path.split('/')[1];
                   // Basic check: resource should be plural or have :id
-                  if (!path.includes(':') && !resource.endsWith('s') && resource.length > 3) {
+                  if (
+                    !path.includes(':') &&
+                    !resource.endsWith('s') &&
+                    resource.length > 3
+                  ) {
                     context.report({
                       node: pathArg,
                       messageId: 'restConventionViolation',
@@ -163,7 +180,7 @@ export const enforceRestConventions = createRule<RuleOptions, MessageIds>({
           }
         }
       }
-      
+
       // Check for status code usage: res.status(200)
       if (checkStatusCodes && node.callee.type === 'MemberExpression') {
         if (propertyName(node.callee) === 'status') {
@@ -174,8 +191,12 @@ export const enforceRestConventions = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({ checkStatusCodes = true, checkResourceNaming = true } =
+          options || {});
+      },
       CallExpression: checkCallExpression,
     };
   },
 });
-

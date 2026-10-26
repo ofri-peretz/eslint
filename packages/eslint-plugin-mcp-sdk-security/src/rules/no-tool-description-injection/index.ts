@@ -502,6 +502,7 @@ function forwardsOf(
 export const noToolDescriptionInjection = createRule<[], MessageIds>({
   name: 'no-tool-description-injection',
   meta: {
+    interop: { runtimes: ['eslint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mcp-sdk-security/docs/rules/no-tool-description-injection.md',
@@ -543,20 +544,15 @@ export const noToolDescriptionInjection = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    // Asked once, up front, over the whole AST. The two-visitor gate this
-    // replaces saw ESM and `require()` only, so import-equals and dynamic
-    // `import()` files ran no rule at all.
-    if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
-    const sourceCode = context.sourceCode;
-    const parser = activeParser(context);
-    const resolve = valueResolverFor(context);
-    const builtBy = createInstanceResolver(context);
-    const handlers = createHandlerCollector(context, resolve, 'arguments');
-    /** Request and route handlers: their first parameter is client data. */
-    const requests = new Map<TSESTree.Node, HandlerRoot>();
-    const candidates: Text[] = [];
-    const calls: TSESTree.CallExpression[] = [];
+  createOnce(context) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let parser: unknown;
+    let resolve: (node: TSESTree.Node) => TSESTree.Node | undefined;
+    let builtBy: ReturnType<typeof createInstanceResolver>;
+    let handlers: ReturnType<typeof createHandlerCollector>;
+    let requests: Map<TSESTree.Node, HandlerRoot>;
+    let candidates: Text[];
+    let calls: TSESTree.CallExpression[];
 
     /** Is this receiver an app built by an HTTP framework? */
     function isHttpApp(node: TSESTree.Node): boolean {
@@ -645,6 +641,22 @@ export const noToolDescriptionInjection = createRule<[], MessageIds>({
     }
 
     return {
+      before() {
+        // Asked once, up front, over the whole AST. The two-visitor gate this
+        // replaces saw ESM and `require()` only, so import-equals and dynamic
+        // `import()` files ran no rule at all.
+        if (!fileUsesMcpSdk(context.sourceCode.ast)) return false;
+        sourceCode = context.sourceCode;
+        parser = activeParser(context);
+        resolve = valueResolverFor(context);
+        builtBy = createInstanceResolver(context);
+        handlers = createHandlerCollector(context, resolve, 'arguments');
+        /** Request and route handlers: their first parameter is client data. */
+        requests = new Map<TSESTree.Node, HandlerRoot>();
+        candidates = [];
+        calls = [];
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const scope = sourceCode.getScope(node);
         handlers.visit(node);

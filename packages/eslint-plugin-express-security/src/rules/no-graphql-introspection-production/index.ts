@@ -78,6 +78,7 @@ export const noGraphqlIntrospectionProduction = createRule<
 >({
   name: 'no-graphql-introspection-production',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-graphql-introspection-production.md',
@@ -123,25 +124,33 @@ export const noGraphqlIntrospectionProduction = createRule<
       allowInDevelopment: true,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const { allowInTests = true } = options as Options;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-
-    if (isTestFile) {
-      return {};
-    }
-
-    const sourceCode = context.sourceCode;
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        const { allowInTests = true } = options as Options;
+
+        const filename = context.filename;
+        const isTestFile = allowInTests && isTestFilePath(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+
+        sourceCode = context.sourceCode;
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
 

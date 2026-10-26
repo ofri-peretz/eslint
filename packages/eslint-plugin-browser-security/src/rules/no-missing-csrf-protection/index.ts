@@ -224,6 +224,7 @@ function matchesIgnorePattern(text: string, patterns: string[]): boolean {
 export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-csrf-protection',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     deprecated: true,
     replacedBy: ['@see eslint-plugin-express-security/require-csrf-protection'],

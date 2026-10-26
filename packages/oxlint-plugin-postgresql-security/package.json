@@ -1,0 +1,71 @@
+{
+  "name": "oxlint-plugin-postgresql-security",
+  "version": "2.6.4",
+  "description": "The postgresql-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-postgresql-security.",
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts"
+  },
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
+    "interlace-security",
+    "pg",
+    "postgres",
+    "postgresql",
+    "node-postgres",
+    "sql",
+    "sql-injection",
+    "cwe-89",
+    "database",
+    "database-security",
+    "connection-pool",
+    "best-practices",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-postgresql-security?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-postgresql-security",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-postgresql-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/ofri-peretz/eslint"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-postgresql-security": "2.6.4"
+  }
+}

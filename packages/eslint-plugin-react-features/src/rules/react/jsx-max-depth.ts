@@ -23,6 +23,10 @@ type RuleOptions = [Options?];
 export const jsxMaxDepth = createRule<RuleOptions, MessageIds>({
   name: 'jsx-max-depth',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/jsx-max-depth',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/jsx-max-depth.md',
@@ -35,7 +39,8 @@ export const jsxMaxDepth = createRule<RuleOptions, MessageIds>({
         description: 'JSX nesting depth exceeds maximum',
         severity: 'MEDIUM',
         fix: 'Extract nested JSX into separate component or reduce nesting',
-        documentationLink: 'https://react.dev/learn/thinking-in-react#step-4-identify-where-your-state-should-live',
+        documentationLink:
+          'https://react.dev/learn/thinking-in-react#step-4-identify-where-your-state-should-live',
       }),
     },
     schema: [
@@ -53,11 +58,14 @@ export const jsxMaxDepth = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ max: 5 }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const maxDepth = options?.max ?? 5;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let maxDepth: number;
 
     return {
+      before() {
+        const [options] = context.options;
+        maxDepth = options?.max ?? 5;
+      },
       JSXElement(node: TSESTree.JSXElement) {
         const depth = calculateDepth(node);
         if (depth > maxDepth) {

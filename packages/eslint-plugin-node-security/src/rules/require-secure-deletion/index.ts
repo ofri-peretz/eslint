@@ -73,10 +73,26 @@ type RuleOptions = [Options?];
  * head-final match already covers `refreshToken`, `accessToken`, `userToken`.
  */
 const SENSITIVE_PROPERTY_NAMES = [
-  'password', 'passwd', 'pwd', 'passphrase',
-  'secret', 'token', 'jwt', 'bearer', 'credential',
-  'api key', 'secret key', 'private key', 'signing key', 'encryption key', 'access key',
-  'session id', 'ssn', 'credit card', 'card number', 'cvv',
+  'password',
+  'passwd',
+  'pwd',
+  'passphrase',
+  'secret',
+  'token',
+  'jwt',
+  'bearer',
+  'credential',
+  'api key',
+  'secret key',
+  'private key',
+  'signing key',
+  'encryption key',
+  'access key',
+  'session id',
+  'ssn',
+  'credit card',
+  'card number',
+  'cvv',
 ];
 
 /**
@@ -117,6 +133,7 @@ function isSensitiveName(name: string, phrases: readonly string[]): boolean {
 export const requireSecureDeletion = createRule<RuleOptions, MessageIds>({
   name: 'require-secure-deletion',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/require-secure-deletion.md',
@@ -129,11 +146,12 @@ export const requireSecureDeletion = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Incomplete Secret Cleanup',
         cwe: 'CWE-459',
-        description: '`delete` on the sensitive property `{{property}}` unbinds it without scrubbing the value',
+        description:
+          '`delete` on the sensitive property `{{property}}` unbinds it without scrubbing the value',
         severity: 'MEDIUM',
         fix: 'Overwrite the value before deleting it (obj.{{property}} = undefined, or zero-fill the Buffer), and make sure no copy of the object was spread, logged, or serialised first',
         documentationLink: 'https://cwe.mitre.org/data/definitions/459.html',
-      })
+      }),
     },
     schema: [
       {
@@ -165,24 +183,18 @@ export const requireSecureDeletion = createRule<RuleOptions, MessageIds>({
       sensitiveProperties: [...SENSITIVE_PROPERTY_NAMES],
     },
   ],
-  create(context, [options = {}]) {
-    // The default lives in `defaultOptions`, so there is no `??` fallback to
-    // take here — a second copy of the default is a second thing to keep in
-    // step, and coverage proved this one was never reached.
-    const {
-      additionalSensitiveProperties = [],
-      sensitiveProperties = SENSITIVE_PROPERTY_NAMES,
-    } = options as Options;
-
-    const phrases = [...sensitiveProperties, ...additionalSensitiveProperties];
+  createOnce(context, currentOptions) {
+    let phrases: string[];
 
     /** The property name being deleted, or undefined if it isn't statically known. */
     function deletedPropertyName(node: TSESTree.Node): string | undefined {
       // `delete obj?.password` wraps the member expression in a ChainExpression.
-      const argument = node.type === AST_NODE_TYPES.ChainExpression ? node.expression : node;
+      const argument =
+        node.type === AST_NODE_TYPES.ChainExpression ? node.expression : node;
       if (argument.type !== AST_NODE_TYPES.MemberExpression) return undefined;
       const property = argument.property;
-      if (!argument.computed && property.type === AST_NODE_TYPES.Identifier) return property.name;
+      if (!argument.computed && property.type === AST_NODE_TYPES.Identifier)
+        return property.name;
       // `const SECRET_FIELD = 'password'; delete user[SECRET_FIELD]`. A
       // redaction helper that keeps its field list in one place is better code
       // than the inline version, and reading only the property node made it
@@ -192,17 +204,36 @@ export const requireSecureDeletion = createRule<RuleOptions, MessageIds>({
       return resolved?.value;
     }
 
-    function reportIfSensitive(node: TSESTree.Node, property: string | undefined): void {
+    function reportIfSensitive(
+      node: TSESTree.Node,
+      property: string | undefined,
+    ): void {
       // Only a `delete` of a *named, statically known, sensitive* property is
       // reportable. Firing on every `delete obj.prop` produced 120 findings
       // on a 1,470-file corpus with no security content whatsoever — the rule
       // was a `delete` detector, not a secret-cleanup detector.
       if (!property) return;
       if (!isSensitiveName(property, phrases)) return;
-      context.report({ node, messageId: 'violationDetected', data: { property } });
+      context.report({
+        node,
+        messageId: 'violationDetected',
+        data: { property },
+      });
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // The default lives in `defaultOptions`, so there is no `??` fallback to
+        // take here — a second copy of the default is a second thing to keep in
+        // step, and coverage proved this one was never reached.
+        const {
+          additionalSensitiveProperties = [],
+          sensitiveProperties = SENSITIVE_PROPERTY_NAMES,
+        } = options as Options;
+
+        phrases = [...sensitiveProperties, ...additionalSensitiveProperties];
+      },
       UnaryExpression(node: TSESTree.UnaryExpression) {
         if (node.operator !== 'delete') return;
         reportIfSensitive(node, deletedPropertyName(node.argument));
@@ -228,7 +259,10 @@ export const requireSecureDeletion = createRule<RuleOptions, MessageIds>({
         }
         const key = node.arguments[1];
         if (!key) return;
-        reportIfSensitive(node, resolveConstantString(context.sourceCode, key)?.value);
+        reportIfSensitive(
+          node,
+          resolveConstantString(context.sourceCode, key)?.value,
+        );
       },
     };
   },

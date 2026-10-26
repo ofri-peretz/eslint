@@ -9,7 +9,11 @@
  * Prevents unassigned imports (eslint-plugin-import inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, staticString } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unassignedImport' | 'sideEffectOnly' | 'missingAssignment';
@@ -24,6 +28,10 @@ type RuleOptions = [Options?];
 export const noUnassignedImport = createRule<RuleOptions, MessageIds>({
   name: 'no-unassigned-import',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/no-unassigned-import',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-unassigned-import.md',
@@ -82,15 +90,18 @@ export const noUnassignedImport = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const { allowModules = [] } = options || {};
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowModules: string[];
 
     function shouldAllow(importPath: string): boolean {
       return allowModules.includes(importPath);
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({ allowModules = [] } = options || {});
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const importPath = node.source.value;
 
@@ -129,7 +140,10 @@ export const noUnassignedImport = createRule<RuleOptions, MessageIds>({
               // Only report if the parent is an ExpressionStatement
               // This strictly catches `require('foo');` which is a side-effect import.
               // Any other parent (VariableDecl, Assignment, Call, Conditional, etc.) means it's used.
-              if (parent && parent.type === AST_NODE_TYPES.ExpressionStatement) {
+              if (
+                parent &&
+                parent.type === AST_NODE_TYPES.ExpressionStatement
+              ) {
                 context.report({
                   node: arg,
                   messageId: 'unassignedImport',
@@ -139,7 +153,7 @@ export const noUnassignedImport = createRule<RuleOptions, MessageIds>({
               // But strictly `no-unassigned-import` might only care about top level.
               // For safety and compatibility, we report if it's in a sequence and NOT the last item.
               else if (
-                parent && 
+                parent &&
                 parent.type === AST_NODE_TYPES.SequenceExpression
               ) {
                 const expressions = parent.expressions;

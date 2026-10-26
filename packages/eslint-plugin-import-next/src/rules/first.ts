@@ -19,6 +19,10 @@ export type RuleOptions = [Options?];
 export const first = createRule<RuleOptions, MessageIds>({
   name: 'first',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/first',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/first.md',
@@ -38,7 +42,16 @@ export const first = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    // oxlint-disable-next-line consistent-function-scoping
+    function isDirective(node: TSESTree.Node) {
+      return (
+        node.type === 'ExpressionStatement' &&
+        node.expression.type === 'Literal' &&
+        typeof node.expression.value === 'string' &&
+        node.expression.value.startsWith('use ')
+      );
+    }
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const sourceCode = context.sourceCode;
@@ -60,15 +73,5 @@ export const first = createRule<RuleOptions, MessageIds>({
         }
       },
     };
-
-    // oxlint-disable-next-line consistent-function-scoping
-    function isDirective(node: TSESTree.Node) {
-      return (
-        node.type === 'ExpressionStatement' &&
-        node.expression.type === 'Literal' &&
-        typeof node.expression.value === 'string' &&
-        node.expression.value.startsWith('use ')
-      );
-    }
   },
 });

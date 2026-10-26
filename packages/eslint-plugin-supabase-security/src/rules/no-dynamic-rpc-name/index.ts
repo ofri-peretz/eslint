@@ -133,6 +133,7 @@ function isFixedName(
 export const noDynamicRpcName = createRule<[], MessageIds>({
   name: 'no-dynamic-rpc-name',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-supabase-security/docs/rules/no-dynamic-rpc-name.md',
@@ -158,10 +159,12 @@ export const noDynamicRpcName = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    if (!fileUsesSupabase(context.sourceCode.ast)) return {};
-
+  createOnce(context) {
     return {
+      before() {
+        if (!fileUsesSupabase(context.sourceCode.ast)) return false;
+        return true;
+      },
       CallExpression(node): void {
         const { callee } = node;
         if (callee.type !== 'MemberExpression') return;

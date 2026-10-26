@@ -20,9 +20,18 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-sensitive-localstorage', noSensitiveLocalstorage, {
   valid: [
     // Non-sensitive data
-    { name: 'a theme preference', code: `localStorage.setItem('theme', 'dark');` },
-    { name: 'a non-sensitive key', code: `localStorage.setItem('language', 'en');` },
-    { code: `localStorage['settings'] = JSON.stringify(settings);` },
+    {
+      name: 'a theme preference',
+      code: `localStorage.setItem('theme', 'dark');`,
+    },
+    {
+      name: 'a non-sensitive key',
+      code: `localStorage.setItem('language', 'en');`,
+    },
+    {
+      name: 'a settings object stored under a bracketed key is not sensitive',
+      code: `localStorage['settings'] = JSON.stringify(settings);`,
+    },
     // Test file with allowInTests
     {
       code: `localStorage.setItem('password', pw);`,
@@ -273,7 +282,9 @@ ruleTester.run('lock: adversarial wave', noSensitiveLocalstorage, {
     {
       code: `export function seed(localStorage) { localStorage.setItem('password', 'fake'); }`,
     },
-    { code: `const { localStorage: store } = fakeWindow; store.setItem('password', pw);` },
+    {
+      code: `const { localStorage: store } = fakeWindow; store.setItem('password', pw);`,
+    },
   ],
   invalid: [
     {

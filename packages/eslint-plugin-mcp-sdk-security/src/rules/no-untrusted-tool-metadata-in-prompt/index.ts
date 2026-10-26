@@ -175,6 +175,7 @@ function llmCallOf(
 export const noUntrustedToolMetadataInPrompt = createRule<[], MessageIds>({
   name: 'no-untrusted-tool-metadata-in-prompt',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mcp-sdk-security/docs/rules/no-untrusted-tool-metadata-in-prompt.md',
@@ -202,13 +203,19 @@ export const noUntrustedToolMetadataInPrompt = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
-    const sourceCode = context.sourceCode;
-    const builtBy = createInstanceResolver(context);
-    const sinks: Array<{ call: TSESTree.CallExpression; sink: string }> = [];
+  createOnce(context) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let builtBy: (node: TSESTree.Node) => Construction | undefined;
+    let sinks: { call: TSESTree.CallExpression; sink: string }[];
 
     return {
+      before() {
+        if (!fileUsesMcpSdk(context.sourceCode.ast)) return false;
+        sourceCode = context.sourceCode;
+        builtBy = createInstanceResolver(context);
+        sinks = [];
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const sink = llmCallOf(node, sourceCode.getScope(node), builtBy);
         if (sink !== undefined) sinks.push({ call: node, sink });

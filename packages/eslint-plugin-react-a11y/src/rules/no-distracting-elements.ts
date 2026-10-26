@@ -25,6 +25,10 @@ type RuleOptions = [Options?];
 export const noDistractingElements = createRule<RuleOptions, MessageIds>({
   name: 'no-distracting-elements',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/no-distracting-elements',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-distracting-elements.md',
@@ -63,13 +67,17 @@ export const noDistractingElements = createRule<RuleOptions, MessageIds>({
       elements: ['marquee', 'blink'],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
-    const { elements = ['marquee', 'blink'] } = options ?? ({} as Options);
+    let elements: string[];
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        ({ elements = ['marquee', 'blink'] } = options ?? ({} as Options));
+      },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (
           node.name.type === 'JSXIdentifier' &&

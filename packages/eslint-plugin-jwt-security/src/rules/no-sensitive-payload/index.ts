@@ -40,6 +40,7 @@ type RuleOptions = [NoSensitivePayloadOptions?];
 export const noSensitivePayload = createRule<RuleOptions, MessageIds>({
   name: 'no-sensitive-payload',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt-security/docs/rules/no-sensitive-payload.md',
@@ -110,15 +111,9 @@ export const noSensitivePayload = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] ?? {};
-    const additionalFields = options.additionalSensitiveFields ?? [];
-    const allSensitiveFields = new Set([
-      ...SENSITIVE_PAYLOAD_FIELDS,
-      ...additionalFields,
-    ]);
-
-    const sourceCode = context.sourceCode;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allSensitiveFields: Set<string>;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /**
      * A signed JAR request object (RFC 9101 §4): issued BY the client — `iss`
@@ -157,6 +152,16 @@ export const noSensitivePayload = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] ?? {};
+        const additionalFields = options.additionalSensitiveFields ?? [];
+        allSensitiveFields = new Set([
+          ...SENSITIVE_PAYLOAD_FIELDS,
+          ...additionalFields,
+        ]);
+
+        sourceCode = context.sourceCode;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (!isSignOperation(node, sourceCode)) {
           return;

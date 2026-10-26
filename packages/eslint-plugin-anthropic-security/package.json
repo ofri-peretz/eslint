@@ -69,6 +69,9 @@
     "@anthropic-ai/claude-agent-sdk": ">=0.1.0 <1.0.0"
   },
   "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    },
     "@anthropic-ai/sdk": {
       "optional": true
     },

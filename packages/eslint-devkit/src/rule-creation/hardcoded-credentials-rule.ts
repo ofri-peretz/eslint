@@ -1,3 +1,4 @@
+import { RuleCreator } from './rule-creator';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -256,8 +257,11 @@ export function createHardcodedCredentialsRule(
   };
   const originOf = createOriginClassifier(config.modules);
 
-  return {
+  return RuleCreator.withoutDocs<[], HardcodedCredentialsMessageIds>({
     meta: {
+      // Shared detection, shared runtimes: oxlint only if every plugin's rule
+      // from this factory passes its own suite there.
+      interop: { runtimes: ['eslint', 'oxlint'] },
       type: config.meta.type,
       docs: { ...config.meta.docs },
       messages: {
@@ -293,21 +297,12 @@ export function createHardcodedCredentialsRule(
       schema: [],
     },
     defaultOptions: [],
-    create(context) {
-      // BENCHMARK-CRITERIA §B1: a test pointing at a throwaway local database
-      // is not a committed production secret.
-      if (isTestFilePath(context.filename)) return {};
-      const env = envOf(context);
-      let ownsFile = false;
-      /** Owned through a config-file shape alone, with no driver import. */
-      let ownsShapeOnly = false;
-      /**
-       * Nodes already reported. A credential can be reached twice — once
-       * through its parent config's scan and once from its own visitor.
-       */
-      const reported = new WeakSet<TSESTree.Node>();
-      /** Objects already scanned, so a nested config is walked once. */
-      const scanned = new WeakSet<TSESTree.ObjectExpression>();
+    createOnce(context) {
+      let env: ReturnType<typeof envOf>;
+      let ownsFile: boolean;
+      let ownsShapeOnly: boolean;
+      let reported: WeakSet<TSESTree.Node>;
+      let scanned: WeakSet<TSESTree.ObjectExpression>;
 
       const report = (
         node: TSESTree.Node,
@@ -392,6 +387,23 @@ export function createHardcodedCredentialsRule(
       };
 
       return {
+        before() {
+          // BENCHMARK-CRITERIA §B1: a test pointing at a throwaway local database
+          // is not a committed production secret.
+          if (isTestFilePath(context.filename)) return false;
+          env = envOf(context);
+          ownsFile = false;
+          /** Owned through a config-file shape alone, with no driver import. */
+          ownsShapeOnly = false;
+          /**
+           * Nodes already reported. A credential can be reached twice — once
+           * through its parent config's scan and once from its own visitor.
+           */
+          reported = new WeakSet<TSESTree.Node>();
+          /** Objects already scanned, so a nested config is walked once. */
+          scanned = new WeakSet<TSESTree.ObjectExpression>();
+          return true;
+        },
         Program(program: TSESTree.Program) {
           ownsFile = usesModule(program);
           ownsShapeOnly = ownsFile && !importsModule(program);
@@ -448,7 +460,7 @@ export function createHardcodedCredentialsRule(
         },
       };
     },
-  };
+  });
 }
 
 /**

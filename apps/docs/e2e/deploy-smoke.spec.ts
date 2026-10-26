@@ -197,3 +197,51 @@ test.describe('Deploy smoke: wide viewport (1728px)', () => {
     });
   }
 });
+
+// The docs lead with oxlint / Vite+ (src/__tests__/oxlint-docs-lock.test.ts
+// pins the source; this proves the built pages render it).
+test.describe('Deploy smoke: oxlint-first docs', () => {
+  const RULE_PAGE =
+    '/docs/security/plugin-jwt-security/rules/no-algorithm-none';
+
+  test('/docs/oxlint renders the alias list and the built-in overlap', async ({
+    page,
+  }) => {
+    const res = await page.goto('/docs/oxlint');
+    expect(res?.status()).toBe(200);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(
+      'oxlint',
+    );
+    await expect(page.getByTestId('oxlint-alias-list')).toContainText(
+      'oxlint-plugin-jwt-security',
+    );
+    await expect(page.getByTestId('import-next-gaps')).toContainText(
+      'no-unresolved',
+    );
+    await expect(page.getByTestId('oxlint-builtin-overlap')).toContainText(
+      'import-next',
+    );
+  });
+
+  test('a rule page shows the oxlint tab by default', async ({ page }) => {
+    await page.goto(RULE_PAGE);
+    const tabs = page.getByTestId('engine-tabs');
+    // The engine panel itself; the package-manager tabs nest panels inside it.
+    const oxlintPanel = tabs.locator('[data-engine="oxlint"]');
+    await expect(oxlintPanel).toBeVisible();
+    await expect(
+      tabs.getByRole('tab', { name: 'oxlint / Vite+' }),
+    ).toHaveAttribute('aria-selected', 'true');
+    await expect(oxlintPanel).toContainText('oxlint-plugin-jwt-security');
+    await expect(oxlintPanel).toContainText('jwt-security/no-algorithm-none');
+  });
+
+  test('#engine-eslint deep-links the ESLint tab', async ({ page }) => {
+    await page.goto(`${RULE_PAGE}#engine-eslint`);
+    const tabs = page.getByTestId('engine-tabs');
+    await expect(tabs.getByRole('tab', { name: 'ESLint' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+  });
+});

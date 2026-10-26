@@ -21,6 +21,7 @@ export interface Options {
 export const requireDefaultProps = createRule<[Options], MessageIds>({
   name: 'require-default-props',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/require-default-props.md',
@@ -50,15 +51,96 @@ export const requireDefaultProps = createRule<[Options], MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, [Options]>) {
-    const [options] = context.options;
-    const forbidDefaultForRequired = options?.forbidDefaultForRequired ?? false;
+  createOnce(context: TSESLint.RuleContext<MessageIds, [Options]>) {
+    let forbidDefaultForRequired: boolean;
+    let propTypes: Map<string, Map<string, TSESTree.Property>>;
+    let defaultProps: Map<string, Map<string, TSESTree.Property>>;
+    let reactComponents: Set<string>;
 
-    const propTypes = new Map<string, Map<string, TSESTree.Property>>();
-    const defaultProps = new Map<string, Map<string, TSESTree.Property>>();
-    const reactComponents = new Set<string>();
+    // oxlint-disable-next-line consistent-function-scoping
+    function getComponentName(node: TSESTree.PropertyDefinition): string {
+      /*
+       * A `PropertyDefinition` exists only as a class member, so its parent is
+       * always a `ClassBody` and that body's parent is always a class —
+       * declaration or expression, an abstract class being a declaration with
+       * `abstract: true`. Neither guard can be reached by any input, and the
+       * house rule is to delete such a branch rather than cover it. Before the
+       * anonymous-class fix `getComponentName` could genuinely return null,
+       * because it keyed on `id.name`; now `componentKey` always produces one.
+       */
+      /*
+       * A `ClassBody`'s parent is always a class — declaration or expression,
+       * and an abstract class is a declaration with `abstract: true`. There is
+       * no third shape, so a guard here would be a branch no input can reach.
+       * The house rule is to delete such a branch rather than cover it; the
+       * cast states the invariant TypeScript cannot see.
+       */
+      const cls = node.parent.parent as
+        TSESTree.ClassDeclaration | TSESTree.ClassExpression;
+      return componentKey(cls);
+    }
+
+    /**
+     * A stable key for a component class, named or not.
+     *
+     * The source position is used when there is no identifier. It is unique per
+     * class within one lint pass, which is all this rule needs — it only has to
+     * match the class that declared `propTypes` with the one that declared
+     * `defaultProps`, and those are the same node.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    function componentKey(
+      node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
+    ): string {
+      return node.id?.name ?? `anonymous@${node.range[0]}`;
+    }
+
+    // oxlint-disable-next-line consistent-function-scoping
+    function isReactComponent(
+      node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
+    ): boolean {
+      if (!node.superClass) return false;
+
+      if (node.superClass.type === 'Identifier') {
+        return (
+          node.superClass.name === 'Component' ||
+          node.superClass.name === 'PureComponent'
+        );
+      }
+
+      if (node.superClass.type === 'MemberExpression') {
+        return (
+          node.superClass.object.type === 'Identifier' &&
+          node.superClass.object.name === 'React' &&
+          (propertyName(node.superClass) === 'Component' ||
+            propertyName(node.superClass) === 'PureComponent')
+        );
+      }
+
+      return false;
+    }
+
+    // oxlint-disable-next-line consistent-function-scoping
+    function isRequiredProp(propType: TSESTree.Property): boolean {
+      // Check if prop type ends with .isRequired
+      if (
+        propType.value.type === 'MemberExpression' &&
+        propertyName(propType.value) === 'isRequired'
+      ) {
+        return true;
+      }
+      return false;
+    }
 
     return {
+      before() {
+        const [options] = context.options;
+        forbidDefaultForRequired = options?.forbidDefaultForRequired ?? false;
+
+        propTypes = new Map<string, Map<string, TSESTree.Property>>();
+        defaultProps = new Map<string, Map<string, TSESTree.Property>>();
+        reactComponents = new Set<string>();
+      },
       // Track React component classes
       ClassDeclaration(node: TSESTree.ClassDeclaration) {
         if (isReactComponent(node)) reactComponents.add(componentKey(node));
@@ -154,80 +236,5 @@ export const requireDefaultProps = createRule<[Options], MessageIds>({
         }
       },
     };
-
-    // oxlint-disable-next-line consistent-function-scoping
-    function getComponentName(node: TSESTree.PropertyDefinition): string {
-      /*
-       * A `PropertyDefinition` exists only as a class member, so its parent is
-       * always a `ClassBody` and that body's parent is always a class —
-       * declaration or expression, an abstract class being a declaration with
-       * `abstract: true`. Neither guard can be reached by any input, and the
-       * house rule is to delete such a branch rather than cover it. Before the
-       * anonymous-class fix `getComponentName` could genuinely return null,
-       * because it keyed on `id.name`; now `componentKey` always produces one.
-       */
-      /*
-       * A `ClassBody`'s parent is always a class — declaration or expression,
-       * and an abstract class is a declaration with `abstract: true`. There is
-       * no third shape, so a guard here would be a branch no input can reach.
-       * The house rule is to delete such a branch rather than cover it; the
-       * cast states the invariant TypeScript cannot see.
-       */
-      const cls = node.parent.parent as
-        TSESTree.ClassDeclaration | TSESTree.ClassExpression;
-      return componentKey(cls);
-    }
-
-    /**
-     * A stable key for a component class, named or not.
-     *
-     * The source position is used when there is no identifier. It is unique per
-     * class within one lint pass, which is all this rule needs — it only has to
-     * match the class that declared `propTypes` with the one that declared
-     * `defaultProps`, and those are the same node.
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    function componentKey(
-      node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
-    ): string {
-      return node.id?.name ?? `anonymous@${node.range[0]}`;
-    }
-
-    // oxlint-disable-next-line consistent-function-scoping
-    function isReactComponent(
-      node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
-    ): boolean {
-      if (!node.superClass) return false;
-
-      if (node.superClass.type === 'Identifier') {
-        return (
-          node.superClass.name === 'Component' ||
-          node.superClass.name === 'PureComponent'
-        );
-      }
-
-      if (node.superClass.type === 'MemberExpression') {
-        return (
-          node.superClass.object.type === 'Identifier' &&
-          node.superClass.object.name === 'React' &&
-          (propertyName(node.superClass) === 'Component' ||
-            propertyName(node.superClass) === 'PureComponent')
-        );
-      }
-
-      return false;
-    }
-
-    // oxlint-disable-next-line consistent-function-scoping
-    function isRequiredProp(propType: TSESTree.Property): boolean {
-      // Check if prop type ends with .isRequired
-      if (
-        propType.value.type === 'MemberExpression' &&
-        propertyName(propType.value) === 'isRequired'
-      ) {
-        return true;
-      }
-      return false;
-    }
   },
 });

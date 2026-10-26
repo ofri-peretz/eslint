@@ -68,6 +68,7 @@ describe('no-buffer-overread', () => {
         },
         // Safe buffer methods with literal offset
         {
+          name: 'a buffer read at a literal offset is in bounds',
           code: 'const value = buffer.readUInt32LE(0);',
         },
         // Non-buffer operations (array doesn't match buffer pattern)
@@ -116,22 +117,26 @@ describe('no-buffer-overread', () => {
   });
 
   describe('Invalid Code - Unsafe Buffer Access', () => {
-    ruleTester.run('invalid - unsafe buffer access patterns', noBufferOverread, {
-      valid: [],
-      invalid: [
-        // The index traces to the request body.
-        {
-          name: 'a buffer index taken from the request body with no bounds check',
-          code: 'function h(req) { return buffer[req.body.slot]; }',
-          errors: [{ messageId: 'userControlledBufferIndex' }],
-        },
-        // …and through one intermediate `const`.
-        {
-          code: 'function h(req) { const at = Number(req.query.at); return buffer[at]; }',
-          errors: [{ messageId: 'userControlledBufferIndex' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - unsafe buffer access patterns',
+      noBufferOverread,
+      {
+        valid: [],
+        invalid: [
+          // The index traces to the request body.
+          {
+            name: 'a buffer index taken from the request body with no bounds check',
+            code: 'function h(req) { return buffer[req.body.slot]; }',
+            errors: [{ messageId: 'userControlledBufferIndex' }],
+          },
+          // …and through one intermediate `const`.
+          {
+            code: 'function h(req) { const at = Number(req.query.at); return buffer[at]; }',
+            errors: [{ messageId: 'userControlledBufferIndex' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Negative Indices', () => {
@@ -313,7 +318,12 @@ describe('no-buffer-overread', () => {
         // never inside, so the binding was never read.
         {
           code: 'const idx = validateIndex(userIndex); const val = buffer[idx];',
-          options: [{ reportUnvalidatedIndices: true, boundsCheckFunctions: ['validateIndex'] }],
+          options: [
+            {
+              reportUnvalidatedIndices: true,
+              boundsCheckFunctions: ['validateIndex'],
+            },
+          ],
         },
         // The same, through `Math.min` — the clamp idiom.
         {
@@ -415,104 +425,108 @@ describe('no-buffer-overread', () => {
   // Every `valid` case is a verbatim shape from the 8-repo corpus scan and
   // reported before this change.
   describe('Shape Is Not An Overread', () => {
-    ruleTester.run('scope, writes, loop bounds and subarray', noBufferOverread, {
-      valid: [
-        // okta/okta-auth-js lib/crypto/base64.ts:57 — a buffer WRITE. If this
-        // is anything it is CWE-787, not the overread this rule reports.
-        `const buffer = new Uint8Array(str.length);
+    ruleTester.run(
+      'scope, writes, loop bounds and subarray',
+      noBufferOverread,
+      {
+        valid: [
+          // okta/okta-auth-js lib/crypto/base64.ts:57 — a buffer WRITE. If this
+          // is anything it is CWE-787, not the overread this rule reports.
+          `const buffer = new Uint8Array(str.length);
          for (var i = 0; i < str.length; i++) { buffer[i] = str.charCodeAt(i); }`,
-        // okta/okta-signin-widget .../typingdna.js:1206-1229 — four findings,
-        // every one a loop counter the loop condition already bounds.
-        `function score(revs) {
+          // okta/okta-signin-widget .../typingdna.js:1206-1229 — four findings,
+          // every one a loop counter the loop condition already bounds.
+          `function score(revs) {
            let rec = 0;
            for (let i = 0; i < revs.length; i++) { rec += Number(revs[i] > 0); }
            return rec;
          }`,
-        // The same, bounded by a hoisted limit and by a while loop.
-        `function walk(bytes, len) {
+          // The same, bounded by a hoisted limit and by a while loop.
+          `function walk(bytes, len) {
            let out = 0;
            for (let i = 0; i < len; i++) { out += bytes[i]; }
            return out;
          }`,
-        `function scan(bytes, len) {
+          `function scan(bytes, len) {
            let i = 0, out = 0;
            while (i < len) { out += bytes[i]; i++; }
            return out;
          }`,
-        // Shopify/cli packages/e2e/scripts/cleanup-apps.ts:566 — `args` became
-        // a "buffer" only because `process.argv.slice(2)` calls a method that
-        // is also a Buffer method. The receiver has to be a buffer too.
-        `const args = process.argv.slice(2);
+          // Shopify/cli packages/e2e/scripts/cleanup-apps.ts:566 — `args` became
+          // a "buffer" only because `process.argv.slice(2)` calls a method that
+          // is also a Buffer method. The receiver has to be a buffer too.
+          `const args = process.argv.slice(2);
          const patternIdx = args.indexOf('--pattern');
          const nextArg = args[patternIdx + 1];`,
-        // The third arm's inversion, isolated: a real buffer, a real read, an
-        // index this rule cannot prove validated — and no evidence anyone
-        // untrusted chose it. Reported before the change, silent now.
-        `function readAt(buf, n) { return buf[n + 1]; }`,
-        // The write guard, isolated: the index IS user-controlled, so the
-        // user-controlled arm would fire — but this is a WRITE, which is
-        // CWE-787 and a different rule's site.
-        `function store(req) { const buf = Buffer.alloc(8); buf[req.query.i] = 1; }`,
-        // The loop-bound guard, isolated.
-        `function sum(buf) { let t = 0; for (let index = 0; index < buf.length; index++) { t += buf[index]; } return t; }`,
-        // The scoping fix, isolated: `store` is a Buffer in one function and an
-        // unrelated parameter in another. The file-wide name set made the
-        // second one a buffer too.
-        `function a() { const store = Buffer.alloc(8); return store[0]; }
+          // The third arm's inversion, isolated: a real buffer, a real read, an
+          // index this rule cannot prove validated — and no evidence anyone
+          // untrusted chose it. Reported before the change, silent now.
+          `function readAt(buf, n) { return buf[n + 1]; }`,
+          // The write guard, isolated: the index IS user-controlled, so the
+          // user-controlled arm would fire — but this is a WRITE, which is
+          // CWE-787 and a different rule's site.
+          `function store(req) { const buf = Buffer.alloc(8); buf[req.query.i] = 1; }`,
+          // The loop-bound guard, isolated.
+          `function sum(buf) { let t = 0; for (let index = 0; index < buf.length; index++) { t += buf[index]; } return t; }`,
+          // The scoping fix, isolated: `store` is a Buffer in one function and an
+          // unrelated parameter in another. The file-wide name set made the
+          // second one a buffer too.
+          `function a() { const store = Buffer.alloc(8); return store[0]; }
          function b(req, store) { return store[req.query.i]; }`,
-        // Scoping: a buffer in one function must not make an unrelated
-        // same-named local in another function a buffer. This is the shape that
-        // produced 8 findings across two minified vendor bundles.
-        `function a() { const buf = Buffer.alloc(8); return buf[0]; }
+          // Scoping: a buffer in one function must not make an unrelated
+          // same-named local in another function a buffer. This is the shape that
+          // produced 8 findings across two minified vendor bundles.
+          `function a() { const buf = Buffer.alloc(8); return buf[0]; }
          function b(buf, n) { return buf.length + n; }`,
-        // `readFileSync` WITH an encoding returns a string, not a Buffer, so
-        // the argument shape decides rather than the callee's name.
-        `const text = readFileSync('/x', 'utf8');
+          // `readFileSync` WITH an encoding returns a string, not a Buffer, so
+          // the argument shape decides rather than the callee's name.
+          `const text = readFileSync('/x', 'utf8');
          function h(req) { return text.slice(Number(req.query.start)); }`,
-        {
-          name: 'an immediately invoked factory names no buffer-returning read',
-          code: `const data = (pick())('/x');
+          {
+            name: 'an immediately invoked factory names no buffer-returning read',
+            code: `const data = (pick())('/x');
          function h(req) { return data.slice(Number(req.query.start)); }`,
-        },
-      ],
-      invalid: [
-        // Still reported: the index really does trace to the request.
-        {
-          code: `app.get('/b', (req, res) => { const buf = Buffer.alloc(64); res.end(buf[req.query.i]); });`,
-          errors: [{ messageId: 'userControlledBufferIndex' }],
-        },
-        // Still reported: a negative literal index is an overread whatever else
-        // is true, and the write/loop guards must not swallow it.
-        {
-          code: `const buf = Buffer.alloc(8); const x = buf[-1];`,
-          errors: [{ messageId: 'negativeBufferIndex' }],
-        },
-        // FALSE NEGATIVE CLOSED: `subarray` is the non-deprecated spelling of
-        // `slice` on a Buffer and returns a view over the SAME memory, so an
-        // unvalidated offset reads exactly as far past the end.
-        {
-          code: `function read(buf, req) { return buf.subarray(req.query.start, req.query.end); }`,
-          errors: [
-            { messageId: 'unsafeBufferSlice' },
-            { messageId: 'unsafeBufferSlice' },
-          ],
-        },
-        // The deprecated spelling still reports, so the fix added a case rather
-        // than moving one.
-        {
-          code: `function read(buf, req) { return buf.slice(req.query.start); }`,
-          errors: [{ messageId: 'unsafeBufferSlice' }],
-        },
-        // FALSE NEGATIVE CLOSED: `fs.readFileSync(path)` with no encoding
-        // returns a Buffer, and it is the commonest way one enters a program.
-        // benchmarks/rule-corpus/…/vulnerable/01-express-slice-from-query.js
-        {
-          code: `const blob = readFileSync('/var/lib/app/blob.bin');
+          },
+        ],
+        invalid: [
+          // Still reported: the index really does trace to the request.
+          {
+            code: `app.get('/b', (req, res) => { const buf = Buffer.alloc(64); res.end(buf[req.query.i]); });`,
+            errors: [{ messageId: 'userControlledBufferIndex' }],
+          },
+          // Still reported: a negative literal index is an overread whatever else
+          // is true, and the write/loop guards must not swallow it.
+          {
+            code: `const buf = Buffer.alloc(8); const x = buf[-1];`,
+            errors: [{ messageId: 'negativeBufferIndex' }],
+          },
+          // FALSE NEGATIVE CLOSED: `subarray` is the non-deprecated spelling of
+          // `slice` on a Buffer and returns a view over the SAME memory, so an
+          // unvalidated offset reads exactly as far past the end.
+          {
+            code: `function read(buf, req) { return buf.subarray(req.query.start, req.query.end); }`,
+            errors: [
+              { messageId: 'unsafeBufferSlice' },
+              { messageId: 'unsafeBufferSlice' },
+            ],
+          },
+          // The deprecated spelling still reports, so the fix added a case rather
+          // than moving one.
+          {
+            code: `function read(buf, req) { return buf.slice(req.query.start); }`,
+            errors: [{ messageId: 'unsafeBufferSlice' }],
+          },
+          // FALSE NEGATIVE CLOSED: `fs.readFileSync(path)` with no encoding
+          // returns a Buffer, and it is the commonest way one enters a program.
+          // benchmarks/rule-corpus/…/vulnerable/01-express-slice-from-query.js
+          {
+            code: `const blob = readFileSync('/var/lib/app/blob.bin');
                  function h(req) { return blob.slice(Number(req.query.start)); }`,
-          errors: [{ messageId: 'unsafeBufferSlice' }],
-        },
-      ],
-    });
+            errors: [{ messageId: 'unsafeBufferSlice' }],
+          },
+        ],
+      },
+    );
   });
 });
 
@@ -611,7 +625,17 @@ describe('no-buffer-overread — options', () => {
       // first valid case report.
       {
         code: 'function h(req) { const b = new MyBuf(8); return b[req.query.i]; }',
-        options: [{ bufferTypes: ['Buffer', 'Uint8Array', 'ArrayBuffer', 'DataView', 'MyBuf'] }],
+        options: [
+          {
+            bufferTypes: [
+              'Buffer',
+              'Uint8Array',
+              'ArrayBuffer',
+              'DataView',
+              'MyBuf',
+            ],
+          },
+        ],
         errors: [{ messageId: 'userControlledBufferIndex' }],
       },
       // CONTROL for narrowing: identical source, default constructor list.
@@ -701,22 +725,31 @@ describe('no-buffer-overread — options', () => {
    * hold there too — a project that turns on the sweep and names its own bounds
    * helper should not then be told its helper is not a bounds check.
    */
-  ruleTester.run('trustedSanitizers — under reportUnvalidatedIndices', noBufferOverread, {
-    valid: [
-      {
-        code: 'const idx = clampToLength(n); const byte = buffer[idx];',
-        options: [{ reportUnvalidatedIndices: true, trustedSanitizers: ['clampToLength'] }],
-      },
-    ],
-    invalid: [
-      // CONTROL: identical source and sweep, without the helper named.
-      {
-        code: 'const idx = clampToLength(n); const byte = buffer[idx];',
-        options: [{ reportUnvalidatedIndices: true }],
-        errors: [{ messageId: 'unsafeBufferAccess' }],
-      },
-    ],
-  });
+  ruleTester.run(
+    'trustedSanitizers — under reportUnvalidatedIndices',
+    noBufferOverread,
+    {
+      valid: [
+        {
+          code: 'const idx = clampToLength(n); const byte = buffer[idx];',
+          options: [
+            {
+              reportUnvalidatedIndices: true,
+              trustedSanitizers: ['clampToLength'],
+            },
+          ],
+        },
+      ],
+      invalid: [
+        // CONTROL: identical source and sweep, without the helper named.
+        {
+          code: 'const idx = clampToLength(n); const byte = buffer[idx];',
+          options: [{ reportUnvalidatedIndices: true }],
+          errors: [{ messageId: 'unsafeBufferAccess' }],
+        },
+      ],
+    },
+  );
 
   ruleTester.run('trustedAnnotations', noBufferOverread, {
     valid: [

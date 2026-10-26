@@ -10,7 +10,15 @@
  * @see OWASP ASI04: Data Exfiltration
  */
 
-import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons, nameHasWord, objectKeyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  nameHasWord,
+  objectKeyName,
+} from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 import { calleeChain, lookupVariable, unwrap } from '../../utils/sdk';
 
@@ -28,6 +36,7 @@ type RuleOptions = [Options?];
 export const requireOutputFiltering = createRule<RuleOptions, MessageIds>({
   name: 'require-output-filtering',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-output-filtering.md',
@@ -42,11 +51,13 @@ export const requireOutputFiltering = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-200',
         owasp: 'A01:2021',
         cvss: 6.5,
-        description: 'Tool "{{toolName}}" returns data from "{{source}}" without filtering. This may leak sensitive information.',
+        description:
+          'Tool "{{toolName}}" returns data from "{{source}}" without filtering. This may leak sensitive information.',
         severity: 'MEDIUM',
         compliance: ['SOC2', 'GDPR'],
         fix: 'Filter sensitive fields before returning: return filterSensitive(data)',
-        documentationLink: 'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
+        documentationLink:
+          'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
       }),
     },
     schema: [
@@ -74,26 +85,33 @@ export const requireOutputFiltering = createRule<RuleOptions, MessageIds>({
       // `supabase.from('t').select`). `get`, `fetch`, `read` and `load` were
       // dropped: they matched `getWeather(city)`, the first tool in the SDK docs.
       dataSourcePatterns: [
-        'query', 'find', 'select', 'aggregate',
-        'database', 'db', 'sql', 'mongo', 'prisma', 'supabase',
+        'query',
+        'find',
+        'select',
+        'aggregate',
+        'database',
+        'db',
+        'sql',
+        'mongo',
+        'prisma',
+        'supabase',
       ],
       filterFunctions: [
-        'filter', 'sanitize', 'redact', 'mask', 'clean',
-        'filterSensitive', 'removePII', 'scrub',
+        'filter',
+        'sanitize',
+        'redact',
+        'mask',
+        'clean',
+        'filterSensitive',
+        'removePII',
+        'scrub',
       ],
     },
   ],
-  create(context, [options]) {
-    // Every rule in this plugin is Vercel-AI-specific, and none of them knew
-    // it: over 107,384 files, 91% of this plugin's findings were in files with
-    // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
-    // the cheap path — a file without the SDK does no work.
-    if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
-
-    // Merged with `defaultOptions` before `create` runs.
-    const { dataSourcePatterns, filterFunctions } = options as Required<Options>;
-
-    const sourceCode = context.sourceCode;
+  createOnce(context, currentOptions) {
+    let dataSourcePatterns: string[];
+    let filterFunctions: string[];
+    let sourceCode: typeof context.sourceCode;
 
     /** A member call into a data-access object or method — not a bare helper. */
     function isDataSourceCall(node: TSESTree.Node): string | null {
@@ -101,27 +119,41 @@ export const requireOutputFiltering = createRule<RuleOptions, MessageIds>({
       if (target.type !== AST_NODE_TYPES.CallExpression) return null;
       if (target.callee.type !== AST_NODE_TYPES.MemberExpression) return null;
       const words = calleeChain(target.callee);
-      if (!dataSourcePatterns.some((pattern: string) => nameHasWord(words, pattern))) return null;
-      if (filterFunctions.some((filter: string) => nameHasWord(words, filter))) return null;
+      if (
+        !dataSourcePatterns.some((pattern: string) =>
+          nameHasWord(words, pattern),
+        )
+      )
+        return null;
+      if (filterFunctions.some((filter: string) => nameHasWord(words, filter)))
+        return null;
       return sourceCode.getText(target.callee);
     }
 
     /** `const u = await db.user.findUnique(...)`; `return u` — the binding's initialiser. */
     function boundDataSource(node: TSESTree.Node): string | null {
-      if (node.type !== AST_NODE_TYPES.Identifier) return isDataSourceCall(node);
+      if (node.type !== AST_NODE_TYPES.Identifier)
+        return isDataSourceCall(node);
       const def = lookupVariable(node.name, sourceCode.getScope(node))?.defs[0];
-      return def?.type === 'Variable' && def.node.init !== null ? isDataSourceCall(def.node.init) : null;
+      return def?.type === 'Variable' && def.node.init !== null
+        ? isDataSourceCall(def.node.init)
+        : null;
     }
 
     // oxlint-disable-next-line consistent-function-scoping
     function getToolName(node: TSESTree.Node): string {
       let current = node.parent;
       while (current) {
-        if (current.type === 'Property' && current.parent?.type === 'ObjectExpression') {
+        if (
+          current.type === 'Property' &&
+          current.parent?.type === 'ObjectExpression'
+        ) {
           const grandparent = current.parent.parent;
-          if (grandparent?.type === 'Property' &&
-              grandparent.key.type === 'Identifier' &&
-              grandparent.key.name === 'tools') {
+          if (
+            grandparent?.type === 'Property' &&
+            grandparent.key.type === 'Identifier' &&
+            grandparent.key.name === 'tools'
+          ) {
             if (current.key.type === 'Identifier') {
               return current.key.name;
             }
@@ -138,7 +170,11 @@ export const requireOutputFiltering = createRule<RuleOptions, MessageIds>({
       return parent?.type === 'Property' && objectKeyName(parent) === 'execute';
     }
 
-    function report(node: TSESTree.Node, fn: TSESTree.Node, source: string): void {
+    function report(
+      node: TSESTree.Node,
+      fn: TSESTree.Node,
+      source: string,
+    ): void {
       context.report({
         node,
         messageId: 'missingOutputFilter',
@@ -147,9 +183,28 @@ export const requireOutputFiltering = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule in this plugin is Vercel-AI-specific, and none of them knew
+        // it: over 107,384 files, 91% of this plugin's findings were in files with
+        // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
+        // the cheap path — a file without the SDK does no work.
+        if (!fileUsesVercelAi(context.sourceCode.ast)) return false;
+
+        // Merged with `defaultOptions` before `create` runs.
+        ({ dataSourcePatterns, filterFunctions } =
+          options as Required<Options>);
+
+        sourceCode = context.sourceCode;
+        return true;
+      },
       // `execute: async (args) => db.query(...)`
       ArrowFunctionExpression(node: TSESTree.ArrowFunctionExpression) {
-        if (!isExecute(node) || node.body.type === AST_NODE_TYPES.BlockStatement) return;
+        if (
+          !isExecute(node) ||
+          node.body.type === AST_NODE_TYPES.BlockStatement
+        )
+          return;
         const source = isDataSourceCall(node.body);
         if (source) report(node.body, node, source);
       },

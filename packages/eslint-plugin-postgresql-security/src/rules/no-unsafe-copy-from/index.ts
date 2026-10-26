@@ -1,3 +1,4 @@
+import { RuleCreator } from '@interlace/eslint-devkit';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -82,7 +83,9 @@ function staticText(node: TSESTree.Node): string {
  * balanced group, and the direction keyword that follows decides whether this
  * is a read (`FROM`) or a write (`TO`).
  */
-function copyClauses(text: string): Array<{ direction: 'from' | 'to'; clause: string }> {
+function copyClauses(
+  text: string,
+): Array<{ direction: 'from' | 'to'; clause: string }> {
   const found: Array<{ direction: 'from' | 'to'; clause: string }> = [];
   const stripped = stripComments(text);
   for (const statement of stripped.split(';')) {
@@ -144,12 +147,15 @@ function functionImplementation(
   | TSESTree.FunctionExpression
   | TSESTree.ArrowFunctionExpression
   | null {
-  const def = variable.defs.find((d) => d.type === 'FunctionName' || d.type === 'Variable');
+  const def = variable.defs.find(
+    (d) => d.type === 'FunctionName' || d.type === 'Variable',
+  );
   if (def === undefined) return null;
   if (def.type === 'FunctionName') {
     return def.node as TSESTree.FunctionDeclaration;
   }
-  if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return null;
+  if (variable.references.filter((ref) => ref.isWrite()).length !== 1)
+    return null;
   const init = (def.node as TSESTree.VariableDeclarator).init;
   if (
     init === null ||
@@ -173,14 +179,17 @@ function functionImplementation(
 function returnedExpression(body: TSESTree.Node): TSESTree.Node | null {
   if (body.type === AST_NODE_TYPES.BlockStatement) {
     const [only] = body.body;
-    if (body.body.length !== 1 || only.type !== AST_NODE_TYPES.ReturnStatement) {
+    if (
+      body.body.length !== 1 ||
+      only.type !== AST_NODE_TYPES.ReturnStatement
+    ) {
       return null;
     }
     return only.argument === null ? null : returnedExpression(only.argument);
   }
   return body.type === AST_NODE_TYPES.TemplateLiteral ||
     body.type === AST_NODE_TYPES.BinaryExpression ||
-    (staticString(body) !== null)
+    staticString(body) !== null
     ? body
     : null;
 }
@@ -207,8 +216,11 @@ function isStringRawTag(node: TSESTree.TaggedTemplateExpression): boolean {
 }
 
 /** The initialiser of a binding written exactly once. */
-function singleAssignedInit(variable: TSESLint.Scope.Variable): TSESTree.Node | null {
-  if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return null;
+function singleAssignedInit(
+  variable: TSESLint.Scope.Variable,
+): TSESTree.Node | null {
+  if (variable.references.filter((ref) => ref.isWrite()).length !== 1)
+    return null;
   const def = variable.defs.find((d) => d.type === 'Variable');
   if (def === undefined) return null;
   return (def.node as TSESTree.VariableDeclarator).init ?? null;
@@ -246,7 +258,9 @@ function effectiveExpression(
     const impl = fn === null ? null : functionImplementation(fn);
     if (impl === null) return node;
     const returned = returnedExpression(impl.body);
-    return returned === null ? node : effectiveExpression(returned, scope, depth + 1);
+    return returned === null
+      ? node
+      : effectiveExpression(returned, scope, depth + 1);
   }
 
   return node;
@@ -264,22 +278,31 @@ function effectiveExpression(
  * path: `path.join(IMPORT_DIR, name)` is still `/srv/imports/../../etc/passwd`
  * when the caller says so.
  */
-function hasDynamicPart(node: TSESTree.Node, scope: TSESLint.Scope.Scope): boolean {
+function hasDynamicPart(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): boolean {
   if (node.type === AST_NODE_TYPES.TemplateLiteral) {
     return node.expressions.some((part) => hasDynamicPart(part, scope));
   }
   if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
     return (
-      hasDynamicPart(node.left as TSESTree.Node, scope) || hasDynamicPart(node.right, scope)
+      hasDynamicPart(node.left as TSESTree.Node, scope) ||
+      hasDynamicPart(node.right, scope)
     );
   }
   return !isStaticExpression({ node, scope });
 }
 
-type MessageIds = 'dynamicPath' | 'dynamicWritePath' | 'hardcodedPath' | 'unverifiablePath';
+type MessageIds =
+  'dynamicPath' | 'dynamicWritePath' | 'hardcodedPath' | 'unverifiablePath';
 
-export const noUnsafeCopyFrom: TSESLint.RuleModule<MessageIds, NoUnsafeCopyFromOptions> = {
+export const noUnsafeCopyFrom: TSESLint.RuleModule<
+  MessageIds,
+  NoUnsafeCopyFromOptions
+> = RuleCreator.withoutDocs<NoUnsafeCopyFromOptions, MessageIds>({
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       description:
@@ -292,46 +315,54 @@ export const noUnsafeCopyFrom: TSESLint.RuleModule<MessageIds, NoUnsafeCopyFromO
       dynamicPath: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'COPY FROM Injection',
-        description: 'Dynamic file path in COPY FROM detected - potential arbitrary file read.',
+        description:
+          'Dynamic file path in COPY FROM detected - potential arbitrary file read.',
         severity: 'CRITICAL',
         cwe: 'CWE-73',
         owasp: 'A03:2021',
         compliance: ['SOC2', 'PCI-DSS'],
         effort: 'low',
         fix: 'Never use user input in COPY FROM paths. Use COPY FROM STDIN for user data.',
-        documentationLink: 'https://www.postgresql.org/docs/current/sql-copy.html',
+        documentationLink:
+          'https://www.postgresql.org/docs/current/sql-copy.html',
       }),
       dynamicWritePath: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'COPY TO Injection',
-        description: 'Dynamic file path in COPY TO detected - potential arbitrary file write on the database server.',
+        description:
+          'Dynamic file path in COPY TO detected - potential arbitrary file write on the database server.',
         severity: 'CRITICAL',
         cwe: 'CWE-73',
         owasp: 'A03:2021',
         compliance: ['SOC2', 'PCI-DSS'],
         effort: 'low',
         fix: 'Never use user input in COPY TO paths. Use COPY TO STDOUT and write the file from the application.',
-        documentationLink: 'https://www.postgresql.org/docs/current/sql-copy.html',
+        documentationLink:
+          'https://www.postgresql.org/docs/current/sql-copy.html',
       }),
       hardcodedPath: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Server-side COPY FROM',
-        description: 'Hardcoded file path in COPY FROM - server-side file access.',
+        description:
+          'Hardcoded file path in COPY FROM - server-side file access.',
         severity: 'MEDIUM',
         cwe: 'CWE-73',
         effort: 'low',
         fix: 'Prefer COPY FROM STDIN for application code. Use allowHardcodedPaths option if this is an admin script.',
-        documentationLink: 'https://www.postgresql.org/docs/current/sql-copy.html',
+        documentationLink:
+          'https://www.postgresql.org/docs/current/sql-copy.html',
       }),
       unverifiablePath: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Unverifiable COPY FROM',
-        description: 'Cannot statically verify COPY FROM source - potential injection risk.',
+        description:
+          'Cannot statically verify COPY FROM source - potential injection risk.',
         severity: 'MEDIUM',
         cwe: 'CWE-73',
         effort: 'medium',
         fix: 'Ensure the query source does not contain user input, or refactor to use COPY FROM STDIN.',
-        documentationLink: 'https://www.postgresql.org/docs/current/sql-copy.html',
+        documentationLink:
+          'https://www.postgresql.org/docs/current/sql-copy.html',
       }),
     },
     schema: [
@@ -340,7 +371,8 @@ export const noUnsafeCopyFrom: TSESLint.RuleModule<MessageIds, NoUnsafeCopyFromO
         properties: {
           allowHardcodedPaths: {
             type: 'boolean',
-            description: 'Allow hardcoded file paths (for admin/migration scripts)',
+            description:
+              'Allow hardcoded file paths (for admin/migration scripts)',
           },
           allowedPaths: {
             type: 'array',
@@ -353,21 +385,28 @@ export const noUnsafeCopyFrom: TSESLint.RuleModule<MessageIds, NoUnsafeCopyFromO
     ],
   },
   defaultOptions: [{}],
-  create(context) {
-    // Every rule here is PostgreSQL-specific, and none of them knew it: over
-    // 108,838 files, 94% of this plugin's findings were in files with no
-    // PostgreSQL client at all. Registering no visitors is both the gate and
-    // the cheap path — a file with no database in it does no work.
-    if (!usesPostgres(context)) return {};
-
-    const options = context.options[0] ?? {};
-    const allowHardcodedPaths = options.allowHardcodedPaths ?? false;
-    const allowedPaths = (options.allowedPaths ?? []).map((p: string) => new RegExp(p));
+  createOnce(context) {
+    let allowHardcodedPaths: boolean;
+    let allowedPaths: RegExp[];
 
     const isPathAllowed = (filePath: string): boolean =>
       allowedPaths.some((pattern: RegExp) => pattern.test(filePath));
 
     return {
+      before() {
+        // Every rule here is PostgreSQL-specific, and none of them knew it: over
+        // 108,838 files, 94% of this plugin's findings were in files with no
+        // PostgreSQL client at all. Registering no visitors is both the gate and
+        // the cheap path — a file with no database in it does no work.
+        if (!usesPostgres(context)) return false;
+
+        const options = context.options[0] ?? {};
+        allowHardcodedPaths = options.allowHardcodedPaths ?? false;
+        allowedPaths = (options.allowedPaths ?? []).map(
+          (p: string) => new RegExp(p),
+        );
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
@@ -378,7 +417,10 @@ export const noUnsafeCopyFrom: TSESLint.RuleModule<MessageIds, NoUnsafeCopyFromO
         }
 
         const [queryArg] = node.arguments;
-        if (queryArg === undefined || queryArg.type === AST_NODE_TYPES.SpreadElement) {
+        if (
+          queryArg === undefined ||
+          queryArg.type === AST_NODE_TYPES.SpreadElement
+        ) {
           return;
         }
 
@@ -391,7 +433,9 @@ export const noUnsafeCopyFrom: TSESLint.RuleModule<MessageIds, NoUnsafeCopyFromO
         // user — and it was skipped outright. A fixed export path is an admin
         // script, as a fixed FROM path is, so only a dynamic one is reported.
         if (
-          copies.some((copy) => copy.direction === 'to' && !TO_STDOUT.test(copy.clause)) &&
+          copies.some(
+            (copy) => copy.direction === 'to' && !TO_STDOUT.test(copy.clause),
+          ) &&
           hasDynamicPart(expression, scope)
         ) {
           context.report({ node: queryArg, messageId: 'dynamicWritePath' });
@@ -420,4 +464,4 @@ export const noUnsafeCopyFrom: TSESLint.RuleModule<MessageIds, NoUnsafeCopyFromO
       },
     };
   },
-};
+});

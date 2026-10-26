@@ -172,6 +172,10 @@ function normalizeText(text: string): string {
 export const anchorAmbiguousText = createRule<RuleOptions, MessageIds>({
   name: 'anchor-ambiguous-text',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/anchor-ambiguous-text',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/anchor-ambiguous-text.md',
@@ -203,16 +207,20 @@ export const anchorAmbiguousText = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
-    const { words = DEFAULT_AMBIGUOUS_WORDS } = options ?? {};
-    const ambiguousWords = new Set(
-      words.map((word: string) => normalizeText(word)),
-    );
+    let ambiguousWords: Set<string>;
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        const { words = DEFAULT_AMBIGUOUS_WORDS } = options ?? {};
+        ambiguousWords = new Set(
+          words.map((word: string) => normalizeText(word)),
+        );
+      },
       JSXElement(node: TSESTree.JSXElement) {
         if (
           node.openingElement.name.type !== 'JSXIdentifier' ||

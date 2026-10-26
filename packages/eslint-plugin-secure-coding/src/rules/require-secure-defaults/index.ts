@@ -10,7 +10,13 @@
  * @see https://cwe.mitre.org/data/definitions/453.html
  */
 
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  staticString,
+} from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -61,7 +67,12 @@ type RuleOptions = [Options?];
  * complete. So it is the DEFAULT of `insecureWhenFalse`, extensible through
  * `additionalInsecureWhenFalse`, rather than a fact the consumer must accept.
  */
-const DEFAULT_INSECURE_WHEN_FALSE = ['strictSSL', 'httpOnly', 'requireTLS', 'sslValidate'];
+const DEFAULT_INSECURE_WHEN_FALSE = [
+  'strictSSL',
+  'httpOnly',
+  'requireTLS',
+  'sslValidate',
+];
 
 /**
  * The same idea inverted: keys where `true` is the value that ACCEPTS the
@@ -128,7 +139,8 @@ const VERIFICATION_CALLBACKS = new Set(['checkServerIdentity']);
  */
 const isBenignReturnValue = (node: TSESTree.Node): boolean =>
   (node.type === AST_NODE_TYPES.Identifier && node.name === 'undefined') ||
-  (node.type === AST_NODE_TYPES.Literal && (node.value === null || node.value === true));
+  (node.type === AST_NODE_TYPES.Literal &&
+    (node.value === null || node.value === true));
 
 const isNoopCallback = (node: TSESTree.Node): boolean => {
   if (
@@ -139,13 +151,18 @@ const isNoopCallback = (node: TSESTree.Node): boolean => {
   }
 
   // `() => undefined`, `() => true` — a concise body that is already the answer.
-  if (node.body.type !== AST_NODE_TYPES.BlockStatement) return isBenignReturnValue(node.body);
+  if (node.body.type !== AST_NODE_TYPES.BlockStatement)
+    return isBenignReturnValue(node.body);
 
   // `() => {}` / `function () {}`
   if (node.body.body.length === 0) return true;
 
   const [only] = node.body.body;
-  if (node.body.body.length !== 1 || only?.type !== AST_NODE_TYPES.ReturnStatement) return false;
+  if (
+    node.body.body.length !== 1 ||
+    only?.type !== AST_NODE_TYPES.ReturnStatement
+  )
+    return false;
 
   // `{ return; }` and `{ return true; }` are both unconditional success.
   return only.argument === null || isBenignReturnValue(only.argument);
@@ -186,7 +203,8 @@ const hasCookieContext = (
     if (sibling === property) continue;
     if (sibling.type !== AST_NODE_TYPES.Property) continue;
     const siblingKey = propertyKey(sibling);
-    if (siblingKey !== undefined && cookieAttributes.has(siblingKey)) return true;
+    if (siblingKey !== undefined && cookieAttributes.has(siblingKey))
+      return true;
   }
 
   const owner = object.parent;
@@ -201,6 +219,7 @@ const isLiteral = (node: TSESTree.Node, value: boolean): boolean =>
 export const requireSecureDefaults = createRule<RuleOptions, MessageIds>({
   name: 'require-secure-defaults',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/require-secure-defaults.md',
@@ -213,11 +232,12 @@ export const requireSecureDefaults = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'violation Detected',
         cwe: 'CWE-1188',
-        description: 'Ensure secure default configurations detected - Insecure default values',
+        description:
+          'Ensure secure default configurations detected - Insecure default values',
         severity: 'MEDIUM',
         fix: 'Review and apply secure practices',
         documentationLink: 'https://cwe.mitre.org/data/definitions/1188.html',
-      })
+      }),
     },
     schema: [
       {
@@ -234,7 +254,8 @@ export const requireSecureDefaults = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra keys where `false` is insecure, on top of `insecureWhenFalse`.',
+            description:
+              'Extra keys where `false` is insecure, on top of `insecureWhenFalse`.',
           },
           insecureWhenTrue: {
             type: 'array',
@@ -247,7 +268,8 @@ export const requireSecureDefaults = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra keys where `true` is insecure, on top of `insecureWhenTrue`.',
+            description:
+              'Extra keys where `true` is insecure, on top of `insecureWhenTrue`.',
           },
           cookieAttributes: {
             type: 'array',
@@ -260,7 +282,8 @@ export const requireSecureDefaults = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra cookie attribute names, on top of `cookieAttributes`.',
+            description:
+              'Extra cookie attribute names, on top of `cookieAttributes`.',
           },
         },
         additionalProperties: false,
@@ -277,24 +300,39 @@ export const requireSecureDefaults = createRule<RuleOptions, MessageIds>({
       additionalCookieAttributes: [],
     },
   ],
-  create(context, [options = {}]) {
-    const {
-      insecureWhenFalse = DEFAULT_INSECURE_WHEN_FALSE,
-      additionalInsecureWhenFalse = [],
-      insecureWhenTrue = DEFAULT_INSECURE_WHEN_TRUE,
-      additionalInsecureWhenTrue = [],
-      cookieAttributes = DEFAULT_COOKIE_ATTRIBUTES,
-      additionalCookieAttributes = [],
-    } = options as Options;
-
-    // Exact membership, as before — the option changes WHICH names are watched,
-    // never HOW they are matched. A configurable substring test would be the
-    // defect this rule's key sets exist to avoid.
-    const falseIsInsecure = new Set([...insecureWhenFalse, ...additionalInsecureWhenFalse]);
-    const trueIsInsecure = new Set([...insecureWhenTrue, ...additionalInsecureWhenTrue]);
-    const cookieKeys = new Set([...cookieAttributes, ...additionalCookieAttributes]);
+  createOnce(context, currentOptions) {
+    let falseIsInsecure: Set<string>;
+    let trueIsInsecure: Set<string>;
+    let cookieKeys: Set<string>;
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const {
+          insecureWhenFalse = DEFAULT_INSECURE_WHEN_FALSE,
+          additionalInsecureWhenFalse = [],
+          insecureWhenTrue = DEFAULT_INSECURE_WHEN_TRUE,
+          additionalInsecureWhenTrue = [],
+          cookieAttributes = DEFAULT_COOKIE_ATTRIBUTES,
+          additionalCookieAttributes = [],
+        } = options as Options;
+
+        // Exact membership, as before — the option changes WHICH names are watched,
+        // never HOW they are matched. A configurable substring test would be the
+        // defect this rule's key sets exist to avoid.
+        falseIsInsecure = new Set([
+          ...insecureWhenFalse,
+          ...additionalInsecureWhenFalse,
+        ]);
+        trueIsInsecure = new Set([
+          ...insecureWhenTrue,
+          ...additionalInsecureWhenTrue,
+        ]);
+        cookieKeys = new Set([
+          ...cookieAttributes,
+          ...additionalCookieAttributes,
+        ]);
+      },
       Property(node: TSESTree.Property) {
         const key = propertyKey(node);
         if (key === undefined) return;

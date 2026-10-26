@@ -76,6 +76,7 @@ export const noWeakSecret = createRule<RuleOptions, MessageIds>({
    */
   skipTestFiles: true,
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt-security/docs/rules/no-weak-secret.md',
@@ -152,10 +153,9 @@ export const noWeakSecret = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] ?? {};
-    const { minSecretLength = 32 } = options;
-    const sourceCode = context.sourceCode;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let minSecretLength: number;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /**
      * Check if a value matches known weak patterns
@@ -228,6 +228,11 @@ export const noWeakSecret = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] ?? {};
+        ({ minSecretLength = 32 } = options);
+        sourceCode = context.sourceCode;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (checkConfig(node)) {
           return;

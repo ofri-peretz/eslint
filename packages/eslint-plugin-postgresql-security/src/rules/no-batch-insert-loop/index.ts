@@ -1,3 +1,4 @@
+import { RuleCreator } from '@interlace/eslint-devkit';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -75,10 +76,15 @@ const TRANSPARENT_METHODS: ReadonlySet<string> = new Set([
  * `Promise.all(items.map((it) => client.query('INSERT …')))` runs strictly
  * one after another. The rule's own docs list it under "Incorrect".
  */
-const WRITE_MAPPING_METHODS: ReadonlySet<string> = new Set(['map', 'flatMap', 'from']);
+const WRITE_MAPPING_METHODS: ReadonlySet<string> = new Set([
+  'map',
+  'flatMap',
+  'from',
+]);
 
 /** A row-writing statement — what `.map()` must not issue once per element. */
-const WRITE_STATEMENT = /^\s*(?:insert\s+into|update\b[\s\S]*\bset\b|delete\s+from|merge\s+into)\b/i;
+const WRITE_STATEMENT =
+  /^\s*(?:insert\s+into|update\b[\s\S]*\bset\b|delete\s+from|merge\s+into)\b/i;
 
 /**
  * A statement that is ALREADY batched: arrays unnested into rows, a JSON
@@ -129,7 +135,8 @@ function isFunction(node: TSESTree.Node): boolean {
  */
 function callbackMethod(fn: TSESTree.Node): string | null {
   const call = fn.parent;
-  if (call === undefined || call.type !== AST_NODE_TYPES.CallExpression) return null;
+  if (call === undefined || call.type !== AST_NODE_TYPES.CallExpression)
+    return null;
   if (call.callee === fn) return 'iife';
   if (
     call.callee.type !== AST_NODE_TYPES.MemberExpression ||
@@ -147,22 +154,33 @@ function callbackMethod(fn: TSESTree.Node): string | null {
  * loop for a query inside a helper is interprocedural, and blaming a lambda's
  * enclosing loop for something that lambda may never run is a lexical accident.
  */
-function iterationContext(start: TSESTree.Node, writes: boolean): IterationContext | null {
-  for (let node: TSESTree.Node | undefined = start.parent; node; node = node.parent) {
+function iterationContext(
+  start: TSESTree.Node,
+  writes: boolean,
+): IterationContext | null {
+  for (
+    let node: TSESTree.Node | undefined = start.parent;
+    node;
+    node = node.parent
+  ) {
     if (isLoop(node)) return { kind: 'loop', node };
     if (!isFunction(node)) continue;
 
     const method = callbackMethod(node);
     if (method === null) return null;
     if (ITERATION_METHODS.has(method)) return { kind: 'method', node };
-    if (writes && WRITE_MAPPING_METHODS.has(method)) return { kind: 'method', node };
+    if (writes && WRITE_MAPPING_METHODS.has(method))
+      return { kind: 'method', node };
     if (method !== 'iife' && !TRANSPARENT_METHODS.has(method)) return null;
   }
   return null;
 }
 
 /** The value of a plainly keyed property of a query config object. */
-function configValue(object: TSESTree.ObjectExpression, key: string): TSESTree.Node | undefined {
+function configValue(
+  object: TSESTree.ObjectExpression,
+  key: string,
+): TSESTree.Node | undefined {
   const found = object.properties.find(
     (p): p is TSESTree.Property =>
       p.type === AST_NODE_TYPES.Property && objectKeyName(p) === key,
@@ -172,12 +190,21 @@ function configValue(object: TSESTree.ObjectExpression, key: string): TSESTree.N
 
 /** Is `node` inside `container`? */
 function within(node: TSESTree.Node, container: TSESTree.Node): boolean {
-  return node.range[0] >= container.range[0] && node.range[1] <= container.range[1];
+  return (
+    node.range[0] >= container.range[0] && node.range[1] <= container.range[1]
+  );
 }
 
 /** The variable a name resolves to, walking outward from `scope`. */
-function lookup(name: string, scope: TSESLint.Scope.Scope): TSESLint.Scope.Variable | null {
-  for (let current: TSESLint.Scope.Scope | null = scope; current; current = current.upper) {
+function lookup(
+  name: string,
+  scope: TSESLint.Scope.Scope,
+): TSESLint.Scope.Variable | null {
+  for (
+    let current: TSESLint.Scope.Scope | null = scope;
+    current;
+    current = current.upper
+  ) {
     const variable = current.set.get(name);
     if (variable !== undefined) return variable;
   }
@@ -226,13 +253,28 @@ function variesPerIteration(
         ref.isWrite() &&
         within(ref.identifier, iteration) &&
         (ref.writeExpr == null ||
-          variesPerIteration(ref.writeExpr as TSESTree.Node, iteration, sourceCode, seen)),
+          variesPerIteration(
+            ref.writeExpr as TSESTree.Node,
+            iteration,
+            sourceCode,
+            seen,
+          )),
     );
   }
   for (const [key, value] of Object.entries(node)) {
     if (key === 'parent') continue;
-    if (key === 'property' && node.type === AST_NODE_TYPES.MemberExpression && !node.computed) continue;
-    if (key === 'key' && node.type === AST_NODE_TYPES.Property && !node.computed) continue;
+    if (
+      key === 'property' &&
+      node.type === AST_NODE_TYPES.MemberExpression &&
+      !node.computed
+    )
+      continue;
+    if (
+      key === 'key' &&
+      node.type === AST_NODE_TYPES.Property &&
+      !node.computed
+    )
+      continue;
     const children: unknown[] = Array.isArray(value) ? value : [value];
     for (const child of children) {
       if (
@@ -300,15 +342,21 @@ function isPagination(text: string | null, context: IterationContext): boolean {
     context.kind === 'loop' &&
     (context.node.type === AST_NODE_TYPES.WhileStatement ||
       context.node.type === AST_NODE_TYPES.DoWhileStatement ||
-      (context.node.type === AST_NODE_TYPES.ForStatement && context.node.test === null))
+      (context.node.type === AST_NODE_TYPES.ForStatement &&
+        context.node.test === null))
   );
 }
 
-export const noBatchInsertLoop: TSESLint.RuleModule<'noBatchInsertLoop', NoBatchInsertLoopOptions> = {
+export const noBatchInsertLoop: TSESLint.RuleModule<
+  'noBatchInsertLoop',
+  NoBatchInsertLoopOptions
+> = RuleCreator.withoutDocs<NoBatchInsertLoopOptions, 'noBatchInsertLoop'>({
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
-      description: 'Prevent executing database queries within loops (N+1 problem).',
+      description:
+        'Prevent executing database queries within loops (N+1 problem).',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/no-batch-insert-loop.md',
       cwe: 'CWE-1049',
       cvss: 7.5,
@@ -322,20 +370,23 @@ export const noBatchInsertLoop: TSESLint.RuleModule<'noBatchInsertLoop', NoBatch
         cwe: 'CWE-1049',
         effort: 'medium',
         fix: 'Batch queries using arrays and "UNNEST" or a single batched INSERT.',
-        documentationLink: 'https://use-the-index-luke.com/sql/joins/nested-loops-join-n1-problem',
+        documentationLink:
+          'https://use-the-index-luke.com/sql/joins/nested-loops-join-n1-problem',
       }),
     },
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    // Every rule here is PostgreSQL-specific, and none of them knew it: over
-    // 108,838 files, 94% of this plugin's findings were in files with no
-    // PostgreSQL client at all. Registering no visitors is both the gate and
-    // the cheap path — a file with no database in it does no work.
-    if (!usesPostgres(context)) return {};
-
+  createOnce(context) {
     return {
+      before() {
+        // Every rule here is PostgreSQL-specific, and none of them knew it: over
+        // 108,838 files, 94% of this plugin's findings were in files with no
+        // PostgreSQL client at all. Registering no visitors is both the gate and
+        // the cheap path — a file with no database in it does no work.
+        if (!usesPostgres(context)) return false;
+        return true;
+      },
       CallExpression(node) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
@@ -356,7 +407,10 @@ export const noBatchInsertLoop: TSESLint.RuleModule<'noBatchInsertLoop', NoBatch
         if (isNonPgQueryObject(queryArg)) return;
         const text = queryArg === undefined ? null : statementText(queryArg);
 
-        const iteration = iterationContext(node, text !== null && WRITE_STATEMENT.test(text));
+        const iteration = iterationContext(
+          node,
+          text !== null && WRITE_STATEMENT.test(text),
+        );
         if (iteration === null) return;
 
         if (text !== null && BATCHED_STATEMENT.test(text)) return;
@@ -369,14 +423,22 @@ export const noBatchInsertLoop: TSESLint.RuleModule<'noBatchInsertLoop', NoBatch
         // insert written the slow way.
         const config =
           queryArg?.type === AST_NODE_TYPES.ObjectExpression ? queryArg : null;
-        const statement = config === null ? queryArg : configValue(config, 'text');
-        const params = config === null ? node.arguments[1] : configValue(config, 'values');
+        const statement =
+          config === null ? queryArg : configValue(config, 'text');
+        const params =
+          config === null ? node.arguments[1] : configValue(config, 'values');
         const varies = (target: TSESTree.Node | undefined): boolean =>
-          target !== undefined && variesPerIteration(target, iteration.node, context.sourceCode, new Set());
+          target !== undefined &&
+          variesPerIteration(
+            target,
+            iteration.node,
+            context.sourceCode,
+            new Set(),
+          );
         if (varies(statement) || !varies(params)) return;
 
         context.report({ node, messageId: 'noBatchInsertLoop' });
       },
     };
   },
-};
+});

@@ -250,9 +250,7 @@ function isCorsOptionsAnnotation(
  * this rule rather than widened into the shared helper, which three other rules
  * consume for decorator roots where the imported name is not needed.
  */
-function collectImportedNames(
-  program: TSESTree.Program,
-): Map<string, string> {
+function collectImportedNames(program: TSESTree.Program): Map<string, string> {
   const names = new Map<string, string>();
   for (const stmt of program.body) {
     if (stmt.type !== AST_NODE_TYPES.ImportDeclaration) continue;
@@ -271,6 +269,7 @@ function collectImportedNames(
 export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
   name: 'no-permissive-cors',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/no-permissive-cors.md',
@@ -343,28 +342,15 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    // Registering no visitors is both the gate and the cheap path: a file
-    // that does not use this SDK does no work at all.
-    if (!fileUsesNestjs(context.sourceCode.ast)) return {};
-
-    const {
-      allowInTests = true,
-      environmentHintNames = DEFAULT_ENVIRONMENT_HINT_NAMES,
-    } = options;
-    if (allowInTests && isTestFilePath(context.filename)) return {};
-
-    let origins: ReadonlyMap<string, string> = new Map();
-    let importedNames: ReadonlyMap<string, string> = new Map();
-    /**
-     * Objects already reported, so a config that is both declared and used in
-     * this file is reported once — at its declaration, which is where the fix
-     * goes. Traversal is in document order, so the declaration wins.
-     */
-    const reported = new Set<TSESTree.ObjectExpression>();
+    let allowInTests: boolean;
+    let environmentHintNames: readonly string[];
+    let origins: ReadonlyMap<string, string>;
+    let importedNames: ReadonlyMap<string, string>;
+    let reported: Set<TSESTree.ObjectExpression>;
 
     /**
      * Whether the call sits inside a branch that tests the environment.
@@ -493,6 +479,28 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Registering no visitors is both the gate and the cheap path: a file
+        // that does not use this SDK does no work at all.
+        if (!fileUsesNestjs(context.sourceCode.ast)) return false;
+
+        ({
+          allowInTests = true,
+          environmentHintNames = DEFAULT_ENVIRONMENT_HINT_NAMES,
+        } = options);
+        if (allowInTests && isTestFilePath(context.filename)) return false;
+
+        origins = new Map();
+        importedNames = new Map();
+        /**
+         * Objects already reported, so a config that is both declared and used in
+         * this file is reported once — at its declaration, which is where the fix
+         * goes. Traversal is in document order, so the declaration wins.
+         */
+        reported = new Set<TSESTree.ObjectExpression>();
+        return true;
+      },
       Program(node: TSESTree.Program) {
         origins = collectImportOrigins(node);
         importedNames = collectImportedNames(node);

@@ -37,6 +37,7 @@ type RuleOptions = [Options?];
 export const noUnsafeEvalCsp = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-eval-csp',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-unsafe-eval-csp.md',
@@ -58,7 +59,6 @@ export const noUnsafeEvalCsp = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src',
       }),
-
     },
     schema: [
       {
@@ -69,20 +69,12 @@ export const noUnsafeEvalCsp = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
     const UNSAFE_EVAL = 'unsafe-eval';
-    const sourceCode = context.sourceCode;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /**
      * Does this string, read as a POLICY, grant `'unsafe-eval'`?
@@ -108,6 +100,18 @@ export const noUnsafeEvalCsp = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+        sourceCode = context.sourceCode;
+        return true;
+      },
       Literal(node: TSESTree.Literal) {
         if (typeof node.value !== 'string') return;
 

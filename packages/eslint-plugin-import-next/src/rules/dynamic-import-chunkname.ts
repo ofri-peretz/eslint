@@ -11,7 +11,12 @@
  * @see https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/dynamic-import-chunkname.md
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  staticString,
+} from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingChunkName' | 'invalidChunkName' | 'suggestChunkName';
 
@@ -29,6 +34,7 @@ type RuleOptions = [Options?];
 export const dynamicImportChunkname = createRule<RuleOptions, MessageIds>({
   name: 'dynamic-import-chunkname',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/dynamic-import-chunkname.md',
@@ -84,12 +90,11 @@ export const dynamicImportChunkname = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const { allowEmpty = false, webpackChunknameFormat = '[a-zA-Z0-9-_/.]+' } =
-      options;
-    const chunkNamePattern = new RegExp(`^${webpackChunknameFormat}$`);
-    const sourceCode = context.sourceCode;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowEmpty: boolean;
+    let webpackChunknameFormat: string;
+    let chunkNamePattern: RegExp;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     function checkChunkName(node: TSESTree.ImportExpression) {
       // Get leading comments
@@ -122,10 +127,11 @@ export const dynamicImportChunkname = createRule<RuleOptions, MessageIds>({
                   const source = node.source;
                   const staticText = staticString(source);
                   if (staticText !== null) {
-                    const chunkName = staticText
-                      .split('/')
-                      .pop()
-                      ?.replace(/[^a-zA-Z0-9-_]/g, '-') || 'chunk';
+                    const chunkName =
+                      staticText
+                        .split('/')
+                        .pop()
+                        ?.replace(/[^a-zA-Z0-9-_]/g, '-') || 'chunk';
                     return fixer.insertTextBefore(
                       source,
                       `/* webpackChunkName: "${chunkName}" */ `,
@@ -147,6 +153,13 @@ export const dynamicImportChunkname = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({ allowEmpty = false, webpackChunknameFormat = '[a-zA-Z0-9-_/.]+' } =
+          options);
+        chunkNamePattern = new RegExp(`^${webpackChunknameFormat}$`);
+        sourceCode = context.sourceCode;
+      },
       ImportExpression(node: TSESTree.ImportExpression) {
         checkChunkName(node);
       },

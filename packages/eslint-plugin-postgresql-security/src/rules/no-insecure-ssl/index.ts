@@ -1,3 +1,4 @@
+import { RuleCreator } from '@interlace/eslint-devkit';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -70,7 +71,12 @@ function disablesVerification(start: Value): boolean {
   if (value.type !== AST_NODE_TYPES.Literal) return false;
   // `null` is a Literal with value `null`; `undefined` is an Identifier and
   // never reaches here.
-  return value.value === false || value.value === 0 || value.value === '' || value.value === null;
+  return (
+    value.value === false ||
+    value.value === 0 ||
+    value.value === '' ||
+    value.value === null
+  );
 }
 
 /**
@@ -91,11 +97,13 @@ function dsnSkipsVerification(dsn: string): boolean {
 export const noInsecureSsl: TSESLint.RuleModule<
   'noInsecureSsl',
   NoInsecureSslOptions
-> = {
+> = RuleCreator.withoutDocs<NoInsecureSslOptions, 'noInsecureSsl'>({
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
-      description: 'Prevent the use of insecure SSL configurations (rejectUnauthorized: false).',
+      description:
+        'Prevent the use of insecure SSL configurations (rejectUnauthorized: false).',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/no-insecure-ssl.md',
       cwe: 'CWE-319',
       cvss: 7.5,
@@ -104,7 +112,8 @@ export const noInsecureSsl: TSESLint.RuleModule<
       noInsecureSsl: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Insecure SSL',
-        description: 'Insecure SSL configuration detected (rejectUnauthorized: false).',
+        description:
+          'Insecure SSL configuration detected (rejectUnauthorized: false).',
         severity: 'HIGH',
         cwe: 'CWE-319',
         owasp: 'A05:2021',
@@ -117,20 +126,9 @@ export const noInsecureSsl: TSESLint.RuleModule<
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    // Every rule here is PostgreSQL-specific, and none of them knew it: over
-    // 108,838 files, 94% of this plugin's findings were in files with no
-    // PostgreSQL client at all. Registering no visitors is both the gate and
-    // the cheap path — a file with no database in it does no work.
-    if (!usesPostgres(context)) return {};
-
-    /**
-     * One finding per insecure property, however many routes reach it — a
-     * typed `const config: PoolConfig` that is ALSO passed to `new Pool(config)`
-     * is one defect, not two.
-     */
-    const env = envOf(context);
-    const reported = new Set<TSESTree.Node>();
+  createOnce(context) {
+    let env: ReturnType<typeof envOf>;
+    let reported: Set<TSESTree.Node>;
     const report = (node: TSESTree.Node): void => {
       if (reported.has(node)) return;
       reported.add(node);
@@ -144,12 +142,22 @@ export const noInsecureSsl: TSESLint.RuleModule<
      */
     const sslBranches = (start: Value): Value[] => {
       const value = follow(start);
-      const at = (node: TSESTree.Node): Value => ({ node, scope: value.env.scopeOf(node), env: value.env });
+      const at = (node: TSESTree.Node): Value => ({
+        node,
+        scope: value.env.scopeOf(node),
+        env: value.env,
+      });
       if (value.node.type === AST_NODE_TYPES.ConditionalExpression) {
-        return [...sslBranches(at(value.node.consequent)), ...sslBranches(at(value.node.alternate))];
+        return [
+          ...sslBranches(at(value.node.consequent)),
+          ...sslBranches(at(value.node.alternate)),
+        ];
       }
       if (value.node.type === AST_NODE_TYPES.LogicalExpression) {
-        return [...sslBranches(at(value.node.left)), ...sslBranches(at(value.node.right))];
+        return [
+          ...sslBranches(at(value.node.left)),
+          ...sslBranches(at(value.node.right)),
+        ];
       }
       return [value];
     };
@@ -163,9 +171,16 @@ export const noInsecureSsl: TSESLint.RuleModule<
       report(value.env.module === null ? value.node : fallback);
     };
 
-    const checkConfig = (argument: TSESTree.Node, scope: TSESLint.Scope.Scope): void => {
+    const checkConfig = (
+      argument: TSESTree.Node,
+      scope: TSESLint.Scope.Scope,
+    ): void => {
       const config = follow({ node: argument, scope, env });
-      const at = (node: TSESTree.Node): Value => ({ node, scope: config.env.scopeOf(node), env: config.env });
+      const at = (node: TSESTree.Node): Value => ({
+        node,
+        scope: config.env.scopeOf(node),
+        env: config.env,
+      });
 
       // `new Client('postgres://…?sslmode=no-verify')` — the DSN passed bare.
       const dsnText = staticString(config.node);
@@ -198,19 +213,45 @@ export const noInsecureSsl: TSESLint.RuleModule<
         const rejectUnauthorized = property(branch.node, 'rejectUnauthorized');
         if (
           rejectUnauthorized !== undefined &&
-          disablesVerification({ node: rejectUnauthorized.value, scope: branch.env.scopeOf(rejectUnauthorized.value), env: branch.env })
+          disablesVerification({
+            node: rejectUnauthorized.value,
+            scope: branch.env.scopeOf(rejectUnauthorized.value),
+            env: branch.env,
+          })
         ) {
-          reportAt({ node: rejectUnauthorized, scope: branch.scope, env: branch.env }, argument);
+          reportAt(
+            { node: rejectUnauthorized, scope: branch.scope, env: branch.env },
+            argument,
+          );
         }
       }
     };
 
-    const checkCall = (node: TSESTree.NewExpression | TSESTree.CallExpression): void => {
+    const checkCall = (
+      node: TSESTree.NewExpression | TSESTree.CallExpression,
+    ): void => {
       const scope = context.sourceCode.getScope(node);
-      for (const argument of connectionConfigArguments(node, scope)) checkConfig(argument, scope);
+      for (const argument of connectionConfigArguments(node, scope))
+        checkConfig(argument, scope);
     };
 
     return {
+      before() {
+        // Every rule here is PostgreSQL-specific, and none of them knew it: over
+        // 108,838 files, 94% of this plugin's findings were in files with no
+        // PostgreSQL client at all. Registering no visitors is both the gate and
+        // the cheap path — a file with no database in it does no work.
+        if (!usesPostgres(context)) return false;
+
+        /**
+         * One finding per insecure property, however many routes reach it — a
+         * typed `const config: PoolConfig` that is ALSO passed to `new Pool(config)`
+         * is one defect, not two.
+         */
+        env = envOf(context);
+        reported = new Set<TSESTree.Node>();
+        return true;
+      },
       NewExpression: checkCall,
       // postgres.js `postgres(url, opts)` and pg-promise `pgp(opts)`.
       CallExpression: checkCall,
@@ -222,4 +263,4 @@ export const noInsecureSsl: TSESLint.RuleModule<
       },
     };
   },
-};
+});

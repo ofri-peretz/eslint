@@ -1,0 +1,78 @@
+{
+  "name": "oxlint-plugin-mongodb-security",
+  "version": "9.1.6",
+  "description": "The mongodb-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-mongodb-security.",
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts"
+  },
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
+    "interlace-security",
+    "mongodb",
+    "mongoose",
+    "nosql",
+    "nosql-injection",
+    "operator-injection",
+    "cwe-943",
+    "injection",
+    "database",
+    "database-security",
+    "odm",
+    "connection-string",
+    "tls",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript",
+    "ast",
+    "mcp",
+    "model-context-protocol",
+    "github-copilot",
+    "cursor-ai",
+    "claude-ai"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-mongodb-security?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-mongodb-security",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-mongodb-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-mongodb-security": "9.1.6"
+  }
+}

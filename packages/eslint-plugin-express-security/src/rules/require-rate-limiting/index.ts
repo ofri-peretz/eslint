@@ -144,6 +144,7 @@ function isRateLimitMiddleware(
 export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
   name: 'require-rate-limiting',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/require-rate-limiting.md',
@@ -197,65 +198,81 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
       assumeRateLimiting: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    const { appReceiverNames } = options as Options;
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const {
-      allowInTests = false,
-      alternativeMiddleware = [],
-      assumeRateLimiting = false,
-    } = options as Options;
-
-    // Skip entirely if rate limiting is assumed (provided by infrastructure)
-    if (assumeRateLimiting) {
-      return {};
-    }
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-
-    if (isTestFile) {
-      return {};
-    }
-
-    let hasExpressApp = false;
-    let hasRateLimiting = false;
-    /**
-     * The first credential-accepting route in the file.
-     *
-     * Rule partition — see the matching note in require-helmet. This rule used
-     * to report the `express()` node, which is the *same character* that rule
-     * reports: on the 8-repo corpus all six findings of each landed on the
-     * identical file:line:column. They are now disjoint by construction —
-     * require-helmet owns the app-creation site, this rule owns the endpoint.
-     *
-     * Reporting the route is also where the fix goes: a limiter is mounted for
-     * the login surface, and the endpoint is what an attacker steers. Only the
-     * first is reported, because the fix (`app.use(rateLimit(…))`) is one edit
-     * for the whole app.
-     */
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let appReceiverNames: string[] | undefined;
+    let allowInTests: boolean;
+    let alternativeMiddleware: string[];
+    let assumeRateLimiting: boolean;
+    let hasExpressApp: boolean;
+    let hasRateLimiting: boolean;
     let credentialRoute: {
       node: TSESTree.Node;
       method: string;
       path: string;
-    } | null = null;
-    /** The binding `express()` was assigned to, so we can see where it travels. */
-    let appBinding: string | null = null;
-    /**
-     * The app was handed to another function, so the middleware stack is
-     * assembled somewhere this rule cannot see — see the same guard in
-     * require-helmet. Measured on ToniR7/express-typescript-starter, which
-     * registers its rate limiter in `utils/appInitialization.ts` and was
-     * reported anyway.
-     */
-    let appEscapes = false;
+    } | null;
+    let appBinding: string | null;
+    let appEscapes: boolean;
 
     return {
+      before() {
+        const [options] = currentOptions();
+        ({ appReceiverNames } = options as Options);
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        ({
+          allowInTests = false,
+          alternativeMiddleware = [],
+          assumeRateLimiting = false,
+        } = options as Options);
+
+        // Skip entirely if rate limiting is assumed (provided by infrastructure)
+        if (assumeRateLimiting) {
+          return false;
+        }
+
+        const filename = context.filename;
+        const isTestFile = allowInTests && isTestFilePath(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+
+        hasExpressApp = false;
+        hasRateLimiting = false;
+        /**
+         * The first credential-accepting route in the file.
+         *
+         * Rule partition — see the matching note in require-helmet. This rule used
+         * to report the `express()` node, which is the *same character* that rule
+         * reports: on the 8-repo corpus all six findings of each landed on the
+         * identical file:line:column. They are now disjoint by construction —
+         * require-helmet owns the app-creation site, this rule owns the endpoint.
+         *
+         * Reporting the route is also where the fix goes: a limiter is mounted for
+         * the login surface, and the endpoint is what an attacker steers. Only the
+         * first is reported, because the fix (`app.use(rateLimit(…))`) is one edit
+         * for the whole app.
+         */
+        credentialRoute = null;
+        /** The binding `express()` was assigned to, so we can see where it travels. */
+        appBinding = null;
+        /**
+         * The app was handed to another function, so the middleware stack is
+         * assembled somewhere this rule cannot see — see the same guard in
+         * require-helmet. Measured on ToniR7/express-typescript-starter, which
+         * registers its rate limiter in `utils/appInitialization.ts` and was
+         * reported anyway.
+         */
+        appEscapes = false;
+        return true;
+      },
       // `module.exports = app`, `export default app`, `return app`.
       [RELEASE_SELECTOR](node: TSESTree.Node) {
         if (appBinding !== null && nodeReleasesBinding(node, appBinding)) {

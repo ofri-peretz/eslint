@@ -34,12 +34,13 @@ export const strykerPlugins = [
         if (!path.isObjectProperty() || keyName(path.node.key) !== 'meta')
           return undefined;
         // Only the `meta` of a rule definition — an object that also carries
-        // `create` — not some unrelated `{ meta }` inside detection logic.
+        // `create` or oxlint's `createOnce` — not some unrelated `{ meta }`
+        // inside detection logic.
         const owner = path.parentPath;
         const isRule = owner.node.properties.some(
           (p) =>
             (p.type === 'ObjectMethod' || p.type === 'ObjectProperty') &&
-            keyName(p.key) === 'create',
+            (keyName(p.key) === 'create' || keyName(p.key) === 'createOnce'),
         );
         return isRule
           ? 'Rule metadata (docs, messages, schema) cannot change a verdict'

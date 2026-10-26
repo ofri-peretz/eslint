@@ -24,6 +24,10 @@ type RuleOptions = [Options?];
 export const preferEventTarget = createRule<RuleOptions, MessageIds>({
   name: 'prefer-event-target',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'unicorn/prefer-event-target',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modernization/docs/rules/prefer-event-target.md',
@@ -58,7 +62,8 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
         description: 'Consider using EventTarget instead of EventEmitter',
         severity: 'MEDIUM',
         fix: 'Replace EventEmitter with EventTarget for better cross-platform support',
-        documentationLink: 'https://nodejs.org/api/events.html#eventtarget-and-event-api',
+        documentationLink:
+          'https://nodejs.org/api/events.html#eventtarget-and-event-api',
       }),
     },
     schema: [
@@ -76,15 +81,10 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allowEventEmitter: false }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const { allowEventEmitter = false } = options || {};
-
-    if (allowEventEmitter) {
-      return {};
-    }
-
-    function checkClassExtends(node: TSESTree.ClassDeclaration | TSESTree.ClassExpression) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    function checkClassExtends(
+      node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
+    ) {
       if (node.superClass) {
         if (
           node.superClass.type === 'Identifier' &&
@@ -94,7 +94,8 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
             node: node.superClass,
             messageId: 'preferEventTarget',
             data: {
-              className: (node as TSESTree.ClassDeclaration).id?.name || 'Anonymous',
+              className:
+                (node as TSESTree.ClassDeclaration).id?.name || 'Anonymous',
               suggestion: 'Extend EventTarget instead of EventEmitter',
             },
           });
@@ -106,7 +107,8 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
             node: node.superClass.property,
             messageId: 'preferEventTarget',
             data: {
-              className: (node as TSESTree.ClassDeclaration).id?.name || 'Anonymous',
+              className:
+                (node as TSESTree.ClassDeclaration).id?.name || 'Anonymous',
               suggestion: 'Extend EventTarget instead of EventEmitter',
             },
           });
@@ -115,13 +117,27 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        const { allowEventEmitter = false } = options || {};
+
+        if (allowEventEmitter) {
+          return false;
+        }
+        return true;
+      },
       // Check import declarations
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        if (node.source.value === 'node:events' || node.source.value === 'events') {
+        if (
+          node.source.value === 'node:events' ||
+          node.source.value === 'events'
+        ) {
           // Check if importing EventEmitter
-          const eventEmitterImport = node.specifiers.find((specifier: TSESTree.ImportClause) =>
-            specifier.type === 'ImportSpecifier' &&
-            specifier.imported.type === 'Identifier' && specifier.imported.name === 'EventEmitter'
+          const eventEmitterImport = node.specifiers.find(
+            (specifier: TSESTree.ImportClause) =>
+              specifier.type === 'ImportSpecifier' &&
+              specifier.imported.type === 'Identifier' &&
+              specifier.imported.name === 'EventEmitter',
           );
 
           if (eventEmitterImport) {
@@ -130,7 +146,8 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
               messageId: 'preferEventTarget',
               data: {
                 importedName: 'EventEmitter',
-                suggestion: 'Use EventTarget instead for cross-platform compatibility',
+                suggestion:
+                  'Use EventTarget instead for cross-platform compatibility',
               },
             });
           }
@@ -152,10 +169,11 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
             if (node.parent?.type === 'VariableDeclarator') {
               const varName = node.parent.id;
               if (varName.type === 'ObjectPattern') {
-                const eventEmitterProp = varName.properties.find((prop: TSESTree.Property | TSESTree.RestElement) =>
-                  prop.type === 'Property' &&
-                  prop.key.type === 'Identifier' &&
-                  prop.key.name === 'EventEmitter'
+                const eventEmitterProp = varName.properties.find(
+                  (prop: TSESTree.Property | TSESTree.RestElement) =>
+                    prop.type === 'Property' &&
+                    prop.key.type === 'Identifier' &&
+                    prop.key.name === 'EventEmitter',
                 );
                 if (eventEmitterProp && eventEmitterProp.type === 'Property') {
                   context.report({
@@ -163,7 +181,8 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
                     messageId: 'preferEventTarget',
                     data: {
                       usage: 'EventEmitter from require',
-                      suggestion: 'Use EventTarget for cross-platform compatibility',
+                      suggestion:
+                        'Use EventTarget for cross-platform compatibility',
                     },
                   });
                 }
@@ -176,20 +195,24 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
       // Check direct EventEmitter usage (not in extends)
       MemberExpression(node: TSESTree.MemberExpression) {
         // Skip if this is part of a class extends clause
-        if (node.parent?.type === 'ClassDeclaration' && node.parent.superClass === node) {
+        if (
+          node.parent?.type === 'ClassDeclaration' &&
+          node.parent.superClass === node
+        ) {
           return;
         }
 
-        if (
-          propertyName(node) === 'EventEmitter'
-        ) {
+        if (propertyName(node) === 'EventEmitter') {
           // Check if it's accessing EventEmitter from require('events') or similar
-          if (node.object.type === 'CallExpression' &&
-              node.object.callee.type === 'Identifier' &&
-              node.object.callee.name === 'require' &&
-              node.object.arguments.length === 1 &&
-              node.object.arguments[0].type === 'Literal' &&
-              (node.object.arguments[0].value === 'events' || node.object.arguments[0].value === 'node:events')) {
+          if (
+            node.object.type === 'CallExpression' &&
+            node.object.callee.type === 'Identifier' &&
+            node.object.callee.name === 'require' &&
+            node.object.arguments.length === 1 &&
+            node.object.arguments[0].type === 'Literal' &&
+            (node.object.arguments[0].value === 'events' ||
+              node.object.arguments[0].value === 'node:events')
+          ) {
             context.report({
               node: node.property,
               messageId: 'preferEventTarget',
@@ -200,8 +223,10 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
             });
           }
           // Check if it's accessing from a specific variable name that we know contains events
-          else if (node.object.type === 'Identifier' &&
-                   (node.object.name === 'events' || node.object.name === 'nodeEvents')) {
+          else if (
+            node.object.type === 'Identifier' &&
+            (node.object.name === 'events' || node.object.name === 'nodeEvents')
+          ) {
             context.report({
               node: node.property,
               messageId: 'preferEventTarget',

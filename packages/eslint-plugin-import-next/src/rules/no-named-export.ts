@@ -30,6 +30,10 @@ type RuleOptions = [Options?];
 export const noNamedExport = createRule<RuleOptions, MessageIds>({
   name: 'no-named-export',
   meta: {
+    interop: {
+      runtimes: ['eslint'],
+      nativeEquivalent: 'import/no-named-export',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-named-export.md',
@@ -100,16 +104,11 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const {
-      allowInFiles = [],
-      allowNames = [],
-      allowPatterns = [],
-      // suggestDefault // unused option
-    } = options || {};
-
-    const filename = context.filename;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowInFiles: string[];
+    let allowNames: string[];
+    let allowPatterns: string[];
+    let filename: string;
 
     function shouldAllow(specifier?: TSESTree.ExportSpecifier): boolean {
       if (!filename) {
@@ -119,14 +118,17 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
       // Check if file is in allowed list
       const allowedByFile = allowInFiles.some((pattern: string) => {
         if (pattern.includes('*')) {
-          const regexStr = '^' + pattern
-             .replace(/[.+?^${}()|[\]\\]/g, (match) => {
-                 // The char class above never matches '*', so no special-casing needed.
-                 return '\\' + match;
-             })
-             .replace(/\*\*/g, '.*')
-             .replace(/\*/g, '[^/]*') + '$';
-             
+          const regexStr =
+            '^' +
+            pattern
+              .replace(/[.+?^${}()|[\]\\]/g, (match) => {
+                // The char class above never matches '*', so no special-casing needed.
+                return '\\' + match;
+              })
+              .replace(/\*\*/g, '.*')
+              .replace(/\*/g, '[^/]*') +
+            '$';
+
           // regexStr escapes every regex metacharacter before translating
           // glob tokens, so new RegExp() can never throw here.
           const regex = new RegExp(regexStr);
@@ -142,13 +144,16 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
       // Check if filename matches allowed patterns
       const allowedByPattern = allowPatterns.some((pattern: string) => {
         if (pattern.includes('*')) {
-          const regexStr = '^' + pattern
-             .replace(/[.+?^${}()|[\]\\]/g, (match) => {
-                 // The char class above never matches '*', so no special-casing needed.
-                 return '\\' + match;
-             })
-             .replace(/\*\*/g, '.*')
-             .replace(/\*/g, '[^/]*') + '$';
+          const regexStr =
+            '^' +
+            pattern
+              .replace(/[.+?^${}()|[\]\\]/g, (match) => {
+                // The char class above never matches '*', so no special-casing needed.
+                return '\\' + match;
+              })
+              .replace(/\*\*/g, '.*')
+              .replace(/\*/g, '[^/]*') +
+            '$';
           // regexStr escapes every regex metacharacter before translating
           // glob tokens, so new RegExp() can never throw here.
           const regex = new RegExp(regexStr);
@@ -174,12 +179,23 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({
+          allowInFiles = [],
+          allowNames = [],
+          allowPatterns = [],
+          // suggestDefault // unused option
+        } = options || {});
+
+        filename = context.filename;
+      },
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
         // Skip type exports
         if (
           node.exportKind === 'type' ||
           (node.declaration &&
-             (node.declaration.type === 'TSInterfaceDeclaration' || 
+            (node.declaration.type === 'TSInterfaceDeclaration' ||
               node.declaration.type === 'TSTypeAliasDeclaration'))
         ) {
           return;
@@ -213,7 +229,8 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
                 declarator.id.type === 'Identifier'
                   ? declarator.id.name
                   : undefined;
-              const isAllowed = (varName && allowNames.includes(varName)) || shouldAllow();
+              const isAllowed =
+                (varName && allowNames.includes(varName)) || shouldAllow();
               if (!isAllowed) {
                 context.report({
                   node: declarator,

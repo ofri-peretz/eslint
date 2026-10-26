@@ -13,7 +13,14 @@
  * @see https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, staticString } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
 type MessageIds = 'permissiveCors' | 'useSpecificOrigin';
@@ -28,10 +35,12 @@ type RuleOptions = [Options?];
 export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
   name: 'no-permissive-cors-response',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-permissive-cors-response.md',
-      description: 'Detects permissive CORS (Access-Control-Allow-Origin: *) in Lambda response headers',
+      description:
+        'Detects permissive CORS (Access-Control-Allow-Origin: *) in Lambda response headers',
       cwe: 'CWE-942',
       cvss: 7.5,
     },
@@ -41,10 +50,12 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Permissive CORS in Lambda Response',
         cwe: 'CWE-942',
-        description: 'Wildcard CORS origin (*) allows any domain to access this Lambda function',
+        description:
+          'Wildcard CORS origin (*) allows any domain to access this Lambda function',
         severity: 'HIGH',
         fix: 'Use specific origins: headers: { "Access-Control-Allow-Origin": "https://your-domain.com" }',
-        documentationLink: 'https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html',
+        documentationLink:
+          'https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html',
       }),
       useSpecificOrigin: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -52,7 +63,8 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
         description: 'Specify allowed origins instead of wildcard',
         severity: 'LOW',
         fix: 'Replace "*" with specific domain(s)',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS',
       }),
     },
     schema: [
@@ -70,20 +82,10 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    // Every rule here is Lambda-specific, and none of them knew it: over 107,382
-    // files, 98% of this plugin's findings were in files with no AWS anything.
-    // Registering no visitors is both the gate and the cheap path.
-    if (!fileIsLambda(context.sourceCode.ast)) return {};
-
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
     /**
      * Check if this is a Lambda response structure
      * { statusCode, headers, body }
@@ -91,9 +93,13 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
     function isLambdaResponse(obj: TSESTree.ObjectExpression): boolean {
       // oxlint-disable-next-line prefer-set-has
       const propNames = obj.properties
-        .filter((p): p is TSESTree.Property => p.type === AST_NODE_TYPES.Property)
-        .map(p => (p.key.type === AST_NODE_TYPES.Identifier ? p.key.name : ''));
-      
+        .filter(
+          (p): p is TSESTree.Property => p.type === AST_NODE_TYPES.Property,
+        )
+        .map((p) =>
+          p.key.type === AST_NODE_TYPES.Identifier ? p.key.name : '',
+        );
+
       return propNames.includes('statusCode') || propNames.includes('body');
     }
 
@@ -115,12 +121,18 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
         // Check for Access-Control-Allow-Origin
         if (headerName.toLowerCase() === 'access-control-allow-origin') {
           // Check if value is wildcard
-          if (prop.value.type === AST_NODE_TYPES.Literal && prop.value.value === '*') {
+          if (
+            prop.value.type === AST_NODE_TYPES.Literal &&
+            prop.value.value === '*'
+          ) {
             context.report({
               node: prop,
               messageId: 'permissiveCors',
               fix: (fixer) => {
-                return fixer.replaceText(prop.value, '"https://your-domain.com"');
+                return fixer.replaceText(
+                  prop.value,
+                  '"https://your-domain.com"',
+                );
               },
             });
           }
@@ -148,6 +160,22 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Every rule here is Lambda-specific, and none of them knew it: over 107,382
+        // files, 98% of this plugin's findings were in files with no AWS anything.
+        // Registering no visitors is both the gate and the cheap path.
+        if (!fileIsLambda(context.sourceCode.ast)) return false;
+
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+        return true;
+      },
       // Check return statements that return Lambda response objects
       ReturnStatement(node: TSESTree.ReturnStatement) {
         if (node.argument?.type === AST_NODE_TYPES.ObjectExpression) {

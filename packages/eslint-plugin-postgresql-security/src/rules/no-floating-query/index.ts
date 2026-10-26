@@ -1,3 +1,4 @@
+import { RuleCreator } from '@interlace/eslint-devkit';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -70,11 +71,18 @@ function promiseChain(node: TSESTree.Node): Chain {
       break;
     }
     const call = member.parent;
-    if (call === undefined || call.type !== AST_NODE_TYPES.CallExpression || call.callee !== member) {
+    if (
+      call === undefined ||
+      call.type !== AST_NODE_TYPES.CallExpression ||
+      call.callee !== member
+    ) {
       break;
     }
     const method = member.property.name;
-    if (method === 'catch' || (method === 'then' && call.arguments.length >= 2)) {
+    if (
+      method === 'catch' ||
+      (method === 'then' && call.arguments.length >= 2)
+    ) {
       rejectionHandled = true;
     }
     current = call;
@@ -93,22 +101,32 @@ function promiseChain(node: TSESTree.Node): Chain {
  * shape was a guaranteed miss.
  */
 function isRead(variable: TSESLint.Scope.Variable | undefined): boolean {
-  return variable !== undefined && variable.references.some((ref) => ref.isRead());
+  return (
+    variable !== undefined && variable.references.some((ref) => ref.isRead())
+  );
 }
 
 function lookup(
   scope: TSESLint.Scope.Scope,
   name: string,
 ): TSESLint.Scope.Variable | undefined {
-  for (let current: TSESLint.Scope.Scope | null = scope; current; current = current.upper) {
+  for (
+    let current: TSESLint.Scope.Scope | null = scope;
+    current;
+    current = current.upper
+  ) {
     const variable = current.set.get(name);
     if (variable !== undefined) return variable;
   }
   return undefined;
 }
 
-export const noFloatingQuery: TSESLint.RuleModule<'noFloatingQuery', NoFloatingQueryOptions> = {
+export const noFloatingQuery: TSESLint.RuleModule<
+  'noFloatingQuery',
+  NoFloatingQueryOptions
+> = RuleCreator.withoutDocs<NoFloatingQueryOptions, 'noFloatingQuery'>({
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       description:
@@ -133,14 +151,16 @@ export const noFloatingQuery: TSESLint.RuleModule<'noFloatingQuery', NoFloatingQ
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    // Every rule here is PostgreSQL-specific, and none of them knew it: over
-    // 108,838 files, 94% of this plugin's findings were in files with no
-    // PostgreSQL client at all. Registering no visitors is both the gate and
-    // the cheap path — a file with no database in it does no work.
-    if (!usesPostgres(context)) return {};
-
+  createOnce(context) {
     return {
+      before() {
+        // Every rule here is PostgreSQL-specific, and none of them knew it: over
+        // 108,838 files, 94% of this plugin's findings were in files with no
+        // PostgreSQL client at all. Registering no visitors is both the gate and
+        // the cheap path — a file with no database in it does no work.
+        if (!usesPostgres(context)) return false;
+        return true;
+      },
       CallExpression(node) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
@@ -185,7 +205,10 @@ export const noFloatingQuery: TSESLint.RuleModule<'noFloatingQuery', NoFloatingQ
           owner.type === AST_NODE_TYPES.AssignmentExpression &&
           owner.left.type === AST_NODE_TYPES.Identifier
         ) {
-          if (isRead(lookup(context.sourceCode.getScope(node), owner.left.name))) return;
+          if (
+            isRead(lookup(context.sourceCode.getScope(node), owner.left.name))
+          )
+            return;
           context.report({ node, messageId: 'noFloatingQuery' });
           return;
         }
@@ -194,10 +217,14 @@ export const noFloatingQuery: TSESLint.RuleModule<'noFloatingQuery', NoFloatingQ
         // value, a return, an await, a yield, `void`, an arrow body — hands the
         // promise to something that can own it. Only a bare statement discards
         // it outright.
-        if (owner.type !== AST_NODE_TYPES.ExpressionStatement || rejectionHandled) return;
+        if (
+          owner.type !== AST_NODE_TYPES.ExpressionStatement ||
+          rejectionHandled
+        )
+          return;
 
         context.report({ node, messageId: 'noFloatingQuery' });
       },
     };
   },
-};
+});

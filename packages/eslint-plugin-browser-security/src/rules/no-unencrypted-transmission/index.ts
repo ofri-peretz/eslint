@@ -256,6 +256,7 @@ const COMPARISON_OPERATORS = new Set(['===', '!==', '==', '!=']);
 export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
   name: 'no-unencrypted-transmission',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-unencrypted-transmission.md',
@@ -326,31 +327,18 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
       ignorePatterns: [],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      allowInTests = false,
-      insecureProtocols,
-      secureAlternatives,
-      ignorePatterns = [],
-    } = options as Options;
-
-    const protocolsToCheck =
-      insecureProtocols && insecureProtocols.length > 0
-        ? insecureProtocols
-        : DEFAULT_INSECURE_PROTOCOLS;
-
-    // Merge user-provided secure alternatives with defaults
-    const secureAlternativesToUse =
-      secureAlternatives && Object.keys(secureAlternatives).length > 0
-        ? { ...SECURE_ALTERNATIVES, ...secureAlternatives }
-        : SECURE_ALTERNATIVES;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-    const sourceCode = context.sourceCode;
+    let allowInTests: boolean;
+    let insecureProtocols: string[] | undefined;
+    let secureAlternatives: Record<string, string> | undefined;
+    let ignorePatterns: string[];
+    let protocolsToCheck: string[];
+    let secureAlternativesToUse: Record<string, string>;
+    let isTestFile: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     function checkLiteral(node: TSESTree.Literal) {
       if (typeof node.value !== 'string') {
@@ -488,6 +476,30 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          allowInTests = false,
+          insecureProtocols,
+          secureAlternatives,
+          ignorePatterns = [],
+        } = options as Options);
+
+        protocolsToCheck =
+          insecureProtocols && insecureProtocols.length > 0
+            ? insecureProtocols
+            : DEFAULT_INSECURE_PROTOCOLS;
+
+        // Merge user-provided secure alternatives with defaults
+        secureAlternativesToUse =
+          secureAlternatives && Object.keys(secureAlternatives).length > 0
+            ? { ...SECURE_ALTERNATIVES, ...secureAlternatives }
+            : SECURE_ALTERNATIVES;
+
+        const filename = context.filename;
+        isTestFile = allowInTests && isTestFilePath(filename);
+        sourceCode = context.sourceCode;
+      },
       Literal: checkLiteral,
       TemplateLiteral: checkTemplateLiteral,
     };

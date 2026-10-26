@@ -56,6 +56,10 @@ function hasContent(
 export const anchorHasContent = createRule<RuleOptions, MessageIds>({
   name: 'anchor-has-content',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/anchor-has-content',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/anchor-has-content.md',
@@ -88,14 +92,18 @@ export const anchorHasContent = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
-    const { components = [] } = options ?? {};
-    const anchors = new Set(['a', ...components]);
+    let anchors: Set<string>;
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        const { components = [] } = options ?? {};
+        anchors = new Set(['a', ...components]);
+      },
       JSXElement(node: TSESTree.JSXElement) {
         const openingElement = node.openingElement;
 

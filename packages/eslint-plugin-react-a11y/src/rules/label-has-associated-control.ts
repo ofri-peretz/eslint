@@ -29,6 +29,10 @@ type RuleOptions = [Options?];
 export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
   name: 'label-has-associated-control',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/label-has-associated-control',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/label-has-associated-control.md',
@@ -70,28 +74,17 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
       depth: 2,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
-    const {
-      labelComponents = [],
-      labelAttributes = [],
-      controlComponents = [],
-      assert = 'either',
-      depth = 2,
-    } = options ?? ({} as Options);
-
-    const labelTags = new Set(['label', ...labelComponents]);
-    const controlTags = new Set([
-      'input',
-      'select',
-      'textarea',
-      'meter',
-      'output',
-      'progress',
-      ...controlComponents,
-    ]);
+    let labelComponents: string[];
+    let labelAttributes: string[];
+    let controlComponents: string[];
+    let assert: 'htmlFor' | 'nesting' | 'both' | 'either';
+    let depth: number;
+    let labelTags: Set<string>;
+    let controlTags: Set<string>;
 
     function hasNestedControl(
       node: TSESTree.JSXElement,
@@ -114,6 +107,27 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        ({
+          labelComponents = [],
+          labelAttributes = [],
+          controlComponents = [],
+          assert = 'either',
+          depth = 2,
+        } = options ?? ({} as Options));
+
+        labelTags = new Set(['label', ...labelComponents]);
+        controlTags = new Set([
+          'input',
+          'select',
+          'textarea',
+          'meter',
+          'output',
+          'progress',
+          ...controlComponents,
+        ]);
+      },
       JSXElement(node: TSESTree.JSXElement) {
         const openingElement = node.openingElement;
         if (

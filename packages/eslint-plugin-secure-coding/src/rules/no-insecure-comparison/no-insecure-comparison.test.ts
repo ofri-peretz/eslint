@@ -36,6 +36,7 @@ describe('no-insecure-comparison', () => {
           code: 'if (x === y) {}',
         },
         {
+          name: 'a strict inequality is a safe comparison',
           code: 'if (x !== y) {}',
         },
         {
@@ -80,30 +81,34 @@ describe('no-insecure-comparison', () => {
       invalid: [],
     });
 
-    ruleTester.run('invalid - non-null loose equality is suggestion-only', noInsecureComparison, {
-      valid: [],
-      invalid: [
-        {
-          name: 'loose equality between a number and a string',
-          // Still reported, but with NO auto-applied `output`: swapping == for
-          // === can change behaviour when operand types differ, so it may only
-          // be offered as a suggestion the author opts into.
-          code: 'if (count == "5") { go(); }',
-          output: null,
-          errors: [
-            {
-              messageId: 'insecureComparison',
-              suggestions: [
-                {
-                  messageId: 'useStrictEquality',
-                  output: 'if (count === "5") { go(); }',
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - non-null loose equality is suggestion-only',
+      noInsecureComparison,
+      {
+        valid: [],
+        invalid: [
+          {
+            name: 'loose equality between a number and a string',
+            // Still reported, but with NO auto-applied `output`: swapping == for
+            // === can change behaviour when operand types differ, so it may only
+            // be offered as a suggestion the author opts into.
+            code: 'if (count == "5") { go(); }',
+            output: null,
+            errors: [
+              {
+                messageId: 'insecureComparison',
+                suggestions: [
+                  {
+                    messageId: 'useStrictEquality',
+                    output: 'if (count === "5") { go(); }',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Loose Equality', () => {
@@ -161,26 +166,30 @@ describe('no-insecure-comparison', () => {
   });
 
   describe('Invalid Code - Loose Inequality', () => {
-    ruleTester.run('invalid - loose inequality operator', noInsecureComparison, {
-      valid: [],
-      invalid: [
-        {
-          code: 'if (x != y) {}',
-          errors: [
-            {
-              messageId: 'insecureComparison',
-              suggestions: [
-                {
-                  messageId: 'useStrictEquality',
-                  output: 'if (x !== y) {}',
-                },
-              ],
-            },
-          ],
-          output: null,
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - loose inequality operator',
+      noInsecureComparison,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'if (x != y) {}',
+            errors: [
+              {
+                messageId: 'insecureComparison',
+                suggestions: [
+                  {
+                    messageId: 'useStrictEquality',
+                    output: 'if (x !== y) {}',
+                  },
+                ],
+              },
+            ],
+            output: null,
+          },
+        ],
+      },
+    );
   });
 
   describe('Options', () => {
@@ -259,12 +268,15 @@ describe('no-insecure-comparison', () => {
    * Source: eslint-benchmark-suite/benchmarks/fn-fp-comparison/fixtures/safe/safe-patterns.js
    */
   describe('Benchmark FP Regression', () => {
-    ruleTester.run('benchmark FP: safe_timing_compare - length check before timingSafeEqual', noInsecureComparison, {
-      valid: [
-        // Length check before timingSafeEqual is a known safe pattern
-        // The .length comparison leaks only length information, which is acceptable
-        {
-          code: `
+    ruleTester.run(
+      'benchmark FP: safe_timing_compare - length check before timingSafeEqual',
+      noInsecureComparison,
+      {
+        valid: [
+          // Length check before timingSafeEqual is a known safe pattern
+          // The .length comparison leaks only length information, which is acceptable
+          {
+            code: `
             function safeCompare(input, secret) {
               const crypto = require('crypto');
               const inputBuffer = Buffer.from(input);
@@ -275,77 +287,82 @@ describe('no-insecure-comparison', () => {
               return crypto.timingSafeEqual(inputBuffer, secretBuffer);
             }
           `,
-        },
-        // Length comparison on the RIGHT side too — same safe pattern, other operand order
-        {
-          code: `
+          },
+          // Length comparison on the RIGHT side too — same safe pattern, other operand order
+          {
+            code: `
             function safeCompare(secret, input) {
               if (secret.length !== input.length) {
                 return false;
               }
             }
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('Timing-unsafe strict comparison of secrets', () => {
-    ruleTester.run('invalid - strict equality on secret-looking identifiers', noInsecureComparison, {
-      valid: [],
-      invalid: [
-        {
-          code: 'if (token === userToken) {}',
-          errors: [
-            {
-              messageId: 'timingUnsafeComparison',
-              data: { operator: '===' },
-              suggestions: [
-                {
-                  messageId: 'useTimingSafeEqual',
-                  output:
-                    'if (crypto.timingSafeEqual(Buffer.from(token), Buffer.from(userToken))) {}',
-                },
-              ],
-            },
-          ],
-        },
-        {
-          code: 'if (apiKey !== storedSecret) {}',
-          errors: [
-            {
-              messageId: 'timingUnsafeComparison',
-              data: { operator: '!==' },
-              suggestions: [
-                {
-                  messageId: 'useTimingSafeEqual',
-                  output:
-                    'if (crypto.timingSafeEqual(Buffer.from(apiKey), Buffer.from(storedSecret))) {}',
-                },
-              ],
-            },
-          ],
-        },
-        // Only the RIGHT side looks like a secret — still flagged (isPotentialSecret(left) || isPotentialSecret(right))
-        {
-          code: 'if (candidate === expectedPassword) {}',
-          errors: [
-            {
-              messageId: 'timingUnsafeComparison',
-              data: { operator: '===' },
-              suggestions: [
-                {
-                  messageId: 'useTimingSafeEqual',
-                  output:
-                    'if (crypto.timingSafeEqual(Buffer.from(candidate), Buffer.from(expectedPassword))) {}',
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - strict equality on secret-looking identifiers',
+      noInsecureComparison,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'if (token === userToken) {}',
+            errors: [
+              {
+                messageId: 'timingUnsafeComparison',
+                data: { operator: '===' },
+                suggestions: [
+                  {
+                    messageId: 'useTimingSafeEqual',
+                    output:
+                      'if (crypto.timingSafeEqual(Buffer.from(token), Buffer.from(userToken))) {}',
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            code: 'if (apiKey !== storedSecret) {}',
+            errors: [
+              {
+                messageId: 'timingUnsafeComparison',
+                data: { operator: '!==' },
+                suggestions: [
+                  {
+                    messageId: 'useTimingSafeEqual',
+                    output:
+                      'if (crypto.timingSafeEqual(Buffer.from(apiKey), Buffer.from(storedSecret))) {}',
+                  },
+                ],
+              },
+            ],
+          },
+          // Only the RIGHT side looks like a secret — still flagged (isPotentialSecret(left) || isPotentialSecret(right))
+          {
+            code: 'if (candidate === expectedPassword) {}',
+            errors: [
+              {
+                messageId: 'timingUnsafeComparison',
+                data: { operator: '===' },
+                suggestions: [
+                  {
+                    messageId: 'useTimingSafeEqual',
+                    output:
+                      'if (crypto.timingSafeEqual(Buffer.from(candidate), Buffer.from(expectedPassword))) {}',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    );
 
     /**
      * LOCK — the enclosing function's NAME must not decide the verdict.
@@ -433,105 +450,109 @@ describe('no-insecure-comparison', () => {
      * Each of these reported nothing before the fix: the comparison site spells no
      * secret word, and the rule only read the identifiers written at the `===`.
      */
-    ruleTester.run('invalid - secret reached through a binding', noInsecureComparison, {
-      valid: [],
-      invalid: [
-        // One binding hop: `expected` is a generic name for `config.callback.token`.
-        {
-          code: `
+    ruleTester.run(
+      'invalid - secret reached through a binding',
+      noInsecureComparison,
+      {
+        valid: [],
+        invalid: [
+          // One binding hop: `expected` is a generic name for `config.callback.token`.
+          {
+            code: `
             const expected = config.callback.token;
             if (presented !== expected) {}
           `,
-          errors: [
-            {
-              messageId: 'timingUnsafeComparison',
-              suggestions: [
-                {
-                  messageId: 'useTimingSafeEqual',
-                  output: `
+            errors: [
+              {
+                messageId: 'timingUnsafeComparison',
+                suggestions: [
+                  {
+                    messageId: 'useTimingSafeEqual',
+                    output: `
             const expected = config.callback.token;
             if (crypto.timingSafeEqual(Buffer.from(presented), Buffer.from(expected))) {}
           `,
-                },
-              ],
-            },
-          ],
-        },
-        // Destructuring alias: `t` is `session.token`.
-        {
-          code: `
+                  },
+                ],
+              },
+            ],
+          },
+          // Destructuring alias: `t` is `session.token`.
+          {
+            code: `
             const { token: t } = session;
             if (t === presented) {}
           `,
-          errors: [
-            {
-              messageId: 'timingUnsafeComparison',
-              suggestions: [
-                {
-                  messageId: 'useTimingSafeEqual',
-                  output: `
+            errors: [
+              {
+                messageId: 'timingUnsafeComparison',
+                suggestions: [
+                  {
+                    messageId: 'useTimingSafeEqual',
+                    output: `
             const { token: t } = session;
             if (crypto.timingSafeEqual(Buffer.from(t), Buffer.from(presented))) {}
           `,
-                },
-              ],
-            },
-          ],
-        },
-        // Computed string-literal key — the same property name in brackets.
-        {
-          code: `if (req.headers['x-api-key'] === config['apiKey']) {}`,
-          errors: [
-            {
-              messageId: 'timingUnsafeComparison',
-              suggestions: [
-                {
-                  messageId: 'useTimingSafeEqual',
-                  output: `if (crypto.timingSafeEqual(Buffer.from(req.headers['x-api-key']), Buffer.from(config['apiKey']))) {}`,
-                },
-              ],
-            },
-          ],
-        },
-        // Adjacent-segment match: `SERVICE_API_KEY` splits to service/api/key, and
-        // `key` alone is deliberately not a secret word.
-        {
-          code: `if (providedKey !== process.env.SERVICE_API_KEY) {}`,
-          errors: [
-            {
-              messageId: 'timingUnsafeComparison',
-              suggestions: [
-                {
-                  messageId: 'useTimingSafeEqual',
-                  output: `if (crypto.timingSafeEqual(Buffer.from(providedKey), Buffer.from(process.env.SERVICE_API_KEY))) {}`,
-                },
-              ],
-            },
-          ],
-        },
-        // A ternary selects which credential is compared; either branch counts.
-        {
-          code: `
+                  },
+                ],
+              },
+            ],
+          },
+          // Computed string-literal key — the same property name in brackets.
+          {
+            code: `if (req.headers['x-api-key'] === config['apiKey']) {}`,
+            errors: [
+              {
+                messageId: 'timingUnsafeComparison',
+                suggestions: [
+                  {
+                    messageId: 'useTimingSafeEqual',
+                    output: `if (crypto.timingSafeEqual(Buffer.from(req.headers['x-api-key']), Buffer.from(config['apiKey']))) {}`,
+                  },
+                ],
+              },
+            ],
+          },
+          // Adjacent-segment match: `SERVICE_API_KEY` splits to service/api/key, and
+          // `key` alone is deliberately not a secret word.
+          {
+            code: `if (providedKey !== process.env.SERVICE_API_KEY) {}`,
+            errors: [
+              {
+                messageId: 'timingUnsafeComparison',
+                suggestions: [
+                  {
+                    messageId: 'useTimingSafeEqual',
+                    output: `if (crypto.timingSafeEqual(Buffer.from(providedKey), Buffer.from(process.env.SERVICE_API_KEY))) {}`,
+                  },
+                ],
+              },
+            ],
+          },
+          // A ternary selects which credential is compared; either branch counts.
+          {
+            code: `
             const reference = isProd ? PRODUCTION_CREDENTIAL : SANDBOX_CREDENTIAL;
             if (presented !== reference) {}
           `,
-          errors: [
-            {
-              messageId: 'timingUnsafeComparison',
-              suggestions: [
-                {
-                  messageId: 'useTimingSafeEqual',
-                  output: `
+            errors: [
+              {
+                messageId: 'timingUnsafeComparison',
+                suggestions: [
+                  {
+                    messageId: 'useTimingSafeEqual',
+                    output: `
             const reference = isProd ? PRODUCTION_CREDENTIAL : SANDBOX_CREDENTIAL;
             if (crypto.timingSafeEqual(Buffer.from(presented), Buffer.from(reference))) {}
           `,
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    });
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    );
 
     /**
      * LOCK — `==` between two provably-string operands is exempt even when the
@@ -542,42 +563,46 @@ describe('no-insecure-comparison', () => {
      * the right operand is a string literal, so no coercion is possible. Reported as
      * `insecureComparison` on the unfixed rule.
      */
-    ruleTester.run('valid - multi-write binding whose every write is a string', noInsecureComparison, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - multi-write binding whose every write is a string',
+      noInsecureComparison,
+      {
+        valid: [
+          {
+            code: `
             let mode = 'animated';
             if (prefersReducedMotion) { mode = 'static'; }
             if (mode == 'static') {}
           `,
-        },
-      ],
-      invalid: [
-        // Positive control: one write is NOT a string, so the exemption must not apply.
-        {
-          code: `
+          },
+        ],
+        invalid: [
+          // Positive control: one write is NOT a string, so the exemption must not apply.
+          {
+            code: `
             let mode = 'animated';
             if (flag) { mode = readMode(); }
             if (mode == 'static') {}
           `,
-          errors: [
-            {
-              messageId: 'insecureComparison',
-              suggestions: [
-                {
-                  messageId: 'useStrictEquality',
-                  output: `
+            errors: [
+              {
+                messageId: 'insecureComparison',
+                suggestions: [
+                  {
+                    messageId: 'useStrictEquality',
+                    output: `
             let mode = 'animated';
             if (flag) { mode = readMode(); }
             if (mode === 'static') {}
           `,
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    });
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    );
 
     ruleTester.run(
       'valid - length comparisons on secrets are safe even with strict equality',
@@ -597,63 +622,75 @@ describe('no-insecure-comparison', () => {
   });
 
   describe('Codemod / AST-walker file detection', () => {
-    ruleTester.run('valid - filename under a codemods directory', noInsecureComparison, {
-      valid: [
-        {
-          code: "if (node.key === 'foo') {}",
-          filename: '/repo/tools/codemods/rename-prop.ts',
-        },
-        {
-          code: "if (node.key === 'foo') {}",
-          filename: '/repo/tools/codemod/rename-prop.ts',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - filename under a codemods directory',
+      noInsecureComparison,
+      {
+        valid: [
+          {
+            code: "if (node.key === 'foo') {}",
+            filename: '/repo/tools/codemods/rename-prop.ts',
+          },
+          {
+            code: "if (node.key === 'foo') {}",
+            filename: '/repo/tools/codemod/rename-prop.ts',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - filename matching *codemod.ts pattern', noInsecureComparison, {
-      valid: [
-        {
-          code: "if (node.key === 'foo') {}",
-          filename: '/repo/tools/rename-prop.codemod.ts',
-        },
-        {
-          code: "if (node.key === 'foo') {}",
-          filename: '/repo/tools/rename-prop.codemod.mjs',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - filename matching *codemod.ts pattern',
+      noInsecureComparison,
+      {
+        valid: [
+          {
+            code: "if (node.key === 'foo') {}",
+            filename: '/repo/tools/rename-prop.codemod.ts',
+          },
+          {
+            code: "if (node.key === 'foo') {}",
+            filename: '/repo/tools/rename-prop.codemod.mjs',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - file imports a known AST-tool package', noInsecureComparison, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - file imports a known AST-tool package',
+      noInsecureComparison,
+      {
+        valid: [
+          {
+            code: `
             import traverse from '@babel/traverse';
             function transform(node) {
               if (node.key === 'foo') {}
             }
           `,
-          filename: '/repo/scripts/transform.ts',
-        },
-        {
-          code: `
+            filename: '/repo/scripts/transform.ts',
+          },
+          {
+            code: `
             import { visit } from 'unist-util-visit';
             if (node.key === 'foo') {}
           `,
-          filename: '/repo/scripts/plain.ts',
-        },
-        // Subpath import of an AST-tool package still counts
-        {
-          code: `
+            filename: '/repo/scripts/plain.ts',
+          },
+          // Subpath import of an AST-tool package still counts
+          {
+            code: `
             import parser from '@typescript-eslint/typescript-estree/dist/parser';
             if (node.key === 'foo') {}
           `,
-          filename: '/repo/scripts/subpath.ts',
-        },
-      ],
-      invalid: [],
-    });
+            filename: '/repo/scripts/subpath.ts',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
     ruleTester.run(
       'invalid - non-codemod file with no AST-tool import still flags loose equality',
@@ -708,7 +745,6 @@ describe('no-insecure-comparison', () => {
   });
 });
 
-
 /**
  * Regression lock — word-level secret detection.
  *
@@ -754,22 +790,27 @@ describe('no-insecure-comparison — word-level secret matching', () => {
   });
 });
 
-
 /**
  * Regression lock — a timing attack needs a secret on BOTH sides. You cannot learn a secret
  * by discovering how many characters of `true`, `null` or `undefined` matched, so a
  * comparison against one of those literals is not CWE-208 — it is a state check that happens
  * to sit on an identifier the secret-name heuristic likes.
  */
-ruleTester.run('lock: comparison against a non-secret literal', noInsecureComparison, {
-  valid: [
-    { code: 'function f(token) { return verifyToken(token).valid === true; }' },
-    { code: 'function f(token) { return token.password === null; }' },
-    { code: 'function f(token) { return token.secret === undefined; }' },
-    { code: 'function f(token) { return undefined === token.apiKey; }' },
-  ],
-  invalid: [],
-});
+ruleTester.run(
+  'lock: comparison against a non-secret literal',
+  noInsecureComparison,
+  {
+    valid: [
+      {
+        code: 'function f(token) { return verifyToken(token).valid === true; }',
+      },
+      { code: 'function f(token) { return token.password === null; }' },
+      { code: 'function f(token) { return token.secret === undefined; }' },
+      { code: 'function f(token) { return undefined === token.apiKey; }' },
+    ],
+    invalid: [],
+  },
+);
 
 /**
  * Regression lock — `==` between two provable strings is not a coercion weakness.
@@ -782,189 +823,236 @@ ruleTester.run('lock: comparison against a non-secret literal', noInsecureCompar
  * The proof is the single-write check — a name written twice can hold anything by the
  * time the comparison runs, so it stays a finding.
  */
-ruleTester.run('no-insecure-comparison: coercion needs two types', noInsecureComparison, {
-  valid: [
-    { code: `var accessLevel = "user"; if (accessLevel != "user") { admin(); }` },
-    { code: `const role = 'admin'; if (role == 'admin') { go(); }` },
-    { code: `if ('a' == 'b') { go(); }` },
-    // A template literal is a string by construction.
-    { code: 'const role = `admin`; if (role == `admin`) { go(); }' },
-    // Resolved through a chain of constants.
-    { code: `const A = 'x'; const B = A; if (B == 'x') { go(); }` },
-  ],
-  invalid: [
-    // Reassigned: the value at the comparison is not provable.
-    {
-      code: `let role = 'admin'; role = readInput(); if (role == 'admin') { go(); }`,
-      errors: [
-        {
-          messageId: 'insecureComparison',
-          suggestions: [{ messageId: 'useStrictEquality', output: `let role = 'admin'; role = readInput(); if (role === 'admin') { go(); }` }],
-        },
-      ],
-    },
-    // A parameter could be anything, including a number that coerces.
-    {
-      code: `function check(role) { return role == 'admin'; }`,
-      errors: [
-        {
-          messageId: 'insecureComparison',
-          suggestions: [{ messageId: 'useStrictEquality', output: `function check(role) { return role === 'admin'; }` }],
-        },
-      ],
-    },
-    // Different types is exactly the case this rule exists for.
-    {
-      code: `const n = 1; if (n == '1') { go(); }`,
-      errors: [
-        {
-          messageId: 'insecureComparison',
-          suggestions: [{ messageId: 'useStrictEquality', output: `const n = 1; if (n === '1') { go(); }` }],
-        },
-      ],
-    },
-    // Declared nowhere in the file.
-    {
-      code: `if (globalRole == 'admin') { go(); }`,
-      errors: [
-        {
-          messageId: 'insecureComparison',
-          suggestions: [{ messageId: 'useStrictEquality', output: `if (globalRole === 'admin') { go(); }` }],
-        },
-      ],
-    },
-    // A member expression carries no provable type here.
-    {
-      code: `if (user.role == 'admin') { go(); }`,
-      errors: [
-        {
-          messageId: 'insecureComparison',
-          suggestions: [{ messageId: 'useStrictEquality', output: `if (user.role === 'admin') { go(); }` }],
-        },
-      ],
-    },
-    // A cyclic initializer pair resolved forever and overflowed the stack — which takes
-    // the whole ESLint run down, not just this rule. A cycle proves nothing about the
-    // type, so it answers "not provably a string" and the comparison still reports.
-    {
-      code: `var a = b; var b = a; if (a == y) { go(); }`,
-      errors: [
-        {
-          messageId: 'insecureComparison',
-          suggestions: [{ messageId: 'useStrictEquality', output: `var a = b; var b = a; if (a === y) { go(); }` }],
-        },
-      ],
-    },
-    // Declared without an initializer.
-    {
-      code: `let role; role = input; if (role == 'admin') { go(); }`,
-      errors: [
-        {
-          messageId: 'insecureComparison',
-          suggestions: [{ messageId: 'useStrictEquality', output: `let role; role = input; if (role === 'admin') { go(); }` }],
-        },
-      ],
-    },
-  ],
-});
+ruleTester.run(
+  'no-insecure-comparison: coercion needs two types',
+  noInsecureComparison,
+  {
+    valid: [
+      {
+        code: `var accessLevel = "user"; if (accessLevel != "user") { admin(); }`,
+      },
+      { code: `const role = 'admin'; if (role == 'admin') { go(); }` },
+      { code: `if ('a' == 'b') { go(); }` },
+      // A template literal is a string by construction.
+      { code: 'const role = `admin`; if (role == `admin`) { go(); }' },
+      // Resolved through a chain of constants.
+      { code: `const A = 'x'; const B = A; if (B == 'x') { go(); }` },
+    ],
+    invalid: [
+      // Reassigned: the value at the comparison is not provable.
+      {
+        code: `let role = 'admin'; role = readInput(); if (role == 'admin') { go(); }`,
+        errors: [
+          {
+            messageId: 'insecureComparison',
+            suggestions: [
+              {
+                messageId: 'useStrictEquality',
+                output: `let role = 'admin'; role = readInput(); if (role === 'admin') { go(); }`,
+              },
+            ],
+          },
+        ],
+      },
+      // A parameter could be anything, including a number that coerces.
+      {
+        code: `function check(role) { return role == 'admin'; }`,
+        errors: [
+          {
+            messageId: 'insecureComparison',
+            suggestions: [
+              {
+                messageId: 'useStrictEquality',
+                output: `function check(role) { return role === 'admin'; }`,
+              },
+            ],
+          },
+        ],
+      },
+      // Different types is exactly the case this rule exists for.
+      {
+        code: `const n = 1; if (n == '1') { go(); }`,
+        errors: [
+          {
+            messageId: 'insecureComparison',
+            suggestions: [
+              {
+                messageId: 'useStrictEquality',
+                output: `const n = 1; if (n === '1') { go(); }`,
+              },
+            ],
+          },
+        ],
+      },
+      // Declared nowhere in the file.
+      {
+        code: `if (globalRole == 'admin') { go(); }`,
+        errors: [
+          {
+            messageId: 'insecureComparison',
+            suggestions: [
+              {
+                messageId: 'useStrictEquality',
+                output: `if (globalRole === 'admin') { go(); }`,
+              },
+            ],
+          },
+        ],
+      },
+      // A member expression carries no provable type here.
+      {
+        code: `if (user.role == 'admin') { go(); }`,
+        errors: [
+          {
+            messageId: 'insecureComparison',
+            suggestions: [
+              {
+                messageId: 'useStrictEquality',
+                output: `if (user.role === 'admin') { go(); }`,
+              },
+            ],
+          },
+        ],
+      },
+      // A cyclic initializer pair resolved forever and overflowed the stack — which takes
+      // the whole ESLint run down, not just this rule. A cycle proves nothing about the
+      // type, so it answers "not provably a string" and the comparison still reports.
+      {
+        code: `var a = b; var b = a; if (a == y) { go(); }`,
+        errors: [
+          {
+            messageId: 'insecureComparison',
+            suggestions: [
+              {
+                messageId: 'useStrictEquality',
+                output: `var a = b; var b = a; if (a === y) { go(); }`,
+              },
+            ],
+          },
+        ],
+      },
+      // Declared without an initializer.
+      {
+        code: `let role; role = input; if (role == 'admin') { go(); }`,
+        errors: [
+          {
+            messageId: 'insecureComparison',
+            suggestions: [
+              {
+                messageId: 'useStrictEquality',
+                output: `let role; role = input; if (role === 'admin') { go(); }`,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+);
 
 /**
  * Branch coverage for `namesIn` — the binding-resolution walk that finds a secret
  * through the name it carried one hop earlier.
  */
 describe('namesIn resolution arms', () => {
-  ruleTester.run('patterns, computed keys and TS syntax', noInsecureComparison, {
-    valid: [
-      // A non-Property member of an ObjectPattern (a rest element).
-      'const { a, ...rest } = payload; if (rest === other) {}',
-      // A computed destructuring key binds no readable name.
-      'const KEY = "x"; const { [KEY]: v } = payload; if (v === other) {}',
-      // Array pattern with a hole, and a default. Neither binds a secret name.
-      'const [, second = fallback] = tuple; if (second === other) {}',
-      // A computed member whose key is not a string literal is walked, not read.
-      'if (bag[index] === other) {}',
-    ],
-    invalid: [
-      // Nested object pattern: the key is found by recursing into `property.value`.
-      {
-        code: 'const { session: { token: t } } = state; if (t === presented) {}',
-        errors: [
-          {
-            messageId: 'timingUnsafeComparison',
-            suggestions: [
-              {
-                messageId: 'useTimingSafeEqual',
-                output:
-                  'const { session: { token: t } } = state; if (crypto.timingSafeEqual(Buffer.from(t), Buffer.from(presented))) {}',
-              },
-            ],
-          },
-        ],
-      },
-      // Array pattern element whose binding resolves to a secret-bearing write.
-      {
-        code: 'const [first] = list; const value = credentials.get(first); if (value === presented) {}',
-        errors: [
-          {
-            messageId: 'timingUnsafeComparison',
-            suggestions: [
-              {
-                messageId: 'useTimingSafeEqual',
-                output:
-                  'const [first] = list; const value = credentials.get(first); if (crypto.timingSafeEqual(Buffer.from(value), Buffer.from(presented))) {}',
-              },
-            ],
-          },
-        ],
-      },
-      // TypeScript-only syntax is transparent to the walk.
-      {
-        code: 'if (presented as string === (session.token as string)) {}',
-        errors: [
-          {
-            messageId: 'timingUnsafeComparison',
-            suggestions: [
-              {
-                messageId: 'useTimingSafeEqual',
-                output:
-                  'if (crypto.timingSafeEqual(Buffer.from(presented as string), Buffer.from(session.token as string))) {}',
-              },
-            ],
-          },
-        ],
-      },
-      {
-        code: 'if (presented === session.token!) {}',
-        errors: [
-          {
-            messageId: 'timingUnsafeComparison',
-            suggestions: [
-              {
-                messageId: 'useTimingSafeEqual',
-                output: 'if (crypto.timingSafeEqual(Buffer.from(presented), Buffer.from(session.token!))) {}',
-              },
-            ],
-          },
-        ],
-      },
-      // A binding written more than once claims nothing, so the OTHER operand has to
-      // carry the evidence.
-      {
-        code: 'let v = a; v = b; if (v === session.token) {}',
-        errors: [
-          {
-            messageId: 'timingUnsafeComparison',
-            suggestions: [
-              {
-                messageId: 'useTimingSafeEqual',
-                output: 'let v = a; v = b; if (crypto.timingSafeEqual(Buffer.from(v), Buffer.from(session.token))) {}',
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  });
+  ruleTester.run(
+    'patterns, computed keys and TS syntax',
+    noInsecureComparison,
+    {
+      valid: [
+        // A non-Property member of an ObjectPattern (a rest element).
+        'const { a, ...rest } = payload; if (rest === other) {}',
+        // A computed destructuring key binds no readable name.
+        'const KEY = "x"; const { [KEY]: v } = payload; if (v === other) {}',
+        // Array pattern with a hole, and a default. Neither binds a secret name.
+        'const [, second = fallback] = tuple; if (second === other) {}',
+        // A computed member whose key is not a string literal is walked, not read.
+        'if (bag[index] === other) {}',
+      ],
+      invalid: [
+        // Nested object pattern: the key is found by recursing into `property.value`.
+        {
+          code: 'const { session: { token: t } } = state; if (t === presented) {}',
+          errors: [
+            {
+              messageId: 'timingUnsafeComparison',
+              suggestions: [
+                {
+                  messageId: 'useTimingSafeEqual',
+                  output:
+                    'const { session: { token: t } } = state; if (crypto.timingSafeEqual(Buffer.from(t), Buffer.from(presented))) {}',
+                },
+              ],
+            },
+          ],
+        },
+        // Array pattern element whose binding resolves to a secret-bearing write.
+        {
+          code: 'const [first] = list; const value = credentials.get(first); if (value === presented) {}',
+          errors: [
+            {
+              messageId: 'timingUnsafeComparison',
+              suggestions: [
+                {
+                  messageId: 'useTimingSafeEqual',
+                  output:
+                    'const [first] = list; const value = credentials.get(first); if (crypto.timingSafeEqual(Buffer.from(value), Buffer.from(presented))) {}',
+                },
+              ],
+            },
+          ],
+        },
+        // TypeScript-only syntax is transparent to the walk.
+        {
+          code: 'if (presented as string === (session.token as string)) {}',
+          errors: [
+            {
+              messageId: 'timingUnsafeComparison',
+              suggestions: [
+                {
+                  messageId: 'useTimingSafeEqual',
+                  output:
+                    'if (crypto.timingSafeEqual(Buffer.from(presented as string), Buffer.from(session.token as string))) {}',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          code: 'if (presented === session.token!) {}',
+          errors: [
+            {
+              messageId: 'timingUnsafeComparison',
+              suggestions: [
+                {
+                  messageId: 'useTimingSafeEqual',
+                  output:
+                    'if (crypto.timingSafeEqual(Buffer.from(presented), Buffer.from(session.token!))) {}',
+                },
+              ],
+            },
+          ],
+        },
+        // A binding written more than once claims nothing, so the OTHER operand has to
+        // carry the evidence.
+        {
+          code: 'let v = a; v = b; if (v === session.token) {}',
+          errors: [
+            {
+              messageId: 'timingUnsafeComparison',
+              suggestions: [
+                {
+                  messageId: 'useTimingSafeEqual',
+                  output:
+                    'let v = a; v = b; if (crypto.timingSafeEqual(Buffer.from(v), Buffer.from(session.token))) {}',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  );
 
   /**
    * Burgee turned this rule off over `spec.env === undefined`, `fromEnv !==
@@ -997,7 +1085,18 @@ describe('namesIn resolution arms', () => {
         {
           name: 'the same env var compared to a caller-supplied value is the finding',
           code: 'function check(presented) { return presented === process.env.ANTHROPIC_API_KEY; }',
-          errors: [{ messageId: 'timingUnsafeComparison', suggestions: [{ messageId: 'useTimingSafeEqual', output: 'function check(presented) { return crypto.timingSafeEqual(Buffer.from(presented), Buffer.from(process.env.ANTHROPIC_API_KEY)); }' }] }],
+          errors: [
+            {
+              messageId: 'timingUnsafeComparison',
+              suggestions: [
+                {
+                  messageId: 'useTimingSafeEqual',
+                  output:
+                    'function check(presented) { return crypto.timingSafeEqual(Buffer.from(presented), Buffer.from(process.env.ANTHROPIC_API_KEY)); }',
+                },
+              ],
+            },
+          ],
         },
       ],
     });

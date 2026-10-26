@@ -22,11 +22,14 @@ const MULTER = `import multer from 'multer';\n`;
 
 ruleTester.run('require-mime-type-validation', requireMimeTypeValidation, {
   valid: [
-    'const x = 42;',
+    { name: 'a numeric constant handles no upload', code: 'const x = 42;' },
     'const flag = true;',
     'const x = 1',
     // Multer with a real type check.
-    { name: 'a fileFilter is supplied', code: `${MULTER}multer({ fileFilter: validateMime }).single('file')` },
+    {
+      name: 'a fileFilter is supplied',
+      code: `${MULTER}multer({ fileFilter: validateMime }).single('file')`,
+    },
     {
       code: `${MULTER}const upload = multer({ fileFilter: validateMime });\nupload.array('photos');`,
     },
@@ -72,7 +75,9 @@ ruleTester.run('require-mime-type-validation', requireMimeTypeValidation, {
     { code: `fetch('/api/files', { method: 'GET' });` },
     // `send`/`append` with too few arguments are not upload sinks.
     { code: `function go(input) { const f = input.files[0]; socket.send(); }` },
-    { code: `function go(input) { const f = input.files[0]; bag.append('k'); }` },
+    {
+      code: `function go(input) { const f = input.files[0]; bag.append('k'); }`,
+    },
     // One handler yields at most one finding.
     {
       code: `function go(input) {\n  const f = input.files[0];\n  if (f.type === 'image/png') {\n    body.append('a', f);\n    body.append('b', f);\n  }\n}`,
@@ -112,7 +117,9 @@ ruleTester.run('require-mime-type-validation', requireMimeTypeValidation, {
     // when the file is served back.
     {
       code: `if (file.type.startsWith('image/')) send(file);`,
-      errors: [{ messageId: 'prefixMimeCheck', data: { method: 'startsWith' } }],
+      errors: [
+        { messageId: 'prefixMimeCheck', data: { method: 'startsWith' } },
+      ],
     },
     {
       name: 'an includes() test on a media type is a substring test',

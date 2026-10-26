@@ -15,9 +15,18 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-credentials-in-query-params', noCredentialsInQueryParams, {
   valid: [
     // Safe URLs without credentials
-    { name: 'a URL with no credential in it', code: "const url = 'https://api.example.com/data'" },
-    { code: "const url = 'https://api.example.com?user=john'" },
-    { name: 'a fetch URL with no query string', code: "fetch('https://api.example.com/users')" },
+    {
+      name: 'a URL with no credential in it',
+      code: "const url = 'https://api.example.com/data'",
+    },
+    {
+      name: 'a user name in the query string is not a credential',
+      code: "const url = 'https://api.example.com?user=john'",
+    },
+    {
+      name: 'a fetch URL with no query string',
+      code: "fetch('https://api.example.com/users')",
+    },
     { code: 'const x = 1' },
 
     // --- A template is not a URL just because it contains "token=" ----------
@@ -29,7 +38,10 @@ ruleTester.run('no-credentials-in-query-params', noCredentialsInQueryParams, {
     {
       code: 'outputDebug(`Loaded session for ${store}: token=${maskToken(session.accessToken)}`)',
     },
-    { code: 'log(`user=${name} token=${redact(t)}`)' },
+    {
+      name: 'a log template with a redacted token value is not a URL',
+      code: 'log(`user=${name} token=${redact(t)}`)',
+    },
     // The prefix requirement now matches the Literal branch: a bare `token=`
     // with no `?` or `&` before it is not a query parameter.
     { code: 'const msg = `status: token=${x}`' },

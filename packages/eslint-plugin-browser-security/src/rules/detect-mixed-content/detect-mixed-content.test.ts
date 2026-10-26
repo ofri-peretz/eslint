@@ -21,7 +21,10 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('detect-mixed-content', detectMixedContent, {
   valid: [
-    'const x = 42;',
+    {
+      name: 'a numeric declaration loads no subresource',
+      code: 'const x = 42;',
+    },
     'const flag = true;',
     'function noop() {}',
     'const items = [];',
@@ -33,18 +36,27 @@ ruleTester.run('detect-mixed-content', detectMixedContent, {
     // `no-http-urls` reports each of them. They are silent HERE so that one
     // line does not draw two findings under two CWEs, which is what got this
     // rule demoted out of `recommended` in the first place.
-    { name: 'an http URL in a variable that never reaches the DOM', code: "const url = 'http://acmecorp.io/api'" },        // -> no-http-urls
-    { name: 'a fetch URL argument is left to require-https-only', code: "fetch('http://cdn.acmecorp.io/lib.js')" },      // -> require-https-only
-    { code: "const base = 'http://localhost.evil.com/api'" },// -> no-http-urls
-    { code: "const base = 'http://'" },                      // -> no-http-urls
-    { code: "const svg = 'http://www.w3.org/2000/svg'" },    // namespace: nobody
+    {
+      name: 'an http URL in a variable that never reaches the DOM',
+      code: "const url = 'http://acmecorp.io/api'",
+    }, // -> no-http-urls
+    {
+      name: 'a fetch URL argument is left to require-https-only',
+      code: "fetch('http://cdn.acmecorp.io/lib.js')",
+    }, // -> require-https-only
+    { code: "const base = 'http://localhost.evil.com/api'" }, // -> no-http-urls
+    { code: "const base = 'http://'" }, // -> no-http-urls
+    { code: "const svg = 'http://www.w3.org/2000/svg'" }, // namespace: nobody
     { code: "const {pathname, search} = new URL(p, 'http://e.c');" }, // discarded base: nobody
 
     // HTTPS subresources are the remediation.
     { code: "el.src = 'https://cdn.acmecorp.io/lib.js'" },
     { code: "importScripts('https://cdn.acmecorp.io/sw.js')" },
     // A loader chosen at RUNTIME names nothing that fetches a subresource.
-    { name: 'a loader chosen at RUNTIME names nothing that fetches a subresource', code: "self[load]('http://cdn.acmecorp.io/sw-helper.js')" },
+    {
+      name: 'a loader chosen at RUNTIME names nothing that fetches a subresource',
+      code: "self[load]('http://cdn.acmecorp.io/sw-helper.js')",
+    },
     { code: "el.setAttribute('src', 'https://cdn.acmecorp.io/a.js')" },
     // A relative subresource inherits the page scheme, so it cannot be mixed.
     { code: "el.src = '/static/lib.js'" },
@@ -262,29 +274,39 @@ const W3C_NAMESPACE_IDENTIFIERS = [
   'http://www.w3.org/2000/xmlns/',
 ];
 
-ruleTester.run('lock: W3C namespace identifiers are never mixed content', detectMixedContent, {
-  valid: [
-    // Each as a bare literal…
-    ...W3C_NAMESPACE_IDENTIFIERS.map((ns) => ({ code: `const NS = '${ns}';` })),
-    // …and as the createElementNS argument, the shape from the blog hit.
-    ...W3C_NAMESPACE_IDENTIFIERS.map((ns) => ({
-      code: `document.createElementNS('${ns}', 'svg');`,
-    })),
-    // The namespaced attribute setter takes the identifier first.
-    { code: "img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', url);" },
-    // A namespaceURI comparison is how code branches on document type.
-    { code: "if (svg.namespaceURI === 'http://www.w3.org/2000/svg') { serialize(svg); }" },
-  ],
-  invalid: [
-    // POSITIVE CONTROL — a genuine http:// subresource load still reports, so
-    // the valid cases above are quiet for the right reason and not because the
-    // suite lost its sink.
-    {
-      code: "el.src = 'http://cdn.acmecorp.io/analytics.js';",
-      errors: [{ messageId: 'violationDetected' }],
-    },
-  ],
-});
+ruleTester.run(
+  'lock: W3C namespace identifiers are never mixed content',
+  detectMixedContent,
+  {
+    valid: [
+      // Each as a bare literal…
+      ...W3C_NAMESPACE_IDENTIFIERS.map((ns) => ({
+        code: `const NS = '${ns}';`,
+      })),
+      // …and as the createElementNS argument, the shape from the blog hit.
+      ...W3C_NAMESPACE_IDENTIFIERS.map((ns) => ({
+        code: `document.createElementNS('${ns}', 'svg');`,
+      })),
+      // The namespaced attribute setter takes the identifier first.
+      {
+        code: "img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', url);",
+      },
+      // A namespaceURI comparison is how code branches on document type.
+      {
+        code: "if (svg.namespaceURI === 'http://www.w3.org/2000/svg') { serialize(svg); }",
+      },
+    ],
+    invalid: [
+      // POSITIVE CONTROL — a genuine http:// subresource load still reports, so
+      // the valid cases above are quiet for the right reason and not because the
+      // suite lost its sink.
+      {
+        code: "el.src = 'http://cdn.acmecorp.io/analytics.js';",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+    ],
+  },
+);
 
 /*
  * ── REGRESSION: `<link>` needs its `rel` read ────────────────────────────────
@@ -298,32 +320,38 @@ ruleTester.run('lock: W3C namespace identifiers are never mixed content', detect
  * would cost every canonical tag, while declining costs the family nothing
  * because `no-http-urls` still reports the cleartext URL.
  */
-jsxRuleTester.run('regression: link rel decides whether href loads', detectMixedContent, {
-  valid: [
-    { code: '<link rel="canonical" href="http://acmecorp.io/page" />' },
-    { code: '<link rel="alternate" type="application/rss+xml" href="http://acmecorp.io/feed.xml" />' },
-    { code: '<link rel="author" href="http://acmecorp.io/about" />' },
-    { code: '<link rel="license" href="http://acmecorp.io/license" />' },
-    // Unknowable rel.
-    { code: '<link rel={kind} href="http://cdn.acmecorp.io/a.css" />' },
-    // No rel at all: the link does nothing.
-    { code: '<link href="http://cdn.acmecorp.io/a.css" />' },
-    // A spread carrying the rel is equally unknowable.
-    { code: '<link {...rest} href="http://cdn.acmecorp.io/a.css" />' },
-  ],
-  invalid: [
-    {
-      code: '<link rel="stylesheet" href="http://cdn.acmecorp.io/a.css" />',
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    {
-      code: '<link rel="manifest" href="http://cdn.acmecorp.io/app.webmanifest" />',
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    // Case-insensitive token match, as the HTML spec requires.
-    {
-      code: '<link rel="StyleSheet" href="http://cdn.acmecorp.io/a.css" />',
-      errors: [{ messageId: 'violationDetected' }],
-    },
-  ],
-});
+jsxRuleTester.run(
+  'regression: link rel decides whether href loads',
+  detectMixedContent,
+  {
+    valid: [
+      { code: '<link rel="canonical" href="http://acmecorp.io/page" />' },
+      {
+        code: '<link rel="alternate" type="application/rss+xml" href="http://acmecorp.io/feed.xml" />',
+      },
+      { code: '<link rel="author" href="http://acmecorp.io/about" />' },
+      { code: '<link rel="license" href="http://acmecorp.io/license" />' },
+      // Unknowable rel.
+      { code: '<link rel={kind} href="http://cdn.acmecorp.io/a.css" />' },
+      // No rel at all: the link does nothing.
+      { code: '<link href="http://cdn.acmecorp.io/a.css" />' },
+      // A spread carrying the rel is equally unknowable.
+      { code: '<link {...rest} href="http://cdn.acmecorp.io/a.css" />' },
+    ],
+    invalid: [
+      {
+        code: '<link rel="stylesheet" href="http://cdn.acmecorp.io/a.css" />',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        code: '<link rel="manifest" href="http://cdn.acmecorp.io/app.webmanifest" />',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // Case-insensitive token match, as the HTML spec requires.
+      {
+        code: '<link rel="StyleSheet" href="http://cdn.acmecorp.io/a.css" />',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+    ],
+  },
+);

@@ -68,6 +68,9 @@
     "@google/genai": "^1.0.0 || ^2.0.0"
   },
   "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    },
     "@google/genai": {
       "optional": true
     }

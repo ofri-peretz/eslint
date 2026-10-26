@@ -12,7 +12,11 @@ import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
-type MessageIds = 'unreadableIIFE' | 'suggestNamedFunction' | 'suggestBlockScope' | 'complexIIFE';
+type MessageIds =
+  | 'unreadableIIFE'
+  | 'suggestNamedFunction'
+  | 'suggestBlockScope'
+  | 'complexIIFE';
 
 export interface Options {
   /** Maximum number of statements allowed in IIFE */
@@ -28,6 +32,10 @@ type RuleOptions = [Options?];
 export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
   name: 'no-unreadable-iife',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'unicorn/no-unreadable-iife',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/no-unreadable-iife.md',
@@ -42,7 +50,8 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
         description: 'Complex IIFE reduces code readability',
         severity: 'MEDIUM',
         fix: 'Extract to named function or simplify the IIFE structure',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Glossary/IIFE',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Glossary/IIFE',
       }),
       suggestNamedFunction: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -50,7 +59,8 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
         description: 'Extract complex logic to named function',
         severity: 'LOW',
         fix: 'function processData() { /* logic */ } processData();',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Functions',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Functions',
       }),
       suggestBlockScope: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -58,7 +68,8 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
         description: 'Use block scope instead of IIFE',
         severity: 'LOW',
         fix: '{ const isolated = value; /* logic */ }',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/block',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/block',
       }),
       complexIIFE: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -66,7 +77,8 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
         description: 'Complex IIFE detected',
         severity: 'LOW',
         fix: 'Simplify or extract to separate function',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Glossary/IIFE',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Glossary/IIFE',
       }),
     },
     schema: [
@@ -94,13 +106,10 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ maxStatements: 3, maxDepth: 2, allowReturningIIFE: true }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const {
-      maxStatements = 3,
-      maxDepth = 2,
-      allowReturningIIFE = true
-    } = options || {};
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let maxStatements: number;
+    let maxDepth: number;
+    let allowReturningIIFE: boolean;
 
     // oxlint-disable-next-line consistent-function-scoping
     function getIifeFunctionNode(
@@ -109,15 +118,19 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
       // Check if this is a call expression with a function expression or arrow function
       // Note: In typescript-eslint AST, parentheses don't create a separate node type,
       // so (function(){})() will have callee.type === 'FunctionExpression' directly
-      if (node.callee.type === 'FunctionExpression' ||
-          node.callee.type === 'ArrowFunctionExpression') {
+      if (
+        node.callee.type === 'FunctionExpression' ||
+        node.callee.type === 'ArrowFunctionExpression'
+      ) {
         return node.callee;
       }
 
       // Check for unary operator IIFEs like (!function(){})(), (+function(){})(), (void function(){})()
-      if (node.callee.type === 'UnaryExpression' &&
-          (node.callee.argument.type === 'FunctionExpression' ||
-           node.callee.argument.type === 'ArrowFunctionExpression')) {
+      if (
+        node.callee.type === 'UnaryExpression' &&
+        (node.callee.argument.type === 'FunctionExpression' ||
+          node.callee.argument.type === 'ArrowFunctionExpression')
+      ) {
         return node.callee.argument;
       }
 
@@ -125,7 +138,9 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
     }
 
     // oxlint-disable-next-line consistent-function-scoping
-    function countStatements(body: TSESTree.BlockStatement | TSESTree.Expression): number {
+    function countStatements(
+      body: TSESTree.BlockStatement | TSESTree.Expression,
+    ): number {
       if (body.type === 'BlockStatement') {
         return body.body.length;
       }
@@ -135,16 +150,35 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
     function calculateDepth(node: TSESTree.Node): number {
       // AST-based nesting depth calculation — no regex needed
       const CONTROL_FLOW_TYPES = new Set([
-        'IfStatement', 'ForStatement', 'ForInStatement', 'ForOfStatement',
-        'WhileStatement', 'DoWhileStatement', 'SwitchStatement', 'TryStatement',
+        'IfStatement',
+        'ForStatement',
+        'ForInStatement',
+        'ForOfStatement',
+        'WhileStatement',
+        'DoWhileStatement',
+        'SwitchStatement',
+        'TryStatement',
       ]);
 
       // Non-AST keys that should never be traversed
-      const SKIP_KEYS = new Set(['parent', 'loc', 'range', 'tokens', 'comments', 'leadingComments', 'trailingComments']);
+      const SKIP_KEYS = new Set([
+        'parent',
+        'loc',
+        'range',
+        'tokens',
+        'comments',
+        'leadingComments',
+        'trailingComments',
+      ]);
 
       // oxlint-disable-next-line consistent-function-scoping
       function isASTNode(value: unknown): value is TSESTree.Node {
-        return !!value && typeof value === 'object' && 'type' in value && 'loc' in value;
+        return (
+          !!value &&
+          typeof value === 'object' &&
+          'type' in value &&
+          'loc' in value
+        );
       }
 
       let maxNestingDepth = 0;
@@ -157,7 +191,9 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
         Object.entries(current).forEach(([key, value]) => {
           if (SKIP_KEYS.has(key)) return;
           if (Array.isArray(value)) {
-            value.forEach(item => { if (isASTNode(item)) walk(item, newDepth); });
+            value.forEach((item) => {
+              if (isASTNode(item)) walk(item, newDepth);
+            });
           } else if (isASTNode(value)) {
             walk(value, newDepth);
           }
@@ -168,7 +204,9 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
       return maxNestingDepth;
     }
 
-    function hasComplexLogic(body: TSESTree.BlockStatement | TSESTree.Expression): boolean {
+    function hasComplexLogic(
+      body: TSESTree.BlockStatement | TSESTree.Expression,
+    ): boolean {
       if (body.type !== 'BlockStatement') {
         return false;
       }
@@ -180,21 +218,26 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
 
       // Check for complex constructs
       for (const statement of body.body) {
-        if (statement.type === 'IfStatement' ||
-            statement.type === 'ForStatement' ||
-            statement.type === 'WhileStatement' ||
-            statement.type === 'SwitchStatement' ||
-            statement.type === 'TryStatement') {
+        if (
+          statement.type === 'IfStatement' ||
+          statement.type === 'ForStatement' ||
+          statement.type === 'WhileStatement' ||
+          statement.type === 'SwitchStatement' ||
+          statement.type === 'TryStatement'
+        ) {
           return true;
         }
 
         // Check for nested function declarations
-        if (statement.type === 'FunctionDeclaration' ||
-            statement.type === 'VariableDeclaration' &&
-            statement.declarations.some((decl: TSESTree.VariableDeclarator) =>
-              decl.init?.type === 'FunctionExpression' ||
-              decl.init?.type === 'ArrowFunctionExpression'
-            )) {
+        if (
+          statement.type === 'FunctionDeclaration' ||
+          (statement.type === 'VariableDeclaration' &&
+            statement.declarations.some(
+              (decl: TSESTree.VariableDeclarator) =>
+                decl.init?.type === 'FunctionExpression' ||
+                decl.init?.type === 'ArrowFunctionExpression',
+            ))
+        ) {
           return true;
         }
       }
@@ -204,14 +247,18 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
 
     function analyzeIIFE(
       node: TSESTree.CallExpression,
-      functionNode: TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression,
+      functionNode:
+        TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression,
     ) {
       const body = functionNode.body;
       const statementCount = countStatements(body);
       const nestingDepth = calculateDepth(body);
       const hasComplex = hasComplexLogic(body);
-      const returnsValue = body.type === 'BlockStatement' &&
-                          body.body.some((stmt: TSESTree.Statement) => stmt.type === 'ReturnStatement');
+      const returnsValue =
+        body.type === 'BlockStatement' &&
+        body.body.some(
+          (stmt: TSESTree.Statement) => stmt.type === 'ReturnStatement',
+        );
 
       // Skip IIFEs that return values if allowed
       if (allowReturningIIFE && returnsValue && !hasComplex) {
@@ -222,7 +269,9 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
       const issues = [];
 
       if (statementCount > maxStatements) {
-        issues.push(`too many statements (${statementCount} > ${maxStatements})`);
+        issues.push(
+          `too many statements (${statementCount} > ${maxStatements})`,
+        );
       }
 
       if (nestingDepth > maxDepth) {
@@ -245,20 +294,28 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
             issues: issues.join(', '),
             statementCount,
             nestingDepth,
-            suggestion: hasComplex ? 'extract to named function' : 'simplify or use block scope',
+            suggestion: hasComplex
+              ? 'extract to named function'
+              : 'simplify or use block scope',
           },
           suggest: [
             {
               messageId: 'suggestNamedFunction',
               fix(fixer: TSESLint.RuleFixer) {
                 // Complex fix - would need to generate a function name and hoist it
-                return fixer.insertTextBefore(node, '// TODO: Extract complex IIFE to named function\n');
+                return fixer.insertTextBefore(
+                  node,
+                  '// TODO: Extract complex IIFE to named function\n',
+                );
               },
             },
             {
               messageId: 'suggestBlockScope',
               fix(fixer: TSESLint.RuleFixer) {
-                return fixer.insertTextBefore(node, '// TODO: Consider using block scope { const x = ...; }\n');
+                return fixer.insertTextBefore(
+                  node,
+                  '// TODO: Consider using block scope { const x = ...; }\n',
+                );
               },
             },
           ],
@@ -267,6 +324,14 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({
+          maxStatements = 3,
+          maxDepth = 2,
+          allowReturningIIFE = true,
+        } = options || {});
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const functionNode = getIifeFunctionNode(node);
         if (functionNode) {

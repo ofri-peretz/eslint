@@ -53,6 +53,7 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
     },
     // Safe: using variable (not direct event.data)
     {
+      name: 'a sanitized value held in a variable is written to innerHTML',
       code: `
         const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {

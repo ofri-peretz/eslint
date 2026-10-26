@@ -70,6 +70,7 @@ export const maxParameters = createRule<RuleOptions, MessageIds>({
   // decision, not something anyone can refactor.
   skipGeneratedFiles: true,
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/max-parameters.md',
@@ -143,15 +144,12 @@ export const maxParameters = createRule<RuleOptions, MessageIds>({
       ignoreOverriddenMethods: false,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      max = 4,
-      ignoreConstructors = false,
-      // ignoreOverriddenMethods = false, // Not used
-    }: Options = options || {};
+    let max: number;
+    let ignoreConstructors: boolean;
 
     /**
      * Check function parameters
@@ -211,6 +209,14 @@ export const maxParameters = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          max = 4,
+          ignoreConstructors = false,
+          // ignoreOverriddenMethods = false, // Not used
+        } = options || {});
+      },
       FunctionDeclaration: checkFunction,
       FunctionExpression: checkFunction,
       ArrowFunctionExpression: checkFunction,

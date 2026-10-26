@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { resolve } from 'path';
 
 /**
  * Vitest configuration for eslint-devkit package
@@ -22,6 +23,15 @@ import { defineConfig } from 'vitest/config';
  */
 export default defineConfig({
   root: __dirname,
+  resolve: {
+    alias: {
+      // Every rule test runs on ESLint and on oxlint: vitest.dual-rule-tester.ts.
+      '@typescript-eslint/rule-tester': resolve(
+        __dirname,
+        '../../vitest.dual-rule-tester.ts',
+      ),
+    },
+  },
   plugins: [],
   test: {
     // Packaging test, not a unit test: it reads this package's own dist/, so

@@ -38,6 +38,7 @@ type MessageIds = 'promptWithoutFlag';
 export const noPromptWithoutFlag = createRule<[], MessageIds>({
   name: 'no-prompt-without-flag',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-cli-floor/docs/rules/no-prompt-without-flag.md',
@@ -59,11 +60,15 @@ export const noPromptWithoutFlag = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    if (!fileUsesCliHost(context.sourceCode.ast)) return {};
-    const { sourceCode } = context;
+  createOnce(context) {
+    let sourceCode: typeof context.sourceCode;
 
     return {
+      before() {
+        if (!fileUsesCliHost(context.sourceCode.ast)) return false;
+        ({ sourceCode } = context);
+        return true;
+      },
       CallExpression(node): void {
         if (!isPromptCall(node, sourceCode.getScope(node))) return;
         const model = programModel(sourceCode);

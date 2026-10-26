@@ -92,6 +92,7 @@ const DEFAULT_ANALYTICS_METHODS = ['track', 'identify', 'page'];
 export const noTrackingWithoutConsent = createRule<RuleOptions, MessageIds>({
   name: 'no-tracking-without-consent',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-tracking-without-consent.md',
@@ -140,13 +141,9 @@ export const noTrackingWithoutConsent = createRule<RuleOptions, MessageIds>({
       analyticsMethods: DEFAULT_ANALYTICS_METHODS,
     },
   ],
-  create(context, [options = {}]) {
-    const {
-      consentIdentifiers = DEFAULT_CONSENT_IDENTIFIERS,
-      analyticsMethods = DEFAULT_ANALYTICS_METHODS,
-    } = options as Options;
-    const words = consentIdentifiers.map(normalize);
-    const methods = analyticsMethods;
+  createOnce(context, currentOptions) {
+    let words: string[];
+    let methods: string[];
 
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
@@ -332,6 +329,15 @@ export const noTrackingWithoutConsent = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const {
+          consentIdentifiers = DEFAULT_CONSENT_IDENTIFIERS,
+          analyticsMethods = DEFAULT_ANALYTICS_METHODS,
+        } = options as Options;
+        words = consentIdentifiers.map(normalize);
+        methods = analyticsMethods;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         // The sink surface is SHARED with `no-sensitive-data-in-analytics`.
         // A complementary pair with different sink lists is not complementary,

@@ -1,13 +1,18 @@
 import { source } from '@/lib/source';
 import { DocsLayout } from 'fumadocs-ui/layouts/docs';
 import { baseOptions } from '@/lib/layout.shared';
-import { Rocket, Shield, Layers } from 'lucide-react';
+import { Rocket, Shield, Layers, Zap } from 'lucide-react';
 
 // Define colored icons for each pillar - sized to fit sidebar tabs
 const pillarIcons: Record<string, React.ReactNode> = {
   'getting-started': (
     <div className="flex size-5 shrink-0 items-center justify-center rounded bg-linear-to-t from-blue-600 to-blue-500 text-white">
       <Rocket className="size-3.5" />
+    </div>
+  ),
+  oxlint: (
+    <div className="flex size-5 shrink-0 items-center justify-center rounded bg-linear-to-t from-violet-600 to-violet-500 text-white">
+      <Zap className="size-3.5" />
     </div>
   ),
   security: (
@@ -36,6 +41,7 @@ export default function Layout({ children }: LayoutProps<'/docs'>) {
             // Map display names to folder slugs
             const nameToSlug: Record<string, string> = {
               'getting started': 'getting-started',
+              'oxlint / vite+': 'oxlint',
               'security': 'security',
               'quality & architecture': 'quality',
             };

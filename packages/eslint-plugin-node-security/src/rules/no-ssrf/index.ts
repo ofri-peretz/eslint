@@ -435,6 +435,7 @@ function hasValidationBefore(node: TSESTree.CallExpression): boolean {
 export const noSsrf = createRule<RuleOptions, MessageIds>({
   name: 'no-ssrf',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-ssrf.md',
@@ -476,22 +477,27 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = true, reportUnresolvedUrls = false }: Options =
-      options || {};
-    const carriesUntrustedUrl = makeCarriesUntrustedUrl(
-      context.sourceCode,
-      reportUnresolvedUrls,
-    );
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-    if (isTestFile) return {};
+    let carriesUntrustedUrl: (node: TSESTree.Node) => boolean;
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = true, reportUnresolvedUrls = false }: Options =
+          options || {};
+        carriesUntrustedUrl = makeCarriesUntrustedUrl(
+          context.sourceCode,
+          reportUnresolvedUrls,
+        );
+
+        const filename = context.filename;
+        const isTestFile = allowInTests && isTestFilePath(filename);
+        if (isTestFile) return false;
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         let isHttpCall = false;
 

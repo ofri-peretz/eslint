@@ -48,6 +48,7 @@ describe('no-missing-authentication', () => {
             code: 'app.get("/api/users", authenticate(), (req, res) => {});',
           },
           {
+            name: 'a route guarded by an auth middleware is authenticated',
             code: 'app.post("/api/users", auth, (req, res) => {});',
           },
           {

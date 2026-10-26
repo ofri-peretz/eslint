@@ -11,7 +11,11 @@
  * type-level requirement and silently masks consumer omissions.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 
 type MessageIds = 'defaultTestId';
 type RuleOptions = [];
@@ -19,10 +23,12 @@ type RuleOptions = [];
 export const noDefaultTestId = createRule<RuleOptions, MessageIds>({
   name: 'no-default-test-id',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-default-test-id.md',
-      description: 'data-testid must be consumer-provided — no runtime default value (R5)',
+      description:
+        'data-testid must be consumer-provided — no runtime default value (R5)',
     },
     fixable: 'code',
     schema: [],
@@ -30,19 +36,22 @@ export const noDefaultTestId = createRule<RuleOptions, MessageIds>({
       defaultTestId: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'data-testid default value',
-        description: 'data-testid has a runtime default — consumer must provide it (R5)',
+        description:
+          'data-testid has a runtime default — consumer must provide it (R5)',
         severity: 'HIGH',
         fix: 'Remove the default. Require data-testid at the type level and let the consumer pass it.',
-        documentationLink: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-default-test-id.md',
+        documentationLink:
+          'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-default-test-id.md',
       }),
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       Property(node: TSESTree.Property) {
         // Match `"data-testid": x = "..."` in destructuring patterns
-        if (node.key.type !== 'Literal' || node.key.value !== 'data-testid') return;
+        if (node.key.type !== 'Literal' || node.key.value !== 'data-testid')
+          return;
         if (node.value.type !== 'AssignmentPattern') return;
         const assignment = node.value;
         context.report({

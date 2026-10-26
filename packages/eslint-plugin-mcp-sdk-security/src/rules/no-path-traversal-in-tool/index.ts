@@ -160,6 +160,7 @@ function pathExport(
 export const noPathTraversalInTool = createRule<[], MessageIds>({
   name: 'no-path-traversal-in-tool',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mcp-sdk-security/docs/rules/no-path-traversal-in-tool.md',
@@ -187,17 +188,22 @@ export const noPathTraversalInTool = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
-    const resolve = valueResolverFor(context);
-    const handlers = createHandlerCollector(context, resolve, 'arguments');
-    const candidates: Array<{
+  createOnce(context) {
+    let handlers: ReturnType<typeof createHandlerCollector>;
+    let candidates: {
       call: TSESTree.CallExpression;
       arg: TSESTree.Node;
       sink: string;
-    }> = [];
+    }[];
 
     return {
+      before() {
+        if (!fileUsesMcpSdk(context.sourceCode.ast)) return false;
+        const resolve = valueResolverFor(context);
+        handlers = createHandlerCollector(context, resolve, 'arguments');
+        candidates = [];
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         handlers.visit(node);
         const sink = fsExport(node.callee, context.sourceCode.getScope(node));

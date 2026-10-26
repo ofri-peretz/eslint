@@ -39,6 +39,7 @@ type RuleOptions = [Options?];
 export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
   name: 'no-dynamic-require',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-dynamic-require.md',
@@ -96,22 +97,11 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const { allowContexts = [], allowPatterns = [] } = options || {};
-
-    const filename = context.filename || '';
-
-    // Compiled once per file rather than once per `require()`: a rule that
-    // rebuilds a RegExp inside a visitor pays for it on every node.
-    //
-    // `compileUserPatterns`, not a bare `new RegExp`. A user pattern reaches
-    // this line, and a bare constructor has two measured failure modes here —
-    // `[` throws "Invalid regular expression" out of `create()`, killing the
-    // whole lint run rather than just this rule, and `(a+)+$` takes tens of
-    // seconds on a single file. The devkit helper degrades both to a plain
-    // substring match. `no-timing-unsafe-compare` learned this first.
-    const allowed = compileUserPatterns(allowPatterns, '');
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowContexts: ('test' | 'config' | 'build' | 'runtime')[];
+    let allowPatterns: string[];
+    let filename: string;
+    let allowed: ReturnType<typeof compileUserPatterns>;
 
     function isInAllowedContext(): boolean {
       if (
@@ -165,6 +155,23 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({ allowContexts = [], allowPatterns = [] } = options || {});
+
+        filename = context.filename || '';
+
+        // Compiled once per file rather than once per `require()`: a rule that
+        // rebuilds a RegExp inside a visitor pays for it on every node.
+        //
+        // `compileUserPatterns`, not a bare `new RegExp`. A user pattern reaches
+        // this line, and a bare constructor has two measured failure modes here —
+        // `[` throws "Invalid regular expression" out of `create()`, killing the
+        // whole lint run rather than just this rule, and `(a+)+$` takes tens of
+        // seconds on a single file. The devkit helper degrades both to a plain
+        // substring match. `no-timing-unsafe-compare` learned this first.
+        allowed = compileUserPatterns(allowPatterns, '');
+      },
       CallExpression(node: TSESTree.CallExpression) {
         // The loader is whatever Node hands you, not the six letters `require`:
         // a `module.createRequire()` binding, `module.require`,

@@ -126,6 +126,7 @@ function mountsSerializer(decorators: readonly TSESTree.Decorator[]): boolean {
 export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
   name: 'no-res-bypass-serialization',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/no-res-bypass-serialization.md',
@@ -159,13 +160,9 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context, [options = {}]) {
-    // Registering no visitors is both the gate and the cheap path: a file
-    // that does not use this SDK does no work at all.
-    if (!fileUsesNestjs(context.sourceCode.ast)) return {};
-
-    const { allowInTests = true, assumeGlobalSerializer = false } = options;
-    if (allowInTests && isTestFilePath(context.filename)) return {};
+  createOnce(context, currentOptions) {
+    let allowInTests: boolean;
+    let assumeGlobalSerializer: boolean;
 
     /**
      * The identifier bound to a non-passthrough `@Res()`, if the handler has
@@ -393,6 +390,16 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Registering no visitors is both the gate and the cheap path: a file
+        // that does not use this SDK does no work at all.
+        if (!fileUsesNestjs(context.sourceCode.ast)) return false;
+
+        ({ allowInTests = true, assumeGlobalSerializer = false } = options);
+        if (allowInTests && isTestFilePath(context.filename)) return false;
+        return true;
+      },
       MethodDefinition(node: TSESTree.MethodDefinition) {
         if (!isRouteHandler(node)) return;
         // A MethodDefinition is always a ClassBody child, so this is non-null.

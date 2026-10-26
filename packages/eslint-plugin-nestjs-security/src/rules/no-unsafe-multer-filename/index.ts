@@ -147,6 +147,7 @@ function readsOriginalNameRaw(
 export const noUnsafeMulterFilename = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-multer-filename',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/no-unsafe-multer-filename.md',
@@ -183,17 +184,10 @@ export const noUnsafeMulterFilename = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    // Registering no visitors is both the gate and the cheap path: a file
-    // that does not use this SDK does no work at all.
-    if (!fileUsesNestjs(context.sourceCode.ast)) return {};
-
-    const { allowInTests = true } = options;
-    if (allowInTests && isTestFilePath(context.filename)) return {};
-
     /** The name a handler parameter was given, or null when it is destructured. */
     function paramName(param: TSESTree.Parameter | undefined): string | null {
       return param?.type === AST_NODE_TYPES.Identifier ? param.name : null;
@@ -288,6 +282,16 @@ export const noUnsafeMulterFilename = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Registering no visitors is both the gate and the cheap path: a file
+        // that does not use this SDK does no work at all.
+        if (!fileUsesNestjs(context.sourceCode.ast)) return false;
+
+        const { allowInTests = true } = options;
+        if (allowInTests && isTestFilePath(context.filename)) return false;
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         // `diskStorage({…})` and `multer.diskStorage({…})` are the same call.
         const callee = node.callee;

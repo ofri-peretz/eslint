@@ -7,12 +7,16 @@
 /**
  * ESLint Rule: no-danger-with-children
  * Prevent using both children and dangerouslySetInnerHTML
- * 
+ *
  * Bug Prevention: React will throw an error when both are present
  * @see https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/no-danger-with-children.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'dangerWithChildren';
@@ -22,6 +26,10 @@ type RuleOptions = [];
 export const noDangerWithChildren = createRule<RuleOptions, MessageIds>({
   name: 'no-danger-with-children',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/no-danger-with-children',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-danger-with-children.md',
@@ -31,22 +39,26 @@ export const noDangerWithChildren = createRule<RuleOptions, MessageIds>({
       dangerWithChildren: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'dangerouslySetInnerHTML with Children',
-        description: 'Cannot use children and dangerouslySetInnerHTML at the same time - React will throw an error',
+        description:
+          'Cannot use children and dangerouslySetInnerHTML at the same time - React will throw an error',
         severity: 'CRITICAL',
         fix: 'Remove either children or dangerouslySetInnerHTML',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/no-danger-with-children.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/no-danger-with-children.md',
       }),
     },
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    function hasDangerouslySetInnerHTML(node: TSESTree.JSXOpeningElement): boolean {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    function hasDangerouslySetInnerHTML(
+      node: TSESTree.JSXOpeningElement,
+    ): boolean {
       return node.attributes.some(
         (attr): attr is TSESTree.JSXAttribute =>
           attr.type === 'JSXAttribute' &&
           attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'dangerouslySetInnerHTML'
+          attr.name.name === 'dangerouslySetInnerHTML',
       );
     }
 
@@ -55,14 +67,14 @@ export const noDangerWithChildren = createRule<RuleOptions, MessageIds>({
         (attr): attr is TSESTree.JSXAttribute =>
           attr.type === 'JSXAttribute' &&
           attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'children'
+          attr.name.name === 'children',
       );
     }
 
     // oxlint-disable-next-line consistent-function-scoping
     function hasJSXChildren(node: TSESTree.JSXElement): boolean {
       // Check if there are any meaningful children
-      return node.children.some(child => {
+      return node.children.some((child) => {
         if (child.type === 'JSXText') {
           // Only count non-whitespace text
           return !/^\s*$/.test(child.value);
@@ -79,13 +91,14 @@ export const noDangerWithChildren = createRule<RuleOptions, MessageIds>({
     return {
       JSXElement(node: TSESTree.JSXElement) {
         const openingElement = node.openingElement;
-        
+
         if (!hasDangerouslySetInnerHTML(openingElement)) {
           return;
         }
 
         // Check for children prop or JSX children
-        const hasChildren = hasChildrenProp(openingElement) || hasJSXChildren(node);
+        const hasChildren =
+          hasChildrenProp(openingElement) || hasJSXChildren(node);
 
         if (hasChildren) {
           context.report({
@@ -98,7 +111,11 @@ export const noDangerWithChildren = createRule<RuleOptions, MessageIds>({
       // Also check React.createElement() calls
       CallExpression(node: TSESTree.CallExpression) {
         if (node.callee.type !== 'MemberExpression') return;
-        if (node.callee.object.type !== 'Identifier' || node.callee.object.name !== 'React') return;
+        if (
+          node.callee.object.type !== 'Identifier' ||
+          node.callee.object.name !== 'React'
+        )
+          return;
         // `React['createElement'](…)` builds the same element.
         if (propertyName(node.callee) !== 'createElement') return;
 

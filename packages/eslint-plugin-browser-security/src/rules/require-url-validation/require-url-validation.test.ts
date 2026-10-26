@@ -18,11 +18,16 @@ ruleTester.run('require-url-validation', requireUrlValidation, {
   valid: [
     // Safe static URLs written inline.
     { name: 'a literal URL', code: "window.open('https://example.com')" },
-    { code: `${NEXT_ROUTER}const router = useRouter(); router.push('/dashboard');` },
+    {
+      code: `${NEXT_ROUTER}const router = useRouter(); router.push('/dashboard');`,
+    },
 
     // A hardcoded URL held in a binding. The OLD rule reported this because
     // the argument was an Identifier — the spelling was the whole verdict.
-    { code: 'const target = buildUrl(); window.open(target);' },
+    {
+      name: 'a URL built by a helper call is not user-controlled input',
+      code: 'const target = buildUrl(); window.open(target);',
+    },
     {
       code: `${NEXT_ROUTER}const SUPPORT = 'https://help.example.com'; const router = useRouter(); router.push(SUPPORT);`,
     },
@@ -72,7 +77,10 @@ ruleTester.run('require-url-validation', requireUrlValidation, {
     { code: 'window.close(url);' },
     { code: 'open(url);' },
     { code: 'window.open();' },
-    { name: 'non-navigation code that shares a shape', code: 'window[go](location.hash);' },
+    {
+      name: 'non-navigation code that shares a shape',
+      code: 'window[go](location.hash);',
+    },
     { code: "const url = 'https://example.com'" },
     { code: 'const x = 1' },
   ],

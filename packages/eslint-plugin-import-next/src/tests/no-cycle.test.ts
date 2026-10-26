@@ -6,17 +6,22 @@ import { describe, afterAll, vi, beforeAll, it } from 'vitest';
 
 // Use vi.hoisted to ensure mocks are available in factory
 const mocks = vi.hoisted(() => {
-    return {
-        detectCycleFromImport: vi.fn(),
-        resolveImportPath: vi.fn(),
-        isBarrelExport: vi.fn().mockReturnValue(false),
-    };
+  return {
+    detectCycleFromImport: vi.fn(),
+    resolveImportPath: vi.fn(),
+    isBarrelExport: vi.fn().mockReturnValue(false),
+  };
 });
 
 // Mock the devkit
-vi.mock('@interlace/eslint-devkit', () => {
+vi.mock('@interlace/eslint-devkit', async () => {
+  // The real creator: a createOnce rule only has an ESLint `create` once it
+  // has been through it.
+  const { createRule } = await vi.importActual<
+    typeof import('@interlace/eslint-devkit')
+  >('@interlace/eslint-devkit');
   return {
-    createRule: (data: any) => data, // eslint-disable-line @typescript-eslint/no-explicit-any
+    createRule,
     formatLLMMessage: () => 'Mocked cycle detection message', // Must return string
     MessageIcons: { ARCHITECTURE: 'ARCHITECTURE', WARNING: 'WARNING' },
     formatCycleDisplay: () => 'cycle',
@@ -82,32 +87,41 @@ const { detectCycleFromImport, resolveImportPath, isBarrelExport } = mocks;
 
 // Set up mocks before all tests run
 beforeAll(() => {
-    // detectCycleFromImport is called with (sourceFile, targetFile, options)
-    // It should return cycles that include the sourceFile
-    detectCycleFromImport.mockImplementation((sourceFile: string, targetFile: string) => {
-        if (!sourceFile || !targetFile) return [];
-        if (sourceFile.includes('cycle-a') && targetFile.includes('cycle-b')) {
-            return [['/path/to/cycle-a.ts', '/path/to/cycle-b.ts', '/path/to/cycle-a.ts']];
-        }
-        if (sourceFile.includes('cycle-complex') && targetFile.includes('dep1')) {
-             return [
-                 ['/path/to/cycle-complex.ts', '/path/to/dep1.ts', '/path/to/cycle-complex.ts'],
-             ];
-        }
-        return [];
-    });
+  // detectCycleFromImport is called with (sourceFile, targetFile, options)
+  // It should return cycles that include the sourceFile
+  detectCycleFromImport.mockImplementation(
+    (sourceFile: string, targetFile: string) => {
+      if (!sourceFile || !targetFile) return [];
+      if (sourceFile.includes('cycle-a') && targetFile.includes('cycle-b')) {
+        return [
+          ['/path/to/cycle-a.ts', '/path/to/cycle-b.ts', '/path/to/cycle-a.ts'],
+        ];
+      }
+      if (sourceFile.includes('cycle-complex') && targetFile.includes('dep1')) {
+        return [
+          [
+            '/path/to/cycle-complex.ts',
+            '/path/to/dep1.ts',
+            '/path/to/cycle-complex.ts',
+          ],
+        ];
+      }
+      return [];
+    },
+  );
 
-    resolveImportPath.mockImplementation((source: string) => {
-        if (source === './cycle-b') return '/path/to/cycle-b.ts';
-        if (source === './dep1') return '/path/to/dep1.ts';
-        return null;
-    });
-    
-    isBarrelExport.mockReturnValue(false);
+  resolveImportPath.mockImplementation((source: string) => {
+    if (source === './cycle-b') return '/path/to/cycle-b.ts';
+    if (source === './dep1') return '/path/to/dep1.ts';
+    return null;
+  });
+
+  isBarrelExport.mockReturnValue(false);
 });
 
 // ruleTester.run() creates its own describe/it blocks - don't nest inside it()
-ruleTester.run('no-cycle', noCycle as any, { // eslint-disable-line @typescript-eslint/no-explicit-any
+ruleTester.run('no-cycle', noCycle as any, {
+  // eslint-disable-line @typescript-eslint/no-explicit-any
   valid: [
     {
       name: 'a scoped package, which cannot cycle back into this file',
@@ -115,15 +129,15 @@ ruleTester.run('no-cycle', noCycle as any, { // eslint-disable-line @typescript-
       filename: '/path/to/no-cycle.ts',
     },
     {
-        name: 'an import that leads nowhere back',
-        code: `import foo from './foo';`,
-        filename: '/path/to/no-cycle.ts' 
+      name: 'an import that leads nowhere back',
+      code: `import foo from './foo';`,
+      filename: '/path/to/no-cycle.ts',
     },
-    { 
-        code: `import foo from 'external';`,
-        filename: '/path/to/no-cycle.ts'
-        // External imports don't cause cycles, so no special options needed
-    }
+    {
+      code: `import foo from 'external';`,
+      filename: '/path/to/no-cycle.ts',
+      // External imports don't cause cycles, so no special options needed
+    },
   ],
 
   invalid: [
@@ -131,12 +145,12 @@ ruleTester.run('no-cycle', noCycle as any, { // eslint-disable-line @typescript-
       name: 'two modules that import each other',
       code: `import b from './cycle-b';`,
       filename: '/path/to/cycle-a.ts',
-      errors: [{ messageId: 'moduleSplit' }] 
+      errors: [{ messageId: 'moduleSplit' }],
     },
     {
       code: `import dep1 from './dep1';`,
       filename: '/path/to/cycle-complex.ts',
-      errors: [{ messageId: 'moduleSplit' }] 
-    }
+      errors: [{ messageId: 'moduleSplit' }],
+    },
   ],
 });

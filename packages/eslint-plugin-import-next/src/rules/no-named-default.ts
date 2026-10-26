@@ -11,7 +11,11 @@
  * @see https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-named-default.md
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 
 type MessageIds = 'namedDefault';
 
@@ -20,6 +24,10 @@ type RuleOptions = [];
 export const noNamedDefault = createRule<RuleOptions, MessageIds>({
   name: 'no-named-default',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/no-named-default',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-named-default.md',
@@ -43,7 +51,7 @@ export const noNamedDefault = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         node.specifiers.forEach((spec: TSESTree.ImportClause) => {

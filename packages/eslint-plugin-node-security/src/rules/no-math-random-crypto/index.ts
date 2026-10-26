@@ -437,6 +437,7 @@ const CRYPTO_FUNCTION_PATTERNS = [
 export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
   name: 'no-math-random-crypto',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-math-random-crypto.md',
@@ -538,32 +539,20 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
       correlationIdWords: [...NON_SECURITY_ID_QUALIFIERS],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      allowInTests = true,
-      secretWords = CRYPTO_WORDS,
-      correlationIdWords = [...NON_SECURITY_ID_QUALIFIERS],
-    } = options as Options;
-
+    let vocab: Vocabulary;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let isTestFile: boolean;
     /**
-     * Built once per file, from the consumer's list or the measured default.
-     * Nothing below reads a module-level word list directly — the vocabulary
-     * arrives as data so that a project whose secrets are called `nonce` or
-     * whose `keyHandler` is a keyboard handler can say so.
+     * How many `const` hops the crypto meaning is allowed to be away from the
+     * `Math.random()` call. Two covers `raw` → `apiKey` and the one-alias
+     * relay; beyond that the flow stops being visible in one glance and the
+     * answer stops being trustworthy.
      */
-    const vocab: Vocabulary = {
-      words: new Set(secretWords),
-      correlationWords: new Set(correlationIdWords),
-      suggestsCrypto: makeNameTest(secretWords),
-    };
-
-    const sourceCode = context.sourceCode;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
+    const MAX_BINDING_HOPS = 2;
 
     /**
      * The declarator this identifier is bound to, when the binding has exactly
@@ -720,14 +709,6 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         return key.type === AST_NODE_TYPES.Literal && key.value === 'random';
       });
     }
-
-    /**
-     * How many `const` hops the crypto meaning is allowed to be away from the
-     * `Math.random()` call. Two covers `raw` → `apiKey` and the one-alias
-     * relay; beyond that the flow stops being visible in one glance and the
-     * answer stops being trustworthy.
-     */
-    const MAX_BINDING_HOPS = 2;
 
     /**
      * Does any LATER use of this binding sit in a crypto context?
@@ -955,6 +936,31 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const {
+          allowInTests = true,
+          secretWords = CRYPTO_WORDS,
+          correlationIdWords = [...NON_SECURITY_ID_QUALIFIERS],
+        } = options as Options;
+
+        /**
+         * Built once per file, from the consumer's list or the measured default.
+         * Nothing below reads a module-level word list directly — the vocabulary
+         * arrives as data so that a project whose secrets are called `nonce` or
+         * whose `keyHandler` is a keyboard handler can say so.
+         */
+        vocab = {
+          words: new Set(secretWords),
+          correlationWords: new Set(correlationIdWords),
+          suggestsCrypto: makeNameTest(secretWords),
+        };
+
+        sourceCode = context.sourceCode;
+
+        const filename = context.filename;
+        isTestFile = allowInTests && isTestFilePath(filename);
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (isTestFile) return;
 

@@ -73,6 +73,9 @@
     "typeorm": "^0.3.0"
   },
   "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    },
     "typeorm": {
       "optional": true
     }

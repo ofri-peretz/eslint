@@ -162,6 +162,7 @@ type RuleOptions = [Options?];
 export const noCryptojs = createRule<RuleOptions, MessageIds>({
   name: 'no-cryptojs',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-cryptojs.md',

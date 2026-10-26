@@ -203,6 +203,7 @@ export function violatesDomainBoundary(
 export const noCrossDomainImports = createRule<RuleOptions, MessageIds>({
   name: 'no-cross-domain-imports',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-cross-domain-imports.md',
@@ -298,11 +299,12 @@ export const noCrossDomainImports = createRule<RuleOptions, MessageIds>({
       customRules: [],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const filename = context.filename;
+    let filename: string;
+    let options: Options;
 
     /**
      * Check import declarations
@@ -369,6 +371,10 @@ export const noCrossDomainImports = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        [options = {}] = currentOptions();
+        filename = context.filename;
+      },
       ImportDeclaration: checkImport,
       ImportExpression: checkImport,
     };

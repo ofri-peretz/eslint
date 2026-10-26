@@ -32,6 +32,7 @@ type RuleOptions = [Options?];
 export const requireStorageEncryption = createRule<RuleOptions, MessageIds>({
   name: 'require-storage-encryption',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/require-storage-encryption.md',
@@ -54,7 +55,7 @@ export const requireStorageEncryption = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  createOnce(context) {
     return {
       /**
        * A credential written to disk in the clear. Previously this fired on every

@@ -48,9 +48,33 @@ That trade costs recall, and we measure it:
 
 - To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security). 📚
 
+<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
+
+**oxlint / Vite+** — the same rules under the same `vercel-ai-security/<rule>` IDs, without ESLint:
+
+```bash
+npm install oxlint-plugin-vercel-ai-security --save-dev
+```
+
+```jsonc
+// .oxlintrc.json
+{ "jsPlugins": ["oxlint-plugin-vercel-ai-security"] }
+```
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite-plus';
+
+export default defineConfig({ lint: { jsPlugins: ['oxlint-plugin-vercel-ai-security'] } });
+```
+
+**ESLint:**
+
 ```bash
 npm install eslint-plugin-vercel-ai-security --save-dev
 ```
+
+<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## ⚙️ Configuration Presets
 | Preset        | Description                              |
@@ -149,7 +173,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) fo
 | [require-audit-logging](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-audit-logging?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-778 |  |  | This rule identifies AI SDK calls that aren't preceded by logging statements | 🟢 |  |  |  |  |  |
 | [require-embedding-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-embedding-validation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-20 |  |  | This rule identifies code patterns where embeddings are stored in vector databases without validation. | 🟢 |  |  |  |  |  |
 | [require-error-handling](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-error-handling?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-755 |  |  | This rule identifies AI SDK calls that aren't wrapped in try-catch blocks | 🟢 |  |  |  |  |  |
-| [require-max-steps](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-steps?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-834 |  |  | This rule identifies tool-calling AI SDK calls whose step limit does not bound the loop: a hasToolCall-only stop… | 🟢 |  |  |  |  |  |
+| [require-max-steps](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-steps?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-834 |  |  | This rule identifies tool-calling AI SDK calls whose step limit does not bound the loop: a hasToolCall-only… | 🟢 |  |  |  |  |  |
 | [require-max-tokens](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-tokens?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-770 |  |  | This rule identifies AI SDK calls that don't specify a token limit (maxTokens or maxOutputTokens) | 🟢 |  |  |  |  |  |
 | [require-output-filtering](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-output-filtering?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-200 |  |  | This rule identifies tool execute functions that return raw data from data sources (databases, APIs, file s… | 🟢 |  |  |  |  |  |
 | [require-output-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-output-validation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-707 |  |  | This rule identifies code patterns where AI-generated output is displayed to users without validation or fa… | 🟢 |  |  |  |  |  |

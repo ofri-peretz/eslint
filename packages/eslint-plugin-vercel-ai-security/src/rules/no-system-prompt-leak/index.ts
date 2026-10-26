@@ -10,7 +10,17 @@
  * @see OWASP LLM07: System Prompt Leakage
  */
 
-import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons, memberPath, nameHasWord, objectKeyName, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  memberPath,
+  nameHasWord,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 import { isSystemPromptProp } from '../../utils/prompt-props';
 import { optionValue } from '../../utils/sdk';
@@ -27,10 +37,12 @@ type RuleOptions = [Options?];
 export const noSystemPromptLeak = createRule<RuleOptions, MessageIds>({
   name: 'no-system-prompt-leak',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/no-system-prompt-leak.md',
-      description: 'Prevent system prompts from being exposed in API responses or client code',
+      description:
+        'Prevent system prompts from being exposed in API responses or client code',
       cwe: 'CWE-200',
       cvss: 7.5,
     },
@@ -41,11 +53,13 @@ export const noSystemPromptLeak = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-200',
         owasp: 'A01:2021',
         cvss: 7.5,
-        description: 'System prompt "{{variable}}" is exposed in return statement. This reveals AI behavior instructions to users.',
+        description:
+          'System prompt "{{variable}}" is exposed in return statement. This reveals AI behavior instructions to users.',
         severity: 'HIGH',
         compliance: ['SOC2'],
         fix: 'Remove system prompt from API response. Only return the AI-generated content.',
-        documentationLink: 'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
+        documentationLink:
+          'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
       }),
     },
     schema: [
@@ -65,28 +79,30 @@ export const noSystemPromptLeak = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       systemPromptPatterns: [
-        'systemPrompt', 'system_prompt', 'SYSTEM_PROMPT',
-        'systemMessage', 'system_message', 'SYSTEM_MESSAGE',
-        'instructions', 'INSTRUCTIONS', 'aiInstructions',
-        'agentPrompt', 'basePrompt', 'contextPrompt',
+        'systemPrompt',
+        'system_prompt',
+        'SYSTEM_PROMPT',
+        'systemMessage',
+        'system_message',
+        'SYSTEM_MESSAGE',
+        'instructions',
+        'INSTRUCTIONS',
+        'aiInstructions',
+        'agentPrompt',
+        'basePrompt',
+        'contextPrompt',
       ],
     },
   ],
-  create(context, [options]) {
-    // Every rule in this plugin is Vercel-AI-specific, and none of them knew
-    // it: over 107,384 files, 91% of this plugin's findings were in files with
-    // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
-    // the cheap path — a file without the SDK does no work.
-    if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
-
-    // Merged with `defaultOptions` before `create` runs.
-    const { systemPromptPatterns } = options as Required<Options>;
-
-    const sourceCode = context.sourceCode;
+  createOnce(context, currentOptions) {
+    let systemPromptPatterns: string[];
+    let sourceCode: typeof context.sourceCode;
 
     /** Whole words: `SYSTEM_PROMPT`, `config.systemPrompt`, `AI_INSTRUCTIONS`. */
     function isSystemPromptVariable(name: string): boolean {
-      return systemPromptPatterns.some((pattern: string) => nameHasWord(name, pattern));
+      return systemPromptPatterns.some((pattern: string) =>
+        nameHasWord(name, pattern),
+      );
     }
 
     function findSystemPromptVar(node: TSESTree.Node): string | null {
@@ -95,7 +111,8 @@ export const noSystemPromptLeak = createRule<RuleOptions, MessageIds>({
       }
       if (node.type === 'MemberExpression') {
         const name = propertyName(node);
-        if (name !== null && isSystemPromptVariable(name)) return sourceCode.getText(node);
+        if (name !== null && isSystemPromptVariable(name))
+          return sourceCode.getText(node);
       }
       return null;
     }
@@ -105,13 +122,18 @@ export const noSystemPromptLeak = createRule<RuleOptions, MessageIds>({
      * KEY is evidence too (`{ system: persona }` leaks whatever `persona` is
      * called), and nested objects are part of the payload.
      */
-    function checkObjectForLeaks(node: TSESTree.ObjectExpression, inResponse: boolean): void {
+    function checkObjectForLeaks(
+      node: TSESTree.ObjectExpression,
+      inResponse: boolean,
+    ): void {
       for (const prop of node.properties) {
         if (prop.type !== 'Property') continue;
         const key = objectKeyName(prop);
         const leaked =
           findSystemPromptVar(prop.value) ??
-          (inResponse && key !== null && (isSystemPromptProp(key) || isSystemPromptVariable(key))
+          (inResponse &&
+          key !== null &&
+          (isSystemPromptProp(key) || isSystemPromptVariable(key))
             ? key
             : null);
         if (leaked) {
@@ -127,6 +149,20 @@ export const noSystemPromptLeak = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule in this plugin is Vercel-AI-specific, and none of them knew
+        // it: over 107,384 files, 91% of this plugin's findings were in files with
+        // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
+        // the cheap path — a file without the SDK does no work.
+        if (!fileUsesVercelAi(context.sourceCode.ast)) return false;
+
+        // Merged with `defaultOptions` before `create` runs.
+        ({ systemPromptPatterns } = options as Required<Options>);
+
+        sourceCode = context.sourceCode;
+        return true;
+      },
       // Check return statements in functions
       ReturnStatement(node: TSESTree.ReturnStatement) {
         if (!node.argument) return;
@@ -162,7 +198,11 @@ export const noSystemPromptLeak = createRule<RuleOptions, MessageIds>({
 
       // new Response(JSON.stringify({ ... }))
       NewExpression(node: TSESTree.NewExpression) {
-        if (node.callee.type !== AST_NODE_TYPES.Identifier || node.callee.name !== 'Response') return;
+        if (
+          node.callee.type !== AST_NODE_TYPES.Identifier ||
+          node.callee.name !== 'Response'
+        )
+          return;
         const body = node.arguments[0];
         if (body?.type !== AST_NODE_TYPES.CallExpression) return;
         if (memberPath(body.callee)?.join('.') !== 'JSON.stringify') return;

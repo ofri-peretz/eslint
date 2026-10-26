@@ -57,6 +57,7 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
   // follow" is advice to a maintainer, and generated code has none.
   skipGeneratedFiles: true,
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/cognitive-complexity.md',
@@ -128,9 +129,9 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
       includeMetrics: true,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const { maxComplexity = 15 }: Options = context.options[0] || {};
-    const filename = context.filename;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let maxComplexity: number;
+    let filename: string;
 
     /**
      * Calculate cognitive complexity for a function
@@ -516,6 +517,10 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        ({ maxComplexity = 15 } = context.options[0] || {});
+        filename = context.filename;
+      },
       FunctionDeclaration: checkFunction,
       FunctionExpression: checkFunction,
       ArrowFunctionExpression: checkFunction,

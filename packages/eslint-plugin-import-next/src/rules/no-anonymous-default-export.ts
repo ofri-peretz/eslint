@@ -32,6 +32,10 @@ type RuleOptions = [Options?];
 export const noAnonymousDefaultExport = createRule<RuleOptions, MessageIds>({
   name: 'no-anonymous-default-export',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/no-anonymous-default-export',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-anonymous-default-export.md',
@@ -107,13 +111,10 @@ export const noAnonymousDefaultExport = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const {
-      allowArrowFunction = false,
-      allowClassExpression = false,
-      allowFunctionExpression = false,
-    } = options || {};
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowArrowFunction: boolean;
+    let allowClassExpression: boolean;
+    let allowFunctionExpression: boolean;
 
     function isAnonymous(node: TSESTree.ExportDefaultDeclaration): boolean {
       const declaration = node.declaration;
@@ -177,6 +178,14 @@ export const noAnonymousDefaultExport = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({
+          allowArrowFunction = false,
+          allowClassExpression = false,
+          allowFunctionExpression = false,
+        } = options || {});
+      },
       ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration) {
         if (isAnonymous(node)) {
           context.report({

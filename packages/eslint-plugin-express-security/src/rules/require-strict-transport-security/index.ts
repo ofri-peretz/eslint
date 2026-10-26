@@ -108,6 +108,7 @@ export const requireStrictTransportSecurity = createRule<
 >({
   name: 'require-strict-transport-security',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     hasSuggestions: true,
     docs: {
@@ -173,16 +174,12 @@ export const requireStrictTransportSecurity = createRule<
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const { minMaxAge, requireSubDomains } = options as Options;
-    const minimum = minMaxAge ?? DEFAULT_MIN_MAX_AGE;
-    const wantSubDomains = requireSubDomains ?? true;
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let minimum: number;
+    let wantSubDomains: boolean;
 
     /** Inspect the object form: { maxAge, includeSubDomains }. */
     function checkHstsOptions(config: TSESTree.ObjectExpression): void {
@@ -246,6 +243,19 @@ export const requireStrictTransportSecurity = createRule<
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        const { minMaxAge, requireSubDomains } = options as Options;
+        minimum = minMaxAge ?? DEFAULT_MIN_MAX_AGE;
+        wantSubDomains = requireSubDomains ?? true;
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         // helmet.hsts({ ... }) — dedicated middleware factory
         if (isHelmetHstsFactory(node)) {

@@ -46,9 +46,33 @@ That trade costs recall, and we measure it:
 
 - To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-secure-coding?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding). 📚
 
+<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
+
+**oxlint / Vite+** — the same rules under the same `secure-coding/<rule>` IDs, without ESLint:
+
+```bash
+npm install oxlint-plugin-secure-coding --save-dev
+```
+
+```jsonc
+// .oxlintrc.json
+{ "jsPlugins": ["oxlint-plugin-secure-coding"] }
+```
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite-plus';
+
+export default defineConfig({ lint: { jsPlugins: ['oxlint-plugin-secure-coding'] } });
+```
+
+**ESLint:**
+
 ```bash
 npm install eslint-plugin-secure-coding --save-dev
 ```
+
+<!-- AUTO-GENERATED:INSTALL:END -->
 
 **Add to your `eslint.config.mjs` — one line activates 16 security rules:**
 
@@ -133,6 +157,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | [detect-weak-password-validation](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/detect-weak-password-validation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-521 | A07:2021 |  | Detects weak password length requirements (less than 8 characters) in validation code. | 🟢 |  |  |  |  |  |
 | [no-bidi-characters](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-bidi-characters?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-1007 |  |  | Disallows Unicode bidirectional control characters, which let source render differently than it compiles (T… | 🟢 |  |  |  |  |  |
 | [no-directive-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-directive-injection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-94 |  |  | Detects directive injection vulnerabilities in template systems | 🟢 |  |  |  |  |  |
+| [no-disabled-template-escaping](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-disabled-template-escaping?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-79 | A03:2021 |  | Disallows assigning `false` to `escapeMarkup`, which disables template HTML auto-escaping (CWE-79) | 🟢 |  |  |  |  |  |
 | [no-electron-security-issues](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-electron-security-issues?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-16 |  |  | Detects Electron security vulnerabilities and insecure configurations | 🟢 |  |  |  |  |  |
 | [no-fail-open-auth](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-fail-open-auth?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-636 | A10:2025 |  | Detects authentication and authorization checks whose catch block fails open | 🟢 | 💼 |  |  |  |  |
 | [no-format-string-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-format-string-injection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-134 |  |  | Detects format string injection vulnerabilities | 🟢 |  |  |  |  |  |
@@ -143,6 +168,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | [no-improper-sanitization](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-improper-sanitization?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-116 |  |  | Detects improper sanitization of user input | 🟢 | 💼 |  |  |  |  |
 | [no-improper-type-validation](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-improper-type-validation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-1287 |  |  | Detects improper type validation in user input handling | 🟢 |  |  |  |  |  |
 | [no-insecure-comparison](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-insecure-comparison?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-697 |  |  | Detects insecure comparison operators (==, !=) that can lead to type coercion vulnerabilities | 🟢 |  |  |  |  |  |
+| [no-invisible-characters](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-invisible-characters?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-1007 | A08:2021 |  | Disallows invisible letters such as the Hangul fillers (U+3164, U+FFA0), which hide identifiers, values and… | 🟢 |  |  |  |  |  |
 | [no-ldap-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-ldap-injection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-90 |  |  | Detects LDAP injection vulnerabilities | 🟢 | 💼 |  |  |  |  |
 | [no-log-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-log-injection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-117 | A09:2021 |  | Detects request data concatenated into a log message, which lets an attacker forge log records | 🟢 | 💼 |  |  |  |  |
 | [no-missing-authentication](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-missing-authentication?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-287 |  |  | CWE: [CWE-287](https://cwe.mitre.org/data/definitions/287.html) | 🟢 |  |  |  |  |  |

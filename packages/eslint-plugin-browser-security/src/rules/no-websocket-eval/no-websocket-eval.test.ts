@@ -42,6 +42,7 @@ ruleTester.run('no-websocket-eval', noWebsocketEval, {
     },
     // Not a WebSocket handler
     {
+      name: 'eval inside a button click handler is not a WebSocket message sink',
       code: `
         button.onclick = (event) => {
           eval(event.target.value);
@@ -95,7 +96,9 @@ ruleTester.run('no-websocket-eval', noWebsocketEval, {
           fn();
         };
       `,
-      errors: [{ messageId: 'evalWithWsData', data: { method: 'new Function' } }],
+      errors: [
+        { messageId: 'evalWithWsData', data: { method: 'new Function' } },
+      ],
     },
     // Function() constructor (without new)
     {

@@ -7,11 +7,15 @@
 /**
  * ESLint Rule: no-find-dom-node
  * Prevent using findDOMNode (deprecated since React 16.3)
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/no-find-dom-node.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noFindDOMNode';
@@ -21,6 +25,10 @@ type RuleOptions = [];
 export const noFindDomNode = createRule<RuleOptions, MessageIds>({
   name: 'no-find-dom-node',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/no-find-dom-node',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-find-dom-node.md',
@@ -30,7 +38,8 @@ export const noFindDomNode = createRule<RuleOptions, MessageIds>({
       noFindDOMNode: formatLLMMessage({
         icon: MessageIcons.DEPRECATION,
         issueName: 'Deprecated findDOMNode',
-        description: 'findDOMNode is deprecated since React 16.3 and removed in React 19',
+        description:
+          'findDOMNode is deprecated since React 16.3 and removed in React 19',
         severity: 'HIGH',
         fix: 'Use refs instead: const ref = useRef(); return <div ref={ref} />',
         documentationLink: 'https://react.dev/reference/react-dom/findDOMNode',
@@ -39,7 +48,7 @@ export const noFindDomNode = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Check for ReactDOM.findDOMNode()

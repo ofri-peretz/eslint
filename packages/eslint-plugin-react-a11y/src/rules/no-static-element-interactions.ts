@@ -52,6 +52,10 @@ const INTERACTIVE_HANDLERS = [
 export const noStaticElementInteractions = createRule<RuleOptions, MessageIds>({
   name: 'no-static-element-interactions',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/no-static-element-interactions',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-static-element-interactions.md',
@@ -81,13 +85,17 @@ export const noStaticElementInteractions = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
-    const { handlers = INTERACTIVE_HANDLERS } = options ?? {};
+    let handlers: string[];
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        ({ handlers = INTERACTIVE_HANDLERS } = options ?? {});
+      },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier') return;
         if (!STATIC_ELEMENTS.has(node.name.name)) return;

@@ -61,7 +61,10 @@ ruleTester.run(
         code: "tls.connect({ checkServerIdentity: function (h, c) { throw new Error('nope'); } })",
       },
       // A named reference is opaque — guessing would be reporting without evidence.
-      { code: 'tls.connect({ checkServerIdentity: verifyPeer })' },
+      {
+        name: 'a named checkServerIdentity reference is opaque and left alone',
+        code: 'tls.connect({ checkServerIdentity: verifyPeer })',
+      },
       // Not a `checkServerIdentity` property at all.
       { code: 'tls.connect({ onError: () => undefined })' },
       { code: 'tls.connect({ [dynamicKey]: () => undefined })' },

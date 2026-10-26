@@ -24,6 +24,7 @@ export type RuleOptions = [Options?];
 export const namespace = createRule<RuleOptions, MessageIds>({
   name: 'namespace',
   meta: {
+    interop: { runtimes: ['eslint'], nativeEquivalent: 'import/namespace' },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/namespace.md',
@@ -61,7 +62,9 @@ export const namespace = createRule<RuleOptions, MessageIds>({
 
         if (symbol && symbol.declarations && symbol.declarations.length > 0) {
           const declaration = symbol.declarations[0];
-          if (declaration.kind === loadTypeScript()?.SyntaxKind.NamespaceImport) {
+          if (
+            declaration.kind === loadTypeScript()?.SyntaxKind.NamespaceImport
+          ) {
             // If we have a namespace import, the symbol should refer to the module.
             // We need to check if the property being accessed exists on the module exports.
 
@@ -76,7 +79,7 @@ export const namespace = createRule<RuleOptions, MessageIds>({
               type,
               propertyName,
             );
-            
+
             // Removed erroneous early return here
 
             if (!propertySymbol) {

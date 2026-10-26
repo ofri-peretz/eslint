@@ -74,8 +74,14 @@ describe('no-improper-sanitization', () => {
         // Reported by review on the first pass of this fix: an `id` field is
         // the most common thing to sit next to a message, and a numeric
         // literal was making the whole array unsafe again.
-        `res.json([{ id: 1, text: "You don't have permission" }]);`,
-        `res.json([{ ok: true, total: null, text: "That's all" }]);`,
+        {
+          name: 'an apostrophe in a literal nested under res.json is data, not markup',
+          code: `res.json([{ id: 1, text: "You don't have permission" }]);`,
+        },
+        {
+          name: 'a boolean and a null beside the string do not make the payload unsafe',
+          code: `res.json([{ ok: true, total: null, text: "That's all" }]);`,
+        },
         // A hole is `undefined`, which carries no markup either.
         `res.json([, { text: "You don't have permission" }]);`,
         // A regex literal is NOT a safe primitive — its source can hold markup.

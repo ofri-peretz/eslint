@@ -35,7 +35,12 @@
  * Locked by `../no-insecure-redirects/url-navigation-partition.matrix.test.ts`.
  */
 
-import { createRule, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import {
   isGuardedDestination,
@@ -56,6 +61,7 @@ type RuleOptions = [Options?];
 export const requireUrlValidation = createRule<RuleOptions, MessageIds>({
   name: 'require-url-validation',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/require-url-validation.md',
@@ -68,17 +74,19 @@ export const requireUrlValidation = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'URL Validation Required',
         cwe: 'CWE-601',
-        description: 'Unvalidated URL used for navigation - this is a security risk',
+        description:
+          'Unvalidated URL used for navigation - this is a security risk',
         severity: 'HIGH',
         fix: 'Validate URLs before using them for navigation',
         documentationLink: 'https://cwe.mitre.org/data/definitions/601.html',
-      })
+      }),
     },
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    const { sourceCode } = context;
+  createOnce(context) {
+    let sourceCode: typeof context.sourceCode;
+    let OPENERS: ReadonlySet<string>;
 
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
@@ -89,26 +97,6 @@ export const requireUrlValidation = createRule<RuleOptions, MessageIds>({
       isAnchoredHostGuard(test, sourceCode) ||
       isRelativePathGuard(test, sourceCode) ||
       isOriginEqualityGuard(test, sourceCode);
-
-    /**
-     * The globals that own a `window.open`.
-     *
-     * DELIBERATELY NOT CONFIGURABLE. The ledger's `unconfigurable-vocabulary`
-     * check flags this list; it is a false alarm. These five are the complete
-     * set of `WindowProxy`-valued globals defined by the HTML specification —
-     * the only receivers on which `open` IS `Window.open`. The list is what
-     * stops `stream.open(path)` and `db.open(name)` from being read as
-     * navigations, so widening it would manufacture exactly the
-     * name-inference false positive the rule's header refuses; narrowing it
-     * would let `top.open(userUrl)` through unreported.
-     */
-    const OPENERS: ReadonlySet<string> = new Set([
-      'window',
-      'self',
-      'globalThis',
-      'top',
-      'parent',
-    ]);
 
     /**
      * `<receiver>.<method>(…)` with a static key — the method name resolved,
@@ -128,6 +116,23 @@ export const requireUrlValidation = createRule<RuleOptions, MessageIds>({
     // navigates is a `Location` write, and those are `no-insecure-redirects`'.
 
     return {
+      before() {
+        ({ sourceCode } = context);
+
+        /**
+         * The globals that own a `window.open`.
+         *
+         * DELIBERATELY NOT CONFIGURABLE. The ledger's `unconfigurable-vocabulary`
+         * check flags this list; it is a false alarm. These five are the complete
+         * set of `WindowProxy`-valued globals defined by the HTML specification —
+         * the only receivers on which `open` IS `Window.open`. The list is what
+         * stops `stream.open(path)` and `db.open(name)` from being read as
+         * navigations, so widening it would manufacture exactly the
+         * name-inference false positive the rule's header refuses; narrowing it
+         * would let `top.open(userUrl)` through unreported.
+         */
+        OPENERS = new Set(['window', 'self', 'globalThis', 'top', 'parent']);
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const parts = calleeParts(node);
         if (parts === null) return;
@@ -155,7 +160,9 @@ export const requireUrlValidation = createRule<RuleOptions, MessageIds>({
         // was written it had no idea what validation looked like: an exact
         // allowlist and a relative-path guard — the two remediations its own
         // message asks for — were both reported at HIGH severity.
-        if (isGuardedDestination(node, urlArg, sourceCode, provesSafeDestination)) {
+        if (
+          isGuardedDestination(node, urlArg, sourceCode, provesSafeDestination)
+        ) {
           return;
         }
         report(node);

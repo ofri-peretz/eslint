@@ -42,6 +42,7 @@ type RuleOptions = [Options?];
 export const noDebugCodeInProduction = createRule<RuleOptions, MessageIds>({
   name: 'no-debug-code-in-production',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-operability/docs/rules/no-debug-code-in-production.md',
@@ -72,14 +73,18 @@ export const noDebugCodeInProduction = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ ignoreNonProductionPaths: true }],
-  create(context, [options = {}]) {
-    // No `?? {}` here: the parameter default already covers undefined, and the
-    // fallback would be a branch no input can take.
-    const { ignoreNonProductionPaths = true }: Options = options;
-    if (ignoreNonProductionPaths && isNonProductionPath(context.filename)) {
-      return {};
-    }
+  createOnce(context, currentOptions) {
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // No `?? {}` here: the parameter default already covers undefined, and the
+        // fallback would be a branch no input can take.
+        const { ignoreNonProductionPaths = true }: Options = options;
+        if (ignoreNonProductionPaths && isNonProductionPath(context.filename)) {
+          return false;
+        }
+        return true;
+      },
       Identifier(node: TSESTree.Identifier) {
         if (!['DEBUG', '__DEV__'].includes(node.name)) return;
         // CWE-489 is ACTIVE debug code, so only a REFERENCE counts. A non-computed

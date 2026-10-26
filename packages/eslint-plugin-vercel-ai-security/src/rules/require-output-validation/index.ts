@@ -10,7 +10,14 @@
  * @see OWASP LLM09: Misinformation
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons, nameHasWord, propertyName } from '@interlace/eslint-devkit';
+import {
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  nameHasWord,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 import { calleeChain } from '../../utils/sdk';
 
@@ -28,6 +35,7 @@ type RuleOptions = [Options?];
 export const requireOutputValidation = createRule<RuleOptions, MessageIds>({
   name: 'require-output-validation',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-output-validation.md',
@@ -42,11 +50,13 @@ export const requireOutputValidation = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-707',
         owasp: 'A03:2021',
         cvss: 5.0,
-        description: 'AI output displayed via "{{method}}" without validation. This can propagate misinformation.',
+        description:
+          'AI output displayed via "{{method}}" without validation. This can propagate misinformation.',
         severity: 'MEDIUM',
         compliance: ['SOC2'],
         fix: 'Validate AI output before display: display(validateOutput(result.text))',
-        documentationLink: 'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
+        documentationLink:
+          'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
       }),
     },
     schema: [
@@ -71,27 +81,36 @@ export const requireOutputValidation = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       displayPatterns: [
-        'render', 'display', 'show', 'print', 'send', 'respond',
-        'setContent', 'setText', 'setMessage', 'Response.json',
+        'render',
+        'display',
+        'show',
+        'print',
+        'send',
+        'respond',
+        'setContent',
+        'setText',
+        'setMessage',
+        'Response.json',
       ],
       validatorFunctions: [
-        'validate', 'verify', 'check', 'sanitize', 'filter',
-        'validateOutput', 'factCheck', 'verifyFacts',
+        'validate',
+        'verify',
+        'check',
+        'sanitize',
+        'filter',
+        'validateOutput',
+        'factCheck',
+        'verifyFacts',
       ],
     },
   ],
-  create(context, [options]) {
-    // Every rule in this plugin is Vercel-AI-specific, and none of them knew
-    // it: over 107,384 files, 91% of this plugin's findings were in files with
-    // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
-    // the cheap path — a file without the SDK does no work.
-    if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
+  createOnce(context, currentOptions) {
+    let displayPatterns: string[];
+    let aiResultVariables: Set<string>;
 
-    // Merged with `defaultOptions` before `create` runs.
-    const { displayPatterns } = options as Required<Options>;
-
-    // Track variables that hold AI results
-    const aiResultVariables = new Set<string>();
+    function calleeText(node: TSESTree.CallExpression): string {
+      return context.sourceCode.getText(node.callee);
+    }
 
     /**
      * `x.text`, `x.content`, `x.output` — by exact property name. `.message`
@@ -113,6 +132,21 @@ export const requireOutputValidation = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule in this plugin is Vercel-AI-specific, and none of them knew
+        // it: over 107,384 files, 91% of this plugin's findings were in files with
+        // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
+        // the cheap path — a file without the SDK does no work.
+        if (!fileUsesVercelAi(context.sourceCode.ast)) return false;
+
+        // Merged with `defaultOptions` before `create` runs.
+        ({ displayPatterns } = options as Required<Options>);
+
+        // Track variables that hold AI results
+        aiResultVariables = new Set<string>();
+        return true;
+      },
       // Track AI result assignments
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (node.id.type !== 'Identifier') return;
@@ -125,7 +159,12 @@ export const requireOutputValidation = createRule<RuleOptions, MessageIds>({
         // Whole words of the call chain: `res.status(200).send` sends;
         // `showcaseItems` does not show.
         const chain = calleeChain(node.callee);
-        if (!displayPatterns.some((pattern: string) => nameHasWord(chain, pattern))) return;
+        if (
+          !displayPatterns.some((pattern: string) =>
+            nameHasWord(chain, pattern),
+          )
+        )
+          return;
 
         // NOTE: `isAIOutput` only matches MemberExpression/Identifier nodes,
         // so a wrapped call like `render(validate(result.text))` never
@@ -154,10 +193,6 @@ export const requireOutputValidation = createRule<RuleOptions, MessageIds>({
         }
       },
     };
-
-    function calleeText(node: TSESTree.CallExpression): string {
-      return context.sourceCode.getText(node.callee);
-    }
   },
 });
 

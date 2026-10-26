@@ -40,11 +40,14 @@ describe('no-sql-injection', () => {
        return sequelize.query(\`SELECT * FROM \${table};\`);
      };`,
       // The block spelling of the guard body.
-      `const ALLOWED = new Set(['t']);
+      {
+        name: 'an identifier checked against an allowlist with a throwing block guard is safe',
+        code: `const ALLOWED = new Set(['t']);
      export const q = async (table) => {
        if (!ALLOWED.has(table)) { throw new Error('Invalid table'); }
        return sequelize.query(\`SELECT * FROM \${table};\`);
      };`,
+      },
       // The array spelling, and a guard that returns rather than throws.
       `const COLS = ['id', 'name'];
      export const q = async (col) => {

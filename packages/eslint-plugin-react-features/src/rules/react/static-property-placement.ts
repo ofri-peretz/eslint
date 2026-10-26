@@ -42,6 +42,7 @@ const DEFAULT_GROUPS = [
 export const staticPropertyPlacement = createRule<[Options], MessageIds>({
   name: 'static-property-placement',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/static-property-placement.md',
@@ -82,17 +83,8 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
     },
   },
   defaultOptions: [{ propertyGroups: DEFAULT_GROUPS, childClass: 'first' }],
-  create(context: TSESLint.RuleContext<MessageIds, [Options]>) {
-    const [options] = context.options;
-    const propertyGroups = options?.propertyGroups ?? DEFAULT_GROUPS;
-
-    return {
-      ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        if (isReactComponent(node)) {
-          checkStaticPropertyPlacement(node, propertyGroups);
-        }
-      },
-    };
+  createOnce(context: TSESLint.RuleContext<MessageIds, [Options]>) {
+    let propertyGroups: { name: string; properties: string[] }[];
 
     // oxlint-disable-next-line consistent-function-scoping
     function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
@@ -210,5 +202,17 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
       }
       return null;
     }
+
+    return {
+      before() {
+        const [options] = context.options;
+        propertyGroups = options?.propertyGroups ?? DEFAULT_GROUPS;
+      },
+      ClassDeclaration(node: TSESTree.ClassDeclaration) {
+        if (isReactComponent(node)) {
+          checkStaticPropertyPlacement(node, propertyGroups);
+        }
+      },
+    };
   },
 });

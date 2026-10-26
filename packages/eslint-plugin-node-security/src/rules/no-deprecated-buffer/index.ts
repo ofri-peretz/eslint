@@ -69,6 +69,7 @@ export const noDeprecatedBuffer: TSESLint.RuleModule<MessageIds, []> =
   createRule<[], MessageIds>({
     name: 'no-deprecated-buffer',
     meta: {
+      interop: { runtimes: ['eslint', 'oxlint'] },
       type: 'problem',
       docs: {
         url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-deprecated-buffer.md',
@@ -107,8 +108,8 @@ export const noDeprecatedBuffer: TSESLint.RuleModule<MessageIds, []> =
       schema: [],
     },
     defaultOptions: [],
-    create(context) {
-      const sourceCode = context.sourceCode;
+    createOnce(context) {
+      let sourceCode: Readonly<TSESLint.SourceCode>;
 
       /**
        * Does this identifier resolve to Node's own `Buffer` constructor?
@@ -273,6 +274,9 @@ export const noDeprecatedBuffer: TSESLint.RuleModule<MessageIds, []> =
       }
 
       return {
+        before() {
+          sourceCode = context.sourceCode;
+        },
         // Catches `new Buffer(size)` / `new Buffer(arr)` / `new Buffer('str')`
         NewExpression(node) {
           const callee = deprecatedCallee(node.callee);

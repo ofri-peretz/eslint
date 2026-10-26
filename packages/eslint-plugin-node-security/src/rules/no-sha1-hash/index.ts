@@ -13,12 +13,15 @@
  * @see https://www.npmjs.com/package/crypto-hash
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  createRule,
+  AST_NODE_TYPES,
+  isTestFilePath,
+} from '@interlace/eslint-devkit';
 
-type MessageIds =
-  | 'sha1Deprecated'
-  | 'useSha256'
-  | 'useSha512';
+type MessageIds = 'sha1Deprecated' | 'useSha256' | 'useSha512';
 
 export interface Options {
   /** Allow SHA1 in test files. Default: false */
@@ -30,10 +33,12 @@ type RuleOptions = [Options?];
 export const noSha1Hash = createRule<RuleOptions, MessageIds>({
   name: 'no-sha1-hash',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-sha1-hash.md',
-      description: 'Disallow sha1() from crypto-hash package (use sha256 or sha512)',
+      description:
+        'Disallow sha1() from crypto-hash package (use sha256 or sha512)',
       cwe: 'CWE-327',
       cvss: 7.5,
     },
@@ -43,7 +48,8 @@ export const noSha1Hash = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'SHA-1 hash detected',
         cwe: 'CWE-327',
-        description: 'SHA-1 is cryptographically broken and should not be used. The crypto-hash package itself warns against using sha1().',
+        description:
+          'SHA-1 is cryptographically broken and should not be used. The crypto-hash package itself warns against using sha1().',
         severity: 'HIGH',
         fix: 'Use sha256() or sha512() instead',
         documentationLink: 'https://shattered.io/',
@@ -84,19 +90,24 @@ export const noSha1Hash = createRule<RuleOptions, MessageIds>({
       allowInTests: false,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    currentOptions,
   ) {
-    const { allowInTests = false } = options as Options;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-
-    // Track if sha1 was imported from crypto-hash
-    let sha1ImportedFromCryptoHash = false;
+    let isTestFile: boolean;
+    let sha1ImportedFromCryptoHash: boolean;
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = false } = options as Options;
+
+        const filename = context.filename;
+        isTestFile = allowInTests && isTestFilePath(filename);
+
+        // Track if sha1 was imported from crypto-hash
+        sha1ImportedFromCryptoHash = false;
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         if (isTestFile) return;
 

@@ -69,6 +69,7 @@ type RuleOptions = [Options?];
 export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
   name: 'no-improper-sanitization',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-improper-sanitization.md',
@@ -186,32 +187,30 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const {
-      safeSanitizers = [
-        'DOMPurify.sanitize',
-        'he.encode',
-        'encodeURIComponent',
-        'encodeURI',
-        'escape',
-      ],
-      dangerousChars = ['<', '>', '"', "'", '&'],
-      trustedSanitizers = [],
-      trustedAnnotations = [],
-      strictMode = false,
-    }: Options = options;
-
-    const sourceCode = context.sourceCode;
-    const filename = context.filename;
-
-    // Create safety checker for false positive detection
-    const safetyChecker = createSafetyChecker({
-      trustedSanitizers,
-      trustedAnnotations,
-      trustedOrmPatterns: [],
-      strictMode,
-    });
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let safeSanitizers: string[];
+    let dangerousChars: string[];
+    let trustedSanitizers: string[];
+    let trustedAnnotations: string[];
+    let strictMode: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let filename: string;
+    let safetyChecker: {
+      isSafe(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      isSanitized(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      hasAnnotation(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+    };
+    /** `&amp;` `&lt;` `&#039;` `&#x27;` — a replacement that produces markup-safe text. */
+    const ENTITY = /&(?:amp|lt|gt|quot|apos|#x[0-9a-f]+|#\d+);/i;
 
     /**
      * Check if sanitization is safe
@@ -296,9 +295,6 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       return pairs;
     };
 
-    /** `&amp;` `&lt;` `&#039;` `&#x27;` — a replacement that produces markup-safe text. */
-    const ENTITY = /&(?:amp|lt|gt|quot|apos|#x[0-9a-f]+|#\d+);/i;
-
     /**
      * Check whether a `.replace()` chain is an INCOMPLETE HTML escaper.
      *
@@ -379,6 +375,33 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({
+          safeSanitizers = [
+            'DOMPurify.sanitize',
+            'he.encode',
+            'encodeURIComponent',
+            'encodeURI',
+            'escape',
+          ],
+          dangerousChars = ['<', '>', '"', "'", '&'],
+          trustedSanitizers = [],
+          trustedAnnotations = [],
+          strictMode = false,
+        } = options);
+
+        sourceCode = context.sourceCode;
+        filename = context.filename;
+
+        // Create safety checker for false positive detection
+        safetyChecker = createSafetyChecker({
+          trustedSanitizers,
+          trustedAnnotations,
+          trustedOrmPatterns: [],
+          strictMode,
+        });
+      },
       // Check call expressions for sanitization issues
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;

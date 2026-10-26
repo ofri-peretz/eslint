@@ -41,6 +41,7 @@ const CROSS_PROPERTY_HOSTS = new Set([
 export const noRawCrossPropertyHref = createRule<RuleOptions, MessageIds>({
   name: 'no-raw-cross-property-href',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/no-raw-cross-property-href.md',
@@ -56,7 +57,7 @@ export const noRawCrossPropertyHref = createRule<RuleOptions, MessageIds>({
         description:
           'href "{{href}}" points to a cross-property surface ({{host}}). Use buildUtmHref() from lib/utm.ts so the link carries UTM and ph_distinct_id.',
         severity: 'HIGH',
-        fix: 'Replace with buildUtmHref(\'{{href}}\', { source, medium, campaign, content }).',
+        fix: "Replace with buildUtmHref('{{href}}', { source, medium, campaign, content }).",
         documentationLink:
           'https://github.com/ofri-peretz/interlace/blob/main/docs/philosophies/UTM_PHILOSOPHY.md',
       }),
@@ -65,7 +66,7 @@ export const noRawCrossPropertyHref = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     function parseHost(value: string): string | null {
       // Only absolute URLs with a hostname.
       if (!/^https?:\/\//i.test(value)) return null;

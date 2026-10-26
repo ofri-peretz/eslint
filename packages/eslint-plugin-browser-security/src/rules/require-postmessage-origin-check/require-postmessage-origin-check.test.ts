@@ -44,6 +44,7 @@ ruleTester.run(
       },
       // Uses allowedOrigins array check
       {
+        name: 'an allowedOrigins includes() test on event.origin is an origin check',
         code: `
         window.addEventListener('message', (event) => {
           if (!allowedOrigins.includes(event.origin)) return;

@@ -16,7 +16,10 @@ describe('no-deprecated-buffer', () => {
   ruleTester.run('no-deprecated-buffer', noDeprecatedBuffer, {
     valid: [
       { name: 'Buffer.from', code: 'Buffer.from("hello")' },
-      { code: 'Buffer.alloc(1024)' },
+      {
+        name: 'Buffer.alloc returns zero-filled memory',
+        code: 'Buffer.alloc(1024)',
+      },
       { code: 'Buffer.allocUnsafe(512)' },
       { code: 'Buffer.concat([a, b])' },
       { code: 'const buf = Buffer.from(data, "utf8")' },
@@ -47,9 +50,13 @@ describe('no-deprecated-buffer', () => {
         ].join('\n'),
       },
       // A destructured sibling export is not the constructor.
-      { code: "const { byteLength } = require('node:buffer'); byteLength('a');" },
+      {
+        code: "const { byteLength } = require('node:buffer'); byteLength('a');",
+      },
       // The module object itself is not the constructor.
-      { code: "const buffer = require('node:buffer'); buffer.Buffer.alloc(4);" },
+      {
+        code: "const buffer = require('node:buffer'); buffer.Buffer.alloc(4);",
+      },
       // Feature detection + the remediated static call. safe/11-*
       {
         code: "if (typeof Buffer !== 'undefined') { Buffer.from('a', 'utf8'); }",
@@ -90,41 +97,55 @@ describe('no-deprecated-buffer', () => {
       // `import { Buffer as NodeBuffer } from 'node:buffer'`. vulnerable/08-*
       {
         code: "import { Buffer as NodeBuffer } from 'node:buffer';\nconst b = new NodeBuffer(64);",
-        output: "import { Buffer as NodeBuffer } from 'node:buffer';\nconst b = NodeBuffer.alloc(64);",
+        output:
+          "import { Buffer as NodeBuffer } from 'node:buffer';\nconst b = NodeBuffer.alloc(64);",
         errors: [{ messageId: 'deprecatedBufferConstructor' }],
       },
       // `const BufferCtor = require('buffer').Buffer`. vulnerable/09-*
       {
         code: "const BufferCtor = require('buffer').Buffer;\nconst r = new BufferCtor(8);",
-        output: "const BufferCtor = require('buffer').Buffer;\nconst r = BufferCtor.alloc(8);",
+        output:
+          "const BufferCtor = require('buffer').Buffer;\nconst r = BufferCtor.alloc(8);",
         errors: [{ messageId: 'deprecatedBufferConstructor' }],
       },
       // `const { Buffer } = require('buffer')`. vulnerable/04-*
       {
         code: "const { Buffer } = require('buffer');\nconst d = new Buffer('ff', 'hex');",
-        output: "const { Buffer } = require('buffer');\nconst d = Buffer.from('ff', 'hex');",
+        output:
+          "const { Buffer } = require('buffer');\nconst d = Buffer.from('ff', 'hex');",
         errors: [{ messageId: 'deprecatedBufferConstructor' }],
       },
       // The destructure may be renamed too.
       {
         code: "const { Buffer: B } = require('node:buffer');\nconst d = new B(16);",
-        output: "const { Buffer: B } = require('node:buffer');\nconst d = B.alloc(16);",
+        output:
+          "const { Buffer: B } = require('node:buffer');\nconst d = B.alloc(16);",
         errors: [{ messageId: 'deprecatedBufferConstructor' }],
       },
       // `new buffer.Buffer(n)` — the callee is a member expression, which a
       // callee-identifier test cannot see at all. vulnerable/07-*
       {
         code: "const buffer = require('node:buffer');\nconst f = new buffer.Buffer(32);",
-        output: "const buffer = require('node:buffer');\nconst f = buffer.Buffer.alloc(32);",
+        output:
+          "const buffer = require('node:buffer');\nconst f = buffer.Buffer.alloc(32);",
         errors: [{ messageId: 'deprecatedBufferConstructor' }],
       },
       {
         code: "import * as nb from 'node:buffer';\nconst f = new nb.Buffer(32);",
-        output: "import * as nb from 'node:buffer';\nconst f = nb.Buffer.alloc(32);",
+        output:
+          "import * as nb from 'node:buffer';\nconst f = nb.Buffer.alloc(32);",
         errors: [{ messageId: 'deprecatedBufferConstructor' }],
       },
-      { code: 'const f = new global.Buffer(4);', output: 'const f = global.Buffer.alloc(4);', errors: [{ messageId: 'deprecatedBufferConstructor' }] },
-      { code: "globalThis.Buffer('x');", output: "globalThis.Buffer.from('x');", errors: [{ messageId: 'deprecatedBufferCall' }] },
+      {
+        code: 'const f = new global.Buffer(4);',
+        output: 'const f = global.Buffer.alloc(4);',
+        errors: [{ messageId: 'deprecatedBufferConstructor' }],
+      },
+      {
+        code: "globalThis.Buffer('x');",
+        output: "globalThis.Buffer.from('x');",
+        errors: [{ messageId: 'deprecatedBufferCall' }],
+      },
 
       // ── Autofix safety ─────────────────────────────────────────────────
       // `Buffer.from(number)` THROWS. When the argument's type cannot be
@@ -134,16 +155,32 @@ describe('no-deprecated-buffer', () => {
         output: null,
         errors: [{ messageId: 'deprecatedBufferConstructor' }],
       },
-      { code: 'new Buffer(...parts);', output: null, errors: [{ messageId: 'deprecatedBufferConstructor' }] },
-      { code: 'new Buffer();', output: null, errors: [{ messageId: 'deprecatedBufferConstructor' }] },
+      {
+        code: 'new Buffer(...parts);',
+        output: null,
+        errors: [{ messageId: 'deprecatedBufferConstructor' }],
+      },
+      {
+        code: 'new Buffer();',
+        output: null,
+        errors: [{ messageId: 'deprecatedBufferConstructor' }],
+      },
       // A `const` alias IS resolvable, so this one still fixes.
       {
         code: 'const SIZE = 1024;\nconst page = new Buffer(SIZE);',
         output: 'const SIZE = 1024;\nconst page = Buffer.alloc(SIZE);',
         errors: [{ messageId: 'deprecatedBufferConstructor' }],
       },
-      { code: 'new Buffer([1, 2, 3]);', output: 'Buffer.from([1, 2, 3]);', errors: [{ messageId: 'deprecatedBufferConstructor' }] },
-      { code: 'new Buffer(`a${x}b`);', output: 'Buffer.from(`a${x}b`);', errors: [{ messageId: 'deprecatedBufferConstructor' }] },
+      {
+        code: 'new Buffer([1, 2, 3]);',
+        output: 'Buffer.from([1, 2, 3]);',
+        errors: [{ messageId: 'deprecatedBufferConstructor' }],
+      },
+      {
+        code: 'new Buffer(`a${x}b`);',
+        output: 'Buffer.from(`a${x}b`);',
+        errors: [{ messageId: 'deprecatedBufferConstructor' }],
+      },
     ],
   });
 });

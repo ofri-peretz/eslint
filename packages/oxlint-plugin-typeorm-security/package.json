@@ -1,0 +1,70 @@
+{
+  "name": "oxlint-plugin-typeorm-security",
+  "version": "1.0.1",
+  "description": "The typeorm-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-typeorm-security.",
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts"
+  },
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
+    "interlace-security",
+    "typeorm",
+    "sql",
+    "sql-injection",
+    "cwe-89",
+    "raw-query",
+    "database",
+    "database-security",
+    "mysql",
+    "sqlite",
+    "postgres",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-typeorm-security?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-typeorm-security",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-typeorm-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-typeorm-security": "1.0.1"
+  }
+}

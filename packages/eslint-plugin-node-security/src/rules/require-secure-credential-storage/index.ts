@@ -41,6 +41,7 @@ export const requireSecureCredentialStorage = createRule<
 >({
   name: 'require-secure-credential-storage',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/require-secure-credential-storage.md',
@@ -73,7 +74,7 @@ export const requireSecureCredentialStorage = createRule<
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  createOnce(context) {
     /**
      * Is this expression the `process.env` OBJECT?
      *

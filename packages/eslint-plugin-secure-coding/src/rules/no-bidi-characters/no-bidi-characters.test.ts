@@ -26,18 +26,33 @@ describe('no-bidi-characters', () => {
       { name: 'plain text', code: `const greeting = 'hello';` },
       // Escape sequences are the safe way to express bidi text: visible in review.
       { code: `const rtl = '\\u202E';` },
-      { code: `// a normal comment about right-to-left text` },
+      {
+        name: 'a comment that only mentions right-to-left text is not a bidi control',
+        code: `// a normal comment about right-to-left text`,
+      },
       { code: `const arabic = 'مرحبا';` },
       // Directional marks may be permitted for genuine bidirectional strings.
-      { code: `const s = '${RLM}';`, options: [{ allowDirectionalMarks: true }] },
+      {
+        code: `const s = '${RLM}';`,
+        options: [{ allowDirectionalMarks: true }],
+      },
       // An unparseable additionalCharacters entry is ignored rather than throwing.
-      { code: `const s = 'ok';`, options: [{ additionalCharacters: ['not-a-codepoint', 'U+ZZZZ', ''] }] },
+      {
+        code: `const s = 'ok';`,
+        options: [{ additionalCharacters: ['not-a-codepoint', 'U+ZZZZ', ''] }],
+      },
       // A well-formed entry that is simply absent from the source stays quiet.
-      { code: `const s = 'ok';`, options: [{ additionalCharacters: ['U+200B'] }] },
+      {
+        code: `const s = 'ok';`,
+        options: [{ additionalCharacters: ['U+200B'] }],
+      },
       // Above the U+10FFFF Unicode ceiling. The 4-6 hex-digit pattern accepts it, but
       // `String.fromCodePoint` throws a RangeError on it — this used to crash the rule
       // and take the whole lint run with it.
-      { code: `const s = 'ok';`, options: [{ additionalCharacters: ['U+110000', 'U+FFFFFF'] }] },
+      {
+        code: `const s = 'ok';`,
+        options: [{ additionalCharacters: ['U+110000', 'U+FFFFFF'] }],
+      },
       // A supplementary character that is NOT configured is walked over, not matched.
       { code: `const s = '${BEAM}';` },
     ],
@@ -50,7 +65,11 @@ describe('no-bidi-characters', () => {
         errors: 3,
       },
       // A right-to-left override inside a string literal.
-      { name: 'a right-to-left override inside a string literal', code: `const label = '${RLO}admin';`, errors: 1 },
+      {
+        name: 'a right-to-left override inside a string literal',
+        code: `const label = '${RLO}admin';`,
+        errors: 1,
+      },
       // ...and inside a comment, which an AST-only rule would never see.
       { code: `// begin admins only ${RLO}\nconst x = 1;`, errors: 1 },
       // Directional marks are dangerous by default.
@@ -74,7 +93,12 @@ describe('no-bidi-characters', () => {
         errors: [
           {
             messageId: 'bidiCharacter',
-            suggestions: [{ messageId: 'removeBidiCharacter', output: `const label = 'admin';` }],
+            suggestions: [
+              {
+                messageId: 'removeBidiCharacter',
+                output: `const label = 'admin';`,
+              },
+            ],
           },
         ],
       },

@@ -19,9 +19,18 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-sensitive-sessionstorage', noSensitiveSessionstorage, {
   valid: [
-    { name: 'a theme preference', code: `sessionStorage.setItem('theme', 'dark');` },
-    { name: 'a non-sensitive key', code: `sessionStorage.setItem('step', '3');` },
-    { code: `const v = sessionStorage.getItem('password');` },
+    {
+      name: 'a theme preference',
+      code: `sessionStorage.setItem('theme', 'dark');`,
+    },
+    {
+      name: 'a non-sensitive key',
+      code: `sessionStorage.setItem('step', '3');`,
+    },
+    {
+      name: 'reading a stored password back is not a write of one',
+      code: `const v = sessionStorage.getItem('password');`,
+    },
     // Test files allowed by default
     { code: `sessionStorage.setItem('password', pw);`, filename: 'x.test.ts' },
 
@@ -60,7 +69,9 @@ ruleTester.run('no-sensitive-sessionstorage', noSensitiveSessionstorage, {
     },
     {
       code: `sessionStorage.setItem('ssn', v);`,
-      errors: [{ messageId: 'sensitiveInSessionStorage', data: { key: 'ssn' } }],
+      errors: [
+        { messageId: 'sensitiveInSessionStorage', data: { key: 'ssn' } },
+      ],
     },
     {
       code: `sessionStorage.setItem('creditCardNumber', pan);`,
@@ -73,7 +84,9 @@ ruleTester.run('no-sensitive-sessionstorage', noSensitiveSessionstorage, {
     },
     {
       code: `sessionStorage.setItem('cvv', c);`,
-      errors: [{ messageId: 'sensitiveInSessionStorage', data: { key: 'cvv' } }],
+      errors: [
+        { messageId: 'sensitiveInSessionStorage', data: { key: 'cvv' } },
+      ],
     },
     {
       code: `sessionStorage['apiKey'] = k;`,
@@ -108,7 +121,10 @@ ruleTester.run('no-sensitive-sessionstorage', noSensitiveSessionstorage, {
         sessionStorage.setItem(K, v);
       `,
       errors: [
-        { messageId: 'sensitiveInSessionStorage', data: { key: 'private_key' } },
+        {
+          messageId: 'sensitiveInSessionStorage',
+          data: { key: 'private_key' },
+        },
       ],
     },
   ],

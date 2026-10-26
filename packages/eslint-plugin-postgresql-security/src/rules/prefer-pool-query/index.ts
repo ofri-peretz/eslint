@@ -1,3 +1,4 @@
+import { RuleCreator } from '@interlace/eslint-devkit';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -70,12 +71,16 @@ const SESSION_STATEMENTS: readonly RegExp[] = [
  * request is handed that connection — or never, because the holder went back
  * into the pool. `pg_export_snapshot` has the same connection affinity.
  */
-const SESSION_FUNCTIONS = /\bpg_(?:try_)?advisory_(?:xact_)?(?:un)?lock\w*\s*\(|\bpg_export_snapshot\s*\(/i;
+const SESSION_FUNCTIONS =
+  /\bpg_(?:try_)?advisory_(?:xact_)?(?:un)?lock\w*\s*\(|\bpg_export_snapshot\s*\(/i;
 
 /** Whether a statement needs the connection it runs on to be the same one. */
 function needsSessionAffinity(text: string): boolean {
   const trimmed = text.trim();
-  return SESSION_STATEMENTS.some((pattern) => pattern.test(trimmed)) || SESSION_FUNCTIONS.test(trimmed);
+  return (
+    SESSION_STATEMENTS.some((pattern) => pattern.test(trimmed)) ||
+    SESSION_FUNCTIONS.test(trimmed)
+  );
 }
 
 /**
@@ -148,19 +153,31 @@ function owningScopeNode(node: TSESTree.Node): TSESTree.Node {
  * it, which is advice to make the code worse. The same counting bug reaches the
  * `rows.map((row) => client.query(...))` form.
  */
-function runsExactlyOnce(call: TSESTree.Node, declarator: TSESTree.Node): boolean {
+function runsExactlyOnce(
+  call: TSESTree.Node,
+  declarator: TSESTree.Node,
+): boolean {
   const owner = owningScopeNode(declarator);
-  for (let node: TSESTree.Node | undefined = call.parent; node && node !== owner; node = node.parent) {
+  for (
+    let node: TSESTree.Node | undefined = call.parent;
+    node && node !== owner;
+    node = node.parent
+  ) {
     if (isLoop(node) || isFunctionOrProgram(node)) return false;
   }
   return true;
 }
 
-export const preferPoolQuery: TSESLint.RuleModule<'preferPoolQuery', PreferPoolQueryOptions> = {
+export const preferPoolQuery: TSESLint.RuleModule<
+  'preferPoolQuery',
+  PreferPoolQueryOptions
+> = RuleCreator.withoutDocs<PreferPoolQueryOptions, 'preferPoolQuery'>({
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
-      description: 'Prefer pool.query() over client.query() for single-shot queries.',
+      description:
+        'Prefer pool.query() over client.query() for single-shot queries.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/prefer-pool-query.md',
       // See the sibling rule: the value lived only inside formatLLMMessage,
       // where the formatter cannot see it.
@@ -181,14 +198,16 @@ export const preferPoolQuery: TSESLint.RuleModule<'preferPoolQuery', PreferPoolQ
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    // Every rule here is PostgreSQL-specific, and none of them knew it: over
-    // 108,838 files, 94% of this plugin's findings were in files with no
-    // PostgreSQL client at all. Registering no visitors is both the gate and
-    // the cheap path — a file with no database in it does no work.
-    if (!usesPostgres(context)) return {};
-
+  createOnce(context) {
     return {
+      before() {
+        // Every rule here is PostgreSQL-specific, and none of them knew it: over
+        // 108,838 files, 94% of this plugin's findings were in files with no
+        // PostgreSQL client at all. Registering no visitors is both the gate and
+        // the cheap path — a file with no database in it does no work.
+        if (!usesPostgres(context)) return false;
+        return true;
+      },
       VariableDeclarator(node) {
         // `const client = await pool.connect()` — a manual checkout.
         if (
@@ -196,7 +215,8 @@ export const preferPoolQuery: TSESLint.RuleModule<'preferPoolQuery', PreferPoolQ
           node.init.type !== AST_NODE_TYPES.AwaitExpression ||
           node.init.argument.type !== AST_NODE_TYPES.CallExpression ||
           node.init.argument.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          node.init.argument.callee.property.type !== AST_NODE_TYPES.Identifier ||
+          node.init.argument.callee.property.type !==
+            AST_NODE_TYPES.Identifier ||
           node.init.argument.callee.property.name !== 'connect'
         ) {
           return;
@@ -237,7 +257,10 @@ export const preferPoolQuery: TSESLint.RuleModule<'preferPoolQuery', PreferPoolQ
 
           queryCallCount += 1;
           const call = access.parent;
-          if (call === undefined || call.type !== AST_NODE_TYPES.CallExpression) {
+          if (
+            call === undefined ||
+            call.type !== AST_NODE_TYPES.CallExpression
+          ) {
             // `const run = client.query` — the method is taken as a value.
             otherUsageCount += 1;
             continue;
@@ -250,10 +273,14 @@ export const preferPoolQuery: TSESLint.RuleModule<'preferPoolQuery', PreferPoolQ
           if (text === null || needsSessionAffinity(text)) return;
         }
 
-        if (queryCallCount === 1 && releaseCallCount === 1 && otherUsageCount === 0) {
+        if (
+          queryCallCount === 1 &&
+          releaseCallCount === 1 &&
+          otherUsageCount === 0
+        ) {
           context.report({ node, messageId: 'preferPoolQuery' });
         }
       },
     };
   },
-};
+});

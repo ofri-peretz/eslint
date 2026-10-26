@@ -8,7 +8,12 @@
  * @fileoverview Require validation of deep link URLs
  */
 
-import { createRule, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   identityArgumentIndex,
@@ -73,11 +78,17 @@ function memberPath(
  * Exact segment membership against React Navigation's closed API surface — not
  * a substring test, so `routerParams` and `paramsHistory` do not match.
  */
-function isRouteParam(node: TSESTree.Node, sourceCode: TSESLint.SourceCode): boolean {
+function isRouteParam(
+  node: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
   const path = memberPath(node, sourceCode);
   if (path === null) return false;
   for (let i = 0; i + 2 < path.length; i += 1) {
-    if ((path[i] === 'route' || path[i] === 'routes') && path[i + 1] === 'params') {
+    if (
+      (path[i] === 'route' || path[i] === 'routes') &&
+      path[i + 1] === 'params'
+    ) {
       return true;
     }
   }
@@ -223,6 +234,7 @@ type RuleOptions = [Options?];
 export const noUnvalidatedDeeplinks = createRule<RuleOptions, MessageIds>({
   name: 'no-unvalidated-deeplinks',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-unvalidated-deeplinks.md',
@@ -235,23 +247,27 @@ export const noUnvalidatedDeeplinks = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Unvalidated Deeplink',
         cwe: 'CWE-939',
-        description: 'Deep link URL used without validation - potential open redirect',
+        description:
+          'Deep link URL used without validation - potential open redirect',
         severity: 'HIGH',
         fix: 'Validate deep link URLs against a whitelist before navigation',
         documentationLink: 'https://cwe.mitre.org/data/definitions/939.html',
-      })
+      }),
     },
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    const { sourceCode } = context;
+  createOnce(context) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
     }
 
     return {
+      before() {
+        ({ sourceCode } = context);
+      },
       CallExpression(node: TSESTree.CallExpression) {
         // `Linking.openURL(url)` hands the string to the OS URL-scheme
         // handler, which will launch whatever app claims that scheme.
@@ -282,9 +298,10 @@ export const noUnvalidatedDeeplinks = createRule<RuleOptions, MessageIds>({
         // utils/url-taint.ts. `Linking.openURL` above needs no such test: it
         // hands the string to the OS URL-scheme handler, which is the sink
         // CWE-939 is about.
-        if (node.callee.type === 'MemberExpression' &&
-            propertyName(node.callee) === 'navigate') {
-
+        if (
+          node.callee.type === 'MemberExpression' &&
+          propertyName(node.callee) === 'navigate'
+        ) {
           const urlArg = node.arguments[0];
           if (urlArg && isSteerableUrlValue(urlArg, context.sourceCode)) {
             report(node);

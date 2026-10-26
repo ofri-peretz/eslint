@@ -8,11 +8,15 @@
  * ESLint Rule: ddd-value-object-immutability
  * Validates value objects are properly immutable
  * Priority 1: Domain-Driven Design
- * 
+ *
  * @see https://martinfowler.com/bliki/ValueObject.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -25,10 +29,10 @@ type MessageIds =
 export interface Options {
   /** Patterns to identify value objects. Default: ['Value', 'VO', 'ValueObject'] */
   valueObjectPatterns?: string[];
-  
+
   /** Require readonly modifiers. Default: true */
   requireReadonly?: boolean;
-  
+
   /** Check for Object.freeze usage. Default: true */
   checkObjectFreeze?: boolean;
 }
@@ -55,11 +59,8 @@ type RuleOptions = [Options?];
  * it is not allowed to do is match loosely and then assert a design defect the
  * evidence does not support — which is what "contains" did.
  */
-function isValueObject(
-  className: string,
-  patterns: string[]
-): boolean {
-  return patterns.some(pattern => className.endsWith(pattern));
+function isValueObject(className: string, patterns: string[]): boolean {
+  return patterns.some((pattern) => className.endsWith(pattern));
 }
 
 /**
@@ -75,7 +76,7 @@ function hasReadonlyModifier(node: TSESTree.PropertyDefinition): boolean {
  * Check if class uses Object.freeze
  */
 function usesObjectFreeze(
-  node: TSESTree.ClassDeclaration | TSESTree.ClassExpression
+  node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
 ): boolean {
   // Check constructor for Object.freeze(this)
   for (const member of node.body.body) {
@@ -100,7 +101,7 @@ function usesObjectFreeze(
       }
     }
   }
-  
+
   return false;
 }
 
@@ -115,6 +116,7 @@ export const dddValueObjectImmutability = createRule<RuleOptions, MessageIds>({
    */
   skipGeneratedFiles: true,
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modularity/docs/rules/ddd-value-object-immutability.md',
@@ -133,10 +135,12 @@ export const dddValueObjectImmutability = createRule<RuleOptions, MessageIds>({
       mutableNestedType: formatLLMMessage({
         icon: MessageIcons.ARCHITECTURE,
         issueName: 'Mutable nested type',
-        description: 'Value object {{className}} has mutable nested type (array/object) - use Readonly<T> or readonly arrays',
+        description:
+          'Value object {{className}} has mutable nested type (array/object) - use Readonly<T> or readonly arrays',
         severity: 'MEDIUM',
         fix: 'Use readonly arrays or Readonly<T> for nested objects',
-        documentationLink: 'https://www.typescriptlang.org/docs/handbook/utility-types.html#readonlytype',
+        documentationLink:
+          'https://www.typescriptlang.org/docs/handbook/utility-types.html#readonlytype',
       }),
       addReadonly: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -144,7 +148,8 @@ export const dddValueObjectImmutability = createRule<RuleOptions, MessageIds>({
         description: 'Add readonly modifier',
         severity: 'LOW',
         fix: 'readonly propertyName: Type',
-        documentationLink: 'https://www.typescriptlang.org/docs/handbook/2/classes.html#readonly',
+        documentationLink:
+          'https://www.typescriptlang.org/docs/handbook/2/classes.html#readonly',
       }),
       useObjectFreeze: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -152,7 +157,8 @@ export const dddValueObjectImmutability = createRule<RuleOptions, MessageIds>({
         description: 'Use Object.freeze in constructor',
         severity: 'LOW',
         fix: 'constructor() { Object.freeze(this); }',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze',
       }),
       makeImmutable: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -195,18 +201,20 @@ export const dddValueObjectImmutability = createRule<RuleOptions, MessageIds>({
       checkObjectFreeze: true,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const {
-valueObjectPatterns = ['Value', 'VO', 'ValueObject'],
-      requireReadonly = true,
-      checkObjectFreeze = true,
-    
-}: Options = options || {};
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let valueObjectPatterns: string[];
+    let requireReadonly: boolean;
+    let checkObjectFreeze: boolean;
 
     /**
      * Check class declarations
      */
-    function checkClass(node: TSESTree.ClassDeclaration | TSESTree.ClassExpression) {
+    function checkClass(
+      node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
+    ) {
       if (!node.id) {
         return;
       }
@@ -225,7 +233,7 @@ valueObjectPatterns = ['Value', 'VO', 'ValueObject'],
 
       // Check properties for readonly
       const mutableProperties: TSESTree.Node[] = [];
-      
+
       for (const member of node.body.body) {
         if (member.type === 'PropertyDefinition') {
           if (requireReadonly && !hasReadonlyModifier(member)) {
@@ -260,9 +268,16 @@ valueObjectPatterns = ['Value', 'VO', 'ValueObject'],
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          valueObjectPatterns = ['Value', 'VO', 'ValueObject'],
+          requireReadonly = true,
+          checkObjectFreeze = true,
+        } = options || {});
+      },
       ClassDeclaration: checkClass,
       ClassExpression: checkClass,
     };
   },
 });
-

@@ -252,6 +252,7 @@ function unwrapAwait(node: TSESTree.Node): TSESTree.Node {
 export const requireAuthErrorCheck = createRule<[], MessageIds>({
   name: 'require-auth-error-check',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-supabase-security/docs/rules/require-auth-error-check.md',
@@ -278,9 +279,8 @@ export const requireAuthErrorCheck = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    if (!fileUsesSupabase(context.sourceCode.ast)) return {};
-    const sourceCode = context.sourceCode;
+  createOnce(context) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /** The auth method a call invokes, if it is one this rule covers. */
     const authMethodOf = (node: TSESTree.Node): string | undefined => {
@@ -305,6 +305,11 @@ export const requireAuthErrorCheck = createRule<[], MessageIds>({
     }
 
     return {
+      before() {
+        if (!fileUsesSupabase(context.sourceCode.ast)) return false;
+        sourceCode = context.sourceCode;
+        return true;
+      },
       VariableDeclarator(node): void {
         if (node.id.type !== 'ObjectPattern') return;
         if (node.init === null) return;

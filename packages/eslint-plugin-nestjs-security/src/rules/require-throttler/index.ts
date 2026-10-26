@@ -142,6 +142,7 @@ function isSensitiveRoute(candidates: readonly string[]): boolean {
 export const requireThrottler = createRule<RuleOptions, MessageIds>({
   name: 'require-throttler',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/require-throttler.md',
@@ -162,7 +163,6 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
         fix: 'Add @UseGuards(ThrottlerGuard) or configure global ThrottlerModule',
         documentationLink: 'https://docs.nestjs.com/security/rate-limiting',
       }),
-
     },
     schema: [
       {
@@ -201,43 +201,17 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     { allowInTests: true, skipRoutes: [], assumeGlobalThrottler: false },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    // Registering no visitors is both the gate and the cheap path: a file
-    // that does not use this SDK does no work at all.
-    if (!fileUsesNestjs(context.sourceCode.ast)) return {};
-
-    const {
-      allowInTests = true,
-      assumeGlobalThrottler = false,
-      detectGlobalThrottler = true,
-      skipRoutes = [],
-      onlySensitiveRoutes = true,
-    } = options as Options;
-
-    // Skip entirely if global ThrottlerModule is assumed (configured in AppModule)
-    if (assumeGlobalThrottler) {
-      return {};
-    }
-
-    if (allowInTests && isTestFilePath(context.filename)) {
-      return {};
-    }
-
-    // The registration lives in another file, so this is the only way a
-    // single-file rule can know it exists. Without it the rule reports every
-    // route of a correctly-configured application.
-    if (
-      detectGlobalThrottler &&
-      getProjectContext(context).hasGlobalThrottler
-    ) {
-      return {};
-    }
-
-    const origins = collectImportOrigins(context.sourceCode.ast);
-    const skipped = new Set(skipRoutes);
+    let allowInTests: boolean;
+    let assumeGlobalThrottler: boolean;
+    let detectGlobalThrottler: boolean;
+    let skipRoutes: string[];
+    let onlySensitiveRoutes: boolean;
+    let origins: Map<string, string>;
+    let skipped: Set<string>;
 
     /** Whether @UseGuards(...) installs a ThrottlerGuard. */
     function hasThrottlerGuardDecorator(
@@ -272,6 +246,43 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Registering no visitors is both the gate and the cheap path: a file
+        // that does not use this SDK does no work at all.
+        if (!fileUsesNestjs(context.sourceCode.ast)) return false;
+
+        ({
+          allowInTests = true,
+          assumeGlobalThrottler = false,
+          detectGlobalThrottler = true,
+          skipRoutes = [],
+          onlySensitiveRoutes = true,
+        } = options as Options);
+
+        // Skip entirely if global ThrottlerModule is assumed (configured in AppModule)
+        if (assumeGlobalThrottler) {
+          return false;
+        }
+
+        if (allowInTests && isTestFilePath(context.filename)) {
+          return false;
+        }
+
+        // The registration lives in another file, so this is the only way a
+        // single-file rule can know it exists. Without it the rule reports every
+        // route of a correctly-configured application.
+        if (
+          detectGlobalThrottler &&
+          getProjectContext(context).hasGlobalThrottler
+        ) {
+          return false;
+        }
+
+        origins = collectImportOrigins(context.sourceCode.ast);
+        skipped = new Set(skipRoutes);
+        return true;
+      },
       MethodDefinition(node: TSESTree.MethodDefinition) {
         // A MethodDefinition is always a ClassBody child, so this is non-null.
         const cls = enclosingClass(node) as ClassNode;

@@ -39,7 +39,12 @@
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#security
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+} from '@interlace/eslint-devkit';
 
 import {
   cookieNameFrom,
@@ -65,6 +70,7 @@ type RuleOptions = [Options?];
 export const noSensitiveCookieJs = createRule<RuleOptions, MessageIds>({
   name: 'no-sensitive-cookie-js',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-sensitive-cookie-js.md',
@@ -112,18 +118,27 @@ export const noSensitiveCookieJs = createRule<RuleOptions, MessageIds>({
       sensitivePatterns: [...NON_BEARER_SECRET_TERMS],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = true, sensitivePatterns = [...NON_BEARER_SECRET_TERMS] } = options as Options;
-    const isTestFile = isTestFilePath(context.filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
+    let allowInTests: boolean;
+    let sensitivePatterns: string[];
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          allowInTests = true,
+          sensitivePatterns = [...NON_BEARER_SECRET_TERMS],
+        } = options as Options);
+        const isTestFile = isTestFilePath(context.filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+        return true;
+      },
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         if (!isDocumentCookieTarget(node.left)) return;
 

@@ -25,6 +25,10 @@ type RuleOptions = [];
 export const noNamedAsDefaultMember = createRule<RuleOptions, MessageIds>({
   name: 'no-named-as-default-member',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/no-named-as-default-member',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-named-as-default-member.md',
@@ -49,16 +53,23 @@ export const noNamedAsDefaultMember = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    // Track default imports and their sources
-    const defaultImports = new Map<
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let defaultImports: Map<
       string,
       { source: string; node: TSESTree.ImportDefaultSpecifier }
-    >();
-    // Track named imports per source
-    const namedImportsBySource = new Map<string, Set<string>>();
+    >;
+    let namedImportsBySource: Map<string, Set<string>>;
 
     return {
+      before() {
+        // Track default imports and their sources
+        defaultImports = new Map<
+          string,
+          { source: string; node: TSESTree.ImportDefaultSpecifier }
+        >();
+        // Track named imports per source
+        namedImportsBySource = new Map<string, Set<string>>();
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const source = node.source.value as string;
 

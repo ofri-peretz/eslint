@@ -73,6 +73,9 @@
     "drizzle-orm": "^0.29.0 || ^0.30.0 || ^1.0.0"
   },
   "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    },
     "drizzle-orm": {
       "optional": true
     }

@@ -28,6 +28,10 @@ const nameOf = (node: TSESTree.Identifier | TSESTree.StringLiteral): string =>
 export const noNamedAsDefault = createRule<RuleOptions, MessageIds>({
   name: 'no-named-as-default',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/no-named-as-default',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-named-as-default.md',
@@ -53,7 +57,7 @@ export const noNamedAsDefault = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     /**
      * The collision this rule can actually see is WITHIN one declaration: a
      * module's default is bound to a name, and the same declaration also

@@ -32,7 +32,10 @@ describe('no-unsafe-regex-construction', () => {
           'const safeRegex = new RegExp("^[0-9]+$");',
           'const pattern = /^.{1,100}$/;',
           // Escaped user input using trusted functions
-          'const regex = new RegExp(escapeRegex(userInput));',
+          {
+            name: 'user input escaped before RegExp construction is safe',
+            code: 'const regex = new RegExp(escapeRegex(userInput));',
+          },
           'const regex = new RegExp(sanitize(userInput));',
           'const regex = new RegExp(escape(input));',
           // Non-RegExp calls

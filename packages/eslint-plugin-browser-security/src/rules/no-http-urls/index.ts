@@ -64,7 +64,7 @@ type MessageIds = 'insecureHttp' | 'insecureHttpWithException';
 export interface Options {
   /** List of hostnames allowed to use HTTP (e.g., localhost, 127.0.0.1) */
   allowedHosts?: string[];
-  
+
   /** List of ports allowed for HTTP (e.g., 3000, 8080 for development) */
   allowedPorts?: number[];
 }
@@ -98,6 +98,7 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
    */
   skipTestFiles: true,
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-http-urls.md',
@@ -138,13 +139,15 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: DEFAULT_ALLOWED_HOSTS,
-            description: 'List of hostnames allowed to use HTTP (e.g., localhost, 127.0.0.1)',
+            description:
+              'List of hostnames allowed to use HTTP (e.g., localhost, 127.0.0.1)',
           },
           allowedPorts: {
             type: 'array',
             items: { type: 'number' },
             default: [],
-            description: 'List of ports allowed for HTTP (e.g., 3000, 8080 for development)',
+            description:
+              'List of ports allowed for HTTP (e.g., 3000, 8080 for development)',
           },
         },
         additionalProperties: false,
@@ -157,29 +160,31 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
       allowedPorts: [],
     },
   ],
-  create(context) {
-    const [options = {}] = context.options;
-    const allowedHosts = options.allowedHosts ?? DEFAULT_ALLOWED_HOSTS;
-    const allowedPorts = options.allowedPorts ?? [];
+  createOnce(context) {
+    let allowedHosts: string[];
+    let allowedPorts: number[];
 
     function isAllowedException(url: string): boolean {
       try {
         const parsedUrl = new URL(url);
-        
+
         // Check if host is in allowed list
         if (allowedHosts.includes(parsedUrl.hostname)) {
           return true;
         }
 
         // Check if port is in allowed list
-        if (parsedUrl.port && allowedPorts.includes(parseInt(parsedUrl.port, 10))) {
+        if (
+          parsedUrl.port &&
+          allowedPorts.includes(parseInt(parsedUrl.port, 10))
+        ) {
           return true;
         }
 
         return false;
       } catch {
         // If URL parsing fails, treat as pattern match
-        return allowedHosts.some(host => url.includes(host));
+        return allowedHosts.some((host) => url.includes(host));
       }
     }
 
@@ -294,15 +299,21 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
       if (httpPattern.test(value) && !isAllowedException(value)) {
         context.report({
           node,
-          messageId: allowedHosts.length > 0 || allowedPorts.length > 0 
-            ? 'insecureHttpWithException' 
-            : 'insecureHttp',
+          messageId:
+            allowedHosts.length > 0 || allowedPorts.length > 0
+              ? 'insecureHttpWithException'
+              : 'insecureHttp',
           data: { url: value },
         });
       }
     }
 
     return {
+      before() {
+        const [options = {}] = context.options;
+        allowedHosts = options.allowedHosts ?? DEFAULT_ALLOWED_HOSTS;
+        allowedPorts = options.allowedPorts ?? [];
+      },
       Literal(node) {
         if (typeof node.value === 'string') {
           checkStringValue(node, node.value);

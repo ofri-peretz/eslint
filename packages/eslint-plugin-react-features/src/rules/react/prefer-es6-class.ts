@@ -17,6 +17,10 @@ type MessageIds = 'preferEs6Class';
 export const preferEs6Class = createRule<[], MessageIds>({
   name: 'prefer-es6-class',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/prefer-es6-class',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/prefer-es6-class.md',
@@ -35,7 +39,7 @@ export const preferEs6Class = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Check for React.createClass()

@@ -71,6 +71,7 @@ type RuleOptions = [NoAlgorithmNoneOptions?];
 export const noAlgorithmNone = createRule<RuleOptions, MessageIds>({
   name: 'no-algorithm-none',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt-security/docs/rules/no-algorithm-none.md',
@@ -158,15 +159,8 @@ export const noAlgorithmNone = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] ?? {};
-    const { allowInTests = false } = options;
-    const filename = context.filename;
-
-    // Skip test files if configured
-    if (allowInTests && isTestFilePath(filename)) {
-      return {};
-    }
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /**
      * Check if an algorithm value is 'none' (case insensitive)
@@ -175,11 +169,6 @@ export const noAlgorithmNone = createRule<RuleOptions, MessageIds>({
     const isNoneAlgorithm = (value: string): boolean => {
       return value.toLowerCase() === 'none';
     };
-
-    /**
-     * Check options object for 'none' algorithm
-     */
-    const sourceCode = context.sourceCode;
 
     const checkOptionsForNone = (optionsNode: ResolvedObject): void => {
       // Resolved options carry only real properties: spreads of a resolvable
@@ -253,6 +242,22 @@ export const noAlgorithmNone = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] ?? {};
+        const { allowInTests = false } = options;
+        const filename = context.filename;
+
+        // Skip test files if configured
+        if (allowInTests && isTestFilePath(filename)) {
+          return false;
+        }
+
+        /**
+         * Check options object for 'none' algorithm
+         */
+        sourceCode = context.sourceCode;
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         // NOTE: a bare `jwt.decode(...)` is deliberately NOT reported here —
         // see the PARTITION note at the top of this file. It belongs to

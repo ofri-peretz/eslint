@@ -94,6 +94,7 @@ export function findTerminatorsInExamples(commentText: string): number[] {
 export const noJsdocTerminatorInExample = createRule<RuleOptions, MessageIds>({
   name: 'no-jsdoc-terminator-in-example',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     // DEPRECATED: this rule cannot fire on any parseable file.
     //
@@ -135,10 +136,13 @@ export const noJsdocTerminatorInExample = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const sourceCode = context.sourceCode;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     return {
+      before() {
+        sourceCode = context.sourceCode;
+      },
       Program() {
         const comments = sourceCode.getAllComments();
 

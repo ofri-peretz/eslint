@@ -73,14 +73,23 @@ type RuleOptions = [Options?];
  * same fact.
  */
 const STREAM_CONSTRUCTORS: ReadonlySet<string> = new Set([
-  'createReadStream', 'createWriteStream',
-  'createGzip', 'createGunzip', 'createDeflate', 'createInflate',
-  'createBrotliCompress', 'createBrotliDecompress',
+  'createReadStream',
+  'createWriteStream',
+  'createGzip',
+  'createGunzip',
+  'createDeflate',
+  'createInflate',
+  'createBrotliCompress',
+  'createBrotliDecompress',
 ]);
 
 /** Methods that register an event listener. */
 const LISTENER_METHODS: ReadonlySet<string> = new Set([
-  'on', 'once', 'addListener', 'prependListener', 'prependOnceListener',
+  'on',
+  'once',
+  'addListener',
+  'prependListener',
+  'prependOnceListener',
 ]);
 
 /** The method name this callee invokes, for `f()` and `o.f()`. */
@@ -103,6 +112,7 @@ export function constructsStream(node: TSESTree.Node): boolean {
 export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
   name: 'require-stream-error-handler',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/require-stream-error-handler.md',
@@ -122,7 +132,6 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
         fix: "Attach stream.on('error', handler) before piping, or use pipeline(), which destroys every stream and reports the failure.",
         documentationLink: 'https://cwe.mitre.org/data/definitions/248.html',
       }),
-
     },
     schema: [
       {
@@ -143,21 +152,13 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
       allowInTests: true,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = true } = options as Options;
-    if (allowInTests && isTestFilePath(context.filename)) {
-      return {};
-    }
-
-    /** Names that appear with an `'error'` listener anywhere in this file. */
-    const handled = new Set<string>();
-    /** Names bound to a stream constructor. */
-    const streamBindings = new Set<string>();
-    /** Pipes to judge at Program:exit, once every listener is known. */
-    const pending: { node: TSESTree.CallExpression; offender: TSESTree.Node }[] = [];
+    let handled: Set<string>;
+    let streamBindings: Set<string>;
+    let pending: { node: TSESTree.CallExpression; offender: TSESTree.Node }[];
 
     /**
      * Is this expression a stream with no reachable `'error'` listener?
@@ -176,6 +177,21 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = true } = options as Options;
+        if (allowInTests && isTestFilePath(context.filename)) {
+          return false;
+        }
+
+        /** Names that appear with an `'error'` listener anywhere in this file. */
+        handled = new Set<string>();
+        /** Names bound to a stream constructor. */
+        streamBindings = new Set<string>();
+        /** Pipes to judge at Program:exit, once every listener is known. */
+        pending = [];
+        return true;
+      },
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (
           node.init !== null &&

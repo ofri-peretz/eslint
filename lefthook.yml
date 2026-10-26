@@ -13,6 +13,14 @@ pre-commit:
       run: npx --no markdownlint-cli2 {staged_files}
     shim-drift:
       run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent oxlint:shims:check
+    alias-drift:
+      # oxlint-plugin-* aliases are generated from each plugin's manifest.
+      glob: '{packages/*/package.json,packages/*/LICENSE,packages/eslint-plugin-*/README.md,packages/oxlint-plugin-*/**,.changeset/config.json,scripts/generate-oxlint-aliases.mts}'
+      run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent oxlint:aliases:check
+    runtimes-report:
+      # docs/oxlint-runtimes.md is generated from the survey evidence.
+      glob: '{.agent/oxlint-runtime-survey.json,.agent/type-awareness-scan.tsv,packages/eslint-plugin-*/src/index.ts,docs/oxlint-runtimes.md,scripts/lib/oxlint-runtimes.mts}'
+      run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent oxlint:runtimes:check
     stale-build-artifacts:
       # Two assertions. (1) No .js/.d.ts/.js.map alongside .ts source in
       # packages/<pkg>/src/ — these shadow current .ts at workspace runtime
@@ -212,7 +220,7 @@ pre-push:
       # Filtering `test` is where the time actually goes (74 tasks → 21), and
       # build is cache-hit in seconds once warm, so scoping only `test` keeps
       # the speed win without handing the verify a half-built tree.
-      run: perl -e 'alarm 420; exec @ARGV' -- bash -c 'set -f; FILTER=; git rev-parse --verify --quiet origin/main >/dev/null && FILTER=--filter=...[origin/main]; npx --no turbo run build --output-logs=errors-only && npx --no turbo run test $FILTER --output-logs=errors-only && npm run --silent oxlint:shims:verify'
+      run: perl -e 'alarm 420; exec @ARGV' -- bash -c 'set -f; FILTER=; git rev-parse --verify --quiet origin/main >/dev/null && FILTER=--filter=...[origin/main]; npx --no turbo run build --output-logs=errors-only && npx --no turbo run test $FILTER --output-logs=errors-only && npm run --silent oxlint:shims:verify && npm run --silent oxlint:aliases:verify'
     # Only the markdown this push actually changes. `lint:md` walks 832 files
     # every time; a push that touches one .md paid for all of them.
     #

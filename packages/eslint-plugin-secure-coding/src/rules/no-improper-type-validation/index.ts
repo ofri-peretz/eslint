@@ -122,6 +122,7 @@ function unwrapTypeOnly(node: TSESTree.Node): TSESTree.Node {
 export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
   name: 'no-improper-type-validation',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-improper-type-validation.md',
@@ -220,25 +221,28 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const {
-      allowInstanceofSameRealm = true,
-      checkLooseEquality = true,
-      trustedSanitizers = [],
-      trustedAnnotations = [],
-      strictMode = false,
-    }: Options = options;
-
-    const sourceCode = context.sourceCode;
-    const filename = context.filename;
-
-    const safetyChecker = createSafetyChecker({
-      trustedSanitizers,
-      trustedAnnotations,
-      trustedOrmPatterns: [],
-      strictMode,
-    });
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowInstanceofSameRealm: boolean;
+    let checkLooseEquality: boolean;
+    let trustedSanitizers: string[];
+    let trustedAnnotations: string[];
+    let strictMode: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let filename: string;
+    let safetyChecker: {
+      isSafe(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      isSanitized(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      hasAnnotation(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+    };
 
     /** `null` or `undefined`, as written. */
     // oxlint-disable-next-line consistent-function-scoping
@@ -455,6 +459,26 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({
+          allowInstanceofSameRealm = true,
+          checkLooseEquality = true,
+          trustedSanitizers = [],
+          trustedAnnotations = [],
+          strictMode = false,
+        } = options);
+
+        sourceCode = context.sourceCode;
+        filename = context.filename;
+
+        safetyChecker = createSafetyChecker({
+          trustedSanitizers,
+          trustedAnnotations,
+          trustedOrmPatterns: [],
+          strictMode,
+        });
+      },
       BinaryExpression(node: TSESTree.BinaryExpression) {
         // `typeof x === 'object'` admits `null` and admits an array. That is a
         // property of the OPERATOR, not of the variable's name — the predecessor only

@@ -101,6 +101,10 @@ function isImportingSelf(
 export const noSelfImport = createRule<RuleOptions, MessageIds>({
   name: 'no-self-import',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/no-self-import',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-self-import.md',
@@ -133,7 +137,7 @@ export const noSelfImport = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allowInTests: false }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     // Visit all module imports and requires
     function visitModule(source: TSESTree.Literal, node: TSESTree.Node) {
       const importPath = source.value;

@@ -33,6 +33,7 @@ describe('no-unchecked-loop-condition', () => {
           code: 'for (let i = 0; i < 10; i++) { console.log(i); }',
         },
         {
+          name: 'a for loop bounded by the array length terminates',
           code: 'for (let i = 0; i < items.length; i++) { processItem(items[i]); }',
         },
         // Safe while loops with conditions
@@ -72,134 +73,157 @@ describe('no-unchecked-loop-condition', () => {
   });
 
   describe('Invalid Code - Infinite Loops', () => {
-    ruleTester.run('invalid - infinite loop patterns', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          name: 'a loop with no exit condition',
-          code: 'for (;;) { console.log("infinite"); }',
-          errors: [
-            {
-              messageId: 'infiniteLoop',
-            },
-          ],
-        },
-        {
-          name: 'while (true) with no break is an unbounded loop',
-          code: 'while (true) { /* no break */ }',
-          options: [{ allowWhileTrueWithBreak: false }],
-          errors: [
-            {
-              messageId: 'infiniteLoop',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - infinite loop patterns',
+      noUncheckedLoopCondition,
+      {
+        valid: [],
+        invalid: [
+          {
+            name: 'a loop with no exit condition',
+            code: 'for (;;) { console.log("infinite"); }',
+            errors: [
+              {
+                messageId: 'infiniteLoop',
+              },
+            ],
+          },
+          {
+            name: 'while (true) with no break is an unbounded loop',
+            code: 'while (true) { /* no break */ }',
+            options: [{ allowWhileTrueWithBreak: false }],
+            errors: [
+              {
+                messageId: 'infiniteLoop',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - User Controlled Loop Bounds', () => {
-    ruleTester.run('invalid - user controlled loop conditions', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          code: 'for (let i = 0; i < req.query.limit; i++) { processItem(); }',
-          errors: [
-            {
-              messageId: 'userControlledLoopBound',
-            },
-          ],
-        },
-        {
-          code: 'const userInput = req.query.count; while (userInput-- > 0) { doWork(); }',
-          errors: [
-            {
-              messageId: 'userControlledLoopBound',
-            },
-          ],
-        },
-        {
-          code: 'const iterations = req.body.count; for (let i = 0; i < iterations; i++) { /* work */ }',
-          errors: [
-            {
-              messageId: 'userControlledLoopBound',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - user controlled loop conditions',
+      noUncheckedLoopCondition,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'for (let i = 0; i < req.query.limit; i++) { processItem(); }',
+            errors: [
+              {
+                messageId: 'userControlledLoopBound',
+              },
+            ],
+          },
+          {
+            code: 'const userInput = req.query.count; while (userInput-- > 0) { doWork(); }',
+            errors: [
+              {
+                messageId: 'userControlledLoopBound',
+              },
+            ],
+          },
+          {
+            code: 'const iterations = req.body.count; for (let i = 0; i < iterations; i++) { /* work */ }',
+            errors: [
+              {
+                messageId: 'userControlledLoopBound',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Complex User Input Expressions', () => {
-    ruleTester.run('invalid - complex expressions with user input', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          code: 'const userInput = req.query.count; while (-userInput > 0) { /* UnaryExpression */ process(); }',
-          errors: [{ messageId: 'userControlledLoopBound' }],
-        },
-        {
-          code: 'const userInput = req.query.count; while (userInput++ < 100) { /* UpdateExpression */ process(); }',
-          errors: [{ messageId: 'userControlledLoopBound' }],
-        },
-        {
-          code: 'const userInput = req.query.count; while (!userInput) { /* UnaryExpression ! */ process(); }',
-          errors: [{ messageId: 'userControlledLoopBound' }],
-        },
-        {
-          code: 'const userInput = req.query.count; while (check(userInput)) { /* CallExpression with user input */ process(); }',
-          errors: [{ messageId: 'userControlledLoopBound' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - complex expressions with user input',
+      noUncheckedLoopCondition,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'const userInput = req.query.count; while (-userInput > 0) { /* UnaryExpression */ process(); }',
+            errors: [{ messageId: 'userControlledLoopBound' }],
+          },
+          {
+            code: 'const userInput = req.query.count; while (userInput++ < 100) { /* UpdateExpression */ process(); }',
+            errors: [{ messageId: 'userControlledLoopBound' }],
+          },
+          {
+            code: 'const userInput = req.query.count; while (!userInput) { /* UnaryExpression ! */ process(); }',
+            errors: [{ messageId: 'userControlledLoopBound' }],
+          },
+          {
+            code: 'const userInput = req.query.count; while (check(userInput)) { /* CallExpression with user input */ process(); }',
+            errors: [{ messageId: 'userControlledLoopBound' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Large Loop Bounds', () => {
-    ruleTester.run('invalid - potentially large iteration counts', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          code: 'for (let i = 0; i < 100000; i++) { processItem(); }',
-          errors: [
-            {
-              messageId: 'largeLoopBound',
-            },
-          ],
-        },
-        {
-          code: 'for (let i = 0; i <= 50000; i++) { /* work */ }',
-          errors: [
-            {
-              messageId: 'largeLoopBound',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - potentially large iteration counts',
+      noUncheckedLoopCondition,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'for (let i = 0; i < 100000; i++) { processItem(); }',
+            errors: [
+              {
+                messageId: 'largeLoopBound',
+              },
+            ],
+          },
+          {
+            code: 'for (let i = 0; i <= 50000; i++) { /* work */ }',
+            errors: [
+              {
+                messageId: 'largeLoopBound',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Missing Loop Termination', () => {
-    ruleTester.run('invalid - missing loop termination conditions', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          code: 'for (let i = 0; ; i++) { if (i > 10) break; }', // Missing condition in for loop
-          errors: [
-            {
-              messageId: 'missingLoopTermination',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - missing loop termination conditions',
+      noUncheckedLoopCondition,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'for (let i = 0; ; i++) { if (i > 10) break; }', // Missing condition in for loop
+            errors: [
+              {
+                messageId: 'missingLoopTermination',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Unsafe Recursion', () => {
-    ruleTester.run('invalid - unsafe recursive functions', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          code: `
+    ruleTester.run(
+      'invalid - unsafe recursive functions',
+      noUncheckedLoopCondition,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: `
             function recursiveFunc(n) {
               if (n > 0) {
                 recursiveFunc(n - 1); // Recursion without depth limit
@@ -217,127 +241,136 @@ describe('no-unchecked-loop-condition', () => {
               }
             }
           `,
-          errors: [
-            {
-              messageId: 'unsafeRecursion',
-            },
-          ],
-        },
-      ],
-    });
+            errors: [
+              {
+                messageId: 'unsafeRecursion',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Unchecked Collections', () => {
-    ruleTester.run('invalid - iteration over unchecked collections', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          code: 'for (const item of req.body.items) { processItem(item); }',
-          errors: [
-            {
-              messageId: 'uncheckedLoopCondition',
-            },
-          ],
-        },
-        // checkIfCollectionIsValidated walks up through IfStatement
-        // ancestors looking for an Array.isArray(...) + .length guard; an
-        // enclosing `if` that checks something unrelated to the collection
-        // does not count as validation (exercises the outer `if`'s false
-        // branch: no Array.isArray(collectionText) match at all).
-        {
-          code: `
+    ruleTester.run(
+      'invalid - iteration over unchecked collections',
+      noUncheckedLoopCondition,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'for (const item of req.body.items) { processItem(item); }',
+            errors: [
+              {
+                messageId: 'uncheckedLoopCondition',
+              },
+            ],
+          },
+          // checkIfCollectionIsValidated walks up through IfStatement
+          // ancestors looking for an Array.isArray(...) + .length guard; an
+          // enclosing `if` that checks something unrelated to the collection
+          // does not count as validation (exercises the outer `if`'s false
+          // branch: no Array.isArray(collectionText) match at all).
+          {
+            code: `
             if (someUnrelatedFlag) {
               for (const item of req.body.items) { processItem(item); }
             }
           `,
-          errors: [
-            {
-              messageId: 'uncheckedLoopCondition',
-            },
-          ],
-        },
-        // Array.isArray(...) present but no accompanying `.length`
-        // comparison — exercises the inner guard's false branch (has the
-        // isArray check, but not the length bound), so validation still
-        // fails and the loop is reported.
-        {
-          code: `
+            errors: [
+              {
+                messageId: 'uncheckedLoopCondition',
+              },
+            ],
+          },
+          // Array.isArray(...) present but no accompanying `.length`
+          // comparison — exercises the inner guard's false branch (has the
+          // isArray check, but not the length bound), so validation still
+          // fails and the loop is reported.
+          {
+            code: `
             if (Array.isArray(req.body.items)) {
               for (const item of req.body.items) { processItem(item); }
             }
           `,
-          errors: [
-            {
-              messageId: 'uncheckedLoopCondition',
-            },
-          ],
-        },
-        {
-          code: 'const userInput = req.query.count; for (const key in userInput) { console.log(key); }',
-          errors: [
-            {
-              messageId: 'uncheckedLoopCondition',
-            },
-          ],
-        },
-      ],
-    });
+            errors: [
+              {
+                messageId: 'uncheckedLoopCondition',
+              },
+            ],
+          },
+          {
+            code: 'const userInput = req.query.count; for (const key in userInput) { console.log(key); }',
+            errors: [
+              {
+                messageId: 'uncheckedLoopCondition',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Valid Code - False Positives Reduced', () => {
-    ruleTester.run('valid - false positives reduced', noUncheckedLoopCondition, {
-      valid: [
-        // Safe annotations
-        {
-          code: `
+    ruleTester.run(
+      'valid - false positives reduced',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          // Safe annotations
+          {
+            code: `
             /** @safe-loop */
             while (true) {
               processData();
               if (shouldStop) break;
             }
           `,
-        },
-        // Controlled user input
-        {
-          code: `
+          },
+          // Controlled user input
+          {
+            code: `
             const safeLimit = Math.min(req.query.limit, 100);
             for (let i = 0; i < safeLimit; i++) { /* work */ }
           `,
-        },
-        // Validated collections
-        {
-          code: `
+          },
+          // Validated collections
+          {
+            code: `
             if (Array.isArray(req.body.items) && req.body.items.length < 100) {
               for (const item of req.body.items) { processItem(item); }
             }
           `,
-        },
-        // Same validation shape using >= instead of < — checkIfCollectionIsValidated's
-        // length-comparison check is a 4-way `||` over <, >, <=, >=; the `<`
-        // fixture above only exercises the first disjunct.
-        {
-          code: `
+          },
+          // Same validation shape using >= instead of < — checkIfCollectionIsValidated's
+          // length-comparison check is a 4-way `||` over <, >, <=, >=; the `<`
+          // fixture above only exercises the first disjunct.
+          {
+            code: `
             if (Array.isArray(req.body.items) && req.body.items.length >= 0) {
               for (const item of req.body.items) { processItem(item); }
             }
           `,
-        },
-        // Small iteration counts
-        {
-          code: 'for (let i = 0; i < 100; i++) { /* safe small loop */ }',
-        },
-        // Controlled recursion
-        {
-          code: `
+          },
+          // Small iteration counts
+          {
+            code: 'for (let i = 0; i < 100; i++) { /* safe small loop */ }',
+          },
+          // Controlled recursion
+          {
+            code: `
             function safeRecursion(n, depth = 0) {
               if (depth > 10) return; // Depth limit
               if (n > 0) safeRecursion(n - 1, depth + 1);
             }
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('Configuration Options', () => {
@@ -361,48 +394,59 @@ describe('no-unchecked-loop-condition', () => {
       ],
     });
 
-    ruleTester.run('config - custom user input variables', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: 'for (let i = 0; i < customInput; i++) { /* not flagged */ }',
-          options: [{ userInputVariables: ['otherInput'] }],
-        },
-      ],
-      invalid: [
-        {
-          code: 'while (customInput-- > 0) { /* flagged */ }',
-          options: [{ userInputVariables: ['customInput'] }],
-          errors: [
-            {
-              messageId: 'userControlledLoopBound',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'config - custom user input variables',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: 'for (let i = 0; i < customInput; i++) { /* not flagged */ }',
+            options: [{ userInputVariables: ['otherInput'] }],
+          },
+        ],
+        invalid: [
+          {
+            code: 'while (customInput-- > 0) { /* flagged */ }',
+            options: [{ userInputVariables: ['customInput'] }],
+            errors: [
+              {
+                messageId: 'userControlledLoopBound',
+              },
+            ],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('config - disable while true with break', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          code: 'while (true) { processData(); if (done) break; }',
-          options: [{ allowWhileTrueWithBreak: false }],
-          errors: [
-            {
-              messageId: 'infiniteLoop',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'config - disable while true with break',
+      noUncheckedLoopCondition,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'while (true) { processData(); if (done) break; }',
+            options: [{ allowWhileTrueWithBreak: false }],
+            errors: [
+              {
+                messageId: 'infiniteLoop',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Complex Loop Condition Scenarios', () => {
-    ruleTester.run('complex - real-world DoS loop patterns', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          code: `
+    ruleTester.run(
+      'complex - real-world DoS loop patterns',
+      noUncheckedLoopCondition,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: `
             // ReDoS through user-controlled regex in loop
             app.post('/search', (req, res) => {
               const pattern = req.body.pattern;
@@ -416,14 +460,14 @@ describe('no-unchecked-loop-condition', () => {
               res.json({ result: text });
             });
           `,
-          errors: [
-            {
-              messageId: 'userControlledLoopBound',
-            },
-          ],
-        },
-        {
-          code: `
+            errors: [
+              {
+                messageId: 'userControlledLoopBound',
+              },
+            ],
+          },
+          {
+            code: `
             // Resource exhaustion through large array operations
             function processLargeArray(req, res) {
               const data = req.body.data; // Could be millions of items
@@ -436,14 +480,14 @@ describe('no-unchecked-loop-condition', () => {
               res.json({ processed: data.length });
             }
           `,
-          errors: [
-            {
-              messageId: 'uncheckedLoopCondition',
-            },
-          ],
-        },
-        {
-          code: `
+            errors: [
+              {
+                messageId: 'uncheckedLoopCondition',
+              },
+            ],
+          },
+          {
+            code: `
             // DoS through user-controlled iteration bounds
             app.get('/paginate', (req, res) => {
               const pageSize = parseInt(req.query.pageSize) || 10;
@@ -462,14 +506,15 @@ describe('no-unchecked-loop-condition', () => {
               res.json(results);
             });
           `,
-          errors: [
-            {
-              messageId: 'userControlledLoopBound',
-            },
-          ],
-        },
-      ],
-    });
+            errors: [
+              {
+                messageId: 'userControlledLoopBound',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - WhileStatement/DoWhileStatement gaps', () => {
@@ -483,27 +528,35 @@ describe('no-unchecked-loop-condition', () => {
     //
     // The heuristics that produced them are gone; see the REMOVED note in
     // index.ts for the string-literal and comment probes that settled it.
-    ruleTester.run('valid - no user input means no user-controlled bound', noUncheckedLoopCondition, {
-      valid: [
-        "while (cache.match(rx)) { cache = cache.replace(rx, ''); }",
-        'while (page < pageSize) { advance(); }',
-        'while (offset * limit < total) { advance(); }',
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - no user input means no user-controlled bound',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          "while (cache.match(rx)) { cache = cache.replace(rx, ''); }",
+          'while (page < pageSize) { advance(); }',
+          'while (offset * limit < total) { advance(); }',
+        ],
+        invalid: [],
+      },
+    );
 
     // do-while's userControlledLoopBound report path was only ever exercised
     // by a `/** @safe */`-annotated fixture (which short-circuits before
     // context.report), so the actual report call itself was never hit.
-    ruleTester.run('invalid - DoWhileStatement user-controlled condition', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          code: 'const userInput = req.query.count; do { doWork(); } while (userInput-- > 0);',
-          errors: [{ messageId: 'userControlledLoopBound' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - DoWhileStatement user-controlled condition',
+      noUncheckedLoopCondition,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'const userInput = req.query.count; do { doWork(); } while (userInput-- > 0);',
+            errors: [{ messageId: 'userControlledLoopBound' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Valid Code - DoWhileStatement/ForOfStatement without user input', () => {
@@ -511,23 +564,31 @@ describe('no-unchecked-loop-condition', () => {
     // never exercised for DoWhileStatement or ForOfStatement — every
     // existing fixture for those loop types used a req/userInput-derived
     // condition or collection.
-    ruleTester.run('valid - do-while with a plain non-user-input condition', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: 'do { doWork(); } while (attempts < 3);',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - do-while with a plain non-user-input condition',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: 'do { doWork(); } while (attempts < 3);',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - for-of over a plain non-user-input collection', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: 'for (const item of localItems) { processItem(item); }',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - for-of over a plain non-user-input collection',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: 'for (const item of localItems) { processItem(item); }',
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('A flag is not evidence of an infinite loop', () => {
@@ -541,16 +602,20 @@ describe('no-unchecked-loop-condition', () => {
     //
     // A supervisor loop driven by a flag the body clears is the most common
     // loop in any codebase, and the flag is the reason it terminates.
-    ruleTester.run('valid - loops driven by a state flag', noUncheckedLoopCondition, {
-      valid: [
-        'while (shouldContinue) { doWork(); }',
-        'while (isActive) { doWork(); }',
-        'while (isEnabled) { doWork(); }',
-        'while (isRunning) { doWork(); }',
-        'let isActive = true; while (isActive) { isActive = step(); }',
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - loops driven by a state flag',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          'while (shouldContinue) { doWork(); }',
+          'while (isActive) { doWork(); }',
+          'while (isEnabled) { doWork(); }',
+          'while (isRunning) { doWork(); }',
+          'let isActive = true; while (isActive) { isActive = step(); }',
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('Valid Code - VariableDeclaration taint-tracking isSanitized branches', () => {
@@ -561,17 +626,21 @@ describe('no-unchecked-loop-condition', () => {
     // the variable is NOT added to taintedVariables, so a later use of that
     // variable in a condition that doesn't textually mention any
     // userInputVariables substring stays unflagged.
-    ruleTester.run('valid - variable initializer guarded with "&&" and ".length" is treated as sanitized', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - variable initializer guarded with "&&" and ".length" is treated as sanitized',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: `
             const n = req.body.items && req.body.items.length;
             while (check(n)) { doWork(); }
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('Valid Code - anonymous default-export FunctionDeclaration has no id', () => {
@@ -580,20 +649,24 @@ describe('no-unchecked-loop-condition', () => {
     // (`if (node.id)`) both take their false branch, so no name is ever
     // pushed onto currentFunctionStack and any calls inside are never
     // attributed to "the enclosing function" for recursion purposes.
-    ruleTester.run('valid - anonymous default-exported function is not tracked for recursion', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - anonymous default-exported function is not tracked for recursion',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: `
             export default function(n) {
               if (n > 0) {
                 helper(n - 1);
               }
             }
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('Valid Code - estimateIterations non-BinaryExpression / non-comparison test shapes', () => {
@@ -602,23 +675,31 @@ describe('no-unchecked-loop-condition', () => {
     // right-hand side; every other `for` test shape falls through to
     // `null` (no largeLoopBound report), but neither branch was previously
     // exercised independently.
-    ruleTester.run('valid - for-loop test is not a BinaryExpression', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: 'for (let i = 0; iterator.hasNext(); i++) { advance(iterator); }',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - for-loop test is not a BinaryExpression',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: 'for (let i = 0; iterator.hasNext(); i++) { advance(iterator); }',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - for-loop test uses a non-comparison binary operator', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: 'for (let i = 0; i !== 10; i++) { console.log(i); }',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - for-loop test uses a non-comparison binary operator',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: 'for (let i = 0; i !== 10; i++) { console.log(i); }',
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('Valid Code - @safe annotation short-circuits every report site', () => {
@@ -627,10 +708,13 @@ describe('no-unchecked-loop-condition', () => {
     // the enclosing statement makes isSafe() return true, which RuleTester
     // can exercise for real (see the same pattern used successfully in
     // no-unlimited-resource-allocation). One fixture per guarded report site.
-    ruleTester.run('valid - @safe annotation on unsafeRecursion', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @safe annotation on unsafeRecursion',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: `
             /** @safe */
             function recursiveFunc(n) {
               if (n > 0) {
@@ -649,145 +733,190 @@ describe('no-unchecked-loop-condition', () => {
               }
             }
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - @safe annotation on WhileStatement userControlledLoopBound', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @safe annotation on WhileStatement userControlledLoopBound',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: `
             const userInput = req.query.count;
             /** @safe */
             while (userInput-- > 0) { doWork(); }
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - @safe annotation on WhileStatement complex-DoS userControlledLoopBound', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @safe annotation on WhileStatement complex-DoS userControlledLoopBound',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: `
             /** @safe */
             while (cache.match(rx)) { cache = cache.replace(rx, ''); }
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - @safe annotation on WhileStatement state-dependent infiniteLoop', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @safe annotation on WhileStatement state-dependent infiniteLoop',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: `
             /** @safe */
             while (isRunning) { doWork(); }
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - @safe annotation on ForStatement for(;;) infiniteLoop', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @safe annotation on ForStatement for(;;) infiniteLoop',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: `
             /** @safe */
             for (;;) { doWork(); if (done) break; }
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - @safe annotation on ForStatement missing-test missingLoopTermination', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @safe annotation on ForStatement missing-test missingLoopTermination',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: `
             /** @safe */
             for (let i = 0; ; i++) { if (i > 10) break; }
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - @safe annotation on ForStatement userControlledLoopBound', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @safe annotation on ForStatement userControlledLoopBound',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: `
             const userInput = req.query.count;
             /** @safe */
             for (let i = 0; i < userInput; i++) { doWork(); }
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - @safe annotation on ForStatement complex-DoS userControlledLoopBound', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @safe annotation on ForStatement complex-DoS userControlledLoopBound',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: `
             /** @safe */
             for (let i = startIndex; i < endIndex; i++) { doWork(); }
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - @safe annotation on ForStatement largeLoopBound', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @safe annotation on ForStatement largeLoopBound',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: `
             /** @safe */
             for (let i = 0; i < 100000; i++) { processItem(); }
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - @safe annotation on DoWhileStatement userControlledLoopBound', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @safe annotation on DoWhileStatement userControlledLoopBound',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: `
             const userInput = req.query.count;
             /** @safe */
             do { doWork(); } while (userInput-- > 0);
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - @safe annotation on ForInStatement uncheckedLoopCondition', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @safe annotation on ForInStatement uncheckedLoopCondition',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: `
             /** @safe */
             for (const key in req.body.data) { process(key); }
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - @safe annotation on ForOfStatement uncheckedLoopCondition', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @safe annotation on ForOfStatement uncheckedLoopCondition',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: `
             /** @safe */
             for (const item of req.body.data) { process(item); }
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('involvesUserInput recursive expression walker', () => {
@@ -798,57 +927,73 @@ describe('no-unchecked-loop-condition', () => {
     // recursive checkExpression() walker to run, which is what actually
     // exercises the CallExpression/BinaryExpression/UpdateExpression/
     // UnaryExpression branches below.
-    ruleTester.run('invalid - tainted local reached via CallExpression argument + UpdateExpression', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          code: `
+    ruleTester.run(
+      'invalid - tainted local reached via CallExpression argument + UpdateExpression',
+      noUncheckedLoopCondition,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: `
             let n = req.body.count;
             while (check(n++)) { doWork(); }
           `,
-          errors: [{ messageId: 'userControlledLoopBound' }],
-        },
-      ],
-    });
+            errors: [{ messageId: 'userControlledLoopBound' }],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('invalid - tainted local reached via CallExpression argument + UnaryExpression', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          code: `
+    ruleTester.run(
+      'invalid - tainted local reached via CallExpression argument + UnaryExpression',
+      noUncheckedLoopCondition,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: `
             let n = req.body.count;
             while (check(-n)) { doWork(); }
           `,
-          errors: [{ messageId: 'userControlledLoopBound' }],
-        },
-      ],
-    });
+            errors: [{ messageId: 'userControlledLoopBound' }],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('invalid - tainted local reached via BinaryExpression both sides', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          code: `
+    ruleTester.run(
+      'invalid - tainted local reached via BinaryExpression both sides',
+      noUncheckedLoopCondition,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: `
             let n = req.body.count;
             while (check(n + offset)) { doWork(); }
           `,
-          errors: [{ messageId: 'userControlledLoopBound' }],
-        },
-      ],
-    });
+            errors: [{ messageId: 'userControlledLoopBound' }],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('valid - CallExpression with a spread argument does not crash the walker', noUncheckedLoopCondition, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - CallExpression with a spread argument does not crash the walker',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          {
+            code: `
             let n = req.body.count;
             const rest = [1, 2, 3];
             while (check(...rest)) { doWork(); }
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('Layer 2 — node.loc?.start.line ?? 0 fallback (every report site)', () => {
@@ -859,9 +1004,15 @@ describe('no-unchecked-loop-condition', () => {
     // report site, each using a synthetic node with no `loc` property.
 
     it('unsafeRecursion (CallExpression) falls back to line 0', () => {
-      const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition);
-      const functionDeclaration = listeners.FunctionDeclaration as (node: unknown) => void;
-      const callExpression = listeners.CallExpression as (node: unknown) => void;
+      const { listeners, reports } = createWithMockContext(
+        noUncheckedLoopCondition,
+      );
+      const functionDeclaration = listeners.FunctionDeclaration as (
+        node: unknown,
+      ) => void;
+      const callExpression = listeners.CallExpression as (
+        node: unknown,
+      ) => void;
 
       // THIS TEST USED TO PASS THE LITERAL NAME 'recursiveFunc', with a comment
       // saying so, "to satisfy the flagged-pattern OR". That OR was two
@@ -872,8 +1023,14 @@ describe('no-unchecked-loop-condition', () => {
         type: 'FunctionDeclaration',
         id: { type: 'Identifier', name: 'drain' },
       };
-      const block: Record<string, unknown> = { type: 'BlockStatement', parent: fn };
-      const statement: Record<string, unknown> = { type: 'ExpressionStatement', parent: block };
+      const block: Record<string, unknown> = {
+        type: 'BlockStatement',
+        parent: fn,
+      };
+      const statement: Record<string, unknown> = {
+        type: 'ExpressionStatement',
+        parent: block,
+      };
       block.body = [statement];
       fn.body = block;
       const call: Record<string, unknown> = {
@@ -892,8 +1049,12 @@ describe('no-unchecked-loop-condition', () => {
       expect(reports[0].data?.line).toBe('0');
     });
     it('WhileStatement infiniteLoop (while(true)) falls back to line 0', () => {
-      const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition);
-      const whileStatement = listeners.WhileStatement as (node: unknown) => void;
+      const { listeners, reports } = createWithMockContext(
+        noUncheckedLoopCondition,
+      );
+      const whileStatement = listeners.WhileStatement as (
+        node: unknown,
+      ) => void;
 
       whileStatement({
         type: 'WhileStatement',
@@ -907,14 +1068,28 @@ describe('no-unchecked-loop-condition', () => {
     });
 
     it('WhileStatement userControlledLoopBound falls back to line 0', () => {
-      const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition, {
-        sourceText: 'req',
-      });
-      const whileStatement = listeners.WhileStatement as (node: unknown) => void;
+      const { listeners, reports } = createWithMockContext(
+        noUncheckedLoopCondition,
+        {
+          sourceText: 'req',
+        },
+      );
+      const whileStatement = listeners.WhileStatement as (
+        node: unknown,
+      ) => void;
 
       whileStatement({
         type: 'WhileStatement',
-        test: { type: 'BinaryExpression', operator: '>', left: { type: 'MemberExpression', object: { type: 'Identifier', name: 'req' }, property: { type: 'Identifier', name: 'count' } }, right: { type: 'Literal', value: 0 } },
+        test: {
+          type: 'BinaryExpression',
+          operator: '>',
+          left: {
+            type: 'MemberExpression',
+            object: { type: 'Identifier', name: 'req' },
+            property: { type: 'Identifier', name: 'count' },
+          },
+          right: { type: 'Literal', value: 0 },
+        },
         body: { type: 'BlockStatement', body: [] },
       });
 
@@ -924,7 +1099,9 @@ describe('no-unchecked-loop-condition', () => {
     });
 
     it('ForStatement for(;;) infiniteLoop falls back to line 0', () => {
-      const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition);
+      const { listeners, reports } = createWithMockContext(
+        noUncheckedLoopCondition,
+      );
       const forStatement = listeners.ForStatement as (node: unknown) => void;
 
       forStatement({
@@ -941,7 +1118,9 @@ describe('no-unchecked-loop-condition', () => {
     });
 
     it('ForStatement missingLoopTermination falls back to line 0', () => {
-      const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition);
+      const { listeners, reports } = createWithMockContext(
+        noUncheckedLoopCondition,
+      );
       const forStatement = listeners.ForStatement as (node: unknown) => void;
 
       forStatement({
@@ -958,15 +1137,27 @@ describe('no-unchecked-loop-condition', () => {
     });
 
     it('ForStatement userControlledLoopBound falls back to line 0', () => {
-      const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition, {
-        sourceText: 'req',
-      });
+      const { listeners, reports } = createWithMockContext(
+        noUncheckedLoopCondition,
+        {
+          sourceText: 'req',
+        },
+      );
       const forStatement = listeners.ForStatement as (node: unknown) => void;
 
       forStatement({
         type: 'ForStatement',
         init: null,
-        test: { type: 'BinaryExpression', operator: '>', left: { type: 'MemberExpression', object: { type: 'Identifier', name: 'req' }, property: { type: 'Identifier', name: 'count' } }, right: { type: 'Literal', value: 0 } },
+        test: {
+          type: 'BinaryExpression',
+          operator: '>',
+          left: {
+            type: 'MemberExpression',
+            object: { type: 'Identifier', name: 'req' },
+            property: { type: 'Identifier', name: 'count' },
+          },
+          right: { type: 'Literal', value: 0 },
+        },
         update: { type: 'UpdateExpression' },
         body: { type: 'BlockStatement', body: [] },
       });
@@ -977,9 +1168,12 @@ describe('no-unchecked-loop-condition', () => {
     });
 
     it('ForStatement largeLoopBound falls back to line 0', () => {
-      const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition, {
-        sourceText: 'i < 1000000',
-      });
+      const { listeners, reports } = createWithMockContext(
+        noUncheckedLoopCondition,
+        {
+          sourceText: 'i < 1000000',
+        },
+      );
       const forStatement = listeners.ForStatement as (node: unknown) => void;
 
       forStatement({
@@ -1001,14 +1195,28 @@ describe('no-unchecked-loop-condition', () => {
     });
 
     it('DoWhileStatement userControlledLoopBound falls back to line 0', () => {
-      const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition, {
-        sourceText: 'req',
-      });
-      const doWhileStatement = listeners.DoWhileStatement as (node: unknown) => void;
+      const { listeners, reports } = createWithMockContext(
+        noUncheckedLoopCondition,
+        {
+          sourceText: 'req',
+        },
+      );
+      const doWhileStatement = listeners.DoWhileStatement as (
+        node: unknown,
+      ) => void;
 
       doWhileStatement({
         type: 'DoWhileStatement',
-        test: { type: 'BinaryExpression', operator: '>', left: { type: 'MemberExpression', object: { type: 'Identifier', name: 'req' }, property: { type: 'Identifier', name: 'count' } }, right: { type: 'Literal', value: 0 } },
+        test: {
+          type: 'BinaryExpression',
+          operator: '>',
+          left: {
+            type: 'MemberExpression',
+            object: { type: 'Identifier', name: 'req' },
+            property: { type: 'Identifier', name: 'count' },
+          },
+          right: { type: 'Literal', value: 0 },
+        },
         body: { type: 'BlockStatement', body: [] },
       });
 
@@ -1018,15 +1226,24 @@ describe('no-unchecked-loop-condition', () => {
     });
 
     it('ForInStatement uncheckedLoopCondition falls back to line 0', () => {
-      const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition, {
-        sourceText: 'req',
-      });
-      const forInStatement = listeners.ForInStatement as (node: unknown) => void;
+      const { listeners, reports } = createWithMockContext(
+        noUncheckedLoopCondition,
+        {
+          sourceText: 'req',
+        },
+      );
+      const forInStatement = listeners.ForInStatement as (
+        node: unknown,
+      ) => void;
 
       forInStatement({
         type: 'ForInStatement',
         left: { type: 'Identifier', name: 'key' },
-        right: { type: 'MemberExpression', object: { type: 'Identifier', name: 'req' }, property: { type: 'Identifier', name: 'body' } },
+        right: {
+          type: 'MemberExpression',
+          object: { type: 'Identifier', name: 'req' },
+          property: { type: 'Identifier', name: 'body' },
+        },
         body: { type: 'BlockStatement', body: [] },
       });
 
@@ -1036,16 +1253,25 @@ describe('no-unchecked-loop-condition', () => {
     });
 
     it('ForOfStatement uncheckedLoopCondition falls back to line 0', () => {
-      const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition, {
-        sourceText: 'req',
-      });
-      const forOfStatement = listeners.ForOfStatement as (node: unknown) => void;
+      const { listeners, reports } = createWithMockContext(
+        noUncheckedLoopCondition,
+        {
+          sourceText: 'req',
+        },
+      );
+      const forOfStatement = listeners.ForOfStatement as (
+        node: unknown,
+      ) => void;
 
       forOfStatement({
         type: 'ForOfStatement',
         parent: undefined,
         left: { type: 'Identifier', name: 'item' },
-        right: { type: 'MemberExpression', object: { type: 'Identifier', name: 'req' }, property: { type: 'Identifier', name: 'body' } },
+        right: {
+          type: 'MemberExpression',
+          object: { type: 'Identifier', name: 'req' },
+          property: { type: 'Identifier', name: 'body' },
+        },
         body: { type: 'BlockStatement', body: [] },
       });
 
@@ -1223,7 +1449,11 @@ describe('no-unchecked-loop-condition — option differentials', () => {
       {
         code: TWO_SITE_RECURSION,
         options: [
-          { maxRecursionDepth: 1, trustedSanitizers: ['walk'], strictMode: true },
+          {
+            maxRecursionDepth: 1,
+            trustedSanitizers: ['walk'],
+            strictMode: true,
+          },
         ],
         errors: [{ messageId: 'unsafeRecursion' }],
       },
@@ -1274,23 +1504,27 @@ describe('Regression - the ledger textual-matching probe', () => {
   // reported. Each pair below is the probe with its positive control - the
   // second member of every pair was ALWAYS quiet, which is what makes the first
   // member evidence about the text rather than about the loop.
-  ruleTester.run('valid - matched text in a string literal or a comment', noUncheckedLoopCondition, {
-    valid: [
-      // `.match(` as data, in a hand-written lexer.
-      `while (source.slice(c, c + 7) !== '.match(') { c += 1; }`,
-      `while (source.slice(c, c + 7) !== '.test(') { c += 1; }`,
-      // `endIndex` in a comment inside the loop test.
-      'for (let i = 0; i < /* stop before endIndex */ rows.length; i++) { work(i); }',
-      // A local index window; `startIndex`/`endIndex` are the spellings, and
-      // both ends are derived from `rows.length`.
-      'const startIndex = 0; const endIndex = 5; for (let i = startIndex; i < endIndex; i++) { work(i); }',
-      // `page` next to `pageSize`, with the bound derived from a server count.
-      'let page = 0; while (page < totalPages && pageSize > 0) { page += 1; }',
-      // `*` next to `limit`, with both operands local constants.
-      'const limit = 50; const width = 100; for (let i = 0; i < limit * width; i++) { slots.push(null); }',
-    ],
-    invalid: [],
-  });
+  ruleTester.run(
+    'valid - matched text in a string literal or a comment',
+    noUncheckedLoopCondition,
+    {
+      valid: [
+        // `.match(` as data, in a hand-written lexer.
+        `while (source.slice(c, c + 7) !== '.match(') { c += 1; }`,
+        `while (source.slice(c, c + 7) !== '.test(') { c += 1; }`,
+        // `endIndex` in a comment inside the loop test.
+        'for (let i = 0; i < /* stop before endIndex */ rows.length; i++) { work(i); }',
+        // A local index window; `startIndex`/`endIndex` are the spellings, and
+        // both ends are derived from `rows.length`.
+        'const startIndex = 0; const endIndex = 5; for (let i = startIndex; i < endIndex; i++) { work(i); }',
+        // `page` next to `pageSize`, with the bound derived from a server count.
+        'let page = 0; while (page < totalPages && pageSize > 0) { page += 1; }',
+        // `*` next to `limit`, with both operands local constants.
+        'const limit = 50; const width = 100; for (let i = 0; i < limit * width; i++) { slots.push(null); }',
+      ],
+      invalid: [],
+    },
+  );
 });
 
 describe('Regression - a flag is not evidence of an infinite loop', () => {
@@ -1303,73 +1537,87 @@ describe('Regression - a flag is not evidence of an infinite loop', () => {
     ],
     invalid: [
       // The shapes that ARE evidence still report.
-      { code: 'while (true) { doWork(); }', errors: [{ messageId: 'infiniteLoop' }] },
-      { code: 'for (;;) { doWork(); }', errors: [{ messageId: 'infiniteLoop' }] },
+      {
+        code: 'while (true) { doWork(); }',
+        errors: [{ messageId: 'infiniteLoop' }],
+      },
+      {
+        code: 'for (;;) { doWork(); }',
+        errors: [{ messageId: 'infiniteLoop' }],
+      },
     ],
   });
 });
 
 describe('Regression - taint roots the walk could not follow', () => {
-  ruleTester.run('invalid - shapes that were silent', noUncheckedLoopCondition, {
-    valid: [],
-    invalid: [
-      {
-        // A TypeScript cast. Express types `req.query.x` as
-        // `string | string[] | ParsedQs | undefined`, so a TS codebase cannot
-        // use it as a bound without one - which meant the rule did not fire on
-        // TypeScript Express code at all.
-        name: 'as-number cast',
-        code: 'for (let i = 0; i < (req.query.count as unknown as number); i++) { work(i); }',
-        errors: [{ messageId: 'userControlledLoopBound' }],
-      },
-      {
-        // A parse is not a clamp. `?limit=99999999` parses cleanly.
-        name: 'parsed but not clamped',
-        code: [
-          'const limit = parseInt(req.query.limit, 10);',
-          'for (let i = 0; i < limit; i++) { rows.push(i); }',
-        ].join('\n'),
-        errors: [{ messageId: 'userControlledLoopBound' }],
-      },
-      {
-        // A `||` default replaces the falsy case and bounds nothing.
-        name: 'logical-or default',
-        code: [
-          'const pageSize = parseInt(req.query.pageSize) || 10;',
-          'for (let i = 0; i < pageSize; i++) { rows.push(i); }',
-        ].join('\n'),
-        errors: [{ messageId: 'userControlledLoopBound' }],
-      },
-    ],
-  });
+  ruleTester.run(
+    'invalid - shapes that were silent',
+    noUncheckedLoopCondition,
+    {
+      valid: [],
+      invalid: [
+        {
+          // A TypeScript cast. Express types `req.query.x` as
+          // `string | string[] | ParsedQs | undefined`, so a TS codebase cannot
+          // use it as a bound without one - which meant the rule did not fire on
+          // TypeScript Express code at all.
+          name: 'as-number cast',
+          code: 'for (let i = 0; i < (req.query.count as unknown as number); i++) { work(i); }',
+          errors: [{ messageId: 'userControlledLoopBound' }],
+        },
+        {
+          // A parse is not a clamp. `?limit=99999999` parses cleanly.
+          name: 'parsed but not clamped',
+          code: [
+            'const limit = parseInt(req.query.limit, 10);',
+            'for (let i = 0; i < limit; i++) { rows.push(i); }',
+          ].join('\n'),
+          errors: [{ messageId: 'userControlledLoopBound' }],
+        },
+        {
+          // A `||` default replaces the falsy case and bounds nothing.
+          name: 'logical-or default',
+          code: [
+            'const pageSize = parseInt(req.query.pageSize) || 10;',
+            'for (let i = 0; i < pageSize; i++) { rows.push(i); }',
+          ].join('\n'),
+          errors: [{ messageId: 'userControlledLoopBound' }],
+        },
+      ],
+    },
+  );
 
-  ruleTester.run('valid - bounds that really are bounded', noUncheckedLoopCondition, {
-    valid: [
-      // `Math.min`/`Math.max` are the only two that impose a ceiling, and they
-      // are matched on the `Math` global rather than found in the text.
-      [
-        'const requested = Number.parseInt(req.query.pages, 10) || 1;',
-        'const pages = Math.min(Math.max(requested, 1), 100);',
-        'for (let i = 0; i < pages; i++) { rows.push(i); }',
-      ].join('\n'),
-      // `.length` is a MEASUREMENT of data already materialised, not a count
-      // the client can inflate. `Object.keys(req.body).length` is the number of
-      // fields the body parser already built.
-      [
-        'const fields = Object.keys(req.body);',
-        'for (let i = 0; i < fields.length; i++) { applied.push(fields[i]); }',
-      ].join('\n'),
-      'const n = req.body.items && req.body.items.length; while (check(n)) { doWork(); }',
-    ],
-    invalid: [
-      {
-        // …but a property that is not a measurement still reports.
-        name: 'a chosen count, not a measured one',
-        code: 'for (let i = 0; i < req.body.count; i++) { work(i); }',
-        errors: [{ messageId: 'userControlledLoopBound' }],
-      },
-    ],
-  });
+  ruleTester.run(
+    'valid - bounds that really are bounded',
+    noUncheckedLoopCondition,
+    {
+      valid: [
+        // `Math.min`/`Math.max` are the only two that impose a ceiling, and they
+        // are matched on the `Math` global rather than found in the text.
+        [
+          'const requested = Number.parseInt(req.query.pages, 10) || 1;',
+          'const pages = Math.min(Math.max(requested, 1), 100);',
+          'for (let i = 0; i < pages; i++) { rows.push(i); }',
+        ].join('\n'),
+        // `.length` is a MEASUREMENT of data already materialised, not a count
+        // the client can inflate. `Object.keys(req.body).length` is the number of
+        // fields the body parser already built.
+        [
+          'const fields = Object.keys(req.body);',
+          'for (let i = 0; i < fields.length; i++) { applied.push(fields[i]); }',
+        ].join('\n'),
+        'const n = req.body.items && req.body.items.length; while (check(n)) { doWork(); }',
+      ],
+      invalid: [
+        {
+          // …but a property that is not a measurement still reports.
+          name: 'a chosen count, not a measured one',
+          code: 'for (let i = 0; i < req.body.count; i++) { work(i); }',
+          errors: [{ messageId: 'userControlledLoopBound' }],
+        },
+      ],
+    },
+  );
 });
 
 describe('Regression - a guard clause validates a collection', () => {
@@ -1410,108 +1658,116 @@ describe('Regression - recursion is decided by structure, not by two names', () 
   // `unsafeRecursion` in practice: the other disjunct counts recursive call
   // SITES against maxRecursionDepth, so it needs eleven self-calls written
   // inside one function. Both names are fixtures from this file.
-  ruleTester.run('valid - recursion the rule cannot decide, and recursion it can clear', noUncheckedLoopCondition, {
-    valid: [
-      // Renaming the two magic names must not change the verdict. Both of
-      // these are conditional recursion, which is not decidable here.
-      'function traverseObject(n) { for (const c of n.kids) { traverseObject(c); } }',
-      'function walk(n) { for (const c of n.kids) { walk(c); } }',
-      // A depth-bounded recursion is the correct remediation and must not be
-      // reported. The base case is a preceding sibling of the recursive call.
-      'function factorial(n, depth = 0) { if (depth > 10) return 1; return n * factorial(n - 1, depth + 1); }',
-      'function safeRecursion(n, depth = 0) { if (depth > 10) return; if (n > 0) safeRecursion(n - 1, depth + 1); }',
-    ],
-    invalid: [
-      {
-        // Nothing branches above the self-call, so the function never returns -
-        // whatever it is called.
-        name: 'unconditional self-recursion, innocuously named',
-        code: 'function drain(queue) { handle(queue.pop()); drain(queue); }',
-        errors: [{ messageId: 'unsafeRecursion' }],
-      },
-    ],
-  });
+  ruleTester.run(
+    'valid - recursion the rule cannot decide, and recursion it can clear',
+    noUncheckedLoopCondition,
+    {
+      valid: [
+        // Renaming the two magic names must not change the verdict. Both of
+        // these are conditional recursion, which is not decidable here.
+        'function traverseObject(n) { for (const c of n.kids) { traverseObject(c); } }',
+        'function walk(n) { for (const c of n.kids) { walk(c); } }',
+        // A depth-bounded recursion is the correct remediation and must not be
+        // reported. The base case is a preceding sibling of the recursive call.
+        'function factorial(n, depth = 0) { if (depth > 10) return 1; return n * factorial(n - 1, depth + 1); }',
+        'function safeRecursion(n, depth = 0) { if (depth > 10) return; if (n > 0) safeRecursion(n - 1, depth + 1); }',
+      ],
+      invalid: [
+        {
+          // Nothing branches above the self-call, so the function never returns -
+          // whatever it is called.
+          name: 'unconditional self-recursion, innocuously named',
+          code: 'function drain(queue) { handle(queue.pop()); drain(queue); }',
+          errors: [{ messageId: 'unsafeRecursion' }],
+        },
+      ],
+    },
+  );
 
   /**
    * Locks for the three remaining decision arms, each written as a real
    * program rather than a synthetic AST.
    */
   describe('coverage - remaining decision arms', () => {
-    ruleTester.run('block base case, ternary clamp, mismatched guard', noUncheckedLoopCondition, {
-      valid: [
-        // The base case is a BLOCK, not a bare statement. The exit search has
-        // to walk the block's statement ARRAY to find the `return`; with a
-        // braceless base case it never touches that arm. Both spellings are
-        // the same program and must agree.
-        'function walk(n) { if (n <= 0) { return 0; } return walk(n - 1); }',
-        // A clamp reached through a ternary. Both branches clamp, so the bound
-        // is bounded whichever way the flag falls - which is exactly why the
-        // arm requires BOTH branches rather than either.
-        [
-          'export function paginate(req, fast) {',
-          '  const limit = fast ? Math.min(req.query.n, 10) : Math.min(req.query.n, 5);',
-          '  const rows = [];',
-          '  for (let i = 0; i < limit; i++) { rows.push(i); }',
-          '  return rows;',
-          '}',
-        ].join('\n'),
-      ],
-      invalid: [
-        // A validation call whose argument is a LITERAL, not the collection
-        // being iterated. Comparing a Literal against an Identifier is the
-        // path-comparison mismatch arm: the guard proves nothing about
-        // `req.body.items`, so the loop is still unchecked.
-        {
-          name: 'guard argument does not match the iterated collection',
-          code: [
-            'export function importAll(req) {',
-            '  if (Array.isArray(42)) {',
-            '    for (const record of req.body.items) { persist(record); }',
-            '  }',
+    ruleTester.run(
+      'block base case, ternary clamp, mismatched guard',
+      noUncheckedLoopCondition,
+      {
+        valid: [
+          // The base case is a BLOCK, not a bare statement. The exit search has
+          // to walk the block's statement ARRAY to find the `return`; with a
+          // braceless base case it never touches that arm. Both spellings are
+          // the same program and must agree.
+          'function walk(n) { if (n <= 0) { return 0; } return walk(n - 1); }',
+          // A clamp reached through a ternary. Both branches clamp, so the bound
+          // is bounded whichever way the flag falls - which is exactly why the
+          // arm requires BOTH branches rather than either.
+          [
+            'export function paginate(req, fast) {',
+            '  const limit = fast ? Math.min(req.query.n, 10) : Math.min(req.query.n, 5);',
+            '  const rows = [];',
+            '  for (let i = 0; i < limit; i++) { rows.push(i); }',
+            '  return rows;',
             '}',
           ].join('\n'),
-          errors: [{ messageId: 'uncheckedLoopCondition' }],
-        },
-        // There IS a branch above the self-call, but it cannot terminate
-        // anything: no `return` and no `throw` anywhere inside it. A branch
-        // that only logs is not a base case, so the recursion is still
-        // unbounded. This is the arm that distinguishes "a guard exists" from
-        // "a guard exits".
-        {
-          name: 'preceding branch contains no exit at all',
-          code: 'function countdown(n) { if (n > 5) { console.log(n); } countdown(n - 1); }',
-          errors: [{ messageId: 'unsafeRecursion' }],
-        },
-        // `||` in the condition, where `&&` is handled separately. For `&&`
-        // only the right operand can bound the loop (`items && items.length`),
-        // but for `||` EITHER side can supply an attacker-chosen bound, so
-        // both have to be examined - here the tainted value is on the left.
-        {
-          name: 'either side of a logical OR can carry the bound',
-          code: [
-            'export function replay(req, fallback) {',
-            '  let cursor = 0;',
-            '  while (cursor < (req.query.events || fallback)) { cursor++; }',
-            '  return cursor;',
-            '}',
-          ].join('\n'),
-          errors: [{ messageId: 'userControlledLoopBound' }],
-        },
-        // The mirror of the case above. With the tainted operand on the LEFT
-        // the check short-circuits and never evaluates the right; only a clean
-        // left operand forces the right-hand branch to be taken.
-        {
-          name: 'logical OR with the tainted operand on the right',
-          code: [
-            'export function replay(req, fallback) {',
-            '  let cursor = 0;',
-            '  while (cursor < (fallback || req.query.events)) { cursor++; }',
-            '  return cursor;',
-            '}',
-          ].join('\n'),
-          errors: [{ messageId: 'userControlledLoopBound' }],
-        },
-      ],
-    });
+        ],
+        invalid: [
+          // A validation call whose argument is a LITERAL, not the collection
+          // being iterated. Comparing a Literal against an Identifier is the
+          // path-comparison mismatch arm: the guard proves nothing about
+          // `req.body.items`, so the loop is still unchecked.
+          {
+            name: 'guard argument does not match the iterated collection',
+            code: [
+              'export function importAll(req) {',
+              '  if (Array.isArray(42)) {',
+              '    for (const record of req.body.items) { persist(record); }',
+              '  }',
+              '}',
+            ].join('\n'),
+            errors: [{ messageId: 'uncheckedLoopCondition' }],
+          },
+          // There IS a branch above the self-call, but it cannot terminate
+          // anything: no `return` and no `throw` anywhere inside it. A branch
+          // that only logs is not a base case, so the recursion is still
+          // unbounded. This is the arm that distinguishes "a guard exists" from
+          // "a guard exits".
+          {
+            name: 'preceding branch contains no exit at all',
+            code: 'function countdown(n) { if (n > 5) { console.log(n); } countdown(n - 1); }',
+            errors: [{ messageId: 'unsafeRecursion' }],
+          },
+          // `||` in the condition, where `&&` is handled separately. For `&&`
+          // only the right operand can bound the loop (`items && items.length`),
+          // but for `||` EITHER side can supply an attacker-chosen bound, so
+          // both have to be examined - here the tainted value is on the left.
+          {
+            name: 'either side of a logical OR can carry the bound',
+            code: [
+              'export function replay(req, fallback) {',
+              '  let cursor = 0;',
+              '  while (cursor < (req.query.events || fallback)) { cursor++; }',
+              '  return cursor;',
+              '}',
+            ].join('\n'),
+            errors: [{ messageId: 'userControlledLoopBound' }],
+          },
+          // The mirror of the case above. With the tainted operand on the LEFT
+          // the check short-circuits and never evaluates the right; only a clean
+          // left operand forces the right-hand branch to be taken.
+          {
+            name: 'logical OR with the tainted operand on the right',
+            code: [
+              'export function replay(req, fallback) {',
+              '  let cursor = 0;',
+              '  while (cursor < (fallback || req.query.events)) { cursor++; }',
+              '  return cursor;',
+              '}',
+            ].join('\n'),
+            errors: [{ messageId: 'userControlledLoopBound' }],
+          },
+        ],
+      },
+    );
   });
 });

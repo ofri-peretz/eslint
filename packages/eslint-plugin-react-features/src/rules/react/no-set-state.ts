@@ -17,10 +17,15 @@ type MessageIds = 'noSetState';
 export const noSetState = createRule<[], MessageIds>({
   name: 'no-set-state',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/no-set-state',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-set-state.md',
-      description: 'Disallow usage of setState to encourage functional components with hooks',
+      description:
+        'Disallow usage of setState to encourage functional components with hooks',
     },
     messages: {
       noSetState: formatLLMMessage({
@@ -35,7 +40,7 @@ export const noSetState = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Check if this is a setState call

@@ -60,9 +60,14 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock('@interlace/eslint-devkit', () => ({
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  createRule: (data: any) => data,
+vi.mock('@interlace/eslint-devkit', async () => ({
+  // The real creator: a createOnce rule only has an ESLint `create` once it
+  // has been through it.
+  createRule: (
+    await vi.importActual<typeof import('@interlace/eslint-devkit')>(
+      '@interlace/eslint-devkit',
+    )
+  ).createRule,
   formatLLMMessage: () => 'mocked message {{cycle}}',
   MessageIcons: { ARCHITECTURE: 'ARCHITECTURE', WARNING: 'WARNING' },
   formatCycleDisplay: (cycle: string[]) => cycle.join(' -> '),
@@ -258,7 +263,13 @@ describe('no-cycle — Layer 2', () => {
       cwd: '/repo',
       options: [{}],
       settings: {},
-      sourceCode: { text: '' },
+      // Enough SourceCode for the creator's skipGeneratedFiles check.
+      sourceCode: {
+        text: '',
+        lines: [''],
+        getAllComments: () => [],
+        getFirstToken: () => null,
+      },
       getFilename: () => filename,
       getCwd: () => '/repo',
       report: (d: unknown) => {

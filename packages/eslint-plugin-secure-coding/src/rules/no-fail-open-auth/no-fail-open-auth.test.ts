@@ -76,7 +76,10 @@ async function handleAdminAction(req, res) {
       // Parsing, storage and telemetry are what most catch blocks in an auth
       // SDK are actually wrapped around.
       `function f(raw) { try { JSON.parse(raw); } catch (e) { /* ignore */ } save(raw); }`,
-      `function f() { try { localStorage.removeItem('k'); } catch (e) {} render(); }`,
+      {
+        name: 'a swallowed catch around storage cleanup is not a security decision',
+        code: `function f() { try { localStorage.removeItem('k'); } catch (e) {} render(); }`,
+      },
       // Bare verbs are deliberately not decisions: `jwt.verify` is a real
       // miss, and it is the price of not matching sinon/mock/schema `.verify`.
       {

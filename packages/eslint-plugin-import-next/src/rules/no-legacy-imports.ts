@@ -57,10 +57,7 @@ type RuleOptions = [NoLegacyImportsOptions];
 /**
  * Check if import matches a legacy pattern
  */
-function matchLegacyPattern(
-  importPath: string,
-  pattern: string,
-): boolean {
+function matchLegacyPattern(importPath: string, pattern: string): boolean {
   try {
     const regex = new RegExp(pattern);
     return regex.test(importPath);
@@ -73,6 +70,7 @@ function matchLegacyPattern(
 export const noLegacyImports = createRule<RuleOptions, MessageIds>({
   name: 'no-legacy-imports',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-legacy-imports.md',
@@ -130,13 +128,17 @@ export const noLegacyImports = createRule<RuleOptions, MessageIds>({
       severity: 'warn',
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options]: readonly [NoLegacyImportsOptions],
+    currentOptions,
   ) {
-    const { mappings } = options;
+    let mappings: LegacyMapping[];
 
-    function checkImport(importPath: string, node: TSESTree.Node, sourceNode: TSESTree.Literal) {
+    function checkImport(
+      importPath: string,
+      node: TSESTree.Node,
+      sourceNode: TSESTree.Literal,
+    ) {
       for (const mapping of mappings) {
         if (matchLegacyPattern(importPath, mapping.deprecated)) {
           const reasonText = mapping.reason ? ` (${mapping.reason})` : '';
@@ -164,6 +166,10 @@ export const noLegacyImports = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        ({ mappings } = options);
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const importPath = node.source.value;
         if (typeof importPath === 'string') {
@@ -189,7 +195,11 @@ export const noLegacyImports = createRule<RuleOptions, MessageIds>({
         ) {
           const importPath = node.arguments[0].value;
           if (typeof importPath === 'string') {
-            checkImport(importPath, node, node.arguments[0] as TSESTree.Literal);
+            checkImport(
+              importPath,
+              node,
+              node.arguments[0] as TSESTree.Literal,
+            );
           }
         }
       },

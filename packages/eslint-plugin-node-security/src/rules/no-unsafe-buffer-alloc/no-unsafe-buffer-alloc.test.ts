@@ -28,7 +28,10 @@ describe('no-unsafe-buffer-alloc', () => {
         name: 'Buffer.from a string literal is initialized memory and not reported',
         code: 'Buffer.from("hello")',
       },
-      { code: 'Buffer.concat([a, b])' },
+      {
+        code: 'Buffer.concat([a, b])',
+        name: 'Buffer.concat copies existing buffers and is not an uninitialized allocation',
+      },
       // Structural exemption: zeroed in the same expression.
       { code: 'const buf = Buffer.allocUnsafe(64).fill(0);' },
       { code: 'Buffer.allocUnsafeSlow(64).fill(0);' },

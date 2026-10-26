@@ -1,11 +1,11 @@
 {
   "command": "npx tsx scripts/check-artifact-size.ts --update",
-  "generated": "2026-09-10",
+  "generated": "2026-10-25",
   "packages": {
     "@interlace/eslint-devkit": {
-      "unpacked": 399,
-      "tarball": 105,
-      "files": 103
+      "unpacked": 544,
+      "tarball": 142,
+      "files": 117
     },
     "@interlace/eslint-formatter": {
       "unpacked": 54,
@@ -20,162 +20,317 @@
     "eslint-plugin-anthropic-security": {
       "unpacked": 26,
       "tarball": 7,
-      "files": 13
+      "files": 10
     },
     "eslint-plugin-browser-security": {
-      "unpacked": 382,
-      "tarball": 88,
-      "files": 131
+      "unpacked": 302,
+      "tarball": 64,
+      "files": 69
     },
     "eslint-plugin-cli-floor": {
-      "unpacked": 59,
+      "unpacked": 57,
       "tarball": 14,
       "files": 14
     },
     "eslint-plugin-conventions": {
-      "unpacked": 86,
-      "tarball": 21,
+      "unpacked": 90,
+      "tarball": 22,
       "files": 23
     },
     "eslint-plugin-drizzle-security": {
       "unpacked": 31,
       "tarball": 8,
-      "files": 17
-    },
-    "eslint-plugin-express-security": {
-      "unpacked": 217,
-      "tarball": 48,
-      "files": 75
-    },
-    "eslint-plugin-gemini-security": {
-      "unpacked": 27,
-      "tarball": 7,
       "files": 13
     },
+    "eslint-plugin-express-security": {
+      "unpacked": 193,
+      "tarball": 41,
+      "files": 42
+    },
+    "eslint-plugin-gemini-security": {
+      "unpacked": 28,
+      "tarball": 7,
+      "files": 10
+    },
     "eslint-plugin-import-next": {
-      "unpacked": 291,
-      "tarball": 58,
-      "files": 125
+      "unpacked": 264,
+      "tarball": 52,
+      "files": 68
     },
     "eslint-plugin-jwt-security": {
-      "unpacked": 95,
-      "tarball": 20,
-      "files": 37
+      "unpacked": 139,
+      "tarball": 30,
+      "files": 29
     },
     "eslint-plugin-knex-security": {
-      "unpacked": 34,
+      "unpacked": 33,
       "tarball": 9,
-      "files": 19
+      "files": 14
     },
     "eslint-plugin-lambda-security": {
-      "unpacked": 106,
-      "tarball": 23,
-      "files": 39
+      "unpacked": 100,
+      "tarball": 21,
+      "files": 23
     },
     "eslint-plugin-maintainability": {
-      "unpacked": 90,
-      "tarball": 20,
+      "unpacked": 97,
+      "tarball": 22,
       "files": 21
     },
     "eslint-plugin-mcp-sdk-security": {
-      "unpacked": 48,
-      "tarball": 13,
-      "files": 17
+      "unpacked": 188,
+      "tarball": 43,
+      "files": 32
     },
     "eslint-plugin-modernization": {
-      "unpacked": 37,
+      "unpacked": 38,
       "tarball": 9,
-      "files": 17
+      "files": 12
     },
     "eslint-plugin-modularity": {
-      "unpacked": 56,
-      "tarball": 14,
-      "files": 21
+      "unpacked": 53,
+      "tarball": 13,
+      "files": 14
     },
     "eslint-plugin-mongodb-security": {
-      "unpacked": 103,
-      "tarball": 20,
-      "files": 45
+      "unpacked": 99,
+      "tarball": 19,
+      "files": 27
     },
     "eslint-plugin-mysql-security": {
       "unpacked": 30,
       "tarball": 8,
-      "files": 15
+      "files": 12
     },
     "eslint-plugin-nestjs-security": {
-      "unpacked": 129,
-      "tarball": 32,
-      "files": 37
+      "unpacked": 106,
+      "tarball": 25,
+      "files": 22
     },
     "eslint-plugin-node-security": {
-      "unpacked": 418,
-      "tarball": 97,
-      "files": 103
+      "unpacked": 368,
+      "tarball": 80,
+      "files": 59
     },
     "eslint-plugin-openai-security": {
       "unpacked": 26,
       "tarball": 7,
-      "files": 13
+      "files": 10
     },
     "eslint-plugin-operability": {
-      "unpacked": 51,
-      "tarball": 14,
-      "files": 23
+      "unpacked": 45,
+      "tarball": 11,
+      "files": 15
     },
     "eslint-plugin-postgresql-security": {
-      "unpacked": 121,
-      "tarball": 25,
-      "files": 41
+      "unpacked": 175,
+      "tarball": 38,
+      "files": 29
     },
     "eslint-plugin-prisma-security": {
-      "unpacked": 32,
+      "unpacked": 31,
       "tarball": 8,
-      "files": 17
+      "files": 13
     },
     "eslint-plugin-react-a11y": {
-      "unpacked": 135,
-      "tarball": 24,
+      "unpacked": 140,
+      "tarball": 25,
       "files": 46
     },
     "eslint-plugin-react-features": {
-      "unpacked": 245,
-      "tarball": 48,
-      "files": 131
+      "unpacked": 229,
+      "tarball": 45,
+      "files": 70
     },
     "eslint-plugin-reliability": {
-      "unpacked": 79,
-      "tarball": 18,
+      "unpacked": 83,
+      "tarball": 19,
       "files": 17
     },
     "eslint-plugin-secure-coding": {
-      "unpacked": 420,
-      "tarball": 91,
+      "unpacked": 445,
+      "tarball": 95,
       "files": 45
     },
     "eslint-plugin-sequelize-security": {
       "unpacked": 33,
       "tarball": 9,
-      "files": 17
+      "files": 13
     },
     "eslint-plugin-sqlite-security": {
       "unpacked": 26,
       "tarball": 7,
-      "files": 11
+      "files": 10
     },
     "eslint-plugin-supabase-security": {
-      "unpacked": 39,
-      "tarball": 9,
+      "unpacked": 47,
+      "tarball": 12,
       "files": 12
     },
     "eslint-plugin-typeorm-security": {
       "unpacked": 32,
-      "tarball": 8,
-      "files": 17
+      "tarball": 9,
+      "files": 13
     },
     "eslint-plugin-vercel-ai-security": {
-      "unpacked": 116,
-      "tarball": 23,
-      "files": 51
+      "unpacked": 127,
+      "tarball": 27,
+      "files": 34
+    },
+    "oxlint-plugin-anthropic-security": {
+      "unpacked": 11,
+      "tarball": 4,
+      "files": 5
+    },
+    "oxlint-plugin-browser-security": {
+      "unpacked": 33,
+      "tarball": 6,
+      "files": 5
+    },
+    "oxlint-plugin-conventions": {
+      "unpacked": 17,
+      "tarball": 5,
+      "files": 5
+    },
+    "oxlint-plugin-drizzle-security": {
+      "unpacked": 13,
+      "tarball": 4,
+      "files": 5
+    },
+    "oxlint-plugin-express-security": {
+      "unpacked": 24,
+      "tarball": 6,
+      "files": 5
+    },
+    "oxlint-plugin-gemini-security": {
+      "unpacked": 11,
+      "tarball": 4,
+      "files": 5
+    },
+    "oxlint-plugin-import-next": {
+      "unpacked": 31,
+      "tarball": 5,
+      "files": 5
+    },
+    "oxlint-plugin-jwt-security": {
+      "unpacked": 16,
+      "tarball": 5,
+      "files": 5
+    },
+    "oxlint-plugin-knex-security": {
+      "unpacked": 13,
+      "tarball": 4,
+      "files": 5
+    },
+    "oxlint-plugin-lambda-security": {
+      "unpacked": 17,
+      "tarball": 5,
+      "files": 5
+    },
+    "oxlint-plugin-maintainability": {
+      "unpacked": 16,
+      "tarball": 5,
+      "files": 5
+    },
+    "oxlint-plugin-mcp-sdk-security": {
+      "unpacked": 18,
+      "tarball": 5,
+      "files": 5
+    },
+    "oxlint-plugin-modernization": {
+      "unpacked": 13,
+      "tarball": 4,
+      "files": 5
+    },
+    "oxlint-plugin-modularity": {
+      "unpacked": 15,
+      "tarball": 5,
+      "files": 5
+    },
+    "oxlint-plugin-mongodb-security": {
+      "unpacked": 18,
+      "tarball": 5,
+      "files": 5
+    },
+    "oxlint-plugin-mysql-security": {
+      "unpacked": 12,
+      "tarball": 4,
+      "files": 5
+    },
+    "oxlint-plugin-nestjs-security": {
+      "unpacked": 15,
+      "tarball": 5,
+      "files": 5
+    },
+    "oxlint-plugin-node-security": {
+      "unpacked": 30,
+      "tarball": 7,
+      "files": 5
+    },
+    "oxlint-plugin-openai-security": {
+      "unpacked": 11,
+      "tarball": 4,
+      "files": 5
+    },
+    "oxlint-plugin-operability": {
+      "unpacked": 14,
+      "tarball": 5,
+      "files": 5
+    },
+    "oxlint-plugin-postgresql-security": {
+      "unpacked": 17,
+      "tarball": 5,
+      "files": 5
+    },
+    "oxlint-plugin-prisma-security": {
+      "unpacked": 13,
+      "tarball": 4,
+      "files": 5
+    },
+    "oxlint-plugin-react-a11y": {
+      "unpacked": 30,
+      "tarball": 5,
+      "files": 5
+    },
+    "oxlint-plugin-react-features": {
+      "unpacked": 39,
+      "tarball": 6,
+      "files": 5
+    },
+    "oxlint-plugin-reliability": {
+      "unpacked": 16,
+      "tarball": 5,
+      "files": 5
+    },
+    "oxlint-plugin-secure-coding": {
+      "unpacked": 25,
+      "tarball": 6,
+      "files": 5
+    },
+    "oxlint-plugin-sequelize-security": {
+      "unpacked": 13,
+      "tarball": 5,
+      "files": 5
+    },
+    "oxlint-plugin-sqlite-security": {
+      "unpacked": 12,
+      "tarball": 4,
+      "files": 5
+    },
+    "oxlint-plugin-supabase-security": {
+      "unpacked": 11,
+      "tarball": 4,
+      "files": 5
+    },
+    "oxlint-plugin-typeorm-security": {
+      "unpacked": 13,
+      "tarball": 4,
+      "files": 5
+    },
+    "oxlint-plugin-vercel-ai-security": {
+      "unpacked": 18,
+      "tarball": 5,
+      "files": 5
     }
   }
 }

@@ -49,7 +49,13 @@
  * `type: 'suggestion'` and not a taint analysis.
  */
 
-import { createRule, formatLLMMessage, MessageIcons, nameHasAnyWord, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  nameHasAnyWord,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -147,13 +153,18 @@ function resolveThreshold(
     scope;
     scope = scope.upper
   ) {
-    const variable = scope.variables.find((candidate) => candidate.name === node.name);
+    const variable = scope.variables.find(
+      (candidate) => candidate.name === node.name,
+    );
     if (!variable) continue;
     if (variable.defs.length !== 1) return null;
     const definition = variable.defs[0]!;
-    if (definition.type !== 'Variable' || definition.parent.kind !== 'const') return null;
+    if (definition.type !== 'Variable' || definition.parent.kind !== 'const')
+      return null;
     const init = definition.node.init;
-    return init?.type === 'Literal' && typeof init.value === 'number' ? init.value : null;
+    return init?.type === 'Literal' && typeof init.value === 'number'
+      ? init.value
+      : null;
   }
   return null;
 }
@@ -175,7 +186,8 @@ function measuresPasswordLength(
   // `req.body?.password?.length >= 6` wraps the whole access in a
   // ChainExpression. Optional links change nothing about which value is being
   // measured, and the shape is the norm once the request body is not guaranteed.
-  const access = node.type === 'ChainExpression' ? (node.expression as TSESTree.Node) : node;
+  const access =
+    node.type === 'ChainExpression' ? (node.expression as TSESTree.Node) : node;
 
   if (
     access.type !== 'MemberExpression' ||
@@ -231,72 +243,83 @@ function namesPassword(
   return false;
 }
 
-export const detectWeakPasswordValidation = createRule<RuleOptions, MessageIds>({
-  name: 'detect-weak-password-validation',
-  meta: {
-    type: 'suggestion',
-    docs: {
-      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/detect-weak-password-validation.md',
-      description: 'Identify weak password requirements',
-      cwe: 'CWE-521',
-      cvss: 5.3,
-    },
-    messages: {
-      violationDetected: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Weak Password Validation',
+export const detectWeakPasswordValidation = createRule<RuleOptions, MessageIds>(
+  {
+    name: 'detect-weak-password-validation',
+    meta: {
+      interop: { runtimes: ['eslint', 'oxlint'] },
+      type: 'suggestion',
+      docs: {
+        url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/detect-weak-password-validation.md',
+        description: 'Identify weak password requirements',
         cwe: 'CWE-521',
-        description: 'Password length requirement is too weak (less than 8 characters)',
-        severity: 'CRITICAL',
-        fix: 'Require at least 12 characters with complexity requirements',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/521.html',
-      })
-    },
-    schema: [
-      {
-        type: 'object',
-        properties: {
-          passwordWords: {
-            type: 'array',
-            items: { type: 'string' },
-            default: [...DEFAULT_PASSWORD_WORDS],
-            description:
-              'Words that mark a value as a credential. Replaces the default.',
+        cvss: 5.3,
+      },
+      messages: {
+        violationDetected: formatLLMMessage({
+          icon: MessageIcons.SECURITY,
+          issueName: 'Weak Password Validation',
+          cwe: 'CWE-521',
+          description:
+            'Password length requirement is too weak (less than 8 characters)',
+          severity: 'CRITICAL',
+          fix: 'Require at least 12 characters with complexity requirements',
+          documentationLink: 'https://cwe.mitre.org/data/definitions/521.html',
+        }),
+      },
+      schema: [
+        {
+          type: 'object',
+          properties: {
+            passwordWords: {
+              type: 'array',
+              items: { type: 'string' },
+              default: [...DEFAULT_PASSWORD_WORDS],
+              description:
+                'Words that mark a value as a credential. Replaces the default.',
+            },
           },
+          additionalProperties: false,
         },
-        additionalProperties: false,
-      },
-    ],
+      ],
+    },
+    defaultOptions: [{}],
+    createOnce(context, currentOptions) {
+      let words: readonly string[];
+      return {
+        before() {
+          const [options] = currentOptions();
+          words = (options as Options).passwordWords ?? DEFAULT_PASSWORD_WORDS;
+        },
+        BinaryExpression(node: TSESTree.BinaryExpression) {
+          // 1. Is this a length comparison at all? Structural, no names involved.
+          if (!measuresPasswordLength(node.left as TSESTree.Node, words)) {
+            return;
+          }
+
+          // 2. What threshold does it compare against?
+          const threshold = resolveThreshold(node.right, context.sourceCode);
+          if (threshold === null) {
+            return;
+          }
+
+          // 3. What minimum does that operator + threshold actually enforce?
+          const minimum = enforcedMinimum(node.operator, threshold);
+          if (minimum === null) {
+            return;
+          }
+
+          // 4. Is the enforced minimum a real policy, and is it below the floor?
+          if (
+            minimum < SMALLEST_MEANINGFUL_MINIMUM ||
+            minimum >= NIST_MINIMUM_LENGTH
+          ) {
+            return;
+          }
+
+          context.report({ node, messageId: 'violationDetected' });
+        },
+      };
+    },
   },
-  defaultOptions: [{}],
-  create(context, [options]) {
-    const words = (options as Options).passwordWords ?? DEFAULT_PASSWORD_WORDS;
-    return {
-      BinaryExpression(node: TSESTree.BinaryExpression) {
-        // 1. Is this a length comparison at all? Structural, no names involved.
-        if (!measuresPasswordLength(node.left as TSESTree.Node, words)) {
-          return;
-        }
-
-        // 2. What threshold does it compare against?
-        const threshold = resolveThreshold(node.right, context.sourceCode);
-        if (threshold === null) {
-          return;
-        }
-
-        // 3. What minimum does that operator + threshold actually enforce?
-        const minimum = enforcedMinimum(node.operator, threshold);
-        if (minimum === null) {
-          return;
-        }
-
-        // 4. Is the enforced minimum a real policy, and is it below the floor?
-        if (minimum < SMALLEST_MEANINGFUL_MINIMUM || minimum >= NIST_MINIMUM_LENGTH) {
-          return;
-        }
-
-        context.report({ node, messageId: 'violationDetected' });
-      },
-    };
-  },
-});
+);

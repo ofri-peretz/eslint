@@ -97,6 +97,7 @@ function contains(owner: TSESTree.Node, node: TSESTree.Node): boolean {
 export const noSharedStatelessTransport = createRule<[], MessageIds>({
   name: 'no-shared-stateless-transport',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mcp-sdk-security/docs/rules/no-shared-stateless-transport.md',
@@ -136,15 +137,13 @@ export const noSharedStatelessTransport = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
-    const sourceCode = context.sourceCode;
-    const builtBy = createInstanceResolver(context);
-    /** Stateless transport constructions inside a function → that function. */
-    const perRequest = new Map<TSESTree.Node, TSESTree.Node>();
-    const connects: Array<
-      TSESTree.CallExpression & { callee: TSESTree.MemberExpression }
-    > = [];
+  createOnce(context) {
+    let sourceCode: typeof context.sourceCode;
+    let builtBy: ReturnType<typeof createInstanceResolver>;
+    let perRequest: Map<TSESTree.Node, TSESTree.Node>;
+    let connects: (TSESTree.CallExpression & {
+      callee: TSESTree.MemberExpression;
+    })[];
 
     /** Inline options that omit `sessionIdGenerator` or set it to `undefined`. */
     function isStateless(node: TSESTree.NewExpression): boolean {
@@ -169,6 +168,15 @@ export const noSharedStatelessTransport = createRule<[], MessageIds>({
     }
 
     return {
+      before() {
+        if (!fileUsesMcpSdk(context.sourceCode.ast)) return false;
+        sourceCode = context.sourceCode;
+        builtBy = createInstanceResolver(context);
+        /** Stateless transport constructions inside a function → that function. */
+        perRequest = new Map<TSESTree.Node, TSESTree.Node>();
+        connects = [];
+        return true;
+      },
       NewExpression(node: TSESTree.NewExpression) {
         const transport = mcpExport(node.callee, sourceCode.getScope(node));
         if (transport === undefined || !STREAMABLE_TRANSPORTS.has(transport))

@@ -75,6 +75,7 @@ const HOST_GETTER_METHODS = new Set(['get', 'header']);
 export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
   name: 'no-host-header-in-links',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-host-header-in-links.md',
@@ -117,25 +118,14 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const { allowedHosts, checkMailCallees } = options as Options;
-    const allowed = allowedHosts ?? [];
-    const mailCallees = new Set(checkMailCallees ?? ['sendMail', 'send']);
-    const sourceCode = context.sourceCode;
-
-    /**
-     * Variables assigned from a host-header read → source description. Keyed by
-     * the RESOLVED scope variable, not by name: two handlers in the same file
-     * can each declare `host`, and a name-keyed map would report the second
-     * one as request-derived when it never was.
-     */
-    const hostVars = new Map<TSESLint.Scope.Variable, string>();
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let allowed: string[];
+    let mailCallees: Set<string>;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let hostVars: Map<TSESLint.Scope.Variable, string>;
 
     function isRequestIdent(name: string): boolean {
       const lower = name.toLowerCase();
@@ -283,6 +273,28 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        const { allowedHosts, checkMailCallees } = options as Options;
+        allowed = allowedHosts ?? [];
+        mailCallees = new Set(checkMailCallees ?? ['sendMail', 'send']);
+        sourceCode = context.sourceCode;
+
+        /**
+         * Variables assigned from a host-header read → source description. Keyed by
+         * the RESOLVED scope variable, not by name: two handlers in the same file
+         * can each declare `host`, and a name-keyed map would report the second
+         * one as request-derived when it never was.
+         */
+        hostVars = new Map<TSESLint.Scope.Variable, string>();
+        return true;
+      },
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (node.id.type !== AST_NODE_TYPES.Identifier || node.init == null) {
           return;

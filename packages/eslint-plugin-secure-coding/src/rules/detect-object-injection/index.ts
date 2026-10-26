@@ -672,6 +672,7 @@ const bodyGuardsKey = (
 export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
   name: 'detect-object-injection',
   meta: {
+    interop: { runtimes: ['eslint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/detect-object-injection.md',
@@ -775,46 +776,35 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       dangerousProperties: ['__proto__', 'prototype', 'constructor'],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const {
-      // `allowLiterals` is accepted for backward-compatible schema/options
-      // parity (see comment near `isTypedUnionAccess` usage below) but no
-      // longer changes runtime behavior, so it is intentionally unused here.
-      allowLiterals: _allowLiterals = false,
-      dangerousProperties = ['__proto__', 'prototype', 'constructor'],
-    }: Options = options;
-
-    // Track MemberExpressions that are part of AssignmentExpressions to avoid double-reporting
-    const handledMemberExpressions = new WeakSet<TSESTree.MemberExpression>();
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let _allowLiterals: boolean;
+    let dangerousProperties: string[];
+    let handledMemberExpressions: WeakSet<TSESTree.MemberExpression>;
+    let openCopyLoops: { keyName: string; reported: boolean }[];
+    let armedLoops: WeakSet<TSESTree.ForInStatement>;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let isInCodemodContext: boolean;
     /**
-     * `for...in` loops whose source and shape qualify as a prototype-polluting copy loop,
-     * currently open in the traversal — innermost last.
+     * A `+` chain with a provably-numeric operand somewhere inside it.
      *
-     * ForInStatement is visited before its body, so the loop is armed by the time the
-     * body's assignments arrive and the copy-loop check claims each one first; the generic
-     * handler then steps aside. Without that hand-off the same `target[key] = source[key]`
-     * reports twice — one defect, two findings, precisely the over-reporting we criticise
-     * in competitors.
+     * `samples[frameStart + frame * stride + channel]` is ordinary index
+     * arithmetic, but `+` is not provably numeric unless BOTH ends are, and
+     * `frameStart` is a bare parameter. The *concatenation* argument settles it
+     * anyway: the result must contain the numeric operand's rendering as a
+     * contiguous substring, and every `String(number)` — including `NaN`,
+     * `Infinity`, `-0` and `1e+21` — contains at least one of `[0-9NI]`. None of
+     * `__proto__`, `prototype` or `constructor` contains any of those, so the
+     * sum cannot equal one of them whatever the other operands hold.
+     *
+     * Scoped to the CONFIGURED `dangerousProperties`, because a user who adds
+     * `slot0` to the list breaks the premise and must keep the finding.
      */
-    const openCopyLoops: { keyName: string; reported: boolean }[] = [];
-    /** The `for...in` nodes that actually armed, so `:exit` pops exactly what it pushed. */
-    const armedLoops = new WeakSet<TSESTree.ForInStatement>();
-
-    // ── AST-walker / codemod context detection (closes the audit FP
-    // surfaced by `npm run ilb:stress-test`). When the file imports any
-    // AST library (`@babel/types`, `recast`, `jscodeshift`, `eslint`,
-    // `estree-walker`, `unist-util-visit`), `node[name]`-style access is
-    // tree traversal, not user-input indexing. The same helper landed
-    // for `no-insecure-comparison` in audit iter-2; this is the port to
-    // `detect-object-injection`. See benchmarks/AUDIT_PATTERNS.md §2.1.
-    const sourceCode = context.sourceCode;
-    const isInCodemodContext = (() => {
-      const filename = context.filename;
-      if (/\/codemod[s]?\//i.test(filename)) return true;
-      if (/codemod\.[mc]?[jt]sx?$/i.test(filename)) return true;
-      return fileUsesAstTooling(sourceCode.ast);
-    })();
+    const NUMERIC_RENDERING_CHARS = /[0-9NI]/;
+    let REQUEST_ROOTS: Set<string>;
+    let numericVarCache: WeakMap<object, boolean>;
+    let numericVarInProgress: WeakSet<object>;
+    let ARRAY_PRODUCING_METHODS: ReadonlySet<string>;
+    let ELEMENT_FIRST_ITERATORS: ReadonlySet<string>;
 
     // The test-file skip that used to live here is gone. It is now `skipTestFiles`
     // on the rule definition, which short-circuits `create()` before any visitor
@@ -1118,23 +1108,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       }
       return false;
     };
-
-    /**
-     * A `+` chain with a provably-numeric operand somewhere inside it.
-     *
-     * `samples[frameStart + frame * stride + channel]` is ordinary index
-     * arithmetic, but `+` is not provably numeric unless BOTH ends are, and
-     * `frameStart` is a bare parameter. The *concatenation* argument settles it
-     * anyway: the result must contain the numeric operand's rendering as a
-     * contiguous substring, and every `String(number)` — including `NaN`,
-     * `Infinity`, `-0` and `1e+21` — contains at least one of `[0-9NI]`. None of
-     * `__proto__`, `prototype` or `constructor` contains any of those, so the
-     * sum cannot equal one of them whatever the other operands hold.
-     *
-     * Scoped to the CONFIGURED `dangerousProperties`, because a user who adds
-     * `slot0` to the list breaks the premise and must keep the finding.
-     */
-    const NUMERIC_RENDERING_CHARS = /[0-9NI]/;
     const hasNumericOperandInConcatenation = (node: TSESTree.Node): boolean => {
       if (
         node.type !== AST_NODE_TYPES.BinaryExpression ||
@@ -1295,21 +1268,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         isStaticExpression({ node: init, scope: sourceCode.getScope(init) })
       );
     };
-
-    /**
-     * Does this expression carry caller-supplied data?
-     *
-     * Exact membership against request roots, never a substring — `requestId`
-     * and `prerequisites` are not requests. Then disqualified by
-     * `isLocallyConstructed`, so the SPELLING alone never decides.
-     */
-    const REQUEST_ROOTS = new Set([
-      'req',
-      'request',
-      'ctx',
-      'context',
-      'event',
-    ]);
     const isUntrustedExpression = (node: TSESTree.Node): boolean => {
       const root = chainRoot(node);
       if (root === null) return false;
@@ -2254,25 +2212,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * True when the identifier provably holds a number — decided from how the
-     * variable is *defined*, not from what it is called.
-     *
-     * `values[valueStart + k]` is ordinary index arithmetic, but `+` between
-     * two identifiers proves nothing on its own. Resolving each operand to its
-     * declaration settles it: if every value the variable ever receives is a
-     * provably-numeric expression, the sum is numeric and the key can never be
-     * `__proto__` / `prototype` / `constructor`.
-     *
-     * Deliberately conservative — a parameter, a `for..of` binding, or a
-     * single non-numeric assignment anywhere leaves the variable unproven and
-     * the access still reports. That keeps the analysis on the safe side of
-     * the FP/FN trade: it can only ever fail to clear a safe access, never
-     * clear an unsafe one.
-     */
-    const numericVarCache = new WeakMap<object, boolean>();
-    const numericVarInProgress = new WeakSet<object>();
-
-    /**
      * Methods whose callback receives the element first and the INDEX second,
      * and the two reducers, whose index is third: `(acc, cur, index, arr)`.
      *
@@ -2286,31 +2225,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       if (method === 'reduce' || method === 'reduceRight') return 2;
       return null;
     };
-
-    /**
-     * Array-producing calls: the value they return is an Array by specification.
-     *
-     * @protocol-constant Every entry is an ECMA-262 method whose return value
-     * the specification fixes as an Array — `Array.prototype.map` / `filter` /
-     * `slice` / `concat` / `flat` / `flatMap` / `toSorted` / `toReversed` and
-     * `String.prototype.split`. This is a fact about the language, not a
-     * vocabulary a domain chooses: a consumer cannot make `.map` return
-     * something else, and a host that adds a method adds it to the spec rather
-     * than to their codebase. Letting a consumer edit the list could not change
-     * WHAT is reported in their favour — only delete an entry and re-assert the
-     * false positive this exemption exists to remove.
-     */
-    const ARRAY_PRODUCING_METHODS: ReadonlySet<string> = new Set([
-      'split',
-      'slice',
-      'concat',
-      'map',
-      'filter',
-      'flat',
-      'flatMap',
-      'toSorted',
-      'toReversed',
-    ]);
 
     /**
      * Is this expression provably an Array — not merely something with a
@@ -2540,30 +2454,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       numericVarCache.set(variable, result);
       return result;
     };
-
-    /**
-     * Array-iteration methods whose callback receives the ELEMENT first. Exact
-     * membership against a closed API surface, not a substring test.
-     *
-     * @protocol-constant These are the `Array.prototype` iteration methods
-     * whose callback signature the ECMAScript specification fixes as
-     * `(element, index, array)`; the set is a property of the language, not of
-     * a consumer's codebase. Adding a name here asserts a callback signature
-     * that the named method does not have, so the first parameter would be
-     * read as an element when it is really an index — and removing one
-     * re-asserts the false positive on `arr.forEach((el) => el[k])` that the
-     * set was added to close.
-     */
-    const ELEMENT_FIRST_ITERATORS: ReadonlySet<string> = new Set([
-      'forEach',
-      'map',
-      'filter',
-      'find',
-      'findLast',
-      'some',
-      'every',
-      'flatMap',
-    ]);
 
     /**
      * Is this function the callback of `Object.keys(x).forEach(...)` (or `.map`,
@@ -3662,6 +3552,124 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({
+          // `allowLiterals` is accepted for backward-compatible schema/options
+          // parity (see comment near `isTypedUnionAccess` usage below) but no
+          // longer changes runtime behavior, so it is intentionally unused here.
+          allowLiterals: _allowLiterals = false,
+          dangerousProperties = ['__proto__', 'prototype', 'constructor'],
+        } = options);
+
+        // Track MemberExpressions that are part of AssignmentExpressions to avoid double-reporting
+        handledMemberExpressions = new WeakSet<TSESTree.MemberExpression>();
+        /**
+         * `for...in` loops whose source and shape qualify as a prototype-polluting copy loop,
+         * currently open in the traversal — innermost last.
+         *
+         * ForInStatement is visited before its body, so the loop is armed by the time the
+         * body's assignments arrive and the copy-loop check claims each one first; the generic
+         * handler then steps aside. Without that hand-off the same `target[key] = source[key]`
+         * reports twice — one defect, two findings, precisely the over-reporting we criticise
+         * in competitors.
+         */
+        openCopyLoops = [];
+        /** The `for...in` nodes that actually armed, so `:exit` pops exactly what it pushed. */
+        armedLoops = new WeakSet<TSESTree.ForInStatement>();
+
+        // ── AST-walker / codemod context detection (closes the audit FP
+        // surfaced by `npm run ilb:stress-test`). When the file imports any
+        // AST library (`@babel/types`, `recast`, `jscodeshift`, `eslint`,
+        // `estree-walker`, `unist-util-visit`), `node[name]`-style access is
+        // tree traversal, not user-input indexing. The same helper landed
+        // for `no-insecure-comparison` in audit iter-2; this is the port to
+        // `detect-object-injection`. See benchmarks/AUDIT_PATTERNS.md §2.1.
+        sourceCode = context.sourceCode;
+        isInCodemodContext = (() => {
+          const filename = context.filename;
+          if (/\/codemod[s]?\//i.test(filename)) return true;
+          if (/codemod\.[mc]?[jt]sx?$/i.test(filename)) return true;
+          return fileUsesAstTooling(sourceCode.ast);
+        })();
+
+        /**
+         * Does this expression carry caller-supplied data?
+         *
+         * Exact membership against request roots, never a substring — `requestId`
+         * and `prerequisites` are not requests. Then disqualified by
+         * `isLocallyConstructed`, so the SPELLING alone never decides.
+         */
+        REQUEST_ROOTS = new Set(['req', 'request', 'ctx', 'context', 'event']);
+
+        /**
+         * True when the identifier provably holds a number — decided from how the
+         * variable is *defined*, not from what it is called.
+         *
+         * `values[valueStart + k]` is ordinary index arithmetic, but `+` between
+         * two identifiers proves nothing on its own. Resolving each operand to its
+         * declaration settles it: if every value the variable ever receives is a
+         * provably-numeric expression, the sum is numeric and the key can never be
+         * `__proto__` / `prototype` / `constructor`.
+         *
+         * Deliberately conservative — a parameter, a `for..of` binding, or a
+         * single non-numeric assignment anywhere leaves the variable unproven and
+         * the access still reports. That keeps the analysis on the safe side of
+         * the FP/FN trade: it can only ever fail to clear a safe access, never
+         * clear an unsafe one.
+         */
+        numericVarCache = new WeakMap<object, boolean>();
+        numericVarInProgress = new WeakSet<object>();
+
+        /**
+         * Array-producing calls: the value they return is an Array by specification.
+         *
+         * @protocol-constant Every entry is an ECMA-262 method whose return value
+         * the specification fixes as an Array — `Array.prototype.map` / `filter` /
+         * `slice` / `concat` / `flat` / `flatMap` / `toSorted` / `toReversed` and
+         * `String.prototype.split`. This is a fact about the language, not a
+         * vocabulary a domain chooses: a consumer cannot make `.map` return
+         * something else, and a host that adds a method adds it to the spec rather
+         * than to their codebase. Letting a consumer edit the list could not change
+         * WHAT is reported in their favour — only delete an entry and re-assert the
+         * false positive this exemption exists to remove.
+         */
+        ARRAY_PRODUCING_METHODS = new Set([
+          'split',
+          'slice',
+          'concat',
+          'map',
+          'filter',
+          'flat',
+          'flatMap',
+          'toSorted',
+          'toReversed',
+        ]);
+
+        /**
+         * Array-iteration methods whose callback receives the ELEMENT first. Exact
+         * membership against a closed API surface, not a substring test.
+         *
+         * @protocol-constant These are the `Array.prototype` iteration methods
+         * whose callback signature the ECMAScript specification fixes as
+         * `(element, index, array)`; the set is a property of the language, not of
+         * a consumer's codebase. Adding a name here asserts a callback signature
+         * that the named method does not have, so the first parameter would be
+         * read as an element when it is really an index — and removing one
+         * re-asserts the false positive on `arr.forEach((el) => el[k])` that the
+         * set was added to close.
+         */
+        ELEMENT_FIRST_ITERATORS = new Set([
+          'forEach',
+          'map',
+          'filter',
+          'find',
+          'findLast',
+          'some',
+          'every',
+          'flatMap',
+        ]);
+      },
       ForOfStatement: checkMassAssignmentLoop,
       ForInStatement: checkPrototypePollutingCopyLoop,
       'ForInStatement:exit': (node: TSESTree.ForInStatement) => {

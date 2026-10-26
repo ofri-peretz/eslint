@@ -61,7 +61,10 @@ ruleTester.run('no-allow-arbitrary-loads', noAllowArbitraryLoads, {
       code: 'export default { ios: { infoPlist: { NSAppTransportSecurity: { NSExceptionDomains: { "api.example.com": {} } } } } };',
     },
     { code: 'const settings = { secureMode: true }' },
-    { code: 'const x = 1' },
+    {
+      name: 'a plain numeric declaration is not an ATS opt-out',
+      code: 'const x = 1',
+    },
     // Capacitor's cleartext switch, with the option at its default.
     { code: 'const config = { server: { cleartext: true } };' },
   ],

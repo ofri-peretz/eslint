@@ -68,6 +68,9 @@
     "@supabase/supabase-js": "^2.0.0"
   },
   "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    },
     "@supabase/supabase-js": {
       "optional": true
     }

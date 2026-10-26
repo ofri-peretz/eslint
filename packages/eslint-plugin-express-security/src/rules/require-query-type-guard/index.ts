@@ -92,6 +92,7 @@ interface ScopeFrame {
 export const requireQueryTypeGuard = createRule<RuleOptions, MessageIds>({
   name: 'require-query-type-guard',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     hasSuggestions: true,
     docs: {
@@ -137,17 +138,14 @@ export const requireQueryTypeGuard = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const { coercers, validators } = options as Options;
-    const coercerNames = new Set(coercers ?? ['String']);
-    const validatorNames = new Set(validators ?? ['parse', 'safeParse']);
-    const sourceCode = context.sourceCode;
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let coercerNames: Set<string>;
+    let validatorNames: Set<string>;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let frames: ScopeFrame[];
 
     function newFrame(): ScopeFrame {
       return {
@@ -156,7 +154,6 @@ export const requireQueryTypeGuard = createRule<RuleOptions, MessageIds>({
         guardedProps: new Set(),
       };
     }
-    const frames: ScopeFrame[] = [newFrame()];
     const current = (): ScopeFrame => frames[frames.length - 1];
 
     function isRequestIdent(name: string): boolean {
@@ -285,6 +282,21 @@ export const requireQueryTypeGuard = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        const { coercers, validators } = options as Options;
+        coercerNames = new Set(coercers ?? ['String']);
+        validatorNames = new Set(validators ?? ['parse', 'safeParse']);
+        sourceCode = context.sourceCode;
+        frames = [newFrame()];
+        return true;
+      },
       'FunctionDeclaration, FunctionExpression, ArrowFunctionExpression':
         enterFunction,
       'FunctionDeclaration:exit': exitFunction,

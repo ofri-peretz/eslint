@@ -106,6 +106,7 @@ type RuleOptions = [Options?];
 export const noSensitiveDataInAnalytics = createRule<RuleOptions, MessageIds>({
   name: 'no-sensitive-data-in-analytics',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-sensitive-data-in-analytics.md',
@@ -142,8 +143,8 @@ export const noSensitiveDataInAnalytics = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ sensitiveFields: [...DEFAULT_SENSITIVE_FIELDS] }],
-  create(context, [options = {}]) {
-    const { sensitiveFields = [...DEFAULT_SENSITIVE_FIELDS] } = options;
+  createOnce(context, currentOptions) {
+    let sensitiveFields: string[];
 
     function report(node: TSESTree.Node, field: string) {
       context.report({ node, messageId: 'violationDetected', data: { field } });
@@ -182,6 +183,10 @@ export const noSensitiveDataInAnalytics = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({ sensitiveFields = [...DEFAULT_SENSITIVE_FIELDS] } = options);
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (!isAnalyticsTransmission(node)) return;
         // EVERY argument, not just position 1. `gtag('event', name, params)`

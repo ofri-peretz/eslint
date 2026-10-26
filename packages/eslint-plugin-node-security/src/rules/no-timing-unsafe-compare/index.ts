@@ -20,6 +20,7 @@ import {
   compileUserPatterns,
   unwrapTypeSyntax,
   propertyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 import {
   bindingInit,
@@ -60,6 +61,18 @@ export interface Options {
    * which were timing oracles, so it is off.
    */
   reportUnverifiedComparisons?: boolean;
+
+  /**
+   * Report a secret-named value compared against a string literal, in either
+   * order: `password === 'mypass'`, `'mypass' === password`. Default: `false`.
+   *
+   * Off by default because a string comparand is usually a tag, not a secret —
+   * `revokedToken === 'access'` (see {@link isSourceConstant}). `true` reports
+   * on the name alone, without the attacker-controlled-operand check, which is
+   * what `eslint-plugin-security`'s `detect-possible-timing-attacks` does and
+   * what a drop-in for eslint-plugin-security pins (docs/intents/oxlint-plugin-security-drop-in).
+   */
+  reportLiteralComparands?: boolean;
 
   /**
    * Whole words whose presence in an identifier means a `secretPatterns` match
@@ -177,6 +190,14 @@ function isSourceConstant(node: TSESTree.Node): boolean {
   if (node.type === AST_NODE_TYPES.TemplateLiteral)
     return node.expressions.length === 0;
   return false;
+}
+
+/**
+ * A string comparand — `'mypass'` or `\`mypass\``, not a number, `null` or a
+ * regex. `staticString` reads both spellings of the same string.
+ */
+function isStringLiteral(node: TSESTree.Node): boolean {
+  return staticString(node) !== null;
 }
 
 /**
@@ -567,6 +588,7 @@ function isNonSecretMember(node: TSESTree.MemberExpression): boolean {
 export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
   name: 'no-timing-unsafe-compare',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-timing-unsafe-compare.md',
@@ -610,6 +632,12 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
             description:
               'Report on a secret-looking name alone, without an attacker-controlled operand. Restores the pre-inversion behaviour.',
           },
+          reportLiteralComparands: {
+            type: 'boolean',
+            default: false,
+            description:
+              "Report a secret-named value compared against a string literal (password === 'mypass'), in either order, on the name alone. Off by default because string comparands are usually tags (revokedToken === 'access').",
+          },
           nonSecretWords: {
             type: 'array',
             items: { type: 'string' },
@@ -637,47 +665,21 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       nonSecretTails: [...DEFAULT_NON_SECRET_TAILS],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      secretPatterns = DEFAULT_SECRET_PATTERNS,
-      untrustedSources = DEFAULT_UNTRUSTED_SOURCES,
-      reportUnverifiedComparisons = false,
-      nonSecretWords = [...DEFAULT_NON_SECRET_WORDS],
-      nonSecretTails = [...DEFAULT_NON_SECRET_TAILS],
-    } = options as Options;
-    // Lower-cased once. `identifierWords` already lower-cases what it returns,
-    // so a user who writes `['Author']` must still match `postAuthorId` — the
-    // built-ins are lower-case and the option has to behave identically.
-    const nonSecretWordSet: ReadonlySet<string> = new Set(
-      nonSecretWords.map((word) => word.toLowerCase()),
-    );
-    const nonSecretTailSet: ReadonlySet<string> = new Set(
-      nonSecretTails.map((word) => word.toLowerCase()),
-    );
-    const sourceCode = context.sourceCode;
-    const readsUntrusted = makeReadsTaintSource(
-      sourceCode,
-      new Set(untrustedSources.map((source) => source.toLowerCase())),
-    );
-    // Substring-matched on purpose: `auth` has to match `authorization`, and
-    // `token` has to match `accessTokenValue`. Anchoring to word boundaries was
-    // tried and dropped — it fixed `firstKey` but stopped matching
-    // `req.headers.authorization`, trading one false positive for a worse false
-    // negative.
-    //
-    // Under the DEFAULT patterns `firstKey` never reaches the guard at all,
-    // because `key` is not among them. The existence-check guard below is what
-    // handles the same shape when a project adds `key` back through
-    // `secretPatterns` — two separate mechanisms, not one.
-    // Guarded: a user pattern reaches `new RegExp` here. Measured before this
-    // change: `(a+)+$` took 45-58s on a single file, and `[` threw
-    // "Invalid regular expression" out of create(), killing the whole lint
-    // run rather than just this rule. compileUserPattern degrades both to a
-    // substring match.
-    const patterns = compileUserPatterns(secretPatterns as string[], 'i');
+    let secretPatterns: string[];
+    let untrustedSources: string[];
+    let reportUnverifiedComparisons: boolean;
+    let reportLiteralComparands: boolean;
+    let nonSecretWords: string[];
+    let nonSecretTails: string[];
+    let nonSecretWordSet: ReadonlySet<string>;
+    let nonSecretTailSet: ReadonlySet<string>;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let readsUntrusted: (node: TSESTree.Node) => boolean;
+    let patterns: ReturnType<typeof compileUserPatterns>;
 
     function nameLooksSecret(name: string): boolean {
       if (BOOLEAN_PREDICATE_NAME.test(name)) return false;
@@ -1039,6 +1041,19 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       const left = unwrapChain(rawLeft);
       const right = unwrapChain(rawRight);
 
+      // Opt-in: a secret-named value against a string literal reports on the
+      // name alone. Checked before the constant guard below, which is what
+      // skips the literal by default.
+      if (reportLiteralComparands) {
+        const literalLeft = isStringLiteral(left);
+        if (literalLeft !== isStringLiteral(right)) {
+          if (isSecretIdentifier(literalLeft ? right : left)) {
+            context.report({ node, messageId: 'timingUnsafeCompare' });
+            return;
+          }
+        }
+      }
+
       // Comparing against a constant that is already in the source — a string,
       // a number, `null`, `undefined` — cannot leak a secret, because the value
       // being compared against is not one an attacker is trying to discover.
@@ -1120,6 +1135,47 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          secretPatterns = DEFAULT_SECRET_PATTERNS,
+          untrustedSources = DEFAULT_UNTRUSTED_SOURCES,
+          reportUnverifiedComparisons = false,
+          reportLiteralComparands = false,
+          nonSecretWords = [...DEFAULT_NON_SECRET_WORDS],
+          nonSecretTails = [...DEFAULT_NON_SECRET_TAILS],
+        } = options as Options);
+        // Lower-cased once. `identifierWords` already lower-cases what it returns,
+        // so a user who writes `['Author']` must still match `postAuthorId` — the
+        // built-ins are lower-case and the option has to behave identically.
+        nonSecretWordSet = new Set(
+          nonSecretWords.map((word) => word.toLowerCase()),
+        );
+        nonSecretTailSet = new Set(
+          nonSecretTails.map((word) => word.toLowerCase()),
+        );
+        sourceCode = context.sourceCode;
+        readsUntrusted = makeReadsTaintSource(
+          sourceCode,
+          new Set(untrustedSources.map((source) => source.toLowerCase())),
+        );
+        // Substring-matched on purpose: `auth` has to match `authorization`, and
+        // `token` has to match `accessTokenValue`. Anchoring to word boundaries was
+        // tried and dropped — it fixed `firstKey` but stopped matching
+        // `req.headers.authorization`, trading one false positive for a worse false
+        // negative.
+        //
+        // Under the DEFAULT patterns `firstKey` never reaches the guard at all,
+        // because `key` is not among them. The existence-check guard below is what
+        // handles the same shape when a project adds `key` back through
+        // `secretPatterns` — two separate mechanisms, not one.
+        // Guarded: a user pattern reaches `new RegExp` here. Measured before this
+        // change: `(a+)+$` took 45-58s on a single file, and `[` threw
+        // "Invalid regular expression" out of create(), killing the whole lint
+        // run rather than just this rule. compileUserPattern degrades both to a
+        // substring match.
+        patterns = compileUserPatterns(secretPatterns as string[], 'i');
+      },
       BinaryExpression: checkBinaryExpression,
       CallExpression: checkCallExpression,
     };

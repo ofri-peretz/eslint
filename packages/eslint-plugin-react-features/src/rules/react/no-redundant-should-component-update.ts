@@ -17,6 +17,10 @@ type MessageIds = 'noRedundantShouldComponentUpdate';
 export const noRedundantShouldComponentUpdate = createRule<[], MessageIds>({
   name: 'no-redundant-should-component-update',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/no-redundant-should-component-update',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-redundant-should-component-update.md',
@@ -29,13 +33,14 @@ export const noRedundantShouldComponentUpdate = createRule<[], MessageIds>({
         description: 'shouldComponentUpdate method does nothing useful',
         severity: 'MEDIUM',
         fix: 'Remove redundant shouldComponentUpdate or implement proper logic',
-        documentationLink: 'https://react.dev/reference/react/Component#shouldcomponentupdate',
+        documentationLink:
+          'https://react.dev/reference/react/Component#shouldcomponentupdate',
       }),
     },
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       MethodDefinition(node: TSESTree.MethodDefinition) {
         if (

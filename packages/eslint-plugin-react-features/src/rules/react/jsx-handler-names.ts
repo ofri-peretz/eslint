@@ -17,6 +17,10 @@ type MessageIds = 'jsxHandlerNames';
 export const jsxHandlerNames = createRule<[], MessageIds>({
   name: 'jsx-handler-names',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/jsx-handler-names',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/jsx-handler-names.md',
@@ -30,12 +34,13 @@ export const jsxHandlerNames = createRule<[], MessageIds>({
         description: 'Event handler does not follow naming convention',
         severity: 'LOW',
         fix: 'Rename handler to start with "handle" or "on" (e.g., handleClick, onSubmit)',
-        documentationLink: 'https://react.dev/learn/responding-to-events#naming-event-handler-functions',
+        documentationLink:
+          'https://react.dev/learn/responding-to-events#naming-event-handler-functions',
       }),
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (node.name.type === 'JSXIdentifier') {
@@ -51,7 +56,10 @@ export const jsxHandlerNames = createRule<[], MessageIds>({
                 const handlerName = expression.name;
 
                 // Check naming convention: should start with 'handle' or 'on'
-                if (!handlerName.startsWith('handle') && !handlerName.startsWith('on')) {
+                if (
+                  !handlerName.startsWith('handle') &&
+                  !handlerName.startsWith('on')
+                ) {
                   context.report({
                     node: expression,
                     messageId: 'jsxHandlerNames',

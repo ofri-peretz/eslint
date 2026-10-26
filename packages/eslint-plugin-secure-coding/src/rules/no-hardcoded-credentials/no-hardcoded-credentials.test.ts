@@ -71,6 +71,7 @@ describe('no-hardcoded-credentials', () => {
           code: 'const apiKey = process.env.API_KEY;',
         },
         {
+          name: 'a password read from the environment is not hardcoded',
           code: 'const password = process.env.DATABASE_PASSWORD;',
         },
         {

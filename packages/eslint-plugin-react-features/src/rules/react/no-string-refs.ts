@@ -17,6 +17,10 @@ type MessageIds = 'noStringRefs';
 export const noStringRefs = createRule<[], MessageIds>({
   name: 'no-string-refs',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/no-string-refs',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-string-refs.md',
@@ -35,13 +39,10 @@ export const noStringRefs = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
-        if (
-          node.name.type === 'JSXIdentifier' &&
-          node.name.name === 'ref'
-        ) {
+        if (node.name.type === 'JSXIdentifier' && node.name.name === 'ref') {
           // Check for direct string literals
           if (
             node.value &&

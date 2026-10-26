@@ -406,6 +406,7 @@ function isInsideRoleCheck(
 export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
   name: 'no-privilege-escalation',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-privilege-escalation.md',

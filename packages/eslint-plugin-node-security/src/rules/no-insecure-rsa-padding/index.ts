@@ -43,6 +43,7 @@ const PKCS1_PADDING_NAMES = new Set([
 export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
   name: 'no-insecure-rsa-padding',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-insecure-rsa-padding.md',
@@ -93,16 +94,12 @@ export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
       allowInTests: false,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = false } = options as Options;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-
-    const sourceCode = context.sourceCode;
+    let isTestFile: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     function checkCallExpression(node: TSESTree.CallExpression) {
       if (isTestFile) return;
@@ -159,6 +156,15 @@ export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = false } = options as Options;
+
+        const filename = context.filename;
+        isTestFile = allowInTests && isTestFilePath(filename);
+
+        sourceCode = context.sourceCode;
+      },
       CallExpression: checkCallExpression,
     };
   },

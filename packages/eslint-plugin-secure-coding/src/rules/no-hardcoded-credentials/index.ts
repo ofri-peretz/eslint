@@ -1026,6 +1026,7 @@ function looksLikeCredential(
 export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
   name: 'no-hardcoded-credentials',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-hardcoded-credentials.md',
@@ -1165,97 +1166,32 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       additionalPlaceholderWords: [],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    // Lower-cased once: the list is compared case-insensitively, and doing it
-    // per-lookup was the shape that made the old Set awkward to replace.
-    const credentialWords = new Set<string>(
-      (options.credentialWords ?? [...CREDENTIAL_VARIABLE_NAMES]).map((w) =>
-        w.toLowerCase(),
-      ),
-    );
-    const {
-      ignorePatterns = [],
-      allowInTests = true,
-      minLength = 8,
-      detectApiKeys = true,
-      detectPasswords = true,
-      detectTokens = true,
-      detectDatabaseStrings = true,
-      customPatterns = [],
-      allowPlaceholders = true,
-      placeholderWords = DEFAULT_PLACEHOLDER_WORDS,
-      additionalPlaceholderWords = [],
-    }: Options = options;
-
-    const placeholderWordSet: ReadonlySet<string> = new Set([
-      ...placeholderWords,
-      ...additionalPlaceholderWords,
-    ]);
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-
-    // Compile ignore patterns to regex
-    // Guarded: a user pattern reaches `new RegExp` here. Measured before this
-    // change: `(a+)+$` took 45-58s on a single file, and `[` threw
-    // "Invalid regular expression" out of create(), killing the whole lint
-    // run rather than just this rule. compileUserPattern degrades both to a
-    // substring match.
-    const compiledIgnorePatterns = compileUserPatterns(
-      ignorePatterns as string[],
-    );
-
-    const detectionOptions = {
-      minLength,
-      detectApiKeys,
-      detectPasswords,
-      detectTokens,
-      detectDatabaseStrings,
-      customPatterns,
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let credentialWords: Set<string>;
+    let ignorePatterns: string[];
+    let allowInTests: boolean;
+    let minLength: number;
+    let detectApiKeys: boolean;
+    let detectPasswords: boolean;
+    let detectTokens: boolean;
+    let detectDatabaseStrings: boolean;
+    let customPatterns: { type: string; pattern: string }[];
+    let allowPlaceholders: boolean;
+    let placeholderWords: string[];
+    let additionalPlaceholderWords: string[];
+    let placeholderWordSet: ReadonlySet<string>;
+    let isTestFile: boolean;
+    let compiledIgnorePatterns: ReturnType<typeof compileUserPatterns>;
+    let detectionOptions: {
+      minLength: number;
+      detectApiKeys: boolean;
+      detectPasswords: boolean;
+      detectTokens: boolean;
+      detectDatabaseStrings: boolean;
+      customPatterns: { type: string; pattern: string }[];
     };
-
-    /**
-     * Variable / property names that hold UI labels and HTML attribute
-     * values, not secrets. When a literal containing the word "password"
-     * (or other credential-like text) lives in one of these contexts, it's
-     * a label or form-field metadata, not a hardcoded credential.
-     */
-    const LABEL_CONTEXT_NAMES = new Set<string>([
-      // HTML form attributes
-      'type',
-      'name',
-      'id',
-      'placeholder',
-      'label',
-      'title',
-      'role',
-      'autocomplete',
-      'autoFocus',
-      'autocapitalize',
-      'inputmode',
-      // ARIA
-      'aria-label',
-      'aria-labelledby',
-      'aria-describedby',
-      // Common semantic UI fields
-      'fieldName',
-      'fieldType',
-      'fieldLabel',
-      'inputType',
-      'inputName',
-      'displayName',
-      'columnName',
-      'paramName',
-      // i18n keys / translation lookup. NOTE: bare `'key'` is intentionally
-      // omitted — `const key = '...'` is the canonical name for actual API
-      // keys (e.g. AWS, Stripe), so exempting it would mask real secrets.
-      // The specific i18n names below cover translation lookups without
-      // that false-negative.
-      'i18nKey',
-      'translationKey',
-      'messageKey',
-    ]);
+    let LABEL_CONTEXT_NAMES: Set<string>;
+    let loadedVendors: ReadonlySet<string> | null;
 
     /**
      * Returns true if the literal is being used as a UI label or HTML
@@ -1556,13 +1492,6 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
 
       return false;
     }
-
-    /**
-     * The publishable-key vendors this file loads an SDK for. Computed at most
-     * once per file, and only if something already looked like a credential —
-     * seven tree walks are not worth doing for a file with no findings.
-     */
-    let loadedVendors: ReadonlySet<string> | null = null;
     function vendorsInFile(): ReadonlySet<string> {
       if (loadedVendors === null) {
         const found = new Set<string>();
@@ -1806,6 +1735,105 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        // Lower-cased once: the list is compared case-insensitively, and doing it
+        // per-lookup was the shape that made the old Set awkward to replace.
+        credentialWords = new Set<string>(
+          (options.credentialWords ?? [...CREDENTIAL_VARIABLE_NAMES]).map((w) =>
+            w.toLowerCase(),
+          ),
+        );
+        ({
+          ignorePatterns = [],
+          allowInTests = true,
+          minLength = 8,
+          detectApiKeys = true,
+          detectPasswords = true,
+          detectTokens = true,
+          detectDatabaseStrings = true,
+          customPatterns = [],
+          allowPlaceholders = true,
+          placeholderWords = DEFAULT_PLACEHOLDER_WORDS,
+          additionalPlaceholderWords = [],
+        } = options);
+
+        placeholderWordSet = new Set([
+          ...placeholderWords,
+          ...additionalPlaceholderWords,
+        ]);
+
+        const filename = context.filename;
+        isTestFile = allowInTests && isTestFilePath(filename);
+
+        // Compile ignore patterns to regex
+        // Guarded: a user pattern reaches `new RegExp` here. Measured before this
+        // change: `(a+)+$` took 45-58s on a single file, and `[` threw
+        // "Invalid regular expression" out of create(), killing the whole lint
+        // run rather than just this rule. compileUserPattern degrades both to a
+        // substring match.
+        compiledIgnorePatterns = compileUserPatterns(
+          ignorePatterns as string[],
+        );
+
+        detectionOptions = {
+          minLength,
+          detectApiKeys,
+          detectPasswords,
+          detectTokens,
+          detectDatabaseStrings,
+          customPatterns,
+        };
+
+        /**
+         * Variable / property names that hold UI labels and HTML attribute
+         * values, not secrets. When a literal containing the word "password"
+         * (or other credential-like text) lives in one of these contexts, it's
+         * a label or form-field metadata, not a hardcoded credential.
+         */
+        LABEL_CONTEXT_NAMES = new Set<string>([
+          // HTML form attributes
+          'type',
+          'name',
+          'id',
+          'placeholder',
+          'label',
+          'title',
+          'role',
+          'autocomplete',
+          'autoFocus',
+          'autocapitalize',
+          'inputmode',
+          // ARIA
+          'aria-label',
+          'aria-labelledby',
+          'aria-describedby',
+          // Common semantic UI fields
+          'fieldName',
+          'fieldType',
+          'fieldLabel',
+          'inputType',
+          'inputName',
+          'displayName',
+          'columnName',
+          'paramName',
+          // i18n keys / translation lookup. NOTE: bare `'key'` is intentionally
+          // omitted — `const key = '...'` is the canonical name for actual API
+          // keys (e.g. AWS, Stripe), so exempting it would mask real secrets.
+          // The specific i18n names below cover translation lookups without
+          // that false-negative.
+          'i18nKey',
+          'translationKey',
+          'messageKey',
+        ]);
+
+        /**
+         * The publishable-key vendors this file loads an SDK for. Computed at most
+         * once per file, and only if something already looked like a credential —
+         * seven tree walks are not worth doing for a file with no findings.
+         */
+        loadedVendors = null;
+      },
       Literal(node: TSESTree.Literal) {
         checkStringLiteral(node, node.parent);
       },

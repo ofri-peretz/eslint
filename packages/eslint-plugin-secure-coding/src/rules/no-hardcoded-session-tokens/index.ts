@@ -57,6 +57,7 @@ type RuleOptions = [Options?];
 export const noHardcodedSessionTokens = createRule<RuleOptions, MessageIds>({
   name: 'no-hardcoded-session-tokens',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-hardcoded-session-tokens.md',
@@ -93,17 +94,20 @@ export const noHardcodedSessionTokens = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ sessionWords: [...DEFAULT_SESSION_WORDS] }],
-  create(context) {
-    const sessionWords = (
-      (context.options[0] as Options | undefined)?.sessionWords ??
-      DEFAULT_SESSION_WORDS
-    ).map((word) => word.toLowerCase());
+  createOnce(context) {
+    let sessionWords: string[];
 
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
     }
 
     return {
+      before() {
+        sessionWords = (
+          (context.options[0] as Options | undefined)?.sessionWords ??
+          DEFAULT_SESSION_WORDS
+        ).map((word) => word.toLowerCase());
+      },
       Literal(node: TSESTree.Literal) {
         if (typeof node.value !== 'string') return;
 

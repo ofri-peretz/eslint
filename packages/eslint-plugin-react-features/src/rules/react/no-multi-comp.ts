@@ -23,6 +23,10 @@ type RuleOptions = [Options?];
 export const noMultiComp = createRule<RuleOptions, MessageIds>({
   name: 'no-multi-comp',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/no-multi-comp',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-multi-comp.md',
@@ -46,63 +50,32 @@ export const noMultiComp = createRule<RuleOptions, MessageIds>({
         description: 'Multiple components defined in single file',
         severity: 'LOW',
         fix: 'Extract components to separate files',
-        documentationLink: 'https://react.dev/learn/thinking-in-react#step-3-identify-where-your-state-should-live',
+        documentationLink:
+          'https://react.dev/learn/thinking-in-react#step-3-identify-where-your-state-should-live',
       }),
     },
   },
   defaultOptions: [{ ignoreStateless: false }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const components: TSESTree.Node[] = [];
-
-    return {
-      // Class components
-      ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        if (isReactComponent(node)) {
-          components.push(node);
-        }
-      },
-
-      // Function components
-      'VariableDeclarator, FunctionDeclaration'(node: TSESTree.VariableDeclarator | TSESTree.FunctionDeclaration) {
-        if (isReactComponentFunction(getComponentFromDeclaration(node))) {
-          components.push(node);
-        }
-      },
-
-      'Program:exit'() {
-        const [firstOption] = context.options;
-        const ignoreStateless = firstOption?.ignoreStateless ?? false;
-
-        let componentCount = components.length;
-
-        if (ignoreStateless) {
-          // Count only stateful components
-          componentCount = components.filter(comp => !isStatelessComponent(comp)).length;
-        }
-
-        if (componentCount > 1) {
-          // Report on all components except the first
-          for (let i = 1; i < components.length; i++) {
-            const comp = components[i];
-            if (!ignoreStateless || !isStatelessComponent(comp)) {
-              context.report({
-                node: getComponentNameNode(comp),
-                messageId: 'noMultiComp',
-              });
-            }
-          }
-        }
-      },
-    };
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let components: TSESTree.Node[];
 
     // oxlint-disable-next-line consistent-function-scoping
-    function getComponentFromDeclaration(node: TSESTree.VariableDeclarator | TSESTree.FunctionDeclaration): TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression | TSESTree.FunctionDeclaration | null {
+    function getComponentFromDeclaration(
+      node: TSESTree.VariableDeclarator | TSESTree.FunctionDeclaration,
+    ):
+      | TSESTree.FunctionExpression
+      | TSESTree.ArrowFunctionExpression
+      | TSESTree.FunctionDeclaration
+      | null {
       if (node.type === 'FunctionDeclaration') {
         return node;
       }
 
       if (node.type === 'VariableDeclarator' && node.init) {
-        if (node.init.type === 'FunctionExpression' || node.init.type === 'ArrowFunctionExpression') {
+        if (
+          node.init.type === 'FunctionExpression' ||
+          node.init.type === 'ArrowFunctionExpression'
+        ) {
           return node.init;
         }
       }
@@ -110,28 +83,45 @@ export const noMultiComp = createRule<RuleOptions, MessageIds>({
       return null;
     }
 
-    function isReactComponentFunction(node: TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression | TSESTree.FunctionDeclaration | null): boolean {
+    function isReactComponentFunction(
+      node:
+        | TSESTree.FunctionExpression
+        | TSESTree.ArrowFunctionExpression
+        | TSESTree.FunctionDeclaration
+        | null,
+    ): boolean {
       if (!node) return false;
       const body = node.type === 'FunctionDeclaration' ? node.body : node.body;
       return containsJSX(body);
     }
 
-    function containsJSX(node: TSESTree.Node | null | undefined, visited = new Set<TSESTree.Node>()): boolean {
+    function containsJSX(
+      node: TSESTree.Node | null | undefined,
+      visited = new Set<TSESTree.Node>(),
+    ): boolean {
       if (!node) return false;
-      
+
       if (visited.has(node)) return false;
       visited.add(node);
-      
+
       if (node.type === 'JSXElement' || node.type === 'JSXFragment') {
         return true;
       }
 
       // Skip non-child keys to avoid circular references
-      const skipKeys = new Set(['parent', 'range', 'loc', 'start', 'end', 'tokens', 'comments']);
-      
+      const skipKeys = new Set([
+        'parent',
+        'range',
+        'loc',
+        'start',
+        'end',
+        'tokens',
+        'comments',
+      ]);
+
       for (const key in node) {
         if (skipKeys.has(key)) continue;
-        
+
         const child = (node as unknown as Record<string, unknown>)[key];
         if (child && typeof child === 'object') {
           if (Array.isArray(child)) {
@@ -158,14 +148,18 @@ export const noMultiComp = createRule<RuleOptions, MessageIds>({
       if (!node.superClass) return false;
 
       if (node.superClass.type === 'Identifier') {
-        return node.superClass.name === 'Component' || node.superClass.name === 'PureComponent';
+        return (
+          node.superClass.name === 'Component' ||
+          node.superClass.name === 'PureComponent'
+        );
       }
 
       if (node.superClass.type === 'MemberExpression') {
         return (
           node.superClass.object.type === 'Identifier' &&
           node.superClass.object.name === 'React' &&
-          (propertyName(node.superClass) === 'Component' || propertyName(node.superClass) === 'PureComponent')
+          (propertyName(node.superClass) === 'Component' ||
+            propertyName(node.superClass) === 'PureComponent')
         );
       }
 
@@ -190,5 +184,53 @@ export const noMultiComp = createRule<RuleOptions, MessageIds>({
       }
       return node;
     }
+
+    return {
+      before() {
+        components = [];
+      },
+      // Class components
+      ClassDeclaration(node: TSESTree.ClassDeclaration) {
+        if (isReactComponent(node)) {
+          components.push(node);
+        }
+      },
+
+      // Function components
+      'VariableDeclarator, FunctionDeclaration'(
+        node: TSESTree.VariableDeclarator | TSESTree.FunctionDeclaration,
+      ) {
+        if (isReactComponentFunction(getComponentFromDeclaration(node))) {
+          components.push(node);
+        }
+      },
+
+      'Program:exit'() {
+        const [firstOption] = context.options;
+        const ignoreStateless = firstOption?.ignoreStateless ?? false;
+
+        let componentCount = components.length;
+
+        if (ignoreStateless) {
+          // Count only stateful components
+          componentCount = components.filter(
+            (comp) => !isStatelessComponent(comp),
+          ).length;
+        }
+
+        if (componentCount > 1) {
+          // Report on all components except the first
+          for (let i = 1; i < components.length; i++) {
+            const comp = components[i];
+            if (!ignoreStateless || !isStatelessComponent(comp)) {
+              context.report({
+                node: getComponentNameNode(comp),
+                messageId: 'noMultiComp',
+              });
+            }
+          }
+        }
+      },
+    };
   },
 });

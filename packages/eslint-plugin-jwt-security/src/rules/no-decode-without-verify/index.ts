@@ -70,6 +70,7 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
    */
   skipTestFiles: true,
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt-security/docs/rules/no-decode-without-verify.md',
@@ -148,13 +149,11 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] ?? {};
-    const {
-      trustedAnnotations = DEFAULT_TRUSTED_ANNOTATIONS,
-      allowHeaderInspection = false,
-    } = options;
-    const sourceCode = context.sourceCode;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let trustedAnnotations: string[];
+    let allowHeaderInspection: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let TIME_CLAIMS: Set<string>;
 
     /**
      * A jwt-decode call the main `isDecodeOperation` path did not claim
@@ -175,12 +174,6 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
     const isJwtDecodeLibrary = (node: TSESTree.CallExpression): boolean =>
       node.callee.type === 'Identifier' &&
       isJwtLibraryCall(node, JWT_DECODE_LIBRARY_NAMES, sourceCode);
-
-    /**
-     * Claims that carry no authority. Reading them from an unverified token is
-     * the documented safe use of `decode`, and the reason the function exists.
-     */
-    const TIME_CLAIMS = new Set(['exp', 'iat', 'nbf']);
 
     /** Strip `as T` / `!` wrappers that sit between a call and its real parent. */
     const skipTypeWrappers = (node: TSESTree.Node): TSESTree.Node => {
@@ -329,6 +322,20 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
      * callback by `response_mode=form_post` too.
      */
     return {
+      before() {
+        const options = context.options[0] ?? {};
+        ({
+          trustedAnnotations = DEFAULT_TRUSTED_ANNOTATIONS,
+          allowHeaderInspection = false,
+        } = options);
+        sourceCode = context.sourceCode;
+
+        /**
+         * Claims that carry no authority. Reading them from an unverified token is
+         * the documented safe use of `decode`, and the reason the function exists.
+         */
+        TIME_CLAIMS = new Set(['exp', 'iat', 'nbf']);
+      },
       CallExpression(node: TSESTree.CallExpression) {
         // Check for jwt.decode() pattern
         if (isDecodeOperation(node, sourceCode)) {

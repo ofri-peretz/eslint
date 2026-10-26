@@ -25,6 +25,10 @@ type RuleOptions = [];
 export const ariaUnsupportedElements = createRule<RuleOptions, MessageIds>({
   name: 'aria-unsupported-elements',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/aria-unsupported-elements',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/aria-unsupported-elements.md',
@@ -46,7 +50,7 @@ export const ariaUnsupportedElements = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier') return;

@@ -43,7 +43,10 @@ import {
   MessageIcons,
   propertyName,
 } from '@interlace/eslint-devkit';
-import { constInitializerOf, resolveConstantString } from '../../utils/const-value';
+import {
+  constInitializerOf,
+  resolveConstantString,
+} from '../../utils/const-value';
 
 type MessageIds = 'shellFlagInjection' | 'commandStringInterpolation';
 
@@ -108,11 +111,7 @@ const SHELL_COMMAND_FLAGS: Record<string, Set<string>> = {
 };
 
 /** Library entry points that accept a full command line without escaping. */
-const COMMAND_RUNNERS = new Set([
-  'execaCommand',
-  'execaCommandSync',
-  '$.raw',
-]);
+const COMMAND_RUNNERS = new Set(['execaCommand', 'execaCommandSync', '$.raw']);
 
 /**
  * A POSIX shell option cluster whose LAST letter is `c`: `-lc`, `-euc`, `-xc`.
@@ -126,9 +125,14 @@ const COMMAND_RUNNERS = new Set([
 const POSIX_COMMAND_CLUSTER = /^-[a-zA-Z]*c$/;
 
 /** Does this flag make the NEXT argv element a command line for `shell`? */
-function isCommandFlag(commandFlags: ReadonlySet<string>, flag: string): boolean {
+function isCommandFlag(
+  commandFlags: ReadonlySet<string>,
+  flag: string,
+): boolean {
   if (commandFlags.has(flag)) return true;
-  return commandFlags === POSIX_COMMAND_FLAGS && POSIX_COMMAND_CLUSTER.test(flag);
+  return (
+    commandFlags === POSIX_COMMAND_FLAGS && POSIX_COMMAND_CLUSTER.test(flag)
+  );
 }
 
 /** The basename of a command path: '/bin/bash' → 'bash'. */
@@ -138,7 +142,9 @@ function basename(command: string): string {
 }
 
 /** The command-flag dialect of a program path, or null if it is not a shell. */
-function shellDialect(command: string): { shell: string; flags: ReadonlySet<string> } | null {
+function shellDialect(
+  command: string,
+): { shell: string; flags: ReadonlySet<string> } | null {
   const shell = basename(command);
   const flags = SHELL_COMMAND_FLAGS[shell.toLowerCase()];
   return flags ? { shell, flags } : null;
@@ -198,6 +204,7 @@ function calleeName(callee: TSESTree.Node): string | null {
 export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
   name: 'no-dynamic-command-string',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-dynamic-command-string.md',
@@ -253,13 +260,12 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    const { extraCommandRunners } = options as Options;
-    const runners = new Set([
-      ...COMMAND_RUNNERS,
-      ...(extraCommandRunners ?? []),
-    ]);
-    const { sourceCode } = context;
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let runners: Set<string>;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /**
      * The string this expression is *proven* to evaluate to, or null.
@@ -323,7 +329,10 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
      */
     function canonicalName(callee: TSESTree.Node): string | null {
       const direct = calleeName(callee);
-      if (direct !== null && (ARGV_FUNCTIONS.has(direct) || runners.has(direct))) {
+      if (
+        direct !== null &&
+        (ARGV_FUNCTIONS.has(direct) || runners.has(direct))
+      ) {
         return direct;
       }
       if (callee.type !== AST_NODE_TYPES.Identifier) return direct;
@@ -358,7 +367,11 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
       command: TSESTree.Node,
       argv: TSESTree.ArrayExpression,
     ): Array<{ shell: string; flags: ReadonlySet<string>; from: number }> {
-      const positions: Array<{ shell: string; flags: ReadonlySet<string>; from: number }> = [];
+      const positions: Array<{
+        shell: string;
+        flags: ReadonlySet<string>;
+        from: number;
+      }> = [];
       const commandText = staticStringOf(command);
       const outer = commandText === null ? null : shellDialect(commandText);
       if (outer) positions.push({ ...outer, from: 0 });
@@ -427,6 +440,12 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        const { extraCommandRunners } = options as Options;
+        runners = new Set([...COMMAND_RUNNERS, ...(extraCommandRunners ?? [])]);
+        ({ sourceCode } = context);
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const fn = canonicalName(node.callee);
         if (!fn) return;

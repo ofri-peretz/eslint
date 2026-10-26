@@ -21,14 +21,14 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-http-urls', noHttpUrls, {
   valid: [
-      // A fully dynamic key resolves to no name, so there is no slot to judge
-      // the URL against and the rule stays quiet. Covers the null return from
-      // `objectKeyName`, which replaced a hand-rolled `key.name` read that was
-      // blind to `{ ['href']: v }`.
-      {
-        name: 'a fully dynamic key resolves to no name, so there is no slot to judge',
-        code: `const o = { [k]: 'http://example.com' };`,
-      },
+    // A fully dynamic key resolves to no name, so there is no slot to judge
+    // the URL against and the rule stays quiet. Covers the null return from
+    // `objectKeyName`, which replaced a hand-rolled `key.name` read that was
+    // blind to `{ ['href']: v }`.
+    {
+      name: 'a fully dynamic key resolves to no name, so there is no slot to judge',
+      code: `const o = { [k]: 'http://example.com' };`,
+    },
     // --- a bare scheme names no host ----------------------------------------
     // Lighthouse's `report/renderer/details-renderer.js` classifies URLs with
     // `const URL_PREFIXES = ['http://', 'https://', 'data:']`. There is no host
@@ -38,8 +38,14 @@ ruleTester.run('no-http-urls', noHttpUrls, {
       name: 'a list of scheme prefixes is not a request',
       code: "const URL_PREFIXES = ['http://', 'https://', 'data:'];",
     },
-    { name: 'a bare scheme passed to startsWith is a guard', code: "if (u.startsWith('http://')) { upgrade(u); }" },
-    { code: "const scheme = 'http://';" },
+    {
+      name: 'a bare scheme passed to startsWith is a guard',
+      code: "if (u.startsWith('http://')) { upgrade(u); }",
+    },
+    {
+      name: 'a bare http:// scheme names no host',
+      code: "const scheme = 'http://';",
+    },
     // The template form of the same thing, for the same reason.
     { code: 'const u = `http://`;' },
 

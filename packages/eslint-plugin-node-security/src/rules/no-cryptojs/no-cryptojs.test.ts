@@ -23,13 +23,19 @@ const ruleTester = new RuleTester({
 describe('no-cryptojs', () => {
   ruleTester.run('no-cryptojs', noCryptojs, {
     valid: [
-        'const x = 42;',
-        'const flag = true;',
+      'const x = 42;',
+      'const flag = true;',
       // Valid: Native crypto
       { name: 'node:crypto', code: 'import crypto from "node:crypto";' },
-      { name: 'require of native node crypto is not reported', code: 'const crypto = require("crypto");' },
+      {
+        name: 'require of native node crypto is not reported',
+        code: 'const crypto = require("crypto");',
+      },
       // Valid: Other packages
-      { code: 'import hash from "crypto-hash";' },
+      {
+        name: 'crypto-hash is a different package from crypto-js',
+        code: 'import hash from "crypto-hash";',
+      },
     ],
     invalid: [
       // Invalid: crypto-js import
@@ -82,7 +88,9 @@ describe('no-cryptojs', () => {
         ].join('\n'),
       },
       // The newly-visited sites, pointed at local modules.
-      { code: 'export async function f() { return import("./legacy/crypto-js-adapter.js"); }' },
+      {
+        code: 'export async function f() { return import("./legacy/crypto-js-adapter.js"); }',
+      },
       { code: 'export * from "./crypto/native.js";' },
       { code: 'export { seal } from "./crypto/envelope.js";' },
       // An export declaration with no module source, whose VALUE is the name.
@@ -99,7 +107,9 @@ describe('no-cryptojs', () => {
       { code: 'const x = require();' },
       // `import x = A.B` — an import-equals whose reference is a namespace, not
       // a module specifier.
-      { code: 'namespace A { export const B = 1; }\nimport C = A.B;\nexport const d = C;' },
+      {
+        code: 'namespace A { export const B = 1; }\nimport C = A.B;\nexport const d = C;',
+      },
       // A specifier that cannot be resolved is no evidence.
       { code: 'const name = pick(); const m = require(name);' },
     ],

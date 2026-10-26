@@ -238,6 +238,7 @@ const VIEW_METHODS: ReadonlySet<string> = new Set(['slice', 'subarray']);
 export const noBufferOverread = createRule<RuleOptions, MessageIds>({
   name: 'no-buffer-overread',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-buffer-overread.md',
@@ -402,43 +403,35 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       bufferParameterNames: [...DEFAULT_BUFFER_PARAMETER_NAMES],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const {
-      bufferMethods = [...DEFAULT_BUFFER_METHODS],
-      boundsCheckFunctions = [
-        'validateIndex',
-        'checkBounds',
-        'safeIndex',
-        'validateBufferIndex',
-      ],
-      bufferTypes = ['Buffer', 'Uint8Array', 'ArrayBuffer', 'DataView'],
-      trustedSanitizers = [],
-      trustedAnnotations = [],
-      strictMode = false,
-      reportUnvalidatedIndices = false,
-      untrustedSources = [...DEFAULT_UNTRUSTED_SOURCES],
-      bufferParameterNames = [...DEFAULT_BUFFER_PARAMETER_NAMES],
-    }: Options = options;
-
-    // Lower-cased once, then matched whole. `isBufferType` compares against
-    // `node.name.toLowerCase()`, so a user who writes `bufferParameterNames:
-    // ['Buf']` must still match `buf` — folding here rather than at every call
-    // site is what makes the option behave the same way the built-ins do.
-    const bufferParameterSet: ReadonlySet<string> = new Set(
-      bufferParameterNames.map((name) => name.toLowerCase()),
-    );
-
-    const sourceCode = context.sourceCode;
-    const filename = context.filename;
-
-    // Create safety checker for false positive detection
-    const safetyChecker = createSafetyChecker({
-      trustedSanitizers,
-      trustedAnnotations,
-      trustedOrmPatterns: [],
-      strictMode,
-    });
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let bufferMethods: string[];
+    let boundsCheckFunctions: string[];
+    let bufferTypes: string[];
+    let trustedSanitizers: string[];
+    let trustedAnnotations: string[];
+    let strictMode: boolean;
+    let reportUnvalidatedIndices: boolean;
+    let untrustedSources: string[];
+    let bufferParameterNames: string[];
+    let bufferParameterSet: ReadonlySet<string>;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let filename: string;
+    let safetyChecker: {
+      isSafe(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      isSanitized(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      hasAnnotation(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+    };
+    let readsTaintSource: (node: TSESTree.Node) => boolean;
+    let bufferVars: Set<TSESLint.Scope.Variable>;
 
     /**
      * Was this INDEX produced by one of the project's own bounds helpers?
@@ -481,51 +474,6 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         namesOneOf(propertyName(calleeNode), trustedSanitizers)
       );
     };
-
-    /**
-     * "Can an attacker steer this value?" — the shared provenance model.
-     *
-     * What stood here instead was three overlapping name tests, all of them on
-     * a REPORTING path:
-     *
-     * ```ts
-     * varName.includes(keyword)                       // 'offset', 'index', 'user'…
-     * keywords.some(k => sourceCode.getText(init.object).includes(k))
-     * keywords.some(k => sourceCode.getText(indexNode).includes(k))
-     * ```
-     *
-     * The last two match printed SOURCE, which the repo's own rules forbid
-     * outright. All three answered "user-controlled" for values that are
-     * nothing of the sort: `const offset = 4; MAGIC[offset - 1]` and
-     * `const VERSION_INDEX = 0; LAYOUT[VERSION_INDEX]` were both reported as
-     * "Buffer accessed with user-controlled index" in files that contain no
-     * request, no socket and no parameter — rename the constant and the finding
-     * disappears, which is the definition of a name-inference false positive.
-     *
-     * `makeReadsTaintSource` decides by flow instead: request roots, request
-     * PROPERTY names wherever the receiver came from, one hop per binding,
-     * last-write-before-use for a reassigned `let`, and `unwrapTypeSyntax` so a
-     * TypeScript `as string` does not end the walk. Nothing was lost by
-     * deleting the name tests: an index that is a bare parameter was already
-     * exempted by `isIndexValidated`, so the name test could only ever fire on
-     * a LOCAL, whose provenance is exactly what this reader follows.
-     */
-    const readsTaintSource = makeReadsTaintSource(
-      sourceCode,
-      new Set(untrustedSources.map((source) => source.toLowerCase())),
-    );
-
-    /**
-     * Variables known to hold a buffer.
-     *
-     * Keyed by the resolved SCOPE VARIABLE, not by name. The set used to hold
-     * bare strings, so one `const buf = Buffer.alloc(8)` anywhere in a file made
-     * every unrelated `buf` in every other function a buffer — and in minified
-     * bundles, where the same one-letter names are reused in dozens of
-     * closures, that is most of the file. Shopify/cli's vendored speedscope
-     * bundles produced 8 of the rule's 15 corpus findings that way.
-     */
-    const bufferVars = new Set<TSESLint.Scope.Variable>();
 
     /** Register a declarator's binding as a buffer, resolved through scope. */
     const addBufferVar = (id: TSESTree.Identifier): void => {
@@ -862,6 +810,89 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({
+          bufferMethods = [...DEFAULT_BUFFER_METHODS],
+          boundsCheckFunctions = [
+            'validateIndex',
+            'checkBounds',
+            'safeIndex',
+            'validateBufferIndex',
+          ],
+          bufferTypes = ['Buffer', 'Uint8Array', 'ArrayBuffer', 'DataView'],
+          trustedSanitizers = [],
+          trustedAnnotations = [],
+          strictMode = false,
+          reportUnvalidatedIndices = false,
+          untrustedSources = [...DEFAULT_UNTRUSTED_SOURCES],
+          bufferParameterNames = [...DEFAULT_BUFFER_PARAMETER_NAMES],
+        } = options);
+
+        // Lower-cased once, then matched whole. `isBufferType` compares against
+        // `node.name.toLowerCase()`, so a user who writes `bufferParameterNames:
+        // ['Buf']` must still match `buf` — folding here rather than at every call
+        // site is what makes the option behave the same way the built-ins do.
+        bufferParameterSet = new Set(
+          bufferParameterNames.map((name) => name.toLowerCase()),
+        );
+
+        sourceCode = context.sourceCode;
+        filename = context.filename;
+
+        // Create safety checker for false positive detection
+        safetyChecker = createSafetyChecker({
+          trustedSanitizers,
+          trustedAnnotations,
+          trustedOrmPatterns: [],
+          strictMode,
+        });
+
+        /**
+         * "Can an attacker steer this value?" — the shared provenance model.
+         *
+         * What stood here instead was three overlapping name tests, all of them on
+         * a REPORTING path:
+         *
+         * ```ts
+         * varName.includes(keyword)                       // 'offset', 'index', 'user'…
+         * keywords.some(k => sourceCode.getText(init.object).includes(k))
+         * keywords.some(k => sourceCode.getText(indexNode).includes(k))
+         * ```
+         *
+         * The last two match printed SOURCE, which the repo's own rules forbid
+         * outright. All three answered "user-controlled" for values that are
+         * nothing of the sort: `const offset = 4; MAGIC[offset - 1]` and
+         * `const VERSION_INDEX = 0; LAYOUT[VERSION_INDEX]` were both reported as
+         * "Buffer accessed with user-controlled index" in files that contain no
+         * request, no socket and no parameter — rename the constant and the finding
+         * disappears, which is the definition of a name-inference false positive.
+         *
+         * `makeReadsTaintSource` decides by flow instead: request roots, request
+         * PROPERTY names wherever the receiver came from, one hop per binding,
+         * last-write-before-use for a reassigned `let`, and `unwrapTypeSyntax` so a
+         * TypeScript `as string` does not end the walk. Nothing was lost by
+         * deleting the name tests: an index that is a bare parameter was already
+         * exempted by `isIndexValidated`, so the name test could only ever fire on
+         * a LOCAL, whose provenance is exactly what this reader follows.
+         */
+        readsTaintSource = makeReadsTaintSource(
+          sourceCode,
+          new Set(untrustedSources.map((source) => source.toLowerCase())),
+        );
+
+        /**
+         * Variables known to hold a buffer.
+         *
+         * Keyed by the resolved SCOPE VARIABLE, not by name. The set used to hold
+         * bare strings, so one `const buf = Buffer.alloc(8)` anywhere in a file made
+         * every unrelated `buf` in every other function a buffer — and in minified
+         * bundles, where the same one-letter names are reused in dozens of
+         * closures, that is most of the file. Shopify/cli's vendored speedscope
+         * bundles produced 8 of the rule's 15 corpus findings that way.
+         */
+        bufferVars = new Set<TSESLint.Scope.Variable>();
+      },
       /**
        * The deprecated `noAssert` argument on the numeric Buffer reads.
        *

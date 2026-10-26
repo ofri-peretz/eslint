@@ -28,7 +28,10 @@ ruleTester.run('no-hardcoded-session-tokens', noHardcodedSessionTokens, {
       name: 'the token comes from the environment',
       code: 'const token = process.env.JWT_TOKEN',
     },
-    { code: 'const session = getSession()' },
+    {
+      name: 'a session obtained from a function call is not a hardcoded token',
+      code: 'const session = getSession()',
+    },
     // Short strings (not tokens)
     { code: "const id = 'abc'" },
     { code: 'const x = 1' },

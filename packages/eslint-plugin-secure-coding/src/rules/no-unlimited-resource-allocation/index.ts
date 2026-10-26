@@ -101,6 +101,7 @@ export const noUnlimitedResourceAllocation = createRule<
 >({
   name: 'no-unlimited-resource-allocation',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-unlimited-resource-allocation.md',
@@ -261,129 +262,44 @@ export const noUnlimitedResourceAllocation = createRule<
       strictMode: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const sizeProperties = new Set<string>(
-      options.sizeProperties ?? DEFAULT_SIZE_PROPERTIES,
-    );
-    const limitOptionNames = new Set<string>(
-      options.limitOptionNames ?? DEFAULT_LIMIT_OPTION_NAMES,
-    );
-    const {
-      maxResourceSize = 1048576,
-      userInputVariables = [
-        'req',
-        'request',
-        'body',
-        'query',
-        'params',
-        'input',
-        'data',
-      ],
-      safeResourceFunctions = [
-        'validateSize',
-        'checkLimits',
-        'limitResource',
-        'safeAlloc',
-      ],
-      requireResourceValidation = true,
-      trustedSanitizers = [],
-      trustedAnnotations = [],
-      strictMode = false,
-    }: Options = options;
-
-    const sourceCode = context.sourceCode;
-    const filename = context.filename;
-
-    // Create safety checker for false positive detection
-    const safetyChecker = createSafetyChecker({
-      trustedSanitizers,
-      trustedAnnotations,
-      trustedOrmPatterns: [],
-      strictMode,
-    });
-
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let sizeProperties: Set<string>;
+    let limitOptionNames: Set<string>;
+    let maxResourceSize: number;
+    let userInputVariables: string[];
+    let safeResourceFunctions: string[];
+    let requireResourceValidation: boolean;
+    let trustedSanitizers: string[];
+    let trustedAnnotations: string[];
+    let strictMode: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let filename: string;
+    let safetyChecker: {
+      isSafe(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      isSanitized(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      hasAnnotation(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+    };
+    let REQUEST_SURFACE: ReadonlySet<string>;
+    let requestRoots: Set<string>;
     /**
-     * Does this expression carry a value the INVOKER supplies?
-     *
-     * What this replaces was one line —
-     *
-     *     const exprText = sourceCode.getText(expression);
-     *     return patterns.some(pattern => exprText.includes(pattern));
-     *
-     * — substring matching over printed source against
-     * `['req','request','body','query','params','input','data']`. On the
-     * 20-repo corpus it failed in BOTH directions at once:
-     *
-     *   FP  fs.readFileSync(path.join(Database.dataDir, 'db-config.json'))
-     *         'data' inside 'dataDir'
-     *         uptime-kuma server/database.js:208
-     *   FP  databaseOptions.ssl.ca = fs.readFileSync(queryParams.ca)
-     *         'query' inside 'queryParams' — which holds the parsed POSTGRES
-     *         CONNECTION URI, supplied by the operator's own configuration
-     *         parse-server src/Adapters/Storage/Postgres/PostgresConfigParser.js:30
-     *   FP  fs.writeFileSync(entryMetadataPath, JSON.stringify(data.metadata))
-     *         'data' inside 'Metadata'
-     *         strapi packages/core/data-transfer/.../destination/index.ts:175
-     *   FP  fs.readFileSync(path.resolve(cwd, inputFile))
-     *         'input' inside 'inputFile'
-     *         mongoose scripts/website.js:512
-     *
-     *   FN  const size = Number(url.searchParams.get('size'));
-     *       const buf = Buffer.alloc(size);
-     *         'size' contains none of the seven patterns, so the rule did not
-     *         report benchmarks/corpus/CWE-770/vulnerable/buffer-alloc-user.js
-     *         — ITS OWN FIXTURE. Measured 2026-08-18: the rule detected 0 of
-     *         the 2 vulnerable CWE-770 fixtures it was written against while
-     *         emitting 173 findings across the corpus.
-     *
-     * The replacement asks where the value CAME FROM, on the AST. A root the
-     * invoker owns, proven by a member access naming a request surface, and
-     * propagated through local `const`/`let` initializers so a value that has
-     * been through `Number(...)` or `new URL(...)` is still recognised.
-     *
-     * Deliberately the same shape as `node-security/detect-non-literal-fs-filename`:
-     * a value is either invoker-supplied or it is not, and two rules in one
-     * ecosystem must not answer that question differently.
+     * Local names bound to a decompression module. Populated from imports and
+     * requires so an aliased binding (`const unzip = require('unzipper')`)
+     * resolves, while an unrelated identifier that merely reads like one does
+     * not.
      */
-    /**
-     * @protocol-constant These are framework API surfaces, not a tunable
-     * vocabulary: `body`, `query`, `params`, `headers` and `cookies` are
-     * Express and Koa's own property names, `url`/`originalUrl`/`rawBody`/
-     * `files`/`payload` are the request objects of Node's http, Koa, Fastify
-     * and hapi, and `searchParams` is WHATWG `URL`. A framework either has
-     * them or is not the framework. Making the set editable would let a
-     * consumer delete `body` and silence CWE-770 on
-     * `Buffer.alloc(req.body.size)` — the canonical finding this rule exists
-     * for — while the rule went on reporting elsewhere and looked healthy.
-     * The tunable half of the question is the ROOT, which is
-     * `userInputVariables`, and taint reaches any local the root flows into.
-     *
-     * `node-security/detect-non-literal-fs-filename` holds the same set for
-     * the same reason. Two rules in one ecosystem must not disagree about
-     * what a request looks like.
-     */
-    const REQUEST_SURFACE: ReadonlySet<string> = new Set([
-      'body',
-      'query',
-      'params',
-      'headers',
-      'cookies',
-      'url',
-      'originalUrl',
-      'rawBody',
-      'files',
-      'payload',
-      'searchParams',
-    ]);
-
-    /**
-     * `userInputVariables` names the ROOTS, matched whole and case-insensitively.
-     * `dataDir` is not `data`, and `queryParams` is not `query`.
-     */
-    const requestRoots = new Set(
-      userInputVariables.map((name) => name.toLowerCase()),
-    );
+    const ARCHIVE_MODULES =
+      /^(unzipper|tar|tar-stream|yauzl|adm-zip|node:zlib|zlib)$/;
+    let archiveBindings: Set<string>;
+    let ALLOCATORS: ReadonlySet<string>;
 
     const readsRequestSurface = (node: TSESTree.Node | undefined): boolean =>
       // `req['query'].size` reads the same surface `req.query.size` does, so
@@ -662,57 +578,9 @@ export const noUnlimitedResourceAllocation = createRule<
       return null;
     };
 
-    /**
-     * Local names bound to a decompression module. Populated from imports and
-     * requires so an aliased binding (`const unzip = require('unzipper')`)
-     * resolves, while an unrelated identifier that merely reads like one does
-     * not.
-     */
-    const ARCHIVE_MODULES =
-      /^(unzipper|tar|tar-stream|yauzl|adm-zip|node:zlib|zlib)$/;
-    const archiveBindings = new Set<string>(['zlib']);
-
     const noteArchiveBinding = (local: string, source: string): void => {
       if (ARCHIVE_MODULES.test(source)) archiveBindings.add(local);
     };
-
-    /**
-     * A call that actually allocates, sized by something non-constant, inside a
-     * loop BODY.
-     *
-     * Three separate requirements, each of which the old substring heuristic
-     * lacked:
-     *
-     * 1. The callee is an allocation, matched exactly — not text that contains
-     *    'Array'. `Buffer.byteLength` and `Array.isArray` are not allocations.
-     * 2. There is a size argument and it is not a numeric literal. A zero-arg
-     *    `new Set()` allocates a constant, and `Buffer.alloc(512)` is bounded.
-     * 3. It is in the loop's BODY, not its init. `for (var e = Array(t), u = 0; …)`
-     *    runs once, however dynamic `t` is.
-     *
-     * @protocol-constant Every entry is a built-in global: the ECMAScript
-     * collection constructors (`Array`, `Map`, `Set`, `WeakMap`, `WeakSet`) and
-     * Node's `Buffer` allocation API (`Buffer.alloc`, `Buffer.allocUnsafe`,
-     * `Buffer.allocUnsafeSlow`, and `Buffer` itself). Those are the only calls
-     * in the language that take a size argument and reserve memory for it, so
-     * the set is closed by the platform rather than curated from a domain — a
-     * consumer's own allocator is a wrapper around one of these, and the
-     * wrapped call is where the loop bound is missing. Making it editable would
-     * let a consumer delete `Buffer.allocUnsafe` and silence CWE-770 on exactly
-     * the unbounded per-iteration allocation the rule exists to find, or add an
-     * ordinary factory and report every `new Thing(n)` inside a loop.
-     */
-    const ALLOCATORS: ReadonlySet<string> = new Set([
-      'Buffer.alloc',
-      'Buffer.allocUnsafe',
-      'Buffer.allocUnsafeSlow',
-      'Buffer',
-      'Array',
-      'Map',
-      'Set',
-      'WeakMap',
-      'WeakSet',
-    ]);
 
     /**
      * The loop whose body this node sits in, or `undefined`. Reached through
@@ -823,6 +691,169 @@ export const noUnlimitedResourceAllocation = createRule<
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        sizeProperties = new Set<string>(
+          options.sizeProperties ?? DEFAULT_SIZE_PROPERTIES,
+        );
+        limitOptionNames = new Set<string>(
+          options.limitOptionNames ?? DEFAULT_LIMIT_OPTION_NAMES,
+        );
+        ({
+          maxResourceSize = 1048576,
+          userInputVariables = [
+            'req',
+            'request',
+            'body',
+            'query',
+            'params',
+            'input',
+            'data',
+          ],
+          safeResourceFunctions = [
+            'validateSize',
+            'checkLimits',
+            'limitResource',
+            'safeAlloc',
+          ],
+          requireResourceValidation = true,
+          trustedSanitizers = [],
+          trustedAnnotations = [],
+          strictMode = false,
+        } = options);
+
+        sourceCode = context.sourceCode;
+        filename = context.filename;
+
+        // Create safety checker for false positive detection
+        safetyChecker = createSafetyChecker({
+          trustedSanitizers,
+          trustedAnnotations,
+          trustedOrmPatterns: [],
+          strictMode,
+        });
+
+        /**
+         * Does this expression carry a value the INVOKER supplies?
+         *
+         * What this replaces was one line —
+         *
+         *     const exprText = sourceCode.getText(expression);
+         *     return patterns.some(pattern => exprText.includes(pattern));
+         *
+         * — substring matching over printed source against
+         * `['req','request','body','query','params','input','data']`. On the
+         * 20-repo corpus it failed in BOTH directions at once:
+         *
+         *   FP  fs.readFileSync(path.join(Database.dataDir, 'db-config.json'))
+         *         'data' inside 'dataDir'
+         *         uptime-kuma server/database.js:208
+         *   FP  databaseOptions.ssl.ca = fs.readFileSync(queryParams.ca)
+         *         'query' inside 'queryParams' — which holds the parsed POSTGRES
+         *         CONNECTION URI, supplied by the operator's own configuration
+         *         parse-server src/Adapters/Storage/Postgres/PostgresConfigParser.js:30
+         *   FP  fs.writeFileSync(entryMetadataPath, JSON.stringify(data.metadata))
+         *         'data' inside 'Metadata'
+         *         strapi packages/core/data-transfer/.../destination/index.ts:175
+         *   FP  fs.readFileSync(path.resolve(cwd, inputFile))
+         *         'input' inside 'inputFile'
+         *         mongoose scripts/website.js:512
+         *
+         *   FN  const size = Number(url.searchParams.get('size'));
+         *       const buf = Buffer.alloc(size);
+         *         'size' contains none of the seven patterns, so the rule did not
+         *         report benchmarks/corpus/CWE-770/vulnerable/buffer-alloc-user.js
+         *         — ITS OWN FIXTURE. Measured 2026-08-18: the rule detected 0 of
+         *         the 2 vulnerable CWE-770 fixtures it was written against while
+         *         emitting 173 findings across the corpus.
+         *
+         * The replacement asks where the value CAME FROM, on the AST. A root the
+         * invoker owns, proven by a member access naming a request surface, and
+         * propagated through local `const`/`let` initializers so a value that has
+         * been through `Number(...)` or `new URL(...)` is still recognised.
+         *
+         * Deliberately the same shape as `node-security/detect-non-literal-fs-filename`:
+         * a value is either invoker-supplied or it is not, and two rules in one
+         * ecosystem must not answer that question differently.
+         */
+        /**
+         * @protocol-constant These are framework API surfaces, not a tunable
+         * vocabulary: `body`, `query`, `params`, `headers` and `cookies` are
+         * Express and Koa's own property names, `url`/`originalUrl`/`rawBody`/
+         * `files`/`payload` are the request objects of Node's http, Koa, Fastify
+         * and hapi, and `searchParams` is WHATWG `URL`. A framework either has
+         * them or is not the framework. Making the set editable would let a
+         * consumer delete `body` and silence CWE-770 on
+         * `Buffer.alloc(req.body.size)` — the canonical finding this rule exists
+         * for — while the rule went on reporting elsewhere and looked healthy.
+         * The tunable half of the question is the ROOT, which is
+         * `userInputVariables`, and taint reaches any local the root flows into.
+         *
+         * `node-security/detect-non-literal-fs-filename` holds the same set for
+         * the same reason. Two rules in one ecosystem must not disagree about
+         * what a request looks like.
+         */
+        REQUEST_SURFACE = new Set([
+          'body',
+          'query',
+          'params',
+          'headers',
+          'cookies',
+          'url',
+          'originalUrl',
+          'rawBody',
+          'files',
+          'payload',
+          'searchParams',
+        ]);
+
+        /**
+         * `userInputVariables` names the ROOTS, matched whole and case-insensitively.
+         * `dataDir` is not `data`, and `queryParams` is not `query`.
+         */
+        requestRoots = new Set(
+          userInputVariables.map((name) => name.toLowerCase()),
+        );
+        archiveBindings = new Set<string>(['zlib']);
+
+        /**
+         * A call that actually allocates, sized by something non-constant, inside a
+         * loop BODY.
+         *
+         * Three separate requirements, each of which the old substring heuristic
+         * lacked:
+         *
+         * 1. The callee is an allocation, matched exactly — not text that contains
+         *    'Array'. `Buffer.byteLength` and `Array.isArray` are not allocations.
+         * 2. There is a size argument and it is not a numeric literal. A zero-arg
+         *    `new Set()` allocates a constant, and `Buffer.alloc(512)` is bounded.
+         * 3. It is in the loop's BODY, not its init. `for (var e = Array(t), u = 0; …)`
+         *    runs once, however dynamic `t` is.
+         *
+         * @protocol-constant Every entry is a built-in global: the ECMAScript
+         * collection constructors (`Array`, `Map`, `Set`, `WeakMap`, `WeakSet`) and
+         * Node's `Buffer` allocation API (`Buffer.alloc`, `Buffer.allocUnsafe`,
+         * `Buffer.allocUnsafeSlow`, and `Buffer` itself). Those are the only calls
+         * in the language that take a size argument and reserve memory for it, so
+         * the set is closed by the platform rather than curated from a domain — a
+         * consumer's own allocator is a wrapper around one of these, and the
+         * wrapped call is where the loop bound is missing. Making it editable would
+         * let a consumer delete `Buffer.allocUnsafe` and silence CWE-770 on exactly
+         * the unbounded per-iteration allocation the rule exists to find, or add an
+         * ordinary factory and report every `new Thing(n)` inside a loop.
+         */
+        ALLOCATORS = new Set([
+          'Buffer.alloc',
+          'Buffer.allocUnsafe',
+          'Buffer.allocUnsafeSlow',
+          'Buffer',
+          'Array',
+          'Map',
+          'Set',
+          'WeakMap',
+          'WeakSet',
+        ]);
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         for (const spec of node.specifiers) {
           if (

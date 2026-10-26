@@ -36,8 +36,14 @@ ruleTester.run('require-backend-authorization', requireBackendAuthorization, {
   valid: [
     'const x = 42;',
     'const flag = true;',
-    { name: 'the permission is checked on the server', code: 'const response = await api.checkPermission(userId, resource)' },
-    { code: 'const x = 1' },
+    {
+      name: 'the permission is checked on the server',
+      code: 'const response = await api.checkPermission(userId, resource)',
+    },
+    {
+      name: 'code with no sensitive operation needs no authorization check',
+      code: 'const x = 1',
+    },
 
     // ---- REGRESSION LOCKS: server-side enforcement is the CURE -------------
     // Express middleware refusing the request with a 403. Reporting this tells

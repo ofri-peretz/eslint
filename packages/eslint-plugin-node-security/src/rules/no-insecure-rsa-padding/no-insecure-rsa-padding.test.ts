@@ -24,48 +24,102 @@ describe('no-insecure-rsa-padding', () => {
   ruleTester.run('no-insecure-rsa-padding', noInsecureRsaPadding, {
     valid: [
       // Valid: OAEP padding
-      { name: 'OAEP', code: 'crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buffer);' },
+      {
+        name: 'OAEP',
+        code: 'crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buffer);',
+      },
       // Valid: OAEP with hash
-      { name: 'publicEncrypt with OAEP padding and a sha256 oaepHash is not reported', code: 'crypto.publicEncrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: "sha256" }, data);' },
+      {
+        name: 'publicEncrypt with OAEP padding and a sha256 oaepHash is not reported',
+        code: 'crypto.publicEncrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: "sha256" }, data);',
+      },
       // Valid: No padding specified (different method)
-      { code: 'crypto.sign(algorithm, data, key);' },
+      {
+        code: 'crypto.sign(algorithm, data, key);',
+        name: 'sign is not an RSA encryption call and is not reported',
+      },
     ],
     invalid: [
       // Invalid: PKCS#1 v1.5 padding on privateDecrypt
       {
         name: 'PKCS#1 v1.5 decryption padding — the Bleichenbacher oracle',
         code: 'crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_PADDING }, buffer);',
-        errors: [{ messageId: 'insecureRsaPadding', suggestions: [
-          { messageId: 'useOaep', output: 'crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buffer);' },
-        ] }],
+        errors: [
+          {
+            messageId: 'insecureRsaPadding',
+            suggestions: [
+              {
+                messageId: 'useOaep',
+                output:
+                  'crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buffer);',
+              },
+            ],
+          },
+        ],
       },
       // Invalid: PKCS#1 v1.5 padding on publicDecrypt
       {
         code: 'crypto.publicDecrypt({ key, padding: crypto.constants.RSA_PKCS1_PADDING }, buffer);',
-        errors: [{ messageId: 'insecureRsaPadding', suggestions: [
-          { messageId: 'useOaep', output: 'crypto.publicDecrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buffer);' },
-        ] }],
+        errors: [
+          {
+            messageId: 'insecureRsaPadding',
+            suggestions: [
+              {
+                messageId: 'useOaep',
+                output:
+                  'crypto.publicDecrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buffer);',
+              },
+            ],
+          },
+        ],
       },
       // Invalid: PKCS#1 v1.5 padding on privateEncrypt
       {
         code: 'crypto.privateEncrypt({ key, padding: crypto.constants.RSA_PKCS1_PADDING }, buffer);',
-        errors: [{ messageId: 'insecureRsaPadding', suggestions: [
-          { messageId: 'useOaep', output: 'crypto.privateEncrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buffer);' },
-        ] }],
+        errors: [
+          {
+            messageId: 'insecureRsaPadding',
+            suggestions: [
+              {
+                messageId: 'useOaep',
+                output:
+                  'crypto.privateEncrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buffer);',
+              },
+            ],
+          },
+        ],
       },
       // Invalid: PKCS#1 v1.5 padding on publicEncrypt
       {
         code: 'crypto.publicEncrypt({ key, padding: crypto.constants.RSA_PKCS1_PADDING }, buffer);',
-        errors: [{ messageId: 'insecureRsaPadding', suggestions: [
-          { messageId: 'useOaep', output: 'crypto.publicEncrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buffer);' },
-        ] }],
+        errors: [
+          {
+            messageId: 'insecureRsaPadding',
+            suggestions: [
+              {
+                messageId: 'useOaep',
+                output:
+                  'crypto.publicEncrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buffer);',
+              },
+            ],
+          },
+        ],
       },
       // Invalid: Shorthand RSA_PKCS1_PADDING
       {
         code: 'crypto.privateDecrypt({ key, padding: RSA_PKCS1_PADDING }, buffer);',
-        errors: [{ messageId: 'insecureRsaPadding', suggestions: [
-          { messageId: 'useOaep', output: 'crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buffer);' },
-        ] }],
+        errors: [
+          {
+            messageId: 'insecureRsaPadding',
+            suggestions: [
+              {
+                messageId: 'useOaep',
+                output:
+                  'crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buffer);',
+              },
+            ],
+          },
+        ],
       },
     ],
   });

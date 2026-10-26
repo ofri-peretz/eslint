@@ -58,6 +58,7 @@ type RuleOptions = [];
 export const noInvalidHtmlAttribute = createRule<RuleOptions, MessageIds>({
   name: 'no-invalid-html-attribute',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-invalid-html-attribute.md',
@@ -70,13 +71,14 @@ export const noInvalidHtmlAttribute = createRule<RuleOptions, MessageIds>({
         description: 'Invalid HTML attribute detected',
         severity: 'MEDIUM',
         fix: 'Use camelCase React attribute instead',
-        documentationLink: 'https://react.dev/reference/react-dom/components/common#html-attributes',
+        documentationLink:
+          'https://react.dev/reference/react-dom/components/common#html-attributes',
       }),
     },
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (node.name.type === 'JSXIdentifier') {

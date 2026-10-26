@@ -45,6 +45,7 @@ function connectionStringText(node: TSESTree.Node | undefined): string | null {
 export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
   name: 'require-auth-mechanism',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-auth-mechanism.md',
@@ -75,27 +76,31 @@ export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    // Every rule here is MongoDB-specific, and none of them could ask the
-    // file-level question: over the corpus, 47% of this plugin's findings were
-    // in files with no Mongo in them. `receiver.ts` discriminates by receiver
-    // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
-    // well as in a Mongoose one. Registering no visitors is both the gate and
-    // the cheap path.
-    if (!fileUsesMongo(context.sourceCode.ast)) return {};
-
-    const [options = {}] = context.options;
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const inTestFile = isTestFilePath(filename);
-
-    if (allowInTests && inTestFile) {
-      return {};
-    }
-
-    const mongo = analyzeMongoScope(context.sourceCode.ast);
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let mongo: ReturnType<typeof analyzeMongoScope>;
 
     return {
+      before() {
+        // Every rule here is MongoDB-specific, and none of them could ask the
+        // file-level question: over the corpus, 47% of this plugin's findings were
+        // in files with no Mongo in them. `receiver.ts` discriminates by receiver
+        // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
+        // well as in a Mongoose one. Registering no visitors is both the gate and
+        // the cheap path.
+        if (!fileUsesMongo(context.sourceCode.ast)) return false;
+
+        const [options = {}] = context.options;
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const inTestFile = isTestFilePath(filename);
+
+        if (allowInTests && inTestFile) {
+          return false;
+        }
+
+        mongo = analyzeMongoScope(context.sourceCode.ast);
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
           return;

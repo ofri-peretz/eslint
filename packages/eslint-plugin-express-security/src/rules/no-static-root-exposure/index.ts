@@ -92,6 +92,7 @@ function quoteLiteral(value: string): string {
 export const noStaticRootExposure = createRule<RuleOptions, MessageIds>({
   name: 'no-static-root-exposure',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     hasSuggestions: true,
     docs: {
@@ -170,20 +171,13 @@ export const noStaticRootExposure = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const { allowedRoots } = options as Options;
-    const roots = new Set(allowedRoots ?? DEFAULT_ALLOWED_ROOTS);
-    const suggestionRoot =
-      (allowedRoots ?? DEFAULT_ALLOWED_ROOTS)[0] ?? 'public';
-
-    /** Local bindings of the serve-index package (require + import). */
-    const serveIndexNames = new Set(['serveIndex']);
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let roots: Set<string>;
+    let suggestionRoot: string;
+    let serveIndexNames: Set<string>;
 
     function isDirnameNode(node: TSESTree.Node): boolean {
       return (
@@ -343,6 +337,22 @@ export const noStaticRootExposure = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        const { allowedRoots } = options as Options;
+        roots = new Set(allowedRoots ?? DEFAULT_ALLOWED_ROOTS);
+        suggestionRoot = (allowedRoots ?? DEFAULT_ALLOWED_ROOTS)[0] ?? 'public';
+
+        /** Local bindings of the serve-index package (require + import). */
+        serveIndexNames = new Set(['serveIndex']);
+        return true;
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         if (node.source.value !== 'serve-index') return;
         for (const specifier of node.specifiers) {

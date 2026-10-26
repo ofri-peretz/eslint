@@ -188,9 +188,10 @@ describe('docs seal: every plugin overview sells before it lectures', () => {
   it.each(overviews)('%s installs its own package above the README', (rel) => {
     const body = readFileSync(join(CONTENT, rel), 'utf8');
     const slug = rel.split('/')[1]; // plugin-<name>
-    const install = body.indexOf(`<InstallSnippet packages="eslint-${slug}"`);
+    // Both engines' install + config, oxlint first, derived from the slug.
+    const install = body.indexOf(`<EngineSetup plugin="${slug.replace(/^plugin-/, '')}" />`);
     const readme = body.indexOf('<RemoteReadme');
-    expect(install, 'InstallSnippet for the wrong package, or missing').toBeGreaterThan(-1);
+    expect(install, 'EngineSetup for the wrong plugin, or missing').toBeGreaterThan(-1);
     expect(readme, 'RemoteReadme missing').toBeGreaterThan(-1);
     expect(install, 'install must come before the fetched README').toBeLessThan(readme);
   });

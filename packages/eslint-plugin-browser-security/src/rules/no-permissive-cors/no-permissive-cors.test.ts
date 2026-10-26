@@ -33,7 +33,10 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
     {
       code: "res.setHeader('Access-Control-Allow-Origin', 'https://mysite.com')",
     },
-    { code: "const origin = 'https://safe.com'" },
+    {
+      name: 'a plain origin string is not a CORS policy',
+      code: "const origin = 'https://safe.com'",
+    },
 
     // An allowlist, a predicate and a callback are all real origin decisions.
     { code: "cors({ origin: ['https://a.example', 'https://b.example'] })" },

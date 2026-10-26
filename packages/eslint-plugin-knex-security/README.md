@@ -54,9 +54,33 @@ That trade costs recall, and we measure it:
 
 - To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-knex-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-knex-security), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-knex-security). 📚
 
+<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
+
+**oxlint / Vite+** — the same rules under the same `knex-security/<rule>` IDs, without ESLint:
+
+```bash
+npm install oxlint-plugin-knex-security --save-dev
+```
+
+```jsonc
+// .oxlintrc.json
+{ "jsPlugins": ["oxlint-plugin-knex-security"] }
+```
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite-plus';
+
+export default defineConfig({ lint: { jsPlugins: ['oxlint-plugin-knex-security'] } });
+```
+
+**ESLint:**
+
 ```bash
 npm install eslint-plugin-knex-security --save-dev
 ```
+
+<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## ⚙️ Configuration Presets
 | Preset        | Description                                              |

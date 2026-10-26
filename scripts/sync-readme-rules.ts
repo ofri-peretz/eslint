@@ -622,6 +622,82 @@ export function spliceDoctrine(readme: string): {
   return { content, modified: content !== readme };
 }
 
+const INSTALL_START =
+  '<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->';
+const INSTALL_END = '<!-- AUTO-GENERATED:INSTALL:END -->';
+
+/**
+ * Install block, oxlint / Vite+ first and ESLint second.
+ *
+ * Every `eslint-plugin-<name>` has an `oxlint-plugin-<name>` twin that re-exports its
+ * `./oxlint` entry (scripts/generate-oxlint-aliases.mts), so this is one implementation
+ * under two package names. oxlint takes the rule prefix from `meta.name`, normalized
+ * the same way for both prefixes, so the IDs (`<name>/<rule>`) are identical in both
+ * engines. Generated rather than hand-edited for the same reason as the doctrine:
+ * thirty copies of one install story drift.
+ */
+export function renderInstall(pkg: string): string {
+  const name = pkg.replace(/^eslint-plugin-/, '');
+  const alias = `oxlint-plugin-${name}`;
+  return [
+    INSTALL_START,
+    '',
+    `**oxlint / Vite+** — the same rules under the same \`${name}/<rule>\` IDs, without ESLint:`,
+    '',
+    '```bash',
+    `npm install ${alias} --save-dev`,
+    '```',
+    '',
+    '```jsonc',
+    '// .oxlintrc.json',
+    `{ "jsPlugins": ["${alias}"] }`,
+    '```',
+    '',
+    '```ts',
+    '// vite.config.ts',
+    "import { defineConfig } from 'vite-plus';",
+    '',
+    `export default defineConfig({ lint: { jsPlugins: ['${alias}'] } });`,
+    '```',
+    '',
+    '**ESLint:**',
+    '',
+    '```bash',
+    `npm install ${pkg} --save-dev`,
+    '```',
+    '',
+    INSTALL_END,
+  ].join('\n');
+}
+
+/**
+ * Insert or refresh the install block. First run replaces the hand-written
+ * `npm install <pkg> --save-dev` fence under `## Getting Started`; later runs replace
+ * marker-to-marker. A README with neither is left alone, like spliceDoctrine.
+ */
+export function spliceInstall(
+  readme: string,
+  pkg: string,
+): { content: string; modified: boolean } {
+  const block = renderInstall(pkg);
+  const start = readme.indexOf(INSTALL_START);
+  const end = readme.indexOf(INSTALL_END);
+  if (start !== -1 || end !== -1) {
+    if (start === -1 || end === -1 || end < start)
+      throw new Error('INSTALL markers are unpaired or out of order');
+    const content =
+      readme.slice(0, start) + block + readme.slice(end + INSTALL_END.length);
+    return { content, modified: content !== readme };
+  }
+  const gs = readme.search(/^## Getting Started$/m);
+  if (gs === -1) return { content: readme, modified: false };
+  const fence = `\`\`\`bash\nnpm install ${pkg} --save-dev\n\`\`\``;
+  const at = readme.indexOf(fence, gs);
+  if (at === -1) return { content: readme, modified: false };
+  const content = readme.slice(0, at) + block + readme.slice(at + fence.length);
+  return { content, modified: true };
+}
+
 export interface ProcessResult {
   slug: string;
   ruleCount: number;
@@ -706,10 +782,14 @@ export function processPlugin(
       withDoctrine.content,
       renderEcosystemTable(opts.registry, entry.package),
     );
+    const withInstall = spliceInstall(withEcosystem.content, entry.package);
     result = {
-      content: withEcosystem.content,
+      content: withInstall.content,
       modified:
-        result.modified || withDoctrine.modified || withEcosystem.modified,
+        result.modified ||
+        withDoctrine.modified ||
+        withEcosystem.modified ||
+        withInstall.modified,
     };
   } catch (e) {
     return {
@@ -751,17 +831,24 @@ export function processPlugin(
  * Same predicate as the lock: published, and not one of the thirty plugins.
  */
 function nonPluginReadmeTargets(): string[] {
-  return fs
-    .readdirSync(PACKAGES_DIR, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && !e.name.startsWith('eslint-plugin-'))
-    .filter((e) => {
-      const manifest = path.join(PACKAGES_DIR, e.name, 'package.json');
-      const readme = path.join(PACKAGES_DIR, e.name, 'README.md');
-      if (!fs.existsSync(manifest) || !fs.existsSync(readme)) return false;
-      return !JSON.parse(fs.readFileSync(manifest, 'utf-8')).private;
-    })
-    .map((e) => e.name)
-    .sort();
+  return (
+    fs
+      .readdirSync(PACKAGES_DIR, { withFileTypes: true })
+      .filter((e) => e.isDirectory() && !e.name.startsWith('eslint-plugin-'))
+      // oxlint-plugin-* READMEs are generated whole by their own scripts
+      // (generate-oxlint-aliases.mts renders this same table, through prettier;
+      // generate-oxlint-security.mts owns the façade's). Two writers would
+      // fight over formatting on every run.
+      .filter((e) => !e.name.startsWith('oxlint-plugin-'))
+      .filter((e) => {
+        const manifest = path.join(PACKAGES_DIR, e.name, 'package.json');
+        const readme = path.join(PACKAGES_DIR, e.name, 'README.md');
+        if (!fs.existsSync(manifest) || !fs.existsSync(readme)) return false;
+        return !JSON.parse(fs.readFileSync(manifest, 'utf-8')).private;
+      })
+      .map((e) => e.name)
+      .sort()
+  );
 }
 
 function syncNonPluginReadmes(

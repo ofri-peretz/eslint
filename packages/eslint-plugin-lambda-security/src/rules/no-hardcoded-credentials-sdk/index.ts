@@ -13,7 +13,14 @@
  * @see https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/loading-browser-credentials-browser.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, staticString } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
 type MessageIds = 'hardcodedCredentials';
@@ -27,15 +34,15 @@ type RuleOptions = [Options?];
 
 // Patterns that indicate AWS access keys
 const AWS_ACCESS_KEY_PATTERNS = [
-  /^AKIA[0-9A-Z]{16}$/,  // IAM user access key
-  /^ASIA[0-9A-Z]{16}$/,  // STS temporary access key
-  /^AIDA[0-9A-Z]{16}$/,  // IAM user ID
+  /^AKIA[0-9A-Z]{16}$/, // IAM user access key
+  /^ASIA[0-9A-Z]{16}$/, // STS temporary access key
+  /^AIDA[0-9A-Z]{16}$/, // IAM user ID
 ];
 
 // Property names that indicate credentials
 const CREDENTIAL_PROPERTY_NAMES = [
   'accessKeyId',
-  'secretAccessKey', 
+  'secretAccessKey',
   'sessionToken',
   'awsAccessKeyId',
   'awsSecretAccessKey',
@@ -68,10 +75,12 @@ const AWS_SDK_V3_CLIENTS = new Set([
 export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
   name: 'no-hardcoded-credentials-sdk',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-hardcoded-credentials-sdk.md',
-      description: 'Detects hardcoded AWS credentials in SDK client configurations',
+      description:
+        'Detects hardcoded AWS credentials in SDK client configurations',
       cwe: 'CWE-798',
       cvss: 9.8,
     },
@@ -80,12 +89,13 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Hardcoded AWS Credentials',
         cwe: 'CWE-798',
-        description: 'Hardcoded AWS credentials detected in {{clientName}} config: {{property}}',
+        description:
+          'Hardcoded AWS credentials detected in {{clientName}} config: {{property}}',
         severity: 'CRITICAL',
         fix: 'Use credential provider chain: new {{clientName}}({ credentials: fromNodeProviderChain() })',
-        documentationLink: 'https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/setting-credentials-node.html',
+        documentationLink:
+          'https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/setting-credentials-node.html',
       }),
-
     },
     schema: [
       {
@@ -106,25 +116,15 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
       allowInTests: true,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    // Every rule here is Lambda-specific, and none of them knew it: over 107,382
-    // files, 98% of this plugin's findings were in files with no AWS anything.
-    // Registering no visitors is both the gate and the cheap path.
-    if (!fileIsLambda(context.sourceCode.ast)) return {};
-
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
     /**
      * Check if a value looks like an AWS access key
      */
     function looksLikeAwsAccessKey(value: string): boolean {
-      return AWS_ACCESS_KEY_PATTERNS.some(pattern => pattern.test(value));
+      return AWS_ACCESS_KEY_PATTERNS.some((pattern) => pattern.test(value));
     }
 
     /**
@@ -132,7 +132,7 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
      */
     function isCredentialProperty(name: string): boolean {
       return CREDENTIAL_PROPERTY_NAMES.some(
-        credProp => name.toLowerCase() === credProp.toLowerCase()
+        (credProp) => name.toLowerCase() === credProp.toLowerCase(),
       );
     }
 
@@ -148,7 +148,12 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
           return name;
         }
         // Only match *Client if it looks like AWS (contains common AWS service prefixes)
-        if (name.endsWith('Client') && /^(S3|DynamoDB|Lambda|SQS|SNS|Secrets|KMS|STS|IAM|EC2|ECS|CloudWatch|APIGateway|Cognito|EventBridge|StepFunctions|RDS|ElastiCache|SSM|Athena|Glue|Kinesis|Firehose|Rekognition|Textract|Comprehend|Polly|Lex|Bedrock|My|Custom|AWS)/i.test(name)) {
+        if (
+          name.endsWith('Client') &&
+          /^(S3|DynamoDB|Lambda|SQS|SNS|Secrets|KMS|STS|IAM|EC2|ECS|CloudWatch|APIGateway|Cognito|EventBridge|StepFunctions|RDS|ElastiCache|SSM|Athena|Glue|Kinesis|Firehose|Rekognition|Textract|Comprehend|Polly|Lex|Bedrock|My|Custom|AWS)/i.test(
+            name,
+          )
+        ) {
           return name;
         }
       }
@@ -160,7 +165,7 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
      */
     function checkCredentialsObject(
       obj: TSESTree.ObjectExpression,
-      clientName: string
+      clientName: string,
     ): void {
       for (const prop of obj.properties) {
         if (prop.type !== AST_NODE_TYPES.Property) continue;
@@ -193,18 +198,21 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
      */
     function checkCredentialsInner(
       obj: TSESTree.ObjectExpression,
-      clientName: string
+      clientName: string,
     ): void {
       for (const prop of obj.properties) {
         if (prop.type !== AST_NODE_TYPES.Property) continue;
 
-        if (prop.key.type === AST_NODE_TYPES.Identifier && isCredentialProperty(prop.key.name)) {
+        if (
+          prop.key.type === AST_NODE_TYPES.Identifier &&
+          isCredentialProperty(prop.key.name)
+        ) {
           // Check for literal string values
           const staticText2 = staticString(prop.value);
           if (staticText2 !== null) {
             const value = staticText2;
             const keyName = prop.key.name.toLowerCase();
-            
+
             // For accessKeyId, check if it looks like an actual AWS key (AKIA/ASIA pattern)
             if (keyName === 'accesskeyid') {
               if (looksLikeAwsAccessKey(value)) {
@@ -238,7 +246,7 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
     function reportHardcodedCredential(
       node: TSESTree.Property,
       clientName: string,
-      propertyName: string
+      propertyName: string,
     ): void {
       context.report({
         node,
@@ -251,12 +259,31 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Every rule here is Lambda-specific, and none of them knew it: over 107,382
+        // files, 98% of this plugin's findings were in files with no AWS anything.
+        // Registering no visitors is both the gate and the cheap path.
+        if (!fileIsLambda(context.sourceCode.ast)) return false;
+
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+        return true;
+      },
       NewExpression(node: TSESTree.NewExpression) {
         const clientName = getAwsClientName(node);
         if (!clientName) return;
 
         // Check constructor arguments
-        if (node.arguments.length > 0 && node.arguments[0].type === AST_NODE_TYPES.ObjectExpression) {
+        if (
+          node.arguments.length > 0 &&
+          node.arguments[0].type === AST_NODE_TYPES.ObjectExpression
+        ) {
           checkCredentialsObject(node.arguments[0], clientName);
         }
       },

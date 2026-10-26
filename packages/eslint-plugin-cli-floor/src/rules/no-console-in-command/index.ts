@@ -34,6 +34,7 @@ type MessageIds = 'consoleInCommand';
 export const noConsoleInCommand = createRule<[], MessageIds>({
   name: 'no-console-in-command',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-cli-floor/docs/rules/no-console-in-command.md',
@@ -55,10 +56,12 @@ export const noConsoleInCommand = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    if (!fileUsesCliHost(context.sourceCode.ast)) return {};
-
+  createOnce(context) {
     return {
+      before() {
+        if (!fileUsesCliHost(context.sourceCode.ast)) return false;
+        return true;
+      },
       CallExpression(node): void {
         const { callee } = node;
         if (callee.type !== AST_NODE_TYPES.MemberExpression) return;

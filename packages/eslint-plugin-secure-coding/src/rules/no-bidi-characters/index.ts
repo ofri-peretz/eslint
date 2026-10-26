@@ -83,6 +83,7 @@ const codePointFromLabel = (label: string): string | undefined => {
 export const noBidiCharacters = createRule<RuleOptions, MessageIds>({
   name: 'no-bidi-characters',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-bidi-characters',
@@ -111,7 +112,11 @@ export const noBidiCharacters = createRule<RuleOptions, MessageIds>({
         properties: {
           // The destructuring in create() defaults this to `[]`; the schema
           // said nothing, so the generated docs could not state the default.
-          additionalCharacters: { type: 'array', items: { type: 'string' }, default: [] },
+          additionalCharacters: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+          },
           allowDirectionalMarks: { type: 'boolean', default: false },
         },
         additionalProperties: false,
@@ -119,19 +124,25 @@ export const noBidiCharacters = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context, [options = {}]) {
-    const { additionalCharacters = [], allowDirectionalMarks = false } = options;
-
-    const dangerous = new Map(BIDI_CHARACTERS);
-    if (!allowDirectionalMarks) {
-      for (const [char, name] of DIRECTIONAL_MARKS) dangerous.set(char, name);
-    }
-    for (const label of additionalCharacters) {
-      const char = codePointFromLabel(label);
-      if (char) dangerous.set(char, label.trim());
-    }
+  createOnce(context, currentOptions) {
+    let dangerous: Map<string, string>;
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { additionalCharacters = [], allowDirectionalMarks = false } =
+          options;
+
+        dangerous = new Map(BIDI_CHARACTERS);
+        if (!allowDirectionalMarks) {
+          for (const [char, name] of DIRECTIONAL_MARKS)
+            dangerous.set(char, name);
+        }
+        for (const label of additionalCharacters) {
+          const char = codePointFromLabel(label);
+          if (char) dangerous.set(char, label.trim());
+        }
+      },
       Program(node: TSESTree.Program) {
         const { sourceCode } = context;
         const text = sourceCode.getText();
@@ -141,7 +152,7 @@ export const noBidiCharacters = createRule<RuleOptions, MessageIds>({
         // could never match its own key — the lookup only ever saw the high surrogate.
         // BMP characters, which is every built-in bidi control, keep width 1 and the
         // exact ranges they had before.
-        for (let index = 0; index < text.length; ) {
+        for (let index = 0; index < text.length;) {
           const codePoint = text.codePointAt(index) as number;
           const width = codePoint > 0xffff ? 2 : 1;
           const characterName = dangerous.get(text.slice(index, index + width));

@@ -86,7 +86,10 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
         // `kind` does not cover `tokenKinds`. Removing `kinds` from
         // DEFAULT_NON_SECRET_TAILS makes this report, because the identifier
         // still carries `token`.
-        'if (tokenKinds === allowedKinds) { return; }',
+        {
+          name: 'comparing a collection of token kinds is a label comparison, not a secret one',
+          code: 'if (tokenKinds === allowedKinds) { return; }',
+        },
         // Same for `category` — `secretCategory` is a classification label the
         // program assigns, not a value an attacker guesses a byte at a time.
         // Removing `category` makes this report on the `secret` pattern.
@@ -118,7 +121,10 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
         { code: 'if (status === "active") {}' },
         { code: 'if (index === 0) {}' },
         // Similar names that are NOT secrets (use specific non-matching names)
-        { code: 'if (role === "admin") {}' },
+        {
+          code: 'if (role === "admin") {}',
+          name: 'comparing a role name to a literal is not a secret comparison',
+        },
         { code: 'if (method === "oauth") {}' },
         { code: 'if (length === 8) {}' },
         // Non-comparison operators with secrets (should NOT flag)
@@ -1158,6 +1164,62 @@ ruleTester.run(
         code: `const sig = req.headers['x-sig'];
 const expected = createHmac('sha256', S)${'.q()'.repeat(100)};
 if (sig === expected) { ok(); }`,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+    ],
+  },
+);
+
+/**
+ * `reportLiteralComparands` — the two live cases of eslint-plugin-security's
+ * `detect-possible-timing-attacks`, which `oxlint-plugin-security` pins this
+ * option on to match. Off by default, because a string comparand is usually a
+ * tag (`revokedToken === 'access'`), not a secret.
+ */
+const LITERAL_COMPARANDS = [{ reportLiteralComparands: true }];
+
+ruleTester.run(
+  'no-timing-unsafe-compare — reportLiteralComparands',
+  noTimingUnsafeCompare,
+  {
+    valid: [
+      {
+        name: 'by default a secret name compared against a string literal is skipped',
+        code: "if (password === 'mypass') {}",
+      },
+      {
+        name: 'with the option on, a string literal against a non-secret name stays silent',
+        code: "if (role === 'admin') {}",
+        options: LITERAL_COMPARANDS,
+      },
+      {
+        name: 'with the option on, a number comparand is not a string literal and stays skipped',
+        code: 'if (password === 5) {}',
+        options: LITERAL_COMPARANDS,
+      },
+      {
+        name: 'with the option on, two non-literal operands still need an attacker-controlled side',
+        code: 'if (password === stored) {}',
+        options: LITERAL_COMPARANDS,
+      },
+    ],
+    invalid: [
+      {
+        name: 'with the option on, a secret name on the left of a string literal reports',
+        code: "if (password === 'mypass') {}",
+        options: LITERAL_COMPARANDS,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'with the option on, a secret name on the right of a string literal reports',
+        code: "if ('mypass' === password) {}",
+        options: LITERAL_COMPARANDS,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'with the option on, a template-literal string is the same comparand as a quoted one',
+        code: 'if (password === `mypass`) {}',
+        options: LITERAL_COMPARANDS,
         errors: [{ messageId: 'timingUnsafeCompare' }],
       },
     ],

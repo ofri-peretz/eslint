@@ -468,6 +468,7 @@ function findWeakHash(
 export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
   name: 'no-weak-hash-algorithm',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-weak-hash-algorithm.md',
@@ -563,37 +564,19 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
       nonCryptographicNames: DEFAULT_NON_CRYPTOGRAPHIC_NAMES,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      additionalWeakAlgorithms = [],
-      allowInTests = false,
-      nonCryptographicNames = DEFAULT_NON_CRYPTOGRAPHIC_NAMES,
-      securityUseNames = DEFAULT_SECURITY_USE_NAMES,
-      reportUnclassifiedHashes = false,
-    } = options as Options;
-    const isSecurityUse = makeNameTest(securityUseNames);
-    // What a digest is CHECKED against: the security names plus the two that
-    // only mean "authentication tag" in a comparison. `mac` and `digest` are
-    // not security names on their own — `const digest = md5(file)` is a
-    // content digest — but `digest === md5(body)` is verifying one.
-    const isComparedSecurityValue = makeNameTest([
-      ...securityUseNames,
-      'mac',
-      'digest',
-    ]);
-    // Whole-word, exactly as the security list is matched. A superset of the
-    // old exact-membership test — `cacheKey` still normalizes to `cachekey` —
-    // that additionally reads the compound spellings the corpus produced:
-    // `certThumbprint`, `calculateThumbprint`.
-    const isNonCryptographicName = makeNameTest(
-      nonCryptographicNames.map(normalizeName),
-    );
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
+    let additionalWeakAlgorithms: string[];
+    let allowInTests: boolean;
+    let nonCryptographicNames: string[];
+    let securityUseNames: string[];
+    let reportUnclassifiedHashes: boolean;
+    let isSecurityUse: (name: string) => boolean;
+    let isComparedSecurityValue: (name: string) => boolean;
+    let isNonCryptographicName: (name: string) => boolean;
+    let isTestFile: boolean;
 
     /** Is this hash stored under a name that marks it as an identifier? */
     function isNonCryptographicUse(node: TSESTree.Node): boolean {
@@ -899,6 +882,36 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          additionalWeakAlgorithms = [],
+          allowInTests = false,
+          nonCryptographicNames = DEFAULT_NON_CRYPTOGRAPHIC_NAMES,
+          securityUseNames = DEFAULT_SECURITY_USE_NAMES,
+          reportUnclassifiedHashes = false,
+        } = options as Options);
+        isSecurityUse = makeNameTest(securityUseNames);
+        // What a digest is CHECKED against: the security names plus the two that
+        // only mean "authentication tag" in a comparison. `mac` and `digest` are
+        // not security names on their own — `const digest = md5(file)` is a
+        // content digest — but `digest === md5(body)` is verifying one.
+        isComparedSecurityValue = makeNameTest([
+          ...securityUseNames,
+          'mac',
+          'digest',
+        ]);
+        // Whole-word, exactly as the security list is matched. A superset of the
+        // old exact-membership test — `cacheKey` still normalizes to `cachekey` —
+        // that additionally reads the compound spellings the corpus produced:
+        // `certThumbprint`, `calculateThumbprint`.
+        isNonCryptographicName = makeNameTest(
+          nonCryptographicNames.map(normalizeName),
+        );
+
+        const filename = context.filename;
+        isTestFile = allowInTests && isTestFilePath(filename);
+      },
       CallExpression: checkCallExpression,
     };
   },

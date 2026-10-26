@@ -51,6 +51,11 @@ export const noInteractiveElementToNoninteractiveRole = createRule<
 >({
   name: 'no-interactive-element-to-noninteractive-role',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent:
+        'jsx_a11y/no-interactive-element-to-noninteractive-role',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-interactive-element-to-noninteractive-role.md',
@@ -82,16 +87,20 @@ export const noInteractiveElementToNoninteractiveRole = createRule<
     ],
   },
   defaultOptions: [DEFAULT_EXCEPTIONS],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
-    const exceptions: Record<string, string[]> = {
-      ...DEFAULT_EXCEPTIONS,
-      ...options,
-    };
+    let exceptions: Record<string, string[]>;
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        exceptions = {
+          ...DEFAULT_EXCEPTIONS,
+          ...options,
+        };
+      },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier') return;
 

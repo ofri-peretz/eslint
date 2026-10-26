@@ -1,0 +1,81 @@
+---
+title: oxlint and Vite+
+description: Run every Interlace plugin on oxlint or Vite+ with an oxlint-plugin-* package. Same rules, same rule IDs, no ESLint install.
+icon: Zap
+---
+
+import { OxlintAliasList, OxlintBuiltinOverlap, ImportNextGaps } from '@/components/docs/oxlint-landing';
+
+## Why oxlint and Vite+
+
+[Vite+](https://viteplus.dev/guide/lint) bundles the Vite toolchain into one
+dependency, and its linter is [oxlint](https://oxc.rs/docs/guide/usage/linter/js-plugins).
+oxlint loads ESLint-style rules through `jsPlugins`, so a project on Vite+ can
+run our rules without adding ESLint at all.
+
+We treat oxlint as an automated peer of ESLint: the same rule tests run on both
+engines, and a rule declares in `meta.interop.runtimes` which engines it
+supports. Rules that need TypeScript type information run on ESLint only.
+
+## One implementation, the same rule IDs
+
+Every `eslint-plugin-<name>` has an `oxlint-plugin-<name>` twin. The twin is one
+line, `module.exports = require('eslint-plugin-<name>/oxlint')`, and it is
+released at the same version. There is no second copy of any rule to drift.
+
+The rule IDs are identical on both engines: `<name>/<rule>`, for example
+`jwt-security/no-algorithm-none`. oxlint takes the prefix from the plugin's own
+`meta.name`, which is the same object ESLint loads.
+
+## Installing an alias does not install ESLint
+
+`eslint` is an optional peer of every plugin. Installing
+`oxlint-plugin-<name>` pulls in the plugin and its runtime helpers, not ESLint.
+
+## Set it up
+
+Every plugin page and every rule page carries the same two tabs: oxlint / Vite+
+first, ESLint second. Your choice is remembered across pages. To link someone
+straight to the ESLint setup, add `#engine-eslint` to the page URL.
+
+```json title=".oxlintrc.json"
+{
+  "jsPlugins": ["oxlint-plugin-jwt-security"],
+  "rules": { "jwt-security/no-algorithm-none": "error" }
+}
+```
+
+```ts title="vite.config.ts"
+import { defineConfig } from 'vite-plus';
+
+export default defineConfig({
+  lint: {
+    jsPlugins: ['oxlint-plugin-jwt-security'],
+    rules: { 'jwt-security/no-algorithm-none': 'error' },
+  },
+});
+```
+
+## Every alias package
+
+<OxlintAliasList />
+
+## import-next fills the gaps in oxlint's import plugin
+
+oxlint ships a native `import` plugin. `oxlint-plugin-import-next` adds the
+rules it does not have yet: resolution (`no-unresolved`), ordering (`order`),
+dependency hygiene (`no-extraneous-dependencies`, `no-unused-modules`), and
+architecture boundaries (`no-restricted-paths`, `no-internal-modules`), and
+path cleanup (`no-useless-path-segments`). The rules for which oxlint ships a
+native rule of the same name are listed in the next section.
+
+<ImportNextGaps />
+
+## Covered natively by oxlint
+
+For some of our rules, oxlint ships a native rule of the same name, mostly in
+`import-next` (oxlint's `import`), `react-a11y` (`jsx_a11y`) and
+`react-features` (`react`). Each name match was triaged; matches between
+unrelated rules are left out.
+
+<OxlintBuiltinOverlap />

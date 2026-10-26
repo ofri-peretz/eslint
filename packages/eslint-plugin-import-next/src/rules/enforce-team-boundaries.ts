@@ -73,9 +73,7 @@ function globToRegex(pattern: string): RegExp {
   // reaches `new RegExp()` raw and throws "Nothing to repeat".
   const escaped = pattern.replace(/[.+?^${}()|[\]\\*]/g, '\\$&');
   return new RegExp(
-    escaped
-      .replace(/\\\*\\\*/g, '.*')
-      .replace(/\\\*/g, '[^/]*'),
+    escaped.replace(/\\\*\\\*/g, '.*').replace(/\\\*/g, '[^/]*'),
   );
 }
 
@@ -161,6 +159,7 @@ function isSharedPath(importPath: string, sharedPaths: string[]): boolean {
 export const enforceTeamBoundaries = createRule<RuleOptions, MessageIds>({
   name: 'enforce-team-boundaries',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/enforce-team-boundaries.md',
@@ -172,16 +171,15 @@ export const enforceTeamBoundaries = createRule<RuleOptions, MessageIds>({
         issueName: 'Unauthorized Cross-Team Import',
         description:
           "Team '{{sourceTeam}}' is importing from team '{{targetTeam}}' " +
-          "without explicit permission. This creates tight coupling between teams. " +
+          'without explicit permission. This creates tight coupling between teams. ' +
           "Module: '{{importPath}}'",
         severity: 'HIGH',
         fix:
           'Either:\n' +
           "  1. Add '{{targetTeam}}' to allowedDependencies in ESLint config\n" +
-          "  2. Move shared code to a public package\n" +
+          '  2. Move shared code to a public package\n' +
           '  3. Request API from target team via approved interface',
-        documentationLink:
-          'https://nx.dev/concepts/enforce-project-boundaries',
+        documentationLink: 'https://nx.dev/concepts/enforce-project-boundaries',
       }),
     },
     schema: [
@@ -226,34 +224,30 @@ export const enforceTeamBoundaries = createRule<RuleOptions, MessageIds>({
       allowExternalPackages: true,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options]: readonly [EnforceTeamBoundariesOptions],
+    currentOptions,
   ) {
-    const { teams, sharedPaths = [], allowExternalPackages = true } = options;
+    let teams: TeamBoundary[];
+    let sharedPaths: string[];
+    let allowExternalPackages: boolean;
+    let owningTeam: TeamBoundary;
 
-    // Get the file's team ownership
-    const filename = context.filename;
-    const sourceTeam = getFileTeam(filename, teams);
-
-    // If file doesn't belong to any team, skip checking
-    if (!sourceTeam) {
-      return {};
-    }
-
-    // Narrowed binding: the early return above guarantees sourceTeam is non-null,
-    // and closures cannot rely on that narrowing without re-checking.
-    const owningTeam = sourceTeam;
-
-    function checkImport(node: TSESTree.ImportDeclaration | TSESTree.ImportExpression | TSESTree.CallExpression) {
-
+    function checkImport(
+      node:
+        | TSESTree.ImportDeclaration
+        | TSESTree.ImportExpression
+        | TSESTree.CallExpression,
+    ) {
       let importPath: string | null = null;
 
       if (node.type === AST_NODE_TYPES.ImportDeclaration) {
-        importPath = typeof node.source.value === 'string' ? node.source.value : null;
+        importPath =
+          typeof node.source.value === 'string' ? node.source.value : null;
       } else if (node.type === AST_NODE_TYPES.ImportExpression) {
         if (node.source.type === AST_NODE_TYPES.Literal) {
-          importPath = typeof node.source.value === 'string' ? node.source.value : null;
+          importPath =
+            typeof node.source.value === 'string' ? node.source.value : null;
         }
       } else if (
         node.type === AST_NODE_TYPES.CallExpression &&
@@ -262,7 +256,10 @@ export const enforceTeamBoundaries = createRule<RuleOptions, MessageIds>({
         node.arguments.length > 0 &&
         node.arguments[0].type === AST_NODE_TYPES.Literal
       ) {
-        importPath = typeof node.arguments[0].value === 'string' ? node.arguments[0].value : null;
+        importPath =
+          typeof node.arguments[0].value === 'string'
+            ? node.arguments[0].value
+            : null;
       }
 
       if (!importPath) return;
@@ -309,6 +306,24 @@ export const enforceTeamBoundaries = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        ({ teams, sharedPaths = [], allowExternalPackages = true } = options);
+
+        // Get the file's team ownership
+        const filename = context.filename;
+        const sourceTeam = getFileTeam(filename, teams);
+
+        // If file doesn't belong to any team, skip checking
+        if (!sourceTeam) {
+          return false;
+        }
+
+        // Narrowed binding: the early return above guarantees sourceTeam is non-null,
+        // and closures cannot rely on that narrowing without re-checking.
+        owningTeam = sourceTeam;
+        return true;
+      },
       ImportDeclaration: checkImport,
       ImportExpression: checkImport,
       CallExpression(node: TSESTree.CallExpression) {

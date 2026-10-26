@@ -12,7 +12,14 @@
  * @see https://cwe.mitre.org/data/definitions/532.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
 type MessageIds = 'envLogging';
@@ -25,11 +32,19 @@ export interface Options {
 type RuleOptions = [Options?];
 
 // Logging function names
-const LOGGING_FUNCTIONS = new Set(['log', 'info', 'warn', 'error', 'debug', 'trace']);
+const LOGGING_FUNCTIONS = new Set([
+  'log',
+  'info',
+  'warn',
+  'error',
+  'debug',
+  'trace',
+]);
 
 export const noEnvLogging = createRule<RuleOptions, MessageIds>({
   name: 'no-env-logging',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-env-logging.md',
@@ -42,12 +57,12 @@ export const noEnvLogging = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Environment Variable Logging',
         cwe: 'CWE-532',
-        description: 'Logging process.env may expose secrets (API keys, passwords, tokens)',
+        description:
+          'Logging process.env may expose secrets (API keys, passwords, tokens)',
         severity: 'HIGH',
         fix: 'Remove process.env from log statements or log specific non-sensitive values',
         documentationLink: 'https://cwe.mitre.org/data/definitions/532.html',
       }),
-
     },
     schema: [
       {
@@ -60,21 +75,11 @@ export const noEnvLogging = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    // Every rule here is Lambda-specific, and none of them knew it: over 107,382
-    // files, 98% of this plugin's findings were in files with no AWS anything.
-    // Registering no visitors is both the gate and the cheap path.
-    if (!fileIsLambda(context.sourceCode.ast)) return {};
-
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
-    const sourceCode = context.sourceCode;
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /**
      * Check if a node is process.env or process.env access
@@ -107,10 +112,10 @@ export const noEnvLogging = createRule<RuleOptions, MessageIds>({
       if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
         const obj = node.callee.object;
         const prop = node.callee.property;
-        
+
         if (prop.type !== AST_NODE_TYPES.Identifier) return false;
         const methodName = prop.name;
-        
+
         if (!LOGGING_FUNCTIONS.has(methodName)) return false;
 
         // console.log, console.info, etc.
@@ -118,7 +123,10 @@ export const noEnvLogging = createRule<RuleOptions, MessageIds>({
           return true;
         }
         // logger.log, log.info, etc.
-        if (obj.type === AST_NODE_TYPES.Identifier && /log(ger)?/i.test(obj.name)) {
+        if (
+          obj.type === AST_NODE_TYPES.Identifier &&
+          /log(ger)?/i.test(obj.name)
+        ) {
           return true;
         }
       }
@@ -126,6 +134,24 @@ export const noEnvLogging = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Every rule here is Lambda-specific, and none of them knew it: over 107,382
+        // files, 98% of this plugin's findings were in files with no AWS anything.
+        // Registering no visitors is both the gate and the cheap path.
+        if (!fileIsLambda(context.sourceCode.ast)) return false;
+
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+
+        sourceCode = context.sourceCode;
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (!isLoggingCall(node)) return;
 
@@ -143,7 +169,10 @@ export const noEnvLogging = createRule<RuleOptions, MessageIds>({
             // Don't flag if it's just a specific env var access like process.env.AWS_REGION
             const text = sourceCode.getText(arg);
             // Flag if it's the entire process.env object
-            if (/process\.env\s*[,)\]]/.test(text) || /JSON\.stringify\s*\(\s*process\.env\s*\)/.test(text)) {
+            if (
+              /process\.env\s*[,)\]]/.test(text) ||
+              /JSON\.stringify\s*\(\s*process\.env\s*\)/.test(text)
+            ) {
               context.report({
                 node: arg,
                 messageId: 'envLogging',

@@ -83,6 +83,7 @@ const HOOKS_WITH_DEPS = new Set([
 export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
   name: 'hooks-exhaustive-deps',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/hooks-exhaustive-deps.md',
@@ -171,11 +172,8 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{}],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const additionalHooksPattern = options.additionalHooks
-      ? new RegExp(options.additionalHooks)
-      : null;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let additionalHooksPattern: RegExp | null;
 
     /**
      * Check if a call expression is a React hook with dependencies
@@ -587,6 +585,12 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        additionalHooksPattern = options.additionalHooks
+          ? new RegExp(options.additionalHooks)
+          : null;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (!isHookWithDeps(node)) {
           return;

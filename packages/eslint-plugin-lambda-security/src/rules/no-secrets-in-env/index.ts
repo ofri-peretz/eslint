@@ -13,7 +13,15 @@
  * @see https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, staticString, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  staticString,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
 type MessageIds = 'secretsInEnv';
@@ -48,6 +56,7 @@ const SECRET_PATTERNS = [
 export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
   name: 'no-secrets-in-env',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-secrets-in-env.md',
@@ -60,50 +69,43 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Secret in Environment Variable',
         cwe: 'CWE-798',
-        description: 'Secret "{{varName}}" should not be hardcoded in environment variables',
+        description:
+          'Secret "{{varName}}" should not be hardcoded in environment variables',
         severity: 'CRITICAL',
         fix: 'Use AWS Secrets Manager: const secret = await secretsClient.send(new GetSecretValueCommand({ SecretId: "{{varName}}" }))',
-        documentationLink: 'https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html',
+        documentationLink:
+          'https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html',
       }),
-
     },
     schema: [
       {
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
-          additionalPatterns: { type: 'array', items: { type: 'string' }, default: [], description: 'Extra environment-variable name patterns to treat as secrets' },
+          additionalPatterns: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description:
+              'Extra environment-variable name patterns to treat as secrets',
+          },
         },
         additionalProperties: false,
       },
     ],
   },
   defaultOptions: [{ allowInTests: true, additionalPatterns: [] }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    // Every rule here is Lambda-specific, and none of them knew it: over 107,382
-    // files, 98% of this plugin's findings were in files with no AWS anything.
-    // Registering no visitors is both the gate and the cheap path.
-    if (!fileIsLambda(context.sourceCode.ast)) return {};
-
-    const { allowInTests = true, additionalPatterns = [] } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
-    // Compile additional patterns
-    const allPatterns = [
-      ...SECRET_PATTERNS,
-      ...additionalPatterns.map(p => new RegExp(p, 'i')),
-    ];
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let allPatterns: RegExp[];
 
     /**
      * Check if a variable name looks like a secret
      */
     function isSecretName(name: string): boolean {
-      return allPatterns.some(pattern => pattern.test(name));
+      return allPatterns.some((pattern) => pattern.test(name));
     }
 
     /**
@@ -117,12 +119,35 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
       }
       // Template literals with string parts
       if (node.type === AST_NODE_TYPES.TemplateLiteral) {
-        return node.quasis.some(quasi => quasi.value.raw.length > 5);
+        return node.quasis.some((quasi) => quasi.value.raw.length > 5);
       }
       return false;
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Every rule here is Lambda-specific, and none of them knew it: over 107,382
+        // files, 98% of this plugin's findings were in files with no AWS anything.
+        // Registering no visitors is both the gate and the cheap path.
+        if (!fileIsLambda(context.sourceCode.ast)) return false;
+
+        const { allowInTests = true, additionalPatterns = [] } =
+          options as Options;
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+
+        // Compile additional patterns
+        allPatterns = [
+          ...SECRET_PATTERNS,
+          ...additionalPatterns.map((p) => new RegExp(p, 'i')),
+        ];
+        return true;
+      },
       // Detect process.env.SECRET_KEY = 'value'
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         if (

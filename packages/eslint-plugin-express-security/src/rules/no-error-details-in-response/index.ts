@@ -88,6 +88,7 @@ interface Frame {
 export const noErrorDetailsInResponse = createRule<RuleOptions, MessageIds>({
   name: 'no-error-details-in-response',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     hasSuggestions: false,
     docs: {
@@ -131,20 +132,14 @@ export const noErrorDetailsInResponse = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const { allowMessage, allowInDev } = options as Options;
-    const messageAllowed = allowMessage ?? true;
-    const devAllowed = allowInDev ?? false;
-    const sourceCode = context.sourceCode;
-
-    /** Active error bindings (catch params + error-first callback params). */
-    const frames: Frame[] = [];
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let messageAllowed: boolean;
+    let devAllowed: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let frames: Frame[];
 
     function isErrorName(name: string): boolean {
       return frames.some((frame) => frame.name === name);
@@ -271,6 +266,23 @@ export const noErrorDetailsInResponse = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        const { allowMessage, allowInDev } = options as Options;
+        messageAllowed = allowMessage ?? true;
+        devAllowed = allowInDev ?? false;
+        sourceCode = context.sourceCode;
+
+        /** Active error bindings (catch params + error-first callback params). */
+        frames = [];
+        return true;
+      },
       CatchClause(node: TSESTree.CatchClause) {
         if (
           node.param !== null &&

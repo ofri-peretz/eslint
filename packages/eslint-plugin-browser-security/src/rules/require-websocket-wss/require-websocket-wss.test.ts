@@ -25,10 +25,12 @@ ruleTester.run('require-websocket-wss', requireWebsocketWss, {
       code: `const ws = new WebSocket('wss://acmecorp.io/socket');`,
     },
     {
-      name: 'wss:// with an explicit 443 port', code: `const ws = new WebSocket('wss://api.acmecorp.io:443/ws');`,
+      name: 'wss:// with an explicit 443 port',
+      code: `const ws = new WebSocket('wss://api.acmecorp.io:443/ws');`,
     },
     // Localhost is allowed by default
     {
+      name: 'plain ws:// to localhost is allowed',
       code: `const ws = new WebSocket('ws://localhost:3000');`,
     },
     {
@@ -118,7 +120,10 @@ ruleTester.run('require-websocket-wss', requireWebsocketWss, {
         {
           messageId: 'insecureWebsocket',
           suggestions: [
-            { messageId: 'useWss', output: `const ws = new WebSocket('wss://acmecorp.io');` },
+            {
+              messageId: 'useWss',
+              output: `const ws = new WebSocket('wss://acmecorp.io');`,
+            },
           ],
         },
       ],
@@ -131,7 +136,10 @@ ruleTester.run('require-websocket-wss', requireWebsocketWss, {
         {
           messageId: 'insecureWebsocket',
           suggestions: [
-            { messageId: 'useWss', output: `const ws = new WebSocket('wss://api.acmecorp.io:8080/socket');` },
+            {
+              messageId: 'useWss',
+              output: `const ws = new WebSocket('wss://api.acmecorp.io:8080/socket');`,
+            },
           ],
         },
       ],
@@ -144,7 +152,10 @@ ruleTester.run('require-websocket-wss', requireWebsocketWss, {
         {
           messageId: 'insecureWebsocket',
           suggestions: [
-            { messageId: 'useWss', output: `const ws = new WebSocket('wss://acmecorp.io/api/v1/socket');` },
+            {
+              messageId: 'useWss',
+              output: `const ws = new WebSocket('wss://acmecorp.io/api/v1/socket');`,
+            },
           ],
         },
       ],
@@ -157,7 +168,10 @@ ruleTester.run('require-websocket-wss', requireWebsocketWss, {
         {
           messageId: 'insecureWebsocket',
           suggestions: [
-            { messageId: 'useWss', output: 'const ws = new WebSocket(`wss://acmecorp.io/socket`);' },
+            {
+              messageId: 'useWss',
+              output: 'const ws = new WebSocket(`wss://acmecorp.io/socket`);',
+            },
           ],
         },
       ],
@@ -170,7 +184,10 @@ ruleTester.run('require-websocket-wss', requireWebsocketWss, {
         {
           messageId: 'insecureWebsocket',
           suggestions: [
-            { messageId: 'useWss', output: `const ws = new WebSocket('wss://localhost:3000');` },
+            {
+              messageId: 'useWss',
+              output: `const ws = new WebSocket('wss://localhost:3000');`,
+            },
           ],
         },
       ],
@@ -184,7 +201,10 @@ ruleTester.run('require-websocket-wss', requireWebsocketWss, {
         {
           messageId: 'insecureWebsocket',
           suggestions: [
-            { messageId: 'useWss', output: `const ws = new WebSocket('wss://127.0.0.1:8080');` },
+            {
+              messageId: 'useWss',
+              output: `const ws = new WebSocket('wss://127.0.0.1:8080');`,
+            },
           ],
         },
       ],
@@ -199,7 +219,10 @@ ruleTester.run('require-websocket-wss', requireWebsocketWss, {
         {
           messageId: 'insecureWebsocket',
           suggestions: [
-            { messageId: 'useWss', output: `const ws = new WebSocket('wss://acmecorp.io');` },
+            {
+              messageId: 'useWss',
+              output: `const ws = new WebSocket('wss://acmecorp.io');`,
+            },
           ],
         },
       ],
@@ -210,13 +233,16 @@ ruleTester.run('require-websocket-wss', requireWebsocketWss, {
     // corruption fixed below (it re-encoded the string), not a feature. Quote
     // style belongs to `quotes`/Prettier, not to a CWE-319 transport rule.
     {
-      name: 'the fix swaps the scheme and leaves the author\'s quote style alone',
+      name: "the fix swaps the scheme and leaves the author's quote style alone",
       code: `const ws = new WebSocket("ws://acmecorp.io");`,
       errors: [
         {
           messageId: 'insecureWebsocket',
           suggestions: [
-            { messageId: 'useWss', output: `const ws = new WebSocket("wss://acmecorp.io");` },
+            {
+              messageId: 'useWss',
+              output: `const ws = new WebSocket("wss://acmecorp.io");`,
+            },
           ],
         },
       ],
@@ -238,40 +264,48 @@ ruleTester.run('require-websocket-wss', requireWebsocketWss, {
  * have shipped a fix that changed nothing. The `output` assertions below are
  * the half that a detection-only test would have missed.
  */
-ruleTester.run('regression: uppercase scheme is the same URL', requireWebsocketWss, {
-  valid: [
-    { code: `const ws = new WebSocket('WSS://chat.acmecorp.io');` },
-    { code: `const ws = new WebSocket('WS://localhost:1337/hmr');` },
-  ],
-  invalid: [
-    {
-      code: `const ws = new WebSocket('WS://legacy.acmecorp.io/feed');`,
-      errors: [
-        {
-          messageId: 'insecureWebsocket',
-          suggestions: [
-            { messageId: 'useWss', output: `const ws = new WebSocket('wss://legacy.acmecorp.io/feed');` },
-          ],
-        },
-      ],
-      output: `const ws = new WebSocket('wss://legacy.acmecorp.io/feed');`,
-    },
-    {
-      code: 'const ws = new WebSocket(`Ws://legacy.acmecorp.io/rooms/${room}`);',
-      errors: [
-        {
-          messageId: 'insecureWebsocket',
-          suggestions: [
-            {
-              messageId: 'useWss',
-              output: 'const ws = new WebSocket(`wss://legacy.acmecorp.io/rooms/${room}`);',
-            },
-          ],
-        },
-      ],
-    },
-  ],
-});
+ruleTester.run(
+  'regression: uppercase scheme is the same URL',
+  requireWebsocketWss,
+  {
+    valid: [
+      { code: `const ws = new WebSocket('WSS://chat.acmecorp.io');` },
+      { code: `const ws = new WebSocket('WS://localhost:1337/hmr');` },
+    ],
+    invalid: [
+      {
+        code: `const ws = new WebSocket('WS://legacy.acmecorp.io/feed');`,
+        errors: [
+          {
+            messageId: 'insecureWebsocket',
+            suggestions: [
+              {
+                messageId: 'useWss',
+                output: `const ws = new WebSocket('wss://legacy.acmecorp.io/feed');`,
+              },
+            ],
+          },
+        ],
+        output: `const ws = new WebSocket('wss://legacy.acmecorp.io/feed');`,
+      },
+      {
+        code: 'const ws = new WebSocket(`Ws://legacy.acmecorp.io/rooms/${room}`);',
+        errors: [
+          {
+            messageId: 'insecureWebsocket',
+            suggestions: [
+              {
+                messageId: 'useWss',
+                output:
+                  'const ws = new WebSocket(`wss://legacy.acmecorp.io/rooms/${room}`);',
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+);
 
 /*
  * ── REGRESSION: the autofix corrupted URLs it claimed to secure ──────────────
@@ -290,57 +324,70 @@ ruleTester.run('regression: uppercase scheme is the same URL', requireWebsocketW
  * the TemplateLiteral branch already used, and the one QUALITY_STANDARDS' own
  * GOOD example demonstrates.
  */
-ruleTester.run('regression: the fix must not re-encode the literal', requireWebsocketWss, {
-  valid: [],
-  invalid: [
-    {
-      name: 'an apostrophe in the path is a legal sub-delim — the fix must not close the literal on it',
-      code: `const ws = new WebSocket("ws://live.acmecorp.io/room's");`,
-      errors: [
-        {
-          messageId: 'insecureWebsocket',
-          suggestions: [
-            { messageId: 'useWss', output: `const ws = new WebSocket("wss://live.acmecorp.io/room's");` },
-          ],
-        },
-      ],
-      output: `const ws = new WebSocket("wss://live.acmecorp.io/room's");`,
-    },
-    {
-      name: 'an escaped newline stays escaped — decoding it would leave the literal unterminated',
-      code: `const ws = new WebSocket("ws://live.acmecorp.io/a\\nb");`,
-      errors: [
-        {
-          messageId: 'insecureWebsocket',
-          suggestions: [
-            { messageId: 'useWss', output: `const ws = new WebSocket("wss://live.acmecorp.io/a\\nb");` },
-          ],
-        },
-      ],
-      output: `const ws = new WebSocket("wss://live.acmecorp.io/a\\nb");`,
-    },
-    {
-      name: 'an escaped backslash stays escaped — decoding it changed the URL while still parsing',
-      code: `const ws = new WebSocket('ws://live.acmecorp.io/a\\\\b');`,
-      errors: [
-        {
-          messageId: 'insecureWebsocket',
-          suggestions: [
-            { messageId: 'useWss', output: `const ws = new WebSocket('wss://live.acmecorp.io/a\\\\b');` },
-          ],
-        },
-      ],
-      output: `const ws = new WebSocket('wss://live.acmecorp.io/a\\\\b');`,
-    },
-    {
-      // A scheme spelled with an escape decodes to `ws://` but is not written
-      // that way, so a source-text rewrite cannot find it. The URL is still
-      // cleartext, so it must still REPORT — but with no fix, rather than one
-      // that changes nothing.
-      name: 'an escaped scheme still reports, and offers no fix rather than a no-op one',
-      code: `const ws = new WebSocket('\\x77s://live.acmecorp.io/feed');`,
-      errors: [{ messageId: 'insecureWebsocket', suggestions: [] }],
-      output: null,
-    },
-  ],
-});
+ruleTester.run(
+  'regression: the fix must not re-encode the literal',
+  requireWebsocketWss,
+  {
+    valid: [],
+    invalid: [
+      {
+        name: 'an apostrophe in the path is a legal sub-delim — the fix must not close the literal on it',
+        code: `const ws = new WebSocket("ws://live.acmecorp.io/room's");`,
+        errors: [
+          {
+            messageId: 'insecureWebsocket',
+            suggestions: [
+              {
+                messageId: 'useWss',
+                output: `const ws = new WebSocket("wss://live.acmecorp.io/room's");`,
+              },
+            ],
+          },
+        ],
+        output: `const ws = new WebSocket("wss://live.acmecorp.io/room's");`,
+      },
+      {
+        name: 'an escaped newline stays escaped — decoding it would leave the literal unterminated',
+        code: `const ws = new WebSocket("ws://live.acmecorp.io/a\\nb");`,
+        errors: [
+          {
+            messageId: 'insecureWebsocket',
+            suggestions: [
+              {
+                messageId: 'useWss',
+                output: `const ws = new WebSocket("wss://live.acmecorp.io/a\\nb");`,
+              },
+            ],
+          },
+        ],
+        output: `const ws = new WebSocket("wss://live.acmecorp.io/a\\nb");`,
+      },
+      {
+        name: 'an escaped backslash stays escaped — decoding it changed the URL while still parsing',
+        code: `const ws = new WebSocket('ws://live.acmecorp.io/a\\\\b');`,
+        errors: [
+          {
+            messageId: 'insecureWebsocket',
+            suggestions: [
+              {
+                messageId: 'useWss',
+                output: `const ws = new WebSocket('wss://live.acmecorp.io/a\\\\b');`,
+              },
+            ],
+          },
+        ],
+        output: `const ws = new WebSocket('wss://live.acmecorp.io/a\\\\b');`,
+      },
+      {
+        // A scheme spelled with an escape decodes to `ws://` but is not written
+        // that way, so a source-text rewrite cannot find it. The URL is still
+        // cleartext, so it must still REPORT — but with no fix, rather than one
+        // that changes nothing.
+        name: 'an escaped scheme still reports, and offers no fix rather than a no-op one',
+        code: `const ws = new WebSocket('\\x77s://live.acmecorp.io/feed');`,
+        errors: [{ messageId: 'insecureWebsocket', suggestions: [] }],
+        output: null,
+      },
+    ],
+  },
+);

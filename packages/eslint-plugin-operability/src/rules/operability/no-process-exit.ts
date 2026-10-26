@@ -24,6 +24,10 @@ type RuleOptions = [Options?];
 export const noProcessExit = createRule<RuleOptions, MessageIds>({
   name: 'no-process-exit',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'unicorn/no-process-exit',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-operability/docs/rules/no-process-exit.md',
@@ -58,7 +62,7 @@ export const noProcessExit = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allow: [] }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     // oxlint-disable-next-line consistent-function-scoping
     function isInAllowedContext(): boolean {
       // For simplicity, we'll skip the allow option for now

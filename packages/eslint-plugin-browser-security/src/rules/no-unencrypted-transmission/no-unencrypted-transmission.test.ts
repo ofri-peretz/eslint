@@ -32,7 +32,10 @@ describe('no-unencrypted-transmission', () => {
         // A protocol string being TESTED is not a transmission. Ungated, this
         // rule flagged the security check itself — measured on the Interlace
         // repo, the finding landed inside an `if` that skips insecure URLs.
-        `if (url.startsWith('http://')) return;`,
+        {
+          name: 'testing a url for the http:// prefix is not a transmission',
+          code: `if (url.startsWith('http://')) return;`,
+        },
         // An XML namespace is an identifier, never fetched — and every inline
         // SVG in every React codebase carries one. Changing it to https breaks
         // the document.
@@ -51,7 +54,8 @@ describe('no-unencrypted-transmission', () => {
         },
         // WSS
         {
-          name: 'a wss:// URL is encrypted', code: 'const ws = new WebSocket("wss://acmecorp.io");',
+          name: 'a wss:// URL is encrypted',
+          code: 'const ws = new WebSocket("wss://acmecorp.io");',
         },
         // Secure database connections
         {
@@ -301,9 +305,18 @@ describe('no-unencrypted-transmission', () => {
             code: 'const db = "mongodb://u:p@db.acmecorp.io:27017";',
             errors: 1,
           },
-          { code: 'const cache = "redis://cache.acmecorp.io:6379";', errors: 1 },
-          { code: 'const drop = "ftp://files.acmecorp.io/incoming";', errors: 1 },
-          { code: 'const sql = "mysql://u:p@db.acmecorp.io:3306/app";', errors: 1 },
+          {
+            code: 'const cache = "redis://cache.acmecorp.io:6379";',
+            errors: 1,
+          },
+          {
+            code: 'const drop = "ftp://files.acmecorp.io/incoming";',
+            errors: 1,
+          },
+          {
+            code: 'const sql = "mysql://u:p@db.acmecorp.io:3306/app";',
+            errors: 1,
+          },
           { code: 'const raw = "tcp://metrics.acmecorp.io:2003";', errors: 1 },
         ],
       },
@@ -329,7 +342,9 @@ describe('no-unencrypted-transmission', () => {
           {
             code: `const HELP = 'Connection strings must not use redis:// or mysql://; use the TLS variants.';`,
           },
-          { code: `const msg = 'Switch ftp:// endpoints to ftps:// before release.';` },
+          {
+            code: `const msg = 'Switch ftp:// endpoints to ftps:// before release.';`,
+          },
           // The remediation must not be reported as the defect: these START
           // with the insecure scheme's letters, and a prefix test that stopped
           // one character early would flag every correctly-secured DSN.
@@ -338,10 +353,16 @@ describe('no-unencrypted-transmission', () => {
           { code: `const files = 'ftps://files.acmecorp.io/incoming';` },
         ],
         invalid: [
-          { code: `const M = 'mongodb://svc:pw@db.acmecorp.io:27017/orders';`, errors: 1 },
+          {
+            code: `const M = 'mongodb://svc:pw@db.acmecorp.io:27017/orders';`,
+            errors: 1,
+          },
           // Schemes are ASCII case-insensitive; this rule lowercases before
           // matching and must keep doing so.
-          { code: `const M = 'MONGODB://svc:pw@db.acmecorp.io:27017/orders';`, errors: 1 },
+          {
+            code: `const M = 'MONGODB://svc:pw@db.acmecorp.io:27017/orders';`,
+            errors: 1,
+          },
           // Leading whitespace is not prose.
           { code: `const M = '  redis://cache.acmecorp.io:6379';`, errors: 1 },
           // FN LOCK. A "the secure variant appears somewhere in the string"
@@ -453,53 +474,53 @@ describe('no-unencrypted-transmission', () => {
     );
   });
 
-// A loopback broker in a spec file, on a non-web scheme.
-//
-// `allowInTests` promises "localhost in tests" — the docs say so, and the
-// Options-coverage suite pins that a real host still reports under it. On
-// non-web schemes that promise was not kept: `isNonTransmittingUrl` is
-// scheme-gated on purpose, so `"redis://localhost:6379"` in `test/unit/**` was
-// reachable by neither exemption. Twenty-one findings on moleculerjs/moleculer.
-ruleTester.run(
-  'no-unencrypted-transmission - loopback in tests, any scheme',
-  noUnencryptedTransmission,
-  {
-    valid: [
-      {
-        code: 'let opts = "redis://localhost:6379";',
-        filename: 'test/unit/cachers/redis.spec.js',
-        options: [{ allowInTests: true }],
-      },
-      {
-        code: 'var mockEnv = { storageURI: "mongodb://localhost:27017/nightscout" };',
-        filename: 'tests/production-safety.test.js',
-        options: [{ allowInTests: true }],
-      },
-    ],
-    invalid: [
-      // A REAL host in a test file still reports — the line the option was
-      // always meant to hold.
-      {
-        code: 'let opts = "redis://cache.internal:6379";',
-        filename: 'test/unit/cachers/redis.spec.js',
-        options: [{ allowInTests: true }],
-        errors: 1,
-      },
-      // Loopback on a non-web scheme still reports in PRODUCTION code, which is
-      // the documented reason the scheme gate exists.
-      {
-        code: 'let opts = "redis://localhost:6379";',
-        filename: 'src/cachers/redis.js',
-        options: [{ allowInTests: true }],
-        errors: 1,
-      },
-      // And without the opt-in, nothing changes.
-      {
-        code: 'let opts = "redis://localhost:6379";',
-        filename: 'test/unit/cachers/redis.spec.js',
-        errors: 1,
-      },
-    ],
-  },
-);
+  // A loopback broker in a spec file, on a non-web scheme.
+  //
+  // `allowInTests` promises "localhost in tests" — the docs say so, and the
+  // Options-coverage suite pins that a real host still reports under it. On
+  // non-web schemes that promise was not kept: `isNonTransmittingUrl` is
+  // scheme-gated on purpose, so `"redis://localhost:6379"` in `test/unit/**` was
+  // reachable by neither exemption. Twenty-one findings on moleculerjs/moleculer.
+  ruleTester.run(
+    'no-unencrypted-transmission - loopback in tests, any scheme',
+    noUnencryptedTransmission,
+    {
+      valid: [
+        {
+          code: 'let opts = "redis://localhost:6379";',
+          filename: 'test/unit/cachers/redis.spec.js',
+          options: [{ allowInTests: true }],
+        },
+        {
+          code: 'var mockEnv = { storageURI: "mongodb://localhost:27017/nightscout" };',
+          filename: 'tests/production-safety.test.js',
+          options: [{ allowInTests: true }],
+        },
+      ],
+      invalid: [
+        // A REAL host in a test file still reports — the line the option was
+        // always meant to hold.
+        {
+          code: 'let opts = "redis://cache.internal:6379";',
+          filename: 'test/unit/cachers/redis.spec.js',
+          options: [{ allowInTests: true }],
+          errors: 1,
+        },
+        // Loopback on a non-web scheme still reports in PRODUCTION code, which is
+        // the documented reason the scheme gate exists.
+        {
+          code: 'let opts = "redis://localhost:6379";',
+          filename: 'src/cachers/redis.js',
+          options: [{ allowInTests: true }],
+          errors: 1,
+        },
+        // And without the opt-in, nothing changes.
+        {
+          code: 'let opts = "redis://localhost:6379";',
+          filename: 'test/unit/cachers/redis.spec.js',
+          errors: 1,
+        },
+      ],
+    },
+  );
 });

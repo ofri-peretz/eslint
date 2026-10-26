@@ -45,6 +45,10 @@ type FunctionNode =
 export const displayName = createRule<RuleOptions, MessageIds>({
   name: 'display-name',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/display-name',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/display-name.md',
@@ -65,7 +69,7 @@ export const displayName = createRule<RuleOptions, MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const report = (node: TSESTree.Node): void => {
       context.report({ node, messageId: 'displayName' });
     };

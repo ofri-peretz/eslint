@@ -34,8 +34,13 @@ export const requireTls = createRequireTlsRule({
     },
   },
   modules: ['mysql2', 'mysql'],
-  connectionKeys: ['connectionLimit', 'waitForConnections', 'multipleStatements'],
+  connectionKeys: [
+    'connectionLimit',
+    'waitForConnections',
+    'multipleStatements',
+  ],
   urlSchemes: ['mysql'],
   fix: 'Keep TLS on and give the driver the server CA — `ssl: { ca: fs.readFileSync(caPath) }`. `ssl: "Amazon RDS"` selects a bundled CA on RDS.',
-  documentationLink: 'https://sidorares.github.io/node-mysql2/docs/documentation/ssl',
+  documentationLink:
+    'https://sidorares.github.io/node-mysql2/docs/documentation/ssl',
 });

@@ -1,3 +1,4 @@
+import { RuleCreator } from './rule-creator';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -420,8 +421,11 @@ export function createUnscopedMutationRule(
   const usesModule = createModuleEvidence({ packages: config.modules });
   const originOf = createOriginClassifier(config.modules);
 
-  return {
+  return RuleCreator.withoutDocs<[], UnscopedMutationMessageIds>({
     meta: {
+      // Shared detection, shared runtimes: oxlint only if every plugin's rule
+      // from this factory passes its own suite there.
+      interop: { runtimes: ['eslint', 'oxlint'] },
       type: config.meta.type,
       // CWE / CVSS surface in @interlace/eslint-formatter (devkit augments
       // RuleMetaDataDocs) and are locked against the emitted message by
@@ -460,15 +464,41 @@ export function createUnscopedMutationRule(
       schema: [],
     },
     defaultOptions: [],
-    create(context) {
-      // BENCHMARK-CRITERIA §B1: a test's `deleteMany()` teardown is the test
-      // working, not a forgotten clause.
-      if (isTestFilePath(context.filename)) return {};
-      const env = envOf(context);
-      let ownsFile = false;
-      let migrations = new Set<TSESTree.Node>();
+    createOnce(context) {
+      let env: Env;
+      let ownsFile: boolean;
+      let migrations: Set<TSESTree.Node>;
+
+      function hasDistinctiveShape(node: TSESTree.CallExpression): boolean {
+        const callee = node.callee as TSESTree.MemberExpression;
+        switch (config.distinctiveShape) {
+          case 'model-accessor':
+            return callee.object.type === AST_NODE_TYPES.MemberExpression;
+          case 'table-call':
+            return startsWithTable(callee.object);
+          case 'table-argument': {
+            const [table] = node.arguments;
+            return (
+              table !== undefined &&
+              table.type !== AST_NODE_TYPES.SpreadElement &&
+              originOf(valueAt(table, env)) === 'ours'
+            );
+          }
+          default:
+            return false;
+        }
+      }
 
       return {
+        before() {
+          // BENCHMARK-CRITERIA §B1: a test's `deleteMany()` teardown is the test
+          // working, not a forgotten clause.
+          if (isTestFilePath(context.filename)) return false;
+          env = envOf(context);
+          ownsFile = false;
+          migrations = new Set<TSESTree.Node>();
+          return true;
+        },
         Program(program: TSESTree.Program) {
           ownsFile = usesModule(program);
           migrations = exportedFunctions(
@@ -540,28 +570,8 @@ export function createUnscopedMutationRule(
           context.report({ node, messageId: 'unscopedMutation' });
         },
       };
-
-      function hasDistinctiveShape(node: TSESTree.CallExpression): boolean {
-        const callee = node.callee as TSESTree.MemberExpression;
-        switch (config.distinctiveShape) {
-          case 'model-accessor':
-            return callee.object.type === AST_NODE_TYPES.MemberExpression;
-          case 'table-call':
-            return startsWithTable(callee.object);
-          case 'table-argument': {
-            const [table] = node.arguments;
-            return (
-              table !== undefined &&
-              table.type !== AST_NODE_TYPES.SpreadElement &&
-              originOf(valueAt(table, env)) === 'ours'
-            );
-          }
-          default:
-            return false;
-        }
-      }
     },
-  };
+  });
 }
 
 /** Knex chain starters that name the table: `knex('t')`, `knex.from('t')`. */

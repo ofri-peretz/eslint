@@ -33,6 +33,7 @@ type RuleOptions = [Options?];
 export const noUselessPathSegments = createRule<RuleOptions, MessageIds>({
   name: 'no-useless-path-segments',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-useless-path-segments.md',
@@ -67,9 +68,9 @@ export const noUselessPathSegments = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ noUselessIndex: false, commonjs: true }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const { noUselessIndex = false, commonjs = true } = options;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let noUselessIndex: boolean;
+    let commonjs: boolean;
 
     function simplifyPath(importPath: string): string | null {
       // Only process relative paths
@@ -135,6 +136,10 @@ export const noUselessPathSegments = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({ noUselessIndex = false, commonjs = true } = options);
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         checkImport(node.source);
       },

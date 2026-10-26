@@ -17,10 +17,15 @@ type MessageIds = 'noThisInSfc';
 export const noThisInSfc = createRule<[], MessageIds>({
   name: 'no-this-in-sfc',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/no-this-in-sfc',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-this-in-sfc.md',
-      description: 'Disallow this from being used in stateless functional components',
+      description:
+        'Disallow this from being used in stateless functional components',
     },
     schema: [],
     messages: {
@@ -35,23 +40,9 @@ export const noThisInSfc = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
-    // A depth, not a flag: a class nested inside a class must not clear the
-    // enclosing one on exit, or valid `this` in the outer class reports.
-    let classDepth = 0;
-
-    /**
-     * A function that declares an explicit TS `this` parameter has named its
-     * own receiver in its signature, so `this` there is a declared contract
-     * rather than a component mistake — `function (this: unknown, ...args)`
-     * forwarding through `fn.apply(this, args)` is the canonical shape.
-     *
-     * Tracked as a stack on function entry/exit rather than by climbing from
-     * each `this`, so a deep arrow chain with a `this` at every level stays
-     * O(n). Arrows push nothing: they have no receiver of their own, so the
-     * top of the stack is already the function whose `this` they close over.
-     */
-    const declaredThis: boolean[] = [];
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
+    let classDepth: number;
+    let declaredThis: boolean[];
     const enterFunction = (
       node: TSESTree.FunctionDeclaration | TSESTree.FunctionExpression,
     ): void => {
@@ -65,6 +56,24 @@ export const noThisInSfc = createRule<[], MessageIds>({
     };
 
     return {
+      before() {
+        // A depth, not a flag: a class nested inside a class must not clear the
+        // enclosing one on exit, or valid `this` in the outer class reports.
+        classDepth = 0;
+
+        /**
+         * A function that declares an explicit TS `this` parameter has named its
+         * own receiver in its signature, so `this` there is a declared contract
+         * rather than a component mistake — `function (this: unknown, ...args)`
+         * forwarding through `fn.apply(this, args)` is the canonical shape.
+         *
+         * Tracked as a stack on function entry/exit rather than by climbing from
+         * each `this`, so a deep arrow chain with a `this` at every level stays
+         * O(n). Arrows push nothing: they have no receiver of their own, so the
+         * top of the stack is already the function whose `this` they close over.
+         */
+        declaredThis = [];
+      },
       FunctionDeclaration: enterFunction,
       'FunctionDeclaration:exit': exitFunction,
       FunctionExpression: enterFunction,

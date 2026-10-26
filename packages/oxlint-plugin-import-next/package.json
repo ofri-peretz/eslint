@@ -1,0 +1,72 @@
+{
+  "name": "oxlint-plugin-import-next",
+  "version": "2.8.13",
+  "description": "The import-next rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-import-next.",
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts"
+  },
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "interlace-quality",
+    "eslint-plugin-import",
+    "eslint-plugin-import-alternative",
+    "import",
+    "imports",
+    "no-cycle",
+    "circular-dependencies",
+    "dependency-graph",
+    "import-order",
+    "barrel-file",
+    "tree-shaking",
+    "monorepo",
+    "modules",
+    "module-resolution",
+    "commonjs",
+    "esm",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript",
+    "auto-fix",
+    "mcp",
+    "agentic"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-import-next",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-import-next"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-import-next": "2.8.13"
+  }
+}

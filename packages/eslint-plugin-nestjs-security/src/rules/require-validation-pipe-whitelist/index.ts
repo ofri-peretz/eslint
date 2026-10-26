@@ -127,6 +127,7 @@ export const requireValidationPipeWhitelist = createRule<
 >({
   name: 'require-validation-pipe-whitelist',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/require-validation-pipe-whitelist.md',
@@ -163,19 +164,25 @@ export const requireValidationPipeWhitelist = createRule<
     ],
   },
   defaultOptions: [{ allowInTests: true, requireForbidNonWhitelisted: false }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    // Registering no visitors is both the gate and the cheap path: a file
-    // that does not use this SDK does no work at all.
-    if (!fileUsesNestjs(context.sourceCode.ast)) return {};
-
-    const { allowInTests = true, requireForbidNonWhitelisted = false } =
-      options;
-    if (allowInTests && isTestFilePath(context.filename)) return {};
+    let allowInTests: boolean;
+    let requireForbidNonWhitelisted: boolean;
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Registering no visitors is both the gate and the cheap path: a file
+        // that does not use this SDK does no work at all.
+        if (!fileUsesNestjs(context.sourceCode.ast)) return false;
+
+        ({ allowInTests = true, requireForbidNonWhitelisted = false } =
+          options);
+        if (allowInTests && isTestFilePath(context.filename)) return false;
+        return true;
+      },
       NewExpression(node: TSESTree.NewExpression) {
         if (node.callee.type !== AST_NODE_TYPES.Identifier) return;
         if (node.callee.name !== 'ValidationPipe') return;

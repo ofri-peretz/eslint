@@ -24,6 +24,7 @@ type RuleOptions = [Options?];
 export const noUnusedModules = createRule<RuleOptions, MessageIds>({
   name: 'no-unused-modules',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-unused-modules.md',
@@ -61,14 +62,19 @@ export const noUnusedModules = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const { allowImportOnly = false } = options || {};
-
-    let hasExports = false;
-    let hasImports = false;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowImportOnly: boolean;
+    let hasExports: boolean;
+    let hasImports: boolean;
 
     return {
+      before() {
+        const [options] = context.options;
+        ({ allowImportOnly = false } = options || {});
+
+        hasExports = false;
+        hasImports = false;
+      },
       ImportDeclaration() {
         hasImports = true;
       },

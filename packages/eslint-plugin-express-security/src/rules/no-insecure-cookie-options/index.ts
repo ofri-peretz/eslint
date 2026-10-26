@@ -158,6 +158,7 @@ export function checkCookieOptions(
 export const noInsecureCookieOptions = createRule<RuleOptions, MessageIds>({
   name: 'no-insecure-cookie-options',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-insecure-cookie-options.md',
@@ -227,23 +228,31 @@ export const noInsecureCookieOptions = createRule<RuleOptions, MessageIds>({
       acceptableSameSiteValues: ['strict', 'lax'],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const { allowInTests = false } = options as Options;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-
-    if (isTestFile) {
-      return {};
-    }
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let options: Options | undefined;
 
     return {
+      before() {
+        [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        const { allowInTests = false } = options as Options;
+
+        const filename = context.filename;
+        const isTestFile = allowInTests && isTestFilePath(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
 

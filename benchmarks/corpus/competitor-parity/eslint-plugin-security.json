@@ -2,17 +2,17 @@
  "$schema": "./competitor-parity.schema.json",
  "source": {
   "package": "eslint-plugin-security",
-  "version": "4.0.1",
+  "version": "4.2.0",
   "license": "Apache-2.0",
   "upstream": "https://github.com/eslint-community/eslint-plugin-security",
   "extractedFrom": "test/rules/*.js via RuleTester capture",
-  "extractedOn": "2026-08-11"
+  "extractedOn": "2026-10-25"
  },
  "notice": "Test cases below are derived from eslint-plugin-security (Apache-2.0). Retained for interoperability/parity benchmarking under Apache-2.0 s.4 attribution. Do not relicense.",
  "counts": {
-  "total": 189,
-  "invalid": 84,
-  "valid": 105
+  "total": 219,
+  "invalid": 107,
+  "valid": 112
  },
  "cases": [
   {
@@ -27,7 +27,122 @@
    "kind": "invalid",
    "i": 0,
    "code": "\n      var accessLevel = \"user\";\n      if (accessLevel != \"user‮ ⁦// Check if admin⁩ ⁦\") {\n          console.log(\"You are an admin.\");\n      }\n      ",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": {},
+     "line": 3,
+     "endLine": 3,
+     "column": 31,
+     "endColumn": 32
+    },
+    {
+     "message": {},
+     "line": 3,
+     "endLine": 3,
+     "column": 33,
+     "endColumn": 34
+    },
+    {
+     "message": {},
+     "line": 3,
+     "endLine": 3,
+     "column": 51,
+     "endColumn": 52
+    },
+    {
+     "message": {},
+     "line": 3,
+     "endLine": 3,
+     "column": 53,
+     "endColumn": 54
+    }
+   ]
+  },
+  {
+   "rule": "detect-bidi-characters",
+   "kind": "invalid",
+   "i": 1,
+   "code": "var t = `a\nX‮`;",
+   "filename": null,
+   "name": "line terminator: LF (\\n)",
+   "errors": [
+    {
+     "message": {},
+     "line": 2,
+     "endLine": 2,
+     "column": 2,
+     "endColumn": 3
+    }
+   ]
+  },
+  {
+   "rule": "detect-bidi-characters",
+   "kind": "invalid",
+   "i": 2,
+   "code": "var t = `a\r\nX‮`;",
+   "filename": null,
+   "name": "line terminator: CRLF (\\r\\n)",
+   "errors": [
+    {
+     "message": {},
+     "line": 2,
+     "endLine": 2,
+     "column": 2,
+     "endColumn": 3
+    }
+   ]
+  },
+  {
+   "rule": "detect-bidi-characters",
+   "kind": "invalid",
+   "i": 3,
+   "code": "var t = `a\rX‮`;",
+   "filename": null,
+   "name": "line terminator: CR (\\r)",
+   "errors": [
+    {
+     "message": {},
+     "line": 2,
+     "endLine": 2,
+     "column": 2,
+     "endColumn": 3
+    }
+   ]
+  },
+  {
+   "rule": "detect-bidi-characters",
+   "kind": "invalid",
+   "i": 4,
+   "code": "var t = `a X‮`;",
+   "filename": null,
+   "name": "line terminator: LS (\\u2028)",
+   "errors": [
+    {
+     "message": {},
+     "line": 2,
+     "endLine": 2,
+     "column": 2,
+     "endColumn": 3
+    }
+   ]
+  },
+  {
+   "rule": "detect-bidi-characters",
+   "kind": "invalid",
+   "i": 5,
+   "code": "var t = `a X‮`;",
+   "filename": null,
+   "name": "line terminator: PS (\\u2029)",
+   "errors": [
+    {
+     "message": {},
+     "line": 2,
+     "endLine": 2,
+     "column": 2,
+     "endColumn": 3
+    }
+   ]
   },
   {
    "rule": "detect-bidi-characters in comment-line",
@@ -41,7 +156,150 @@
    "kind": "invalid",
    "i": 0,
    "code": "\n      var isAdmin = false;\n      /*‮ } ⁦if (isAdmin)⁩ ⁦ begin admins only */\n          console.log(\"You are an admin.\");\n      /* end admins only ‮\n⁦*/\n      /* end admins only ‮\n { ⁦*/\n        ",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": {},
+     "line": 3,
+     "endLine": 3,
+     "column": 9,
+     "endColumn": 10
+    },
+    {
+     "message": {},
+     "line": 3,
+     "endLine": 3,
+     "column": 13,
+     "endColumn": 14
+    },
+    {
+     "message": {},
+     "line": 3,
+     "endLine": 3,
+     "column": 26,
+     "endColumn": 27
+    },
+    {
+     "message": {},
+     "line": 3,
+     "endLine": 3,
+     "column": 28,
+     "endColumn": 29
+    },
+    {
+     "message": {},
+     "line": 5,
+     "endLine": 5,
+     "column": 26,
+     "endColumn": 27
+    },
+    {
+     "message": {},
+     "line": 6,
+     "endLine": 6,
+     "column": 1,
+     "endColumn": 2
+    },
+    {
+     "message": {},
+     "line": 7,
+     "endLine": 7,
+     "column": 26,
+     "endColumn": 27
+    },
+    {
+     "message": {},
+     "line": 8,
+     "endLine": 8,
+     "column": 4,
+     "endColumn": 5
+    }
+   ]
+  },
+  {
+   "rule": "detect-bidi-characters in comment-line",
+   "kind": "invalid",
+   "i": 1,
+   "code": "/* a\nX‮ */",
+   "filename": null,
+   "name": "line terminator: LF (\\n)",
+   "errors": [
+    {
+     "message": {},
+     "line": 2,
+     "endLine": 2,
+     "column": 2,
+     "endColumn": 3
+    }
+   ]
+  },
+  {
+   "rule": "detect-bidi-characters in comment-line",
+   "kind": "invalid",
+   "i": 2,
+   "code": "/* a\r\nX‮ */",
+   "filename": null,
+   "name": "line terminator: CRLF (\\r\\n)",
+   "errors": [
+    {
+     "message": {},
+     "line": 2,
+     "endLine": 2,
+     "column": 2,
+     "endColumn": 3
+    }
+   ]
+  },
+  {
+   "rule": "detect-bidi-characters in comment-line",
+   "kind": "invalid",
+   "i": 3,
+   "code": "/* a\rX‮ */",
+   "filename": null,
+   "name": "line terminator: CR (\\r)",
+   "errors": [
+    {
+     "message": {},
+     "line": 2,
+     "endLine": 2,
+     "column": 2,
+     "endColumn": 3
+    }
+   ]
+  },
+  {
+   "rule": "detect-bidi-characters in comment-line",
+   "kind": "invalid",
+   "i": 4,
+   "code": "/* a X‮ */",
+   "filename": null,
+   "name": "line terminator: LS (\\u2028)",
+   "errors": [
+    {
+     "message": {},
+     "line": 2,
+     "endLine": 2,
+     "column": 2,
+     "endColumn": 3
+    }
+   ]
+  },
+  {
+   "rule": "detect-bidi-characters in comment-line",
+   "kind": "invalid",
+   "i": 5,
+   "code": "/* a X‮ */",
+   "filename": null,
+   "name": "line terminator: PS (\\u2029)",
+   "errors": [
+    {
+     "message": {},
+     "line": 2,
+     "endLine": 2,
+     "column": 2,
+     "endColumn": 3
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
@@ -440,203 +698,348 @@
    "kind": "invalid",
    "i": 0,
    "code": "a.readUInt8(0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.readUInt8 with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 1,
    "code": "a.readUInt16LE(0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.readUInt16LE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 2,
    "code": "a.readUInt16BE(0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.readUInt16BE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 3,
    "code": "a.readUInt32LE(0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.readUInt32LE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 4,
    "code": "a.readUInt32BE(0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.readUInt32BE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 5,
    "code": "a.readInt8(0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.readInt8 with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 6,
    "code": "a.readInt16LE(0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.readInt16LE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 7,
    "code": "a.readInt16BE(0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.readInt16BE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 8,
    "code": "a.readInt32LE(0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.readInt32LE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 9,
    "code": "a.readInt32BE(0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.readInt32BE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 10,
    "code": "a.readFloatLE(0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.readFloatLE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 11,
    "code": "a.readFloatBE(0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.readFloatBE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 12,
    "code": "a.readDoubleLE(0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.readDoubleLE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 13,
    "code": "a.readDoubleBE(0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.readDoubleBE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 14,
    "code": "a.writeUInt8(0, 0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.writeUInt8 with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 15,
    "code": "a.writeUInt16LE(0, 0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.writeUInt16LE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 16,
    "code": "a.writeUInt16BE(0, 0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.writeUInt16BE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 17,
    "code": "a.writeUInt32LE(0, 0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.writeUInt32LE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 18,
    "code": "a.writeUInt32BE(0, 0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.writeUInt32BE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 19,
    "code": "a.writeInt8(0, 0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.writeInt8 with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 20,
    "code": "a.writeInt16LE(0, 0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.writeInt16LE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 21,
    "code": "a.writeInt16BE(0, 0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.writeInt16BE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 22,
    "code": "a.writeInt32LE(0, 0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.writeInt32LE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 23,
    "code": "a.writeInt32BE(0, 0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.writeInt32BE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 24,
    "code": "a.writeFloatLE(0, 0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.writeFloatLE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 25,
    "code": "a.writeFloatBE(0, 0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.writeFloatBE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 26,
    "code": "a.writeDoubleLE(0, 0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.writeDoubleLE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 27,
    "code": "a.writeDoubleBE(0, 0, true)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.writeDoubleBE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-buffer-noassert",
    "kind": "invalid",
    "i": 28,
    "code": "a.readDoubleLE(0, true);",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found Buffer.readDoubleLE with noAssert flag set true"
+    }
+   ]
   },
   {
    "rule": "detect-child-process",
@@ -776,105 +1179,187 @@
    "kind": "invalid",
    "i": 0,
    "code": "require('child_process')",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found require(\"child_process\")"
+    }
+   ]
   },
   {
    "rule": "detect-child-process",
    "kind": "invalid",
    "i": 1,
    "code": "require('node:child_process')",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found require(\"node:child_process\")"
+    }
+   ]
   },
   {
    "rule": "detect-child-process",
    "kind": "invalid",
    "i": 2,
    "code": "var child = require('child_process'); child.exec(com)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found child_process.exec() with non Literal first argument"
+    }
+   ]
   },
   {
    "rule": "detect-child-process",
    "kind": "invalid",
    "i": 3,
    "code": "var child = require('node:child_process'); child.exec(com)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found child_process.exec() with non Literal first argument"
+    }
+   ]
   },
   {
    "rule": "detect-child-process",
    "kind": "invalid",
    "i": 4,
    "code": "import child from 'child_process'; child.exec(com)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found child_process.exec() with non Literal first argument"
+    }
+   ]
   },
   {
    "rule": "detect-child-process",
    "kind": "invalid",
    "i": 5,
    "code": "import child from 'node:child_process'; child.exec(com)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found child_process.exec() with non Literal first argument"
+    }
+   ]
   },
   {
    "rule": "detect-child-process",
    "kind": "invalid",
    "i": 6,
    "code": "var child = sinon.stub(require('child_process')); child.exec.returns({});",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found require(\"child_process\")"
+    }
+   ]
   },
   {
    "rule": "detect-child-process",
    "kind": "invalid",
    "i": 7,
    "code": "var child = sinon.stub(require('node:child_process')); child.exec.returns({});",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found require(\"node:child_process\")"
+    }
+   ]
   },
   {
    "rule": "detect-child-process",
    "kind": "invalid",
    "i": 8,
    "code": "\n      var foo = require('child_process');\n      function fn () {\n        var result = foo.exec(str);\n      }",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found child_process.exec() with non Literal first argument",
+     "line": 4
+    }
+   ]
   },
   {
    "rule": "detect-child-process",
    "kind": "invalid",
    "i": 9,
    "code": "\n      import foo from 'child_process';\n      function fn () {\n        var result = foo.exec(str);\n      }",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found child_process.exec() with non Literal first argument",
+     "line": 4
+    }
+   ]
   },
   {
    "rule": "detect-child-process",
    "kind": "invalid",
    "i": 10,
    "code": "\n      import foo from 'node:child_process';\n      function fn () {\n        var result = foo.exec(str);\n      }",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found child_process.exec() with non Literal first argument",
+     "line": 4
+    }
+   ]
   },
   {
    "rule": "detect-child-process",
    "kind": "invalid",
    "i": 11,
    "code": "\n      require('child_process').exec(str)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found child_process.exec() with non Literal first argument",
+     "line": 2
+    }
+   ]
   },
   {
    "rule": "detect-child-process",
    "kind": "invalid",
    "i": 12,
    "code": "\n      function fn () {\n        require('child_process').exec(str)\n      }",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found child_process.exec() with non Literal first argument",
+     "line": 3
+    }
+   ]
   },
   {
    "rule": "detect-child-process",
    "kind": "invalid",
    "i": 13,
    "code": "\n      const {exec} = require('child_process');\n      exec(str)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found child_process.exec() with non Literal first argument",
+     "line": 3
+    }
+   ]
   },
   {
    "rule": "detect-child-process",
    "kind": "invalid",
    "i": 14,
    "code": "\n      const {exec} = require('node:child_process');\n      exec(str)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found child_process.exec() with non Literal first argument",
+     "line": 3
+    }
+   ]
   },
   {
    "rule": "detect-disable-mustache-escape",
@@ -888,7 +1373,12 @@
    "kind": "invalid",
    "i": 0,
    "code": "a.escapeMarkup = false",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Markup escaping disabled."
+    }
+   ]
   },
   {
    "rule": "detect-eval-with-expression",
@@ -916,7 +1406,283 @@
    "kind": "invalid",
    "i": 0,
    "code": "eval(a);",
+   "filename": null,
+   "errors": [
+    {
+     "message": "eval with argument of type Identifier"
+    }
+   ]
+  },
+  {
+   "rule": "detect-invisible-characters",
+   "kind": "valid",
+   "i": 0,
+   "code": "\n      var accessLevel = \"user\";\n      if (accessLevel != \"user\") {\n        console.log(\"You are an admin.\");\n      }\n      ",
    "filename": null
+  },
+  {
+   "rule": "detect-invisible-characters",
+   "kind": "valid",
+   "i": 1,
+   "code": "var greeting = \"hello world\";",
+   "filename": null
+  },
+  {
+   "rule": "detect-invisible-characters",
+   "kind": "valid",
+   "i": 2,
+   "code": "var s = \"\\u3164\";",
+   "filename": null
+  },
+  {
+   "rule": "detect-invisible-characters",
+   "kind": "valid",
+   "i": 3,
+   "code": "var s = \"ㄱㅏ\";",
+   "filename": null
+  },
+  {
+   "rule": "detect-invisible-characters",
+   "kind": "valid",
+   "i": 4,
+   "code": "var s = \"ﾡ\";",
+   "filename": null
+  },
+  {
+   "rule": "detect-invisible-characters",
+   "kind": "valid",
+   "i": 5,
+   "code": "var s = \"안녕하세요\";",
+   "filename": null
+  },
+  {
+   "rule": "detect-invisible-characters",
+   "kind": "invalid",
+   "i": 0,
+   "code": "var a = \"helloㅤworld\";",
+   "filename": null,
+   "errors": [
+    {
+     "message": {},
+     "line": 1,
+     "column": 15,
+     "endLine": 1,
+     "endColumn": 16
+    }
+   ]
+  },
+  {
+   "rule": "detect-invisible-characters",
+   "kind": "invalid",
+   "i": 1,
+   "code": "var b = \"fooﾠbar\";",
+   "filename": null,
+   "errors": [
+    {
+     "message": {},
+     "line": 1,
+     "column": 13,
+     "endLine": 1,
+     "endColumn": 14
+    }
+   ]
+  },
+  {
+   "rule": "detect-invisible-characters",
+   "kind": "invalid",
+   "i": 2,
+   "code": "var c = \"aㅤbﾠc\";",
+   "filename": null,
+   "errors": [
+    {
+     "message": {},
+     "line": 1,
+     "column": 11,
+     "endLine": 1,
+     "endColumn": 12
+    },
+    {
+     "message": {},
+     "line": 1,
+     "column": 13,
+     "endLine": 1,
+     "endColumn": 14
+    }
+   ]
+  },
+  {
+   "rule": "detect-invisible-characters",
+   "kind": "invalid",
+   "i": 3,
+   "code": "var admㅤin = 1;",
+   "filename": null,
+   "errors": [
+    {
+     "message": {},
+     "line": 1,
+     "column": 8,
+     "endLine": 1,
+     "endColumn": 9
+    }
+   ]
+  },
+  {
+   "rule": "detect-invisible-characters",
+   "kind": "invalid",
+   "i": 4,
+   "code": "var bﾠar = 1;",
+   "filename": null,
+   "errors": [
+    {
+     "message": {},
+     "line": 1,
+     "column": 6,
+     "endLine": 1,
+     "endColumn": 7
+    }
+   ]
+  },
+  {
+   "rule": "detect-invisible-characters",
+   "kind": "invalid",
+   "i": 5,
+   "code": "var t = `line1\nliㅤne2`;",
+   "filename": null,
+   "errors": [
+    {
+     "message": {},
+     "line": 2,
+     "column": 3,
+     "endLine": 2,
+     "endColumn": 4
+    }
+   ]
+  },
+  {
+   "rule": "detect-invisible-characters",
+   "kind": "invalid",
+   "i": 6,
+   "code": "var t = `line1\r\nliㅤne2`;",
+   "filename": null,
+   "errors": [
+    {
+     "message": {},
+     "line": 2,
+     "column": 3,
+     "endLine": 2,
+     "endColumn": 4
+    }
+   ]
+  },
+  {
+   "rule": "detect-invisible-characters",
+   "kind": "invalid",
+   "i": 7,
+   "code": "var t = `line1\rliㅤne2`;",
+   "filename": null,
+   "errors": [
+    {
+     "message": {},
+     "line": 2,
+     "column": 3,
+     "endLine": 2,
+     "endColumn": 4
+    }
+   ]
+  },
+  {
+   "rule": "detect-invisible-characters",
+   "kind": "invalid",
+   "i": 8,
+   "code": "var t = `line1 liㅤne2`;",
+   "filename": null,
+   "errors": [
+    {
+     "message": {},
+     "line": 2,
+     "column": 3,
+     "endLine": 2,
+     "endColumn": 4
+    }
+   ]
+  },
+  {
+   "rule": "detect-invisible-characters",
+   "kind": "invalid",
+   "i": 9,
+   "code": "var t = `line1 liㅤne2`;",
+   "filename": null,
+   "errors": [
+    {
+     "message": {},
+     "line": 2,
+     "column": 3,
+     "endLine": 2,
+     "endColumn": 4
+    }
+   ]
+  },
+  {
+   "rule": "detect-invisible-characters",
+   "kind": "invalid",
+   "i": 10,
+   "code": "const checkCommands = [\n  'ping -c 1 google.com',\n  'curl -s http://example.com/',ㅤ\n];",
+   "filename": null,
+   "errors": [
+    {
+     "message": {},
+     "line": 3,
+     "column": 33,
+     "endLine": 3,
+     "endColumn": 34
+    }
+   ]
+  },
+  {
+   "rule": "detect-invisible-characters in comment",
+   "kind": "valid",
+   "i": 0,
+   "code": "\n      // a normal comment\n      var isAdmin = false;\n      ",
+   "filename": null
+  },
+  {
+   "rule": "detect-invisible-characters in comment",
+   "kind": "invalid",
+   "i": 0,
+   "code": "// hiddenㅤcomment\nvar x = 1;",
+   "filename": null,
+   "errors": [
+    {
+     "message": {},
+     "line": 1,
+     "column": 10,
+     "endLine": 1,
+     "endColumn": 11
+    }
+   ]
+  },
+  {
+   "rule": "detect-invisible-characters in comment",
+   "kind": "invalid",
+   "i": 1,
+   "code": "/* aㅤ\n bㅤ */\nvar y = 2;",
+   "filename": null,
+   "errors": [
+    {
+     "message": {},
+     "line": 1,
+     "column": 5,
+     "endLine": 1,
+     "endColumn": 6
+    },
+    {
+     "message": {},
+     "line": 2,
+     "column": 3,
+     "endLine": 2,
+     "endColumn": 4
+    }
+   ]
   },
   {
    "rule": "detect-new-buffer",
@@ -930,7 +1696,12 @@
    "kind": "invalid",
    "i": 0,
    "code": "var a = new Buffer(c)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found new Buffer"
+    }
+   ]
   },
   {
    "rule": "detect-no-csrf-before-method-override",
@@ -944,7 +1715,12 @@
    "kind": "invalid",
    "i": 0,
    "code": "express.csrf();express.methodOverride()",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "express.csrf() middleware found before express.methodOverride()"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
@@ -972,21 +1748,36 @@
    "kind": "valid",
    "i": 3,
    "code": "\n            import { promises as fsp } from 'fs';\n            import fs from 'fs';\n            import path from 'path';\n\n            const index = await fsp.readFile(path.resolve(__dirname, './index.html'), 'utf-8');\n            const key = fs.readFileSync(path.join(__dirname, './ssl.key'));\n            await fsp.writeFile(path.resolve(__dirname, './sitemap.xml'), sitemap);",
-   "filename": null
+   "filename": null,
+   "languageOptions": {
+    "globals": {
+     "__dirname": "readonly"
+    }
+   }
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "valid",
    "i": 4,
    "code": "\n            import fs from 'fs';\n            import path from 'path';\n            const dirname = path.dirname(__filename)\n            const key = fs.readFileSync(path.resolve(dirname, './index.html'));",
-   "filename": null
+   "filename": null,
+   "languageOptions": {
+    "globals": {
+     "__filename": "readonly"
+    }
+   }
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "valid",
    "i": 5,
    "code": "\n            import fs from 'fs';\n            const key = fs.readFileSync(`${process.cwd()}/path/to/foo.json`);",
-   "filename": null
+   "filename": null,
+   "languageOptions": {
+    "globals": {
+     "process": "readonly"
+    }
+   }
   },
   {
    "rule": "detect-non-literal-fs-filename",
@@ -1014,182 +1805,317 @@
    "kind": "valid",
    "i": 9,
    "code": "\n      import fs from 'fs';\n      const pkg = fs.readFileSync(require.resolve('eslint/package.json'), 'utf-8');",
-   "filename": null
+   "filename": null,
+   "languageOptions": {
+    "globals": {
+     "require": "readonly"
+    }
+   }
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 0,
    "code": "var something = require('fs');\n             var a = something.open(c);",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found open from package \"fs\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 1,
    "code": "var one = require('fs').readFile;\n             one(filename);",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"fs\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 2,
    "code": "var one = require('node:fs').readFile;\n             one(filename);",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"node:fs\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 3,
    "code": "var one = require('fs/promises').readFile;\n             one(filename);",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"fs/promises\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 4,
    "code": "var something = require('fs/promises');\n             something.readFile(filename);",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"fs/promises\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 5,
    "code": "var something = require('node:fs/promises');\n             something.readFile(filename);",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"node:fs/promises\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 6,
    "code": "var something = require('fs-extra');\n             something.readFile(filename);",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"fs-extra\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 7,
    "code": "var { readFile: something } = require('fs');\n             something(filename)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"fs\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 8,
    "code": "import { readFile as something } from 'fs';\n             something(filename);",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"fs\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 9,
    "code": "import { readFile as something } from 'node:fs';\n             something(filename);",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"node:fs\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 10,
    "code": "import { readFile as something } from 'fs-extra';\n             something(filename);",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"fs-extra\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 11,
    "code": "import { readFile as something } from 'fs/promises'\n             something(filename)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"fs/promises\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 12,
    "code": "import { readFile as something } from 'node:fs/promises'\n             something(filename)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"node:fs/promises\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 13,
    "code": "import * as something from 'fs';\n             something.readFile(filename);",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"fs\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 14,
    "code": "import * as something from 'node:fs';\n             something.readFile(filename);",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"node:fs\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 15,
    "code": "var something = require('fs').promises;\n             something.readFile(filename)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"fs\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 16,
    "code": "var something = require('node:fs').promises;\n             something.readFile(filename)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"node:fs\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 17,
    "code": "var something = require('fs');\n             something.promises.readFile(filename)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"fs\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 18,
    "code": "var something = require('node:fs');\n             something.promises.readFile(filename)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"node:fs\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 19,
    "code": "var fs = require('fs');\nfs.readFile(`template with ${filename}`);",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"fs\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 20,
    "code": "function foo () {\nvar fs = require('fs');\nfs.readFile(filename);\n}",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"fs\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 21,
    "code": "function foo () {\nvar { readFile: something } = require('fs');\nsomething(filename);\n}",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"fs\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 22,
    "code": "var fs = require('fs');\nfunction foo () {\nvar { readFile: something } = fs.promises;\nsomething(filename);\n}",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFile from package \"fs\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 23,
    "code": "\n            import fs from 'fs';\n            import path from 'path';\n            const key = fs.readFileSync(path.resolve(__dirname, foo));",
-   "filename": null
+   "filename": null,
+   "languageOptions": {
+    "globals": {
+     "__filename": "readonly"
+    }
+   },
+   "errors": [
+    {
+     "message": "Found readFileSync from package \"fs\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-fs-filename",
    "kind": "invalid",
    "i": 24,
    "code": "\n            import fs from 'fs';\n            import path from 'path';\n            const key = fs.readFileSync(path.resolve(import.meta[prop], './index.html'));",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found readFileSync from package \"fs\" with non literal argument at index 0"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-regexp",
@@ -1210,7 +2136,12 @@
    "kind": "invalid",
    "i": 0,
    "code": "var a = new RegExp(c, 'i')",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found non-literal argument to RegExp Constructor"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-require",
@@ -1238,21 +2169,36 @@
    "kind": "valid",
    "i": 3,
    "code": "const utils = require(__dirname + '/utils');",
-   "filename": null
+   "filename": null,
+   "languageOptions": {
+    "globals": {
+     "__dirname": "readonly"
+    }
+   }
   },
   {
    "rule": "detect-non-literal-require",
    "kind": "invalid",
    "i": 0,
    "code": "var a = require(c)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found non-literal argument in require"
+    }
+   ]
   },
   {
    "rule": "detect-non-literal-require",
    "kind": "invalid",
    "i": 1,
    "code": "var a = require(`${c}`)",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found non-literal argument in require"
+    }
+   ]
   },
   {
    "rule": "detect-object-injection (Generic)",
@@ -1266,7 +2212,12 @@
    "kind": "invalid",
    "i": 0,
    "code": "var a = {}; a[b] = 4",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Generic Object Injection Sink"
+    }
+   ]
   },
   {
    "rule": "detect-possible-timing-attacks (left side)",
@@ -1280,7 +2231,12 @@
    "kind": "invalid",
    "i": 0,
    "code": "if (password === 'mypass') {}",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Potential timing attack, left side: true"
+    }
+   ]
   },
   {
    "rule": "detect-possible-timing-attacks (right side)",
@@ -1294,7 +2250,12 @@
    "kind": "invalid",
    "i": 0,
    "code": "if ('mypass' === password) {}",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Potential timing attack, right side: true"
+    }
+   ]
   },
   {
    "rule": "detect-pseudoRandomBytes",
@@ -1308,7 +2269,12 @@
    "kind": "invalid",
    "i": 0,
    "code": "crypto.pseudoRandomBytes",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found crypto.pseudoRandomBytes which does not produce cryptographically strong numbers"
+    }
+   ]
   },
   {
    "rule": "detect-unsafe-regex",
@@ -1322,7 +2288,12 @@
    "kind": "invalid",
    "i": 0,
    "code": "/(x+x+)+y/",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Unsafe Regular Expression"
+    }
+   ]
   },
   {
    "rule": "detect-unsafe-regex (new RegExp)",
@@ -1336,7 +2307,12 @@
    "kind": "invalid",
    "i": 0,
    "code": "new RegExp('x+x+)+y')",
-   "filename": null
+   "filename": null,
+   "errors": [
+    {
+     "message": "Unsafe Regular Expression (new RegExp)"
+    }
+   ]
   }
  ]
 }

@@ -358,6 +358,7 @@ function enclosingScopeNode(node: TSESTree.Node): TSESTree.Node {
 export const noIncompleteUrlSanitization = createRule<RuleOptions, MessageIds>({
   name: 'no-incomplete-url-sanitization',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-incomplete-url-sanitization.md',
@@ -405,21 +406,17 @@ export const noIncompleteUrlSanitization = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const sourceCode = context.sourceCode;
-    const urlNameWords = (
-      context.options[0]?.urlNameWords ?? DEFAULT_URL_NAME_WORDS
-    ).map((word) => word.toLowerCase());
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let urlNameWords: string[];
+    let schemeTests: Map<
+      TSESTree.Node,
+      { tested: Set<ScriptableScheme>; firstJavascript: TSESTree.Node | null }
+    >;
     const urlNameTest = (name: string): boolean => {
       const lower = name.toLowerCase();
       return urlNameWords.some((word) => lower.includes(word));
     };
-
-    /** Per enclosing function: which scriptable schemes it tests, and where. */
-    const schemeTests = new Map<
-      TSESTree.Node,
-      { tested: Set<ScriptableScheme>; firstJavascript: TSESTree.Node | null }
-    >();
 
     /**
      * Record a scheme test. `at` is the node the *decision* is made on, which
@@ -489,6 +486,21 @@ export const noIncompleteUrlSanitization = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        sourceCode = context.sourceCode;
+        urlNameWords = (
+          context.options[0]?.urlNameWords ?? DEFAULT_URL_NAME_WORDS
+        ).map((word) => word.toLowerCase());
+
+        /** Per enclosing function: which scriptable schemes it tests, and where. */
+        schemeTests = new Map<
+          TSESTree.Node,
+          {
+            tested: Set<ScriptableScheme>;
+            firstJavascript: TSESTree.Node | null;
+          }
+        >();
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
         if (callee.type !== 'MemberExpression') return;

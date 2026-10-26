@@ -32,6 +32,7 @@ describe('no-improper-type-validation', () => {
           code: 'if (value !== null && typeof value === "object") { /* process */ }',
         },
         {
+          name: 'Array.isArray is the correct array check',
           code: 'if (Array.isArray(data)) { /* process array */ }',
         },
         // Non-user-input typeof checks are valid

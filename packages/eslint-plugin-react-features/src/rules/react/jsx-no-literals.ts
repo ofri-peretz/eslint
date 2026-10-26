@@ -25,6 +25,10 @@ type RuleOptions = [Options?];
 export const jsxNoLiterals = createRule<RuleOptions, MessageIds>({
   name: 'jsx-no-literals',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/jsx-no-literals',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/jsx-no-literals.md',
@@ -37,7 +41,8 @@ export const jsxNoLiterals = createRule<RuleOptions, MessageIds>({
         description: 'String literal found in JSX',
         severity: 'MEDIUM',
         fix: 'Extract string to variable or use translation key',
-        documentationLink: 'https://react.dev/learn/passing-props-to-a-component#passing-jsx-as-children',
+        documentationLink:
+          'https://react.dev/learn/passing-props-to-a-component#passing-jsx-as-children',
       }),
     },
     schema: [
@@ -63,13 +68,18 @@ export const jsxNoLiterals = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const noStrings = options?.noStrings ?? true;
-    const allowedStrings = options?.allowedStrings ?? [];
-    const ignoreProps = options?.ignoreProps ?? true;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let noStrings: boolean;
+    let allowedStrings: string[];
+    let ignoreProps: boolean;
 
     return {
+      before() {
+        const [options] = context.options;
+        noStrings = options?.noStrings ?? true;
+        allowedStrings = options?.allowedStrings ?? [];
+        ignoreProps = options?.ignoreProps ?? true;
+      },
       JSXText(node: TSESTree.JSXText) {
         if (!noStrings) return;
 
@@ -85,7 +95,8 @@ export const jsxNoLiterals = createRule<RuleOptions, MessageIds>({
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (ignoreProps) return;
 
-        const attributeText = node.value === null ? null : staticString(node.value);
+        const attributeText =
+          node.value === null ? null : staticString(node.value);
         if (node.value && attributeText !== null) {
           const text = attributeText.trim();
           if (text && !allowedStrings.includes(text)) {

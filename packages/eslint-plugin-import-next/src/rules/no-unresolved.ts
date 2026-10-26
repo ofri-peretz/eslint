@@ -34,6 +34,7 @@ type RuleOptions = [Options?];
 export const noUnresolved = createRule<RuleOptions, MessageIds>({
   name: 'no-unresolved',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-unresolved.md',
@@ -114,14 +115,10 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const { ignore = [], allowUnresolved = false } = options || {};
-
-    // If allowUnresolved is true, don't check anything
-    if (allowUnresolved) {
-      return {};
-    }
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let options: Options | undefined;
+    let ignore: string[];
+    let allowUnresolved: boolean;
 
     function shouldIgnore(importPath: string): boolean {
       return ignore.some((pattern: string) => {
@@ -198,6 +195,16 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        [options] = context.options;
+        ({ ignore = [], allowUnresolved = false } = options || {});
+
+        // If allowUnresolved is true, don't check anything
+        if (allowUnresolved) {
+          return false;
+        }
+        return true;
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const importPath = node.source.value;
 

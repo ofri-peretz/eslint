@@ -17,6 +17,10 @@ type MessageIds = 'reactInJsxScope';
 export const reactInJsxScope = createRule<[], MessageIds>({
   name: 'react-in-jsx-scope',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/react-in-jsx-scope',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/react-in-jsx-scope.md',
@@ -30,16 +34,21 @@ export const reactInJsxScope = createRule<[], MessageIds>({
         description: 'React must be in scope when using JSX',
         severity: 'CRITICAL',
         fix: 'Add import React from "react" at the top of the file',
-        documentationLink: 'https://react.dev/learn/add-react-to-a-website#optional-using-jsx-without-a-build-step',
+        documentationLink:
+          'https://react.dev/learn/add-react-to-a-website#optional-using-jsx-without-a-build-step',
       }),
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
-    let hasReactImport = false;
-    let hasJsxUsage = false;
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
+    let hasReactImport: boolean;
+    let hasJsxUsage: boolean;
 
     return {
+      before() {
+        hasReactImport = false;
+        hasJsxUsage = false;
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         // Check for React import
         if (node.source.value === 'react') {
@@ -76,7 +85,10 @@ export const reactInJsxScope = createRule<[], MessageIds>({
         if (hasJsxUsage && !hasReactImport) {
           // Find the first JSX element to report on
           for (const statement of node.body) {
-            if (statement.type === 'ExpressionStatement' && statement.expression.type === 'JSXElement') {
+            if (
+              statement.type === 'ExpressionStatement' &&
+              statement.expression.type === 'JSXElement'
+            ) {
               context.report({
                 node: statement.expression.openingElement.name,
                 messageId: 'reactInJsxScope',
@@ -94,7 +106,11 @@ export const reactInJsxScope = createRule<[], MessageIds>({
                 }
               }
             }
-            if (statement.type === 'ReturnStatement' && statement.argument && statement.argument.type === 'JSXElement') {
+            if (
+              statement.type === 'ReturnStatement' &&
+              statement.argument &&
+              statement.argument.type === 'JSXElement'
+            ) {
               context.report({
                 node: statement.argument.openingElement.name,
                 messageId: 'reactInJsxScope',

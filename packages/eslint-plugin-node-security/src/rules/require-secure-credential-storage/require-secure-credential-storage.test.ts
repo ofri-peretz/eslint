@@ -25,32 +25,38 @@ ruleTester.run(
       'const items = [];',
       'const obj = {};',
       'class Foo {}',
-      { name: 'the platform keychain', code: 'await Keychain.setPassword(service, password)' },
-      { code: "SecureStore.setItemAsync('key', value)" },
+      {
+        name: 'the platform keychain',
+        code: 'await Keychain.setPassword(service, password)',
+      },
+      {
+        code: "SecureStore.setItemAsync('key', value)",
+        name: 'SecureStore.setItemAsync is the platform secure store',
+      },
     ],
 
     invalid: [
-    {
-      // FN: was `valid` alongside genuinely different receivers and methods,
-      // as though the notation belonged in that list. It does not —
-      // `Object['assign'](process.env, ...)` publishes the same map of secrets
-      // into the environment that the dotted form does.
-      // @found computed-key blind-spot probe
-      name: 'FN: a batch env write through a string subscript',
-      code: 'Object["assign"](process.env, { API_TOKEN: token });',
-      errors: 1,
-    },
-    {
-      // FN: this was `valid`, on the stated ground that "a computed METHOD name
-      // is not provably `setItem`". A string subscript is provably exactly
-      // that — it is the same slot the dotted form reaches, and it is what a
-      // bundler emits. `stores[name].setItem(...)` above remains valid because
-      // THAT key really is unresolvable.
-      // @found computed-key blind-spot probe
-      name: 'FN: a credential stored through a string subscript',
-      code: "localStorage['setItem']('password', p)",
-      errors: 1,
-    },
+      {
+        // FN: was `valid` alongside genuinely different receivers and methods,
+        // as though the notation belonged in that list. It does not —
+        // `Object['assign'](process.env, ...)` publishes the same map of secrets
+        // into the environment that the dotted form does.
+        // @found computed-key blind-spot probe
+        name: 'FN: a batch env write through a string subscript',
+        code: 'Object["assign"](process.env, { API_TOKEN: token });',
+        errors: 1,
+      },
+      {
+        // FN: this was `valid`, on the stated ground that "a computed METHOD name
+        // is not provably `setItem`". A string subscript is provably exactly
+        // that — it is the same slot the dotted form reaches, and it is what a
+        // bundler emits. `stores[name].setItem(...)` above remains valid because
+        // THAT key really is unresolvable.
+        // @found computed-key blind-spot probe
+        name: 'FN: a credential stored through a string subscript',
+        code: "localStorage['setItem']('password', p)",
+        errors: 1,
+      },
       {
         name: 'an API key in AsyncStorage, which is plain text on disk',
         code: "AsyncStorage.setItem('apiKey', key)",
@@ -123,7 +129,6 @@ ruleTester.run(
       { code: 'localStorage.setItem(...args)' },
       // A computed member with a non-identifier key carries no name to read.
       { code: 'localStorage.setItem(k, creds[0])' },
-
     ],
     invalid: [
       {

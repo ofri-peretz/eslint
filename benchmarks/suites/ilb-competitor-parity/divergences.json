@@ -1,0 +1,17 @@
+{
+  "$comment": "Cases eslint-plugin-security's own tests call safe that oxlint-plugin-security reports ON PURPOSE. drop-in.mjs fails on a finding not declared here, and on a declaration that no longer fires. Keyed by incumbent class; `valid` lists the case indices in benchmarks/corpus/competitor-parity/eslint-plugin-security.json. Decided in docs/intents/oxlint-plugin-security-drop-in (open question 3).",
+  "command": null,
+  "maintainedBy": "Each entry is a product decision recorded in the drop-in intent; drop-in.mjs proves every entry still fires and that nothing undeclared does.",
+  "classes": {
+    "detect-child-process": {
+      "valid": [5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16],
+      "reason": "`spawn(cmd)` / `child.spawn(cmd)` with a command that cannot be resolved to a literal. The incumbent treats spawn without `shell: true` as safe; a non-literal EXECUTABLE is still CWE-78, because whoever chooses the string chooses the program that runs.",
+      "reconsiderIf": "The command provably resolves to a fixed allowlist of executables."
+    },
+    "detect-new-buffer": {
+      "valid": [0],
+      "reason": "`new Buffer('test')`: the Buffer constructor is deprecated (DEP0005) for every argument, not only for numbers, so the call is reported whatever it is given.",
+      "reconsiderIf": "Node un-deprecates the Buffer constructor."
+    }
+  }
+}

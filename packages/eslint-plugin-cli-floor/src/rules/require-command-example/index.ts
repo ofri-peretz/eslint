@@ -30,6 +30,7 @@ type MessageIds = 'missingExample' | 'multilineExample';
 export const requireCommandExample = createRule<[], MessageIds>({
   name: 'require-command-example',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-cli-floor/docs/rules/require-command-example.md',
@@ -61,10 +62,12 @@ export const requireCommandExample = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    if (!fileUsesCliHost(context.sourceCode.ast)) return {};
-
+  createOnce(context) {
     return {
+      before() {
+        if (!fileUsesCliHost(context.sourceCode.ast)) return false;
+        return true;
+      },
       'Program:exit'(): void {
         const model = programModel(context.sourceCode);
         for (const command of model.commands) {

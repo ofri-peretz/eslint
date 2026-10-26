@@ -54,6 +54,7 @@ function findPackageJson(startDir: string): string | null {
 export const noRelativePackages = createRule<RuleOptions, MessageIds>({
   name: 'no-relative-packages',
   meta: {
+    interop: { runtimes: ['eslint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-relative-packages.md',
@@ -87,12 +88,10 @@ export const noRelativePackages = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allowSamePackage: true }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const { allowSamePackage = true } = options;
-    const filename = context.filename;
-    const currentDir = path.dirname(filename);
-    const currentPackageRoot = findPackageJson(currentDir);
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowSamePackage: boolean;
+    let currentDir: string;
+    let currentPackageRoot: string | null;
 
     function checkImport(node: TSESTree.Node, source: TSESTree.Literal) {
       const importPath = source.value;
@@ -155,6 +154,13 @@ export const noRelativePackages = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({ allowSamePackage = true } = options);
+        const filename = context.filename;
+        currentDir = path.dirname(filename);
+        currentPackageRoot = findPackageJson(currentDir);
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         checkImport(node, node.source);
       },

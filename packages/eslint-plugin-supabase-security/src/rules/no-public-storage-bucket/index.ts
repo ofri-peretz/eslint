@@ -55,6 +55,7 @@ function publicFlag(
 export const noPublicStorageBucket = createRule<[], MessageIds>({
   name: 'no-public-storage-bucket',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-supabase-security/docs/rules/no-public-storage-bucket.md',
@@ -81,10 +82,12 @@ export const noPublicStorageBucket = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    if (!fileUsesSupabase(context.sourceCode.ast)) return {};
-
+  createOnce(context) {
     return {
+      before() {
+        if (!fileUsesSupabase(context.sourceCode.ast)) return false;
+        return true;
+      },
       CallExpression(node): void {
         const { callee } = node;
         if (callee.type !== 'MemberExpression') return;

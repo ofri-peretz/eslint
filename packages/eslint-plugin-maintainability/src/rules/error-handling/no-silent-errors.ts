@@ -15,10 +15,7 @@ import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'silentError'
-  | 'addErrorLogging'
-  | 'addErrorHandling'
-  | 'rethrowError';
+  'silentError' | 'addErrorLogging' | 'addErrorHandling' | 'rethrowError';
 
 export interface Options {
   /** Allow empty catch if comment explains why. Default: false */
@@ -124,6 +121,7 @@ function hasExplanatoryComment(
 export const noSilentErrors = createRule<RuleOptions, MessageIds>({
   name: 'no-silent-errors',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/no-silent-errors.md',
@@ -193,22 +191,13 @@ export const noSilentErrors = createRule<RuleOptions, MessageIds>({
       ignoreInTests: true,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowWithComment = false, ignoreInTests = true }: Options =
-      options || {};
-
-    const filename = context.filename;
-    const isTestFile =
-      ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
-
-    if (isTestFile) {
-      return {};
-    }
-
-    const sourceCode = context.sourceCode;
+    let allowWithComment: boolean;
+    let ignoreInTests: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /**
      * Check catch clauses
@@ -244,6 +233,21 @@ export const noSilentErrors = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({ allowWithComment = false, ignoreInTests = true } = options || {});
+
+        const filename = context.filename;
+        const isTestFile =
+          ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+
+        sourceCode = context.sourceCode;
+        return true;
+      },
       CatchClause: checkCatchClause,
     };
   },

@@ -97,6 +97,11 @@
   "peerDependencies": {
     "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"
   },
+  "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    }
+  },
   "funding": {
     "type": "github",
     "url": "git+https://github.com/ofri-peretz/eslint.git"

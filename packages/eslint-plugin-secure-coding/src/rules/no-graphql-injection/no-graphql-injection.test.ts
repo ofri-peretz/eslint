@@ -41,6 +41,7 @@ describe('no-graphql-injection', () => {
         },
         // Using GraphQL libraries safely
         {
+          name: 'graphql called with variableValues keeps user input out of the query text',
           code: 'const result = await graphql({ schema, source: query, variableValues });',
         },
         // Safe schema definitions
@@ -49,6 +50,7 @@ describe('no-graphql-injection', () => {
         },
         // Non-GraphQL strings
         {
+          name: 'a plain string that is not GraphQL is ignored',
           code: 'const message = "Hello World";',
         },
         // Safe introspection in development (with config)

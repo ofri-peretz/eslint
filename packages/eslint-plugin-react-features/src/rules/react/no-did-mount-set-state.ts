@@ -17,6 +17,10 @@ type MessageIds = 'noDidMountSetState';
 export const noDidMountSetState = createRule<[], MessageIds>({
   name: 'no-did-mount-set-state',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/no-did-mount-set-state',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-did-mount-set-state.md',
@@ -30,15 +34,19 @@ export const noDidMountSetState = createRule<[], MessageIds>({
         description: 'setState called in componentDidMount',
         severity: 'HIGH',
         fix: 'Use initial state or constructor instead',
-        documentationLink: 'https://react.dev/reference/react/Component#componentdidmount',
+        documentationLink:
+          'https://react.dev/reference/react/Component#componentdidmount',
       }),
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
-    let inComponentDidMount = false;
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
+    let inComponentDidMount: boolean;
 
     return {
+      before() {
+        inComponentDidMount = false;
+      },
       'MethodDefinition[key.name="componentDidMount"]'() {
         inComponentDidMount = true;
       },

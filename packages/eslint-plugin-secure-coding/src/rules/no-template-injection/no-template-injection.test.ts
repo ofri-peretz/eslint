@@ -16,8 +16,14 @@ describe('no-template-injection', () => {
   ruleTester.run('no-template-injection', noTemplateInjection, {
     valid: [
       // String literals — safe (no injection surface)
-      { name: 'a literal template', code: 'Handlebars.compile("<h1>{{title}}</h1>")' },
-      { code: 'ejs.render("<p><%= name %></p>", { name })' },
+      {
+        name: 'a literal template',
+        code: 'Handlebars.compile("<h1>{{title}}</h1>")',
+      },
+      {
+        name: 'a literal template with data passed as the context is safe',
+        code: 'ejs.render("<p><%= name %></p>", { name })',
+      },
       { code: 'pug.compile("h1 #{title}")' },
       { code: 'Mustache.render("Hello {{name}}", data)' },
       // Template literal without expressions — safe
@@ -50,39 +56,72 @@ describe('no-template-injection', () => {
         name: 'the same compile, spelled with a subscript',
         code: 'Handlebars["compile"](userTemplate)',
         errors: [
-          { messageId: 'templateInjection', data: { engine: 'Handlebars', method: 'compile' } },
+          {
+            messageId: 'templateInjection',
+            data: { engine: 'Handlebars', method: 'compile' },
+          },
         ],
       },
       // Dynamic variable — injection surface
       {
         name: 'a template compiled from a user-supplied string',
         code: 'Handlebars.compile(userTemplate)',
-        errors: [{ messageId: 'templateInjection', data: { engine: 'Handlebars', method: 'compile' } }],
+        errors: [
+          {
+            messageId: 'templateInjection',
+            data: { engine: 'Handlebars', method: 'compile' },
+          },
+        ],
       },
       {
         name: 'a request body rendered as an EJS template',
         code: 'ejs.render(req.body.template, data)',
-        errors: [{ messageId: 'templateInjection', data: { engine: 'ejs', method: 'render' } }],
+        errors: [
+          {
+            messageId: 'templateInjection',
+            data: { engine: 'ejs', method: 'render' },
+          },
+        ],
       },
       // Template literal with expression — injection surface
       {
         code: 'Handlebars.compile(`Hello ${userPart}`)',
-        errors: [{ messageId: 'templateInjection', data: { engine: 'Handlebars', method: 'compile' } }],
+        errors: [
+          {
+            messageId: 'templateInjection',
+            data: { engine: 'Handlebars', method: 'compile' },
+          },
+        ],
       },
       // String concatenation
       {
         code: 'pug.compile("<h1>" + req.query.title + "</h1>")',
-        errors: [{ messageId: 'templateInjection', data: { engine: 'pug', method: 'compile' } }],
+        errors: [
+          {
+            messageId: 'templateInjection',
+            data: { engine: 'pug', method: 'compile' },
+          },
+        ],
       },
       // mustache render
       {
         code: 'Mustache.render(payload.template, view)',
-        errors: [{ messageId: 'templateInjection', data: { engine: 'Mustache', method: 'render' } }],
+        errors: [
+          {
+            messageId: 'templateInjection',
+            data: { engine: 'Mustache', method: 'render' },
+          },
+        ],
       },
       // nunjucks
       {
         code: 'nunjucks.renderString(userString, ctx)',
-        errors: [{ messageId: 'templateInjection', data: { engine: 'nunjucks', method: 'renderString' } }],
+        errors: [
+          {
+            messageId: 'templateInjection',
+            data: { engine: 'nunjucks', method: 'renderString' },
+          },
+        ],
       },
     ],
   });
@@ -100,29 +139,62 @@ describe('corpus regression — dynamic is not attacker-controlled', () => {
     valid: [
       // okta-signin-widget Gruntfile.js:135 and :202 — `content` is the grunt
       // copy-task file-processing callback's parameter.
-      { name: 'grunt file content', code: 'var tpl = Handlebars.compile(content);' },
+      {
+        name: 'grunt file content',
+        code: 'var tpl = Handlebars.compile(content);',
+      },
       // …/babel-plugin-handlebars-inline-precompile/hbs.js:29 — `template` is
       // the babel plugin's own argument.
-      { name: 'babel plugin template', code: 'var precompiled = Handlebars.precompile(template);' },
+      {
+        name: 'babel plugin template',
+        code: 'var precompiled = Handlebars.precompile(template);',
+      },
       // Nothing in these names or shapes says where the value came from.
       { name: 'a local variable', code: 'Handlebars.compile(tpl)' },
       { name: 'a member read', code: 'Handlebars.compile(config.template)' },
-      { name: 'a plain call result', code: 'Handlebars.compile(loadTemplate())' },
-      { name: 'a call argument that is also neutral', code: 'Handlebars.compile(wrap(tpl))' },
+      {
+        name: 'a plain call result',
+        code: 'Handlebars.compile(loadTemplate())',
+      },
+      {
+        name: 'a call argument that is also neutral',
+        code: 'Handlebars.compile(wrap(tpl))',
+      },
       { name: 'a spread argument', code: 'Handlebars.compile(wrap(...parts))' },
-      { name: 'an await of a neutral call', code: 'async function f() { Handlebars.compile(await loadTemplate()); }' },
-      { name: 'a neutral concatenation', code: 'pug.compile("<h1>" + title + "</h1>")' },
-      { name: 'a neutral interpolation', code: 'Handlebars.compile(`Hello ${name}`)' },
-      { name: 'a computed member root', code: 'Handlebars.compile(all[0].template)' },
-      { name: 'a member whose root is not an identifier', code: 'Handlebars.compile(getAll().template)' },
+      {
+        name: 'an await of a neutral call',
+        code: 'async function f() { Handlebars.compile(await loadTemplate()); }',
+      },
+      {
+        name: 'a neutral concatenation',
+        code: 'pug.compile("<h1>" + title + "</h1>")',
+      },
+      {
+        name: 'a neutral interpolation',
+        code: 'Handlebars.compile(`Hello ${name}`)',
+      },
+      {
+        name: 'a computed member root',
+        code: 'Handlebars.compile(all[0].template)',
+      },
+      {
+        name: 'a member whose root is not an identifier',
+        code: 'Handlebars.compile(getAll().template)',
+      },
       // The walk stops at depth 6 rather than following an arbitrarily nested
       // expression — a bounded walk is the point, so the bound is pinned.
       {
         name: 'nested past the depth bound',
         code: 'Handlebars.compile("a" + ("b" + ("c" + ("d" + ("e" + ("f" + ("g" + userTpl)))))))',
       },
-      { name: 'a request root without a request property', code: 'Handlebars.compile(req.template)' },
-      { name: 'process without argv', code: 'Handlebars.compile(process.env.TPL)' },
+      {
+        name: 'a request root without a request property',
+        code: 'Handlebars.compile(req.template)',
+      },
+      {
+        name: 'process without argv',
+        code: 'Handlebars.compile(process.env.TPL)',
+      },
       { name: 'a non-string literal', code: 'Handlebars.compile(0)' },
     ],
     invalid: [

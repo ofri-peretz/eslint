@@ -22,11 +22,20 @@ ruleTester.run('no-unsafe-eval-csp', noUnsafeEvalCsp, {
     // Safe CSP without unsafe-eval
     { name: 'a policy without it', code: `const csp = "script-src 'self'";` },
     // With nonce
-    { code: `const csp = "script-src 'self' 'nonce-abc123'";` },
+    {
+      name: 'a nonce-based policy without unsafe-eval is fine',
+      code: `const csp = "script-src 'self' 'nonce-abc123'";`,
+    },
     // No CSP content
-    { code: `const message = "Some text";` },
+    {
+      name: 'a string with no CSP content is ignored',
+      code: `const message = "Some text";`,
+    },
     // Test files allowed
-    { code: `const csp = "script-src 'unsafe-eval'";`, filename: 'csp.test.ts' },
+    {
+      code: `const csp = "script-src 'unsafe-eval'";`,
+      filename: 'csp.test.ts',
+    },
   ],
   invalid: [
     // String literal with unsafe-eval
@@ -75,34 +84,38 @@ ruleTester.run('no-unsafe-eval-csp', noUnsafeEvalCsp, {
  * through one Linter — a short policy linted after a longer one produced none
  * at all. Every case below FAILS on the unfixed rule.
  */
-ruleTester.run('lock: every occurrence is reported, not every other one', noUnsafeEvalCsp, {
-  valid: [],
-  invalid: [
-    {
-      code: [
-        `const a = "script-src 'unsafe-eval'";`,
-        `const b = "worker-src 'unsafe-eval'";`,
-        `const c = "style-src 'unsafe-eval'";`,
-        `const d = "font-src 'unsafe-eval'";`,
-      ].join('\n'),
-      errors: [
-        { messageId: 'unsafeEval' },
-        { messageId: 'unsafeEval' },
-        { messageId: 'unsafeEval' },
-        { messageId: 'unsafeEval' },
-      ],
-    },
-    // A long policy followed by a short one: the short match sits BEFORE the
-    // offset the long one left behind.
-    {
-      code: [
-        `const long = "default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-eval'";`,
-        `const short = "script-src 'unsafe-eval'";`,
-      ].join('\n'),
-      errors: [{ messageId: 'unsafeEval' }, { messageId: 'unsafeEval' }],
-    },
-  ],
-});
+ruleTester.run(
+  'lock: every occurrence is reported, not every other one',
+  noUnsafeEvalCsp,
+  {
+    valid: [],
+    invalid: [
+      {
+        code: [
+          `const a = "script-src 'unsafe-eval'";`,
+          `const b = "worker-src 'unsafe-eval'";`,
+          `const c = "style-src 'unsafe-eval'";`,
+          `const d = "font-src 'unsafe-eval'";`,
+        ].join('\n'),
+        errors: [
+          { messageId: 'unsafeEval' },
+          { messageId: 'unsafeEval' },
+          { messageId: 'unsafeEval' },
+          { messageId: 'unsafeEval' },
+        ],
+      },
+      // A long policy followed by a short one: the short match sits BEFORE the
+      // offset the long one left behind.
+      {
+        code: [
+          `const long = "default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-eval'";`,
+          `const short = "script-src 'unsafe-eval'";`,
+        ].join('\n'),
+        errors: [{ messageId: 'unsafeEval' }, { messageId: 'unsafeEval' }],
+      },
+    ],
+  },
+);
 
 /**
  * Regression lock — a policy is a GRAMMAR, not a printed token.
@@ -112,44 +125,48 @@ ruleTester.run('lock: every occurrence is reported, not every other one', noUnsa
  * `script-src 'self' 'unsafe-eval'` while the source file contains that token
  * nowhere. Matching the printed form missed all of them.
  */
-ruleTester.run('lock: bare source keywords in a directive source list', noUnsafeEvalCsp, {
-  valid: [
-    // The serialiser's VOCABULARY table grants nothing — it is the list of
-    // names that need quoting, not a policy. Reporting it made the fix for the
-    // finding itself a finding.
-    {
-      code: `const KEYWORDS = new Set(['self', 'none', 'unsafe-eval', 'unsafe-inline']);`,
-    },
-    // A bare keyword outside any source list is just a string.
-    { code: `const mode = 'unsafe-eval';` },
-  ],
-  invalid: [
-    // Helmet's directives object, camelCase, bare sources.
-    {
-      code: `app.use(helmet.contentSecurityPolicy({ directives: { scriptSrc: ['self', 'unsafe-eval'] } }));`,
-      errors: [{ messageId: 'unsafeEval' }],
-    },
-    // The same in kebab-case, as a quoted property key.
-    {
-      code: `const directives = { 'script-src': ['self', 'unsafe-eval'] };`,
-      errors: [{ messageId: 'unsafeEval' }],
-    },
-    // Already-quoted sources in a directive source list.
-    {
-      code: `const directives = { scriptSrc: ["'self'", "'unsafe-eval'"] };`,
-      errors: [{ messageId: 'unsafeEval' }],
-    },
-    // A source array spliced into a template literal right after the
-    // directive name it belongs to.
-    {
-      code: [
-        `const sources = ["'self'", "'unsafe-eval'"];`,
-        `const csp = \`default-src 'self'; script-src \${sources.join(' ')}\`;`,
-      ].join('\n'),
-      errors: [{ messageId: 'unsafeEval' }],
-    },
-  ],
-});
+ruleTester.run(
+  'lock: bare source keywords in a directive source list',
+  noUnsafeEvalCsp,
+  {
+    valid: [
+      // The serialiser's VOCABULARY table grants nothing — it is the list of
+      // names that need quoting, not a policy. Reporting it made the fix for the
+      // finding itself a finding.
+      {
+        code: `const KEYWORDS = new Set(['self', 'none', 'unsafe-eval', 'unsafe-inline']);`,
+      },
+      // A bare keyword outside any source list is just a string.
+      { code: `const mode = 'unsafe-eval';` },
+    ],
+    invalid: [
+      // Helmet's directives object, camelCase, bare sources.
+      {
+        code: `app.use(helmet.contentSecurityPolicy({ directives: { scriptSrc: ['self', 'unsafe-eval'] } }));`,
+        errors: [{ messageId: 'unsafeEval' }],
+      },
+      // The same in kebab-case, as a quoted property key.
+      {
+        code: `const directives = { 'script-src': ['self', 'unsafe-eval'] };`,
+        errors: [{ messageId: 'unsafeEval' }],
+      },
+      // Already-quoted sources in a directive source list.
+      {
+        code: `const directives = { scriptSrc: ["'self'", "'unsafe-eval'"] };`,
+        errors: [{ messageId: 'unsafeEval' }],
+      },
+      // A source array spliced into a template literal right after the
+      // directive name it belongs to.
+      {
+        code: [
+          `const sources = ["'self'", "'unsafe-eval'"];`,
+          `const csp = \`default-src 'self'; script-src \${sources.join(' ')}\`;`,
+        ].join('\n'),
+        errors: [{ messageId: 'unsafeEval' }],
+      },
+    ],
+  },
+);
 
 /**
  * Regression lock — naming the directive is not granting it.
@@ -158,27 +175,33 @@ ruleTester.run('lock: bare source keywords in a directive source list', noUnsafe
  * ship the directive, and it necessarily spells it out. So does a docs page.
  * Both were CVSS 8.1 findings.
  */
-ruleTester.run('lock: prose about a directive is not a policy', noUnsafeEvalCsp, {
-  valid: [
-    {
-      code: `if (policy.includes("'unsafe-eval'")) throw new Error("Refusing a policy containing 'unsafe-eval'.");`,
-    },
-    { code: `const faq = { q: "Why did you remove 'unsafe-eval' from our CSP?" };` },
-    // 'wasm-unsafe-eval' is its OWN keyword and the recommended narrow
-    // remediation for WebAssembly. Matching loosely turns the fix into a
-    // finding.
-    {
-      code: `const csp = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'";`,
-    },
-  ],
-  invalid: [
-    // The counter-control: the same words, arranged as an actual policy.
-    {
-      code: `const csp = "script-src 'self' 'unsafe-eval'";`,
-      errors: [{ messageId: 'unsafeEval' }],
-    },
-  ],
-});
+ruleTester.run(
+  'lock: prose about a directive is not a policy',
+  noUnsafeEvalCsp,
+  {
+    valid: [
+      {
+        code: `if (policy.includes("'unsafe-eval'")) throw new Error("Refusing a policy containing 'unsafe-eval'.");`,
+      },
+      {
+        code: `const faq = { q: "Why did you remove 'unsafe-eval' from our CSP?" };`,
+      },
+      // 'wasm-unsafe-eval' is its OWN keyword and the recommended narrow
+      // remediation for WebAssembly. Matching loosely turns the fix into a
+      // finding.
+      {
+        code: `const csp = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'";`,
+      },
+    ],
+    invalid: [
+      // The counter-control: the same words, arranged as an actual policy.
+      {
+        code: `const csp = "script-src 'self' 'unsafe-eval'";`,
+        errors: [{ messageId: 'unsafeEval' }],
+      },
+    ],
+  },
+);
 
 /** Edge shapes the policy grammar and the source-list proof must survive. */
 ruleTester.run('edge shapes', noUnsafeEvalCsp, {
@@ -213,7 +236,9 @@ ruleTester.run('edge shapes', noUnsafeEvalCsp, {
     // Spliced after an EMPTY quasi.
     { code: 'const s = ["\'unsafe-eval\'"]; const t = `${s.join(" ")}`;' },
     // A reference that precedes the declaration cannot be its splice site.
-    { code: 'const t = `script-src ${later}`; const later = ["\'unsafe-eval\'"];' },
+    {
+      code: 'const t = `script-src ${later}`; const later = ["\'unsafe-eval\'"];',
+    },
     // A quoted-but-unknown source expression.
     { code: `const d = { scriptSrc: ["'made-up-keyword'"] };` },
     // The lone apostrophe is not a quoted keyword.
@@ -232,7 +257,7 @@ ruleTester.run('edge shapes', noUnsafeEvalCsp, {
     },
     // A template whose interpolation sits between two static chunks.
     {
-      code: 'const c = `script-src ${host} \'unsafe-eval\'`;',
+      code: "const c = `script-src ${host} 'unsafe-eval'`;",
       errors: [{ messageId: 'unsafeEval' }],
     },
   ],

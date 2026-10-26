@@ -193,6 +193,10 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
   // elsewhere, if it is in the repository at all.
   skipMinifiedFiles: true,
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'eslint/no-magic-numbers',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/no-magic-numbers.md',
@@ -249,35 +253,23 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
       ignoreBitwiseExpressions: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options = {}] = context.options;
-    const {
-      ignore = [],
-      ignoreArrayIndexes = true,
-      detectObjects = false,
-      ignoreLoopBounds = true,
-      ignoreLengthComparisons = true,
-      ignoreNumericArrays = true,
-      namedConstArithmetic = true,
-      ignoreDefaultValues = true,
-      ignoreEnums = true,
-      ignoreBitwiseExpressions = false,
-    } = options;
-
-    const ignoredValues = new Set<number>([...DEFAULT_IGNORE, ...ignore]);
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let ignore: number[];
+    let ignoreArrayIndexes: boolean;
+    let detectObjects: boolean;
+    let ignoreLoopBounds: boolean;
+    let ignoreLengthComparisons: boolean;
+    let ignoreNumericArrays: boolean;
+    let namedConstArithmetic: boolean;
+    let ignoreDefaultValues: boolean;
+    let ignoreEnums: boolean;
+    let ignoreBitwiseExpressions: boolean;
+    let ignoredValues: Set<number>;
+    let MAX_ARRAY_INDEX: number;
 
     function isIgnoredNumber(value: number): boolean {
       return ignoredValues.has(value);
     }
-
-    /**
-     * The largest value that can be an array index.
-     *
-     * An array's length is at most `2 ** 32 - 1`, so the last addressable index
-     * is one below that. `arr[4294967296]` is an ordinary string-keyed property
-     * on the array object, not an index into it.
-     */
-    const MAX_ARRAY_INDEX = 2 ** 32 - 2;
 
     /**
      * A literal in the index position of a computed member access — AND a value
@@ -390,8 +382,7 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
       const other =
         comparison.left === node ? comparison.right : comparison.left;
       return (
-        other.type === 'MemberExpression' &&
-        propertyName(other) === 'length'
+        other.type === 'MemberExpression' && propertyName(other) === 'length'
       );
     }
 
@@ -561,6 +552,32 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = context.options;
+        ({
+          ignore = [],
+          ignoreArrayIndexes = true,
+          detectObjects = false,
+          ignoreLoopBounds = true,
+          ignoreLengthComparisons = true,
+          ignoreNumericArrays = true,
+          namedConstArithmetic = true,
+          ignoreDefaultValues = true,
+          ignoreEnums = true,
+          ignoreBitwiseExpressions = false,
+        } = options);
+
+        ignoredValues = new Set<number>([...DEFAULT_IGNORE, ...ignore]);
+
+        /**
+         * The largest value that can be an array index.
+         *
+         * An array's length is at most `2 ** 32 - 1`, so the last addressable index
+         * is one below that. `arr[4294967296]` is an ordinary string-keyed property
+         * on the array object, not an index into it.
+         */
+        MAX_ARRAY_INDEX = 2 ** 32 - 2;
+      },
       Literal(node: TSESTree.Literal) {
         if (typeof node.value !== 'number') return;
         const value = node.value;

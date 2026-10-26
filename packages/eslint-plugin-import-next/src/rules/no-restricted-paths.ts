@@ -24,6 +24,7 @@ type RuleOptions = [Options?];
 export const noRestrictedPaths = createRule<RuleOptions, MessageIds>({
   name: 'no-restricted-paths',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-restricted-paths.md',
@@ -75,9 +76,8 @@ export const noRestrictedPaths = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ restricted: [] }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const { restricted = [] } = options || {};
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let restricted: string[];
 
     function checkImport(importPath: string, node: TSESTree.Node) {
       for (const pattern of restricted) {
@@ -92,6 +92,10 @@ export const noRestrictedPaths = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({ restricted = [] } = options || {});
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const importPath = node.source.value;
 

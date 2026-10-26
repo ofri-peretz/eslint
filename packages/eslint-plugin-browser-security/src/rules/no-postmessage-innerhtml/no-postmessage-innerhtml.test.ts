@@ -51,6 +51,7 @@ ruleTester.run('no-postmessage-innerhtml', noPostmessageInnerhtml, {
     },
     // Not a message handler
     {
+      name: 'a click handler writing innerHTML is not a message handler',
       code: `
         window.addEventListener('click', (event) => {
           element.innerHTML = event.target.value;
@@ -118,7 +119,12 @@ ruleTester.run('no-postmessage-innerhtml', noPostmessageInnerhtml, {
           element.insertAdjacentHTML('beforeend', event.data);
         });
       `,
-      errors: [{ messageId: 'unsafeInnerhtml', data: { method: 'insertAdjacentHTML' } }],
+      errors: [
+        {
+          messageId: 'unsafeInnerhtml',
+          data: { method: 'insertAdjacentHTML' },
+        },
+      ],
     },
     // document.write with event.data
     {

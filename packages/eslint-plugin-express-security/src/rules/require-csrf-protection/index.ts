@@ -178,6 +178,7 @@ function isLikelyExpressObject(callee: TSESTree.MemberExpression): boolean {
 export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
   name: 'require-csrf-protection',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/require-csrf-protection.md',
@@ -231,49 +232,21 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
       ignorePatterns: [],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    // Precondition 1 — see the header comment. No cookie, no session, no
-    // CSRF: a cross-site request to this file's routes carries no authority.
-    if (!fileHasAmbientCredentials(context.sourceCode.ast)) return {};
-
-    const {
-      allowInTests = false,
-      protectedMethods = DEFAULT_PROTECTED_METHODS,
-      ignorePatterns = [],
-    } = options as Options;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-
-    if (isTestFile) {
-      return {};
-    }
-
-    let hasGlobalCsrf = false;
-    /**
-     * Reports are deferred to `Program:exit` so that an `app.use(csrf())`
-     * written *below* a route still suppresses it. Reporting inline made the
-     * finding depend on statement order, which no adopter would guess.
-     */
-    const candidates: {
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let allowInTests: boolean;
+    let protectedMethods: string[];
+    let ignorePatterns: string[];
+    let hasGlobalCsrf: boolean;
+    let candidates: {
       node: TSESTree.CallExpression;
       method: string;
       chain: TSESTree.Node[];
       handler: TSESTree.Node | undefined;
-    }[] = [];
-    /**
-     * `app.use(requireAuth)` — a router-wide guard authenticates every route
-     * below it, which is precisely the configuration where CSRF *does* apply.
-     * A path-scoped mount (`app.use('/public', …)`) is not global; treating it
-     * as one is the mistake require-route-authentication documents.
-     */
-    let hasGlobalAuth = false;
+    }[];
+    let hasGlobalAuth: boolean;
 
     /**
      * Check if route matches ignore patterns
@@ -293,6 +266,47 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        // Precondition 1 — see the header comment. No cookie, no session, no
+        // CSRF: a cross-site request to this file's routes carries no authority.
+        if (!fileHasAmbientCredentials(context.sourceCode.ast)) return false;
+
+        ({
+          allowInTests = false,
+          protectedMethods = DEFAULT_PROTECTED_METHODS,
+          ignorePatterns = [],
+        } = options as Options);
+
+        const filename = context.filename;
+        const isTestFile = allowInTests && isTestFilePath(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+
+        hasGlobalCsrf = false;
+        /**
+         * Reports are deferred to `Program:exit` so that an `app.use(csrf())`
+         * written *below* a route still suppresses it. Reporting inline made the
+         * finding depend on statement order, which no adopter would guess.
+         */
+        candidates = [];
+        /**
+         * `app.use(requireAuth)` — a router-wide guard authenticates every route
+         * below it, which is precisely the configuration where CSRF *does* apply.
+         * A path-scoped mount (`app.use('/public', …)`) is not global; treating it
+         * as one is the mistake require-route-authentication documents.
+         */
+        hasGlobalAuth = false;
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
 

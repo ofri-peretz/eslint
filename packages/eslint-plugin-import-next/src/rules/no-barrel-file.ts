@@ -65,9 +65,7 @@ export interface NoBarrelFileOptions {
 type RuleOptions = [NoBarrelFileOptions?];
 
 // Default barrel patterns - index files in various extensions
-const DEFAULT_BARREL_PATTERNS = [
-  '.*[/\\\\]index\\.(ts|tsx|js|jsx|mts|mjs)$',
-];
+const DEFAULT_BARREL_PATTERNS = ['.*[/\\\\]index\\.(ts|tsx|js|jsx|mts|mjs)$'];
 
 /**
  * Check if a path matches any of the regex patterns
@@ -180,6 +178,10 @@ function collectReexportSources(
 export const noBarrelFile = createRule<RuleOptions, MessageIds>({
   name: 'no-barrel-file',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'oxc/no-barrel-file',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-barrel-file.md',
@@ -227,7 +229,8 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Regex patterns for paths where barrel files are allowed',
+            description:
+              'Regex patterns for paths where barrel files are allowed',
           },
           barrelPatterns: {
             type: 'array',
@@ -246,8 +249,7 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
             minimum: 0,
             maximum: 1,
             default: 0.8,
-            description:
-              'Maximum allowed ratio of re-exports to total exports',
+            description: 'Maximum allowed ratio of re-exports to total exports',
           },
         },
         additionalProperties: false,
@@ -263,46 +265,62 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
       reexportRatio: 0.8,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      threshold = 3,
-      allowedPaths = [],
-      barrelPatterns = DEFAULT_BARREL_PATTERNS,
-      allowWithLocalExports = false,
-      reexportRatio = 0.8,
-    }: NoBarrelFileOptions = options || {};
-
-    const filename = context.filename;
-
-    // Check if file matches barrel patterns
-    if (!matchesPattern(filename, barrelPatterns)) {
-      return {};
-    }
-
-    // Check if file is in allowed paths
-    if (allowedPaths.length > 0 && matchesPattern(filename, allowedPaths)) {
-      return {};
-    }
-
-    // Collect all exports
-    const exportAllDeclarations: TSESTree.ExportAllDeclaration[] = [];
-    const namedReexports: TSESTree.ExportNamedDeclaration[] = [];
-    const localExports: TSESTree.Node[] = [];
-    // Sourceless `export { … }` clauses, classified once every import is known.
-    const sourcelessClauses: TSESTree.ExportNamedDeclaration[] = [];
-
-    // Local name -> module it was imported from, for resolving a sourceless
-    // `export { … }` clause back to the edges it actually forwards.
-    const importSourceByLocalName = new Map<string, string>();
-    // Local names bound by a type-only import; erased, so skipped in clauses.
-    const typeOnlyImportNames = new Set<string>();
-    // Sources forwarded indirectly (imported, then exported by specifier).
-    const indirectReexportSources = new Set<string>();
+    let threshold: number;
+    let allowedPaths: string[];
+    let barrelPatterns: string[];
+    let allowWithLocalExports: boolean;
+    let reexportRatio: number;
+    let exportAllDeclarations: TSESTree.ExportAllDeclaration[];
+    let namedReexports: TSESTree.ExportNamedDeclaration[];
+    let localExports: TSESTree.Node[];
+    let sourcelessClauses: TSESTree.ExportNamedDeclaration[];
+    let importSourceByLocalName: Map<string, string>;
+    let typeOnlyImportNames: Set<string>;
+    let indirectReexportSources: Set<string>;
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          threshold = 3,
+          allowedPaths = [],
+          barrelPatterns = DEFAULT_BARREL_PATTERNS,
+          allowWithLocalExports = false,
+          reexportRatio = 0.8,
+        } = options || {});
+
+        const filename = context.filename;
+
+        // Check if file matches barrel patterns
+        if (!matchesPattern(filename, barrelPatterns)) {
+          return false;
+        }
+
+        // Check if file is in allowed paths
+        if (allowedPaths.length > 0 && matchesPattern(filename, allowedPaths)) {
+          return false;
+        }
+
+        // Collect all exports
+        exportAllDeclarations = [];
+        namedReexports = [];
+        localExports = [];
+        // Sourceless `export { … }` clauses, classified once every import is known.
+        sourcelessClauses = [];
+
+        // Local name -> module it was imported from, for resolving a sourceless
+        // `export { … }` clause back to the edges it actually forwards.
+        importSourceByLocalName = new Map<string, string>();
+        // Local names bound by a type-only import; erased, so skipped in clauses.
+        typeOnlyImportNames = new Set<string>();
+        // Sources forwarded indirectly (imported, then exported by specifier).
+        indirectReexportSources = new Set<string>();
+        return true;
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         for (const specifier of node.specifiers) {
           if (

@@ -84,6 +84,10 @@ export const noNoninteractiveElementInteractions = createRule<
 >({
   name: 'no-noninteractive-element-interactions',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/no-noninteractive-element-interactions',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-noninteractive-element-interactions.md',
@@ -114,13 +118,17 @@ export const noNoninteractiveElementInteractions = createRule<
     ],
   },
   defaultOptions: [{}],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
-    const { handlers = INTERACTIVE_HANDLERS } = options ?? {};
+    let handlers: string[];
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        ({ handlers = INTERACTIVE_HANDLERS } = options ?? {});
+      },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier') return;
         const element = node.name.name;

@@ -35,7 +35,11 @@
  * - `<obj>.page(...)` / `pageview(...)` — event name is implicit
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, staticString, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  staticString,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'invalidEventName' | 'interpolatedEventName';
@@ -69,6 +73,7 @@ const EVENT_NAME_RE = new RegExp(
 export const analyticsEventNaming = createRule<RuleOptions, MessageIds>({
   name: 'analytics-event-naming',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/analytics-event-naming.md',
@@ -94,7 +99,7 @@ export const analyticsEventNaming = createRule<RuleOptions, MessageIds>({
         description:
           'Event names must be static string literals. Template literals create an unbounded catalog (ANALYTICS_PHILOSOPHY.md principle 3).',
         severity: 'HIGH',
-        fix: 'Move the dynamic part into an event property: track(\'category:object_view\', { slug }).',
+        fix: "Move the dynamic part into an event property: track('category:object_view', { slug }).",
         documentationLink:
           'https://github.com/ofri-peretz/interlace/blob/main/docs/philosophies/ANALYTICS_PHILOSOPHY.md',
       }),
@@ -103,7 +108,7 @@ export const analyticsEventNaming = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     function isCaptureLike(node: TSESTree.CallExpression): boolean {
       // <obj>.capture(...) — PostHog
       // <obj>.track(...)   — Segment / Mixpanel / Amplitude
@@ -115,10 +120,7 @@ export const analyticsEventNaming = createRule<RuleOptions, MessageIds>({
         return true;
       }
       // bare track(...) — our primitive
-      if (
-        node.callee.type === 'Identifier' &&
-        node.callee.name === 'track'
-      ) {
+      if (node.callee.type === 'Identifier' && node.callee.name === 'track') {
         return true;
       }
       return false;

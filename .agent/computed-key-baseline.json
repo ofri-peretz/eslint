@@ -17,7 +17,6 @@
     "browser-security/no-unsafe-eval-csp",
     "lambda-security/no-exposed-error-details",
     "lambda-security/no-user-controlled-requests",
-    "mongodb-security/require-schema-validation",
     "mysql-security/require-tls",
     "nestjs-security/no-permissive-cors",
     "node-security/detect-eval-with-expression",

@@ -62,7 +62,8 @@ const BUILT_IN_MAPPINGS: ModernApiMapping[] = [
     modern: 'date-fns or dayjs',
     reason: 'Moment.js is in maintenance mode. date-fns is tree-shakeable.',
     difficulty: 'medium',
-    migrationGuide: 'https://github.com/date-fns/date-fns/blob/HEAD/docs/moment.md',
+    migrationGuide:
+      'https://github.com/date-fns/date-fns/blob/HEAD/docs/moment.md',
   },
   {
     deprecated: 'moment-timezone',
@@ -70,7 +71,7 @@ const BUILT_IN_MAPPINGS: ModernApiMapping[] = [
     reason: 'Maintenance mode. date-fns-tz is smaller and tree-shakeable.',
     difficulty: 'medium',
   },
-  
+
   // HTTP Clients
   {
     deprecated: 'request',
@@ -84,7 +85,7 @@ const BUILT_IN_MAPPINGS: ModernApiMapping[] = [
     reason: 'Deprecated with the request package.',
     difficulty: 'easy',
   },
-  
+
   // Utility Libraries (full imports)
   {
     deprecated: 'underscore',
@@ -92,7 +93,7 @@ const BUILT_IN_MAPPINGS: ModernApiMapping[] = [
     reason: 'Underscore is outdated. Modern JS has most utilities built-in.',
     difficulty: 'medium',
   },
-  
+
   // Testing
   {
     deprecated: 'mocha',
@@ -106,7 +107,7 @@ const BUILT_IN_MAPPINGS: ModernApiMapping[] = [
     reason: 'Modern test runners have built-in assertions.',
     difficulty: 'medium',
   },
-  
+
   // Build Tools
   {
     deprecated: 'gulp',
@@ -120,15 +121,16 @@ const BUILT_IN_MAPPINGS: ModernApiMapping[] = [
     reason: 'Grunt is largely obsolete. Use modern build tools.',
     difficulty: 'hard',
   },
-  
+
   // CSS
   {
     deprecated: 'node-sass',
     modern: 'sass (dart-sass)',
-    reason: 'node-sass is deprecated. dart-sass is the official implementation.',
+    reason:
+      'node-sass is deprecated. dart-sass is the official implementation.',
     difficulty: 'easy',
   },
-  
+
   // Crypto
   {
     deprecated: 'bcrypt-nodejs',
@@ -136,7 +138,7 @@ const BUILT_IN_MAPPINGS: ModernApiMapping[] = [
     reason: 'bcrypt-nodejs is unmaintained and has security issues.',
     difficulty: 'easy',
   },
-  
+
   // UUID
   {
     deprecated: 'uuid/v4',
@@ -144,7 +146,7 @@ const BUILT_IN_MAPPINGS: ModernApiMapping[] = [
     reason: 'Node.js 16+ has built-in crypto.randomUUID().',
     difficulty: 'easy',
   },
-  
+
   // State Management
   {
     deprecated: 'redux',
@@ -152,7 +154,7 @@ const BUILT_IN_MAPPINGS: ModernApiMapping[] = [
     reason: 'Modern state libraries have less boilerplate.',
     difficulty: 'hard',
   },
-  
+
   // Validation
   {
     deprecated: 'joi',
@@ -160,7 +162,7 @@ const BUILT_IN_MAPPINGS: ModernApiMapping[] = [
     reason: 'Zod has better TypeScript integration and smaller bundle.',
     difficulty: 'medium',
   },
-  
+
   // Bundlers
   {
     deprecated: 'webpack',
@@ -177,17 +179,19 @@ function matchPackage(importPath: string, deprecated: string): boolean {
   const packageName = importPath.startsWith('@')
     ? importPath.split('/').slice(0, 2).join('/')
     : importPath.split('/')[0];
-  
+
   return packageName === deprecated || importPath.startsWith(deprecated + '/');
 }
 
 export const preferModernApi = createRule<RuleOptions, MessageIds>({
   name: 'prefer-modern-api',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/prefer-modern-api.md',
-      description: 'Suggest modern replacements for deprecated or outdated libraries',
+      description:
+        'Suggest modern replacements for deprecated or outdated libraries',
     },
     messages: {
       preferModernApi: formatLLMMessage({
@@ -195,11 +199,9 @@ export const preferModernApi = createRule<RuleOptions, MessageIds>({
         issueName: 'Outdated Package',
         description:
           "'{{deprecated}}' is outdated. Consider migrating to {{modern}}. " +
-          "Reason: {{reason}}",
+          'Reason: {{reason}}',
         severity: 'LOW',
-        fix:
-          'Migration difficulty: {{difficulty}}\n' +
-          '{{migrationGuide}}',
+        fix: 'Migration difficulty: {{difficulty}}\n{{migrationGuide}}',
         documentationLink: '',
       }),
     },
@@ -215,7 +217,10 @@ export const preferModernApi = createRule<RuleOptions, MessageIds>({
                 deprecated: { type: 'string' },
                 modern: { type: 'string' },
                 reason: { type: 'string' },
-                difficulty: { type: 'string', enum: ['easy', 'medium', 'hard'] },
+                difficulty: {
+                  type: 'string',
+                  enum: ['easy', 'medium', 'hard'],
+                },
                 migrationGuide: { type: 'string' },
               },
               required: ['deprecated', 'modern', 'reason'],
@@ -236,15 +241,11 @@ export const preferModernApi = createRule<RuleOptions, MessageIds>({
       disableBuiltIn: false,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]: readonly [PreferModernApiOptions?],
+    currentOptions,
   ) {
-    const { customMappings = [], disableBuiltIn = false } = options;
-    
-    const allMappings = disableBuiltIn
-      ? customMappings
-      : [...BUILT_IN_MAPPINGS, ...customMappings];
+    let allMappings: ModernApiMapping[];
 
     function checkImport(importPath: string, node: TSESTree.Node) {
       // Only check package imports
@@ -271,6 +272,14 @@ export const preferModernApi = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { customMappings = [], disableBuiltIn = false } = options;
+
+        allMappings = disableBuiltIn
+          ? customMappings
+          : [...BUILT_IN_MAPPINGS, ...customMappings];
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const importPath = node.source.value;
         if (typeof importPath === 'string') {

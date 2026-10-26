@@ -34,6 +34,7 @@ type RuleOptions = [Options?];
 export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-inline-csp',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-unsafe-inline-csp.md',
@@ -65,25 +66,16 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
     // NOT global. `/…/g.test()` advances `lastIndex` on every match and
     // resumes from there on the next call, so in a file with two CSP strings
     // the second one was searched from an offset past its own match and came
     // back false — then reset, so the third reported again. Every second
     // finding in a file was silently dropped by the flag alone.
     const UNSAFE_INLINE_PATTERN = /'unsafe-inline'/i;
-
     /**
      * Directive names that only appear in a Content-Security-Policy.
      *
@@ -180,6 +172,17 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+        return true;
+      },
       // Check string literals
       Literal(node: TSESTree.Literal) {
         if (typeof node.value === 'string') {

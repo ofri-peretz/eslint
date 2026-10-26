@@ -10,7 +10,14 @@
  * @see OWASP LLM08: Vector & Embedding Weaknesses
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons, nameHasWord, objectKeyName } from '@interlace/eslint-devkit';
+import {
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  nameHasWord,
+  objectKeyName,
+} from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 import { calleeChain } from '../../utils/sdk';
 
@@ -28,10 +35,12 @@ type RuleOptions = [Options?];
 export const requireEmbeddingValidation = createRule<RuleOptions, MessageIds>({
   name: 'require-embedding-validation',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-embedding-validation.md',
-      description: 'Require validation of embeddings before storage or similarity search',
+      description:
+        'Require validation of embeddings before storage or similarity search',
       cwe: 'CWE-20',
       cvss: 5.5,
     },
@@ -42,11 +51,13 @@ export const requireEmbeddingValidation = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-20',
         owasp: 'A03:2021',
         cvss: 5.5,
-        description: 'Embedding from "{{source}}" used without validation. Malicious embeddings can poison vector stores.',
+        description:
+          'Embedding from "{{source}}" used without validation. Malicious embeddings can poison vector stores.',
         severity: 'MEDIUM',
         compliance: ['SOC2'],
         fix: 'Validate embeddings before use: const validated = validateEmbedding(embedding)',
-        documentationLink: 'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
+        documentationLink:
+          'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
       }),
     },
     schema: [
@@ -71,29 +82,31 @@ export const requireEmbeddingValidation = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       embeddingPatterns: [
-        'embed', 'embedding', 'embeddings', 'vector', 'encode',
-        'createEmbedding', 'getEmbedding', 'generateEmbedding',
+        'embed',
+        'embedding',
+        'embeddings',
+        'vector',
+        'encode',
+        'createEmbedding',
+        'getEmbedding',
+        'generateEmbedding',
       ],
       validatorFunctions: [
-        'validate', 'verify', 'check', 'sanitize', 'normalize',
-        'validateEmbedding', 'verifyVector',
+        'validate',
+        'verify',
+        'check',
+        'sanitize',
+        'normalize',
+        'validateEmbedding',
+        'verifyVector',
       ],
     },
   ],
-  create(context, [options]) {
-    // Every rule in this plugin is Vercel-AI-specific, and none of them knew
-    // it: over 107,384 files, 91% of this plugin's findings were in files with
-    // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
-    // the cheap path — a file without the SDK does no work.
-    if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
-
-    // Merged with `defaultOptions` before `create` runs.
-    const { embeddingPatterns, validatorFunctions } = options as Required<Options>;
-
-    const sourceCode = context.sourceCode;
-
-    // Vector store operations
-    const vectorStoreOps = ['upsert', 'insert', 'add', 'store', 'index', 'save'];
+  createOnce(context, currentOptions) {
+    let embeddingPatterns: string[];
+    let validatorFunctions: string[];
+    let sourceCode: typeof context.sourceCode;
+    let vectorStoreOps: string[];
 
     /**
      * Check if expression is an embedding call
@@ -101,7 +114,9 @@ export const requireEmbeddingValidation = createRule<RuleOptions, MessageIds>({
     function isEmbeddingCall(node: TSESTree.CallExpression): string | null {
       // Whole words of the call chain, not substrings.
       const chain = calleeChain(node.callee);
-      return embeddingPatterns.some((pattern: string) => nameHasWord(chain, pattern))
+      return embeddingPatterns.some((pattern: string) =>
+        nameHasWord(chain, pattern),
+      )
         ? sourceCode.getText(node.callee)
         : null;
     }
@@ -123,6 +138,24 @@ export const requireEmbeddingValidation = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule in this plugin is Vercel-AI-specific, and none of them knew
+        // it: over 107,384 files, 91% of this plugin's findings were in files with
+        // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
+        // the cheap path — a file without the SDK does no work.
+        if (!fileUsesVercelAi(context.sourceCode.ast)) return false;
+
+        // Merged with `defaultOptions` before `create` runs.
+        ({ embeddingPatterns, validatorFunctions } =
+          options as Required<Options>);
+
+        sourceCode = context.sourceCode;
+
+        // Vector store operations
+        vectorStoreOps = ['upsert', 'insert', 'add', 'store', 'index', 'save'];
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         // Check if this is a vector store operation
         if (!isVectorStoreOp(node)) return;
@@ -132,9 +165,13 @@ export const requireEmbeddingValidation = createRule<RuleOptions, MessageIds>({
           if (arg.type === 'ObjectExpression') {
             for (const prop of arg.properties) {
               if (prop.type !== 'Property') continue;
-              
+
               const keyName = objectKeyName(prop);
-              if (keyName === 'embedding' || keyName === 'vector' || keyName === 'values') {
+              if (
+                keyName === 'embedding' ||
+                keyName === 'vector' ||
+                keyName === 'values'
+              ) {
                 // Check if value is an unvalidated embedding call
                 let valueNode = prop.value;
                 if (valueNode.type === 'AwaitExpression') {

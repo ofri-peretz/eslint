@@ -43,7 +43,10 @@ ruleTester.run(
          return \`\${Date.now() % THIRTY_MINUTES}_\${Math.random().toString(36).substring(2, 15)}\`;
        }`,
       // The rest of the correlation family, same argument.
-      `function generateCorrelationId() { return Math.random().toString(36).slice(2); }`,
+      {
+        name: 'a correlation id built from Math.random is not a credential',
+        code: `function generateCorrelationId() { return Math.random().toString(36).slice(2); }`,
+      },
       `function generateTraceId() { return Math.random().toString(36).slice(2); }`,
       `function generateMessageId() { return Math.random().toString(36).slice(2); }`,
       `function generateElementId() { return Math.random().toString(36).slice(2); }`,
@@ -81,13 +84,11 @@ ruleTester.run(
     ],
 
     invalid: [
-
       // A computed callee names nothing the rule can read, so the call ahead of
 
       // the token is not evidence of a CSPRNG and the finding stands.
 
       {
-
         code: `function generateToken(helpers, key) {
 
            helpers[key]();
@@ -97,13 +98,11 @@ ruleTester.run(
          }`,
 
         errors: [{ messageId: 'mathRandomCrypto' as const }],
-
       },
 
       // Neither is an immediately-invoked function expression.
 
       {
-
         code: `function generateSecret() {
 
            (function warmUp() {})();
@@ -113,7 +112,6 @@ ruleTester.run(
          }`,
 
         errors: [{ messageId: 'mathRandomCrypto' as const }],
-
       },
       // A session id IS the credential — `session` is not a correlation word,
       // and this is the false negative the subtraction must not open.

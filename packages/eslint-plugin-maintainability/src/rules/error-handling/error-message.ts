@@ -24,6 +24,10 @@ type RuleOptions = [Options?];
 export const errorMessage = createRule<RuleOptions, MessageIds>({
   name: 'error-message',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'unicorn/error-message',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/error-message.md',
@@ -66,20 +70,9 @@ export const errorMessage = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allowEmptyCatch: false }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const { allowEmptyCatch = false } = options || {};
-
-    // Built-in Error constructors that should have messages
-    const errorConstructors = new Set([
-      'Error',
-      'TypeError',
-      'ReferenceError',
-      'SyntaxError',
-      'RangeError',
-      'EvalError',
-      'URIError',
-    ]);
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowEmptyCatch: boolean;
+    let errorConstructors: Set<string>;
 
     function isErrorConstructor(name: string): boolean {
       return errorConstructors.has(name);
@@ -180,6 +173,21 @@ export const errorMessage = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({ allowEmptyCatch = false } = options || {});
+
+        // Built-in Error constructors that should have messages
+        errorConstructors = new Set([
+          'Error',
+          'TypeError',
+          'ReferenceError',
+          'SyntaxError',
+          'RangeError',
+          'EvalError',
+          'URIError',
+        ]);
+      },
       NewExpression: checkErrorCreation,
       CallExpression: checkErrorCreation,
     };

@@ -1,3 +1,4 @@
+import { RuleCreator } from './rule-creator';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -295,8 +296,11 @@ export function createRequireTlsRule(
   });
   const originOf = createOriginClassifier(config.modules);
 
-  return {
+  return RuleCreator.withoutDocs<[], RequireTlsMessageIds>({
     meta: {
+      // Shared detection, shared runtimes: oxlint only if every plugin's rule
+      // from this factory passes its own suite there.
+      interop: { runtimes: ['eslint', 'oxlint'] },
       type: config.meta.type,
       docs: { ...config.meta.docs },
       messages: {
@@ -330,19 +334,14 @@ export function createRequireTlsRule(
       schema: [],
     },
     defaultOptions: [],
-    create(context) {
-      // BENCHMARK-CRITERIA §B1: a test pointing at a local database with
-      // TLS off is not the shipped connection.
-      if (isTestFilePath(context.filename)) return {};
-      const env = envOf(context);
-      let ownsFile = false;
-      /**
-       * Properties already reported. The TLS sub-object is reached twice —
-       * once while its parent config is scanned, and again when the
-       * ObjectExpression visitor lands on the sub-object itself — so without
-       * this a single `rejectUnauthorized: false` would report twice.
-       */
-      const reported = new WeakSet<TSESTree.Node>();
+    createOnce(context) {
+      let env: ReturnType<typeof envOf>;
+      let ownsFile: boolean;
+      let reported: WeakSet<TSESTree.Node>;
+
+      function isDriverCallee(callee: TSESTree.Node): boolean {
+        return originOf(valueAt(callee, env)) === 'ours';
+      }
 
       const report = (
         node: TSESTree.Node,
@@ -426,6 +425,21 @@ export function createRequireTlsRule(
       };
 
       return {
+        before() {
+          // BENCHMARK-CRITERIA §B1: a test pointing at a local database with
+          // TLS off is not the shipped connection.
+          if (isTestFilePath(context.filename)) return false;
+          env = envOf(context);
+          ownsFile = false;
+          /**
+           * Properties already reported. The TLS sub-object is reached twice —
+           * once while its parent config is scanned, and again when the
+           * ObjectExpression visitor lands on the sub-object itself — so without
+           * this a single `rejectUnauthorized: false` would report twice.
+           */
+          reported = new WeakSet<TSESTree.Node>();
+          return true;
+        },
         Program(program: TSESTree.Program) {
           ownsFile = usesModule(program);
         },
@@ -452,10 +466,6 @@ export function createRequireTlsRule(
           context.report({ node, messageId: 'tlsDisabled' });
         },
       };
-
-      function isDriverCallee(callee: TSESTree.Node): boolean {
-        return originOf(valueAt(callee, env)) === 'ours';
-      }
     },
-  };
+  });
 }

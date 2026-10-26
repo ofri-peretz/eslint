@@ -51,6 +51,7 @@ describe('detect-non-literal-fs-filename', () => {
           code: 'myFunction.readFile(filename);',
         },
         {
+          name: 'a readFile method on an arbitrary object is not an fs call',
           code: 'obj.readFile(userPath);',
         },
         // Guard clause validation - path validated with startsWith() before use

@@ -55,6 +55,7 @@ describe('no-unsafe-dynamic-require', () => {
           code: 'const fs = require(`fs`);',
         },
         {
+          name: 'a no-substitution template with a relative path names one module',
           code: 'const path = require(`./utils/path`);',
         },
         // Not a require call

@@ -10,7 +10,14 @@
  * @see OWASP ASI10: Logging & Monitoring
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons, isTestFilePath, memberPath } from '@interlace/eslint-devkit';
+import {
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  memberPath,
+} from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 import { optionValue, sdkCallName } from '../../utils/sdk';
 
@@ -26,6 +33,7 @@ type RuleOptions = [Options?];
 export const requireAuditLogging = createRule<RuleOptions, MessageIds>({
   name: 'require-audit-logging',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-audit-logging.md',
@@ -40,11 +48,13 @@ export const requireAuditLogging = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-778',
         owasp: 'A09:2021',
         cvss: 4.0,
-        description: '{{function}} call lacks audit logging. AI operations should be logged for security monitoring.',
+        description:
+          '{{function}} call lacks audit logging. AI operations should be logged for security monitoring.',
         severity: 'LOW',
         compliance: ['SOC2', 'PCI-DSS'],
         fix: 'Add logging: logger.info("AI call", { userId }); before the call',
-        documentationLink: 'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
+        documentationLink:
+          'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
       }),
     },
     schema: [
@@ -65,21 +75,7 @@ export const requireAuditLogging = createRule<RuleOptions, MessageIds>({
       allowInTests: true,
     },
   ],
-  create(context, [options]) {
-    // Every rule in this plugin is Vercel-AI-specific, and none of them knew
-    // it: over 107,384 files, 91% of this plugin's findings were in files with
-    // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
-    // the cheap path — a file without the SDK does no work.
-    if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
-
-    // Merged with `defaultOptions` before `create` runs.
-    const { allowInTests } = options as Required<Options>;
-
-    // Skip test files if allowed
-    if (allowInTests && isTestFilePath(context.filename)) {
-      return {};
-    }
-
+  createOnce(context, currentOptions) {
     /**
      * A logging call by shape: rooted at a logger (`console.log`,
      * `logger.info`, `log(...)`), or a member call to a log-level method
@@ -114,16 +110,22 @@ export const requireAuditLogging = createRule<RuleOptions, MessageIds>({
     function hasNearbyLogging(node: TSESTree.CallExpression): boolean {
       // Find the statement containing this call
       let statement: TSESTree.Node | null = node;
-      while (statement && statement.type !== 'ExpressionStatement' &&
-             statement.type !== 'VariableDeclaration' &&
-             statement.type !== 'ReturnStatement') {
+      while (
+        statement &&
+        statement.type !== 'ExpressionStatement' &&
+        statement.type !== 'VariableDeclaration' &&
+        statement.type !== 'ReturnStatement'
+      ) {
         statement = statement.parent ?? null;
       }
       if (!statement) return false;
 
       // Get the block or program containing this statement
       const block = statement.parent;
-      if (!block || (block.type !== 'BlockStatement' && block.type !== 'Program')) {
+      if (
+        !block ||
+        (block.type !== 'BlockStatement' && block.type !== 'Program')
+      ) {
         return false;
       }
 
@@ -139,6 +141,23 @@ export const requireAuditLogging = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule in this plugin is Vercel-AI-specific, and none of them knew
+        // it: over 107,384 files, 91% of this plugin's findings were in files with
+        // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
+        // the cheap path — a file without the SDK does no work.
+        if (!fileUsesVercelAi(context.sourceCode.ast)) return false;
+
+        // Merged with `defaultOptions` before `create` runs.
+        const { allowInTests } = options as Required<Options>;
+
+        // Skip test files if allowed
+        if (allowInTests && isTestFilePath(context.filename)) {
+          return false;
+        }
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const matchedFunction = sdkCallName(node);
         if (!matchedFunction) return;
@@ -156,7 +175,25 @@ export const requireAuditLogging = createRule<RuleOptions, MessageIds>({
 });
 
 /** Logger objects, matched as the first segment of the callee path. */
-const LOGGER_ROOTS = new Set(['log', 'logger', 'console', 'debug', 'winston', 'pino', 'bunyan', 'audit']);
+const LOGGER_ROOTS = new Set([
+  'log',
+  'logger',
+  'console',
+  'debug',
+  'winston',
+  'pino',
+  'bunyan',
+  'audit',
+]);
 
 /** Log-level methods, matched as the last segment of a member call. */
-const LOG_LEVELS = new Set(['log', 'info', 'warn', 'error', 'debug', 'trace', 'fatal', 'audit']);
+const LOG_LEVELS = new Set([
+  'log',
+  'info',
+  'warn',
+  'error',
+  'debug',
+  'trace',
+  'fatal',
+  'audit',
+]);

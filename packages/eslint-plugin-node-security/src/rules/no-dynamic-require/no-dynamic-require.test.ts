@@ -32,7 +32,10 @@ describe('no-dynamic-require', () => {
         'const lodash = require("lodash");',
 
         // Relative path — static string
-        'const config = require("./config");',
+        {
+          code: 'const config = require("./config");',
+          name: 'a relative path given as a literal is a static require',
+        },
         'const utils = require("../utils/helper");',
 
         // JSON require — static
@@ -240,7 +243,8 @@ const pkg = nodeRequire('./package.json');`,
         {
           name: 'a const bound to a call that is not createRequire is not a loader',
           code: 'const nodeRequire = makeLoader(); const mod = nodeRequire(userPath);',
-        },        {
+        },
+        {
           name: 'a .main.require chain rooted at something other than require is not a loader',
           code: 'const mod = app.main.require(userPath);',
         },

@@ -45,7 +45,10 @@ import {
   MessageIcons,
   isTestFilePath,
 } from '@interlace/eslint-devkit';
-import { isLoopbackUrl, isReservedExampleUrl } from '../../utils/loopback-hosts';
+import {
+  isLoopbackUrl,
+  isReservedExampleUrl,
+} from '../../utils/loopback-hosts';
 
 /**
  * URL schemes are ASCII case-insensitive, so `WS://legacy…` opens exactly the
@@ -72,6 +75,7 @@ type RuleOptions = [Options?];
 export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
   name: 'require-websocket-wss',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/require-websocket-wss.md',
@@ -124,17 +128,12 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true, allowLocalhost: true }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = true, allowLocalhost = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
+    let allowInTests: boolean;
+    let allowLocalhost: boolean;
 
     /**
      * Is there no cleartext transmission to report for this URL?
@@ -146,7 +145,9 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
      */
     // oxlint-disable-next-line consistent-function-scoping
     function isNonTransmitting(url: string): boolean {
-      return (allowLocalhost && isLoopbackUrl(url)) || isReservedExampleUrl(url);
+      return (
+        (allowLocalhost && isLoopbackUrl(url)) || isReservedExampleUrl(url)
+      );
     }
 
     /**
@@ -190,10 +191,7 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
           const originalText = context.sourceCode.getText(urlArg);
           // The literal's text starts with its quote, so the scheme is not at
           // index 0 — anchor on the delimiter instead of the string start.
-          const fixedText = originalText.replace(
-            /(?<=^.)ws:\/\//i,
-            'wss://',
-          );
+          const fixedText = originalText.replace(/(?<=^.)ws:\/\//i, 'wss://');
 
           // An escaped scheme (`'\x77s://h'`) decodes to `ws://` but is not
           // spelled that way in source, so the rewrite is a no-op. Report it —
@@ -228,8 +226,14 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
           // The authority the template actually writes down. When the next
           // `${…}` supplies it there is no host to exempt, and the connection
           // is cleartext whatever it resolves to, so it reports.
-          const authority = /^ws:\/\/([^/?#]*)/i.exec(firstQuasi.value.raw)?.[1];
-          if (authority !== undefined && authority !== '' && isNonTransmitting(`ws://${authority}`)) {
+          const authority = /^ws:\/\/([^/?#]*)/i.exec(
+            firstQuasi.value.raw,
+          )?.[1];
+          if (
+            authority !== undefined &&
+            authority !== '' &&
+            isNonTransmitting(`ws://${authority}`)
+          ) {
             return;
           }
 
@@ -254,6 +258,17 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({ allowInTests = true, allowLocalhost = true } = options as Options);
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+        return true;
+      },
       NewExpression(node: TSESTree.NewExpression) {
         // Check for new WebSocket()
         if (

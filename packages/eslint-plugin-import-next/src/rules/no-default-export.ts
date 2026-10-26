@@ -13,9 +13,7 @@ import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'defaultExport'
-  | 'preferNamedExport'
-  | 'defaultExportRefactor';
+  'defaultExport' | 'preferNamedExport' | 'defaultExportRefactor';
 
 export interface Options {
   /** Allow default exports in specific files */
@@ -31,6 +29,10 @@ type RuleOptions = [Options?];
 export const noDefaultExport = createRule<RuleOptions, MessageIds>({
   name: 'no-default-export',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/no-default-export',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-default-export.md',
@@ -103,15 +105,11 @@ export const noDefaultExport = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const {
-      allowInFiles = [],
-      allowPatterns = [],
-      suggestNamed = true,
-    } = options || {};
-
-    const filename = context.filename;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowInFiles: string[];
+    let allowPatterns: string[];
+    let suggestNamed: boolean;
+    let filename: string;
 
     function shouldAllow(): boolean {
       if (!filename) {
@@ -178,6 +176,16 @@ export const noDefaultExport = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({
+          allowInFiles = [],
+          allowPatterns = [],
+          suggestNamed = true,
+        } = options || {});
+
+        filename = context.filename;
+      },
       ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration) {
         if (shouldAllow()) {
           return;
@@ -285,7 +293,10 @@ export const noDefaultExport = createRule<RuleOptions, MessageIds>({
 
       TSTypeAliasDeclaration(node: TSESTree.TSTypeAliasDeclaration) {
         // Similar to interfaces
-        if (node.parent && node.parent.type === AST_NODE_TYPES.ExportDefaultDeclaration) {
+        if (
+          node.parent &&
+          node.parent.type === AST_NODE_TYPES.ExportDefaultDeclaration
+        ) {
           return;
         }
       },

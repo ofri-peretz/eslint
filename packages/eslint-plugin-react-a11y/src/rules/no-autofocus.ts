@@ -25,6 +25,10 @@ type RuleOptions = [Options?];
 export const noAutofocus = createRule<RuleOptions, MessageIds>({
   name: 'no-autofocus',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/no-autofocus',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-autofocus.md',
@@ -62,7 +66,7 @@ export const noAutofocus = createRule<RuleOptions, MessageIds>({
       ignoreNonDOM: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (

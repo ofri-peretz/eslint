@@ -22,12 +22,14 @@
 // Security rules - Injection
 import { noGraphqlInjection } from './rules/no-graphql-injection';
 import { noBidiCharacters } from './rules/no-bidi-characters';
+import { noInvisibleCharacters } from './rules/no-invisible-characters';
 import { noXxeInjection } from './rules/no-xxe-injection';
 import { noXpathInjection } from './rules/no-xpath-injection';
 import { noLdapInjection } from './rules/no-ldap-injection';
 import { noDirectiveInjection } from './rules/no-directive-injection';
 import { noFormatStringInjection } from './rules/no-format-string-injection';
 import { noTemplateInjection } from './rules/no-template-injection';
+import { noDisabledTemplateEscaping } from './rules/no-disabled-template-escaping';
 import { noSqlInjection } from './rules/no-sql-injection';
 import { noLogInjection } from './rules/no-log-injection';
 
@@ -143,6 +145,11 @@ export const rules: Record<
   'no-hardcoded-session-tokens': noHardcodedSessionTokens,
   'require-secure-defaults': requireSecureDefaults,
   'no-bidi-characters': noBidiCharacters,
+  // Drop-in parity with eslint-plugin-security@4.2.0: its
+  // `detect-invisible-characters` and `detect-disable-mustache-escape` had no
+  // equivalent here (docs/intents/oxlint-plugin-security-drop-in, R10).
+  'no-invisible-characters': noInvisibleCharacters,
+  'no-disabled-template-escaping': noDisabledTemplateEscaping,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**

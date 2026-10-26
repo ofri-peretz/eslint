@@ -222,6 +222,7 @@ const isDangerousDestination = (destText: string): boolean => {
 export const noZipSlip = createRule<RuleOptions, MessageIds>({
   name: 'no-zip-slip',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-zip-slip.md',
@@ -346,55 +347,16 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       ],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const archiveEntryFields = new Set<string>(
-      options.archiveEntryFields ?? DEFAULT_ARCHIVE_ENTRY_FIELDS,
-    );
-    const {
-      archiveFunctions = [
-        'extract',
-        'extractAll',
-        'extractAllTo',
-        'unzip',
-        'untar',
-        'extractArchive',
-      ],
-      pathValidationFunctions = [
-        'validatePath',
-        'sanitizePath',
-        'checkPath',
-        'safePath',
-      ],
-      safeLibraries = [
-        'yauzl',
-        'safe-archive-extract',
-        'tar-stream',
-        'unzipper',
-      ],
-      archiveModules = DEFAULT_ARCHIVE_MODULES,
-      reportWithoutArchiveContext = false,
-    }: Options = options;
-
-    const filename = context.filename;
-    const archiveModuleSet = new Set(
-      archiveModules.map((name) => name.toLowerCase()),
-    );
-
-    /**
-     * Does this file work with archives at all?
-     *
-     * True when it imports or requires an archive module, or when it contains
-     * an archive-extraction call. Collected across the whole file before any
-     * judgement is made, so a `require('adm-zip')` below the extraction still
-     * counts — a rule that depended on statement order would be reporting on
-     * formatting.
-     */
-    let hasArchiveContext = reportWithoutArchiveContext;
-    const isArchiveModule = (specifier: unknown): boolean =>
-      typeof specifier === 'string' &&
-      archiveModuleSet.has(specifier.toLowerCase());
-
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let archiveEntryFields: Set<string>;
+    let archiveFunctions: string[];
+    let pathValidationFunctions: string[];
+    let safeLibraries: string[];
+    let archiveModules: string[];
+    let reportWithoutArchiveContext: boolean;
+    let filename: string;
+    let archiveModuleSet: Set<string>;
+    let hasArchiveContext: boolean;
     /**
      * Names that only appear when archives are in play: `new AdmZip(file)`,
      * `zipfile.readEntry()`, `tarStream.extract()`.
@@ -409,6 +371,11 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
      */
     const ARCHIVE_NAME =
       /zip|tarball|archive|gzip|gunzip|untar|tarstream|\btar\b/i;
+    let pending: (() => void)[];
+    let EXITS: Set<string>;
+    const isArchiveModule = (specifier: unknown): boolean =>
+      typeof specifier === 'string' &&
+      archiveModuleSet.has(specifier.toLowerCase());
     const namesArchive = (node: TSESTree.Node): boolean => {
       if (node.type === 'Identifier') return ARCHIVE_NAME.test(node.name);
       if (node.type === 'MemberExpression') {
@@ -419,9 +386,6 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       }
       return false;
     };
-
-    /** Shapes deferred to Program:exit, once archive context is known. */
-    const pending: (() => void)[] = [];
 
     // Safety checks are implemented directly in the handlers
 
@@ -531,14 +495,6 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           : needle.startsWith('..'));
       return findsTraversal ? 'false' : 'true';
     };
-
-    /** Does this statement always leave the enclosing list? */
-    const EXITS = new Set([
-      'ReturnStatement',
-      'ThrowStatement',
-      'ContinueStatement',
-      'BreakStatement',
-    ]);
     const alwaysExits = (statement: TSESTree.Statement): boolean =>
       EXITS.has(statement.type) ||
       (statement.type === 'BlockStatement' &&
@@ -722,6 +678,63 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        archiveEntryFields = new Set<string>(
+          options.archiveEntryFields ?? DEFAULT_ARCHIVE_ENTRY_FIELDS,
+        );
+        ({
+          archiveFunctions = [
+            'extract',
+            'extractAll',
+            'extractAllTo',
+            'unzip',
+            'untar',
+            'extractArchive',
+          ],
+          pathValidationFunctions = [
+            'validatePath',
+            'sanitizePath',
+            'checkPath',
+            'safePath',
+          ],
+          safeLibraries = [
+            'yauzl',
+            'safe-archive-extract',
+            'tar-stream',
+            'unzipper',
+          ],
+          archiveModules = DEFAULT_ARCHIVE_MODULES,
+          reportWithoutArchiveContext = false,
+        } = options);
+
+        filename = context.filename;
+        archiveModuleSet = new Set(
+          archiveModules.map((name) => name.toLowerCase()),
+        );
+
+        /**
+         * Does this file work with archives at all?
+         *
+         * True when it imports or requires an archive module, or when it contains
+         * an archive-extraction call. Collected across the whole file before any
+         * judgement is made, so a `require('adm-zip')` below the extraction still
+         * counts — a rule that depended on statement order would be reporting on
+         * formatting.
+         */
+        hasArchiveContext = reportWithoutArchiveContext;
+
+        /** Shapes deferred to Program:exit, once archive context is known. */
+        pending = [];
+
+        /** Does this statement always leave the enclosing list? */
+        EXITS = new Set([
+          'ReturnStatement',
+          'ThrowStatement',
+          'ContinueStatement',
+          'BreakStatement',
+        ]);
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         if (isArchiveModule(node.source.value)) hasArchiveContext = true;
       },

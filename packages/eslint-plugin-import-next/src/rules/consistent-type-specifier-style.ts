@@ -28,6 +28,10 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
   {
     name: 'consistent-type-specifier-style',
     meta: {
+      interop: {
+        runtimes: ['eslint', 'oxlint'],
+        nativeEquivalent: 'import/consistent-type-specifier-style',
+      },
       type: 'suggestion',
       docs: {
         url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/consistent-type-specifier-style.md',
@@ -73,9 +77,9 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
     },
     defaultOptions: ['prefer-inline'],
 
-    create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-      const style = context.options[0] || 'prefer-inline';
-      const sourceCode = context.sourceCode;
+    createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+      let style: Style;
+      let sourceCode: Readonly<TSESLint.SourceCode>;
 
       /**
        * Get the text for a specifier, handling aliasing
@@ -89,13 +93,20 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
         const imported = sourceCode.getText(spec.imported);
         const local = spec.local.name;
 
-        if (spec.imported.type === 'Identifier' && spec.imported.name === local) {
+        if (
+          spec.imported.type === 'Identifier' &&
+          spec.imported.name === local
+        ) {
           return imported;
         }
         return `${imported} as ${local}`;
       }
 
       return {
+        before() {
+          style = context.options[0] || 'prefer-inline';
+          sourceCode = context.sourceCode;
+        },
         ImportDeclaration(node: TSESTree.ImportDeclaration) {
           const isTypeImport = node.importKind === 'type';
 
@@ -104,7 +115,8 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
           // `rebuildWouldDropABinding` already guards below. Losing the attribute is a
           // semantic change (TS1543, and ERR_IMPORT_ATTRIBUTE_MISSING at runtime), so
           // the preference still holds and only the rewrite stops.
-          const rebuildWouldDropAnAttribute = (node.attributes?.length ?? 0) > 0;
+          const rebuildWouldDropAnAttribute =
+            (node.attributes?.length ?? 0) > 0;
 
           if (style === 'prefer-inline') {
             // If using top-level type import with named specifiers, suggest inline
@@ -120,7 +132,9 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
                   messageId: 'preferInline',
                   data: {
                     name: namedSpecifiers
-                      .map((s: TSESTree.ImportSpecifier) => `type ${s.local.name}`)
+                      .map(
+                        (s: TSESTree.ImportSpecifier) => `type ${s.local.name}`,
+                      )
                       .join(', '),
                   },
                   fix: rebuildWouldDropAnAttribute

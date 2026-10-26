@@ -17,6 +17,7 @@ type MessageIds = 'defaultPropsMatchPropTypes';
 export const defaultPropsMatchPropTypes = createRule<[], MessageIds>({
   name: 'default-props-match-prop-types',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/default-props-match-prop-types.md',
@@ -36,11 +37,15 @@ export const defaultPropsMatchPropTypes = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
-    const propTypes = new Map<string, TSESTree.Property>();
-    const defaultProps = new Map<string, TSESTree.Property>();
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
+    let propTypes: Map<string, TSESTree.Property>;
+    let defaultProps: Map<string, TSESTree.Property>;
 
     return {
+      before() {
+        propTypes = new Map<string, TSESTree.Property>();
+        defaultProps = new Map<string, TSESTree.Property>();
+      },
       // Collect propTypes (PropertyDefinition is used by TypeScript parser)
       'PropertyDefinition[key.name="propTypes"]'(
         node: TSESTree.PropertyDefinition,

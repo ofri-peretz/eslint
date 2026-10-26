@@ -46,6 +46,7 @@ type RuleOptions = [];
 export const noTypos = createRule<RuleOptions, MessageIds>({
   name: 'no-typos',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-typos.md',
@@ -64,7 +65,7 @@ export const noTypos = createRule<RuleOptions, MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       // Check class property names (PropertyDefinition is used by TypeScript parser)
       PropertyDefinition(node: TSESTree.PropertyDefinition) {

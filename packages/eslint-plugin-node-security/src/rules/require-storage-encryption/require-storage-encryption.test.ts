@@ -22,8 +22,14 @@ ruleTester.run('require-storage-encryption', requireStorageEncryption, {
     'const items = [];',
     'const obj = {};',
     'class Foo {}',
-    { name: "the platform's encrypted store", code: "await SecureStore.setItemAsync('token', token)" },
-    { code: 'const encrypted = encrypt(data)' },
+    {
+      name: "the platform's encrypted store",
+      code: "await SecureStore.setItemAsync('token', token)",
+    },
+    {
+      code: 'const encrypted = encrypt(data)',
+      name: 'encrypting data with no storage write is not reported',
+    },
   ],
 
   invalid: [
@@ -87,7 +93,6 @@ ruleTester.run(
       // Not a write at all.
       { code: "fs.readFileSync('creds.json')" },
       { code: "obj[method]('creds.json', password)" },
-
     ],
     invalid: [
       {

@@ -1,3 +1,4 @@
+import { RuleCreator } from '@interlace/eslint-devkit';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -26,7 +27,10 @@ import { usesPostgres } from '../../utils';
  * keyword and the star and would otherwise break the match.
  */
 const SELECT_PREFIX = String.raw`SELECT\s+(?:ALL\s+|DISTINCT\s+(?:ON\s*\([^)]*\)\s*)?)?`;
-const SELECT_STAR = new RegExp(String.raw`\b${SELECT_PREFIX}(?:[A-Za-z_][\w$]*\s*\.\s*)?\*`, 'i');
+const SELECT_STAR = new RegExp(
+  String.raw`\b${SELECT_PREFIX}(?:[A-Za-z_][\w$]*\s*\.\s*)?\*`,
+  'i',
+);
 /**
  * `SELECT a, *` / `SELECT o.id, u.*` — the star after the first column.
  *
@@ -46,7 +50,10 @@ const SELECT_KEYWORD = /\bSELECT\b/i;
  * No column is fetched, so there is nothing to make explicit, and `EXISTS
  * (SELECT *)` is common enough that reporting it is pure noise.
  */
-const EXISTS_STAR = new RegExp(String.raw`\bEXISTS\s*\(\s*${SELECT_PREFIX}\*`, 'gi');
+const EXISTS_STAR = new RegExp(
+  String.raw`\bEXISTS\s*\(\s*${SELECT_PREFIX}\*`,
+  'gi',
+);
 
 /**
  * `SELECT * FROM unnest($1::int[], $2::text[])` and its relatives.
@@ -136,10 +143,14 @@ function stripSqlNoise(sql: string): string {
  * list is written out one level down, so the outer star names nothing implicit;
  * a star INSIDE the derived table is still matched on its own.
  */
-const SELECT_STAR_FROM_DERIVED = new RegExp(String.raw`\b${SELECT_PREFIX}\*\s+FROM\s*\(`, 'gi');
+const SELECT_STAR_FROM_DERIVED = new RegExp(
+  String.raw`\b${SELECT_PREFIX}\*\s+FROM\s*\(`,
+  'gi',
+);
 
 /** The names a `WITH` clause declares: `WITH a AS (…), b(x, y) AS (…)`. */
-const CTE_NAME = /(?:\bWITH(?:\s+RECURSIVE)?|,)\s{0,20}([A-Za-z_][\w$]{0,62})\s{0,20}(?:\([^)]{0,500}\)\s{0,20})?AS\s*(?:NOT\s+)?(?:MATERIALIZED\s+)?\(/gi;
+const CTE_NAME =
+  /(?:\bWITH(?:\s+RECURSIVE)?|,)\s{0,20}([A-Za-z_][\w$]{0,62})\s{0,20}(?:\([^)]{0,500}\)\s{0,20})?AS\s*(?:NOT\s+)?(?:MATERIALIZED\s+)?\(/gi;
 
 /**
  * Rewrite `SELECT * FROM <cte>` to a projection when `<cte>` is a common table
@@ -151,7 +162,10 @@ function exemptCteStars(sql: string): string {
   for (const [, name] of sql.matchAll(CTE_NAME)) {
     const escaped = name.replaceAll('$', '\\$');
     out = out.replace(
-      new RegExp(String.raw`\b${SELECT_PREFIX}\*(\s+FROM\s+${escaped}\b)`, 'gi'),
+      new RegExp(
+        String.raw`\b${SELECT_PREFIX}\*(\s+FROM\s+${escaped}\b)`,
+        'gi',
+      ),
       'SELECT 1$1',
     );
   }
@@ -186,7 +200,10 @@ function selectsEveryColumn(sql: string): boolean {
  * so `SELECT ${columns} FROM t` does not collapse into `SELECT FROM t` and read
  * as a star.
  */
-function queryText(node: TSESTree.Node, scope: TSESLint.Scope.Scope): string | null {
+function queryText(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): string | null {
   if (node.type === AST_NODE_TYPES.Literal) {
     return typeof node.value === 'string' ? node.value : null;
   }
@@ -200,7 +217,8 @@ function queryText(node: TSESTree.Node, scope: TSESLint.Scope.Scope): string | n
         ((property.key.type === AST_NODE_TYPES.Identifier &&
           !property.computed &&
           property.key.name === 'text') ||
-          (property.key.type === AST_NODE_TYPES.Literal && property.key.value === 'text')),
+          (property.key.type === AST_NODE_TYPES.Literal &&
+            property.key.value === 'text')),
     );
     return text === undefined ? null : queryText(text.value, scope);
   }
@@ -217,11 +235,19 @@ function queryText(node: TSESTree.Node, scope: TSESLint.Scope.Scope): string | n
  * something else by the time it reaches the driver, and guessing would be
  * reporting on evidence the file does not have.
  */
-function bindingText(node: TSESTree.Identifier, scope: TSESLint.Scope.Scope): string | null {
-  for (let current: TSESLint.Scope.Scope | null = scope; current; current = current.upper) {
+function bindingText(
+  node: TSESTree.Identifier,
+  scope: TSESLint.Scope.Scope,
+): string | null {
+  for (
+    let current: TSESLint.Scope.Scope | null = scope;
+    current;
+    current = current.upper
+  ) {
     const variable = current.set.get(node.name);
     if (variable === undefined) continue;
-    if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return null;
+    if (variable.references.filter((ref) => ref.isWrite()).length !== 1)
+      return null;
     const def = variable.defs.find((d) => d.type === 'Variable');
     if (def === undefined) return null;
     const init = (def.node as TSESTree.VariableDeclarator).init;
@@ -231,8 +257,12 @@ function bindingText(node: TSESTree.Identifier, scope: TSESLint.Scope.Scope): st
   return null;
 }
 
-export const noSelectAll: TSESLint.RuleModule<'noSelectAll', NoSelectAllOptions> = {
+export const noSelectAll: TSESLint.RuleModule<
+  'noSelectAll',
+  NoSelectAllOptions
+> = RuleCreator.withoutDocs<NoSelectAllOptions, 'noSelectAll'>({
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       description: 'Prevent using * in SELECT statements (implicit columns).',
@@ -256,14 +286,16 @@ export const noSelectAll: TSESLint.RuleModule<'noSelectAll', NoSelectAllOptions>
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    // Every rule here is PostgreSQL-specific, and none of them knew it: over
-    // 108,838 files, 94% of this plugin's findings were in files with no
-    // PostgreSQL client at all. Registering no visitors is both the gate and
-    // the cheap path — a file with no database in it does no work.
-    if (!usesPostgres(context)) return {};
-
+  createOnce(context) {
     return {
+      before() {
+        // Every rule here is PostgreSQL-specific, and none of them knew it: over
+        // 108,838 files, 94% of this plugin's findings were in files with no
+        // PostgreSQL client at all. Registering no visitors is both the gate and
+        // the cheap path — a file with no database in it does no work.
+        if (!usesPostgres(context)) return false;
+        return true;
+      },
       CallExpression(node) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
@@ -283,4 +315,4 @@ export const noSelectAll: TSESLint.RuleModule<'noSelectAll', NoSelectAllOptions>
       },
     };
   },
-};
+});

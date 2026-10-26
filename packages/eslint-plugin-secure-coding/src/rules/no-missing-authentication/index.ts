@@ -407,6 +407,7 @@ function matchesIgnorePattern(text: string, patterns: string[]): boolean {
 export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-authentication',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-missing-authentication.md',
@@ -501,56 +502,21 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
       additionalRouterNameWords: [],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      allowInTests = false,
-      testFilePattern,
-      authMiddlewarePatterns = DEFAULT_AUTH_MIDDLEWARE_PATTERNS,
-      routeHandlerPatterns = DEFAULT_ROUTE_HANDLER_PATTERNS,
-      ignorePatterns = DEFAULT_PUBLIC_ROUTE_PATTERNS,
-      routerNameWords = ROUTER_NAME_WORDS,
-      additionalRouterNameWords = [],
-    } = options as Options;
-
-    const routerWords = [...routerNameWords, ...additionalRouterNameWords];
-
-    const filename = context.filename;
-    // Guarded: a user pattern reaches `new RegExp` here. Measured before this
-    // change: `(a+)+$` took 45-58s on a single file, and `[` threw
-    // "Invalid regular expression" out of create(), killing the whole lint
-    // run rather than just this rule. compileUserPattern degrades both to a
-    // substring match.
-    // Unset — the normal case — the shared structural predicate decides, so the
-    // verdict cannot depend on where the repo is checked out. A user who sets
-    // the option still overrides it exactly.
-    const isTestFile =
-      allowInTests &&
-      (testFilePattern == null
-        ? isTestFilePath(filename)
-        : compileUserPattern(testFilePattern).test(filename));
-    const sourceCode = context.sourceCode;
-
-    /**
-     * DEFAULT_PUBLIC_ROUTE_PATTERNS describes ROUTE PATHS — `/login`,
-     * `/healthz`, `/metrics`. The shipped rule also tested them against
-     * `sourceCode.getText(node)`, the ENTIRE registration including the
-     * handler body, and `status` is on that list. Every Express handler that
-     * writes `res.status(500)` therefore silenced the rule about its own
-     * missing authentication:
-     *
-     *   app.get('/admin/accounts', async (req, res) => {   // reported
-     *     try { res.json(await listUsers()); }
-     *     catch { res.status(500).end(); }                 // NOT reported
-     *   });
-     *
-     * A user-supplied `ignorePatterns` is a deliberate escape hatch, so it
-     * keeps matching the whole call; the built-in path list does not.
-     */
-    const scansWholeCallText =
-      (context.options[0] as Options | undefined)?.ignorePatterns !== undefined;
+    let allowInTests: boolean;
+    let testFilePattern: string | null | undefined;
+    let authMiddlewarePatterns: string[];
+    let routeHandlerPatterns: string[];
+    let ignorePatterns: string[];
+    let routerNameWords: string[];
+    let additionalRouterNameWords: string[];
+    let routerWords: string[];
+    let isTestFile: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let scansWholeCallText: boolean;
 
     /**
      * Does this object denote an HTTP application or router?
@@ -832,6 +798,56 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          allowInTests = false,
+          testFilePattern,
+          authMiddlewarePatterns = DEFAULT_AUTH_MIDDLEWARE_PATTERNS,
+          routeHandlerPatterns = DEFAULT_ROUTE_HANDLER_PATTERNS,
+          ignorePatterns = DEFAULT_PUBLIC_ROUTE_PATTERNS,
+          routerNameWords = ROUTER_NAME_WORDS,
+          additionalRouterNameWords = [],
+        } = options as Options);
+
+        routerWords = [...routerNameWords, ...additionalRouterNameWords];
+
+        const filename = context.filename;
+        // Guarded: a user pattern reaches `new RegExp` here. Measured before this
+        // change: `(a+)+$` took 45-58s on a single file, and `[` threw
+        // "Invalid regular expression" out of create(), killing the whole lint
+        // run rather than just this rule. compileUserPattern degrades both to a
+        // substring match.
+        // Unset — the normal case — the shared structural predicate decides, so the
+        // verdict cannot depend on where the repo is checked out. A user who sets
+        // the option still overrides it exactly.
+        isTestFile =
+          allowInTests &&
+          (testFilePattern == null
+            ? isTestFilePath(filename)
+            : compileUserPattern(testFilePattern).test(filename));
+        sourceCode = context.sourceCode;
+
+        /**
+         * DEFAULT_PUBLIC_ROUTE_PATTERNS describes ROUTE PATHS — `/login`,
+         * `/healthz`, `/metrics`. The shipped rule also tested them against
+         * `sourceCode.getText(node)`, the ENTIRE registration including the
+         * handler body, and `status` is on that list. Every Express handler that
+         * writes `res.status(500)` therefore silenced the rule about its own
+         * missing authentication:
+         *
+         *   app.get('/admin/accounts', async (req, res) => {   // reported
+         *     try { res.json(await listUsers()); }
+         *     catch { res.status(500).end(); }                 // NOT reported
+         *   });
+         *
+         * A user-supplied `ignorePatterns` is a deliberate escape hatch, so it
+         * keeps matching the whole call; the built-in path list does not.
+         */
+        scansWholeCallText =
+          (context.options[0] as Options | undefined)?.ignorePatterns !==
+          undefined;
+      },
       CallExpression: checkCallExpression,
     };
   },

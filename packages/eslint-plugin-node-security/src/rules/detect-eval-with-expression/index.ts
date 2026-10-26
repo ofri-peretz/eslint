@@ -276,6 +276,7 @@ export const generateRefactoringSteps = (
 export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
   name: 'detect-eval-with-expression',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/detect-eval-with-expression.md',
@@ -415,23 +416,17 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       strategy: 'auto',
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const {
-      allowLiteralStrings = false,
-      additionalEvalFunctions = [],
-      strategy = 'auto',
-    }: Options = options;
-
-    /**
-     * All functions that can execute arbitrary code
-     * NOTE: setTimeout/setInterval are NOT eval-like - they don't execute code strings
-     */
-    const evalFunctions = new Set([
-      'eval',
-      'Function',
-      ...additionalEvalFunctions,
-    ]);
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowLiteralStrings: boolean;
+    let additionalEvalFunctions: string[];
+    let strategy: 'remove' | 'refactor' | 'validate' | 'auto';
+    let evalFunctions: Set<string>;
+    let GLOBAL_OBJECTS: Set<string>;
+    let vmBindings: Map<string, string>;
+    let vm2Bindings: Map<string, string>;
+    let vm2SandboxCandidates: { local: string; init: TSESTree.NewExpression }[];
+    let pendingVmCalls: TSESTree.CallExpression[];
+    let pendingVmNews: TSESTree.NewExpression[];
 
     /**
      * Check if a node is a literal string (safe)
@@ -483,26 +478,10 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     /**
      * Extract expression text for pattern analysis
      */
-    const extractExpression = (node: TSESTree.CallExpression): string => {
-      const sourceCode = context.sourceCode;
-
-      // Try to get the argument text
-      if (node.arguments.length > 0) {
-        return sourceCode.getText(node.arguments[0]);
-      }
-
-      return 'dynamic expression';
-    };
-
-    /**
-     * Global objects that expose `eval` as a property.
-     *
-     * `globalThis.eval(src)` is how isomorphic code reaches eval without a
-     * bundler's static analysis noticing, and it is the same sink. Exact
-     * membership against a closed set of global names — not a substring test.
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    const GLOBAL_OBJECTS = new Set(['globalThis', 'global', 'window', 'self']);
+    const extractExpression = (node: TSESTree.CallExpression): string =>
+      // `checkCallExpression` returns on a call with no argument before it
+      // gets here, so the first argument always exists.
+      context.sourceCode.getText(node.arguments[0] as TSESTree.Node);
 
     /**
      * Which eval-like function this callee ultimately names, if any.
@@ -589,21 +568,19 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       // Check if it's a call to an eval-like function
       const evalName = evalCalleeName(node.callee);
       if (evalName !== null) {
+        // A bare `eval()` has no string to run: it returns `undefined` and
+        // executes nothing. eslint-plugin-security is silent on it too, and
+        // reporting it was the one false positive the eslint-plugin-security
+        // drop-in gate measured on this rule.
+        if (node.arguments.length === 0) return;
+
         // Skip if it's a literal string and literals are allowed
-        if (
-          allowLiteralStrings &&
-          node.arguments.length > 0 &&
-          isLiteralString(node.arguments[0])
-        ) {
+        if (allowLiteralStrings && isLiteralString(node.arguments[0])) {
           return;
         }
 
         // Skip if it's a direct string literal (safe)
-        if (
-          node.arguments.length > 0 &&
-          evalName === 'eval' &&
-          isLiteralString(node.arguments[0])
-        ) {
+        if (evalName === 'eval' && isLiteralString(node.arguments[0])) {
           return;
         }
 
@@ -686,27 +663,6 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         });
       }
     };
-
-    // ── vm / vm2 code-execution sinks ────────────────────────────────────
-    //
-    // Same class of defect as `eval(expr)`: a string becomes running code. The
-    // only reason it needs its own pass is that the sink is reached through a
-    // module binding, so nothing can be judged until every binding in the file
-    // is known — hence the collect-then-judge shape, mirroring
-    // `detect-non-literal-fs-filename`. A `const vm = require('vm')` written
-    // *below* the call would otherwise leave the call silently unchecked.
-
-    /** Local name → export of `vm` it is bound to ('*' = the module itself). */
-    const vmBindings = new Map<string, string>();
-    /** Local name → export of `vm2` it is bound to ('*' = the module itself). */
-    const vm2Bindings = new Map<string, string>();
-    /** `const s = new NodeVM()` — locals holding a vm2 sandbox. */
-    const vm2SandboxCandidates: Array<{
-      local: string;
-      init: TSESTree.NewExpression;
-    }> = [];
-    const pendingVmCalls: TSESTree.CallExpression[] = [];
-    const pendingVmNews: TSESTree.NewExpression[] = [];
 
     /** The nearest binding for an identifier, walking outward through scopes. */
     const findVariable = (node: TSESTree.Identifier) => {
@@ -896,6 +852,52 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({
+          allowLiteralStrings = false,
+          additionalEvalFunctions = [],
+          strategy = 'auto',
+        } = options);
+
+        /**
+         * All functions that can execute arbitrary code
+         * NOTE: setTimeout/setInterval are NOT eval-like - they don't execute code strings
+         */
+        evalFunctions = new Set([
+          'eval',
+          'Function',
+          ...additionalEvalFunctions,
+        ]);
+
+        /**
+         * Global objects that expose `eval` as a property.
+         *
+         * `globalThis.eval(src)` is how isomorphic code reaches eval without a
+         * bundler's static analysis noticing, and it is the same sink. Exact
+         * membership against a closed set of global names — not a substring test.
+         */
+        // oxlint-disable-next-line consistent-function-scoping
+        GLOBAL_OBJECTS = new Set(['globalThis', 'global', 'window', 'self']);
+
+        // ── vm / vm2 code-execution sinks ────────────────────────────────────
+        //
+        // Same class of defect as `eval(expr)`: a string becomes running code. The
+        // only reason it needs its own pass is that the sink is reached through a
+        // module binding, so nothing can be judged until every binding in the file
+        // is known — hence the collect-then-judge shape, mirroring
+        // `detect-non-literal-fs-filename`. A `const vm = require('vm')` written
+        // *below* the call would otherwise leave the call silently unchecked.
+
+        /** Local name → export of `vm` it is bound to ('*' = the module itself). */
+        vmBindings = new Map<string, string>();
+        /** Local name → export of `vm2` it is bound to ('*' = the module itself). */
+        vm2Bindings = new Map<string, string>();
+        /** `const s = new NodeVM()` — locals holding a vm2 sandbox. */
+        vm2SandboxCandidates = [];
+        pendingVmCalls = [];
+        pendingVmNews = [];
+      },
       CallExpression(node: TSESTree.CallExpression) {
         checkCallExpression(node);
         // A LOCAL name is not the export name. `import { runInThisContext as

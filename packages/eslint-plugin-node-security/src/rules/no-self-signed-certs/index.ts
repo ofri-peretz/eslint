@@ -35,6 +35,7 @@ type RuleOptions = [Options?];
 export const noSelfSignedCerts = createRule<RuleOptions, MessageIds>({
   name: 'no-self-signed-certs',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-self-signed-certs.md',
@@ -84,14 +85,11 @@ export const noSelfSignedCerts = createRule<RuleOptions, MessageIds>({
       allowInTests: false,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = false } = options as Options;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
+    let isTestFile: boolean;
 
     function checkProperty(node: TSESTree.Property) {
       if (isTestFile) return;
@@ -154,6 +152,13 @@ export const noSelfSignedCerts = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = false } = options as Options;
+
+        const filename = context.filename;
+        isTestFile = allowInTests && isTestFilePath(filename);
+      },
       Property: checkProperty,
       AssignmentExpression: checkAssignmentExpression,
     };

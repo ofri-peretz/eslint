@@ -15,9 +15,7 @@ import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'nodejsBuiltinImport'
-  | 'nodejsBuiltinRequire'
-  | 'nodejsBuiltinDynamic';
+  'nodejsBuiltinImport' | 'nodejsBuiltinRequire' | 'nodejsBuiltinDynamic';
 
 export interface Options {
   /** Allow specific Node.js builtins */
@@ -86,6 +84,10 @@ const BUILTIN_ALTERNATIVES: Record<string, string> = {
 export const noNodejsModules = createRule<RuleOptions, MessageIds>({
   name: 'no-nodejs-modules',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/no-nodejs-modules',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-nodejs-modules.md',
@@ -156,33 +158,12 @@ export const noNodejsModules = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const {
-      allow = [],
-      additionalBuiltins = [],
-      suggestAlternatives = true,
-    } = options || {};
-
-    // THE BUILTIN SET IS WHATEVER THE RUNNING NODE SAYS IT IS.
-    //
-    // `NODEJS_BUILTINS` is a hand-written literal set covering 31 of the 72
-    // names in Node 24's `module.builtinModules`: no `worker_threads` (stable
-    // since Node 12), `async_hooks`, `diagnostics_channel`, `http2`,
-    // `perf_hooks`, `inspector`, `repl`, `trace_events`, `wasi`, `console` or
-    // `sys`. The sibling `no-extraneous-dependencies` already diagnosed and
-    // fixed this exact defect class in this package, in writing, resolving via
-    // `builtinModules`; `prefer-node-protocol` carries a longer hand-written
-    // list that covers them. The stale set is kept as a floor so a name it
-    // knows is still flagged if a future Node drops it.
-    const allBuiltins = new Set([
-      ...NODEJS_BUILTINS,
-      ...builtinModules,
-      ...additionalBuiltins,
-    ]);
-
-    // Create set of allowed builtins
-    const allowedBuiltins = new Set(allow);
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allow: string[];
+    let additionalBuiltins: string[];
+    let suggestAlternatives: boolean;
+    let allBuiltins: Set<string>;
+    let allowedBuiltins: Set<string>;
 
     function isNodejsBuiltin(moduleName: string): boolean {
       // Strip the `node:` protocol (Node.js 14.18.0+) before any lookup, so the
@@ -281,6 +262,34 @@ export const noNodejsModules = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({
+          allow = [],
+          additionalBuiltins = [],
+          suggestAlternatives = true,
+        } = options || {});
+
+        // THE BUILTIN SET IS WHATEVER THE RUNNING NODE SAYS IT IS.
+        //
+        // `NODEJS_BUILTINS` is a hand-written literal set covering 31 of the 72
+        // names in Node 24's `module.builtinModules`: no `worker_threads` (stable
+        // since Node 12), `async_hooks`, `diagnostics_channel`, `http2`,
+        // `perf_hooks`, `inspector`, `repl`, `trace_events`, `wasi`, `console` or
+        // `sys`. The sibling `no-extraneous-dependencies` already diagnosed and
+        // fixed this exact defect class in this package, in writing, resolving via
+        // `builtinModules`; `prefer-node-protocol` carries a longer hand-written
+        // list that covers them. The stale set is kept as a floor so a name it
+        // knows is still flagged if a future Node drops it.
+        allBuiltins = new Set([
+          ...NODEJS_BUILTINS,
+          ...builtinModules,
+          ...additionalBuiltins,
+        ]);
+
+        // Create set of allowed builtins
+        allowedBuiltins = new Set(allow);
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const moduleName = staticString(node.source);
 

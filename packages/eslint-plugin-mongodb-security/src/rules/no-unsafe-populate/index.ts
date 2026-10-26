@@ -110,6 +110,7 @@ function isConstString(
 export const noUnsafePopulate = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-populate',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-unsafe-populate.md',
@@ -140,25 +141,27 @@ export const noUnsafePopulate = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    // Every rule here is MongoDB-specific, and none of them could ask the
-    // file-level question: over the corpus, 47% of this plugin's findings were
-    // in files with no Mongo in them. `receiver.ts` discriminates by receiver
-    // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
-    // well as in a Mongoose one. Registering no visitors is both the gate and
-    // the cheap path.
-    if (!fileUsesMongo(context.sourceCode.ast)) return {};
-
-    const [options = {}] = context.options;
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const inTestFile = isTestFilePath(filename);
-
-    if (allowInTests && inTestFile) {
-      return {};
-    }
-
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
+      before() {
+        // Every rule here is MongoDB-specific, and none of them could ask the
+        // file-level question: over the corpus, 47% of this plugin's findings were
+        // in files with no Mongo in them. `receiver.ts` discriminates by receiver
+        // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
+        // well as in a Mongoose one. Registering no visitors is both the gate and
+        // the cheap path.
+        if (!fileUsesMongo(context.sourceCode.ast)) return false;
+
+        const [options = {}] = context.options;
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const inTestFile = isTestFilePath(filename);
+
+        if (allowInTests && inTestFile) {
+          return false;
+        }
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
           return;

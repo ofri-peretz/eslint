@@ -275,6 +275,7 @@ function isStringValued(arg: TSESTree.Node | undefined): boolean {
 export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-deserialization',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-unsafe-deserialization.md',
@@ -441,61 +442,37 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
       additionalNonExecutingPackages: [],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const {
-      dangerousFunctions = [
-        'eval',
-        'Function',
-        'setTimeout',
-        'setInterval',
-        'unserialize',
-        'deserialize',
-        'parseUnsafe',
-      ],
-      validationFunctions = [
-        'validateInput',
-        'sanitizeData',
-        'checkSchema',
-        'validateSchema',
-      ],
-      trustedSanitizers = [],
-      trustedAnnotations = [],
-      strictMode = false,
-      safeYamlSchemas = DEFAULT_SAFE_YAML_SCHEMAS,
-      additionalSafeYamlSchemas = [],
-      nonExecutingPackages = DEFAULT_NON_EXECUTING_PACKAGES,
-      additionalNonExecutingPackages = [],
-    }: Options = options;
-
-    const safeSchemas = new Set([
-      ...safeYamlSchemas,
-      ...additionalSafeYamlSchemas,
-    ]);
-    const inertPackages = new Set([
-      ...nonExecutingPackages,
-      ...additionalNonExecutingPackages,
-    ]);
-
-    const sourceCode = context.sourceCode;
-    const filename = context.filename;
-
-    // Create safety checker for false positive detection
-    const safetyChecker = createSafetyChecker({
-      trustedSanitizers,
-      trustedAnnotations,
-      trustedOrmPatterns: [],
-      strictMode,
-    });
-
-    // Track variables that have been validated/sanitized
-    const validatedVariables = new Set<string>();
-    // Track variables that contain untrusted data
-    const untrustedVariables = new Set<string>();
-    // Variables read from a literal-string file path (e.g. fs.readFileSync('config.json')).
-    // These are still "untrusted" for eval/Function but safe for JSON.parse and other
-    // schema-validating parsers because the file content is statically bundled.
-    const literalPathFileVars = new Set<string>();
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let dangerousFunctions: string[];
+    let validationFunctions: string[];
+    let trustedSanitizers: string[];
+    let trustedAnnotations: string[];
+    let strictMode: boolean;
+    let safeYamlSchemas: string[];
+    let additionalSafeYamlSchemas: string[];
+    let nonExecutingPackages: string[];
+    let additionalNonExecutingPackages: string[];
+    let safeSchemas: Set<string>;
+    let inertPackages: Set<string>;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let filename: string;
+    let safetyChecker: {
+      isSafe(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      isSanitized(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      hasAnnotation(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+    };
+    let validatedVariables: Set<string>;
+    let untrustedVariables: Set<string>;
+    let literalPathFileVars: Set<string>;
 
     /**
      * Check if this is a dangerous deserialization function
@@ -1052,6 +1029,62 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({
+          dangerousFunctions = [
+            'eval',
+            'Function',
+            'setTimeout',
+            'setInterval',
+            'unserialize',
+            'deserialize',
+            'parseUnsafe',
+          ],
+          validationFunctions = [
+            'validateInput',
+            'sanitizeData',
+            'checkSchema',
+            'validateSchema',
+          ],
+          trustedSanitizers = [],
+          trustedAnnotations = [],
+          strictMode = false,
+          safeYamlSchemas = DEFAULT_SAFE_YAML_SCHEMAS,
+          additionalSafeYamlSchemas = [],
+          nonExecutingPackages = DEFAULT_NON_EXECUTING_PACKAGES,
+          additionalNonExecutingPackages = [],
+        } = options);
+
+        safeSchemas = new Set([
+          ...safeYamlSchemas,
+          ...additionalSafeYamlSchemas,
+        ]);
+        inertPackages = new Set([
+          ...nonExecutingPackages,
+          ...additionalNonExecutingPackages,
+        ]);
+
+        sourceCode = context.sourceCode;
+        filename = context.filename;
+
+        // Create safety checker for false positive detection
+        safetyChecker = createSafetyChecker({
+          trustedSanitizers,
+          trustedAnnotations,
+          trustedOrmPatterns: [],
+          strictMode,
+        });
+
+        // Track variables that have been validated/sanitized
+        validatedVariables = new Set<string>();
+        // Track variables that contain untrusted data
+        untrustedVariables = new Set<string>();
+        // Variables read from a literal-string file path (e.g. fs.readFileSync('config.json')).
+        // These are still "untrusted" for eval/Function but safe for JSON.parse and other
+        // schema-validating parsers because the file content is statically bundled.
+        literalPathFileVars = new Set<string>();
+      },
       // Track variable assignments from untrusted sources
       VariableDeclaration(node: TSESTree.VariableDeclaration) {
         for (const declarator of node.declarations) {

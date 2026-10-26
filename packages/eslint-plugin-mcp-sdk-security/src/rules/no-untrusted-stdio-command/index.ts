@@ -189,6 +189,7 @@ function fieldOf(
 export const noUntrustedStdioCommand = createRule<[], MessageIds>({
   name: 'no-untrusted-stdio-command',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mcp-sdk-security/docs/rules/no-untrusted-stdio-command.md',
@@ -216,13 +217,12 @@ export const noUntrustedStdioCommand = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
-    const sourceCode = context.sourceCode;
-    const resolve = valueResolverFor(context);
-    const builtBy = createInstanceResolver(context);
-    const handlers = createHandlerCollector(context, resolve, 'arguments');
-    const transports: TSESTree.NewExpression[] = [];
+  createOnce(context) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let resolve: (node: TSESTree.Node) => TSESTree.Node | undefined;
+    let builtBy: ReturnType<typeof createInstanceResolver>;
+    let handlers: ReturnType<typeof createHandlerCollector>;
+    let transports: TSESTree.NewExpression[];
 
     /** `node` resolved to an expression in THIS file, or `undefined`. */
     function local(node: TSESTree.Node): TSESTree.Node | undefined {
@@ -399,6 +399,15 @@ export const noUntrustedStdioCommand = createRule<[], MessageIds>({
     }
 
     return {
+      before() {
+        if (!fileUsesMcpSdk(context.sourceCode.ast)) return false;
+        sourceCode = context.sourceCode;
+        resolve = valueResolverFor(context);
+        builtBy = createInstanceResolver(context);
+        handlers = createHandlerCollector(context, resolve, 'arguments');
+        transports = [];
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         handlers.visit(node);
       },

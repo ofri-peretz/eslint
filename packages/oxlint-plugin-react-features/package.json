@@ -1,0 +1,65 @@
+{
+  "name": "oxlint-plugin-react-features",
+  "version": "1.7.11",
+  "description": "The react-features rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-react-features.",
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts"
+  },
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "interlace-quality",
+    "react",
+    "jsx",
+    "hooks",
+    "react-hooks",
+    "exhaustive-deps",
+    "prop-types",
+    "eslint-plugin-react",
+    "eslint-plugin-react-alternative",
+    "component-api",
+    "performance",
+    "migration",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/quality/plugin-react-features?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-react-features",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-react-features"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-react-features": "1.7.11"
+  }
+}

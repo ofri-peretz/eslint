@@ -78,6 +78,7 @@ const EXTERNAL_CALL_PATTERNS = new Set([
 export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
   name: 'require-timeout-handling',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/require-timeout-handling.md',
@@ -122,39 +123,20 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    // Every rule here is Lambda-specific, and none of them knew it: over 107,382
-    // files, 98% of this plugin's findings were in files with no AWS anything.
-    // Registering no visitors is both the gate and the cheap path.
-    if (!fileIsLambda(context.sourceCode.ast)) return {};
-
-    const eventParamNames = new Set(
-      options.eventParamNames ?? DEFAULT_EVENT_PARAM_NAMES,
-    );
-    const contextParamNames = new Set(
-      options.contextParamNames ?? DEFAULT_CONTEXT_PARAM_NAMES,
-    );
-
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
-    // Track handler functions
+    let eventParamNames: Set<string>;
+    let contextParamNames: Set<string>;
     let currentHandlerNode:
       | TSESTree.ArrowFunctionExpression
       | TSESTree.FunctionExpression
       | TSESTree.FunctionDeclaration
-      | null = null;
-    let hasTimeoutCheck = false;
-    let hasExternalCalls = false;
-    let hasContextParam = false;
+      | null;
+    let hasTimeoutCheck: boolean;
+    let hasExternalCalls: boolean;
+    let hasContextParam: boolean;
 
     function enterFunction(
       node:
@@ -201,6 +183,35 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Every rule here is Lambda-specific, and none of them knew it: over 107,382
+        // files, 98% of this plugin's findings were in files with no AWS anything.
+        // Registering no visitors is both the gate and the cheap path.
+        if (!fileIsLambda(context.sourceCode.ast)) return false;
+
+        eventParamNames = new Set(
+          options.eventParamNames ?? DEFAULT_EVENT_PARAM_NAMES,
+        );
+        contextParamNames = new Set(
+          options.contextParamNames ?? DEFAULT_CONTEXT_PARAM_NAMES,
+        );
+
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+
+        // Track handler functions
+        currentHandlerNode = null;
+        hasTimeoutCheck = false;
+        hasExternalCalls = false;
+        hasContextParam = false;
+        return true;
+      },
       'ArrowFunctionExpression, FunctionExpression, FunctionDeclaration'(
         node:
           | TSESTree.ArrowFunctionExpression

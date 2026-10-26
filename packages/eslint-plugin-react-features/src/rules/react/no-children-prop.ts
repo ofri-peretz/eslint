@@ -17,6 +17,10 @@ type MessageIds = 'noChildrenProp';
 export const noChildrenProp = createRule<[], MessageIds>({
   name: 'no-children-prop',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/no-children-prop',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-children-prop.md',
@@ -30,12 +34,13 @@ export const noChildrenProp = createRule<[], MessageIds>({
         description: 'Passing children as a prop',
         severity: 'HIGH',
         fix: 'Use JSX children syntax: <Component>children</Component>',
-        documentationLink: 'https://react.dev/learn/passing-props-to-a-component#passing-jsx-as-children',
+        documentationLink:
+          'https://react.dev/learn/passing-props-to-a-component#passing-jsx-as-children',
       }),
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (
@@ -51,9 +56,7 @@ export const noChildrenProp = createRule<[], MessageIds>({
 
       // Check for children in spread attributes
       JSXSpreadAttribute(node: TSESTree.JSXSpreadAttribute) {
-        if (
-          node.argument.type === 'ObjectExpression'
-        ) {
+        if (node.argument.type === 'ObjectExpression') {
           // Check if the spread contains a children property
           for (const prop of node.argument.properties) {
             if (

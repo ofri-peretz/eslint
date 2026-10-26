@@ -74,6 +74,9 @@
     "sqlite3": "^5.0.0"
   },
   "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    },
     "better-sqlite3": {
       "optional": true
     },

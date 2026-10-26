@@ -51,6 +51,7 @@ const defaultOptions: Required<Options> = {
 export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
   name: 'enforce-import-order',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/enforce-import-order.md',
@@ -137,25 +138,10 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [defaultOptions],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const userOptions = context.options[0] || {};
-    const options: Required<Options> = {
-      groups: userOptions.groups ?? defaultOptions.groups,
-      internalPatterns:
-        userOptions.internalPatterns ?? defaultOptions.internalPatterns,
-      newlinesBetween:
-        userOptions.newlinesBetween ?? defaultOptions.newlinesBetween,
-      alphabetize: {
-        order:
-          userOptions.alphabetize?.order ?? defaultOptions.alphabetize.order,
-        caseInsensitive:
-          userOptions.alphabetize?.caseInsensitive ??
-          defaultOptions.alphabetize.caseInsensitive,
-      },
-    };
-
-    const sourceCode = context.sourceCode;
-    const imports: TSESTree.ImportDeclaration[] = [];
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let options: Required<Options>;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let imports: TSESTree.ImportDeclaration[];
 
     function getImportType(node: TSESTree.ImportDeclaration): string {
       const source = node.source.value;
@@ -323,6 +309,27 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const userOptions = context.options[0] || {};
+        options = {
+          groups: userOptions.groups ?? defaultOptions.groups,
+          internalPatterns:
+            userOptions.internalPatterns ?? defaultOptions.internalPatterns,
+          newlinesBetween:
+            userOptions.newlinesBetween ?? defaultOptions.newlinesBetween,
+          alphabetize: {
+            order:
+              userOptions.alphabetize?.order ??
+              defaultOptions.alphabetize.order,
+            caseInsensitive:
+              userOptions.alphabetize?.caseInsensitive ??
+              defaultOptions.alphabetize.caseInsensitive,
+          },
+        };
+
+        sourceCode = context.sourceCode;
+        imports = [];
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         imports.push(node);
       },

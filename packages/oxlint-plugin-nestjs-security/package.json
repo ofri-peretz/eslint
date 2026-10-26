@@ -1,0 +1,72 @@
+{
+  "name": "oxlint-plugin-nestjs-security",
+  "version": "3.1.3",
+  "description": "The nestjs-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-nestjs-security.",
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts"
+  },
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
+    "interlace-security",
+    "nestjs",
+    "nest",
+    "node",
+    "nodejs",
+    "api-security",
+    "guards",
+    "validation",
+    "throttler",
+    "rate-limiting",
+    "class-validator",
+    "class-transformer",
+    "decorators",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-nestjs-security?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-nestjs-security",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-nestjs-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-nestjs-security": "3.1.3"
+  }
+}

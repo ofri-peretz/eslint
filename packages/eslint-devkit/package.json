@@ -79,6 +79,9 @@
     "typescript": ">=4.8.4"
   },
   "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    },
     "@typescript-eslint/utils": {
       "optional": true
     },

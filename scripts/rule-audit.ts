@@ -262,7 +262,9 @@ function createBody(code: string): string {
   // and `detect-object-injection` mentions exactly that in its advice text. The
   // extractor then returned the tail of a doc string as "the rule body", and
   // every messageId it genuinely reports was declared orphaned.
-  const m = /^\s{0,4}create\s*\(/m.exec(code);
+  // `createOnce` is oxlint's shape (docs/intents/oxlint-native-plugin-names);
+  // its body is where reporting happens just as `create`'s is.
+  const m = /^\s{0,4}create(?:Once)?\s*\(/m.exec(code);
   if (!m) return '';
   let i = m.index + m[0].length - 1;
   let depth = 0;

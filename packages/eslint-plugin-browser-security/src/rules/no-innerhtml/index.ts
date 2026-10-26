@@ -348,6 +348,7 @@ function isConstantTemplateInvocation(
 export const noInnerhtml = createRule<RuleOptions, MessageIds>({
   name: 'no-innerhtml',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-innerhtml.md',
@@ -405,41 +406,17 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
       allowLiteralStrings: true,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      allowInTests = false,
-      trustedSanitizers = DEFAULT_SANITIZERS,
-      allowLiteralStrings = true,
-    } = options as Options;
-
-    const filename = context.filename;
-    const isTestFile = allowInTests && isTestFilePath(filename);
-
-    if (isTestFile) {
-      return {};
-    }
-
-    const sourceCode = context.sourceCode;
-    // `srcdoc` sets an iframe's whole document from a string — the same parse-as-HTML sink
-    // as innerHTML, and one eslint-plugin-no-unsanitized flags that we previously missed.
-    const dangerousProperties = new Set(['innerHTML', 'outerHTML', 'srcdoc']);
-    // Sibling DOM sinks that share the same XSS class — surfaced as
-    // FN by the hand-curated stress test. See benchmarks/AUDIT_PATTERNS.md
-    // §3.1 ("DOM XSS sink list"). Each takes user-controlled HTML and
-    // injects it into the live DOM exactly the same way innerHTML does.
-    const dangerousSinkMethods = new Set([
-      'insertAdjacentHTML',
-      'write',
-      'writeln',
-      // `range.createContextualFragment(html)` parses its argument as HTML with
-      // exactly the semantics of innerHTML, and the resulting fragment is then
-      // appended to the live DOM. It is the standard way to build nodes from a
-      // markup string, and no competitor measured on this corpus reports it.
-      'createContextualFragment',
-    ]);
+    let allowInTests: boolean;
+    let trustedSanitizers: string[];
+    let allowLiteralStrings: boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let dangerousProperties: Set<string>;
+    let dangerousSinkMethods: Set<string>;
+    let payloadSource: ReturnType<typeof createPayloadResolver>;
 
     /**
      * The property being assigned, whether written dotted or computed.
@@ -569,9 +546,44 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
       });
     }
 
-    const payloadSource = createPayloadResolver(context.sourceCode);
-
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          allowInTests = false,
+          trustedSanitizers = DEFAULT_SANITIZERS,
+          allowLiteralStrings = true,
+        } = options as Options);
+
+        const filename = context.filename;
+        const isTestFile = allowInTests && isTestFilePath(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+
+        sourceCode = context.sourceCode;
+        // `srcdoc` sets an iframe's whole document from a string — the same parse-as-HTML sink
+        // as innerHTML, and one eslint-plugin-no-unsanitized flags that we previously missed.
+        dangerousProperties = new Set(['innerHTML', 'outerHTML', 'srcdoc']);
+        // Sibling DOM sinks that share the same XSS class — surfaced as
+        // FN by the hand-curated stress test. See benchmarks/AUDIT_PATTERNS.md
+        // §3.1 ("DOM XSS sink list"). Each takes user-controlled HTML and
+        // injects it into the live DOM exactly the same way innerHTML does.
+        dangerousSinkMethods = new Set([
+          'insertAdjacentHTML',
+          'write',
+          'writeln',
+          // `range.createContextualFragment(html)` parses its argument as HTML with
+          // exactly the semantics of innerHTML, and the resulting fragment is then
+          // appended to the live DOM. It is the standard way to build nodes from a
+          // markup string, and no competitor measured on this corpus reports it.
+          'createContextualFragment',
+        ]);
+
+        payloadSource = createPayloadResolver(context.sourceCode);
+        return true;
+      },
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         // Check for element.innerHTML = ... or element.outerHTML = ...
         if (node.left.type !== 'MemberExpression') {

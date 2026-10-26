@@ -19,9 +19,16 @@ export interface Options {}
 
 export type RuleOptions = [Options?];
 
-export const checkedRequiresOnchangeOrReadonly = createRule<RuleOptions, MessageIds>({
+export const checkedRequiresOnchangeOrReadonly = createRule<
+  RuleOptions,
+  MessageIds
+>({
   name: 'checked-requires-onchange-or-readonly',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/checked-requires-onchange-or-readonly',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/checked-requires-onchange-or-readonly.md',
@@ -35,12 +42,13 @@ export const checkedRequiresOnchangeOrReadonly = createRule<RuleOptions, Message
         description: 'Checked input missing onChange or readOnly',
         severity: 'MEDIUM',
         fix: 'Add onChange handler or readOnly attribute',
-        documentationLink: 'https://react.dev/reference/react-dom/components/input#controlling-an-input-with-a-state-variable',
+        documentationLink:
+          'https://react.dev/reference/react-dom/components/input#controlling-an-input-with-a-state-variable',
       }),
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXElement(node: TSESTree.JSXElement) {
         if (node.openingElement.name.type !== 'JSXIdentifier') {
@@ -63,7 +71,8 @@ export const checkedRequiresOnchangeOrReadonly = createRule<RuleOptions, Message
         for (const attr of attributes) {
           if (attr.type !== 'JSXAttribute') continue;
 
-          const attrName = attr.name.type === 'JSXIdentifier' ? attr.name.name : '';
+          const attrName =
+            attr.name.type === 'JSXIdentifier' ? attr.name.name : '';
 
           if (attrName === 'checked') {
             hasChecked = true;

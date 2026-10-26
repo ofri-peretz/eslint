@@ -89,6 +89,7 @@ export function argumentRead(
 export const requireToolInputSchema = createRule<[], MessageIds>({
   name: 'require-tool-input-schema',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mcp-sdk-security/docs/rules/require-tool-input-schema.md',
@@ -116,23 +117,28 @@ export const requireToolInputSchema = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    // Asked once, up front, over the whole AST. The two-visitor gate this
-    // replaces saw ESM and `require()` only, so import-equals and dynamic
-    // `import()` files ran no rule at all.
-    if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
-    // Names in a legacy params shape resolve through consts and relative
-    // imports, so `{ path: PathSchema }` reads as the schema it is.
-    const resolve = valueResolverFor(context);
-    // Registrations are collected and judged at Program:exit so the rule does
-    // not depend on the import appearing above them.
-    const candidates: Array<{
+  createOnce(context) {
+    let resolve: (node: TSESTree.Node) => TSESTree.Node | undefined;
+    let candidates: {
       node: TSESTree.CallExpression;
       tool: string;
       arg: string;
-    }> = [];
+    }[];
 
     return {
+      before() {
+        // Asked once, up front, over the whole AST. The two-visitor gate this
+        // replaces saw ESM and `require()` only, so import-equals and dynamic
+        // `import()` files ran no rule at all.
+        if (!fileUsesMcpSdk(context.sourceCode.ast)) return false;
+        // Names in a legacy params shape resolve through consts and relative
+        // imports, so `{ path: PathSchema }` reads as the schema it is.
+        resolve = valueResolverFor(context);
+        // Registrations are collected and judged at Program:exit so the rule does
+        // not depend on the import appearing above them.
+        candidates = [];
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const registration = readRegistration(node, resolve);
         if (registration?.schema.kind !== 'none') return;

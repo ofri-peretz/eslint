@@ -10,8 +10,21 @@
  * @see OWASP LLM02: Sensitive Information Disclosure
  */
 
-import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons, memberPath, nameHasWord, objectKeyName, propertyName } from '@interlace/eslint-devkit';
-import { SYSTEM_PROMPT_PROPS, getStaticPropName } from '../../utils/prompt-props';
+import {
+  AST_NODE_TYPES,
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  memberPath,
+  nameHasWord,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
+import {
+  SYSTEM_PROMPT_PROPS,
+  getStaticPropName,
+} from '../../utils/prompt-props';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 import { sdkCallName } from '../../utils/sdk';
 import { derivesFrom } from '../../utils/flow';
@@ -30,10 +43,12 @@ type RuleOptions = [Options?];
 export const noSensitiveInPrompt = createRule<RuleOptions, MessageIds>({
   name: 'no-sensitive-in-prompt',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/no-sensitive-in-prompt.md',
-      description: 'Prevent sensitive data (secrets, credentials, PII) from being passed to LLM prompts',
+      description:
+        'Prevent sensitive data (secrets, credentials, PII) from being passed to LLM prompts',
       cwe: 'CWE-200',
       cvss: 8,
     },
@@ -44,11 +59,13 @@ export const noSensitiveInPrompt = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-200',
         owasp: 'A01:2021',
         cvss: 8.0,
-        description: 'Sensitive data "{{variable}}" detected in prompt. Secrets and PII should never be sent to LLMs.',
+        description:
+          'Sensitive data "{{variable}}" detected in prompt. Secrets and PII should never be sent to LLMs.',
         severity: 'CRITICAL',
         compliance: ['SOC2', 'GDPR', 'HIPAA', 'PCI-DSS'],
         fix: 'Remove sensitive data from prompt or redact before sending: prompt: redact(sensitiveData)',
-        documentationLink: 'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
+        documentationLink:
+          'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
       }),
     },
     schema: [
@@ -68,11 +85,28 @@ export const noSensitiveInPrompt = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       sensitivePatterns: [
-        'password', 'secret', 'apiKey', 'api_key', 'token', 'credential',
-        'ssn', 'socialSecurity', 'creditCard', 'cardNumber', 'cvv',
-        'privateKey', 'private_key', 'accessToken', 'access_token',
-        'refreshToken', 'refresh_token', 'authToken', 'bearer',
-        'connectionString', 'dbPassword', 'dbUser',
+        'password',
+        'secret',
+        'apiKey',
+        'api_key',
+        'token',
+        'credential',
+        'ssn',
+        'socialSecurity',
+        'creditCard',
+        'cardNumber',
+        'cvv',
+        'privateKey',
+        'private_key',
+        'accessToken',
+        'access_token',
+        'refreshToken',
+        'refresh_token',
+        'authToken',
+        'bearer',
+        'connectionString',
+        'dbPassword',
+        'dbUser',
       ],
     },
   ],
@@ -93,7 +127,9 @@ export const noSensitiveInPrompt = createRule<RuleOptions, MessageIds>({
      * word and `maxTokens` is a count of tokens, not a token.
      */
     function isSensitiveIdentifier(name: string): boolean {
-      return sensitivePatterns.some((pattern: string) => nameHasWord(name, pattern));
+      return sensitivePatterns.some((pattern: string) =>
+        nameHasWord(name, pattern),
+      );
     }
 
     /**
@@ -109,7 +145,9 @@ export const noSensitiveInPrompt = createRule<RuleOptions, MessageIds>({
           return isSensitiveIdentifier(node.name) ? node.name : null;
         case 'MemberExpression': {
           const name = propertyName(node);
-          return name !== null && isSensitiveIdentifier(name) ? sourceCode.getText(node) : null;
+          return name !== null && isSensitiveIdentifier(name)
+            ? sourceCode.getText(node)
+            : null;
         }
         case 'TemplateLiteral':
           // `${record}` embeds the whole object, so the record check applies too.
@@ -122,7 +160,11 @@ export const noSensitiveInPrompt = createRule<RuleOptions, MessageIds>({
           // JSON.stringify(record) / String(record)
           const path = memberPath(node.callee)?.join('.');
           const [first] = node.arguments;
-          if ((path !== 'JSON.stringify' && path !== 'String') || first === undefined) return null;
+          if (
+            (path !== 'JSON.stringify' && path !== 'String') ||
+            first === undefined
+          )
+            return null;
           return findSensitiveData(first) ?? wholeRecord(first);
         }
         case 'BinaryExpression':
@@ -133,7 +175,9 @@ export const noSensitiveInPrompt = createRule<RuleOptions, MessageIds>({
           return findSensitiveData(node.argument);
         case 'ObjectExpression':
           return firstSensitive(
-            node.properties.map((prop) => (prop.type === 'Property' ? prop.value : prop)),
+            node.properties.map((prop) =>
+              prop.type === 'Property' ? prop.value : prop,
+            ),
           );
         default:
           return null;
@@ -150,7 +194,8 @@ export const noSensitiveInPrompt = createRule<RuleOptions, MessageIds>({
     function wholeRecord(node: TSESTree.Node): string | null {
       const label = sourceCode.getText(node);
       const names = typePropertyNames(node, sourceCode);
-      if (names !== null) return names.some(isSensitiveIdentifier) ? label : null;
+      if (names !== null)
+        return names.some(isSensitiveIdentifier) ? label : null;
       if (node.type === 'MemberExpression') return null;
       return derivesFrom(node, recordFlow) ? label : null;
     }
@@ -167,7 +212,9 @@ export const noSensitiveInPrompt = createRule<RuleOptions, MessageIds>({
         isDatabaseRowRead(candidate, sourceCode),
     };
 
-    function firstSensitive(nodes: ReadonlyArray<TSESTree.Node | null>): string | null {
+    function firstSensitive(
+      nodes: ReadonlyArray<TSESTree.Node | null>,
+    ): string | null {
       for (const node of nodes) {
         const found = findSensitiveData(node);
         if (found) return found;
@@ -176,7 +223,11 @@ export const noSensitiveInPrompt = createRule<RuleOptions, MessageIds>({
     }
 
     // `prompt`, the system-prompt props, and `messages`
-    const propsToCheck = new Set(['prompt', 'messages', ...SYSTEM_PROMPT_PROPS]);
+    const propsToCheck = new Set([
+      'prompt',
+      'messages',
+      ...SYSTEM_PROMPT_PROPS,
+    ]);
 
     return {
       CallExpression(node: TSESTree.CallExpression) {

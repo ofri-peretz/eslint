@@ -12,7 +12,13 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
-type MessageIds = 'inlineFunction' | 'useCallback' | 'extractFunction' | 'strategyUseCallback' | 'strategyUseMemo' | 'strategyExtract';
+type MessageIds =
+  | 'inlineFunction'
+  | 'useCallback'
+  | 'extractFunction'
+  | 'strategyUseCallback'
+  | 'strategyUseMemo'
+  | 'strategyExtract';
 
 export interface Options {
   /** Allow inline functions in event handlers. Default: false */
@@ -30,10 +36,12 @@ type RuleOptions = [Options?];
 export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
   name: 'react-no-inline-functions',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/react-no-inline-functions.md',
-      description: 'Prevent inline functions in React renders with performance metrics',
+      description:
+        'Prevent inline functions in React renders with performance metrics',
     },
     messages: {
       // 🎯 Token optimization: 42% reduction (48→28 tokens) - inline functions cause unnecessary re-renders
@@ -97,7 +105,8 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
           minArraySize: {
             type: 'number',
             default: 5,
-            description: 'Minimum array size to report inline functions in .map()',
+            description:
+              'Minimum array size to report inline functions in .map()',
           },
         },
         additionalProperties: false,
@@ -110,12 +119,9 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
       minArraySize: 5,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    // `options` is already object-coerced above, so no second `||` fallback.
-    const {
-allowInEventHandlers = false, minArraySize = 10
-}: Options = options;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowInEventHandlers: boolean;
+    let minArraySize: number;
 
     /**
      * Check if node is inside JSX
@@ -124,7 +130,10 @@ allowInEventHandlers = false, minArraySize = 10
     const isInJSX = (node: TSESTree.Node): boolean => {
       let parent = node.parent;
       while (parent) {
-        if (parent.type === 'JSXExpressionContainer' || parent.type === 'JSXAttribute') {
+        if (
+          parent.type === 'JSXExpressionContainer' ||
+          parent.type === 'JSXAttribute'
+        ) {
           return true;
         }
         parent = parent.parent;
@@ -135,19 +144,24 @@ allowInEventHandlers = false, minArraySize = 10
     /**
      * Check if inline function is in array method
      */
-    const isInArrayMethod = (node: TSESTree.Node): { inArray: boolean; method?: string; estimatedSize?: number } => {
+    const isInArrayMethod = (
+      node: TSESTree.Node,
+    ): { inArray: boolean; method?: string; estimatedSize?: number } => {
       const parent = node.parent;
-      
+
       if (parent?.type === 'CallExpression') {
         const callee = parent.callee;
-        if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
+        if (
+          callee.type === 'MemberExpression' &&
+          callee.property.type === 'Identifier'
+        ) {
           const method = callee.property.name;
           if (['map', 'forEach', 'filter', 'reduce', 'sort'].includes(method)) {
             return { inArray: true, method, estimatedSize: minArraySize };
           }
         }
       }
-      
+
       return { inArray: false };
     };
 
@@ -155,19 +169,25 @@ allowInEventHandlers = false, minArraySize = 10
      * Calculate performance impact
      */
     // oxlint-disable-next-line consistent-function-scoping
-    const calculateImpact = (arrayInfo: ReturnType<typeof isInArrayMethod>): {
+    const calculateImpact = (
+      arrayInfo: ReturnType<typeof isInArrayMethod>,
+    ): {
       severity: 'high' | 'medium' | 'low';
       estimatedSlowdown: string;
       affectedMetric: string;
     } => {
-      if (arrayInfo.inArray && arrayInfo.estimatedSize && arrayInfo.estimatedSize > 50) {
+      if (
+        arrayInfo.inArray &&
+        arrayInfo.estimatedSize &&
+        arrayInfo.estimatedSize > 50
+      ) {
         return {
           severity: 'high',
           estimatedSlowdown: '30-50ms per render',
           affectedMetric: 'Interaction to Next Paint (INP)',
         };
       }
-      
+
       return {
         severity: 'medium',
         estimatedSlowdown: '15-30ms per render',
@@ -190,9 +210,14 @@ allowInEventHandlers = false, minArraySize = 10
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        // `options` is already object-coerced above, so no second `||` fallback.
+        ({ allowInEventHandlers = false, minArraySize = 10 } = options);
+      },
       // Match direct children of JSXExpressionContainer
       'JSXExpressionContainer > ArrowFunctionExpression, JSXExpressionContainer > FunctionExpression'(
-        node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression
+        node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression,
       ) {
         if (!isInJSX(node)) return;
 
@@ -200,7 +225,10 @@ allowInEventHandlers = false, minArraySize = 10
         const parent = node.parent;
         if (allowInEventHandlers && parent?.parent?.type === 'JSXAttribute') {
           const attr = parent.parent as TSESTree.JSXAttribute;
-          if (attr.name.type === 'JSXIdentifier' && attr.name.name.startsWith('on')) {
+          if (
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name.startsWith('on')
+          ) {
             return; // Allow if configured
           }
         }
@@ -213,25 +241,31 @@ allowInEventHandlers = false, minArraySize = 10
           messageId: 'inlineFunction',
           data: {
             impact: impact.severity,
-            location: arrayInfo.inArray ? `${arrayInfo.method}() call` : 'JSX prop',
+            location: arrayInfo.inArray
+              ? `${arrayInfo.method}() call`
+              : 'JSX prop',
           },
         });
       },
-      
+
       // Also match arrow functions inside CallExpressions within JSXExpressionContainer
       // This catches cases like {items.map(() => ...)}
       'CallExpression > ArrowFunctionExpression, CallExpression > FunctionExpression'(
-        node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression
+        node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression,
       ) {
         // Only check if we're inside a JSXExpressionContainer
         if (!isInJSXExpressionContainer(node)) return;
-        
+
         // Check if it's in an event handler prop
         let current: TSESTree.Node | undefined = node;
         while (current) {
           if (current.type === 'JSXAttribute') {
             const attr = current as TSESTree.JSXAttribute;
-            if (allowInEventHandlers && attr.name.type === 'JSXIdentifier' && attr.name.name.startsWith('on')) {
+            if (
+              allowInEventHandlers &&
+              attr.name.type === 'JSXIdentifier' &&
+              attr.name.name.startsWith('on')
+            ) {
               return; // Allow if configured
             }
           }
@@ -246,11 +280,12 @@ allowInEventHandlers = false, minArraySize = 10
           messageId: 'inlineFunction',
           data: {
             impact: impact.severity,
-            location: arrayInfo.inArray ? `${arrayInfo.method}() call` : 'JSX prop',
+            location: arrayInfo.inArray
+              ? `${arrayInfo.method}() call`
+              : 'JSX prop',
           },
         });
       },
     };
   },
 });
-

@@ -30,6 +30,10 @@ type RuleOptions = [Options?];
 export const maxDependencies = createRule<RuleOptions, MessageIds>({
   name: 'max-dependencies',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/max-dependencies',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/max-dependencies.md',
@@ -109,34 +113,13 @@ export const maxDependencies = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const {
-      max = 10,
-      ignoreTypeImports = true,
-      ignoreImports = [],
-      ignoreFiles = [],
-    } = options || {};
-
-    const filename = context.filename;
-    if (!filename) {
-      return {};
-    }
-
-    // Check if file should be ignored
-    const shouldIgnoreFile = ignoreFiles.some((pattern: string) => {
-      if (pattern.includes('*')) {
-        const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-        return regex.test(filename);
-      }
-      return filename.includes(pattern);
-    });
-
-    if (shouldIgnoreFile) {
-      return {};
-    }
-
-    const dependencies = new Set<string>();
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let max: number;
+    let ignoreTypeImports: boolean;
+    let ignoreImports: string[];
+    let ignoreFiles: string[];
+    let filename: string;
+    let dependencies: Set<string>;
 
     function shouldCountImport(
       importPath: string,
@@ -256,6 +239,36 @@ export const maxDependencies = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({
+          max = 10,
+          ignoreTypeImports = true,
+          ignoreImports = [],
+          ignoreFiles = [],
+        } = options || {});
+
+        filename = context.filename;
+        if (!filename) {
+          return false;
+        }
+
+        // Check if file should be ignored
+        const shouldIgnoreFile = ignoreFiles.some((pattern: string) => {
+          if (pattern.includes('*')) {
+            const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+            return regex.test(filename);
+          }
+          return filename.includes(pattern);
+        });
+
+        if (shouldIgnoreFile) {
+          return false;
+        }
+
+        dependencies = new Set<string>();
+        return true;
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const importPath = staticString(node.source);
 

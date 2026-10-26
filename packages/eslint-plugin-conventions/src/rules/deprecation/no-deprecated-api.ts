@@ -36,6 +36,7 @@ type RuleOptions = [Options?];
 export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
   name: 'no-deprecated-api',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/no-deprecated-api.md',
@@ -101,15 +102,9 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
       warnDaysBeforeRemoval: 90,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    // `options` is always an object here (the `|| {}` above guarantees it).
-    const { apis = [], warnDaysBeforeRemoval = 90 }: Options = options;
-
-    // Early return if no deprecated APIs configured
-    if (!apis || apis.length === 0) {
-      return {};
-    }
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let apis: DeprecatedAPI[];
+    let warnDaysBeforeRemoval: number;
 
     /**
      * Calculate days until removal
@@ -138,6 +133,17 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        // `options` is always an object here (the `|| {}` above guarantees it).
+        ({ apis = [], warnDaysBeforeRemoval = 90 } = options);
+
+        // Early return if no deprecated APIs configured
+        if (!apis || apis.length === 0) {
+          return false;
+        }
+        return true;
+      },
       // Check member expressions (e.g., obj.deprecatedMethod())
       MemberExpression(node: TSESTree.MemberExpression) {
         // `obj['deprecatedMethod']()` calls the deprecated API `obj.deprecatedMethod()`

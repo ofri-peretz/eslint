@@ -10,21 +10,38 @@
  * CWE-798: Hardcoded Credentials
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, staticString } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
 type MessageIds = 'hardcodedCredentials';
-export interface Options { allowInTests?: boolean; }
+export interface Options {
+  allowInTests?: boolean;
+}
 type RuleOptions = [Options?];
 
-const CREDENTIAL_KEYS = new Set(['user', 'username', 'pass', 'password', 'auth']);
+const CREDENTIAL_KEYS = new Set([
+  'user',
+  'username',
+  'pass',
+  'password',
+  'auth',
+]);
 
 export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
   name: 'no-hardcoded-credentials',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
-      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-hardcoded-credentials.md', description: 'Prevent hardcoded MongoDB authentication credentials',
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-hardcoded-credentials.md',
+      description: 'Prevent hardcoded MongoDB authentication credentials',
       cwe: 'CWE-798',
       cvss: 7.5,
     },
@@ -40,34 +57,43 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         documentationLink: 'https://cwe.mitre.org/data/definitions/798.html',
       }),
     },
-    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
+    schema: [
+      {
+        type: 'object',
+        properties: { allowInTests: { type: 'boolean', default: true } },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    // Every rule here is MongoDB-specific, and none of them could ask the
-    // file-level question: over the corpus, 47% of this plugin's findings were
-    // in files with no Mongo in them. `receiver.ts` discriminates by receiver
-    // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
-    // well as in a Mongoose one. Registering no visitors is both the gate and
-    // the cheap path.
-    if (!fileUsesMongo(context.sourceCode.ast)) return {};
-
-    const [options = {}] = context.options;
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const inTestFile = isTestFilePath(filename);
-
-    if (allowInTests && inTestFile) {
-      return {};
-    }
-
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
+      before() {
+        // Every rule here is MongoDB-specific, and none of them could ask the
+        // file-level question: over the corpus, 47% of this plugin's findings were
+        // in files with no Mongo in them. `receiver.ts` discriminates by receiver
+        // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
+        // well as in a Mongoose one. Registering no visitors is both the gate and
+        // the cheap path.
+        if (!fileUsesMongo(context.sourceCode.ast)) return false;
+
+        const [options = {}] = context.options;
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const inTestFile = isTestFilePath(filename);
+
+        if (allowInTests && inTestFile) {
+          return false;
+        }
+        return true;
+      },
       Property(node: TSESTree.Property) {
-        const keyName = node.key.type === AST_NODE_TYPES.Identifier
-          ? node.key.name
-          : node.key.type === AST_NODE_TYPES.Literal
-            ? String(node.key.value)
-            : null;
+        const keyName =
+          node.key.type === AST_NODE_TYPES.Identifier
+            ? node.key.name
+            : node.key.type === AST_NODE_TYPES.Literal
+              ? String(node.key.value)
+              : null;
 
         if (!keyName || !CREDENTIAL_KEYS.has(keyName.toLowerCase())) {
           return;

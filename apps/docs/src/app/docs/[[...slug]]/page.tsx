@@ -12,6 +12,7 @@ import { notFound } from 'next/navigation';
 import { getMDXComponents } from '@/mdx-components';
 import { RuleCTAExperiment } from '@/components/docs/rule-cta-experiment';
 import { DocsFooterCTA } from '@/components/docs/docs-footer-cta';
+import { EngineSetup } from '@/components/docs/engine-setup';
 import type { TableOfContents } from 'fumadocs-core/toc';
 import type { MDXComponents } from 'mdx/types';
 import type { ReactElement } from 'react';
@@ -63,6 +64,14 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
           <RuleCTAExperiment plugin={rulePlugin} rule={ruleName} placement="top" />
         ) : null}
         <MDX components={getMDXComponents()} />
+        {/* Every rule page: install + config for both engines, oxlint first,
+            derived from the slug — 500+ rule pages, none of them hand-edited. */}
+        {isRulePage && ruleName ? (
+          <>
+            <h2 id="use-this-rule">Use this rule</h2>
+            <EngineSetup plugin={rulePlugin} rule={ruleName} />
+          </>
+        ) : null}
         {isRulePage && ruleName ? (
           <RuleCTAExperiment
             plugin={rulePlugin}

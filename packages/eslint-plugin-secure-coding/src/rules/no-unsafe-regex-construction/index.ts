@@ -614,6 +614,7 @@ function extractPattern(
 export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-regex-construction',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-unsafe-regex-construction.md',
@@ -685,23 +686,15 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
       maxPatternLength: 100,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    // `options` is always an object here (defaulted by the destructuring
-    // parameter above), so a second `|| {}` fallback could never fire —
-    // removed as dead code.
-    const {
-      allowLiterals = true,
-      maxPatternLength = 100,
-      trustedEscapingFunctions = [...DEFAULT_TRUSTED_ESCAPING_FUNCTIONS],
-    }: Options = options;
-
-    const sourceCode = context.sourceCode;
-    const requestRoots = new Set(
-      options.requestRootNames ?? DEFAULT_REQUEST_ROOT_NAMES,
-    );
+    let allowLiterals: boolean;
+    let maxPatternLength: number;
+    let trustedEscapingFunctions: string[];
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let requestRoots: Set<string>;
 
     /**
      * Check RegExp constructor calls
@@ -840,6 +833,22 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // `options` is always an object here (defaulted by the destructuring
+        // parameter above), so a second `|| {}` fallback could never fire —
+        // removed as dead code.
+        ({
+          allowLiterals = true,
+          maxPatternLength = 100,
+          trustedEscapingFunctions = [...DEFAULT_TRUSTED_ESCAPING_FUNCTIONS],
+        } = options);
+
+        sourceCode = context.sourceCode;
+        requestRoots = new Set(
+          options.requestRootNames ?? DEFAULT_REQUEST_ROOT_NAMES,
+        );
+      },
       CallExpression: checkRegExpCall,
       NewExpression: checkRegExpCall,
     };

@@ -144,6 +144,7 @@ function getImportAtDepth(importPath: string, maxDepth: number): string {
 export const noInternalModules = createRule<RuleOptions, MessageIds>({
   name: 'no-internal-modules',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-internal-modules.md',
@@ -234,15 +235,12 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const {
-      maxDepth = 1,
-      allow = [],
-      forbid = [],
-      ignorePaths = [],
-      strategy = 'error',
-    } = options || {};
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let maxDepth: number;
+    let allow: string[];
+    let forbid: string[];
+    let ignorePaths: string[];
+    let strategy: 'error' | 'warn' | 'autofix' | 'suggest';
 
     /**
      * The string-literal node the fixer must rewrite.
@@ -392,6 +390,16 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({
+          maxDepth = 1,
+          allow = [],
+          forbid = [],
+          ignorePaths = [],
+          strategy = 'error',
+        } = options || {});
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const importPath = node.source.value;
         if (typeof importPath === 'string') {

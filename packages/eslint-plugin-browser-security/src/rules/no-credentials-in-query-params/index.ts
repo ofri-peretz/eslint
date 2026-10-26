@@ -51,6 +51,7 @@ type RuleOptions = [Options?];
 export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
   name: 'no-credentials-in-query-params',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-credentials-in-query-params.md',
@@ -87,18 +88,9 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ bodyProperties: DEFAULT_BODY_PROPERTIES }],
-  create(context) {
-    const { bodyProperties = DEFAULT_BODY_PROPERTIES } =
-      context.options[0] ?? {};
-    const bodyPropertyNames: ReadonlySet<string> = new Set(bodyProperties);
-    const sensitiveParams = [
-      'password=',
-      'token=',
-      'apikey=',
-      'secret=',
-      'auth=',
-    ];
-
+  createOnce(context) {
+    let bodyPropertyNames: ReadonlySet<string>;
+    let sensitiveParams: string[];
     /**
      * Path segments of the out-of-band verification flows.
      *
@@ -188,6 +180,18 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const { bodyProperties = DEFAULT_BODY_PROPERTIES } =
+          context.options[0] ?? {};
+        bodyPropertyNames = new Set(bodyProperties);
+        sensitiveParams = [
+          'password=',
+          'token=',
+          'apikey=',
+          'secret=',
+          'auth=',
+        ];
+      },
       Literal(node: TSESTree.Literal) {
         if (typeof node.value === 'string') {
           const url = node.value.toLowerCase();

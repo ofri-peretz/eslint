@@ -116,6 +116,7 @@ function codeSinkOf(
 export const noCodeInjectionInTool = createRule<[], MessageIds>({
   name: 'no-code-injection-in-tool',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mcp-sdk-security/docs/rules/no-code-injection-in-tool.md',
@@ -143,12 +144,10 @@ export const noCodeInjectionInTool = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
-    const resolve = valueResolverFor(context);
-    const builtBy = createInstanceResolver(context);
-    const handlers = createHandlerCollector(context, resolve, 'arguments');
-    const candidates: Array<{ node: TSESTree.Node; sink: string }> = [];
+  createOnce(context) {
+    let builtBy: (node: TSESTree.Node) => Construction | undefined;
+    let handlers: ReturnType<typeof createHandlerCollector>;
+    let candidates: { node: TSESTree.Node; sink: string }[];
 
     const collect = (
       node: TSESTree.CallExpression | TSESTree.NewExpression,
@@ -163,6 +162,14 @@ export const noCodeInjectionInTool = createRule<[], MessageIds>({
     };
 
     return {
+      before() {
+        if (!fileUsesMcpSdk(context.sourceCode.ast)) return false;
+        const resolve = valueResolverFor(context);
+        builtBy = createInstanceResolver(context);
+        handlers = createHandlerCollector(context, resolve, 'arguments');
+        candidates = [];
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         handlers.visit(node);
         collect(node);

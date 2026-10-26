@@ -385,6 +385,7 @@ function untrustedSource(
 export const noTemplateInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-template-injection',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-template-injection.md',
@@ -483,32 +484,36 @@ export const noTemplateInjection = createRule<RuleOptions, MessageIds>({
       additionalUntrustedNameWords: [],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    // Read the raw user options rather than the defaults-merged parameter: the
-    // merge always produces every key, so a `?? DEFAULT` on the merged object
-    // would have one arm no configuration can reach.
-    const options: Options = context.options[0] ?? {};
-
-    const engines = new Set([
-      ...(options.templateEngines ?? DEFAULT_TEMPLATE_ENGINES),
-      ...(options.additionalTemplateEngines ?? []),
-    ]);
-    const vocabulary: Vocabulary = {
-      requestRoots: new Set([
-        ...(options.requestRoots ?? DEFAULT_REQUEST_ROOTS),
-        ...(options.additionalRequestRoots ?? []),
-      ]),
-      requestProperties: new Set([
-        ...(options.requestProperties ?? DEFAULT_REQUEST_PROPERTIES),
-        ...(options.additionalRequestProperties ?? []),
-      ]),
-      untrustedNameWords: new Set([
-        ...(options.untrustedNameWords ?? DEFAULT_UNTRUSTED_NAME_WORDS),
-        ...(options.additionalUntrustedNameWords ?? []),
-      ]),
-    };
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let engines: Set<string>;
+    let vocabulary: Vocabulary;
 
     return {
+      before() {
+        // Read the raw user options rather than the defaults-merged parameter: the
+        // merge always produces every key, so a `?? DEFAULT` on the merged object
+        // would have one arm no configuration can reach.
+        const options: Options = context.options[0] ?? {};
+
+        engines = new Set([
+          ...(options.templateEngines ?? DEFAULT_TEMPLATE_ENGINES),
+          ...(options.additionalTemplateEngines ?? []),
+        ]);
+        vocabulary = {
+          requestRoots: new Set([
+            ...(options.requestRoots ?? DEFAULT_REQUEST_ROOTS),
+            ...(options.additionalRequestRoots ?? []),
+          ]),
+          requestProperties: new Set([
+            ...(options.requestProperties ?? DEFAULT_REQUEST_PROPERTIES),
+            ...(options.additionalRequestProperties ?? []),
+          ]),
+          untrustedNameWords: new Set([
+            ...(options.untrustedNameWords ?? DEFAULT_UNTRUSTED_NAME_WORDS),
+            ...(options.additionalUntrustedNameWords ?? []),
+          ]),
+        };
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const { callee, arguments: args } = node;
         if (callee.type !== AST_NODE_TYPES.MemberExpression) return;

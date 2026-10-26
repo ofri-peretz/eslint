@@ -69,6 +69,7 @@ export const noKeyboardInaccessibleElements = createRule<
 >({
   name: 'no-keyboard-inaccessible-elements',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-keyboard-inaccessible-elements.md',
@@ -138,20 +139,12 @@ export const noKeyboardInaccessibleElements = createRule<
       checkElements: ['div', 'span'],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { ignoreInTests = true, checkElements = ['div', 'span'] }: Options =
-      options || {};
-
-    const filename = context.filename;
-    const isTestFile =
-      ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
-
-    if (isTestFile) {
-      return {};
-    }
+    let ignoreInTests: boolean;
+    let checkElements: string[];
 
     /**
      * Check JSX elements
@@ -184,6 +177,20 @@ export const noKeyboardInaccessibleElements = createRule<
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({ ignoreInTests = true, checkElements = ['div', 'span'] } =
+          options || {});
+
+        const filename = context.filename;
+        const isTestFile =
+          ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+        return true;
+      },
       JSXOpeningElement: checkJSXElement,
     };
   },

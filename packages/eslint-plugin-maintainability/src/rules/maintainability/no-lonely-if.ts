@@ -24,6 +24,10 @@ type RuleOptions = [Options?];
 export const noLonelyIf = createRule<RuleOptions, MessageIds>({
   name: 'no-lonely-if',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'eslint/no-lonely-if',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/no-lonely-if.md',
@@ -58,11 +62,8 @@ export const noLonelyIf = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allow: [] }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const { allow = [] } = options || {};
-
-    const allowedContexts = new Set(allow);
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowedContexts: Set<string>;
 
     function isInAllowedContext(): boolean {
       // Check if we're in an allowed context
@@ -104,6 +105,12 @@ export const noLonelyIf = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        const { allow = [] } = options || {};
+
+        allowedContexts = new Set(allow);
+      },
       IfStatement(node: TSESTree.IfStatement) {
         if (isLonelyIf(node) && !isInAllowedContext()) {
           context.report({

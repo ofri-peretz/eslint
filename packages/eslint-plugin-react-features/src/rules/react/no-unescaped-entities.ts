@@ -19,6 +19,10 @@ const UNESCAPED_ENTITIES = /[<>"]/;
 export const noUnescapedEntities = createRule<[], MessageIds>({
   name: 'no-unescaped-entities',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/no-unescaped-entities',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-unescaped-entities.md',
@@ -31,13 +35,14 @@ export const noUnescapedEntities = createRule<[], MessageIds>({
         description: 'Unescaped HTML entity in JSX text',
         severity: 'MEDIUM',
         fix: 'Use HTML entities (&lt;, &gt;, &quot;) or wrap in curly braces',
-        documentationLink: 'https://react.dev/learn/javascript-in-jsx-with-curly-braces',
+        documentationLink:
+          'https://react.dev/learn/javascript-in-jsx-with-curly-braces',
       }),
     },
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       JSXText(node: TSESTree.JSXText) {
         const text = node.value;

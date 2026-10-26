@@ -33,6 +33,10 @@ type RuleOptions = [Options?];
 export const noMutableExports = createRule<RuleOptions, MessageIds>({
   name: 'no-mutable-exports',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/no-mutable-exports',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modularity/docs/rules/no-mutable-exports.md',
@@ -54,7 +58,7 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
         const decl = node.declaration;

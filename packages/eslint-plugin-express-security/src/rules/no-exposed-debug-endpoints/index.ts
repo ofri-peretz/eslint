@@ -56,6 +56,7 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
   /** A debug route mounted by a test application is the fixture, not an exposure — it never ships. */
   skipTestFiles: true,
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-exposed-debug-endpoints.md',
@@ -95,22 +96,8 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const options = context.options[0] || {};
-    const debugPaths = options.endpoints || DEFAULT_DEBUG_PATHS;
-    const ignoreFiles = options.ignoreFiles || [];
-    const filename = context.filename;
-
-    // Check if current file should be ignored
-    if (ignoreFiles.some((pattern) => filename.includes(pattern))) {
-      return {};
-    }
+  createOnce(context) {
+    let debugPaths: string[];
 
     // oxlint-disable-next-line consistent-function-scoping
     const isExpressRouteCall = (node: TSESTree.CallExpression) => {
@@ -123,6 +110,24 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        const options = context.options[0] || {};
+        debugPaths = options.endpoints || DEFAULT_DEBUG_PATHS;
+        const ignoreFiles = options.ignoreFiles || [];
+        const filename = context.filename;
+
+        // Check if current file should be ignored
+        if (ignoreFiles.some((pattern) => filename.includes(pattern))) {
+          return false;
+        }
+        return true;
+      },
       // Only route *registrations* are flagged. A bare string literal that
       // happens to equal a debug path (a redirect target, a constant, a
       // comparison) is not an exposed endpoint — flagging it was a false

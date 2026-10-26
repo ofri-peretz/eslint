@@ -83,6 +83,7 @@ const DEFAULT_SENSITIVE_TERMS = [
 export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
   name: 'no-exposed-private-fields',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/no-exposed-private-fields.md',
@@ -103,7 +104,6 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
         fix: 'Add @Exclude() decorator or use class-transformer to exclude from responses',
         documentationLink: 'https://docs.nestjs.com/techniques/serialization',
       }),
-
     },
     schema: [
       {
@@ -122,51 +122,13 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true, sensitivePatterns: [] }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    // Registering no visitors is both the gate and the cheap path: a file
-    // that does not use this SDK does no work at all.
-    if (!fileUsesNestjs(context.sourceCode.ast)) return {};
-
-    const { allowInTests = true, sensitivePatterns = [] } = options as Options;
-
-    if (allowInTests && isTestFilePath(context.filename)) {
-      return {};
-    }
-
-    const terms = compileSensitiveTerms([
-      ...DEFAULT_SENSITIVE_TERMS,
-      ...sensitivePatterns,
-    ]);
-
-    /** Decorators that mark a class as something serialized back to clients. */
-    /**
-     * Class decorators marking something that is serialized *outward*.
-     *
-     * `@InputType()` and `@ArgsType()` are deliberately absent: they are
-     * GraphQL *inputs*, submitted by the client and never returned, so a
-     * credential-named field on one cannot be exposed. They were in this set,
-     * which made every `@InputType()` a reporting surface for a rule about
-     * data leaving. `@ObjectType()` stays — that one is returned.
-     */
-    /**
-     * Persistence. A stored class is serialized outward whatever it is called,
-     * so its name cannot argue it out of scope.
-     */
-    const PERSISTED_DECORATORS = new Set(['Entity', 'Schema']);
-
-    /**
-     * Transport. `@ObjectType()` and `@ApiProperty` say the class is returned
-     * to a caller — which is exactly the question the name answers next. These
-     * used to sit in the same set as the persistence decorators, so an
-     * `@ObjectType() class ApiKeyToken` short-circuited to "in scope" before
-     * the credential-delivery check could run, and twenty's entire auth DTO
-     * directory was reported for carrying the token it exists to return.
-     */
-    const TRANSPORT_DECORATORS = new Set(['ObjectType', 'ApiProperty']);
-
+    let terms: string[][];
+    let PERSISTED_DECORATORS: Set<string>;
+    let TRANSPORT_DECORATORS: Set<string>;
     /**
      * Classes whose purpose is to deliver a credential to the caller.
      *
@@ -176,7 +138,6 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
      */
     const CREDENTIAL_DELIVERY =
       /(Login|SignIn|SignUp|Register|Auth|Refresh|Token|Session|Credential|Verify|Otp|Mfa|TwoFactor)\w*(Response|ResponseDto|Payload|Result)$/;
-
     /**
      * Classes named after the credential they carry.
      *
@@ -188,7 +149,6 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
      */
     const CREDENTIAL_NAMED =
       /(^|[a-z])(Token|Credential|Secret|ApiKey|Otp|Mfa)(Pair)?(DTO|Dto|Object|Output|Model)?$/;
-
     /**
      * Whether the class is a *response* shape.
      *
@@ -265,6 +225,51 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Registering no visitors is both the gate and the cheap path: a file
+        // that does not use this SDK does no work at all.
+        if (!fileUsesNestjs(context.sourceCode.ast)) return false;
+
+        const { allowInTests = true, sensitivePatterns = [] } =
+          options as Options;
+
+        if (allowInTests && isTestFilePath(context.filename)) {
+          return false;
+        }
+
+        terms = compileSensitiveTerms([
+          ...DEFAULT_SENSITIVE_TERMS,
+          ...sensitivePatterns,
+        ]);
+
+        /** Decorators that mark a class as something serialized back to clients. */
+        /**
+         * Class decorators marking something that is serialized *outward*.
+         *
+         * `@InputType()` and `@ArgsType()` are deliberately absent: they are
+         * GraphQL *inputs*, submitted by the client and never returned, so a
+         * credential-named field on one cannot be exposed. They were in this set,
+         * which made every `@InputType()` a reporting surface for a rule about
+         * data leaving. `@ObjectType()` stays — that one is returned.
+         */
+        /**
+         * Persistence. A stored class is serialized outward whatever it is called,
+         * so its name cannot argue it out of scope.
+         */
+        PERSISTED_DECORATORS = new Set(['Entity', 'Schema']);
+
+        /**
+         * Transport. `@ObjectType()` and `@ApiProperty` say the class is returned
+         * to a caller — which is exactly the question the name answers next. These
+         * used to sit in the same set as the persistence decorators, so an
+         * `@ObjectType() class ApiKeyToken` short-circuited to "in scope" before
+         * the credential-delivery check could run, and twenty's entire auth DTO
+         * directory was reported for carrying the token it exists to return.
+         */
+        TRANSPORT_DECORATORS = new Set(['ObjectType', 'ApiProperty']);
+        return true;
+      },
       PropertyDefinition(node: TSESTree.PropertyDefinition) {
         const cls = enclosingClass(node);
         if (!cls || !isEntityOrDto(cls)) return;

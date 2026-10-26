@@ -98,7 +98,6 @@ describe('no-missing-security-headers', () => {
   });
 });
 
-
 /**
  * Regression lock — CSP / X-Frame-Options / X-Content-Type-Options protect a RENDERED
  * DOCUMENT. A scope whose only headers are transport or caching concerns has no document to
@@ -109,17 +108,29 @@ describe('no-missing-security-headers', () => {
  * scope and broke 9 tests — a RuleTester snippet sets a header without sending anything
  * because the snippet is truncated, not because the handler serves no document.
  */
-ruleTester.run('lock: transport-only headers are not a document response', noMissingSecurityHeaders, {
-  valid: [
-    { code: "function setSession(res, id) { res.setHeader('Set-Cookie', 'sid=' + id); }" },
-    { code: "function noStore(res) { res.setHeader('Cache-Control', 'no-store'); }" },
-    { code: "function redirect(res, to) { res.setHeader('Location', to); }" },
-  ],
-  invalid: [
-    // A security header in the mix means this IS a document response — the others are missing.
-    { code: "function h(res) { res.setHeader('X-Frame-Options', 'DENY'); }", errors: 1 },
-  ],
-});
+ruleTester.run(
+  'lock: transport-only headers are not a document response',
+  noMissingSecurityHeaders,
+  {
+    valid: [
+      {
+        code: "function setSession(res, id) { res.setHeader('Set-Cookie', 'sid=' + id); }",
+      },
+      {
+        name: 'a Cache-Control header alone is not a missing security header',
+        code: "function noStore(res) { res.setHeader('Cache-Control', 'no-store'); }",
+      },
+      { code: "function redirect(res, to) { res.setHeader('Location', to); }" },
+    ],
+    invalid: [
+      // A security header in the mix means this IS a document response — the others are missing.
+      {
+        code: "function h(res) { res.setHeader('X-Frame-Options', 'DENY'); }",
+        errors: 1,
+      },
+    ],
+  },
+);
 
 /**
  * Regression lock — `set` is a method name, not evidence of an HTTP response.
@@ -180,28 +191,32 @@ ruleTester.run('lock: .set() must name a header', noMissingSecurityHeaders, {
  * Content-Security-Policy, X-Frame-Options, X-Content-Type-Options" at CVSS
  * 7.5 — the rule flagging its own remediation.
  */
-ruleTester.run('lock: header names compare case-insensitively', noMissingSecurityHeaders, {
-  valid: [
-    {
-      code: `
+ruleTester.run(
+  'lock: header names compare case-insensitively',
+  noMissingSecurityHeaders,
+  {
+    valid: [
+      {
+        code: `
         res.setHeader('content-security-policy', "default-src 'self'");
         res.setHeader('x-frame-options', 'DENY');
         res.setHeader('x-content-type-options', 'nosniff');
       `,
-    },
-    {
-      code: `
+      },
+      {
+        code: `
         res.set('Content-Security-Policy', "default-src 'self'");
         res.set('x-frame-options', 'DENY');
         res.set('X-CONTENT-TYPE-OPTIONS', 'nosniff');
       `,
-    },
-  ],
-  invalid: [
-    // The counter-control: lowercase and genuinely incomplete.
-    { code: "res.setHeader('x-frame-options', 'DENY');", errors: 1 },
-  ],
-});
+      },
+    ],
+    invalid: [
+      // The counter-control: lowercase and genuinely incomplete.
+      { code: "res.setHeader('x-frame-options', 'DENY');", errors: 1 },
+    ],
+  },
+);
 
 /**
  * Regression lock — an unknown is not an absence.
@@ -211,10 +226,13 @@ ruleTester.run('lock: header names compare case-insensitively', noMissingSecurit
  * `for` was invisible and the rule demanded headers that were three lines
  * below it. Every valid case here reported before the fix.
  */
-ruleTester.run('lock: headers set in a branch or a loop are still set', noMissingSecurityHeaders, {
-  valid: [
-    {
-      code: `
+ruleTester.run(
+  'lock: headers set in a branch or a loop are still set',
+  noMissingSecurityHeaders,
+  {
+    valid: [
+      {
+        code: `
         app.use((req, res, next) => {
           res.setHeader('Content-Security-Policy', "default-src 'self'");
           if (process.env.NODE_ENV === 'production') {
@@ -224,10 +242,10 @@ ruleTester.run('lock: headers set in a branch or a loop are still set', noMissin
           next();
         });
       `,
-    },
-    // A name the rule cannot read makes the whole scope unreadable.
-    {
-      code: `
+      },
+      // A name the rule cannot read makes the whole scope unreadable.
+      {
+        code: `
         app.use((req, res, next) => {
           for (const [name, value] of Object.entries(HEADERS)) {
             res.setHeader(name, value);
@@ -235,31 +253,34 @@ ruleTester.run('lock: headers set in a branch or a loop are still set', noMissin
           next();
         });
       `,
-    },
-    { code: 'function apply(res, name, value) { res.setHeader(name, value); }' },
-  ],
-  invalid: [
-    // A constant name IS readable, and resolves through scope rather than
-    // through its spelling.
-    {
-      code: `const FRAME_HEADER = 'X-Frame-Options'; function h(res) { res.setHeader(FRAME_HEADER, 'DENY'); }`,
-      errors: 1,
-    },
-    // So is an entry reached by index out of a const table.
-    {
-      code: `const H = [['X-Frame-Options', 'DENY']]; function h(res) { res.setHeader(H[0][0], H[0][1]); }`,
-      errors: 1,
-    },
-    // A thin wrapper is readable from its call sites.
-    {
-      code: `
+      },
+      {
+        code: 'function apply(res, name, value) { res.setHeader(name, value); }',
+      },
+    ],
+    invalid: [
+      // A constant name IS readable, and resolves through scope rather than
+      // through its spelling.
+      {
+        code: `const FRAME_HEADER = 'X-Frame-Options'; function h(res) { res.setHeader(FRAME_HEADER, 'DENY'); }`,
+        errors: 1,
+      },
+      // So is an entry reached by index out of a const table.
+      {
+        code: `const H = [['X-Frame-Options', 'DENY']]; function h(res) { res.setHeader(H[0][0], H[0][1]); }`,
+        errors: 1,
+      },
+      // A thin wrapper is readable from its call sites.
+      {
+        code: `
         function setSecurityHeader(res, name, value) { res.setHeader(name, value); }
         setSecurityHeader(res, 'X-Frame-Options', 'DENY');
       `,
-      errors: 1,
-    },
-  ],
-});
+        errors: 1,
+      },
+    ],
+  },
+);
 
 /**
  * Regression lock — the response says what it is serving.
@@ -268,15 +289,24 @@ ruleTester.run('lock: headers set in a branch or a loop are still set', noMissin
  * document. On `application/json` there is nothing for them to do, and the
  * rule reported every JSON endpoint that declared its own Content-Type.
  */
-ruleTester.run('lock: a non-document media type ends the question', noMissingSecurityHeaders, {
-  valid: [
-    { code: `res.setHeader('Content-Type', 'application/json; charset=utf-8');` },
-    { code: `res.setHeader('Content-Type', 'text/plain');` },
-  ],
-  invalid: [
-    { code: `res.setHeader('Content-Type', 'text/html; charset=utf-8');`, errors: 1 },
-  ],
-});
+ruleTester.run(
+  'lock: a non-document media type ends the question',
+  noMissingSecurityHeaders,
+  {
+    valid: [
+      {
+        code: `res.setHeader('Content-Type', 'application/json; charset=utf-8');`,
+      },
+      { code: `res.setHeader('Content-Type', 'text/plain');` },
+    ],
+    invalid: [
+      {
+        code: `res.setHeader('Content-Type', 'text/html; charset=utf-8');`,
+        errors: 1,
+      },
+    ],
+  },
+);
 
 /**
  * Regression lock — header blocks written as DATA.
@@ -289,7 +319,9 @@ ruleTester.run('lock: a non-document media type ends the question', noMissingSec
 ruleTester.run('lock: declarative header blocks', noMissingSecurityHeaders, {
   valid: [
     // An outgoing request, not a response.
-    { code: `fetch('/api', { headers: { 'Content-Type': 'application/json' } });` },
+    {
+      code: `fetch('/api', { headers: { 'Content-Type': 'application/json' } });`,
+    },
     // A spread hides keys, so the block cannot be enumerated.
     {
       code: `new Response(html, { headers: { ...SECURE_DEFAULTS, 'X-Request-Id': id } });`,
@@ -349,7 +381,9 @@ ruleTester.run('edge shapes', noMissingSecurityHeaders, {
     },
     // A non-document media type ends the question, however it is written.
     { code: `res.setHeader('Content-Type', 'application/json');` },
-    { code: `const CT = 'application/json'; res.setHeader('Content-Type', CT);` },
+    {
+      code: `const CT = 'application/json'; res.setHeader('Content-Type', CT);`,
+    },
     // A `headers` property that is not a response header block.
     { code: `fetch(url, { headers: { 'X-Frame-Options': 'DENY' } });` },
     { code: `const o = { headers: { 'X-Frame-Options': 'DENY' } };` },
@@ -361,11 +395,15 @@ ruleTester.run('edge shapes', noMissingSecurityHeaders, {
     { code: `new Response(b, { headers: {} });` },
     { code: `new Response(b, { headers: [] });` },
     // Array entries that are not `{ key, value }` objects.
-    { code: `const c = { headers: [null, 'x', { notKey: 'X-Frame-Options' }] };` },
+    {
+      code: `const c = { headers: [null, 'x', { notKey: 'X-Frame-Options' }] };`,
+    },
     // A `key` whose value is not a string.
     { code: `const c = { headers: [{ key: 42, value: 'x' }] };` },
     // A computed key inside a declarative block.
-    { code: `new Response(b, { headers: { [k]: 'v', 'X-Frame-Options': 'DENY' } });` },
+    {
+      code: `new Response(b, { headers: { [k]: 'v', 'X-Frame-Options': 'DENY' } });`,
+    },
     // A response factory that is not one we know.
     { code: `Response.clone(b, { headers: { 'X-Frame-Options': 'DENY' } });` },
     { code: `Whatever.json(b, { headers: { 'X-Frame-Options': 'DENY' } });` },
@@ -375,7 +413,10 @@ ruleTester.run('edge shapes', noMissingSecurityHeaders, {
     { code: `a.b.json(x, { headers: { 'X-Frame-Options': 'DENY' } });` },
     // A factory chosen at RUNTIME names nothing to match — unlike
     // `NextResponse['next']`, there is no key here to read.
-    { name: 'a factory chosen at RUNTIME names nothing to match — unlike', code: `NextResponse[make](b, { headers: { 'X-Frame-Options': 'DENY' } });` },
+    {
+      name: 'a factory chosen at RUNTIME names nothing to match — unlike',
+      code: `NextResponse[make](b, { headers: { 'X-Frame-Options': 'DENY' } });`,
+    },
     // writeHead with no header object, and a computed / wrong method name.
     { code: `res.writeHead(204);` },
     { code: `res[m](200, { 'X-Frame-Options': 'DENY' });` },
@@ -399,9 +440,19 @@ ruleTester.run('edge shapes', noMissingSecurityHeaders, {
       errors: 1,
     },
     // Every response factory we recognise, in either notation.
-    { code: `Response.json(b, { headers: { 'X-Frame-Options': 'DENY' } });`, errors: 1 },
-    { code: `NextResponse.next({ headers: { 'X-Frame-Options': 'DENY' } });`, errors: 1 },
-    { name: 'every response factory we recognise, in either notation', code: `NextResponse['next']({ headers: { 'X-Frame-Options': 'DENY' } });`, errors: 1 },
+    {
+      code: `Response.json(b, { headers: { 'X-Frame-Options': 'DENY' } });`,
+      errors: 1,
+    },
+    {
+      code: `NextResponse.next({ headers: { 'X-Frame-Options': 'DENY' } });`,
+      errors: 1,
+    },
+    {
+      name: 'every response factory we recognise, in either notation',
+      code: `NextResponse['next']({ headers: { 'X-Frame-Options': 'DENY' } });`,
+      errors: 1,
+    },
     // A nested table folded twice.
     {
       code: `const H = [['X-Frame-Options', 'DENY']]; res.setHeader(H[0][0], H[0][1]);`,
@@ -442,7 +493,9 @@ ruleTester.run('bounded folding', noMissingSecurityHeaders, {
 ruleTester.run('remaining shapes', noMissingSecurityHeaders, {
   valid: [
     // A nested table indexed by something unreadable.
-    { code: `const H = [['X-Frame-Options']]; res.setHeader(H[k][0], 'DENY');` },
+    {
+      code: `const H = [['X-Frame-Options']]; res.setHeader(H[k][0], 'DENY');`,
+    },
     // A DESTRUCTURED parameter: the binding is not one of the function's
     // params, so its call sites cannot be matched by position.
     {
@@ -470,7 +523,10 @@ ruleTester.run('remaining shapes', noMissingSecurityHeaders, {
   ],
   invalid: [
     // A writeHead block keyed by a non-string literal alongside a real header.
-    { code: `res.writeHead(200, { 42: 'v', 'X-Frame-Options': 'DENY' });`, errors: 1 },
+    {
+      code: `res.writeHead(200, { 42: 'v', 'X-Frame-Options': 'DENY' });`,
+      errors: 1,
+    },
   ],
 });
 
@@ -520,8 +576,17 @@ ruleTester.run('declarative array media type', noMissingSecurityHeaders, {
     { code: `const c = { headers: [{ key: 'Content-Type' }] };`, errors: 1 },
     // A `value` sibling that is spread in, computed, or written as a string
     // key is likewise not a readable media type.
-    { code: `const c = { headers: [{ key: 'Content-Type', ...rest }] };`, errors: 1 },
-    { code: `const c = { headers: [{ key: 'Content-Type', [k]: 'text/html' }] };`, errors: 1 },
-    { code: `const c = { headers: [{ key: 'Content-Type', 'value': 'application/json' }] };`, errors: 1 },
+    {
+      code: `const c = { headers: [{ key: 'Content-Type', ...rest }] };`,
+      errors: 1,
+    },
+    {
+      code: `const c = { headers: [{ key: 'Content-Type', [k]: 'text/html' }] };`,
+      errors: 1,
+    },
+    {
+      code: `const c = { headers: [{ key: 'Content-Type', 'value': 'application/json' }] };`,
+      errors: 1,
+    },
   ],
 });

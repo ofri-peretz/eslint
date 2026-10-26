@@ -24,6 +24,31 @@
  */
 
 declare module '@typescript-eslint/utils/ts-eslint' {
+  // Same type parameters as upstream, which declaration merging requires.
+  interface RuleMetaData<
+    MessageIds extends string,
+    PluginDocs = unknown,
+    Options extends readonly unknown[] = [],
+  > {
+    /**
+     * Where this rule is known to behave identically (INTEROP_PHILOSOPHY.md).
+     * `oxlint` is claimed only when the rule's own test suite passes on
+     * oxlint's RuleTester too (vitest.dual-rule-tester.ts runs it there);
+     * type-aware rules stay `['eslint']` — oxlint has no parser services.
+     * ESLint is the floor and is always listed.
+     */
+    interop?: {
+      runtimes: readonly ['eslint'] | readonly ['eslint', 'oxlint'];
+      /**
+       * The oxlint built-in that does the same job (`import/no-cycle`),
+       * from docs/oxlint-builtin-overlap.json verdicts of `equivalent`. An
+       * oxlint user enables that native rule instead of this one: same
+       * finding, no double report.
+       */
+      nativeEquivalent?: string;
+    };
+  }
+
   interface RuleMetaDataDocs {
     /** CWE identifier (e.g. "CWE-89"). Rendered inline by @interlace/eslint-formatter. */
     cwe?: string;

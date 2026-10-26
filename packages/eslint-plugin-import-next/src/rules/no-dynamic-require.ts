@@ -30,6 +30,10 @@ type RuleOptions = [Options?];
 export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
   name: 'no-dynamic-require',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/no-dynamic-require',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-dynamic-require.md',
@@ -71,9 +75,8 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ esmodule: false }],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const { esmodule = false } = options;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let esmodule: boolean;
 
     function isStaticValue(node: TSESTree.Node): boolean {
       return (
@@ -84,6 +87,10 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({ esmodule = false } = options);
+      },
       CallExpression(node: TSESTree.CallExpression) {
         // Check require() calls
         if (

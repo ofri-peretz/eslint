@@ -25,7 +25,10 @@ ruleTester.run('no-sensitive-indexeddb', noSensitiveIndexeddb, {
       code: `db.createObjectStore('settings');`,
     },
     { code: `db.createObjectStore('passwords');`, filename: 'db.test.ts' },
-    { code: `db.createObjectStore();` },
+    {
+      name: 'a createObjectStore call with no name names nothing sensitive',
+      code: `db.createObjectStore();`,
+    },
     { code: `db.createObjectStore(computeName());` },
 
     // --- the .add/.put sink must be an IDBObjectStore ------------------------

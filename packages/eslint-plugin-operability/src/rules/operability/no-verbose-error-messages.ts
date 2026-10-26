@@ -30,6 +30,7 @@ type RuleOptions = [Options?];
 export const noVerboseErrorMessages = createRule<RuleOptions, MessageIds>({
   name: 'no-verbose-error-messages',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-operability/docs/rules/no-verbose-error-messages.md',
@@ -52,7 +53,7 @@ export const noVerboseErrorMessages = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  createOnce(context) {
     function report(node: TSESTree.Node) {
       context.report({
         node,

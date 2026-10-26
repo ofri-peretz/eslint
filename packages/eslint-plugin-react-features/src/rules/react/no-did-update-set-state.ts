@@ -24,6 +24,10 @@ type RuleOptions = [Options?];
 export const noDidUpdateSetState = createRule<RuleOptions, MessageIds>({
   name: 'no-did-update-set-state',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'react/no-did-update-set-state',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-did-update-set-state.md',
@@ -36,7 +40,8 @@ export const noDidUpdateSetState = createRule<RuleOptions, MessageIds>({
         description: 'setState called in componentDidUpdate without condition',
         severity: 'HIGH',
         fix: 'Add condition to prevent infinite re-render loop',
-        documentationLink: 'https://react.dev/reference/react/Component#componentdidupdate',
+        documentationLink:
+          'https://react.dev/reference/react/Component#componentdidupdate',
       }),
     },
     schema: [
@@ -53,20 +58,27 @@ export const noDidUpdateSetState = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInCallback: false }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    let inComponentDidUpdate = false;
-    let hasConditionalCheck = false;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let options: Options | undefined;
+    let inComponentDidUpdate: boolean;
+    let hasConditionalCheck: boolean;
 
     return {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      'MethodDefinition[key.name="componentDidUpdate"]'(node: TSESTree.MethodDefinition) {
+      before() {
+        [options] = context.options;
+        inComponentDidUpdate = false;
+        hasConditionalCheck = false;
+      },
+      'MethodDefinition[key.name="componentDidUpdate"]'(
+        _node: TSESTree.MethodDefinition,
+      ) {
         inComponentDidUpdate = true;
         hasConditionalCheck = false;
       },
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      'MethodDefinition[key.name="componentDidUpdate"]:exit'(node: TSESTree.MethodDefinition) {
+      'MethodDefinition[key.name="componentDidUpdate"]:exit'(
+        _node: TSESTree.MethodDefinition,
+      ) {
         inComponentDidUpdate = false;
       },
 

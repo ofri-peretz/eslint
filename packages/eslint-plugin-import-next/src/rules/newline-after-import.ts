@@ -18,6 +18,10 @@ export type RuleOptions = [Options?];
 export const newlineAfterImport = createRule<RuleOptions, MessageIds>({
   name: 'newline-after-import',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/newline-after-import',
+    },
     type: 'layout',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/newline-after-import.md',
@@ -38,7 +42,7 @@ export const newlineAfterImport = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const sourceCode = context.sourceCode;

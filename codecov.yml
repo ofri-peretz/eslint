@@ -549,6 +549,10 @@ ignore:
   # report's 32,016. Both formatters have since left this list on the same
   # rule — they ship, so they are measured, not ignored.
   - 'packages/ui/**'
+  # oxlint-plugin-* ship no code of their own: each alias is a one-line
+  # re-export of an eslint-plugin-* that IS measured, and the security façade
+  # is built from mapping.json. See docs/intents/oxlint-native-plugin-names.
+  - 'packages/oxlint-plugin-*/**'
   - 'apps/**'
   - 'scripts/**'
   - 'benchmarks/**'

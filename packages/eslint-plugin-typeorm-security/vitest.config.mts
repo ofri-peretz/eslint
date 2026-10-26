@@ -15,6 +15,11 @@ export default defineConfig({
   // ponytail: alias devkit to source so vitest-direct runs don't need a pre-built dist
   resolve: {
     alias: {
+      // Every rule test runs on ESLint and on oxlint: vitest.dual-rule-tester.ts.
+      '@typescript-eslint/rule-tester': resolve(
+        __dirname,
+        '../../vitest.dual-rule-tester.ts',
+      ),
       '@interlace/eslint-devkit': resolve(
         __dirname,
         '../eslint-devkit/src/index.ts',

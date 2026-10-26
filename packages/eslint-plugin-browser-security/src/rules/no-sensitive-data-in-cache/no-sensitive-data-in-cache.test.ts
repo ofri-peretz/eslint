@@ -31,16 +31,23 @@ ruleTester.run('no-sensitive-data-in-cache', noSensitiveDataInCache, {
     { code: `cache.put('token', authToken);` },
     { code: `cache.store('creditCard', card);` },
     { code: `cache.set('ssn', socialSecurity);` },
-    { code: `cacheMap.set('creditLimit', 5000);` },
+    {
+      name: 'a plain Map keyed creditLimit is not a cache sink',
+      code: `cacheMap.set('creditLimit', 5000);`,
+    },
     { code: `metrics.set('token_count', 42);` },
 
     // A real Cache, non-sensitive resources.
     {
       code: `const cache = await caches.open('v1'); await cache.addAll(['/shell.html', '/app.js']);`,
     },
-    { code: `const cache = await caches.open('v1'); await cache.put(req, res);` },
+    {
+      code: `const cache = await caches.open('v1'); await cache.put(req, res);`,
+    },
     // Reads are not writes.
-    { code: `const cache = await caches.open('v1'); await cache.match('/api/me/ssn');` },
+    {
+      code: `const cache = await caches.open('v1'); await cache.match('/api/me/ssn');`,
+    },
     { code: `await caches.match('/api/me/ssn');` },
     // A Cache we cannot resolve.
     { code: `someCache.put('/api/me/ssn', res);` },
@@ -100,7 +107,10 @@ ruleTester.run('no-sensitive-data-in-cache', noSensitiveDataInCache, {
     {
       code: `const cache = await caches.open('v1'); await cache.addAll(['/shell.html', '/api/me/api-key']);`,
       errors: [
-        { messageId: 'sensitiveInCache', data: { resource: '/api/me/api-key' } },
+        {
+          messageId: 'sensitiveInCache',
+          data: { resource: '/api/me/api-key' },
+        },
       ],
     },
     // A Request object with a literal URL.

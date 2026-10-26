@@ -34,11 +34,17 @@ describe('no-missing-csrf-protection', () => {
     ruleTester.run('valid - CSRF protection present', noMissingCsrfProtection, {
       valid: [
         // CSRF middleware in route chain
-        { name: 'the route carries csrf()', code: `${APP}app.post("/api/users", csrf(), handler);` },
+        {
+          name: 'the route carries csrf()',
+          code: `${APP}app.post("/api/users", csrf(), handler);`,
+        },
         { code: `${ROUTER}router.put("/api/users/:id", csrf(), handler);` },
         { code: `${APP}app.delete("/api/users/:id", csrf(), handler);` },
         // CSRF middleware globally
-        { code: `${APP}app.use(csrf());` },
+        {
+          name: 'global csrf() middleware protects every route',
+          code: `${APP}app.use(csrf());`,
+        },
         // GET doesn't require CSRF
         { code: `${APP}app.get("/api/users", handler);` },
         // Test files (when allowInTests is true)
@@ -51,56 +57,68 @@ describe('no-missing-csrf-protection', () => {
       invalid: [],
     });
 
-    ruleTester.run('valid - not an Express route at all', noMissingCsrfProtection, {
-      valid: [
-        // ---- FP lock: the method name was the entire verdict ---------------
-        // An HTTP CLIENT call. Reported at CVSS 8.8 before the receiver had to
-        // be proven, with a suggestion that would have inserted `csrf()` into
-        // the request body position.
-        { code: 'import axios from "axios";\naxios.post("/api/orders", cart);' },
-        { code: 'import axios from "axios";\naxios.put("/api/orders/1", { paid: true });' },
-        // A job queue and a cache. Neither has middleware.
-        { code: 'queue.delete("job-1", { force: true });' },
-        { code: 'cache.set("k", v); cache.delete("k", opts);' },
-        // fetch-style wrappers.
-        { code: 'const api = createClient(); api.patch("/users/1", patchBody);' },
-        // A Map — `delete` with two arguments is not a route.
-        { code: 'const seen = new Map(); seen.delete(key, fallback);' },
+    ruleTester.run(
+      'valid - not an Express route at all',
+      noMissingCsrfProtection,
+      {
+        valid: [
+          // ---- FP lock: the method name was the entire verdict ---------------
+          // An HTTP CLIENT call. Reported at CVSS 8.8 before the receiver had to
+          // be proven, with a suggestion that would have inserted `csrf()` into
+          // the request body position.
+          {
+            code: 'import axios from "axios";\naxios.post("/api/orders", cart);',
+          },
+          {
+            code: 'import axios from "axios";\naxios.put("/api/orders/1", { paid: true });',
+          },
+          // A job queue and a cache. Neither has middleware.
+          { code: 'queue.delete("job-1", { force: true });' },
+          { code: 'cache.set("k", v); cache.delete("k", opts);' },
+          // fetch-style wrappers.
+          {
+            code: 'const api = createClient(); api.patch("/users/1", patchBody);',
+          },
+          // A Map — `delete` with two arguments is not a route.
+          { code: 'const seen = new Map(); seen.delete(key, fallback);' },
 
-        // The receiver is a parameter. Nothing in the file proves it is an
-        // Express app, and the parameter's SPELLING is not evidence.
-        { code: 'export default function routes(app) { app.post("/x", handler); }' },
+          // The receiver is a parameter. Nothing in the file proves it is an
+          // Express app, and the parameter's SPELLING is not evidence.
+          {
+            code: 'export default function routes(app) { app.post("/x", handler); }',
+          },
 
-        // Right method, right receiver, but the first argument is a payload
-        // rather than a route path.
-        { code: `${APP}app.post(buildPath(), handler);` },
-        // An empty path array names no route.
-        { code: `${APP}app.post([], handler);` },
-        // `.route(path)` with nothing registered on it.
-        { code: `${APP}app.route("/api/users").post();` },
+          // Right method, right receiver, but the first argument is a payload
+          // rather than a route path.
+          { code: `${APP}app.post(buildPath(), handler);` },
+          // An empty path array names no route.
+          { code: `${APP}app.post([], handler);` },
+          // `.route(path)` with nothing registered on it.
+          { code: `${APP}app.route("/api/users").post();` },
 
-        // ---- receivers the resolver must refuse ----------------------------
-        // A property read, not a binding we can follow.
-        { code: 'server.app.post("/x", handler);' },
-        // Re-assigned, so the name no longer holds what it was declared with.
-        {
-          code: `import express from "express";\nlet app = express();\napp = withAuth(app);\napp.post("/x", handler);`,
-        },
-        // Two declarations for one name — no single knowable value.
-        {
-          code: `import express from "express";\nvar app = express();\nvar app = express();\napp.post("/x", handler);`,
-        },
-        // A declaration cycle must terminate rather than recurse forever.
-        { code: 'const a = b; const b = a; a.post("/x", handler);' },
+          // ---- receivers the resolver must refuse ----------------------------
+          // A property read, not a binding we can follow.
+          { code: 'server.app.post("/x", handler);' },
+          // Re-assigned, so the name no longer holds what it was declared with.
+          {
+            code: `import express from "express";\nlet app = express();\napp = withAuth(app);\napp.post("/x", handler);`,
+          },
+          // Two declarations for one name — no single knowable value.
+          {
+            code: `import express from "express";\nvar app = express();\nvar app = express();\napp.post("/x", handler);`,
+          },
+          // A declaration cycle must terminate rather than recurse forever.
+          { code: 'const a = b; const b = a; a.post("/x", handler);' },
 
-        // Global CSRF middleware covers every route mounted on the app — the
-        // rule's own remediation text has always said so.
-        {
-          code: `${APP}app.use(csrf({ cookie: true }));\napp.post("/api/users", handler);\napp.delete("/api/users/:id", handler);`,
-        },
-      ],
-      invalid: [],
-    });
+          // Global CSRF middleware covers every route mounted on the app — the
+          // rule's own remediation text has always said so.
+          {
+            code: `${APP}app.use(csrf({ cookie: true }));\napp.post("/api/users", handler);\napp.delete("/api/users/:id", handler);`,
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('Invalid Code - Missing CSRF', () => {
@@ -115,7 +133,8 @@ describe('no-missing-csrf-protection', () => {
               messageId: 'missingCsrfProtection',
               data: {
                 issue: 'POST route handler missing CSRF protection',
-                safeAlternative: 'Add CSRF middleware: app.post("/path", csrf(), handler) or use app.use(csrf()) globally',
+                safeAlternative:
+                  'Add CSRF middleware: app.post("/path", csrf(), handler) or use app.use(csrf()) globally',
               },
               suggestions: [
                 {
@@ -133,7 +152,8 @@ describe('no-missing-csrf-protection', () => {
               messageId: 'missingCsrfProtection',
               data: {
                 issue: 'POST route handler missing CSRF protection',
-                safeAlternative: 'Add CSRF middleware: app.post("/path", csrf(), handler) or use app.use(csrf()) globally',
+                safeAlternative:
+                  'Add CSRF middleware: app.post("/path", csrf(), handler) or use app.use(csrf()) globally',
               },
               suggestions: [
                 {
@@ -147,51 +167,94 @@ describe('no-missing-csrf-protection', () => {
         // `express.Router()` and `require('express')` resolve the same way.
         {
           code: 'const express = require("express");\nconst api = express.Router();\napi.post("/pay", chargeCard);',
-          errors: [{
-            messageId: 'missingCsrfProtection',
-            suggestions: [{ messageId: 'addCsrfValidation', output: 'const express = require("express");\nconst api = express.Router();\napi.post("/pay", csrf(), chargeCard);' }],
-          }],
+          errors: [
+            {
+              messageId: 'missingCsrfProtection',
+              suggestions: [
+                {
+                  messageId: 'addCsrfValidation',
+                  output:
+                    'const express = require("express");\nconst api = express.Router();\napi.post("/pay", csrf(), chargeCard);',
+                },
+              ],
+            },
+          ],
         },
         // A template-literal route path is still a route path.
         {
           code: `${APP}app.post(\`/api/\${version}/users\`, handler);`,
-          errors: [{
-            messageId: 'missingCsrfProtection',
-            suggestions: [{ messageId: 'addCsrfValidation', output: `${APP}app.post(\`/api/\${version}/users\`, csrf(), handler);` }],
-          }],
+          errors: [
+            {
+              messageId: 'missingCsrfProtection',
+              suggestions: [
+                {
+                  messageId: 'addCsrfValidation',
+                  output: `${APP}app.post(\`/api/\${version}/users\`, csrf(), handler);`,
+                },
+              ],
+            },
+          ],
         },
         // An array of paths — Express accepts it, so must the rule.
         {
           code: `${APP}app.post(["/api/users", "/api/v2/users"], handler);`,
-          errors: [{
-            messageId: 'missingCsrfProtection',
-            suggestions: [{ messageId: 'addCsrfValidation', output: `${APP}app.post(["/api/users", "/api/v2/users"], csrf(), handler);` }],
-          }],
+          errors: [
+            {
+              messageId: 'missingCsrfProtection',
+              suggestions: [
+                {
+                  messageId: 'addCsrfValidation',
+                  output: `${APP}app.post(["/api/users", "/api/v2/users"], csrf(), handler);`,
+                },
+              ],
+            },
+          ],
         },
         // A RegExp route path.
         {
           code: `${APP}app.post(/^\\/api\\/users/, handler);`,
-          errors: [{
-            messageId: 'missingCsrfProtection',
-            suggestions: [{ messageId: 'addCsrfValidation', output: `${APP}app.post(/^\\/api\\/users/, csrf(), handler);` }],
-          }],
+          errors: [
+            {
+              messageId: 'missingCsrfProtection',
+              suggestions: [
+                {
+                  messageId: 'addCsrfValidation',
+                  output: `${APP}app.post(/^\\/api\\/users/, csrf(), handler);`,
+                },
+              ],
+            },
+          ],
         },
         // A sub-router mounted with `.route(...)` is still the app's router.
         {
           code: `${APP}app.route("/api/users").post(handler, next);`,
-          errors: [{
-            messageId: 'missingCsrfProtection',
-            suggestions: [{ messageId: 'addCsrfValidation', output: `${APP}app.route("/api/users").post(csrf(), handler, next);` }],
-          }],
+          errors: [
+            {
+              messageId: 'missingCsrfProtection',
+              suggestions: [
+                {
+                  messageId: 'addCsrfValidation',
+                  output: `${APP}app.route("/api/users").post(csrf(), handler, next);`,
+                },
+              ],
+            },
+          ],
         },
         // `app.use(helmet())` mounts middleware that is not CSRF, so the route
         // is still unprotected.
         {
           code: `${APP}app.use(helmet());\napp.post("/api/users", handler);`,
-          errors: [{
-            messageId: 'missingCsrfProtection',
-            suggestions: [{ messageId: 'addCsrfValidation', output: `${APP}app.use(helmet());\napp.post("/api/users", csrf(), handler);` }],
-          }],
+          errors: [
+            {
+              messageId: 'missingCsrfProtection',
+              suggestions: [
+                {
+                  messageId: 'addCsrfValidation',
+                  output: `${APP}app.use(helmet());\napp.post("/api/users", csrf(), handler);`,
+                },
+              ],
+            },
+          ],
         },
       ],
     });
@@ -206,7 +269,8 @@ describe('no-missing-csrf-protection', () => {
               messageId: 'missingCsrfProtection',
               data: {
                 issue: 'PUT route handler missing CSRF protection',
-                safeAlternative: 'Add CSRF middleware: app.put("/path", csrf(), handler) or use app.use(csrf()) globally',
+                safeAlternative:
+                  'Add CSRF middleware: app.put("/path", csrf(), handler) or use app.use(csrf()) globally',
               },
               suggestions: [
                 {
@@ -230,7 +294,8 @@ describe('no-missing-csrf-protection', () => {
               messageId: 'missingCsrfProtection',
               data: {
                 issue: 'DELETE route handler missing CSRF protection',
-                safeAlternative: 'Add CSRF middleware: app.delete("/path", csrf(), handler) or use app.use(csrf()) globally',
+                safeAlternative:
+                  'Add CSRF middleware: app.delete("/path", csrf(), handler) or use app.use(csrf()) globally',
               },
               suggestions: [
                 {
@@ -254,7 +319,8 @@ describe('no-missing-csrf-protection', () => {
               messageId: 'missingCsrfProtection',
               data: {
                 issue: 'PATCH route handler missing CSRF protection',
-                safeAlternative: 'Add CSRF middleware: app.patch("/path", csrf(), handler) or use app.use(csrf()) globally',
+                safeAlternative:
+                  'Add CSRF middleware: app.patch("/path", csrf(), handler) or use app.use(csrf()) globally',
               },
               suggestions: [
                 {
@@ -288,10 +354,17 @@ describe('no-missing-csrf-protection', () => {
         // Same code, no ignorePattern — proves the option is what silences it.
         {
           code: `${APP}app.post("/api/internal", handler);`,
-          errors: [{
-            messageId: 'missingCsrfProtection',
-            suggestions: [{ messageId: 'addCsrfValidation', output: `${APP}app.post("/api/internal", csrf(), handler);` }],
-          }],
+          errors: [
+            {
+              messageId: 'missingCsrfProtection',
+              suggestions: [
+                {
+                  messageId: 'addCsrfValidation',
+                  output: `${APP}app.post("/api/internal", csrf(), handler);`,
+                },
+              ],
+            },
+          ],
         },
       ],
     });
@@ -308,46 +381,75 @@ describe('no-missing-csrf-protection', () => {
         // `requireToken`, so the option is what changes the verdict.
         {
           code: `${APP}app.post("/api/users", requireToken(), handler);`,
-          errors: [{
-            messageId: 'missingCsrfProtection',
-            suggestions: [{ messageId: 'addCsrfValidation', output: `${APP}app.post("/api/users", csrf(), requireToken(), handler);` }],
-          }],
+          errors: [
+            {
+              messageId: 'missingCsrfProtection',
+              suggestions: [
+                {
+                  messageId: 'addCsrfValidation',
+                  output: `${APP}app.post("/api/users", csrf(), requireToken(), handler);`,
+                },
+              ],
+            },
+          ],
         },
       ],
     });
 
-    ruleTester.run('options - custom protected methods', noMissingCsrfProtection, {
-      valid: [
-        {
-          code: `${APP}app.options("/api/users", handler);`, // OPTIONS not protected by default
-        },
-      ],
-      invalid: [
-        {
-          code: `${APP}app.options("/api/users", handler);`,
-          options: [{ protectedMethods: ['options'] }],
-          errors: [{
-            messageId: 'missingCsrfProtection',
-            suggestions: [{ messageId: 'addCsrfValidation', output: `${APP}app.options("/api/users", csrf(), handler);` }],
-          }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'options - custom protected methods',
+      noMissingCsrfProtection,
+      {
+        valid: [
+          {
+            code: `${APP}app.options("/api/users", handler);`, // OPTIONS not protected by default
+          },
+        ],
+        invalid: [
+          {
+            code: `${APP}app.options("/api/users", handler);`,
+            options: [{ protectedMethods: ['options'] }],
+            errors: [
+              {
+                messageId: 'missingCsrfProtection',
+                suggestions: [
+                  {
+                    messageId: 'addCsrfValidation',
+                    output: `${APP}app.options("/api/users", csrf(), handler);`,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('options - allowInTests off by default', noMissingCsrfProtection, {
-      valid: [],
-      invalid: [
-        // Same file, same code, no option — the default does NOT exempt tests.
-        {
-          code: `${APP}app.post("/test", handler);`,
-          filename: 'test.spec.ts',
-          errors: [{
-            messageId: 'missingCsrfProtection',
-            suggestions: [{ messageId: 'addCsrfValidation', output: `${APP}app.post("/test", csrf(), handler);` }],
-          }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'options - allowInTests off by default',
+      noMissingCsrfProtection,
+      {
+        valid: [],
+        invalid: [
+          // Same file, same code, no option — the default does NOT exempt tests.
+          {
+            code: `${APP}app.post("/test", handler);`,
+            filename: 'test.spec.ts',
+            errors: [
+              {
+                messageId: 'missingCsrfProtection',
+                suggestions: [
+                  {
+                    messageId: 'addCsrfValidation',
+                    output: `${APP}app.post("/test", csrf(), handler);`,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 });
 
@@ -367,39 +469,43 @@ describe('no-missing-csrf-protection', () => {
  *
  * Every case below fails on the unfixed rule.
  */
-ruleTester.run('lock: CSRF middleware resolves to a module', noMissingCsrfProtection, {
-  valid: [
-    // The remediation with the import renamed — only the local name differs.
-    {
-      code: `const express = require('express'); const guard = require('csurf'); const app = express(); const protect = guard({ cookie: true }); app.post('/transfer', protect, handler);`,
-    },
-    // Mounted globally under a renamed binding.
-    {
-      code: `const express = require('express'); const shield = require('csurf'); const app = express(); app.use(shield({ cookie: true })); app.post('/transfer', handler);`,
-    },
-    // ESM, default import.
-    {
-      code: `import express from 'express'; import csurf from 'csurf'; const app = express(); app.post('/x', csurf(), handler);`,
-    },
-    // A hand-rolled verifier whose name is on the configured list, matched
-    // EXACTLY rather than as a substring.
-    {
-      code: `const express = require('express'); const app = express(); app.use(verifyCsrfToken); app.post('/transfer', handler);`,
-    },
-  ],
-  invalid: [
-    // Redacting the token header is a privacy measure, not a defence.
-    {
-      code: `const express = require('express'); const app = express(); app.use(pino({ redact: ['req.headers["x-csrf-token"]'] })); app.post('/transfer', handler);`,
-      errors: 1,
-    },
-    // Counting is not verifying: `csrfMetrics` is not `csrf`.
-    {
-      code: `const express = require('express'); const app = express(); app.put('/api/profile', csrfMetrics, handler);`,
-      errors: 1,
-    },
-  ],
-});
+ruleTester.run(
+  'lock: CSRF middleware resolves to a module',
+  noMissingCsrfProtection,
+  {
+    valid: [
+      // The remediation with the import renamed — only the local name differs.
+      {
+        code: `const express = require('express'); const guard = require('csurf'); const app = express(); const protect = guard({ cookie: true }); app.post('/transfer', protect, handler);`,
+      },
+      // Mounted globally under a renamed binding.
+      {
+        code: `const express = require('express'); const shield = require('csurf'); const app = express(); app.use(shield({ cookie: true })); app.post('/transfer', handler);`,
+      },
+      // ESM, default import.
+      {
+        code: `import express from 'express'; import csurf from 'csurf'; const app = express(); app.post('/x', csurf(), handler);`,
+      },
+      // A hand-rolled verifier whose name is on the configured list, matched
+      // EXACTLY rather than as a substring.
+      {
+        code: `const express = require('express'); const app = express(); app.use(verifyCsrfToken); app.post('/transfer', handler);`,
+      },
+    ],
+    invalid: [
+      // Redacting the token header is a privacy measure, not a defence.
+      {
+        code: `const express = require('express'); const app = express(); app.use(pino({ redact: ['req.headers["x-csrf-token"]'] })); app.post('/transfer', handler);`,
+        errors: 1,
+      },
+      // Counting is not verifying: `csrfMetrics` is not `csrf`.
+      {
+        code: `const express = require('express'); const app = express(); app.put('/api/profile', csrfMetrics, handler);`,
+        errors: 1,
+      },
+    ],
+  },
+);
 
 /**
  * Regression lock — `router.route(path).get(…).post(…)`.
@@ -439,17 +545,29 @@ ruleTester.run('lock: chained route registrations', noMissingCsrfProtection, {
 ruleTester.run('edge shapes', noMissingCsrfProtection, {
   valid: [
     // A method chosen at RUNTIME names no verb to check.
-    { name: 'a method chosen at RUNTIME names no verb to check', code: `const express = require('express'); const app = express(); app[verb]('/x', h);` },
+    {
+      name: 'a method chosen at RUNTIME names no verb to check',
+      code: `const express = require('express'); const app = express(); app[verb]('/x', h);`,
+    },
     // Nor does a runtime key in the RECEIVER chain prove a router came back.
-    { name: 'nor does a runtime key in the RECEIVER chain prove a router came back', code: `const express = require('express'); const app = express(); app[k]().post('/x', h);` },
+    {
+      name: 'nor does a runtime key in the RECEIVER chain prove a router came back',
+      code: `const express = require('express'); const app = express(); app[k]().post('/x', h);`,
+    },
     // A chain whose root is not a `.route(…)` call.
-    { code: `const express = require('express'); const app = express(); app.listen(3000).post(h);` },
+    {
+      code: `const express = require('express'); const app = express(); app.listen(3000).post(h);`,
+    },
     // A `.route(…)` on something that is not a proven Express receiver.
     { code: `mystery.route('/x').get(a).post(b);` },
     // A chained registration with no handler at all.
-    { code: `const express = require('express'); const r = express.Router(); r.route('/x').get(a).post();` },
+    {
+      code: `const express = require('express'); const r = express.Router(); r.route('/x').get(a).post();`,
+    },
     // A safe verb in the chain.
-    { code: `const express = require('express'); const r = express.Router(); r.route('/x').get(a).head(b);` },
+    {
+      code: `const express = require('express'); const r = express.Router(); r.route('/x').get(a).head(b);`,
+    },
     // The namespaced middleware.
     {
       code: `const express = require('express'); const lusca = require('lusca'); const app = express(); app.use(lusca.csrf()); app.post('/x', h);`,

@@ -46,9 +46,33 @@ That trade costs recall, and we measure it:
 
 - To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-reliability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-reliability), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-reliability). 📚
 
+<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
+
+**oxlint / Vite+** — the same rules under the same `reliability/<rule>` IDs, without ESLint:
+
+```bash
+npm install oxlint-plugin-reliability --save-dev
+```
+
+```jsonc
+// .oxlintrc.json
+{ "jsPlugins": ["oxlint-plugin-reliability"] }
+```
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite-plus';
+
+export default defineConfig({ lint: { jsPlugins: ['oxlint-plugin-reliability'] } });
+```
+
+**ESLint:**
+
 ```bash
 npm install eslint-plugin-reliability --save-dev
 ```
+
+<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## ⚙️ Configuration Presets
 | Preset        | Description                                   |

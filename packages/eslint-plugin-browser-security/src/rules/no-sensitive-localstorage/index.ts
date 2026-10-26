@@ -69,6 +69,7 @@ type RuleOptions = [Options?];
 export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
   name: 'no-sensitive-localstorage',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-sensitive-localstorage.md',
@@ -119,26 +120,14 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
       checkSessionStorage: false,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      allowInTests = false,
-      sensitivePatterns = [...NON_BEARER_SECRET_TERMS],
-      checkSessionStorage = false,
-    } = options as Options;
-
-    const isTestFile = allowInTests && isTestFilePath(context.filename);
-
-    if (isTestFile) {
-      return {};
-    }
-
-    const storageObjects = new Set(['localStorage']);
-    if (checkSessionStorage) {
-      storageObjects.add('sessionStorage');
-    }
+    let allowInTests: boolean;
+    let sensitivePatterns: string[];
+    let checkSessionStorage: boolean;
+    let storageObjects: Set<string>;
 
     function check(
       node: TSESTree.Node,
@@ -167,12 +156,36 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          allowInTests = false,
+          sensitivePatterns = [...NON_BEARER_SECRET_TERMS],
+          checkSessionStorage = false,
+        } = options as Options);
+
+        const isTestFile = allowInTests && isTestFilePath(context.filename);
+
+        if (isTestFile) {
+          return false;
+        }
+
+        storageObjects = new Set(['localStorage']);
+        if (checkSessionStorage) {
+          storageObjects.add('sessionStorage');
+        }
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
         if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
         if (memberName(callee, context.sourceCode) !== 'setItem') return;
 
-        const storage = resolveStorageArea(callee.object, context.sourceCode, storageObjects);
+        const storage = resolveStorageArea(
+          callee.object,
+          context.sourceCode,
+          storageObjects,
+        );
         if (storage === null) return;
 
         const keyArg = node.arguments[0];
@@ -191,7 +204,11 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         if (node.left.type !== AST_NODE_TYPES.MemberExpression) return;
 
-        const storage = resolveStorageArea(node.left.object, context.sourceCode, storageObjects);
+        const storage = resolveStorageArea(
+          node.left.object,
+          context.sourceCode,
+          storageObjects,
+        );
         if (storage === null) return;
 
         const key = node.left.computed

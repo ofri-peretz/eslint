@@ -118,6 +118,7 @@ function unwrap(node: TSESTree.Node): TSESTree.Node {
 export const noDuplicateToolName = createRule<[], MessageIds>({
   name: 'no-duplicate-tool-name',
   meta: {
+    interop: { runtimes: ['eslint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mcp-sdk-security/docs/rules/no-duplicate-tool-name.md',
@@ -159,16 +160,14 @@ export const noDuplicateToolName = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
-    const sourceCode = context.sourceCode;
-    const resolve = valueResolverFor(context);
-    /** Server variable → tool name → the registrations seen so far. */
-    const registered = new Map<
+  createOnce(context) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let resolve: (node: TSESTree.Node) => TSESTree.Node | undefined;
+    let registered: Map<
       TSESLint.Scope.Variable,
       Map<string, TSESTree.CallExpression[]>
-    >();
-    const listed = new Set<TSESTree.ArrayExpression>();
+    >;
+    let listed: Set<TSESTree.ArrayExpression>;
 
     /** A static name: a literal, or a const it resolves to. */
     function nameOf(node: TSESTree.Node): string | null {
@@ -265,6 +264,18 @@ export const noDuplicateToolName = createRule<[], MessageIds>({
     }
 
     return {
+      before() {
+        if (!fileUsesMcpSdk(context.sourceCode.ast)) return false;
+        sourceCode = context.sourceCode;
+        resolve = valueResolverFor(context);
+        /** Server variable → tool name → the registrations seen so far. */
+        registered = new Map<
+          TSESLint.Scope.Variable,
+          Map<string, TSESTree.CallExpression[]>
+        >();
+        listed = new Set<TSESTree.ArrayExpression>();
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (node.callee.type !== 'MemberExpression') return;
         if (propertyName(node.callee) === 'setRequestHandler') checkList(node);

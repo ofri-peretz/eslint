@@ -65,6 +65,7 @@ type RuleOptions = [Options?];
 export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
   name: 'no-websocket-eval',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-websocket-eval.md',
@@ -86,7 +87,6 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
         fix: 'Parse WebSocket data as JSON and validate the structure instead of executing it.',
         documentationLink: 'https://cwe.mitre.org/data/definitions/95.html',
       }),
-
     },
     schema: [
       {
@@ -102,26 +102,11 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: true }],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
-    // Ownership gate: this rule reports only what the resolver attributes
-    // to the websocket source. Everything it cannot identify belongs to the
-    // generic sink rule, so no value is ever reported by both.
-    //
-    // The resolver is the sole sink condition. A mutable in-handler flag was
-    // cleared by any NESTED handler's exit, so sinks after one went unreported
-    // here while no-eval skipped them as ours — the finding belonged to nobody.
-    const payloadSource = createPayloadResolver(context.sourceCode);
+    let payloadSource: ReturnType<typeof createPayloadResolver>;
 
     function inspect(
       node: TSESTree.CallExpression | TSESTree.NewExpression,
@@ -152,6 +137,26 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+
+        // Ownership gate: this rule reports only what the resolver attributes
+        // to the websocket source. Everything it cannot identify belongs to the
+        // generic sink rule, so no value is ever reported by both.
+        //
+        // The resolver is the sole sink condition. A mutable in-handler flag was
+        // cleared by any NESTED handler's exit, so sinks after one went unreported
+        // here while no-eval skipped them as ours — the finding belonged to nobody.
+        payloadSource = createPayloadResolver(context.sourceCode);
+        return true;
+      },
       CallExpression: inspect,
       NewExpression: inspect,
     };

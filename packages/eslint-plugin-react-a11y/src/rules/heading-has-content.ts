@@ -46,6 +46,10 @@ function hasContent(
 export const headingHasContent = createRule<RuleOptions, MessageIds>({
   name: 'heading-has-content',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/heading-has-content',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/heading-has-content.md',
@@ -75,22 +79,18 @@ export const headingHasContent = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {} as Options],
+    currentOptions,
   ) {
-    const { components = [] } = options ?? ({} as Options);
-    const headings = new Set([
-      'h1',
-      'h2',
-      'h3',
-      'h4',
-      'h5',
-      'h6',
-      ...components,
-    ]);
+    let headings: Set<string>;
 
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        const { components = [] } = options ?? ({} as Options);
+        headings = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ...components]);
+      },
       JSXElement(node: TSESTree.JSXElement) {
         const openingElement = node.openingElement;
         if (

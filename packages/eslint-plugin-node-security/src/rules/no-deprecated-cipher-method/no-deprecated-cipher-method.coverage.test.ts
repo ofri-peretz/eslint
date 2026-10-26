@@ -39,6 +39,7 @@ describe('no-deprecated-cipher-method coverage gaps', () => {
     invalid: [
       // Standalone createDecipher → ternary picks createDecipheriv
       {
+        name: 'a bare createDecipher call is offered createDecipheriv',
         code: 'createDecipher("aes192", pw);',
         errors: [
           {

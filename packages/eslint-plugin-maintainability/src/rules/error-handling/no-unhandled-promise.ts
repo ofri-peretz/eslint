@@ -534,6 +534,7 @@ export function isPromiseHandled(node: TSESTree.Node): boolean {
 export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
   name: 'no-unhandled-promise',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/no-unhandled-promise.md',
@@ -621,17 +622,15 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
       promiseReturning: ['fetch'],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      ignoreInTests = true,
-      ignoreVoidExpressions = false,
-      requirePromiseEvidence = true,
-      promiseReturning = ['fetch'],
-    }: Options = options || {};
-    const promiseNames = new Set(promiseReturning);
+    let ignoreInTests: boolean;
+    let ignoreVoidExpressions: boolean;
+    let requirePromiseEvidence: boolean;
+    let promiseReturning: readonly string[];
+    let promiseNames: Set<string>;
 
     /**
      * Resolve an identifier to the function it is bound to, through the scope
@@ -677,27 +676,6 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
         scope = scope.upper as never;
       }
       return null;
-    }
-
-    const filename = context.filename;
-    // `ignoreInTests` is documented ecosystem-wide as "Skip this rule in
-    // `*.test.*` / `*.spec.*` files" — a glob with nothing to say about the
-    // extension. The alternation here was `ts|tsx|js|jsx`, which quietly
-    // dropped the option on `.mts`/`.cts`/`.mjs`/`.cjs`: `c.test.mts` reported
-    // where `c.test.ts` did not, for the same source. `[cm]?` restores the
-    // documented contract, and matches the `[cm]?[jt]sx?` tail of the devkit's
-    // own `TEST_BASENAME`.
-    //
-    // Deliberately NOT the devkit's `isTestFilePath`: that helper also treats
-    // `fixture|mock|e2e-spec|stories|story` basenames and whole test
-    // DIRECTORIES as exempt, which would silence this rule on `.stories.ts`
-    // and on every file under `__tests__/`. That is a far larger behaviour
-    // change than the extension defect being fixed here.
-    const isTestFile =
-      ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
-
-    if (isTestFile) {
-      return {};
     }
 
     // const sourceCode = context.sourceCode; // Not used
@@ -966,6 +944,38 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          ignoreInTests = true,
+          ignoreVoidExpressions = false,
+          requirePromiseEvidence = true,
+          promiseReturning = ['fetch'],
+        } = options || {});
+        promiseNames = new Set(promiseReturning);
+
+        const filename = context.filename;
+        // `ignoreInTests` is documented ecosystem-wide as "Skip this rule in
+        // `*.test.*` / `*.spec.*` files" — a glob with nothing to say about the
+        // extension. The alternation here was `ts|tsx|js|jsx`, which quietly
+        // dropped the option on `.mts`/`.cts`/`.mjs`/`.cjs`: `c.test.mts` reported
+        // where `c.test.ts` did not, for the same source. `[cm]?` restores the
+        // documented contract, and matches the `[cm]?[jt]sx?` tail of the devkit's
+        // own `TEST_BASENAME`.
+        //
+        // Deliberately NOT the devkit's `isTestFilePath`: that helper also treats
+        // `fixture|mock|e2e-spec|stories|story` basenames and whole test
+        // DIRECTORIES as exempt, which would silence this rule on `.stories.ts`
+        // and on every file under `__tests__/`. That is a far larger behaviour
+        // change than the extension defect being fixed here.
+        const isTestFile =
+          ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+        return true;
+      },
       CallExpression: checkCallExpression,
       ImportExpression: checkStatementPromise,
       NewExpression(node: TSESTree.NewExpression) {

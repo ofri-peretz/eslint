@@ -1,3 +1,4 @@
+import { RuleCreator } from '@interlace/eslint-devkit';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -337,8 +338,12 @@ function transfersOwnership(
 export const noMissingClientRelease: TSESLint.RuleModule<
   'missingClientRelease' | 'releaseNotGuaranteed',
   NoMissingClientReleaseOptions
-> = {
+> = RuleCreator.withoutDocs<
+  NoMissingClientReleaseOptions,
+  'missingClientRelease' | 'releaseNotGuaranteed'
+>({
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       description:
@@ -379,17 +384,21 @@ export const noMissingClientRelease: TSESLint.RuleModule<
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    // Every rule here is PostgreSQL-specific, and none of them knew it: over
-    // 108,838 files, 94% of this plugin's findings were in files with no
-    // PostgreSQL client at all. Registering no visitors is both the gate and
-    // the cheap path — a file with no database in it does no work.
-    if (!usesPostgres(context)) return {};
-
-    /** Properties of `this` assigned a pg Pool in this file. */
-    const poolProperties = new Set<string>();
+  createOnce(context) {
+    let poolProperties: Set<string>;
 
     return {
+      before() {
+        // Every rule here is PostgreSQL-specific, and none of them knew it: over
+        // 108,838 files, 94% of this plugin's findings were in files with no
+        // PostgreSQL client at all. Registering no visitors is both the gate and
+        // the cheap path — a file with no database in it does no work.
+        if (!usesPostgres(context)) return false;
+
+        /** Properties of `this` assigned a pg Pool in this file. */
+        poolProperties = new Set<string>();
+        return true;
+      },
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         if (
           node.operator !== '=' ||
@@ -522,4 +531,4 @@ export const noMissingClientRelease: TSESLint.RuleModule<
       },
     };
   },
-};
+});

@@ -16,7 +16,7 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-https-only', requireHttpsOnly, {
   valid: [
-    'const x = 42;',
+    { name: 'a numeric constant makes no request', code: 'const x = 42;' },
     'const flag = true;',
     'function noop() {}',
     'const items = [];',
@@ -83,8 +83,15 @@ ruleTester.run('require-https-only', requireHttpsOnly, {
   ],
 
   invalid: [
-    { name: 'a fetch to an http endpoint', code: "fetch('http://api.example.com')", errors: [{ messageId: 'violationDetected' }] },
-    { code: "axios.get('http://api.acme.io/v1')", errors: [{ messageId: 'violationDetected' }] },
+    {
+      name: 'a fetch to an http endpoint',
+      code: "fetch('http://api.example.com')",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: "axios.get('http://api.acme.io/v1')",
+      errors: [{ messageId: 'violationDetected' }],
+    },
     {
       code: "axios.post('http://api.acme.io/v1/orders', cart)",
       errors: [{ messageId: 'violationDetected' }],
@@ -101,7 +108,10 @@ ruleTester.run('require-https-only', requireHttpsOnly, {
       code: "axios.patch('http://api.acme.io/v1/users/1', patch)",
       errors: [{ messageId: 'violationDetected' }],
     },
-    { code: "axios.head('http://cdn.acme.io/a.js')", errors: [{ messageId: 'violationDetected' }] },
+    {
+      code: "axios.head('http://cdn.acme.io/a.js')",
+      errors: [{ messageId: 'violationDetected' }],
+    },
     {
       code: "axios.options('http://api.acme.io/v1/users')",
       errors: [{ messageId: 'violationDetected' }],
@@ -215,12 +225,16 @@ ruleTester.run('require-https-only', requireHttpsOnly, {
  * hand-written expression, comfortably below the parser ceiling, so a parser
  * upgrade cannot make this lock flaky.
  */
-ruleTester.run('require-https-only — deep concatenation terminates', requireHttpsOnly, {
-  valid: [],
-  invalid: [
-    {
-      code: `fetch(${Array.from({ length: 300 }, () => "'http://acmecorp.io'").join(' + ')})`,
-      errors: [{ messageId: 'violationDetected' }],
-    },
-  ],
-});
+ruleTester.run(
+  'require-https-only — deep concatenation terminates',
+  requireHttpsOnly,
+  {
+    valid: [],
+    invalid: [
+      {
+        code: `fetch(${Array.from({ length: 300 }, () => "'http://acmecorp.io'").join(' + ')})`,
+        errors: [{ messageId: 'violationDetected' }],
+      },
+    ],
+  },
+);

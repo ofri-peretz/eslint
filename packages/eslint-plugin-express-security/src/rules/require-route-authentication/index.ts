@@ -44,10 +44,7 @@ import {
   propertyName,
 } from '@interlace/eslint-devkit';
 import { walk } from '../../utils';
-import {
-  APP_RECEIVER_SCHEMA,
-  isAppReceiver,
-} from '../../utils/app-receiver';
+import { APP_RECEIVER_SCHEMA, isAppReceiver } from '../../utils/app-receiver';
 import {
   isAuthMiddlewareArg,
   routeIsAuthenticated,
@@ -169,7 +166,6 @@ const ROUTE_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'all']);
 
 /** Receivers that are an Express application/router in practice. */
 
-
 /**
  * Does a path fragment occur as a whole word in the route path?
  *
@@ -241,6 +237,7 @@ const RESPONSE_RECEIVER = /^(res|response)$/i;
 export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
   name: 'require-route-authentication',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/require-route-authentication.md',
@@ -289,45 +286,20 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    // Every rule here is Express-specific, and none of them knew it: over
-    // 107,382 files, 75% of this plugin's findings were in files with no
-    // Express import. Registering no visitors is both the gate and the cheap
-    // path — a file with no Express in it does no work.
-    if (!fileUsesExpress(context.sourceCode.ast)) return {};
-
-    const { criticalPaths, publicPaths, authMiddleware, appReceiverNames } =
-      options as Options;
-    const critical = (criticalPaths ?? DEFAULT_CRITICAL_PATHS).map((p) =>
-      p.toLowerCase(),
-    );
-    const publics = (publicPaths ?? DEFAULT_PUBLIC_PATHS).map((p) =>
-      p.toLowerCase(),
-    );
-    const extraAuth = new Set(authMiddleware ?? []);
-
-    /**
-     * Module-level handler declarations, so a route registered with a bare
-     * identifier can be judged on the function it names.
-     */
-    const topLevelFunctions = new Map<string, TSESTree.Node>();
-    for (const stmt of context.sourceCode.ast.body) {
-      if (stmt.type === AST_NODE_TYPES.FunctionDeclaration && stmt.id) {
-        topLevelFunctions.set(stmt.id.name, stmt);
-        continue;
-      }
-      if (stmt.type !== AST_NODE_TYPES.VariableDeclaration) continue;
-      for (const decl of stmt.declarations) {
-        if (decl.id.type === AST_NODE_TYPES.Identifier && decl.init) {
-          topLevelFunctions.set(decl.id.name, decl.init);
-        }
-      }
-    }
-
-    /** Deferred so an `app.use(auth)` after the route still suppresses it. */
-    const candidates: { node: TSESTree.Node; method: string; path: string }[] =
-      [];
-    let hasGlobalAuth = false;
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let criticalPaths: string[] | undefined;
+    let publicPaths: string[] | undefined;
+    let authMiddleware: string[] | undefined;
+    let appReceiverNames: string[] | undefined;
+    let critical: string[];
+    let publics: string[];
+    let extraAuth: Set<string>;
+    let topLevelFunctions: Map<string, TSESTree.Node>;
+    let candidates: { node: TSESTree.Node; method: string; path: string }[];
+    let hasGlobalAuth: boolean;
 
     function routeMethodOf(node: TSESTree.CallExpression): string | null {
       const callee = node.callee;
@@ -341,6 +313,47 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = currentOptions();
+        // Every rule here is Express-specific, and none of them knew it: over
+        // 107,382 files, 75% of this plugin's findings were in files with no
+        // Express import. Registering no visitors is both the gate and the cheap
+        // path — a file with no Express in it does no work.
+        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+
+        ({ criticalPaths, publicPaths, authMiddleware, appReceiverNames } =
+          options as Options);
+        critical = (criticalPaths ?? DEFAULT_CRITICAL_PATHS).map((p) =>
+          p.toLowerCase(),
+        );
+        publics = (publicPaths ?? DEFAULT_PUBLIC_PATHS).map((p) =>
+          p.toLowerCase(),
+        );
+        extraAuth = new Set(authMiddleware ?? []);
+
+        /**
+         * Module-level handler declarations, so a route registered with a bare
+         * identifier can be judged on the function it names.
+         */
+        topLevelFunctions = new Map<string, TSESTree.Node>();
+        for (const stmt of context.sourceCode.ast.body) {
+          if (stmt.type === AST_NODE_TYPES.FunctionDeclaration && stmt.id) {
+            topLevelFunctions.set(stmt.id.name, stmt);
+            continue;
+          }
+          if (stmt.type !== AST_NODE_TYPES.VariableDeclaration) continue;
+          for (const decl of stmt.declarations) {
+            if (decl.id.type === AST_NODE_TYPES.Identifier && decl.init) {
+              topLevelFunctions.set(decl.id.name, decl.init);
+            }
+          }
+        }
+
+        /** Deferred so an `app.use(auth)` after the route still suppresses it. */
+        candidates = [];
+        hasGlobalAuth = false;
+        return true;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         const method = routeMethodOf(node);
         if (!method) return;

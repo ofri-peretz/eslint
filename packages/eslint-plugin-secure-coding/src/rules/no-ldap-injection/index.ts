@@ -234,6 +234,7 @@ const DEFAULT_VALIDATION_FUNCTIONS = [
 export const noLdapInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-ldap-injection',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-ldap-injection.md',
@@ -375,61 +376,39 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       additionalRequestRoots: [],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const {
-      ldapFunctions = DEFAULT_LDAP_FUNCTIONS,
-      ldapEscapeFunctions = DEFAULT_ESCAPE_FUNCTIONS,
-      ldapValidationFunctions = DEFAULT_VALIDATION_FUNCTIONS,
-      trustedSanitizers = [],
-      trustedAnnotations = [],
-      strictMode = false,
-      ldapPackages = DEFAULT_LDAP_PACKAGES,
-      additionalLdapPackages = [],
-      requestRoots = DEFAULT_REQUEST_ROOTS,
-      additionalRequestRoots = [],
-    }: Options = options;
-
-    const ldapPackageSet = new Set([
-      ...ldapPackages,
-      ...additionalLdapPackages,
-    ]);
-    const requestRootSet = new Set([
-      ...requestRoots,
-      ...additionalRequestRoots,
-    ]);
-    // Built per run rather than at module scope, because the package list is now
-    // an option. The devkit probe is a closure over the specifier set, so it has
-    // to be constructed after the options are read.
-    const fileImportsLdapClient = createModuleEvidence({
-      packages: [...ldapPackageSet],
-      scopes: [...LDAP_SCOPES],
-    });
-
-    const sourceCode = context.sourceCode;
-    const filename = context.filename;
-
-    const safetyChecker = createSafetyChecker({
-      trustedSanitizers,
-      trustedAnnotations,
-      trustedOrmPatterns: [],
-      strictMode,
-    });
-
-    /**
-     * Local names bound to an LDAP module in THIS file.
-     *
-     * The file gate proves an LDAP client is loaded somewhere in the file; it does not
-     * prove the receiver of `x.add(a, b)` is that client. `intentKeys.add(k)` on a Set
-     * and `entryCache.delete(k)` on a Map wear the same method names, and treating them
-     * as LDAP operations is exactly how this rule reported an LDAP filter inside
-     * Shopify's CLI. Collecting the imported locals lets the receiver be resolved to a
-     * construction call made from one of them, which a `new Set()` can never satisfy.
-     */
-    const ldapLocals = new Set<string>();
-
-    /** Whether this file loads an LDAP client at all. Set from Program, visited first. */
-    let ldapInFile = false;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let ldapFunctions: string[];
+    let ldapEscapeFunctions: string[];
+    let ldapValidationFunctions: string[];
+    let trustedSanitizers: string[];
+    let trustedAnnotations: string[];
+    let strictMode: boolean;
+    let ldapPackages: string[];
+    let additionalLdapPackages: string[];
+    let requestRoots: string[];
+    let additionalRequestRoots: string[];
+    let ldapPackageSet: Set<string>;
+    let requestRootSet: Set<string>;
+    let fileImportsLdapClient: (ast: TSESTree.Program) => boolean;
+    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let filename: string;
+    let safetyChecker: {
+      isSafe(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      isSanitized(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+      hasAnnotation(
+        node: TSESTree.Node,
+        context: TSESLint.RuleContext<string, unknown[]>,
+      ): boolean;
+    };
+    let ldapLocals: Set<string>;
+    let ldapInFile: boolean;
+    let reported: Set<TSESTree.Node>;
 
     const collectLdapLocals = (program: TSESTree.Program): void => {
       const record = (node: TSESTree.Node | null | undefined): void => {
@@ -882,13 +861,6 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       return undefined;
     };
 
-    /**
-     * One node, one report. A filter is commonly built into a variable and then handed
-     * to `search()`, and both sites resolve to the SAME construction node - without
-     * this, one vulnerability is reported twice at the same location.
-     */
-    const reported = new Set<TSESTree.Node>();
-
     const report = (
       node: TSESTree.Node,
       messageId: MessageIds,
@@ -1018,6 +990,63 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({
+          ldapFunctions = DEFAULT_LDAP_FUNCTIONS,
+          ldapEscapeFunctions = DEFAULT_ESCAPE_FUNCTIONS,
+          ldapValidationFunctions = DEFAULT_VALIDATION_FUNCTIONS,
+          trustedSanitizers = [],
+          trustedAnnotations = [],
+          strictMode = false,
+          ldapPackages = DEFAULT_LDAP_PACKAGES,
+          additionalLdapPackages = [],
+          requestRoots = DEFAULT_REQUEST_ROOTS,
+          additionalRequestRoots = [],
+        } = options);
+
+        ldapPackageSet = new Set([...ldapPackages, ...additionalLdapPackages]);
+        requestRootSet = new Set([...requestRoots, ...additionalRequestRoots]);
+        // Built per run rather than at module scope, because the package list is now
+        // an option. The devkit probe is a closure over the specifier set, so it has
+        // to be constructed after the options are read.
+        fileImportsLdapClient = createModuleEvidence({
+          packages: [...ldapPackageSet],
+          scopes: [...LDAP_SCOPES],
+        });
+
+        sourceCode = context.sourceCode;
+        filename = context.filename;
+
+        safetyChecker = createSafetyChecker({
+          trustedSanitizers,
+          trustedAnnotations,
+          trustedOrmPatterns: [],
+          strictMode,
+        });
+
+        /**
+         * Local names bound to an LDAP module in THIS file.
+         *
+         * The file gate proves an LDAP client is loaded somewhere in the file; it does not
+         * prove the receiver of `x.add(a, b)` is that client. `intentKeys.add(k)` on a Set
+         * and `entryCache.delete(k)` on a Map wear the same method names, and treating them
+         * as LDAP operations is exactly how this rule reported an LDAP filter inside
+         * Shopify's CLI. Collecting the imported locals lets the receiver be resolved to a
+         * construction call made from one of them, which a `new Set()` can never satisfy.
+         */
+        ldapLocals = new Set<string>();
+
+        /** Whether this file loads an LDAP client at all. Set from Program, visited first. */
+        ldapInFile = false;
+
+        /**
+         * One node, one report. A filter is commonly built into a variable and then handed
+         * to `search()`, and both sites resolve to the SAME construction node - without
+         * this, one vulnerability is reported twice at the same location.
+         */
+        reported = new Set<TSESTree.Node>();
+      },
       Program(program: TSESTree.Program) {
         ldapInFile = fileImportsLdapClient(program);
         if (ldapInFile) collectLdapLocals(program);

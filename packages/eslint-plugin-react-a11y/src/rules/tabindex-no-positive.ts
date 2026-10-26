@@ -21,6 +21,10 @@ type RuleOptions = [];
 export const tabindexNoPositive = createRule<RuleOptions, MessageIds>({
   name: 'tabindex-no-positive',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'jsx_a11y/tabindex-no-positive',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/tabindex-no-positive.md',
@@ -43,7 +47,7 @@ export const tabindexNoPositive = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (

@@ -143,6 +143,7 @@ type RuleOptions = [Options?];
 export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
   name: 'no-permissive-cors',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     deprecated: true,
     replacedBy: ['@see eslint-plugin-express-security/no-permissive-cors'],
@@ -168,7 +169,8 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  createOnce(context) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
     function report(node: TSESTree.Node) {
       context.report({
         node,
@@ -176,9 +178,10 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
       });
     }
 
-    const sourceCode = context.sourceCode;
-
     return {
+      before() {
+        sourceCode = context.sourceCode;
+      },
       /**
        * A header block written as DATA — a `ResponseInit`, a Next.js config
        * entry. Same wire result, no call to trigger on.

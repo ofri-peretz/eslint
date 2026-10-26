@@ -46,9 +46,33 @@ That trade costs recall, and we measure it:
 
 - To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-conventions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions). 📚
 
+<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
+
+**oxlint / Vite+** — the same rules under the same `conventions/<rule>` IDs, without ESLint:
+
+```bash
+npm install oxlint-plugin-conventions --save-dev
+```
+
+```jsonc
+// .oxlintrc.json
+{ "jsPlugins": ["oxlint-plugin-conventions"] }
+```
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite-plus';
+
+export default defineConfig({ lint: { jsPlugins: ['oxlint-plugin-conventions'] } });
+```
+
+**ESLint:**
+
 ```bash
 npm install eslint-plugin-conventions --save-dev
 ```
+
+<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## ⚙️ Configuration Presets
 | Preset        | Description                         |

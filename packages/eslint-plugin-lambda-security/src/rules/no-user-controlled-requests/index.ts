@@ -81,6 +81,7 @@ const EVENT_PARAM_NAMES = new Set(['event', 'evt', 'e', 'request', 'req']);
 export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
   name: 'no-user-controlled-requests',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-user-controlled-requests.md',
@@ -122,27 +123,12 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
       allowInTests: true,
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    // Every rule here is Lambda-specific, and none of them knew it: over 107,382
-    // files, 98% of this plugin's findings were in files with no AWS anything.
-    // Registering no visitors is both the gate and the cheap path.
-    if (!fileIsLambda(context.sourceCode.ast)) return {};
-
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = isTestFilePath(filename);
-
-    if (allowInTests && isTestFile) {
-      return {};
-    }
-
-    // Track event parameters
-    const eventParameters = new Set<string>();
-    // Track variables that contain user input
-    const taintedVariables = new Map<string, string>(); // variable name -> source
+    let eventParameters: Set<string>;
+    let taintedVariables: Map<string, string>; // variable name -> source
 
     /**
      * Check if an identifier is an event parameter
@@ -296,6 +282,27 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        // Every rule here is Lambda-specific, and none of them knew it: over 107,382
+        // files, 98% of this plugin's findings were in files with no AWS anything.
+        // Registering no visitors is both the gate and the cheap path.
+        if (!fileIsLambda(context.sourceCode.ast)) return false;
+
+        const { allowInTests = true } = options as Options;
+        const filename = context.filename;
+        const isTestFile = isTestFilePath(filename);
+
+        if (allowInTests && isTestFile) {
+          return false;
+        }
+
+        // Track event parameters
+        eventParameters = new Set<string>();
+        // Track variables that contain user input
+        taintedVariables = new Map<string, string>();
+        return true;
+      },
       // Track event parameters in handlers
       'ArrowFunctionExpression, FunctionExpression, FunctionDeclaration'(
         node:

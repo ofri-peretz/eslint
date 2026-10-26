@@ -1,0 +1,70 @@
+{
+  "name": "oxlint-plugin-sqlite-security",
+  "version": "1.0.0",
+  "description": "The sqlite-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-sqlite-security.",
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts"
+  },
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
+    "interlace-security",
+    "sqlite",
+    "better-sqlite3",
+    "sql",
+    "sql-injection",
+    "cwe-89",
+    "raw-query",
+    "database",
+    "database-security",
+    "mysql",
+    "postgres",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-sqlite-security?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-sqlite-security",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-sqlite-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-sqlite-security": "1.0.0"
+  }
+}

@@ -15,38 +15,74 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-client-side-auth-logic', noClientSideAuthLogic, {
   valid: [
     // Server-side auth checks
-    { name: 'the token is verified', code: "if (await verifyToken(token)) { proceed() }" },
-    { code: "const isAuth = await authService.verify()" },
+    {
+      name: 'the token is verified',
+      code: 'if (await verifyToken(token)) { proceed() }',
+    },
+    {
+      name: 'an auth result awaited from a verification service is not client-side logic',
+      code: 'const isAuth = await authService.verify()',
+    },
     // Non-auth localStorage usage
-    { name: 'a storage key that names no auth decision', code: "if (localStorage.getItem('theme')) { setTheme() }" },
-    { code: "const x = 1" },
+    {
+      name: 'a storage key that names no auth decision',
+      code: "if (localStorage.getItem('theme')) { setTheme() }",
+    },
+    { code: 'const x = 1' },
 
     // --- A flag test is not an auth decision -------------------------------
     // Corpus: okta/okta-signin-widget
     // src/v2/ion/ui-schema/ion-string-handler.js:79 — `secret: true` marks a
     // form field for password rendering. Nothing is authorised here.
-    { code: "if (ionFormField.secret === true) { Object.assign(uiSchema, getPasswordUiSchema(settings)) }" },
-    { code: "if (field.secret === false) { renderPlain() }" },
+    {
+      code: 'if (ionFormField.secret === true) { Object.assign(uiSchema, getPasswordUiSchema(settings)) }',
+    },
+    { code: 'if (field.secret === false) { renderPlain() }' },
     // Presence tests, same category.
-    { code: "if (creds.password === null) { promptForPassword() }" },
-    { code: "if (creds.token === undefined) { fetchToken() }" },
-    { code: "if (undefined !== creds.token) { use(creds.token) }" },
+    { code: 'if (creds.password === null) { promptForPassword() }' },
+    { code: 'if (creds.token === undefined) { fetchToken() }' },
+    { code: 'if (undefined !== creds.token) { use(creds.token) }' },
   ],
 
   invalid: [
     // Local storage auth checks
-    { name: 'an admin flag read out of localStorage', code: "if (localStorage.getItem('isAdmin')) { showAdmin() }", errors: [{ messageId: 'violationDetected' }] },
-    { code: "if (localStorage.getItem('authenticated')) { proceed() }", errors: [{ messageId: 'violationDetected' }] },
-    { code: "if (localStorage.getItem('role')) { checkRole() }", errors: [{ messageId: 'violationDetected' }] },
+    {
+      name: 'an admin flag read out of localStorage',
+      code: "if (localStorage.getItem('isAdmin')) { showAdmin() }",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: "if (localStorage.getItem('authenticated')) { proceed() }",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: "if (localStorage.getItem('role')) { checkRole() }",
+      errors: [{ messageId: 'violationDetected' }],
+    },
     // Password comparison
-    { code: "if (user.password === input) { login() }", errors: [{ messageId: 'violationDetected' }] },
+    {
+      code: 'if (user.password === input) { login() }',
+      errors: [{ messageId: 'violationDetected' }],
+    },
     // The narrowing must not become an FN: a credential compared against a
     // real value is still a client-side auth decision, in either position and
     // against any non-flag operand.
-    { code: "if (input === user.password) { login() }", errors: [{ messageId: 'violationDetected' }] },
-    { code: "if (user.secret === form.secret) { grant() }", errors: [{ messageId: 'violationDetected' }] },
-    { code: "if (user.token === 'abc123') { grant() }", errors: [{ messageId: 'violationDetected' }] },
-    { code: "if (user.password === getInput()) { login() }", errors: [{ messageId: 'violationDetected' }] },
+    {
+      code: 'if (input === user.password) { login() }',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: 'if (user.secret === form.secret) { grant() }',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: "if (user.token === 'abc123') { grant() }",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: 'if (user.password === getInput()) { login() }',
+      errors: [{ messageId: 'violationDetected' }],
+    },
   ],
 });
 
@@ -105,68 +141,72 @@ ruleTester.run('no-client-side-auth-logic-whole-word', noClientSideAuthLogic, {
 // The corpus took this rule from 100% to 55.6% recall in one wave. Everything
 // below FAILS on the pre-corpus rule, and every miss was the same mistake:
 // matching ONE spelling of a sink instead of resolving it.
-ruleTester.run('no-client-side-auth-logic — adversarial', noClientSideAuthLogic, {
-  valid: [
-    // Substring false positives. `role ⊂ casserole` shipped at CRITICAL in the
-    // `recommended` preset.
-    "if (localStorage.getItem('recipe-casserole-draft')) { restoreDraft(); }",
-    "if (localStorage.getItem('authorship-draft')) { restoreByline(); }",
-    "if (localStorage.getItem('preauthorized-payment-nonce-v1')) { resume(); }",
-    // Exact membership against the two web-storage globals keeps every cache
-    // and every LRU wrapper out.
-    "const myStorage = createCache(); if (myStorage.getItem('user-role')) { warm(); }",
-    // A rendering flag, not a credential comparison.
-    'if (formField.secret === true) { renderAsPasswordInput(formField); }',
-    // The correct remediation: render what the SERVER decided.
-    'const nav = permissions.canManageUsers ? adminLink : null;',
-  ],
-  invalid: [
-    // `window.localStorage` is `localStorage` — the spelling every
-    // implicit-globals lint rule asks you to write.
-    {
-      code: "if (window.localStorage.getItem('isAdmin')) { enableDangerZone(); }",
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    // `sessionStorage` is the same trust boundary; it just expires sooner.
-    {
-      code: "if (sessionStorage.getItem('role')) { renderModeratorTools(); }",
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    // The key held in a constant — what every codebase with more than one key
-    // does. A `Literal`-only check could not see it.
-    {
-      code: "const ROLE_KEY = 'user_role'; if (localStorage.getItem(ROLE_KEY)) { showAuditLog(); }",
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    // `getItem` returns a STRING, so this is the idiomatic spelling — and a
-    // bare-call check saw a BinaryExpression and gave up.
-    {
-      code: "if (localStorage.getItem('isAdmin') === 'true') { showBillingExport(); }",
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    // React gates render with a ternary far more often than with an `if`.
-    {
-      code: "const view = localStorage.getItem('isAdmin') ? dangerZone : readOnly;",
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    // Naming the decision does not move it off the client.
-    {
-      code: "const canPurge = sessionStorage.getItem('role') && enabled('purge'); if (canPurge) { purge(); }",
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    // ONE report, not two. `no-nestjs-security` shipped a test pinning two
-    // errors from one rule on one line as correct; this asserts the opposite.
-    {
-      code: "if (localStorage.getItem('role') === user.password) { grant(); }",
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    // FALSE-NEGATIVE DIRECTION: innocuous identifiers, same comparison.
-    {
-      code: 'function step(a, b) { if (a.password === b) { proceed(); } }',
-      errors: [{ messageId: 'violationDetected' }],
-    },
-  ],
-});
+ruleTester.run(
+  'no-client-side-auth-logic — adversarial',
+  noClientSideAuthLogic,
+  {
+    valid: [
+      // Substring false positives. `role ⊂ casserole` shipped at CRITICAL in the
+      // `recommended` preset.
+      "if (localStorage.getItem('recipe-casserole-draft')) { restoreDraft(); }",
+      "if (localStorage.getItem('authorship-draft')) { restoreByline(); }",
+      "if (localStorage.getItem('preauthorized-payment-nonce-v1')) { resume(); }",
+      // Exact membership against the two web-storage globals keeps every cache
+      // and every LRU wrapper out.
+      "const myStorage = createCache(); if (myStorage.getItem('user-role')) { warm(); }",
+      // A rendering flag, not a credential comparison.
+      'if (formField.secret === true) { renderAsPasswordInput(formField); }',
+      // The correct remediation: render what the SERVER decided.
+      'const nav = permissions.canManageUsers ? adminLink : null;',
+    ],
+    invalid: [
+      // `window.localStorage` is `localStorage` — the spelling every
+      // implicit-globals lint rule asks you to write.
+      {
+        code: "if (window.localStorage.getItem('isAdmin')) { enableDangerZone(); }",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // `sessionStorage` is the same trust boundary; it just expires sooner.
+      {
+        code: "if (sessionStorage.getItem('role')) { renderModeratorTools(); }",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // The key held in a constant — what every codebase with more than one key
+      // does. A `Literal`-only check could not see it.
+      {
+        code: "const ROLE_KEY = 'user_role'; if (localStorage.getItem(ROLE_KEY)) { showAuditLog(); }",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // `getItem` returns a STRING, so this is the idiomatic spelling — and a
+      // bare-call check saw a BinaryExpression and gave up.
+      {
+        code: "if (localStorage.getItem('isAdmin') === 'true') { showBillingExport(); }",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // React gates render with a ternary far more often than with an `if`.
+      {
+        code: "const view = localStorage.getItem('isAdmin') ? dangerZone : readOnly;",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // Naming the decision does not move it off the client.
+      {
+        code: "const canPurge = sessionStorage.getItem('role') && enabled('purge'); if (canPurge) { purge(); }",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // ONE report, not two. `no-nestjs-security` shipped a test pinning two
+      // errors from one rule on one line as correct; this asserts the opposite.
+      {
+        code: "if (localStorage.getItem('role') === user.password) { grant(); }",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // FALSE-NEGATIVE DIRECTION: innocuous identifiers, same comparison.
+      {
+        code: 'function step(a, b) { if (a.password === b) { proceed(); } }',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+    ],
+  },
+);
 
 // ── Test-expression walk refusals ─────────────────────────────────────────
 ruleTester.run('no-client-side-auth-logic — refusals', noClientSideAuthLogic, {
@@ -180,7 +220,7 @@ ruleTester.run('no-client-side-auth-logic — refusals', noClientSideAuthLogic, 
     // A method chosen at RUNTIME names no storage read to recognise.
     {
       name: 'a method chosen at RUNTIME names no storage read to recognise',
-      code: 'if (localStorage[m](\'isAdmin\')) { go(); }',
+      code: "if (localStorage[m]('isAdmin')) { go(); }",
     },
     // A different method on the right global.
     "if (localStorage.key('isAdmin')) { go(); }",

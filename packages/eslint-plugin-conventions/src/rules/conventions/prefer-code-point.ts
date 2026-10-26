@@ -19,6 +19,10 @@ type RuleOptions = [];
 export const preferCodePoint = createRule<RuleOptions, MessageIds>({
   name: 'prefer-code-point',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'unicorn/prefer-code-point',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/prefer-code-point.md',
@@ -46,7 +50,7 @@ export const preferCodePoint = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, consistent-function-scoping
     function isInAllowedContext(node: TSESTree.CallExpression): boolean {
       // For simplicity, we'll skip the allow option for now

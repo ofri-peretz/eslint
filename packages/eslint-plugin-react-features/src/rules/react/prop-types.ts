@@ -23,6 +23,7 @@ export interface Options {
 export const propTypes = createRule<[Options], MessageIds>({
   name: 'prop-types',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/prop-types.md',
@@ -54,20 +55,115 @@ export const propTypes = createRule<[Options], MessageIds>({
         description: 'Component missing prop type validation',
         severity: 'MEDIUM',
         fix: 'Add propTypes static property or use TypeScript',
-        documentationLink: 'https://react.dev/learn/components-and-props#specifying-a-default-prop',
+        documentationLink:
+          'https://react.dev/learn/components-and-props#specifying-a-default-prop',
       }),
     },
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, [Options]>) {
-    const [options] = context.options;
-    const ignore = options?.ignore ?? [];
-    const skipUndeclared = options?.skipUndeclared ?? false;
+  createOnce(context: TSESLint.RuleContext<MessageIds, [Options]>) {
+    let ignore: string[];
+    let skipUndeclared: boolean;
+    let components: TSESTree.ClassDeclaration[];
+    let propTypesMap: Map<string, TSESTree.PropertyDefinition>;
 
-    const components: TSESTree.ClassDeclaration[] = [];
-    const propTypesMap = new Map<string, TSESTree.PropertyDefinition>();
+    // oxlint-disable-next-line consistent-function-scoping
+    function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
+      if (!node.superClass) return false;
+
+      if (node.superClass.type === 'Identifier') {
+        return (
+          node.superClass.name === 'Component' ||
+          node.superClass.name === 'PureComponent'
+        );
+      }
+
+      if (node.superClass.type === 'MemberExpression') {
+        return (
+          node.superClass.object.type === 'Identifier' &&
+          node.superClass.object.name === 'React' &&
+          (propertyName(node.superClass) === 'Component' ||
+            propertyName(node.superClass) === 'PureComponent')
+        );
+      }
+
+      return false;
+    }
+
+    function hasPropsUsage(node: TSESTree.ClassDeclaration): boolean {
+      // Simple check: look for this.props usage
+      for (const member of node.body.body) {
+        if (member.type === 'MethodDefinition') {
+          const body = member.value.body;
+          if (containsPropsAccess(body)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function containsPropsAccess(
+      node: TSESTree.Node | null | undefined,
+      visited = new Set<TSESTree.Node>(),
+    ): boolean {
+      if (!node) return false;
+
+      if (visited.has(node)) return false;
+      visited.add(node);
+
+      if (
+        node.type === 'MemberExpression' &&
+        node.object.type === 'ThisExpression' &&
+        propertyName(node) === 'props'
+      ) {
+        return true;
+      }
+
+      // Skip non-child keys to avoid circular references
+      const skipKeys = new Set([
+        'parent',
+        'range',
+        'loc',
+        'start',
+        'end',
+        'tokens',
+        'comments',
+      ]);
+
+      for (const key in node) {
+        if (skipKeys.has(key)) continue;
+
+        const child = (node as unknown as Record<string, unknown>)[key];
+        if (child && typeof child === 'object') {
+          if (Array.isArray(child)) {
+            for (const item of child) {
+              if (item && typeof item === 'object' && 'type' in item) {
+                if (containsPropsAccess(item as TSESTree.Node, visited)) {
+                  return true;
+                }
+              }
+            }
+          } else if ('type' in child) {
+            if (containsPropsAccess(child as TSESTree.Node, visited)) {
+              return true;
+            }
+          }
+        }
+      }
+
+      return false;
+    }
 
     return {
+      before() {
+        const [options] = context.options;
+        ignore = options?.ignore ?? [];
+        skipUndeclared = options?.skipUndeclared ?? false;
+
+        components = [];
+        propTypesMap = new Map<string, TSESTree.PropertyDefinition>();
+      },
       // Collect class components
       ClassDeclaration(node: TSESTree.ClassDeclaration) {
         if (isReactComponent(node) && !ignore.includes(node.id?.name || '')) {
@@ -76,7 +172,9 @@ export const propTypes = createRule<[Options], MessageIds>({
       },
 
       // Collect propTypes (PropertyDefinition in TypeScript ESLint)
-      'PropertyDefinition[key.name="propTypes"]'(node: TSESTree.PropertyDefinition) {
+      'PropertyDefinition[key.name="propTypes"]'(
+        node: TSESTree.PropertyDefinition,
+      ) {
         if (node.parent.type === 'ClassBody') {
           const classNode = node.parent.parent as TSESTree.ClassDeclaration;
           if (classNode.id?.name) {
@@ -105,78 +203,5 @@ export const propTypes = createRule<[Options], MessageIds>({
         }
       },
     };
-
-    // oxlint-disable-next-line consistent-function-scoping
-    function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
-      if (!node.superClass) return false;
-
-      if (node.superClass.type === 'Identifier') {
-        return node.superClass.name === 'Component' || node.superClass.name === 'PureComponent';
-      }
-
-      if (node.superClass.type === 'MemberExpression') {
-        return (
-          node.superClass.object.type === 'Identifier' &&
-          node.superClass.object.name === 'React' &&
-          (propertyName(node.superClass) === 'Component' || propertyName(node.superClass) === 'PureComponent')
-        );
-      }
-
-      return false;
-    }
-
-    function hasPropsUsage(node: TSESTree.ClassDeclaration): boolean {
-      // Simple check: look for this.props usage
-      for (const member of node.body.body) {
-        if (member.type === 'MethodDefinition') {
-          const body = member.value.body;
-          if (containsPropsAccess(body)) {
-            return true;
-          }
-        }
-      }
-      return false;
-    }
-
-    function containsPropsAccess(node: TSESTree.Node | null | undefined, visited = new Set<TSESTree.Node>()): boolean {
-      if (!node) return false;
-      
-      if (visited.has(node)) return false;
-      visited.add(node);
-      
-      if (
-        node.type === 'MemberExpression' &&
-        node.object.type === 'ThisExpression' &&
-        propertyName(node) === 'props'
-      ) {
-        return true;
-      }
-
-      // Skip non-child keys to avoid circular references
-      const skipKeys = new Set(['parent', 'range', 'loc', 'start', 'end', 'tokens', 'comments']);
-      
-      for (const key in node) {
-        if (skipKeys.has(key)) continue;
-        
-        const child = (node as unknown as Record<string, unknown>)[key];
-        if (child && typeof child === 'object') {
-          if (Array.isArray(child)) {
-            for (const item of child) {
-              if (item && typeof item === 'object' && 'type' in item) {
-                if (containsPropsAccess(item as TSESTree.Node, visited)) {
-                  return true;
-                }
-              }
-            }
-          } else if ('type' in child) {
-            if (containsPropsAccess(child as TSESTree.Node, visited)) {
-              return true;
-            }
-          }
-        }
-      }
-
-      return false;
-    }
   },
 });

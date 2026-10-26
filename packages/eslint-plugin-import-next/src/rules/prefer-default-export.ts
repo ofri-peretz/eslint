@@ -13,9 +13,7 @@ import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'preferDefaultExport'
-  | 'singleNamedExport'
-  | 'multipleNamedToDefault';
+  'preferDefaultExport' | 'singleNamedExport' | 'multipleNamedToDefault';
 
 export interface Options {
   /** Target file types to check */
@@ -31,6 +29,10 @@ type RuleOptions = [Options?];
 export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
   name: 'prefer-default-export',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/prefer-default-export',
+    },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/prefer-default-export.md',
@@ -101,30 +103,17 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const {
-      target = 'single',
-      ignoreFiles = [],
-      allowNamedExports = false,
-    } = options || {};
-
-    const filename = context.filename;
-    if (!filename) {
-      return {};
-    }
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let target: 'always' | 'single' | 'as-needed';
+    let ignoreFiles: string[];
+    let allowNamedExports: boolean;
+    let filename: string;
+    let namedExports: Map<string, TSESTree.Node>;
+    let defaultExportNode: TSESTree.ExportDefaultDeclaration | null;
 
     function shouldIgnoreFile(): boolean {
       return ignoreFiles.some((pattern: string) => filename.includes(pattern));
     }
-
-    if (shouldIgnoreFile() || allowNamedExports) {
-      return {};
-    }
-
-    // Track exports in this module with their nodes
-    const namedExports = new Map<string, TSESTree.Node>();
-    let defaultExportNode: TSESTree.ExportDefaultDeclaration | null = null;
 
     function addNamedExport(name: string, exportNode: TSESTree.Node) {
       namedExports.set(name, exportNode);
@@ -166,6 +155,28 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({
+          target = 'single',
+          ignoreFiles = [],
+          allowNamedExports = false,
+        } = options || {});
+
+        filename = context.filename;
+        if (!filename) {
+          return false;
+        }
+
+        if (shouldIgnoreFile() || allowNamedExports) {
+          return false;
+        }
+
+        // Track exports in this module with their nodes
+        namedExports = new Map<string, TSESTree.Node>();
+        defaultExportNode = null;
+        return true;
+      },
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
         // Check if this is a re-export of 'default' (export { default } from "./other")
         if (node.source && node.specifiers) {

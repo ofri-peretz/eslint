@@ -175,6 +175,7 @@ const SESSION_DOCS =
 export const noPredictableSessionId = createRule<[], MessageIds>({
   name: 'no-predictable-session-id',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mcp-sdk-security/docs/rules/no-predictable-session-id.md',
@@ -214,9 +215,8 @@ export const noPredictableSessionId = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
-    const sourceCode = context.sourceCode;
+  createOnce(context) {
+    let sourceCode: Readonly<TSESLint.SourceCode>;
 
     function classify(node: TSESTree.Node, depth: number): Kind {
       if (depth > MAX_DEPTH) return 'unknown';
@@ -311,6 +311,11 @@ export const noPredictableSessionId = createRule<[], MessageIds>({
     }
 
     return {
+      before() {
+        if (!fileUsesMcpSdk(context.sourceCode.ast)) return false;
+        sourceCode = context.sourceCode;
+        return true;
+      },
       NewExpression(node: TSESTree.NewExpression) {
         const transport = mcpExport(node.callee, sourceCode.getScope(node));
         if (transport === undefined || !STREAMABLE_TRANSPORTS.has(transport))

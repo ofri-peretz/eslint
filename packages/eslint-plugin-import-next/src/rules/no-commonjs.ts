@@ -33,6 +33,10 @@ type RuleOptions = [Options?];
 export const noCommonjs = createRule<RuleOptions, MessageIds>({
   name: 'no-commonjs',
   meta: {
+    interop: {
+      runtimes: ['eslint', 'oxlint'],
+      nativeEquivalent: 'import/no-commonjs',
+    },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-commonjs.md',
@@ -123,17 +127,13 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
     },
   ],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options] = context.options;
-    const {
-      allowRequire = false,
-      allowModuleExports = false,
-      allowExports = false,
-      allowInFiles = [],
-      suggestES6 = true,
-    } = options || {};
-
-    const filename = context.filename;
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowRequire: boolean;
+    let allowModuleExports: boolean;
+    let allowExports: boolean;
+    let allowInFiles: string[];
+    let suggestES6: boolean;
+    let filename: string;
 
     function shouldAllow(): boolean {
       if (!filename) {
@@ -203,6 +203,18 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options] = context.options;
+        ({
+          allowRequire = false,
+          allowModuleExports = false,
+          allowExports = false,
+          allowInFiles = [],
+          suggestES6 = true,
+        } = options || {});
+
+        filename = context.filename;
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (shouldAllow() || allowRequire) {
           return;

@@ -1,3 +1,4 @@
+import { RuleCreator } from '@interlace/eslint-devkit';
 /**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
@@ -22,7 +23,8 @@ import { envOf, follow, type Value } from '../../utils/cross-file';
 
 /** The name a property key denotes, including a computed string literal. */
 function propertyKeyName(prop: TSESTree.Property): string | null {
-  if (prop.key.type === AST_NODE_TYPES.Identifier && !prop.computed) return prop.key.name;
+  if (prop.key.type === AST_NODE_TYPES.Identifier && !prop.computed)
+    return prop.key.name;
   const staticText1 = staticString(prop.key);
   if (staticText1 !== null) {
     return staticText1;
@@ -40,7 +42,6 @@ function property(
       prop.type === AST_NODE_TYPES.Property && propertyKeyName(prop) === name,
   );
 }
-
 
 /**
  * Does this DSN actually carry a secret?
@@ -123,16 +124,25 @@ function inTypeormOptions(
 }
 
 /** Hosts that only ever reach the developer's own machine. */
-const LOOPBACK_HOSTS: ReadonlySet<string> = new Set(['localhost', '127.0.0.1', '[::1]']);
+const LOOPBACK_HOSTS: ReadonlySet<string> = new Set([
+  'localhost',
+  '127.0.0.1',
+  '[::1]',
+]);
 
 export const noHardcodedCredentials: TSESLint.RuleModule<
   'noHardcodedCredentials',
   NoHardcodedCredentialsOptions
-> = {
+> = RuleCreator.withoutDocs<
+  NoHardcodedCredentialsOptions,
+  'noHardcodedCredentials'
+>({
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
-      description: 'Detect hardcoded credentials in pg Client or Pool initialization.',
+      description:
+        'Detect hardcoded credentials in pg Client or Pool initialization.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/no-hardcoded-credentials.md',
       cwe: 'CWE-798',
       cvss: 9.8,
@@ -148,35 +158,17 @@ export const noHardcodedCredentials: TSESLint.RuleModule<
         compliance: ['SOC2', 'PCI-DSS', 'ISO27001', 'NIST-CSF'],
         effort: 'low',
         fix: 'Use environment variables (process.env.DB_PASSWORD) instead of hardcoding secrets.',
-        documentationLink: 'https://owasp.org/www-community/vulnerabilities/Use_of_hard-coded_password',
+        documentationLink:
+          'https://owasp.org/www-community/vulnerabilities/Use_of_hard-coded_password',
       }),
     },
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
-    // Every rule here is PostgreSQL-specific, and none of them knew it: over
-    // 108,838 files, 94% of this plugin's findings were in files with no
-    // PostgreSQL client at all. Registering no visitors is both the gate and
-    // the cheap path — a file with no database in it does no work.
-    if (!usesPostgres(context)) return {};
-    // A test pointing at a throwaway database is not a committed production
-    // secret (BENCHMARK-CRITERIA B1) — the policy every credentials rule built
-    // on the devkit factory already follows. The file-wide DSN sweep below made
-    // this matter: `parse('postgres://u:secret@db.example.test/app')` in a spec
-    // is a fixture; the corpus had dozens across teable, bookorbit, immich and
-    // nhost.
-    if (isTestFilePath(context.filename)) return {};
-
-    /**
-     * String literals already judged as the DSN of a config site — so the
-     * file-wide DSN sweep below does not report the same literal twice.
-     */
-    const consumed = new Set<TSESTree.Node>();
-    /** Every literal in the file that spells a DSN, judged at `Program:exit`. */
-    const dsnLiterals: (TSESTree.Literal | TSESTree.TemplateLiteral)[] = [];
-
-    const env = envOf(context);
+  createOnce(context) {
+    let consumed: Set<TSESTree.Node>;
+    let dsnLiterals: (TSESTree.Literal | TSESTree.TemplateLiteral)[];
+    let env: ReturnType<typeof envOf>;
 
     /** The string a value folds to, recording the literal it came from. */
     const stringValue = (start: Value): string | null => {
@@ -194,20 +186,30 @@ export const noHardcodedCredentials: TSESLint.RuleModule<
       });
     };
 
-    const checkConfig = (argument: TSESTree.Node, scope: TSESLint.Scope.Scope): void => {
+    const checkConfig = (
+      argument: TSESTree.Node,
+      scope: TSESLint.Scope.Scope,
+    ): void => {
       const start: Value = { node: argument, scope, env };
       // `new Client('postgres://app:pw@host/db')` — the DSN passed bare.
       const bare = stringValue(start);
       if (bare !== null) {
         if (parseDsnWithPassword(bare) !== null) {
-          context.report({ node: argument, messageId: 'noHardcodedCredentials' });
+          context.report({
+            node: argument,
+            messageId: 'noHardcodedCredentials',
+          });
         }
         return;
       }
 
       const config = follow(start);
       if (config.node.type !== AST_NODE_TYPES.ObjectExpression) return;
-      const at = (node: TSESTree.Node): Value => ({ node, scope: config.env.scopeOf(node), env: config.env });
+      const at = (node: TSESTree.Node): Value => ({
+        node,
+        scope: config.env.scopeOf(node),
+        env: config.env,
+      });
 
       // `connectionString: 'postgres://app:pw@host/db'`
       const connectionString = property(config.node, 'connectionString');
@@ -233,24 +235,59 @@ export const noHardcodedCredentials: TSESLint.RuleModule<
       }
     };
 
-    const checkCall = (node: TSESTree.NewExpression | TSESTree.CallExpression): void => {
+    const checkCall = (
+      node: TSESTree.NewExpression | TSESTree.CallExpression,
+    ): void => {
       const scope = context.sourceCode.getScope(node);
-      for (const argument of connectionConfigArguments(node, scope)) checkConfig(argument, scope);
+      for (const argument of connectionConfigArguments(node, scope))
+        checkConfig(argument, scope);
     };
 
-    const collectDsn = (node: TSESTree.Literal | TSESTree.TemplateLiteral): void => {
+    const collectDsn = (
+      node: TSESTree.Literal | TSESTree.TemplateLiteral,
+    ): void => {
       // `<input placeholder="postgresql://user:password@host:5432/db" />` is
       // UI text showing the format, never a connection a driver reads.
       const attribute =
-        node.parent.type === AST_NODE_TYPES.JSXExpressionContainer ? node.parent.parent : node.parent;
+        node.parent.type === AST_NODE_TYPES.JSXExpressionContainer
+          ? node.parent.parent
+          : node.parent;
       if (attribute.type === AST_NODE_TYPES.JSXAttribute) return;
       const text = staticString(node);
-      if (text !== null && PG_PROTOCOLS.some((protocol) => text.startsWith(protocol))) {
+      if (
+        text !== null &&
+        PG_PROTOCOLS.some((protocol) => text.startsWith(protocol))
+      ) {
         dsnLiterals.push(node);
       }
     };
 
     return {
+      before() {
+        // Every rule here is PostgreSQL-specific, and none of them knew it: over
+        // 108,838 files, 94% of this plugin's findings were in files with no
+        // PostgreSQL client at all. Registering no visitors is both the gate and
+        // the cheap path — a file with no database in it does no work.
+        if (!usesPostgres(context)) return false;
+        // A test pointing at a throwaway database is not a committed production
+        // secret (BENCHMARK-CRITERIA B1) — the policy every credentials rule built
+        // on the devkit factory already follows. The file-wide DSN sweep below made
+        // this matter: `parse('postgres://u:secret@db.example.test/app')` in a spec
+        // is a fixture; the corpus had dozens across teable, bookorbit, immich and
+        // nhost.
+        if (isTestFilePath(context.filename)) return false;
+
+        /**
+         * String literals already judged as the DSN of a config site — so the
+         * file-wide DSN sweep below does not report the same literal twice.
+         */
+        consumed = new Set<TSESTree.Node>();
+        /** Every literal in the file that spells a DSN, judged at `Program:exit`. */
+        dsnLiterals = [];
+
+        env = envOf(context);
+        return true;
+      },
       // pg `new Pool/Client`, postgres.js `postgres(…)`, pg-promise `pgp(…)`.
       NewExpression: checkCall,
       CallExpression: checkCall,
@@ -269,7 +306,8 @@ export const noHardcodedCredentials: TSESLint.RuleModule<
       'Program:exit'(program: TSESTree.Program) {
         const usesTypeorm = fileUsesTypeorm(program);
         for (const node of dsnLiterals) {
-          if (consumed.has(node) || inTypeormOptions(node, usesTypeorm)) continue;
+          if (consumed.has(node) || inTypeormOptions(node, usesTypeorm))
+            continue;
           const parsed = parseDsnWithPassword(staticString(node) as string);
           if (parsed === null || LOOPBACK_HOSTS.has(parsed.hostname)) continue;
           context.report({ node, messageId: 'noHardcodedCredentials' });
@@ -277,4 +315,4 @@ export const noHardcodedCredentials: TSESLint.RuleModule<
       },
     };
   },
-};
+});

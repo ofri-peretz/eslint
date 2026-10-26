@@ -33,7 +33,10 @@ ruleTester.run('require-csp-headers', requireCspHeaders, {
       name: 'a JSON response needs no CSP',
       code: "res.send({ data: 'json' })",
     },
-    { code: "res.json({ status: 'ok' })" },
+    {
+      name: 'res.json sends no HTML so needs no CSP',
+      code: "res.json({ status: 'ok' })",
+    },
     // Non-HTML strings
     { code: "res.send('Hello World')" },
     { code: 'const x = 1' },

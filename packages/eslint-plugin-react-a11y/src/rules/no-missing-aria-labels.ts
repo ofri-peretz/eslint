@@ -66,6 +66,7 @@ function hasTextContent(jsxElement: TSESTree.JSXElement): boolean {
 export const noMissingAriaLabels = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-aria-labels',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-missing-aria-labels.md',
@@ -106,22 +107,12 @@ export const noMissingAriaLabels = createRule<RuleOptions, MessageIds>({
       requireLabels: ['button', 'input', 'select', 'textarea'],
     },
   ],
-  create(
+  createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
+    currentOptions,
   ) {
-    const {
-      ignoreInTests = true,
-      requireLabels = ['button', 'input', 'select', 'textarea'],
-    }: Options = options || {};
-
-    const filename = context.filename;
-    const isTestFile =
-      ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
-
-    if (isTestFile) {
-      return {};
-    }
+    let ignoreInTests: boolean;
+    let requireLabels: string[];
 
     /**
      * Check JSX elements
@@ -161,6 +152,22 @@ export const noMissingAriaLabels = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      before() {
+        const [options = {}] = currentOptions();
+        ({
+          ignoreInTests = true,
+          requireLabels = ['button', 'input', 'select', 'textarea'],
+        } = options || {});
+
+        const filename = context.filename;
+        const isTestFile =
+          ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
+
+        if (isTestFile) {
+          return false;
+        }
+        return true;
+      },
       JSXOpeningElement: checkJSXElement,
     };
   },

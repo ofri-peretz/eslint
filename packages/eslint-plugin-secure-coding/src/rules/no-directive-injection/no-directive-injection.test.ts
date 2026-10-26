@@ -39,6 +39,7 @@ describe('no-directive-injection', () => {
         },
         // Trusted directive names (string literal, not user input)
         {
+          name: 'a directive registered under a literal name is not user-controlled',
           code: 'Vue.directive("my-directive", { /* safe */ });',
         },
         // Static HTML (no user input variables)
@@ -59,162 +60,182 @@ describe('no-directive-injection', () => {
   });
 
   describe('DOMPurify configuration', () => {
-    ruleTester.run('valid - correctly configured sanitizer', noDirectiveInjection, {
-      valid: [
-        // The exact call the issue reported as a false positive. This is the
-        // recommended safe pattern — the answer the rule steers people toward
-        // — and reporting it told developers who did the right thing that they
-        // had done the wrong thing.
-        'DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR });',
-        // Spelled out, still safe: an allow-list naming no dangerous element.
-        `DOMPurify.sanitize(html, { ALLOWED_TAGS: ['b', 'i', 'em'], ALLOWED_ATTR: ['href'] });`,
-        // Defaults are safe.
-        'DOMPurify.sanitize(html);',
-        // A non-array option is not something this check can read.
-        'DOMPurify.sanitize(html, { ALLOWED_TAGS: computeTags() });',
-        // Not a sanitizer. `validator.sanitize` has nothing to do with this.
-        `validator.sanitize(input, { ADD_TAGS: ['script'] });`,
-        // A non-Identifier receiver is not matched.
-        `lib.dom.sanitize(html, { ADD_TAGS: ['script'] });`,
-        // Computed and spread config entries carry no readable option name.
-        `DOMPurify.sanitize(html, { [key]: ['script'] });`,
-        `DOMPurify.sanitize(html, { ...base });`,
-        // A numeric key is not an option name.
-        `DOMPurify.sanitize(html, { 1: ['script'] });`,
-        // Non-string array elements are not tag names.
-        'DOMPurify.sanitize(html, { ADD_TAGS: [null, 1, ...rest] });',
-        // A second argument that is not an object literal.
-        'DOMPurify.sanitize(html, config);',
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - correctly configured sanitizer',
+      noDirectiveInjection,
+      {
+        valid: [
+          // The exact call the issue reported as a false positive. This is the
+          // recommended safe pattern — the answer the rule steers people toward
+          // — and reporting it told developers who did the right thing that they
+          // had done the wrong thing.
+          'DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR });',
+          // Spelled out, still safe: an allow-list naming no dangerous element.
+          `DOMPurify.sanitize(html, { ALLOWED_TAGS: ['b', 'i', 'em'], ALLOWED_ATTR: ['href'] });`,
+          // Defaults are safe.
+          'DOMPurify.sanitize(html);',
+          // A non-array option is not something this check can read.
+          'DOMPurify.sanitize(html, { ALLOWED_TAGS: computeTags() });',
+          // Not a sanitizer. `validator.sanitize` has nothing to do with this.
+          `validator.sanitize(input, { ADD_TAGS: ['script'] });`,
+          // A non-Identifier receiver is not matched.
+          `lib.dom.sanitize(html, { ADD_TAGS: ['script'] });`,
+          // Computed and spread config entries carry no readable option name.
+          `DOMPurify.sanitize(html, { [key]: ['script'] });`,
+          `DOMPurify.sanitize(html, { ...base });`,
+          // A numeric key is not an option name.
+          `DOMPurify.sanitize(html, { 1: ['script'] });`,
+          // Non-string array elements are not tag names.
+          'DOMPurify.sanitize(html, { ADD_TAGS: [null, 1, ...rest] });',
+          // A second argument that is not an object literal.
+          'DOMPurify.sanitize(html, config);',
+        ],
+        invalid: [],
+      },
+    );
 
     // The issue's other acceptance criterion — "a genuinely unsafe directive
     // still reports" — was failing. Each of these re-enables exactly what
     // DOMPurify exists to strip, so the call returns markup that can execute
     // while still reading as sanitized at the call site.
-    ruleTester.run('invalid - sanitizer configured to allow script', noDirectiveInjection, {
-      valid: [],
-      invalid: [
-        {
-          name: "ADD_TAGS: ['script'] hands the sanitiser back what it removes",
-          code: `DOMPurify.sanitize(html, { ADD_TAGS: ['script'] });`,
-          errors: [{ messageId: 'unsafeSanitizerConfig' }],
-        },
-        {
-          name: 'a DOMPurify allowlist that admits iframe is an unsafe sanitizer config',
-          code: `DOMPurify.sanitize(html, { ALLOWED_TAGS: ['b', 'iframe'] });`,
-          errors: [{ messageId: 'unsafeSanitizerConfig' }],
-        },
-        {
-          code: `DOMPurify.sanitize(html, { ADD_ATTR: ['onerror'] });`,
-          errors: [{ messageId: 'unsafeSanitizerConfig' }],
-        },
-        {
-          code: `DOMPurify.sanitize(html, { ALLOWED_ATTR: ['srcdoc'] });`,
-          errors: [{ messageId: 'unsafeSanitizerConfig' }],
-        },
-        // A quoted option name is the same option.
-        {
-          code: `DOMPurify.sanitize(html, { 'ADD_TAGS': ['script'] });`,
-          errors: [{ messageId: 'unsafeSanitizerConfig' }],
-        },
-        // Case is not a defence.
-        {
-          code: `purify.sanitize(html, { ADD_TAGS: ['SCRIPT'] });`,
-          errors: [{ messageId: 'unsafeSanitizerConfig' }],
-        },
-        // Only the first offending entry is reported, so one call yields one
-        // finding rather than one per dangerous value.
-        {
-          code: `DOMPurify.sanitize(html, { ADD_TAGS: ['script', 'iframe'], ADD_ATTR: ['onload'] });`,
-          errors: [{ messageId: 'unsafeSanitizerConfig' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - sanitizer configured to allow script',
+      noDirectiveInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            name: "ADD_TAGS: ['script'] hands the sanitiser back what it removes",
+            code: `DOMPurify.sanitize(html, { ADD_TAGS: ['script'] });`,
+            errors: [{ messageId: 'unsafeSanitizerConfig' }],
+          },
+          {
+            name: 'a DOMPurify allowlist that admits iframe is an unsafe sanitizer config',
+            code: `DOMPurify.sanitize(html, { ALLOWED_TAGS: ['b', 'iframe'] });`,
+            errors: [{ messageId: 'unsafeSanitizerConfig' }],
+          },
+          {
+            code: `DOMPurify.sanitize(html, { ADD_ATTR: ['onerror'] });`,
+            errors: [{ messageId: 'unsafeSanitizerConfig' }],
+          },
+          {
+            code: `DOMPurify.sanitize(html, { ALLOWED_ATTR: ['srcdoc'] });`,
+            errors: [{ messageId: 'unsafeSanitizerConfig' }],
+          },
+          // A quoted option name is the same option.
+          {
+            code: `DOMPurify.sanitize(html, { 'ADD_TAGS': ['script'] });`,
+            errors: [{ messageId: 'unsafeSanitizerConfig' }],
+          },
+          // Case is not a defence.
+          {
+            code: `purify.sanitize(html, { ADD_TAGS: ['SCRIPT'] });`,
+            errors: [{ messageId: 'unsafeSanitizerConfig' }],
+          },
+          // Only the first offending entry is reported, so one call yields one
+          // finding rather than one per dangerous value.
+          {
+            code: `DOMPurify.sanitize(html, { ADD_TAGS: ['script', 'iframe'], ADD_ATTR: ['onload'] });`,
+            errors: [{ messageId: 'unsafeSanitizerConfig' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - dangerouslySetInnerHTML', () => {
-    ruleTester.run('invalid - dangerous innerHTML usage', noDirectiveInjection, {
-      valid: [],
-      invalid: [
-        // userInput is a recognized user input variable
-        {
-          code: '<div dangerouslySetInnerHTML={{ __html: userInput }} />',
-          errors: [
-            {
-              messageId: 'dangerousInnerHTML',
-            },
-          ],
-        },
-        // req.body.content contains 'body' which is a user input variable
-        {
-          code: '<div dangerouslySetInnerHTML={{ __html: req.body.content }} />',
-          errors: [
-            {
-              messageId: 'dangerousInnerHTML',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - dangerous innerHTML usage',
+      noDirectiveInjection,
+      {
+        valid: [],
+        invalid: [
+          // userInput is a recognized user input variable
+          {
+            code: '<div dangerouslySetInnerHTML={{ __html: userInput }} />',
+            errors: [
+              {
+                messageId: 'dangerousInnerHTML',
+              },
+            ],
+          },
+          // req.body.content contains 'body' which is a user input variable
+          {
+            code: '<div dangerouslySetInnerHTML={{ __html: req.body.content }} />',
+            errors: [
+              {
+                messageId: 'dangerousInnerHTML',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Template Injection', () => {
-    ruleTester.run('invalid - template injection in JSX', noDirectiveInjection, {
-      valid: [],
-      invalid: [
-        // Template literal with userInput in dangerouslySetInnerHTML.
-        //
-        // ONE finding. This asserted two — `dangerousInnerHTML` from the
-        // JSXAttribute visitor and `templateInjection` from the TemplateLiteral
-        // visitor — for a single line with a single defect, which is a reader
-        // being told to fix the same thing twice.
-        {
-          code: '<div dangerouslySetInnerHTML={{ __html: `Hello ${userInput}!` }} />',
-          errors: [
-            {
-              messageId: 'dangerousInnerHTML',
-            },
-          ],
-        },
-        // The TemplateLiteral visitor still owns the case the JSX visitor
-        // cannot see: the payload goes through a helper first, so the attribute
-        // value has no provenance and the interpolation is the only evidence.
-        {
-          code: '<div dangerouslySetInnerHTML={{ __html: wrap(`Hello ${userInput}!`) }} />',
-          errors: [
-            {
-              messageId: 'templateInjection',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - template injection in JSX',
+      noDirectiveInjection,
+      {
+        valid: [],
+        invalid: [
+          // Template literal with userInput in dangerouslySetInnerHTML.
+          //
+          // ONE finding. This asserted two — `dangerousInnerHTML` from the
+          // JSXAttribute visitor and `templateInjection` from the TemplateLiteral
+          // visitor — for a single line with a single defect, which is a reader
+          // being told to fix the same thing twice.
+          {
+            code: '<div dangerouslySetInnerHTML={{ __html: `Hello ${userInput}!` }} />',
+            errors: [
+              {
+                messageId: 'dangerousInnerHTML',
+              },
+            ],
+          },
+          // The TemplateLiteral visitor still owns the case the JSX visitor
+          // cannot see: the payload goes through a helper first, so the attribute
+          // value has no provenance and the interpolation is the only evidence.
+          {
+            code: '<div dangerouslySetInnerHTML={{ __html: wrap(`Hello ${userInput}!`) }} />',
+            errors: [
+              {
+                messageId: 'templateInjection',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - innerHTML Assignments', () => {
-    ruleTester.run('invalid - unsafe innerHTML assignments', noDirectiveInjection, {
-      valid: [],
-      invalid: [
-        {
-          code: 'element.innerHTML = userInput;',
-          errors: [
-            {
-              messageId: 'dangerousInnerHTML',
-            },
-          ],
-        },
-        {
-          code: 'document.getElementById("content").innerHTML = req.body.html;',
-          errors: [
-            {
-              messageId: 'dangerousInnerHTML',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - unsafe innerHTML assignments',
+      noDirectiveInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'element.innerHTML = userInput;',
+            errors: [
+              {
+                messageId: 'dangerousInnerHTML',
+              },
+            ],
+          },
+          {
+            code: 'document.getElementById("content").innerHTML = req.body.html;',
+            errors: [
+              {
+                messageId: 'dangerousInnerHTML',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Dynamic Component Binding', () => {
@@ -245,55 +266,63 @@ describe('no-directive-injection', () => {
   });
 
   describe('Invalid Code - Template Compilation', () => {
-    ruleTester.run('invalid - unsafe template compilation', noDirectiveInjection, {
-      valid: [],
-      invalid: [
-        // Handlebars.compile with userInput variable
-        {
-          code: 'const compiled = Handlebars.compile(userInput);',
-          errors: [
-            {
-              messageId: 'userControlledTemplate',
-            },
-          ],
-        },
-        // _.template with variable containing "input"
-        {
-          code: 'const template = _.template(userInput);',
-          errors: [
-            {
-              messageId: 'userControlledTemplate',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - unsafe template compilation',
+      noDirectiveInjection,
+      {
+        valid: [],
+        invalid: [
+          // Handlebars.compile with userInput variable
+          {
+            code: 'const compiled = Handlebars.compile(userInput);',
+            errors: [
+              {
+                messageId: 'userControlledTemplate',
+              },
+            ],
+          },
+          // _.template with variable containing "input"
+          {
+            code: 'const template = _.template(userInput);',
+            errors: [
+              {
+                messageId: 'userControlledTemplate',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Dynamic Directive Creation', () => {
-    ruleTester.run('invalid - dynamic directive creation', noDirectiveInjection, {
-      valid: [],
-      invalid: [
-        // Vue.directive with userInput as directive name
-        {
-          code: 'Vue.directive(userInput, directiveDefinition);',
-          errors: [
-            {
-              messageId: 'unsafeDirectiveName',
-            },
-          ],
-        },
-        // directive() with userInput as directive name
-        {
-          code: 'directive(userInput, function() { /* ... */ });',
-          errors: [
-            {
-              messageId: 'dynamicDirectiveCreation',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - dynamic directive creation',
+      noDirectiveInjection,
+      {
+        valid: [],
+        invalid: [
+          // Vue.directive with userInput as directive name
+          {
+            code: 'Vue.directive(userInput, directiveDefinition);',
+            errors: [
+              {
+                messageId: 'unsafeDirectiveName',
+              },
+            ],
+          },
+          // directive() with userInput as directive name
+          {
+            code: 'directive(userInput, function() { /* ... */ });',
+            errors: [
+              {
+                messageId: 'dynamicDirectiveCreation',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Valid Code - False Positives Reduced', () => {
@@ -360,32 +389,36 @@ describe('no-directive-injection', () => {
   });
 
   describe('Complex Directive Injection Scenarios', () => {
-    ruleTester.run('complex - real-world directive injection attacks', noDirectiveInjection, {
-      valid: [],
-      invalid: [
-        // innerHTML assignment with template literal containing user input.
-        // One defect, one finding — see the note in the JSX block above.
-        {
-          code: 'element.innerHTML = `<div>${userInput}</div>`;',
-          errors: [{ messageId: 'dangerousInnerHTML' }],
-        },
-        {
-          code: '<div dangerouslySetInnerHTML={{ __html: `Hello ${userInput}!` }} />',
-          errors: [{ messageId: 'dangerousInnerHTML' }],
-        },
-        // Multiple dangerous patterns
-        {
-          code: `
+    ruleTester.run(
+      'complex - real-world directive injection attacks',
+      noDirectiveInjection,
+      {
+        valid: [],
+        invalid: [
+          // innerHTML assignment with template literal containing user input.
+          // One defect, one finding — see the note in the JSX block above.
+          {
+            code: 'element.innerHTML = `<div>${userInput}</div>`;',
+            errors: [{ messageId: 'dangerousInnerHTML' }],
+          },
+          {
+            code: '<div dangerouslySetInnerHTML={{ __html: `Hello ${userInput}!` }} />',
+            errors: [{ messageId: 'dangerousInnerHTML' }],
+          },
+          // Multiple dangerous patterns
+          {
+            code: `
             element.innerHTML = req.body.html;
             const tpl = Handlebars.compile(userInput);
           `,
-          errors: [
-            { messageId: 'dangerousInnerHTML' },
-            { messageId: 'userControlledTemplate' },
-          ],
-        },
-      ],
-    });
+            errors: [
+              { messageId: 'dangerousInnerHTML' },
+              { messageId: 'userControlledTemplate' },
+            ],
+          },
+        ],
+      },
+    );
 
     ruleTester.run('invalid - namespaced attributes', noDirectiveInjection, {
       valid: [],
@@ -411,101 +444,133 @@ describe('no-directive-injection', () => {
   // @interlace/eslint-devkit), so each dangerous pattern gets a paired "but
   // annotated safe" valid case exercising the corresponding isSafe() branch.
   describe('Safe Annotation Suppression (safetyChecker.isSafe branches)', () => {
-    ruleTester.run('valid - @safe annotation suppresses dangerouslySetInnerHTML', noDirectiveInjection, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @safe annotation suppresses dangerouslySetInnerHTML',
+      noDirectiveInjection,
+      {
+        valid: [
+          {
+            code: `
             /** @safe */
             const el = <div dangerouslySetInnerHTML={{ __html: userInput }} />;
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - @trusted annotation suppresses namespaced directive injection', noDirectiveInjection, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @trusted annotation suppresses namespaced directive injection',
+      noDirectiveInjection,
+      {
+        valid: [
+          {
+            code: `
             /** @trusted */
             const el = <div v:bind={userInput}></div>;
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - @validated annotation suppresses unsafeComponentBinding', noDirectiveInjection, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @validated annotation suppresses unsafeComponentBinding',
+      noDirectiveInjection,
+      {
+        valid: [
+          {
+            code: `
             /** @validated */
             const el = <div is={userInput}></div>;
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - @sanitized annotation suppresses innerHTML assignment', noDirectiveInjection, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @sanitized annotation suppresses innerHTML assignment',
+      noDirectiveInjection,
+      {
+        valid: [
+          {
+            code: `
             /** @sanitized */
             element.innerHTML = userInput;
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - @clean annotation suppresses userControlledTemplate', noDirectiveInjection, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @clean annotation suppresses userControlledTemplate',
+      noDirectiveInjection,
+      {
+        valid: [
+          {
+            code: `
             /** @clean */
             const compiled = Handlebars.compile(userInput);
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - @verified annotation suppresses unsafeDirectiveName', noDirectiveInjection, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @verified annotation suppresses unsafeDirectiveName',
+      noDirectiveInjection,
+      {
+        valid: [
+          {
+            code: `
             /** @verified */
             Vue.directive(userInput, directiveDefinition);
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - @escaped annotation suppresses dynamicDirectiveCreation', noDirectiveInjection, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @escaped annotation suppresses dynamicDirectiveCreation',
+      noDirectiveInjection,
+      {
+        valid: [
+          {
+            code: `
             /** @escaped */
             directive(userInput, function() { /* ... */ });
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - @timing-safe annotation suppresses templateInjection', noDirectiveInjection, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - @timing-safe annotation suppresses templateInjection',
+      noDirectiveInjection,
+      {
+        valid: [
+          {
+            code: `
             /** @timing-safe */
             element.innerHTML = \`Hello \${userInput}!\`;
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   // Layer 2: raw unit tests against rule.create() with a mock context, for the
@@ -513,15 +578,18 @@ describe('no-directive-injection', () => {
   // options wiring and unrelated visitor keys never firing on empty input).
   describe('Layer 2 - mock context', () => {
     it('wires custom trustedSanitizers/trustedAnnotations/strictMode options through to the safety checker', () => {
-      const { listeners, reports } = createWithMockContext(noDirectiveInjection, {
-        options: [
-          {
-            trustedSanitizers: ['myCustomSanitizer'],
-            trustedAnnotations: ['@my-custom-safe'],
-            strictMode: true,
-          },
-        ],
-      });
+      const { listeners, reports } = createWithMockContext(
+        noDirectiveInjection,
+        {
+          options: [
+            {
+              trustedSanitizers: ['myCustomSanitizer'],
+              trustedAnnotations: ['@my-custom-safe'],
+              strictMode: true,
+            },
+          ],
+        },
+      );
 
       expect(typeof listeners.JSXAttribute).toBe('function');
       expect(typeof listeners.AssignmentExpression).toBe('function');
@@ -531,7 +599,8 @@ describe('no-directive-injection', () => {
     });
 
     it('does not report when JSXAttribute value is not a JSXExpressionContainer', () => {
-      const { listeners, reports } = createWithMockContext(noDirectiveInjection);
+      const { listeners, reports } =
+        createWithMockContext(noDirectiveInjection);
       const jsxAttribute = listeners.JSXAttribute as (node: unknown) => void;
 
       jsxAttribute({
@@ -544,8 +613,11 @@ describe('no-directive-injection', () => {
     });
 
     it('does not report AssignmentExpression when left side is not a MemberExpression', () => {
-      const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-      const assignmentExpression = listeners.AssignmentExpression as (node: unknown) => void;
+      const { listeners, reports } =
+        createWithMockContext(noDirectiveInjection);
+      const assignmentExpression = listeners.AssignmentExpression as (
+        node: unknown,
+      ) => void;
 
       assignmentExpression({
         type: 'AssignmentExpression',
@@ -557,8 +629,11 @@ describe('no-directive-injection', () => {
     });
 
     it('does not report TemplateLiteral with no parent chain (unreachable dangerous context)', () => {
-      const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-      const templateLiteral = listeners.TemplateLiteral as (node: unknown) => void;
+      const { listeners, reports } =
+        createWithMockContext(noDirectiveInjection);
+      const templateLiteral = listeners.TemplateLiteral as (
+        node: unknown,
+      ) => void;
 
       templateLiteral({
         type: 'TemplateLiteral',
@@ -571,8 +646,11 @@ describe('no-directive-injection', () => {
     });
 
     it('does not report CallExpression for an unrelated identifier callee', () => {
-      const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-      const callExpression = listeners.CallExpression as (node: unknown) => void;
+      const { listeners, reports } =
+        createWithMockContext(noDirectiveInjection);
+      const callExpression = listeners.CallExpression as (
+        node: unknown,
+      ) => void;
 
       callExpression({
         type: 'CallExpression',
@@ -589,9 +667,12 @@ describe('no-directive-injection', () => {
     // `loc` at all to force that branch across every report site.
     describe('node.loc fallback (?? 0) at every report site', () => {
       it('dangerousInnerHTML (JSXAttribute) falls back to line 0 when node.loc is absent', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection, {
-          sourceText: 'userInput',
-        });
+        const { listeners, reports } = createWithMockContext(
+          noDirectiveInjection,
+          {
+            sourceText: 'userInput',
+          },
+        );
         const jsxAttribute = listeners.JSXAttribute as (node: unknown) => void;
 
         jsxAttribute({
@@ -608,12 +689,17 @@ describe('no-directive-injection', () => {
       });
 
       it('directiveInjection (namespaced JSXAttribute) falls back to line 0 when node.loc is absent', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
         const jsxAttribute = listeners.JSXAttribute as (node: unknown) => void;
 
         jsxAttribute({
           type: 'JSXAttribute',
-          name: { type: 'JSXNamespacedName', namespace: { name: 'v' }, name2: undefined },
+          name: {
+            type: 'JSXNamespacedName',
+            namespace: { name: 'v' },
+            name2: undefined,
+          },
           value: {
             type: 'JSXExpressionContainer',
             expression: { type: 'Identifier', name: 'userInput' },
@@ -625,7 +711,8 @@ describe('no-directive-injection', () => {
       });
 
       it('unsafeComponentBinding (is= JSXAttribute) falls back to line 0 when node.loc is absent', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
         const jsxAttribute = listeners.JSXAttribute as (node: unknown) => void;
 
         jsxAttribute({
@@ -642,10 +729,15 @@ describe('no-directive-injection', () => {
       });
 
       it('dangerousInnerHTML (AssignmentExpression) falls back to line 0 when node.loc is absent', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection, {
-          sourceText: 'userInput',
-        });
-        const assignmentExpression = listeners.AssignmentExpression as (node: unknown) => void;
+        const { listeners, reports } = createWithMockContext(
+          noDirectiveInjection,
+          {
+            sourceText: 'userInput',
+          },
+        );
+        const assignmentExpression = listeners.AssignmentExpression as (
+          node: unknown,
+        ) => void;
 
         assignmentExpression({
           type: 'AssignmentExpression',
@@ -661,8 +753,11 @@ describe('no-directive-injection', () => {
       });
 
       it('userControlledTemplate (CallExpression) falls back to line 0 when node.loc is absent', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-        const callExpression = listeners.CallExpression as (node: unknown) => void;
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
+        const callExpression = listeners.CallExpression as (
+          node: unknown,
+        ) => void;
 
         callExpression({
           type: 'CallExpression',
@@ -679,8 +774,11 @@ describe('no-directive-injection', () => {
       });
 
       it('unsafeDirectiveName (Vue.directive CallExpression) falls back to line 0 when node.loc is absent', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-        const callExpression = listeners.CallExpression as (node: unknown) => void;
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
+        const callExpression = listeners.CallExpression as (
+          node: unknown,
+        ) => void;
 
         callExpression({
           type: 'CallExpression',
@@ -700,8 +798,11 @@ describe('no-directive-injection', () => {
       });
 
       it('dynamicDirectiveCreation (bare directive() CallExpression) falls back to line 0 when node.loc is absent', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-        const callExpression = listeners.CallExpression as (node: unknown) => void;
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
+        const callExpression = listeners.CallExpression as (
+          node: unknown,
+        ) => void;
 
         callExpression({
           type: 'CallExpression',
@@ -717,8 +818,11 @@ describe('no-directive-injection', () => {
       });
 
       it('templateInjection (TemplateLiteral inside innerHTML assignment) falls back to line 0 when node.loc is absent', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-        const templateLiteral = listeners.TemplateLiteral as (node: unknown) => void;
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
+        const templateLiteral = listeners.TemplateLiteral as (
+          node: unknown,
+        ) => void;
 
         const assignmentParent = {
           type: 'AssignmentExpression',
@@ -747,15 +851,21 @@ describe('no-directive-injection', () => {
     // that also matches a known method name via the generic `methodName`
     // check ('compile'/'template'/'$compile'/'$interpolate').
     it('userControlledTemplate fires via generic methodName when callee.object is not an Identifier', () => {
-      const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-      const callExpression = listeners.CallExpression as (node: unknown) => void;
+      const { listeners, reports } =
+        createWithMockContext(noDirectiveInjection);
+      const callExpression = listeners.CallExpression as (
+        node: unknown,
+      ) => void;
 
       callExpression({
         type: 'CallExpression',
         loc: { start: { line: 7 } },
         callee: {
           type: 'MemberExpression',
-          object: { type: 'CallExpression', callee: { type: 'Identifier', name: 'getEngine' } },
+          object: {
+            type: 'CallExpression',
+            callee: { type: 'Identifier', name: 'getEngine' },
+          },
           property: { type: 'Identifier', name: 'compile' },
         },
         arguments: [{ type: 'Identifier', name: 'userInput' }],
@@ -773,8 +883,11 @@ describe('no-directive-injection', () => {
     // is itself in that array). Force objectName to match but methodName to
     // differ, so the `&&` must actually evaluate (and fail) its right side.
     it('does not report Handlebars.precompile (methodName !== "compile", forces the && right side to evaluate false)', () => {
-      const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-      const callExpression = listeners.CallExpression as (node: unknown) => void;
+      const { listeners, reports } =
+        createWithMockContext(noDirectiveInjection);
+      const callExpression = listeners.CallExpression as (
+        node: unknown,
+      ) => void;
 
       callExpression({
         type: 'CallExpression',
@@ -795,8 +908,11 @@ describe('no-directive-injection', () => {
     // and _.template. Cover the remaining named-engine disjuncts directly.
     describe('named template-engine disjuncts', () => {
       it('detects ejs.render(userInput)', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-        const callExpression = listeners.CallExpression as (node: unknown) => void;
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
+        const callExpression = listeners.CallExpression as (
+          node: unknown,
+        ) => void;
 
         callExpression({
           type: 'CallExpression',
@@ -814,8 +930,11 @@ describe('no-directive-injection', () => {
       });
 
       it('detects pug.render(userInput)', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-        const callExpression = listeners.CallExpression as (node: unknown) => void;
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
+        const callExpression = listeners.CallExpression as (
+          node: unknown,
+        ) => void;
 
         callExpression({
           type: 'CallExpression',
@@ -833,8 +952,11 @@ describe('no-directive-injection', () => {
       });
 
       it('detects mustache.render(userInput)', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-        const callExpression = listeners.CallExpression as (node: unknown) => void;
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
+        const callExpression = listeners.CallExpression as (
+          node: unknown,
+        ) => void;
 
         callExpression({
           type: 'CallExpression',
@@ -859,8 +981,11 @@ describe('no-directive-injection', () => {
     // `${req.body}`) directly, plus the false case where neither matches.
     describe('templateInjection hasUserInput MemberExpression disjunct', () => {
       it('detects a MemberExpression expression whose object is user input (e.g. req.body)', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-        const templateLiteral = listeners.TemplateLiteral as (node: unknown) => void;
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
+        const templateLiteral = listeners.TemplateLiteral as (
+          node: unknown,
+        ) => void;
 
         const assignmentParent = {
           type: 'AssignmentExpression',
@@ -889,8 +1014,11 @@ describe('no-directive-injection', () => {
       });
 
       it('does not report when expressions are neither user-input Identifiers nor user-input MemberExpressions', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-        const templateLiteral = listeners.TemplateLiteral as (node: unknown) => void;
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
+        const templateLiteral = listeners.TemplateLiteral as (
+          node: unknown,
+        ) => void;
 
         const assignmentParent = {
           type: 'AssignmentExpression',
@@ -924,8 +1052,11 @@ describe('no-directive-injection', () => {
     // too-few-arguments false branch of each guard needs a direct call.
     describe('CallExpression argument-count guards (false branches)', () => {
       it('does not report userControlledTemplate when the template-compile call has zero arguments', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-        const callExpression = listeners.CallExpression as (node: unknown) => void;
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
+        const callExpression = listeners.CallExpression as (
+          node: unknown,
+        ) => void;
 
         callExpression({
           type: 'CallExpression',
@@ -942,8 +1073,11 @@ describe('no-directive-injection', () => {
       });
 
       it('does not report unsafeDirectiveName when Vue.directive is called with fewer than 2 arguments', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-        const callExpression = listeners.CallExpression as (node: unknown) => void;
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
+        const callExpression = listeners.CallExpression as (
+          node: unknown,
+        ) => void;
 
         callExpression({
           type: 'CallExpression',
@@ -960,8 +1094,11 @@ describe('no-directive-injection', () => {
       });
 
       it('does not report dynamicDirectiveCreation when bare directive() is called with fewer than 2 arguments', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-        const callExpression = listeners.CallExpression as (node: unknown) => void;
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
+        const callExpression = listeners.CallExpression as (
+          node: unknown,
+        ) => void;
 
         callExpression({
           type: 'CallExpression',
@@ -981,8 +1118,11 @@ describe('no-directive-injection', () => {
     // MemberExpression-property mismatch, so the walk exhausts to `undefined`.
     describe('TemplateLiteral ancestor-walk non-matching branches', () => {
       it('does not report when the enclosing JSXExpressionContainer is not a dangerouslySetInnerHTML attribute', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-        const templateLiteral = listeners.TemplateLiteral as (node: unknown) => void;
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
+        const templateLiteral = listeners.TemplateLiteral as (
+          node: unknown,
+        ) => void;
 
         const container = {
           type: 'JSXExpressionContainer',
@@ -1004,8 +1144,11 @@ describe('no-directive-injection', () => {
       });
 
       it('does not report when the enclosing AssignmentExpression does not target innerHTML', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-        const templateLiteral = listeners.TemplateLiteral as (node: unknown) => void;
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
+        const templateLiteral = listeners.TemplateLiteral as (
+          node: unknown,
+        ) => void;
 
         const assignmentParent = {
           type: 'AssignmentExpression',
@@ -1033,12 +1176,17 @@ describe('no-directive-injection', () => {
     // fixtures only ever hit the true/true path; cover both false paths.
     describe('namespaced directive JSXAttribute guards (false branches)', () => {
       it('does not report directiveInjection when the namespaced attribute value is not a JSXExpressionContainer', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
         const jsxAttribute = listeners.JSXAttribute as (node: unknown) => void;
 
         jsxAttribute({
           type: 'JSXAttribute',
-          name: { type: 'JSXNamespacedName', namespace: { name: 'v' }, name2: 'bind' },
+          name: {
+            type: 'JSXNamespacedName',
+            namespace: { name: 'v' },
+            name2: 'bind',
+          },
           value: { type: 'Literal', value: 'static' },
         });
 
@@ -1046,12 +1194,17 @@ describe('no-directive-injection', () => {
       });
 
       it('does not report directiveInjection when the namespaced attribute expression is not user input', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
         const jsxAttribute = listeners.JSXAttribute as (node: unknown) => void;
 
         jsxAttribute({
           type: 'JSXAttribute',
-          name: { type: 'JSXNamespacedName', namespace: { name: 'ng' }, name2: 'model' },
+          name: {
+            type: 'JSXNamespacedName',
+            namespace: { name: 'ng' },
+            name2: 'model',
+          },
           value: {
             type: 'JSXExpressionContainer',
             expression: { type: 'Identifier', name: 'safeValue' },
@@ -1065,7 +1218,8 @@ describe('no-directive-injection', () => {
     // Same two-nested-if shape for the `is=` dynamic component binding.
     describe('is= dynamic component binding guards (false branches)', () => {
       it('does not report unsafeComponentBinding when the is= value is not a JSXExpressionContainer', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
         const jsxAttribute = listeners.JSXAttribute as (node: unknown) => void;
 
         jsxAttribute({
@@ -1078,7 +1232,8 @@ describe('no-directive-injection', () => {
       });
 
       it('does not report unsafeComponentBinding when the is= expression is not user input', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
         const jsxAttribute = listeners.JSXAttribute as (node: unknown) => void;
 
         jsxAttribute({
@@ -1102,8 +1257,11 @@ describe('no-directive-injection', () => {
     // methodName is wrong).
     describe('named template-engine disjuncts: right-hand mismatch', () => {
       it('does not match the Handlebars.compile disjunct when objectName is "Handlebars" but methodName differs', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-        const callExpression = listeners.CallExpression as (node: unknown) => void;
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
+        const callExpression = listeners.CallExpression as (
+          node: unknown,
+        ) => void;
 
         callExpression({
           type: 'CallExpression',
@@ -1120,8 +1278,11 @@ describe('no-directive-injection', () => {
       });
 
       it('does not match the _.template disjunct when objectName is "_" but methodName differs', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-        const callExpression = listeners.CallExpression as (node: unknown) => void;
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
+        const callExpression = listeners.CallExpression as (
+          node: unknown,
+        ) => void;
 
         callExpression({
           type: 'CallExpression',
@@ -1138,8 +1299,11 @@ describe('no-directive-injection', () => {
       });
 
       it('does not match the ejs.render disjunct when objectName is "ejs" but methodName differs', () => {
-        const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-        const callExpression = listeners.CallExpression as (node: unknown) => void;
+        const { listeners, reports } =
+          createWithMockContext(noDirectiveInjection);
+        const callExpression = listeners.CallExpression as (
+          node: unknown,
+        ) => void;
 
         callExpression({
           type: 'CallExpression',
@@ -1160,8 +1324,11 @@ describe('no-directive-injection', () => {
     // `directiveName.type === 'Identifier' && isUserInput(...)`; cover the
     // false branch where the first argument is not user input.
     it('does not report dynamicDirectiveCreation when the bare directive() first argument is not user input', () => {
-      const { listeners, reports } = createWithMockContext(noDirectiveInjection);
-      const callExpression = listeners.CallExpression as (node: unknown) => void;
+      const { listeners, reports } =
+        createWithMockContext(noDirectiveInjection);
+      const callExpression = listeners.CallExpression as (
+        node: unknown,
+      ) => void;
 
       callExpression({
         type: 'CallExpression',
@@ -1184,17 +1351,26 @@ describe('no-directive-injection', () => {
  * what they already did. Only a SAFE config is exempt; findUnsafeSanitizerConfig still
  * catches widenings such as `{ ADD_TAGS: ['script'] }`.
  */
-ruleTester.run('lock: sanitized innerHTML is the fix, not the defect', noDirectiveInjection, {
-  valid: [
-    {
-      code: "function r(node, c) { node.innerHTML = DOMPurify.sanitize(c.body, { ALLOWED_TAGS: ['b','i'] }); }",
-    },
-    { code: 'function r(node, c) { node.innerHTML = DOMPurify.sanitize(c.body); }' },
-  ],
-  invalid: [
-    { code: 'function r(node, req) { node.innerHTML = req.body.html; }', errors: 1 },
-  ],
-});
+ruleTester.run(
+  'lock: sanitized innerHTML is the fix, not the defect',
+  noDirectiveInjection,
+  {
+    valid: [
+      {
+        code: "function r(node, c) { node.innerHTML = DOMPurify.sanitize(c.body, { ALLOWED_TAGS: ['b','i'] }); }",
+      },
+      {
+        code: 'function r(node, c) { node.innerHTML = DOMPurify.sanitize(c.body); }',
+      },
+    ],
+    invalid: [
+      {
+        code: 'function r(node, req) { node.innerHTML = req.body.html; }',
+        errors: 1,
+      },
+    ],
+  },
+);
 
 /**
  * `userInputVariables` — the vocabulary that decides what counts as
@@ -1213,7 +1389,8 @@ ruleTester.run('lock: sanitized innerHTML is the fix, not the defect', noDirecti
  * entry `data`. The option is a consumer's only lever over that.
  */
 describe('option: userInputVariables', () => {
-  const ASSIGN = 'function r(node, payload) { node.innerHTML = payload.markup; }';
+  const ASSIGN =
+    'function r(node, payload) { node.innerHTML = payload.markup; }';
 
   ruleTester.run('a custom vocabulary adds a source', noDirectiveInjection, {
     valid: [ASSIGN],
@@ -1230,20 +1407,24 @@ describe('option: userInputVariables', () => {
   // extending it, so a consumer who registers only their own name stops the
   // rule seeing `req.body` at all. Worth pinning — it is the failure mode a
   // reader of the docs would not expect.
-  ruleTester.run('a custom vocabulary replaces the defaults', noDirectiveInjection, {
-    valid: [
-      {
-        code: 'function r(node, req) { node.innerHTML = req.body.html; }',
-        options: [{ userInputVariables: ['payload'] }],
-      },
-    ],
-    invalid: [
-      {
-        code: 'function r(node, req) { node.innerHTML = req.body.html; }',
-        errors: [{ messageId: 'dangerousInnerHTML' }],
-      },
-    ],
-  });
+  ruleTester.run(
+    'a custom vocabulary replaces the defaults',
+    noDirectiveInjection,
+    {
+      valid: [
+        {
+          code: 'function r(node, req) { node.innerHTML = req.body.html; }',
+          options: [{ userInputVariables: ['payload'] }],
+        },
+      ],
+      invalid: [
+        {
+          code: 'function r(node, req) { node.innerHTML = req.body.html; }',
+          errors: [{ messageId: 'dangerousInnerHTML' }],
+        },
+      ],
+    },
+  );
 });
 
 /**
@@ -1258,39 +1439,43 @@ describe('option: userInputVariables', () => {
  * 4 of 8 vulnerable fixtures missed, including all three template-compiler
  * shapes.
  */
-ruleTester.run('lock: member expressions reach the template sinks', noDirectiveInjection, {
-  valid: [
-    'Handlebars.compile(INVOICE_TEMPLATE);',
-    'const t = "<b>{{n}}</b>"; Handlebars.compile(t);',
-    // A helper's return value has provenance the rule cannot see from here.
-    'Handlebars.compile(loadTemplate(tenantId));',
-  ],
-  invalid: [
-    {
-      code: 'Handlebars.compile(req.body.template);',
-      errors: [{ messageId: 'userControlledTemplate' }],
-    },
-    {
-      code: '_.template(req.query.tpl);',
-      errors: [{ messageId: 'userControlledTemplate' }],
-    },
-    {
-      code: 'ejs.render(req.body.tpl, ctx);',
-      errors: [{ messageId: 'userControlledTemplate' }],
-    },
-    // A type-only cast is not a change of provenance; Express + TypeScript
-    // forces one at nearly every query read.
-    {
-      code: 'Handlebars.compile(req.query.tpl as string);',
-      errors: [{ messageId: 'userControlledTemplate' }],
-    },
-    // Adding a default does not launder the branch that is still the request.
-    {
-      code: 'Handlebars.compile(useCustom ? req.body.tpl : DEFAULT_TPL);',
-      errors: [{ messageId: 'userControlledTemplate' }],
-    },
-  ],
-});
+ruleTester.run(
+  'lock: member expressions reach the template sinks',
+  noDirectiveInjection,
+  {
+    valid: [
+      'Handlebars.compile(INVOICE_TEMPLATE);',
+      'const t = "<b>{{n}}</b>"; Handlebars.compile(t);',
+      // A helper's return value has provenance the rule cannot see from here.
+      'Handlebars.compile(loadTemplate(tenantId));',
+    ],
+    invalid: [
+      {
+        code: 'Handlebars.compile(req.body.template);',
+        errors: [{ messageId: 'userControlledTemplate' }],
+      },
+      {
+        code: '_.template(req.query.tpl);',
+        errors: [{ messageId: 'userControlledTemplate' }],
+      },
+      {
+        code: 'ejs.render(req.body.tpl, ctx);',
+        errors: [{ messageId: 'userControlledTemplate' }],
+      },
+      // A type-only cast is not a change of provenance; Express + TypeScript
+      // forces one at nearly every query read.
+      {
+        code: 'Handlebars.compile(req.query.tpl as string);',
+        errors: [{ messageId: 'userControlledTemplate' }],
+      },
+      // Adding a default does not launder the branch that is still the request.
+      {
+        code: 'Handlebars.compile(useCustom ? req.body.tpl : DEFAULT_TPL);',
+        errors: [{ messageId: 'userControlledTemplate' }],
+      },
+    ],
+  },
+);
 
 /**
  * Regression lock — user input is a WHOLE name, and it is read off the AST.
@@ -1341,19 +1526,23 @@ ruleTester.run('lock: taint is structural, not textual', noDirectiveInjection, {
  * attributable, and keeps the case the owning visitors cannot see — a template
  * handed to a helper first.
  */
-ruleTester.run('lock: no duplicate finding on one interpolation', noDirectiveInjection, {
-  valid: [],
-  invalid: [
-    {
-      code: 'el.innerHTML = `<p>${req.body.name}</p>`;',
-      errors: [{ messageId: 'dangerousInnerHTML' }],
-    },
-    {
-      code: 'el.innerHTML = wrap(`<p>${req.body.name}</p>`);',
-      errors: [{ messageId: 'templateInjection' }],
-    },
-  ],
-});
+ruleTester.run(
+  'lock: no duplicate finding on one interpolation',
+  noDirectiveInjection,
+  {
+    valid: [],
+    invalid: [
+      {
+        code: 'el.innerHTML = `<p>${req.body.name}</p>`;',
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        code: 'el.innerHTML = wrap(`<p>${req.body.name}</p>`);',
+        errors: [{ messageId: 'templateInjection' }],
+      },
+    ],
+  },
+);
 
 /**
  * Regression lock — a function parameter is not a template this file owns.
@@ -1374,25 +1563,29 @@ ruleTester.run('lock: no duplicate finding on one interpolation', noDirectiveInj
  * to the compiler sinks, never to innerHTML, where a parameter is the normal
  * shape of a DOM helper whose caller did the sanitizing.
  */
-ruleTester.run('lock: unattributed parameter at the compiler sink', noDirectiveInjection, {
-  valid: [
-    'function render(data) { return Handlebars.compile(INVOICE_TEMPLATE)(data); }',
-    'function render(data) { const s = "<p>{{x}}</p>"; return Handlebars.compile(s)(data); }',
-    'function render(compact, data) { let s = "<p>a</p>"; if (compact) s = "<p>b</p>"; return Handlebars.compile(s)(data); }',
-    'function render(id) { return Handlebars.compile(loadTemplate(id)); }',
-    'function paint(el, html) { el.innerHTML = html; }',
-  ],
-  invalid: [
-    {
-      code: 'export function render(templateSource, data) { return Handlebars.compile(templateSource)(data); }',
-      errors: [{ messageId: 'userControlledTemplate' }],
-    },
-    {
-      code: 'function compileWidget(tpl) { return _.template(tpl); }',
-      errors: [{ messageId: 'userControlledTemplate' }],
-    },
-  ],
-});
+ruleTester.run(
+  'lock: unattributed parameter at the compiler sink',
+  noDirectiveInjection,
+  {
+    valid: [
+      'function render(data) { return Handlebars.compile(INVOICE_TEMPLATE)(data); }',
+      'function render(data) { const s = "<p>{{x}}</p>"; return Handlebars.compile(s)(data); }',
+      'function render(compact, data) { let s = "<p>a</p>"; if (compact) s = "<p>b</p>"; return Handlebars.compile(s)(data); }',
+      'function render(id) { return Handlebars.compile(loadTemplate(id)); }',
+      'function paint(el, html) { el.innerHTML = html; }',
+    ],
+    invalid: [
+      {
+        code: 'export function render(templateSource, data) { return Handlebars.compile(templateSource)(data); }',
+        errors: [{ messageId: 'userControlledTemplate' }],
+      },
+      {
+        code: 'function compileWidget(tpl) { return _.template(tpl); }',
+        errors: [{ messageId: 'userControlledTemplate' }],
+      },
+    ],
+  },
+);
 
 /**
  * Coverage — the arms of the structural taint predicate.
@@ -1418,16 +1611,37 @@ ruleTester.run('coverage: taint predicate arms', noDirectiveInjection, {
   ],
   invalid: [
     // Concatenation, tainted on each side in turn.
-    { code: 'el.innerHTML = req.body.n + "</p>";', errors: [{ messageId: 'dangerousInnerHTML' }] },
-    { code: 'el.innerHTML = "<p>" + req.body.n;', errors: [{ messageId: 'dangerousInnerHTML' }] },
+    {
+      code: 'el.innerHTML = req.body.n + "</p>";',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    {
+      code: 'el.innerHTML = "<p>" + req.body.n;',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
     // Fallback, tainted on each side in turn.
-    { code: 'el.innerHTML = req.body.n || DEFAULT_MARKUP;', errors: [{ messageId: 'dangerousInnerHTML' }] },
-    { code: 'el.innerHTML = DEFAULT_MARKUP || req.body.n;', errors: [{ messageId: 'dangerousInnerHTML' }] },
+    {
+      code: 'el.innerHTML = req.body.n || DEFAULT_MARKUP;',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    {
+      code: 'el.innerHTML = DEFAULT_MARKUP || req.body.n;',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
     // Ternary, tainted on each side in turn.
-    { code: 'el.innerHTML = flag ? req.body.n : SAFE_MARKUP;', errors: [{ messageId: 'dangerousInnerHTML' }] },
-    { code: 'el.innerHTML = flag ? SAFE_MARKUP : req.body.n;', errors: [{ messageId: 'dangerousInnerHTML' }] },
+    {
+      code: 'el.innerHTML = flag ? req.body.n : SAFE_MARKUP;',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    {
+      code: 'el.innerHTML = flag ? SAFE_MARKUP : req.body.n;',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
     // Computed access rooted at the request still resolves through the root.
-    { code: 'el.innerHTML = req.body[key];', errors: [{ messageId: 'dangerousInnerHTML' }] },
+    {
+      code: 'el.innerHTML = req.body[key];',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
     // A binding written from itself: the cycle guard returns false for the
     // self-write and the genuine write still decides.
     {

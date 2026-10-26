@@ -1,0 +1,132 @@
+{
+  "source": {
+    "package": "eslint-plugin-security",
+    "version": "4.2.0",
+    "license": "Apache-2.0",
+    "upstream": "https://github.com/eslint-community/eslint-plugin-security",
+    "extractedFrom": "test/rules/*.js via RuleTester capture",
+    "extractedOn": "2026-10-25"
+  },
+  "totals": {
+    "detected": 102,
+    "invalid": 107,
+    "firedOnValid": 15,
+    "valid": 112
+  },
+  "summary": {
+    "detect-bidi-characters": {
+      "detected": 12,
+      "invalid": 12,
+      "firedOnValid": 0,
+      "valid": 2,
+      "rules": [
+        "secure-coding/no-bidi-characters",
+        "secure-coding/no-homoglyph-identifiers"
+      ]
+    },
+    "detect-buffer-noassert": {
+      "detected": 29,
+      "invalid": 29,
+      "firedOnValid": 0,
+      "valid": 56,
+      "rules": ["node-security/no-buffer-overread"]
+    },
+    "detect-child-process": {
+      "detected": 15,
+      "invalid": 15,
+      "firedOnValid": 11,
+      "valid": 19,
+      "rules": ["node-security/detect-child-process"]
+    },
+    "detect-disable-mustache-escape": {
+      "detected": 1,
+      "invalid": 1,
+      "firedOnValid": 0,
+      "valid": 1,
+      "rules": ["secure-coding/no-disabled-template-escaping"]
+    },
+    "detect-eval-with-expression": {
+      "detected": 1,
+      "invalid": 1,
+      "firedOnValid": 3,
+      "valid": 3,
+      "rules": [
+        "browser-security/no-eval",
+        "node-security/detect-eval-with-expression"
+      ]
+    },
+    "detect-invisible-characters": {
+      "detected": 13,
+      "invalid": 13,
+      "firedOnValid": 0,
+      "valid": 7,
+      "rules": ["secure-coding/no-invisible-characters"]
+    },
+    "detect-new-buffer": {
+      "detected": 1,
+      "invalid": 1,
+      "firedOnValid": 1,
+      "valid": 1,
+      "rules": ["node-security/no-deprecated-buffer"]
+    },
+    "detect-no-csrf-before-method-override": {
+      "detected": 0,
+      "invalid": 1,
+      "firedOnValid": 0,
+      "valid": 1,
+      "rules": []
+    },
+    "detect-non-literal-fs-filename": {
+      "detected": 25,
+      "invalid": 25,
+      "firedOnValid": 0,
+      "valid": 10,
+      "rules": ["node-security/detect-non-literal-fs-filename"]
+    },
+    "detect-non-literal-regexp": {
+      "detected": 1,
+      "invalid": 1,
+      "firedOnValid": 0,
+      "valid": 2,
+      "rules": ["secure-coding/detect-non-literal-regexp"]
+    },
+    "detect-non-literal-require": {
+      "detected": 2,
+      "invalid": 2,
+      "firedOnValid": 0,
+      "valid": 4,
+      "rules": [
+        "node-security/no-dynamic-dependency-loading",
+        "node-security/no-dynamic-require"
+      ]
+    },
+    "detect-object-injection": {
+      "detected": 1,
+      "invalid": 1,
+      "firedOnValid": 0,
+      "valid": 1,
+      "rules": ["secure-coding/detect-object-injection"]
+    },
+    "detect-possible-timing-attacks": {
+      "detected": 0,
+      "invalid": 2,
+      "firedOnValid": 0,
+      "valid": 2,
+      "rules": []
+    },
+    "detect-pseudoRandomBytes": {
+      "detected": 0,
+      "invalid": 1,
+      "firedOnValid": 0,
+      "valid": 1,
+      "rules": []
+    },
+    "detect-unsafe-regex": {
+      "detected": 1,
+      "invalid": 2,
+      "firedOnValid": 0,
+      "valid": 2,
+      "rules": ["secure-coding/no-redos-vulnerable-regex"]
+    }
+  }
+}

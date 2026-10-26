@@ -421,6 +421,7 @@ export type { CommandPattern };
 export const detectChildProcess = createRule<RuleOptions, MessageIds>({
   name: 'detect-child-process',
   meta: {
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/detect-child-process.md',
@@ -523,76 +524,16 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       additionalMethods: [],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const {
-      allowLiteralStrings = false,
-      allowLiteralSpawn = false,
-      additionalMethods = [],
-    }: Options = options;
-    const taintRoots = new Set(
-      (options.taintSources ?? DEFAULT_TAINT_SOURCES).map((source) =>
-        source.toLowerCase(),
-      ),
-    );
-    const readsTaintSource = makeReadsTaintSource(
-      context.sourceCode,
-      taintRoots,
-    );
-
-    /**
-     * The same reader minus `process` — "can a party who is NOT already at this
-     * program's command line steer this value?"
-     *
-     * The no-shell path asks two questions and both are privilege-boundary
-     * questions, not shape questions:
-     *
-     *   - argv[0]: can someone else choose which binary runs?
-     *   - argv[1..]: can someone else smuggle in a flag (CWE-88)?
-     *
-     * An answer of "yes, via `process.argv` or `process.env`" is not an answer,
-     * because whoever supplies those is standing at a shell and can invoke the
-     * binary directly with any flags they like. Both labelled CWE-88 fixtures
-     * (`benchmarks/corpus/CWE-088/vulnerable/{git-ls-remote-arg-injection,
-     * tar-user-args}.js`) are `req`-rooted, and both keep reporting.
-     *
-     * Measured: this is the whole of the remaining corpus-scan gap. With
-     * `process` counted, Shopify/cli reported twice —
-     * `bin/changeset.js:17` `spawn(process.execPath, [changesetBinPath, ...args])`
-     * where `args` is `process.argv.slice(2)`, i.e. a wrapper forwarding its own
-     * command line, flagged as argument injection; and
-     * `packages/plugin-cloudflare/src/install-cloudflared.ts:85`
-     * `execFileSync(binTarget, ['--version'])` where `binTarget` traces back
-     * through `getBinPathTarget(env, …)` to `install(env = process.env)` and the
-     * documented `SHOPIFY_CLI_CLOUDFLARED_PATH` override. Neither crosses a
-     * boundary; both were CWE-78 reports on a call with no shell and a literal
-     * argv. Nothing else in the 8-repo corpus changes.
-     *
-     * NOT a name matcher: `env` there is an ordinary parameter, and renaming it
-     * changes nothing. The taint was real resolution — a default-value write of
-     * `process.env` picked up by the last-write-wins reader. The fix has to be
-     * about what `process` MEANS, because the binding analysis was already right.
-     */
-    const readsRemoteTaintSource = makeReadsTaintSource(
-      context.sourceCode,
-      new Set([...taintRoots].filter((root) => root !== LOCAL_TAINT_ROOT)),
-    );
-    const reportUnresolvedCommands = options.reportUnresolvedCommands ?? false;
-
-    /**
-     * Child process methods that can be dangerous (Set for O(1) lookup)
-     */
-    const dangerousMethodsSet = new Set([
-      'exec',
-      'execSync',
-      'execFile',
-      'execFileSync',
-      'spawn',
-      'spawnSync',
-      'fork',
-      'forkSync',
-      ...additionalMethods,
-    ]);
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let allowLiteralStrings: boolean;
+    let allowLiteralSpawn: boolean;
+    let additionalMethods: string[];
+    let readsTaintSource: (node: TSESTree.Node) => boolean;
+    let readsRemoteTaintSource: (node: TSESTree.Node) => boolean;
+    let reportUnresolvedCommands: boolean;
+    let dangerousMethodsSet: Set<string>;
+    let moduleAliases: Set<string>;
+    let importedMethods: Set<string>;
 
     /**
      * Track imported child_process identifiers so we can flag calls like
@@ -604,9 +545,6 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
      */
     const isChildProcessSpecifier = (value: unknown): boolean =>
       value === 'child_process' || value === 'node:child_process';
-
-    const moduleAliases = new Set<string>(['child_process']);
-    const importedMethods = new Set<string>();
 
     /**
      * Check if a node contains string interpolation or concatenation
@@ -1670,6 +1608,77 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      before() {
+        const options = context.options[0] || {};
+        ({
+          allowLiteralStrings = false,
+          allowLiteralSpawn = false,
+          additionalMethods = [],
+        } = options);
+        const taintRoots = new Set(
+          (options.taintSources ?? DEFAULT_TAINT_SOURCES).map((source) =>
+            source.toLowerCase(),
+          ),
+        );
+        readsTaintSource = makeReadsTaintSource(context.sourceCode, taintRoots);
+
+        /**
+         * The same reader minus `process` — "can a party who is NOT already at this
+         * program's command line steer this value?"
+         *
+         * The no-shell path asks two questions and both are privilege-boundary
+         * questions, not shape questions:
+         *
+         *   - argv[0]: can someone else choose which binary runs?
+         *   - argv[1..]: can someone else smuggle in a flag (CWE-88)?
+         *
+         * An answer of "yes, via `process.argv` or `process.env`" is not an answer,
+         * because whoever supplies those is standing at a shell and can invoke the
+         * binary directly with any flags they like. Both labelled CWE-88 fixtures
+         * (`benchmarks/corpus/CWE-088/vulnerable/{git-ls-remote-arg-injection,
+         * tar-user-args}.js`) are `req`-rooted, and both keep reporting.
+         *
+         * Measured: this is the whole of the remaining corpus-scan gap. With
+         * `process` counted, Shopify/cli reported twice —
+         * `bin/changeset.js:17` `spawn(process.execPath, [changesetBinPath, ...args])`
+         * where `args` is `process.argv.slice(2)`, i.e. a wrapper forwarding its own
+         * command line, flagged as argument injection; and
+         * `packages/plugin-cloudflare/src/install-cloudflared.ts:85`
+         * `execFileSync(binTarget, ['--version'])` where `binTarget` traces back
+         * through `getBinPathTarget(env, …)` to `install(env = process.env)` and the
+         * documented `SHOPIFY_CLI_CLOUDFLARED_PATH` override. Neither crosses a
+         * boundary; both were CWE-78 reports on a call with no shell and a literal
+         * argv. Nothing else in the 8-repo corpus changes.
+         *
+         * NOT a name matcher: `env` there is an ordinary parameter, and renaming it
+         * changes nothing. The taint was real resolution — a default-value write of
+         * `process.env` picked up by the last-write-wins reader. The fix has to be
+         * about what `process` MEANS, because the binding analysis was already right.
+         */
+        readsRemoteTaintSource = makeReadsTaintSource(
+          context.sourceCode,
+          new Set([...taintRoots].filter((root) => root !== LOCAL_TAINT_ROOT)),
+        );
+        reportUnresolvedCommands = options.reportUnresolvedCommands ?? false;
+
+        /**
+         * Child process methods that can be dangerous (Set for O(1) lookup)
+         */
+        dangerousMethodsSet = new Set([
+          'exec',
+          'execSync',
+          'execFile',
+          'execFileSync',
+          'spawn',
+          'spawnSync',
+          'fork',
+          'forkSync',
+          ...additionalMethods,
+        ]);
+
+        moduleAliases = new Set<string>(['child_process']);
+        importedMethods = new Set<string>();
+      },
       CallExpression(node: TSESTree.CallExpression) {
         checkChildProcessCall(node);
         checkBareChildProcessRequire(node);

@@ -1,0 +1,77 @@
+{
+  "name": "oxlint-plugin-react-a11y",
+  "version": "2.5.3",
+  "description": "The react-a11y rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-react-a11y.",
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts"
+  },
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "interlace-quality",
+    "accessibility",
+    "a11y",
+    "web-accessibility",
+    "react",
+    "jsx",
+    "jsx-a11y",
+    "eslint-plugin-jsx-a11y-alternative",
+    "wcag",
+    "wcag-2.1",
+    "aria",
+    "screen-reader",
+    "keyboard-navigation",
+    "focus-management",
+    "ada-compliance",
+    "section-508",
+    "inclusive-design",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript",
+    "auto-fix",
+    "ast",
+    "mcp",
+    "model-context-protocol",
+    "github-copilot",
+    "cursor-ai",
+    "claude-ai"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/quality/plugin-react-a11y?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-react-a11y",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-react-a11y"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-react-a11y": "2.5.3"
+  }
+}

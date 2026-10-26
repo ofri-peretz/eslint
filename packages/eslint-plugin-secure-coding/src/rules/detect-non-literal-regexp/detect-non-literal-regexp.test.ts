@@ -32,6 +32,7 @@ describe('detect-non-literal-regexp', () => {
           code: 'const result = myFunction(pattern);',
         },
         {
+          name: 'a RegExp method on another object is not the RegExp constructor',
           code: 'obj.RegExp(pattern);',
         },
         // Note: This rule is very strict and detects ReDoS patterns even in literals
@@ -42,6 +43,7 @@ describe('detect-non-literal-regexp', () => {
         // nothing — exercises the "no arguments" false branches in
         // extractPattern.
         {
+          name: 'new RegExp with no arguments has no pattern to flag',
           code: 'new RegExp();',
         },
       ],
@@ -83,31 +85,45 @@ describe('detect-non-literal-regexp', () => {
   });
 
   describe('Invalid Code - ReDoS Patterns in Literals', () => {
-    ruleTester.run('invalid - True ReDoS vulnerable patterns', detectNonLiteralRegexp, {
-      valid: [
-        // Simple regex literals are now safe - no nested quantifiers
-        { code: 'const pattern = /^[a-z]+$/;' },
-        { code: 'const emailRegex = /^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$/;' },
-        // Static string patterns with new RegExp are now also safe by default
-        { code: 'const pattern = new RegExp("^[a-z]+$");' },
-        { code: 'const pattern = RegExp("^test$");' },
-        { code: 'const pattern = new RegExp(`^test$`);' },
-        // Explicitly allowing literals also works
-        { code: 'const pattern = new RegExp("^[a-z]+$");', options: [{ allowLiterals: true }] },
-        { code: 'const pattern = RegExp("^test$");', options: [{ allowLiterals: true }] },
-        { code: 'const pattern = new RegExp(`^test$`);', options: [{ allowLiterals: true }] },
-      ],
-      invalid: [
-        // Truly dangerous nested quantifier patterns: (a+)+
-        // Dynamic regex with variables still flagged
-        {
-          code: 'const pattern = new RegExp(userInput);',
-          errors: [{ messageId: 'runtimeDecidedPattern' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - True ReDoS vulnerable patterns',
+      detectNonLiteralRegexp,
+      {
+        valid: [
+          // Simple regex literals are now safe - no nested quantifiers
+          { code: 'const pattern = /^[a-z]+$/;' },
+          {
+            code: 'const emailRegex = /^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$/;',
+          },
+          // Static string patterns with new RegExp are now also safe by default
+          { code: 'const pattern = new RegExp("^[a-z]+$");' },
+          { code: 'const pattern = RegExp("^test$");' },
+          { code: 'const pattern = new RegExp(`^test$`);' },
+          // Explicitly allowing literals also works
+          {
+            code: 'const pattern = new RegExp("^[a-z]+$");',
+            options: [{ allowLiterals: true }],
+          },
+          {
+            code: 'const pattern = RegExp("^test$");',
+            options: [{ allowLiterals: true }],
+          },
+          {
+            code: 'const pattern = new RegExp(`^test$`);',
+            options: [{ allowLiterals: true }],
+          },
+        ],
+        invalid: [
+          // Truly dangerous nested quantifier patterns: (a+)+
+          // Dynamic regex with variables still flagged
+          {
+            code: 'const pattern = new RegExp(userInput);',
+            errors: [{ messageId: 'runtimeDecidedPattern' }],
+          },
+        ],
+      },
+    );
   });
-
 
   describe('Suggestions', () => {
     ruleTester.run('suggestions for fixes', detectNonLiteralRegexp, {
@@ -227,37 +243,41 @@ describe('detect-non-literal-regexp', () => {
       ],
     });
 
-    ruleTester.run('constructor resolution boundaries', detectNonLiteralRegexp, {
-      valid: [
-        // An alias chain longer than the resolution bound gives up and reports
-        // nothing rather than recursing — the safe direction for a callee test
-        // is to decline, since declining only costs a finding on a shape that
-        // does not occur in real code.
-        'const a1 = RegExp; const a2 = a1; const a3 = a2; const a4 = a3; const a5 = a4; const a6 = a5; export function f(p) { return new a6(p); }',
-        // A callee that is neither an Identifier nor a member access resolves to
-        // nothing knowable.
-        'export function f(makeCtor, p) { return new (makeCtor())(p); }',
-      ],
-      invalid: [
-        // `String.raw` WITH a substitution: constant iff the substitution is.
-        {
-          code: 'export function f(v) { return new RegExp(String.raw`^${v}$`); }',
-          errors: [{ messageId: 'runtimeDecidedPattern' }],
-        },
-        // An UpdateExpression write carries no inspectable expression, so the
-        // binding stays unproven.
-        {
-          code: 'export function f() { let source = "a"; source++; return new RegExp(source); }',
-          errors: [{ messageId: 'runtimeDecidedPattern' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'constructor resolution boundaries',
+      detectNonLiteralRegexp,
+      {
+        valid: [
+          // An alias chain longer than the resolution bound gives up and reports
+          // nothing rather than recursing — the safe direction for a callee test
+          // is to decline, since declining only costs a finding on a shape that
+          // does not occur in real code.
+          'const a1 = RegExp; const a2 = a1; const a3 = a2; const a4 = a3; const a5 = a4; const a6 = a5; export function f(p) { return new a6(p); }',
+          // A callee that is neither an Identifier nor a member access resolves to
+          // nothing knowable.
+          'export function f(makeCtor, p) { return new (makeCtor())(p); }',
+        ],
+        invalid: [
+          // `String.raw` WITH a substitution: constant iff the substitution is.
+          {
+            code: 'export function f(v) { return new RegExp(String.raw`^${v}$`); }',
+            errors: [{ messageId: 'runtimeDecidedPattern' }],
+          },
+          // An UpdateExpression write carries no inspectable expression, so the
+          // binding stays unproven.
+          {
+            code: 'export function f() { let source = "a"; source++; return new RegExp(source); }',
+            errors: [{ messageId: 'runtimeDecidedPattern' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Options', () => {
     ruleTester.run('options testing', detectNonLiteralRegexp, {
       valid: [
-        // allowLiterals option now allows static string patterns  
+        // allowLiterals option now allows static string patterns
         {
           code: 'new RegExp("^test$");',
           options: [{ allowLiterals: true }],
@@ -285,16 +305,20 @@ describe('detect-non-literal-regexp', () => {
     // The allowLiterals option only affects whether literals are processed or not
 
     // Line 389: Early return when no vulnerability is detected
-    ruleTester.run('line 389 - no vulnerability detected', detectNonLiteralRegexp, {
-      valid: [],
-      invalid: [
-        // This should trigger the no vulnerability case, but still report due to dynamic nature
-        {
-          code: 'new RegExp(userInput);',
-          errors: [{ messageId: 'runtimeDecidedPattern' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'line 389 - no vulnerability detected',
+      detectNonLiteralRegexp,
+      {
+        valid: [],
+        invalid: [
+          // This should trigger the no vulnerability case, but still report due to dynamic nature
+          {
+            code: 'new RegExp(userInput);',
+            errors: [{ messageId: 'runtimeDecidedPattern' }],
+          },
+        ],
+      },
+    );
 
     // `detectVulnerability`'s dynamic-argument loop matches the *source
     // text* of the pattern argument against each REGEXP_PATTERNS regex.
@@ -306,15 +330,19 @@ describe('detect-non-literal-regexp', () => {
     // string `'dynamic'`), also exercises the `case 'redos'` branch in
     // `generateRefactoringSteps` (every constructed vulnerability has
     // `vulnerability: 'redos'`, so this is the only reachable switch arm).
-    ruleTester.run('dynamic argument text matches a REGEXP_PATTERNS entry directly', detectNonLiteralRegexp, {
-      valid: [],
-      invalid: [
-        {
-          code: 'new RegExp(a++);',
-          errors: [{ messageId: 'runtimeDecidedPattern' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'dynamic argument text matches a REGEXP_PATTERNS entry directly',
+      detectNonLiteralRegexp,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'new RegExp(a++);',
+            errors: [{ messageId: 'runtimeDecidedPattern' }],
+          },
+        ],
+      },
+    );
 
     // A regex LITERAL is not a non-literal regexp. The rule used to report
     // `/(a+)+b/` from a `Literal:` visitor using two hand-written regexes as a
@@ -339,118 +367,135 @@ describe('detect-non-literal-regexp', () => {
     // The rule's core question changed from "is this a string literal?" to
     // "can the program determine this before any input arrives?". Every case
     // below was reported before that change and is program-controlled.
-    ruleTester.run('build-time-constant patterns are not dynamic', detectNonLiteralRegexp, {
-      valid: [
-        // A loop counter is driven by the loop.
-        { code: 'for (let i = 0; i < 3; i++) { const r = new RegExp("\\{" + i + "\\}", "g"); }' },
-        // A module constant, and constant-preserving methods over one.
-        { code: 'const EXTS = ["png", "jpg"]; const r = new RegExp(`${EXTS.join("|")}$`);' },
-        { code: 'const PREFIX = "^v"; const r = new RegExp(PREFIX + "\\d+");' },
-        { code: 'const A = ["x"]; const r = new RegExp(A.concat(["y"]).join("|"));' },
-        { code: 'const S = "abc"; const r = new RegExp(S.toUpperCase());' },
-        { code: 'const N = "ab"; const r = new RegExp(N.repeat(2));' },
-        { code: 'const T = "a"; const r = new RegExp(`^${T}$`);' },
-        // Previously a documented ceiling: the old walk gave up past 6 levels, so a
-        // deeply-nested constant reported. Routing through devkit's isStaticExpression
-        // removed the cutoff — nesting depth was never evidence of attacker control.
-        { code: 'const r = new RegExp("a" + ("b" + ("c" + ("d" + ("e" + ("f" + ("g" + "h")))))));' },
-        // burgee sweep: packages/linegauge/src/style.ts:77,78. A spread of a constant
-        // array is no less resolvable than the array itself — `[...ARR]` can no more
-        // change than `ARR.join()` can, and the rule already accepts the latter. The
-        // guard bailed on seeing any SpreadElement, so the two spellings of one value
-        // got opposite verdicts.
-        {
-          name: 'a spread of a constant array is as resolvable as the array itself',
-          code: 'const A = ["x", "y"]; const C = [...A].join(""); const r = new RegExp(`[${C}]`);',
-        },
-        {
-          name: 'a spread beside a literal element',
-          code: 'const A = ["x"]; const r = new RegExp([...A, "y"].join("|"));',
-        },
-      ],
-      invalid: [
-        // Unresolvable provenance still reports: a parameter could be anything.
-        {
-          code: 'function build(pattern) { return new RegExp(pattern); }',
-          errors: [{ messageId: 'runtimeDecidedPattern' }],
-        },
-        // `let` can be reassigned between declaration and use.
-        {
-          code: 'let p = "^a"; p = readInput(); const r = new RegExp(p);',
-          errors: [{ messageId: 'runtimeDecidedPattern' }],
-        },
-        // A constant-preserving method over a NON-constant receiver is not constant.
-        {
-          code: 'function f(parts) { return new RegExp(parts.join("|")); }',
-          errors: [{ messageId: 'runtimeDecidedPattern' }],
-        },
-        // `map` takes a callback that could read anything — not in the allowlist.
-        {
-          code: 'const A = ["x"]; const r = new RegExp(A.map(String).join("|"));',
-          errors: [{ messageId: 'runtimeDecidedPattern' }],
-        },
-        // Subtraction is not concatenation.
-        {
-          code: 'const N = 2; const r = new RegExp(String(N - 1));',
-          errors: [{ messageId: 'runtimeDecidedPattern' }],
-        },
-        // A spread element hides its contents when the spread ARGUMENT is itself
-        // unresolvable — `rest` is a parameter, so the array's contents are not
-        // knowable from this file.
-        {
-          code: 'function f(rest) { const A = ["x", ...rest]; return new RegExp(A.join("|")); }',
-          errors: [{ messageId: 'runtimeDecidedPattern' }],
-        },
-        // A Set's contents are reachable through .add/.delete, which this file does not
-        // model, so `new Set(…)` is not build-time constant — spread or not.
-        {
-          name: 'a spread of a Set stays unresolved -- .add/.delete are not modelled',
-          code: 'const S = new Set(["x"]); const C = [...S].join(""); const r = new RegExp(`[${C}]`);',
-          errors: [{ messageId: 'runtimeDecidedPattern' }],
-        },
-        // A hole in an array literal resolves to undefined, not a constant.
-        {
-          code: 'const A = ["x", , "y"]; const r = new RegExp(A.join("|"));',
-          errors: [{ messageId: 'runtimeDecidedPattern' }],
-        },
-        // An undeclared identifier cannot be resolved at all.
-        {
-          code: 'const r = new RegExp(globalPattern);',
-          errors: [{ messageId: 'runtimeDecidedPattern' }],
-        },
-        // Known ceiling on the LOCAL constancy walk — the one that understands
-        // `.join()` / `.concat()` / `.toUpperCase()`, which devkit's
-        // isStaticExpression does not model. It gives up past 6 levels, so a
-        // deeply-chained constant reports. No corpus repo chains this far.
-        {
-          code:
-            'const A = ["a"]; const r = new RegExp(' +
-            'A.concat(A).concat(A).concat(A).concat(A).concat(A).concat(A).join("|"));',
-          errors: [{ messageId: 'runtimeDecidedPattern' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'build-time-constant patterns are not dynamic',
+      detectNonLiteralRegexp,
+      {
+        valid: [
+          // A loop counter is driven by the loop.
+          {
+            code: 'for (let i = 0; i < 3; i++) { const r = new RegExp("\\{" + i + "\\}", "g"); }',
+          },
+          // A module constant, and constant-preserving methods over one.
+          {
+            code: 'const EXTS = ["png", "jpg"]; const r = new RegExp(`${EXTS.join("|")}$`);',
+          },
+          {
+            code: 'const PREFIX = "^v"; const r = new RegExp(PREFIX + "\\d+");',
+          },
+          {
+            code: 'const A = ["x"]; const r = new RegExp(A.concat(["y"]).join("|"));',
+          },
+          { code: 'const S = "abc"; const r = new RegExp(S.toUpperCase());' },
+          { code: 'const N = "ab"; const r = new RegExp(N.repeat(2));' },
+          { code: 'const T = "a"; const r = new RegExp(`^${T}$`);' },
+          // Previously a documented ceiling: the old walk gave up past 6 levels, so a
+          // deeply-nested constant reported. Routing through devkit's isStaticExpression
+          // removed the cutoff — nesting depth was never evidence of attacker control.
+          {
+            code: 'const r = new RegExp("a" + ("b" + ("c" + ("d" + ("e" + ("f" + ("g" + "h")))))));',
+          },
+          // burgee sweep: packages/linegauge/src/style.ts:77,78. A spread of a constant
+          // array is no less resolvable than the array itself — `[...ARR]` can no more
+          // change than `ARR.join()` can, and the rule already accepts the latter. The
+          // guard bailed on seeing any SpreadElement, so the two spellings of one value
+          // got opposite verdicts.
+          {
+            name: 'a spread of a constant array is as resolvable as the array itself',
+            code: 'const A = ["x", "y"]; const C = [...A].join(""); const r = new RegExp(`[${C}]`);',
+          },
+          {
+            name: 'a spread beside a literal element',
+            code: 'const A = ["x"]; const r = new RegExp([...A, "y"].join("|"));',
+          },
+        ],
+        invalid: [
+          // Unresolvable provenance still reports: a parameter could be anything.
+          {
+            code: 'function build(pattern) { return new RegExp(pattern); }',
+            errors: [{ messageId: 'runtimeDecidedPattern' }],
+          },
+          // `let` can be reassigned between declaration and use.
+          {
+            code: 'let p = "^a"; p = readInput(); const r = new RegExp(p);',
+            errors: [{ messageId: 'runtimeDecidedPattern' }],
+          },
+          // A constant-preserving method over a NON-constant receiver is not constant.
+          {
+            code: 'function f(parts) { return new RegExp(parts.join("|")); }',
+            errors: [{ messageId: 'runtimeDecidedPattern' }],
+          },
+          // `map` takes a callback that could read anything — not in the allowlist.
+          {
+            code: 'const A = ["x"]; const r = new RegExp(A.map(String).join("|"));',
+            errors: [{ messageId: 'runtimeDecidedPattern' }],
+          },
+          // Subtraction is not concatenation.
+          {
+            code: 'const N = 2; const r = new RegExp(String(N - 1));',
+            errors: [{ messageId: 'runtimeDecidedPattern' }],
+          },
+          // A spread element hides its contents when the spread ARGUMENT is itself
+          // unresolvable — `rest` is a parameter, so the array's contents are not
+          // knowable from this file.
+          {
+            code: 'function f(rest) { const A = ["x", ...rest]; return new RegExp(A.join("|")); }',
+            errors: [{ messageId: 'runtimeDecidedPattern' }],
+          },
+          // A Set's contents are reachable through .add/.delete, which this file does not
+          // model, so `new Set(…)` is not build-time constant — spread or not.
+          {
+            name: 'a spread of a Set stays unresolved -- .add/.delete are not modelled',
+            code: 'const S = new Set(["x"]); const C = [...S].join(""); const r = new RegExp(`[${C}]`);',
+            errors: [{ messageId: 'runtimeDecidedPattern' }],
+          },
+          // A hole in an array literal resolves to undefined, not a constant.
+          {
+            code: 'const A = ["x", , "y"]; const r = new RegExp(A.join("|"));',
+            errors: [{ messageId: 'runtimeDecidedPattern' }],
+          },
+          // An undeclared identifier cannot be resolved at all.
+          {
+            code: 'const r = new RegExp(globalPattern);',
+            errors: [{ messageId: 'runtimeDecidedPattern' }],
+          },
+          // Known ceiling on the LOCAL constancy walk — the one that understands
+          // `.join()` / `.concat()` / `.toUpperCase()`, which devkit's
+          // isStaticExpression does not model. It gives up past 6 levels, so a
+          // deeply-chained constant reports. No corpus repo chains this far.
+          {
+            code:
+              'const A = ["a"]; const r = new RegExp(' +
+              'A.concat(A).concat(A).concat(A).concat(A).concat(A).concat(A).join("|"));',
+            errors: [{ messageId: 'runtimeDecidedPattern' }],
+          },
+        ],
+      },
+    );
 
     // `allowLiterals` now defaults to true, because a rule named
     // "non-literal" reporting `new RegExp('^[a-z]+$')` by default was the
     // opposite of its own contract. Setting it false restores the stricter
     // posture: prefer `/…/` syntax over the constructor.
-    ruleTester.run('allowLiterals governs constructor-with-literal only', detectNonLiteralRegexp, {
-      valid: [{ code: 'const r = new RegExp("^[a-z]+$");' }],
-      invalid: [
-        {
-          code: 'const r = new RegExp("^[a-z]+$");',
-          options: [{ allowLiterals: false }],
-          errors: [{ messageId: 'runtimeDecidedPattern' }],
-        },
-        // An absurdly long literal still reports even when literals are allowed.
-        {
-          code: `const r = new RegExp("${'x'.repeat(300)}");`,
-          options: [{ allowLiterals: true, maxPatternLength: 100 }],
-          errors: [{ messageId: 'runtimeDecidedPattern' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'allowLiterals governs constructor-with-literal only',
+      detectNonLiteralRegexp,
+      {
+        valid: [{ code: 'const r = new RegExp("^[a-z]+$");' }],
+        invalid: [
+          {
+            code: 'const r = new RegExp("^[a-z]+$");',
+            options: [{ allowLiterals: false }],
+            errors: [{ messageId: 'runtimeDecidedPattern' }],
+          },
+          // An absurdly long literal still reports even when literals are allowed.
+          {
+            code: `const r = new RegExp("${'x'.repeat(300)}");`,
+            options: [{ allowLiterals: true, maxPatternLength: 100 }],
+            errors: [{ messageId: 'runtimeDecidedPattern' }],
+          },
+        ],
+      },
+    );
   });
 });
-

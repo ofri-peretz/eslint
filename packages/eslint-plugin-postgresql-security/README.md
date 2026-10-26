@@ -52,9 +52,33 @@ That trade costs recall, and we measure it:
 
 - To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-postgresql-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security). 📚
 
+<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
+
+**oxlint / Vite+** — the same rules under the same `postgresql-security/<rule>` IDs, without ESLint:
+
+```bash
+npm install oxlint-plugin-postgresql-security --save-dev
+```
+
+```jsonc
+// .oxlintrc.json
+{ "jsPlugins": ["oxlint-plugin-postgresql-security"] }
+```
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite-plus';
+
+export default defineConfig({ lint: { jsPlugins: ['oxlint-plugin-postgresql-security'] } });
+```
+
+**ESLint:**
+
 ```bash
 npm install eslint-plugin-postgresql-security --save-dev
 ```
+
+<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## ⚙️ Configuration Presets
 | Preset        | Description                                              |
