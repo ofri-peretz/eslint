@@ -157,7 +157,7 @@
       "cwe": "CWE-834",
       "owasp": "",
       "cvss": "",
-      "description": "This rule identifies tool-calling AI SDK calls whose step limit does not bound the loop: a hasToolCall-only stop…",
+      "description": "This rule identifies tool-calling AI SDK calls whose step limit does not bound the loop: a hasToolCall-only…",
       "typeStatus": "unaware",
       "recommended": false,
       "warns": false,
@@ -289,5 +289,5 @@
     }
   ],
   "totalRules": 19,
-  "lastSynced": "2026-10-11T04:53:24.285Z"
+  "lastSynced": "2026-10-26T00:06:24.181Z"
 }

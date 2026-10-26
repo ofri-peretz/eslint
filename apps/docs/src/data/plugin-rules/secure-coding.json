@@ -78,6 +78,21 @@
       "href": "/docs/secure-coding/rules/no-directive-injection"
     },
     {
+      "name": "no-disabled-template-escaping",
+      "cwe": "CWE-79",
+      "owasp": "A03:2021",
+      "cvss": "",
+      "description": "Disallows assigning `false` to `escapeMarkup`, which disables template HTML auto-escaping (CWE-79)",
+      "typeStatus": "unaware",
+      "recommended": false,
+      "warns": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "deprecated": false,
+      "category": "General",
+      "href": "/docs/secure-coding/rules/no-disabled-template-escaping"
+    },
+    {
       "name": "no-electron-security-issues",
       "cwe": "CWE-16",
       "owasp": "",
@@ -226,6 +241,21 @@
       "deprecated": false,
       "category": "General",
       "href": "/docs/secure-coding/rules/no-insecure-comparison"
+    },
+    {
+      "name": "no-invisible-characters",
+      "cwe": "CWE-1007",
+      "owasp": "A08:2021",
+      "cvss": "",
+      "description": "Disallows invisible letters such as the Hangul fillers (U+3164, U+FFA0), which hide identifiers, values and…",
+      "typeStatus": "unaware",
+      "recommended": false,
+      "warns": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "deprecated": false,
+      "category": "General",
+      "href": "/docs/secure-coding/rules/no-invisible-characters"
     },
     {
       "name": "no-ldap-injection",
@@ -498,6 +528,6 @@
       "href": "/docs/secure-coding/rules/require-secure-defaults"
     }
   ],
-  "totalRules": 33,
-  "lastSynced": "2026-08-15T18:33:15.707Z"
+  "totalRules": 35,
+  "lastSynced": "2026-10-26T00:06:24.180Z"
 }
