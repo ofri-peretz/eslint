@@ -292,17 +292,20 @@ function workspaceName(dir: string): string | null {
  * that has never been published.
  */
 function isPrivate(dir: string): boolean {
-  try {
-    return (
-      (
-        JSON.parse(readFileSync(`${dir}/package.json`, 'utf8')) as {
-          private?: boolean;
-        }
-      ).private === true
-    );
-  } catch {
-    return false;
+  // A workspace deleted on this branch has no package.json left to read; ask the
+  // base. Removing a package that was private publishes nothing, and a changeset
+  // cannot name a package that no longer exists.
+  for (const read of [
+    () => readFileSync(`${dir}/package.json`, 'utf8'),
+    () => git(['show', `${mergeBase}:${dir}/package.json`]),
+  ]) {
+    try {
+      return (JSON.parse(read()) as { private?: boolean }).private === true;
+    } catch {
+      // try the next source
+    }
   }
+  return false;
 }
 
 /** Workspaces with consumer-visible changes that NO added changeset names. */
