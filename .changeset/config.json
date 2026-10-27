@@ -10,7 +10,6 @@
   "fixed": [
     ["eslint-plugin-anthropic-security", "oxlint-plugin-anthropic-security"],
     ["eslint-plugin-browser-security", "oxlint-plugin-browser-security"],
-    ["eslint-plugin-cli-floor", "oxlint-plugin-cli-floor"],
     ["eslint-plugin-conventions", "oxlint-plugin-conventions"],
     ["eslint-plugin-drizzle-security", "oxlint-plugin-drizzle-security"],
     ["eslint-plugin-express-security", "oxlint-plugin-express-security"],

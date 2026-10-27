@@ -60,7 +60,6 @@ const PLUGIN_NAMES = [
   'eslint-plugin-postgresql-security',
   'eslint-plugin-jwt-security',
   // quality (8)
-  'eslint-plugin-cli-floor',
   'eslint-plugin-conventions',
   'eslint-plugin-import-next',
   'eslint-plugin-maintainability',
