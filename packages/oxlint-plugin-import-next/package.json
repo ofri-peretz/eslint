@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-import-next",
-  "version": "2.9.0",
+  "version": "2.9.1",
   "description": "The import-next rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-import-next.",
   "type": "commonjs",
   "main": "./index.js",
@@ -67,6 +67,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-import-next": "2.9.0"
+    "eslint-plugin-import-next": "2.9.1"
   }
 }
