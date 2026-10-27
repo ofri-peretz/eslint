@@ -5,6 +5,18 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.9.1
+
+### Patch Changes
+
+- **⚡ Performance** — `no-extraneous-dependencies` reads each package.json once per lint run
+
+  The rule found, read and parsed the nearest `package.json` again for every linted
+  file. It now caches the lookup per directory and the parsed manifest per path,
+  revalidated by mtime, so an editor session still sees edits to `package.json`.
+  Measured on oxlint 1.88 over ~1,100 files: the rule's added cost went from 0.66 s
+  to within noise (median of 5 runs), with identical findings (539 → 539).
+
 ## 2.9.0
 
 ### Minor Changes
