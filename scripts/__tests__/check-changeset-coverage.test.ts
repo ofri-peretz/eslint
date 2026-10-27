@@ -180,6 +180,27 @@ describe('a changeset covers the packages it NAMES, not the whole diff', () => {
     expect(status).toBe(0);
   });
 
+  it('deleting a private workspace needs no changeset', () => {
+    // Removing a package that was never published ships nothing, and no
+    // changeset can name a package that no longer exists. The gate read
+    // `private` from the working tree, found no package.json, and demanded one.
+    write(
+      'packages/gone/package.json',
+      '{"name":"oxlint-plugin-gone","version":"1.0.0","private":true}',
+    );
+    write('packages/gone/index.js', 'module.exports = {};\n');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'add private package');
+    git('branch', '-f', 'base-ref');
+
+    git('rm', '-rq', 'packages/gone');
+    git('commit', '-q', '-m', 'remove private package');
+
+    const { out, status } = run('--since=base-ref', '--strict');
+    expect(out).toContain('No changeset needed');
+    expect(status).toBe(0);
+  });
+
   it('a test-only change under src/ needs no changeset', () => {
     // `files` publishes dist/ only, so a test cannot reach a consumer. The
     // pattern used to match `src/**` wholesale and demanded a changeset for

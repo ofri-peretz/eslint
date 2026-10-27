@@ -175,13 +175,7 @@ export const PLUGINS: PluginEntry[] = [
     pillar: 'security',
     description: 'AI SDK security',
   },
-  // === Quality pillar (10) ===
-  {
-    slug: 'cli-floor',
-    package: 'eslint-plugin-cli-floor',
-    pillar: 'quality',
-    description: 'CLI floor for commander, yargs and burgee',
-  },
+  // === Quality pillar (9) ===
   {
     slug: 'conventions',
     package: 'eslint-plugin-conventions',

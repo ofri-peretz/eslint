@@ -63,7 +63,9 @@ npm install oxlint-plugin-maintainability --save-dev
 // vite.config.ts
 import { defineConfig } from 'vite-plus';
 
-export default defineConfig({ lint: { jsPlugins: ['oxlint-plugin-maintainability'] } });
+export default defineConfig({
+  lint: { jsPlugins: ['oxlint-plugin-maintainability'] },
+});
 ```
 
 **ESLint:**
@@ -155,7 +157,6 @@ Part of the **Interlace ESLint ecosystem** — AI-native rules with LLM-optimize
 
 | Plugin | Downloads | Description |
 | :--- | :---: | :--- |
-| [`eslint-plugin-cli-floor`](https://www.npmjs.com/package/eslint-plugin-cli-floor) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-cli-floor.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-cli-floor) | CLI floor for commander, yargs and burgee. |
 | [`eslint-plugin-conventions`](https://www.npmjs.com/package/eslint-plugin-conventions) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-conventions.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-conventions) | Team-specific habits and styles. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Fast cycle + import-graph analysis. |
 | [`eslint-plugin-modernization`](https://www.npmjs.com/package/eslint-plugin-modernization) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-modernization.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-modernization) | ESNext migration + syntax evolution. |
