@@ -2,7 +2,7 @@
 'eslint-plugin-import-next': patch
 ---
 
-perf(import-next): `no-extraneous-dependencies` reads each package.json once per lint run
+perf(import-next): `no-extraneous-dependencies` stops re-reading unchanged package.json files
 
 The rule found, read and parsed the nearest `package.json` again for every linted
 file. It now caches the lookup per directory and the parsed manifest per path,
