@@ -9,7 +9,7 @@ the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Patch Changes
 
-- **⚡ Performance** — `no-extraneous-dependencies` reads each package.json once per lint run
+- **⚡ Performance** — `no-extraneous-dependencies` stops re-reading unchanged package.json files
 
   The rule found, read and parsed the nearest `package.json` again for every linted
   file. It now caches the lookup per directory and the parsed manifest per path,
