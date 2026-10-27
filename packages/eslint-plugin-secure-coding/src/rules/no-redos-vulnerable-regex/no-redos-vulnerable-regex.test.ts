@@ -34,7 +34,10 @@ describe('no-redos-vulnerable-regex', () => {
           name: 'an anchored negated-class email shape is not vulnerable',
           code: 'const emailRegex = /^[^@]+@[^@]+$/;',
         },
-        'new RegExp("^[0-9]+$");',
+        {
+          name: 'an anchored digit-class pattern built via new RegExp is not vulnerable',
+          code: 'new RegExp("^[0-9]+$");',
+        },
       ],
       invalid: [],
     });
