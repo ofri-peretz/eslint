@@ -12,7 +12,11 @@ import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { builtinModules } from 'node:module';
 import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { readJsonFileSync, findFileUpward } from '@interlace/eslint-devkit';
+import {
+  readJsonFileSync,
+  findFileUpward,
+  statSync,
+} from '@interlace/eslint-devkit';
 import { getDirname } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -64,6 +68,43 @@ interface PackageJson {
   optionalDependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
   bundledDependencies?: string[];
+}
+
+/**
+ * Manifest lookups are shared across files: every file in a package resolves to the
+ * same package.json, and reading + parsing it per file was this rule's whole cost on
+ * oxlint (~0.5 s per 1,100 files). Module scope, so ESLint (which calls the derived
+ * `create` per file) benefits too.
+ *
+ * - A parsed manifest is reused while its mtime is unchanged, so an editor session
+ *   (oxlint / ESLint language server) still sees edits to package.json.
+ * - ponytail: the directory → manifest-path map is never invalidated, so a package.json
+ *   created *closer* to a file mid-session is not seen until restart. Drop the map
+ *   (keep the mtime cache) if that bites.
+ */
+const manifestPathByDir = new Map<string, string | null>();
+const manifestByPath = new Map<
+  string,
+  { mtimeMs: number; json: PackageJson | null }
+>();
+
+function findManifest(dir: string): string | null {
+  let hit = manifestPathByDir.get(dir);
+  if (hit === undefined) {
+    hit = findFileUpward('package.json', dir);
+    manifestPathByDir.set(dir, hit);
+  }
+  return hit;
+}
+
+function readManifest(file: string): PackageJson | null {
+  const stat = statSync(file);
+  if (!stat) return null;
+  const cached = manifestByPath.get(file);
+  if (cached && cached.mtimeMs === stat.mtimeMs) return cached.json;
+  const json = readJsonFileSync<PackageJson>(file);
+  manifestByPath.set(file, { mtimeMs: stat.mtimeMs, json });
+  return json;
 }
 
 export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
@@ -491,17 +532,14 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
           resolvedPackageJson = packageJson;
         } else if (packageJsonPath) {
           // Use specified package.json file
-          resolvedPackageJson = readJsonFileSync<PackageJson>(packageJsonPath);
+          resolvedPackageJson = readManifest(packageJsonPath);
           if (!resolvedPackageJson) {
             // Invalid package.json - skip
             return false;
           }
         } else {
           // Find package.json automatically
-          const packageJsonFile = findFileUpward(
-            'package.json',
-            getDirname(filename),
-          );
+          const packageJsonFile = findManifest(getDirname(filename));
 
           if (!packageJsonFile) {
             // No package.json found - skip this rule
@@ -509,7 +547,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
           }
 
           // Read and parse package.json
-          resolvedPackageJson = readJsonFileSync<PackageJson>(packageJsonFile);
+          resolvedPackageJson = readManifest(packageJsonFile);
           if (!resolvedPackageJson) {
             // Invalid package.json - skip
             return false;
