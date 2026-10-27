@@ -47,6 +47,14 @@ import { oracleAvailable, resetOracleForTests, worstBacktrackingDegree } from '.
 
 const ruleTester = new RuleTester();
 
+/**
+ * `codecov.yml` runs every package's `test:coverage` task in one job via
+ * `turbo run --continue` with no concurrency cap, so this call into the real
+ * oracle competes with dozens of other packages' tests for CPU. See the call
+ * site below.
+ */
+const ORACLE_TEST_TIMEOUT_MS = 15_000;
+
 describe('the oracle is present for these tests', () => {
   it('resolves recheck, so the degree gate is actually exercised', () => {
     // Without this the whole file would pass vacuously on a machine that has
@@ -55,8 +63,8 @@ describe('the oracle is present for these tests', () => {
   });
 
   it('reads a degree rather than a boolean', () => {
-    expect(worstBacktrackingDegree(String.raw`^###\s+(.+)$`, '')).toBe(2);
-    expect(worstBacktrackingDegree(String.raw`(.*?)=(.*)$`, '')).toBe(3);
+    expect(worstBacktrackingDegree(String.raw`^###\s+(.+)$`, '', ORACLE_TEST_TIMEOUT_MS)).toBe(2);
+    expect(worstBacktrackingDegree(String.raw`(.*?)=(.*)$`, '', ORACLE_TEST_TIMEOUT_MS)).toBe(3);
   });
 
   afterEach(() => resetOracleForTests());
