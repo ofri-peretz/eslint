@@ -82,9 +82,6 @@ flags:
   eslint-plugin-operability:
     paths: [packages/eslint-plugin-operability/]
     carryforward: false
-  eslint-plugin-cli-floor:
-    paths: [packages/eslint-plugin-cli-floor/]
-    carryforward: false
   eslint-plugin-postgresql-security:
     paths: [packages/eslint-plugin-postgresql-security/]
     carryforward: false
@@ -427,16 +424,6 @@ component_management:
         - type: patch
           target: 100%
 
-    - component_id: eslint-plugin-cli-floor
-      name: 'eslint-plugin-cli-floor'
-      paths:
-        - packages/eslint-plugin-cli-floor/**
-      statuses:
-        - type: project
-          target: 100%
-        - type: patch
-          target: 100%
-
     - component_id: eslint-plugin-operability
       name: 'eslint-plugin-operability'
       paths:
@@ -549,6 +536,8 @@ ignore:
   # report's 32,016. Both formatters have since left this list on the same
   # rule — they ship, so they are measured, not ignored.
   - 'packages/ui/**'
+  # Built and tested, not yet published: drop this line when it ships.
+  - 'packages/eslint-plugin-cli-floor/**'
   # oxlint-plugin-* ship no code of their own: each alias is a one-line
   # re-export of an eslint-plugin-* that IS measured, and the security façade
   # is built from mapping.json. See docs/intents/oxlint-native-plugin-names.

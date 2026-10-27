@@ -5,7 +5,7 @@
 > plugin list in this repo has drifted at least once; this one is derived so
 > that when it disagrees with a source file, the source file is what changes.
 
-Covers 32 plugins.
+Covers 31 plugins.
 
 ## The eight identifiers a plugin has
 
@@ -29,7 +29,6 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :-: | :-: | :-: |
 | `eslint-plugin-anthropic-security` | 1.1.0 | `anthropic-security/` | — | `plugin-anthropic-security` | security | `claude` | ✅ | ✅ | ✅ |
 | `eslint-plugin-browser-security` | 2.2.0 | `browser-security/` | — | `plugin-browser-security` | security | `chromium` | ✅ | ✅ | ✅ |
-| `eslint-plugin-cli-floor` | 0.2.0 | `cli-floor/` | — | `plugin-cli-floor` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-conventions` | 6.1.0 | `conventions/` | — | `plugin-conventions` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-drizzle-security` | 1.1.0 | `drizzle-security/` | — | `plugin-drizzle-security` | security | `drizzle` | ✅ | ✅ | ✅ |
 | `eslint-plugin-express-security` | 3.3.0 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
@@ -59,6 +58,8 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-supabase-security` | 1.1.0 | `supabase-security/` | — | `plugin-supabase-security` | security | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-typeorm-security` | 1.1.0 | `typeorm-security/` | — | `plugin-typeorm-security` | security | `typeorm` | ✅ | ✅ | ✅ |
 | `eslint-plugin-vercel-ai-security` | 2.4.0 | `vercel-ai-security/` | — | `plugin-vercel-ai-security` | security | `vercel` | ✅ | ✅ | ✅ |
+
+**Unregistered directories:** `eslint-plugin-cli-floor`
 
 ## URL shapes
 

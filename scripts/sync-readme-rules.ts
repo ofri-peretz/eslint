@@ -429,8 +429,17 @@ export function renderEcosystemTable(
   entries: PluginEntry[],
   selfPackage: string,
 ): string {
+  // The table links npm, so it lists only what is on npm: a `private` plugin (built
+  // and tested, never published) would be a dead link in every README.
+  const isPublished = (e: PluginEntry): boolean =>
+    !JSON.parse(
+      fs.readFileSync(
+        path.join(PACKAGES_DIR, e.package, 'package.json'),
+        'utf-8',
+      ),
+    ).private;
   const others = entries
-    .filter((e) => e.package !== selfPackage)
+    .filter((e) => e.package !== selfPackage && isPublished(e))
     .toSorted((a, b) => a.package.localeCompare(b.package));
 
   const row = (e: PluginEntry): string => {
@@ -657,7 +666,11 @@ export function renderInstall(pkg: string): string {
     '// vite.config.ts',
     "import { defineConfig } from 'vite-plus';",
     '',
-    `export default defineConfig({ lint: { jsPlugins: ['${alias}'] } });`,
+    // Expanded the way prettier prints it: a long alias name would otherwise be
+    // re-wrapped by prettier and the generator and the formatter would fight.
+    'export default defineConfig({',
+    `  lint: { jsPlugins: ['${alias}'] },`,
+    '});',
     '```',
     '',
     '**ESLint:**',

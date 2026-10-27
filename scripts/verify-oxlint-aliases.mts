@@ -60,6 +60,9 @@ function oxlintWith(configObject: unknown, alias: string) {
 const aliases = fs
   .readdirSync(PACKAGES_DIR)
   .filter((dir) => dir.startsWith('oxlint-plugin-'))
+  // A directory with only ignored build output (dist/, .turbo/) left behind by a
+  // removed alias is not a package; skip it rather than fail on a missing module.
+  .filter((dir) => fs.existsSync(path.join(PACKAGES_DIR, dir, 'package.json')))
   // The drop-in façade maps another plugin's IDs; it is verified below.
   .filter((dir) => dir !== 'oxlint-plugin-security')
   .sort();

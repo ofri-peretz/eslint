@@ -422,10 +422,13 @@ jobs:
           # tripped check:format-drift on the very files it added and had to
           # be hand-formatted before merge (#1036, #1079). Format exactly the
           # staged additions/modifications — not the baselined older files —
-          # and re-stage them.
-          git diff --staged --name-only --diff-filter=AM -z \
+          # and re-stage them. --no-renames: prune-benchmark-results deletes last
+          # week's snapshot and the run writes this week's, which git reports as
+          # a RENAME (R), not an addition — so --diff-filter=AM skipped every
+          # result JSON and only the .md files got formatted (#1310).
+          git diff --staged --no-renames --name-only --diff-filter=AM -z \
             | xargs -0 -r npx prettier --write --ignore-unknown
-          git diff --staged --name-only --diff-filter=AM -z | xargs -0 -r git add
+          git diff --staged --no-renames --name-only --diff-filter=AM -z | xargs -0 -r git add
           if git diff --staged --quiet; then
             echo "No changes — numbers identical to last week."
             exit 0
