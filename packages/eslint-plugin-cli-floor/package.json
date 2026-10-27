@@ -99,7 +99,6 @@
     "url": "https://github.com/ofri-peretz/eslint"
   },
   "interlace": {
-    "docs": true,
     "surface": {
       "kind": "npm",
       "modules": [

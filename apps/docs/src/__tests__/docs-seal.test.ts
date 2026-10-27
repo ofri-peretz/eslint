@@ -57,7 +57,7 @@ const manifest = JSON.parse(
 
 const pluginStats = JSON.parse(
   readFileSync(join(APP, 'src/data/plugin-stats.json'), 'utf8'),
-) as { totalRules: number; plugins: { name: string; rules: number }[] };
+) as { totalRules: number; plugins: { name: string; rules: number; published: boolean }[] };
 
 const docsDirFor = (pkg: string): string | null => {
   const slug = pkg.replace(/^eslint-/, ''); // plugin-<name>
@@ -148,7 +148,11 @@ describe('docs seal: the two public counts reconcile by definition', () => {
   });
 
   it('per-plugin: id count − alias count = implementation count', () => {
-    const statsByName = new Map(pluginStats.plugins.map((p) => [p.name, p.rules]));
+    // Unpublished plugins sit in plugin-stats with `published: false` and are kept out
+    // of the public manifest by the same rule, so only published ones reconcile.
+    const statsByName = new Map(
+      pluginStats.plugins.filter((p) => p.published).map((p) => [p.name, p.rules]),
+    );
     for (const [pkg, stats] of statsByName) {
       const ids = manifest.rules.filter((r) => r.plugin === pkg).length;
       const aliases = Object.keys(RULE_ALIASES[pkg] ?? {}).length;

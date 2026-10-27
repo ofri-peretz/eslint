@@ -216,6 +216,12 @@ const entries: Entry[] = [];
 
 for (const dirName of readdirSync(path.join(ROOT, 'packages'))) {
   if (!dirName.startsWith('eslint-plugin-')) continue;
+  // Same rule as sync-plugin-stats: a private plugin is not on npm, so the public
+  // manifest leaves it out unless the package opts back in with `interlace.docs`.
+  const pkg = JSON.parse(
+    readFileSync(path.join(ROOT, 'packages', dirName, 'package.json'), 'utf8'),
+  ) as { private?: boolean; interlace?: { docs?: boolean } };
+  if (pkg.private === true && pkg.interlace?.docs !== true) continue;
   const dist = path.join(ROOT, 'packages', dirName, 'dist/src/index.js');
   if (!existsSync(dist)) {
     console.warn(`skip ${dirName}: no dist — run the build first`);

@@ -53,6 +53,21 @@ const PLUGIN_DIRS = new Set(
     .map((e) => e.name),
 );
 
+/**
+ * The plugins the public docs cover: every plugin except a `private` one (built and
+ * tested, never on npm), unless it opts back in with `interlace.docs` — the same rule
+ * apps/docs/scripts/sync-plugin-stats.ts applies.
+ */
+const DOCUMENTED_DIRS = new Set(
+  [...PLUGIN_DIRS].filter((name) => {
+    const pkg = JSON.parse(readFileSync(join(PACKAGES_DIR, name, 'package.json'), 'utf-8')) as {
+      private?: boolean;
+      interlace?: { docs?: boolean };
+    };
+    return pkg.private !== true || pkg.interlace?.docs === true;
+  }),
+);
+
 /** Any `eslint-plugin-<name>` token in a string, however it is quoted or pathed. */
 const PLUGIN_TOKEN = /eslint-plugin-[a-z0-9]+(?:-[a-z0-9]+)*/g;
 
@@ -157,7 +172,7 @@ describe('plugin names in metadata resolve to real packages', () => {
     );
     expect([...registered].filter((n) => !PLUGIN_DIRS.has(n)), 'registered but not in packages/')
       .toEqual([]);
-    expect([...PLUGIN_DIRS].filter((n) => !registered.has(n)), 'in packages/ but not registered')
+    expect([...DOCUMENTED_DIRS].filter((n) => !registered.has(n)), 'in packages/ but not registered')
       .toEqual([]);
   });
 
@@ -171,7 +186,7 @@ describe('plugin names in metadata resolve to real packages', () => {
         /slug:\s*'([a-z0-9-]+)'[\s\S]*?package:\s*'(eslint-plugin-[a-z0-9-]+)'[\s\S]*?pillar:\s*'([a-z]+)'/g,
       ),
     ];
-    expect(entries.length, 'registry parsed to zero entries').toBe(PLUGIN_DIRS.size);
+    expect(entries.length, 'registry parsed to zero entries').toBe(DOCUMENTED_DIRS.size);
 
     const missing = entries
       .map(([, slug, , pillar]) => `apps/docs/content/docs/${pillar}/plugin-${slug}`)
@@ -192,7 +207,7 @@ describe('plugin names in metadata resolve to real packages', () => {
     const live = new Set(dirs);
 
     const offenders: string[] = [];
-    for (const pkg of PLUGIN_DIRS) {
+    for (const pkg of DOCUMENTED_DIRS) {
       const readmePath = join(PACKAGES_DIR, pkg, 'README.md');
       if (!existsSync(readmePath)) continue;
       const readme = readFileSync(readmePath, 'utf-8');
