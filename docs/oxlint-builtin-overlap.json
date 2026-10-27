@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-25T18:34:53.234Z",
-  "oxlintVersion": "1.88.0",
-  "builtinRuleCount": 871,
+  "generatedAt": "2026-10-27T23:09:23.280Z",
+  "oxlintVersion": "1.90.0",
+  "builtinRuleCount": 872,
   "overlap": [
     {
       "id": "browser-security/no-eval",
