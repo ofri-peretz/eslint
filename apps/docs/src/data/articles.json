@@ -1769,8 +1769,8 @@
       "readable_publish_date": "Dec 31 '25",
       "reading_time_minutes": 12,
       "page_views_count": 0,
-      "public_reactions_count": 12,
-      "positive_reactions_count": 12,
+      "public_reactions_count": 13,
+      "positive_reactions_count": 13,
       "comments_count": 6,
       "tag_list": [
         "security",
@@ -1988,6 +1988,6 @@
     }
   ],
   "total": 97,
-  "lastUpdated": "2026-10-25T18:30:53.051Z",
+  "lastUpdated": "2026-10-27T19:44:08.392Z",
   "source": "public"
 }
