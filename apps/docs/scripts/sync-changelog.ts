@@ -155,12 +155,18 @@ function collect(): Release[] {
     const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as {
       name?: string;
       private?: boolean;
+      interlace?: { docs?: boolean };
     };
     if (!pkg.name) continue;
 
     const changelog = readFileSync(changelogPath, 'utf8');
     const short = pkg.name.replace(/^@[^/]+\//, '');
     const isApp = dir.includes(`${join('', 'apps')}`) || /\/apps\//.test(dir);
+    // An app is deployed, so its private releases are real; a private PACKAGE is
+    // unreleased (cli-floor, the oxlint-plugin-security façade) and the public
+    // changelog must not announce it. Same rule as sync-plugin-stats.
+    if (!isApp && pkg.private === true && pkg.interlace?.docs !== true)
+      continue;
 
     for (const { version, headingDate } of versionHeadings(changelog)) {
       // Tag first: it is the moment the release actually happened. The heading
