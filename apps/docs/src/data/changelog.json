@@ -1,7 +1,7 @@
 {
-  "releaseCount": 872,
+  "releaseCount": 874,
   "packageCount": 66,
-  "entryCount": 2460,
+  "entryCount": 2462,
   "oldestYear": 2024,
   "releases": [
     {
@@ -20760,6 +20760,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.9.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "perf",
+          "title": "`no-extraneous-dependencies` reads each package.json once per lint run",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
@@ -21020,6 +21035,21 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-import-next",
+      "short": "oxlint-plugin-import-next",
+      "version": "2.9.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-import-next@2.9.1`",
           "pr": null
         }
       ]
