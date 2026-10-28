@@ -5,6 +5,36 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "oxlint-plugin-import-next",
+      "short": "oxlint-plugin-import-next",
+      "version": "2.9.1",
+      "date": "2026-10-27T23:50:00Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-import-next@2.9.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.9.1",
+      "date": "2026-10-27T23:47:08Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "perf",
+          "title": "`no-extraneous-dependencies` stops re-reading unchanged package.json files",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "oxlint-plugin-vercel-ai-security",
       "short": "oxlint-plugin-vercel-ai-security",
       "version": "2.4.0",
@@ -20760,21 +20790,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-import-next",
-      "short": "eslint-plugin-import-next",
-      "version": "2.9.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "perf",
-          "title": "`no-extraneous-dependencies` reads each package.json once per lint run",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
@@ -21035,21 +21050,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-import-next",
-      "short": "oxlint-plugin-import-next",
-      "version": "2.9.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-import-next@2.9.1`",
           "pr": null
         }
       ]
