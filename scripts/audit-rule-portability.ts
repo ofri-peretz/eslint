@@ -388,7 +388,7 @@ function summarize(allPlugins) {
 // audit's blocker assumptions (sourceCode + scope + fixer + selector + comments
 // + tokens all present). Bumping oxlint past the latest entry must include a
 // re-verification of apps/oxlint/src-js/plugins/ at the new tag.
-const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.88.x' };
+const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.90.x' };
 
 // Hash-pinned bundles. These are the actual runtime files shipped with oxlint
 // — the bundled output of apps/oxlint/src-js/plugins/ that I read at 1.62.0.
@@ -400,6 +400,20 @@ const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.88.x' };
 // source_code,scope,fix,selector}.ts at the new tag, then update both
 // VERIFIED_OXLINT_RANGE and these hashes in the same commit.
 const VERIFIED_OXLINT_RUNTIME_HASHES = {
+  // Re-verified at 1.90.0 (2026-10-28) by `verify-oxlint-runtime.ts`: all 33
+  // probes pass. Same `dist/` file names as 1.88.0; `plugins.js`,
+  // `plugins-dev.js` and `cli.js` are BYTE-IDENTICAL to 1.88.0. `;`-split diff
+  // of 1.88.0 against 1.90.0 on the files that changed:
+  //   1. `bindings.js`: every differing hunk is the version literal.
+  //   2. `rolldown-runtime.js`: `__commonJSMin` now also passes `mod.exports`
+  //      as a third argument (the CJS `this`).
+  //   3. `lint.js`: the raw-transfer deserializer decodes string-literal
+  //      `value` and template `cooked` through a new `deserializeJSStr` instead
+  //      of a lone-surrogate regex post-pass (same string out), and the bundled
+  //      CJS helpers read `__createBinding` & co. off that new `this` argument.
+  //      No `context`, `sourceCode`, scope, fixer, token or comment code
+  //      changes, and no plugin API is added, removed or renamed.
+  //
   // Re-verified at 1.88.0 (2026-10-18) by `verify-oxlint-runtime.ts`: all 33
   // probes pass. Same `dist/` file names as 1.86.0; `plugins.js` and
   // `rolldown-runtime.js` are BYTE-IDENTICAL to 1.86.0. `;`-split diff of
@@ -554,11 +568,11 @@ const VERIFIED_OXLINT_RUNTIME_HASHES = {
     '81e4c275f6200ab4b6aed66ba2836b2a8e68756a8609ced02daf91e226377e2d',
   'plugins-dev.js':
     '302c9eab05f5f7248144f34c180ada857ae04d1eff0b082c9771bad84e5cd835',
-  'lint.js': '650ebbdb7f7dc7bf7dd7819ebbe8b17d3cb7d46620dd233c47094999e2967357',
+  'lint.js': '1505125dfbff4325fd73f74096dd006daa61d93717697f1ff9ff441d3859ab6e',
   'bindings.js':
-    'd64b8f555a1a2bc8a1a61927a3c41dc47d6b4a9f67f088c99c9e4441a5970b93',
+    'fcaded87ff6bf9e2ea0d6a8ad245ff363830a525fbe11331ae373a1003d840f5',
   'rolldown-runtime.js':
-    '5fc650d7f3c5b72629da633623bf7bc72fd972051fe82268c703b2681f26eb51',
+    '7b9ef7786935babcbc9adc68738939f2618e889a9e1f0a34be0e1cf28016765c',
 };
 
 async function checkOxlintRuntimeHashes() {
