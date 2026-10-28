@@ -31,7 +31,7 @@ import { readFileSync } from 'node:fs';
 
 /** `0.0.0-stage`, `0.0.0-canary-20261028`, … — never a release. */
 export function isPlaceholderVersion(version: string): boolean {
-  return /^0\.0\.0-/.test(version);
+  return version.startsWith('0.0.0-');
 }
 
 /** One cause, and every `package → versions` it explains. */
@@ -97,14 +97,13 @@ export function parseUntaggedLedger(raw: string): AcknowledgedMap {
   return out;
 }
 
+/**
+ * The ledger is required. A missing file throws instead of reading as empty:
+ * empty would turn every acknowledged version back into "missing", and
+ * `--backfill-missing` would then tag commits that did not produce them.
+ */
 export function readUntaggedLedger(file: string): AcknowledgedMap {
-  let raw: string;
-  try {
-    raw = readFileSync(file, 'utf8');
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return new Map();
-    throw error;
-  }
+  const raw = readFileSync(file, 'utf8');
   return parseUntaggedLedger(raw);
 }
 

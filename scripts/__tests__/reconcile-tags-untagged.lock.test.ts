@@ -1,5 +1,5 @@
 /**
- * @provenBy {"file":"scripts/lib/reconcile-tags-core.ts","find":"return /^0\\.0\\.0-/.test(version);","replace":"return false;"}
+ * @provenBy {"file":"scripts/lib/reconcile-tags-core.ts","find":"return version.startsWith('0.0.0-');","replace":"return false;"}
  * @provenBy {"file":"scripts/lib/reconcile-tags-core.ts","find":"    else if (acknowledged.has(version)) drift.acknowledged.push(version);\n","replace":""}
  * @provenBy {"file":"scripts/reconcile-tags.ts","find":"    untaggedLedger.get(pkg.name),\n","replace":""}
  *
@@ -93,6 +93,14 @@ describe('reconcile-tags classification', () => {
       ),
     ).toThrow(/reason/);
     expect(() => parseUntaggedLedger(JSON.stringify({}))).toThrow(/entries/);
+  });
+
+  it('a missing ledger file throws instead of reading as empty', () => {
+    // Empty would make every acknowledged version "missing" again, and
+    // --backfill-missing would tag commits that did not produce them.
+    expect(() =>
+      readUntaggedLedger(resolve(ROOT, '.agent/no-such-ledger.json')),
+    ).toThrow(/ENOENT/);
   });
 });
 

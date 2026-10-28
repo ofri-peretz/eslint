@@ -1,4 +1,6 @@
 {
+  "command": null,
+  "maintainedBy": "Hand-curated. An entry is added only with registry evidence (publish time, size, no provenance) that no commit in this repo produced the npm tarball. Versions with a release commit get a tag instead (npm run release:reconcile:backfill).",
   "note": "npm versions that are published with no git tag on purpose. reconcile-tags.ts lists them as acknowledged, not missing, and --backfill-missing never tags them. Add an entry only with evidence that no commit produced the tarball. A version that has a release commit gets a tag instead. See scripts/lib/reconcile-tags-core.ts.",
   "entries": [
     {
