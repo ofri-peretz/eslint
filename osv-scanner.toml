@@ -11,3 +11,14 @@ No fixed version exists. Reached only through the private monorepo root's lint t
 it, and the patterns it expands are this repo's own globs, not user input. Revisit when a
 patched braces ships, or by the date above.
 """
+
+[[IgnoredVulns]]
+id = "GHSA-gcqx-w48m-w2h4"
+ignoreUntil = 2026-11-27
+reason = """
+deepmerge <= 4.3.1: prototype poisoning of objects returned by mergeObject() (CVE-2026-93753,
+medium). No fixed version exists. Dev-only: reached through the private monorepo root's test
+tooling (root -> jest -> @jest/core -> jest-config -> deepmerge), which merges this repo's own
+jest config objects, not untrusted input; no published package depends on it. Revisit when a
+patched deepmerge ships, or by the date above.
+"""
