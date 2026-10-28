@@ -12,6 +12,11 @@
  *   • orphan-tags  — tag exists, version isn't on npm
  *   • missing-tags — version exists on npm, no matching git tag
  *
+ * Not counted as missing (listed, never tagged by --backfill-missing):
+ *   • placeholder  — `0.0.0-*` (name-claim / snapshot publishes)
+ *   • acknowledged — in .agent/release-untagged-versions.json, with a reason
+ * See scripts/lib/reconcile-tags-core.ts.
+ *
  * Modes (all idempotent):
  *   --report (default)        report only, exit 1 on drift
  *   --backfill-missing        create + push tags for npm versions missing one
@@ -29,6 +34,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
 
+import { classifyVersions, readUntaggedLedger } from './lib/reconcile-tags-core.ts';
+
+const UNTAGGED_LEDGER = join('.agent', 'release-untagged-versions.json');
+
 interface Package {
   dir: string;
   name: string;
@@ -45,6 +54,8 @@ interface Finding {
   tagCount: number;
   orphan: string[];
   missing: string[];
+  placeholder: string[];
+  acknowledged: string[];
   noRelease: string[];
 }
 
@@ -161,10 +172,6 @@ function ghReleaseExists(tag: string): boolean {
   return shOk('gh', ['release', 'view', tag, '--json', 'tagName']);
 }
 
-function diffSets(a: Set<string>, b: Set<string>): string[] {
-  return [...a].filter((x) => !b.has(x));
-}
-
 const packages = listPackages().filter((p) =>
   PKG_FILTER ? p.dir === PKG_FILTER || p.name === PKG_FILTER || shortName(p.name) === PKG_FILTER : true,
 );
@@ -174,9 +181,12 @@ if (packages.length === 0) {
   process.exit(2);
 }
 
+const untaggedLedger = readUntaggedLedger(UNTAGGED_LEDGER);
 const findings: Finding[] = [];
 let totalOrphan = 0;
 let totalMissing = 0;
+let totalPlaceholder = 0;
+let totalAcknowledged = 0;
 let totalNoRelease = 0;
 
 for (const pkg of packages) {
@@ -184,10 +194,15 @@ for (const pkg of packages) {
   const tags = gitTagsFor(short);
   const npmVersions = npmVersionsFor(pkg.name);
 
-  const orphan = diffSets(tags, npmVersions);
-  const missing = diffSets(npmVersions, tags);
+  const { orphan, missing, placeholder, acknowledged } = classifyVersions(
+    tags,
+    npmVersions,
+    untaggedLedger.get(pkg.name),
+  );
   totalOrphan += orphan.length;
   totalMissing += missing.length;
+  totalPlaceholder += placeholder.length;
+  totalAcknowledged += acknowledged.length;
 
   let noRelease: string[] = [];
   if (CREATE_RELEASES) {
@@ -204,6 +219,8 @@ for (const pkg of packages) {
     tagCount: tags.size,
     orphan,
     missing,
+    placeholder,
+    acknowledged,
     noRelease,
   });
 }
@@ -216,6 +233,8 @@ if (JSON_OUT) {
           packages: findings.length,
           orphanTags: totalOrphan,
           missingTags: totalMissing,
+          placeholderVersions: totalPlaceholder,
+          acknowledgedUntagged: totalAcknowledged,
           missingReleases: totalNoRelease,
         },
         findings,
@@ -236,11 +255,13 @@ if (JSON_OUT) {
     log(`  ✗ ${f.name}`);
     if (f.orphan.length > 0) log(`      orphan tags (no npm version):  ${f.orphan.join(', ')}`);
     if (f.missing.length > 0) log(`      missing tags (npm without tag): ${f.missing.join(', ')}`);
+    if (f.acknowledged.length > 0) log(`      untagged, acknowledged:         ${f.acknowledged.join(', ')}`);
     if (f.noRelease.length > 0) log(`      tags without GH Release:       ${f.noRelease.join(', ')}`);
   }
   log('');
   log(
-    `Summary: ${findings.length} package(s) · ${totalOrphan} orphan tag(s) · ${totalMissing} missing tag(s)${
+    `Summary: ${findings.length} package(s) · ${totalOrphan} orphan tag(s) · ${totalMissing} missing tag(s) · ` +
+      `${totalAcknowledged} acknowledged untagged · ${totalPlaceholder} placeholder${
       CREATE_RELEASES ? ` · ${totalNoRelease} missing release(s)` : ''
     }`,
   );

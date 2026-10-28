@@ -1,0 +1,43 @@
+{
+  "command": null,
+  "maintainedBy": "Hand-curated. An entry is added only with registry evidence (publish time, size, no provenance) that no commit in this repo produced the npm tarball. Versions with a release commit get a tag instead (npm run release:reconcile:backfill).",
+  "note": "npm versions that are published with no git tag on purpose. reconcile-tags.ts lists them as acknowledged, not missing, and --backfill-missing never tags them. Add an entry only with evidence that no commit produced the tarball. A version that has a release commit gets a tag instead. See scripts/lib/reconcile-tags-core.ts.",
+  "entries": [
+    {
+      "reason": "oxlint-plugin-* first versions, hand-published 2026-10-25 17:45-17:50 UTC without provenance so Trusted Publishing could be set up for each new name (PR #1299). They were packed from an uncommitted working tree: the first commit carrying these packages (3981535ec, 17:51 UTC) already has a different description and README, and no main commit has node-security 5.6.12 or supabase-security 0.2.0 at all. No commit produced them, so none is tagged. Tags start at the first lockstep bump (#1301).",
+      "versions": {
+        "oxlint-plugin-anthropic-security": ["1.0.0"],
+        "oxlint-plugin-browser-security": ["2.1.11"],
+        "oxlint-plugin-conventions": ["6.0.8"],
+        "oxlint-plugin-drizzle-security": ["1.0.0"],
+        "oxlint-plugin-express-security": ["3.2.4"],
+        "oxlint-plugin-gemini-security": ["1.0.0"],
+        "oxlint-plugin-import-next": ["2.8.13"],
+        "oxlint-plugin-jwt-security": ["3.5.3"],
+        "oxlint-plugin-knex-security": ["1.0.1"],
+        "oxlint-plugin-lambda-security": ["2.1.5"],
+        "oxlint-plugin-maintainability": ["3.2.17"],
+        "oxlint-plugin-mcp-sdk-security": ["1.0.1"],
+        "oxlint-plugin-modernization": ["3.1.9"],
+        "oxlint-plugin-modularity": ["2.5.4"],
+        "oxlint-plugin-mongodb-security": ["9.1.6"],
+        "oxlint-plugin-mysql-security": ["1.0.0"],
+        "oxlint-plugin-nestjs-security": ["3.1.3"],
+        "oxlint-plugin-node-security": ["5.6.12"],
+        "oxlint-plugin-openai-security": ["1.0.0"],
+        "oxlint-plugin-operability": ["4.1.6"],
+        "oxlint-plugin-postgresql-security": ["2.6.4"],
+        "oxlint-plugin-prisma-security": ["1.0.0"],
+        "oxlint-plugin-react-a11y": ["2.5.3"],
+        "oxlint-plugin-react-features": ["1.7.11"],
+        "oxlint-plugin-reliability": ["4.1.12"],
+        "oxlint-plugin-secure-coding": ["5.4.17"],
+        "oxlint-plugin-sequelize-security": ["1.0.1"],
+        "oxlint-plugin-sqlite-security": ["1.0.0"],
+        "oxlint-plugin-supabase-security": ["0.2.0"],
+        "oxlint-plugin-typeorm-security": ["1.0.1"],
+        "oxlint-plugin-vercel-ai-security": ["2.3.0"]
+      }
+    }
+  ]
+}
