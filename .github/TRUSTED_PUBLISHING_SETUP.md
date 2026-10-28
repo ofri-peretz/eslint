@@ -27,6 +27,15 @@ Trusted Publishing requires your packages to be properly configured on npmjs.com
 2. Login to your account
 3. Verify you own/maintain the published `@interlace/*` scope and the unscoped `eslint-plugin-*` packages — see the full list in [`packages/`](../packages/).
 
+#### New package names
+
+npm only lets you configure a Trusted Publisher on a package that already exists. To claim a new name, publish an empty
+`0.0.0-stage` by hand, then configure the publisher. Let `release.yml` publish the first real version: it tags what it
+publishes. `scripts/reconcile-tags.ts` ignores `0.0.0-*` versions. A real version published by hand gets no tag, and
+it is reported as missing until a commit is tagged for it or it is recorded, with evidence, in
+`.agent/release-untagged-versions.json`. That ledger exists because the 31 `oxlint-plugin-*` first versions were
+published by hand (#1321).
+
 ### Step 2: Configure Trusted Publishing on NPM
 
 #### For Organization Scope (Recommended)
