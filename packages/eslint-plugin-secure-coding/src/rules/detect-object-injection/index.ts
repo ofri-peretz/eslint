@@ -3392,6 +3392,15 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      */
     const isCopyLoopSourceOpaque = (source: TSESTree.Node): boolean => {
       if (isUntrustedExpression(source)) return true;
+      // `for (k in opts?.source)`: the optional chain wraps the same member access.
+      if (source.type === AST_NODE_TYPES.ChainExpression) {
+        return isCopyLoopSourceOpaque(source.expression);
+      }
+      // `for (k in opts.source)`: a member is as caller-supplied as the object
+      // it hangs off, so judge the chain by its root.
+      if (source.type === AST_NODE_TYPES.MemberExpression) {
+        return isCopyLoopSourceOpaque(source.object);
+      }
       if (source.type !== AST_NODE_TYPES.Identifier) return false;
 
       const variable = resolvedReference(sourceCode.getScope(source), source);

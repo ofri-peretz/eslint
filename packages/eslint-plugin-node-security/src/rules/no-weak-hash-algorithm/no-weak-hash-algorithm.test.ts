@@ -53,6 +53,7 @@ describe('no-weak-hash-algorithm', () => {
       { code: 'const message = "md5 is weak";' },
       // Valid: Test file with allowInTests
       {
+        name: 'a weak hash in a test file is exempt with allowInTests',
         code: 'crypto.createHash("md5").update(data);',
         filename: 'crypto.test.ts',
         options: [{ allowInTests: true }],
@@ -1217,3 +1218,75 @@ ruleTester.run('mutation-guided edges', noWeakHashAlgorithm, {
     },
   ],
 });
+
+// Node accepts the hyphenated spelling as the same digest:
+// `crypto.createHash('sha-1')` hashes exactly like `'sha1'`. `/\bsha1\b/` never
+// matched it, so the password below was hashed with SHA-1 in silence. Found by
+// the Quint fidelity check (benchmarks/suites/fidelity).
+ruleTester.run(
+  'no-weak-hash-algorithm — hyphenated SHA-1',
+  noWeakHashAlgorithm,
+  {
+    valid: [
+      // The boundary still holds: these are SHA-2, not SHA-1.
+      {
+        name: 'sha-256 is SHA-2, not a hyphenated SHA-1',
+        code: `const d = crypto.createHash('sha-256').update(password).digest('hex');`,
+      },
+      {
+        name: 'the sha-1 match stops at a word boundary (sha-1024 is not SHA-1)',
+        code: `const d = crypto.createHash('sha-1024').update(password).digest('hex');`,
+      },
+    ],
+    invalid: [
+      {
+        name: "'sha-1' hashing a password is SHA-1",
+        code: `const d = crypto.createHash('sha-1').update(password).digest('hex');`,
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            data: { algorithm: 'SHA-1', replacement: 'sha256' },
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output: `const d = crypto.createHash("sha256").update(password).digest('hex');`,
+              },
+              {
+                messageId: 'useSha512',
+                output: `const d = crypto.createHash("sha512").update(password).digest('hex');`,
+              },
+              {
+                messageId: 'useSha3',
+                output: `const d = crypto.createHash("sha3-256").update(password).digest('hex');`,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: "'SHA-1' hashing a password is SHA-1",
+        code: `const d = crypto.createHash('SHA-1').update(password).digest('hex');`,
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            data: { algorithm: 'SHA-1', replacement: 'sha256' },
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output: `const d = crypto.createHash("sha256").update(password).digest('hex');`,
+              },
+              {
+                messageId: 'useSha512',
+                output: `const d = crypto.createHash("sha512").update(password).digest('hex');`,
+              },
+              {
+                messageId: 'useSha3',
+                output: `const d = crypto.createHash("sha3-256").update(password).digest('hex');`,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+);

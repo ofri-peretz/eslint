@@ -381,6 +381,7 @@ describe('detect-non-literal-fs-filename', () => {
         // The same taint without the guard, COMPOSED into a path: `p` extends
         // a base directory the code chose, which is what traversal means.
         {
+          name: 'a command-line argument joined onto a base directory is traversal',
           code: "const p = process.argv[2];\nfs.readFile(path.join('/uploads', p));",
           errors: [{ messageId: 'fsPathTraversal' }],
         },

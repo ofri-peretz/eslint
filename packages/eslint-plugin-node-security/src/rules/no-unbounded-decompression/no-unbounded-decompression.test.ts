@@ -30,7 +30,10 @@ describe('no-unbounded-decompression', () => {
         name: 'maxOutputLength is set',
         code: `${REQUIRE}zlib.gunzip(reqBody, { maxOutputLength: MAX }, cb);`,
       },
-      { name: 'gunzipSync with a numeric maxOutputLength cap is not reported', code: `${REQUIRE}zlib.gunzipSync(body, { maxOutputLength: 1024 });` },
+      {
+        name: 'gunzipSync with a numeric maxOutputLength cap is not reported',
+        code: `${REQUIRE}zlib.gunzipSync(body, { maxOutputLength: 1024 });`,
+      },
       { code: `${REQUIRE}zlib.gunzipSync(body, { 'maxOutputLength': 1024 });` },
       // Options this rule cannot read may already carry the cap.
       { code: `${REQUIRE}zlib.gunzip(body, opts, cb);` },
@@ -57,7 +60,6 @@ describe('no-unbounded-decompression', () => {
       { code: `import fs from 'fs'; fs.gunzip(body, cb);` },
       { code: `import { constants } from 'zlib'; constants(body, cb);` },
       { code: `const [zlib] = require('zlib'); zlib.gunzip(body, cb);` },
-      { code: `const { ...rest } = require('zlib'); rest.gunzip(body, cb);` },
       { code: `const { gunzip: { g } } = require('zlib'); g(body, cb);` },
       // Not a resolvable callee shape: the method is named at runtime.
       { code: `${REQUIRE}zlib[method](body, cb);` },
@@ -68,12 +70,22 @@ describe('no-unbounded-decompression', () => {
       { code: `${REQUIRE}zlib.gunzip(body);` },
       { code: `${REQUIRE}zlib.gunzipSync();` },
       // Payload shapes that are not literal blobs but also not Buffer.from().
-      { code: `${REQUIRE}zlib.gunzipSync(Buffer.from(body), { maxOutputLength: 1 });` },
-      { code: `${REQUIRE}zlib.gunzipSync(Buffer.from(), { maxOutputLength: 1 });` },
-      { code: `${REQUIRE}zlib.gunzipSync(a.b.from('x'), { maxOutputLength: 1 });` },
-      { code: `${REQUIRE}zlib.gunzipSync(other.from('x'), { maxOutputLength: 1 });` },
+      {
+        code: `${REQUIRE}zlib.gunzipSync(Buffer.from(body), { maxOutputLength: 1 });`,
+      },
+      {
+        code: `${REQUIRE}zlib.gunzipSync(Buffer.from(), { maxOutputLength: 1 });`,
+      },
+      {
+        code: `${REQUIRE}zlib.gunzipSync(a.b.from('x'), { maxOutputLength: 1 });`,
+      },
+      {
+        code: `${REQUIRE}zlib.gunzipSync(other.from('x'), { maxOutputLength: 1 });`,
+      },
       { code: `${REQUIRE}zlib.gunzipSync(read(), { maxOutputLength: 1 });` },
-      { code: `${REQUIRE}zlib.gunzipSync(body, { [key]: 1, maxOutputLength: 1 });` },
+      {
+        code: `${REQUIRE}zlib.gunzipSync(body, { [key]: 1, maxOutputLength: 1 });`,
+      },
       // allowInTests bypass.
       {
         name: 'gunzip with no maxOutputLength cap',
@@ -141,6 +153,13 @@ describe('no-unbounded-decompression', () => {
       },
     ],
     invalid: [
+      // Was pinned VALID as a resolver limit. An object rest of zlib copies its
+      // methods, so this IS zlib.gunzip; the devkit resolver now follows rest.
+      {
+        name: 'an object rest of zlib carries gunzip',
+        code: `const { ...rest } = require('zlib'); rest.gunzip(body, cb);`,
+        errors: [{ messageId: 'unboundedDecompression' }],
+      },
       // A static computed destructuring key names the same export as `{ gunzip: g }`.
       // It was listed as valid, which pinned a false negative (fixed in devkit).
       {
@@ -156,7 +175,10 @@ describe('no-unbounded-decompression', () => {
         code: `${REQUIRE}zlib.gunzip(reqBody, (err, buf) => cb(err, buf));`,
         errors: [{ messageId: 'unboundedDecompression' }],
       },
-      { code: `${REQUIRE}zlib.gunzipSync(body);`, errors: [{ messageId: 'unboundedDecompression' }] },
+      {
+        code: `${REQUIRE}zlib.gunzipSync(body);`,
+        errors: [{ messageId: 'unboundedDecompression' }],
+      },
       // Was pinned as valid — "not a resolvable callee shape". `zlib['gunzip']`
       // names `gunzip` and buffers the same uncapped output.
       {
@@ -164,8 +186,14 @@ describe('no-unbounded-decompression', () => {
         code: `${REQUIRE}zlib['gunzip'](body, cb);`,
         errors: [{ messageId: 'unboundedDecompression' }],
       },
-      { code: `${REQUIRE}zlib.inflate(body, cb);`, errors: [{ messageId: 'unboundedDecompression' }] },
-      { code: `${REQUIRE}zlib.brotliDecompressSync(body);`, errors: [{ messageId: 'unboundedDecompression' }] },
+      {
+        code: `${REQUIRE}zlib.inflate(body, cb);`,
+        errors: [{ messageId: 'unboundedDecompression' }],
+      },
+      {
+        code: `${REQUIRE}zlib.brotliDecompressSync(body);`,
+        errors: [{ messageId: 'unboundedDecompression' }],
+      },
       // `node:zlib` is the same module.
       {
         code: `const z = require('node:zlib'); z.unzipSync(body);`,

@@ -75,7 +75,7 @@
     "typecheck:benchmarks": "tsgo --noEmit -p benchmarks/tsconfig.scripts.json",
     "release": "gh workflow run release.yml --ref main",
     "release:dry-run": "gh workflow run release.yml --ref main -f dry-run=true",
-    "ci:trigger": "gh workflow run ci.yml --ref local-playground-app && echo '\u2705 Workflow triggered!'",
+    "ci:trigger": "gh workflow run ci.yml --ref local-playground-app && echo '✅ Workflow triggered!'",
     "ci:status": "tsx scripts/ci-status.ts",
     "ci": "tsx scripts/ci-status.ts",
     "delete-branches": "bash scripts/delete-branches.sh",
@@ -283,7 +283,8 @@
     "check:format-drift": "tsx scripts/check-format-drift.ts",
     "check:lock-proofs": "tsx scripts/prove-locks.mts",
     "check:lock-proofs:update": "tsx scripts/prove-locks.mts --update",
-    "mutation": "tsx scripts/mutation.mts"
+    "mutation": "tsx scripts/mutation.mts",
+    "fidelity": "node benchmarks/suites/fidelity/run.cjs"
   },
   "keywords": [
     "eslint",

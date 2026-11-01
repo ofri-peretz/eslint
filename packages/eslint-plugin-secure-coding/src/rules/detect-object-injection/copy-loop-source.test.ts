@@ -43,6 +43,17 @@ describe('detect-object-injection — copy-loop source', () => {
   ruleTester.run('detect-object-injection', detectObjectInjection, {
     valid: [
       {
+        // The member case is judged by its root: a module-local object's
+        // member is no more caller-supplied than the object is.
+        name: 'a member of a module-local object does not arm the loop',
+        code: `const defaults = { source: { a: 1 } };
+export function apply(target) {
+  for (const k in defaults.source) {
+    target[k] = defaults.source[k];
+  }
+}`,
+      },
+      {
         // Covers the write-site guard check in the copy-loop path: the loop is
         // armed (source is a parameter) but the guard names the WRITTEN object.
         name: 'a same-object guard still clears an armed copy loop',
@@ -198,6 +209,28 @@ export function apply(target) {
         code: `export function merge(target, source) {
   for (const k in source) {
     target[k] = source[k];
+  }
+}`,
+        errors: 1,
+      },
+      {
+        // An options bag: `merge(target, { source })`. A member of a parameter
+        // is as caller-supplied as the parameter itself; only the bare
+        // identifier used to arm the loop.
+        name: 'a member of a parameter arms the loop like the parameter',
+        code: `export function merge(target, opts) {
+  for (const k in opts.source) {
+    target[k] = opts.source[k];
+  }
+}`,
+        errors: 1,
+      },
+      {
+        // `opts?.source` wraps the same member access in a ChainExpression.
+        name: 'an optional-chained member of a parameter arms the loop too',
+        code: `export function merge(target, opts) {
+  for (const k in opts?.source) {
+    target[k] = opts.source[k];
   }
 }`,
         errors: 1,
