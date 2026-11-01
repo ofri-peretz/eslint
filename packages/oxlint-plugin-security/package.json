@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-security",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Drop-in replacement for eslint-plugin-security on oxlint and Vite+: the same security/<rule> IDs, backed by Interlace's security rules.",
   "private": true,
   "type": "commonjs",
@@ -42,8 +42,8 @@
     "build": "tsx ../../scripts/build-package.ts"
   },
   "dependencies": {
-    "eslint-plugin-node-security": "5.8.0",
-    "eslint-plugin-secure-coding": "5.5.0"
+    "eslint-plugin-node-security": "5.8.1",
+    "eslint-plugin-secure-coding": "5.5.1"
   },
   "devDependencies": {
     "eslint-plugin-security": "4.2.0"
