@@ -5,6 +5,22 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.8.1
+
+### Patch Changes
+
+- **🐛 Fix** — `no-weak-hash-algorithm` reports `createHash('sha-1')`
+
+  Node accepts `'sha-1'` and `'SHA-1'` for the same digest as `'sha1'`, but the pattern only
+  matched the unhyphenated spelling, so a password hashed with `createHash('sha-1')` was not
+  reported. Found by the Quint fidelity check (`npm run fidelity`).
+
+  Also from the devkit resolver fix: `detect-non-literal-fs-filename` now sees
+  `const { promises: { readFile } } = require('fs')` and an object rest of `fs`, and
+  `no-unbounded-decompression` sees an object rest of `zlib`.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.21.1`
+
 ## 5.8.0
 
 ### Minor Changes
