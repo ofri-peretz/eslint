@@ -13,6 +13,8 @@
  *
  * Sabotage proof: reverting to the bare `fs.mkdtempSync(...)` call throws
  * ENOENT here whenever `node_modules/.cache` does not already exist.
+ *
+ * @provenBy {"file":"scripts/verify-oxlint-aliases.mts","find":"  fs.mkdirSync(cacheDir, { recursive: true });\n","replace":""}
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
