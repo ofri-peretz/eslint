@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-01T14:11:20.267Z",
+  "generatedAt": "2026-11-01T14:02:53.576Z",
   "summary": {
-    "totalRules": 281,
+    "totalRules": 294,
     "ssdfPracticesHit": 2,
     "asvsSectionsHit": 6,
     "capecPatternsHit": 17
@@ -1628,7 +1628,8 @@
       "plugin": "jwt-security",
       "cwes": [
         "CWE-359",
-        "CWE-359"
+        "CWE-359",
+        "CWE-200"
       ],
       "ssdf": [],
       "asvs": [],
@@ -1638,7 +1639,10 @@
         "PW.6"
       ],
       "derivedAsvs": [],
-      "derivedCapec": []
+      "derivedCapec": [
+        "CAPEC-310",
+        "CAPEC-118"
+      ]
     },
     {
       "ruleId": "jwt-security/no-timestamp-manipulation",
@@ -1646,7 +1650,9 @@
       "cwes": [
         "CWE-294",
         "CWE-294",
-        "CWE-294"
+        "CWE-294",
+        "CWE-613",
+        "CWE-613"
       ],
       "ssdf": [],
       "asvs": [],
@@ -1717,6 +1723,7 @@
       "ruleId": "jwt-security/require-expiration",
       "plugin": "jwt-security",
       "cwes": [
+        "CWE-613",
         "CWE-613",
         "CWE-613"
       ],
@@ -2120,6 +2127,25 @@
       "derivedCapec": []
     },
     {
+      "ruleId": "mcp-sdk-security/no-code-injection-in-tool",
+      "plugin": "mcp-sdk-security",
+      "cwes": [
+        "CWE-95",
+        "CWE-95"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-242"
+      ]
+    },
+    {
       "ruleId": "mcp-sdk-security/no-command-injection-in-tool",
       "plugin": "mcp-sdk-security",
       "cwes": [
@@ -2140,7 +2166,176 @@
       ]
     },
     {
+      "ruleId": "mcp-sdk-security/no-credential-leak-in-tool",
+      "plugin": "mcp-sdk-security",
+      "cwes": [
+        "CWE-200"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-310",
+        "CAPEC-118"
+      ]
+    },
+    {
+      "ruleId": "mcp-sdk-security/no-duplicate-tool-name",
+      "plugin": "mcp-sdk-security",
+      "cwes": [
+        "CWE-694",
+        "CWE-694",
+        "CWE-694"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "mcp-sdk-security/no-path-traversal-in-tool",
+      "plugin": "mcp-sdk-security",
+      "cwes": [
+        "CWE-22",
+        "CWE-22"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-126",
+        "CAPEC-79"
+      ]
+    },
+    {
+      "ruleId": "mcp-sdk-security/no-predictable-session-id",
+      "plugin": "mcp-sdk-security",
+      "cwes": [
+        "CWE-330",
+        "CWE-330",
+        "CWE-330"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "mcp-sdk-security/no-shared-stateless-transport",
+      "plugin": "mcp-sdk-security",
+      "cwes": [
+        "CWE-488",
+        "CWE-488",
+        "CWE-488"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "mcp-sdk-security/no-sql-injection-in-tool",
+      "plugin": "mcp-sdk-security",
+      "cwes": [
+        "CWE-89",
+        "CWE-89"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-66"
+      ]
+    },
+    {
+      "ruleId": "mcp-sdk-security/no-ssrf-in-tool",
+      "plugin": "mcp-sdk-security",
+      "cwes": [
+        "CWE-918",
+        "CWE-918"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-664"
+      ]
+    },
+    {
       "ruleId": "mcp-sdk-security/no-tool-description-injection",
+      "plugin": "mcp-sdk-security",
+      "cwes": [
+        "CWE-1427",
+        "CWE-1427",
+        "CWE-1427"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "mcp-sdk-security/no-untrusted-stdio-command",
+      "plugin": "mcp-sdk-security",
+      "cwes": [
+        "CWE-78",
+        "CWE-78"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-88",
+        "CAPEC-248"
+      ]
+    },
+    {
+      "ruleId": "mcp-sdk-security/no-untrusted-tool-metadata-in-prompt",
       "plugin": "mcp-sdk-security",
       "cwes": [
         "CWE-1427",
@@ -2161,7 +2356,28 @@
       "plugin": "mcp-sdk-security",
       "cwes": [
         "CWE-20",
+        "CWE-20",
         "CWE-20"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "mcp-sdk-security/require-http-transport-hardening",
+      "plugin": "mcp-sdk-security",
+      "cwes": [
+        "CWE-346",
+        "CWE-346",
+        "CWE-346",
+        "CWE-346",
+        "CWE-306"
       ],
       "ssdf": [],
       "asvs": [],
@@ -3709,6 +3925,7 @@
         "CWE-73",
         "CWE-73",
         "CWE-73",
+        "CWE-73",
         "CWE-73"
       ],
       "ssdf": [],
@@ -3957,6 +4174,25 @@
       "derivedCapec": []
     },
     {
+      "ruleId": "secure-coding/no-disabled-template-escaping",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-79",
+        "CWE-79"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-63"
+      ]
+    },
+    {
       "ruleId": "secure-coding/no-electron-security-issues",
       "plugin": "secure-coding",
       "cwes": [
@@ -4164,6 +4400,24 @@
       "derivedAsvs": [
         "V6.2.7"
       ],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-invisible-characters",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-1007",
+        "CWE-1007",
+        "CWE-1007"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
       "derivedCapec": []
     },
     {
@@ -4640,6 +4894,8 @@
       "cwes": [
         "CWE-798",
         "CWE-798",
+        "CWE-798",
+        "CWE-798",
         "CWE-798"
       ],
       "ssdf": [],
@@ -4751,6 +5007,7 @@
       "plugin": "vercel-ai-security",
       "cwes": [
         "CWE-74",
+        "CWE-74",
         "CWE-74"
       ],
       "ssdf": [],
@@ -4847,7 +5104,8 @@
         "CWE-94",
         "CWE-94",
         "CWE-89",
-        "CWE-79"
+        "CWE-79",
+        "CWE-918"
       ],
       "ssdf": [],
       "asvs": [],
@@ -4863,7 +5121,8 @@
       "derivedCapec": [
         "CAPEC-242",
         "CAPEC-66",
-        "CAPEC-63"
+        "CAPEC-63",
+        "CAPEC-664"
       ]
     },
     {
