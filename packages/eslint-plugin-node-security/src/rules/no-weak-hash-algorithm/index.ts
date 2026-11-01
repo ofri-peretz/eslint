@@ -90,7 +90,8 @@ const WEAK_HASH_PATTERNS: WeakHashPattern[] = [
   {
     // As MD5 above: 'sha1WithRSAEncryption' is a real `crypto.getHashes()`
     // name digesting byte-identically to bare sha1.
-    pattern: /\bsha1(?:withrsaencryption)?\b/i,
+    // Node also accepts 'sha-1' / 'SHA-1' for the same digest.
+    pattern: /\bsha-?1(?:withrsaencryption)?\b/i,
     name: 'SHA-1',
     alternatives: ['SHA-256', 'SHA-512', 'SHA-3'],
     replacement: 'sha256',

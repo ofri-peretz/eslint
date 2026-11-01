@@ -28,9 +28,17 @@ import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 // so a runtime import of it makes devkit unloadable wherever the consumer
 // did not install it. Only the type import above may name the package.
 import { AST_NODE_TYPES } from '../ast-node-types';
+import { resolveModuleBinding } from './module-binding';
+import { propertyName } from './spellings';
 
-/** Node builtins whose path-construction helpers return a static value for static input. */
-const PATH_MODULES = new Set(['path', 'node:path', 'path/posix', 'path/win32', 'node:path/posix', 'node:path/win32']);
+/**
+ * Node builtins whose path-construction helpers return a static value for static input.
+ * `node:` is already stripped by `resolveModuleBinding`.
+ */
+const PATH_MODULES = new Set(['path', 'path/posix', 'path/win32']);
+
+/** `path.posix` / `path.win32` — namespaces carrying the same helpers and constants. */
+const PATH_NAMESPACES = new Set(['posix', 'win32']);
 
 /** `path.*` methods that are pure functions of their arguments. */
 const PATH_METHODS = new Set([
@@ -81,7 +89,11 @@ function resolveConstInit(
   name: string,
   scope: TSESLint.Scope.Scope,
 ): { init: TSESTree.Expression; scope: TSESLint.Scope.Scope } | undefined {
-  for (let current: TSESLint.Scope.Scope | null = scope; current; current = current.upper) {
+  for (
+    let current: TSESLint.Scope.Scope | null = scope;
+    current;
+    current = current.upper
+  ) {
     const variable = current.variables.find((v) => v.name === name);
     if (!variable) continue;
 
@@ -122,7 +134,11 @@ function isModuleLocationGlobal(
   allowed: ReadonlySet<string> = MODULE_LOCATION_GLOBALS,
 ): boolean {
   if (!allowed.has(name)) return false;
-  for (let current: TSESLint.Scope.Scope | null = scope; current; current = current.upper) {
+  for (
+    let current: TSESLint.Scope.Scope | null = scope;
+    current;
+    current = current.upper
+  ) {
     const variable = current.variables.find((v) => v.name === name);
     // A global-scope entry with no definition is the environment's, not the author's.
     if (variable) return variable.defs.length === 0;
@@ -130,33 +146,24 @@ function isModuleLocationGlobal(
   return true;
 }
 
-/** Is this a `path.<method>()` call, or a `path.sep`-style constant, on a real `path` import? */
-function isPathModuleReference(object: TSESTree.Node, scope: TSESLint.Scope.Scope): boolean {
-  if (object.type !== AST_NODE_TYPES.Identifier) return false;
-
-  for (let current: TSESLint.Scope.Scope | null = scope; current; current = current.upper) {
-    const variable = current.variables.find((v) => v.name === object.name);
-    if (!variable) continue;
-    const [def] = variable.defs;
-    if (!def) return false;
-
-    // import path from 'node:path' (but not `import path = require(...)`, which has no `source`)
-    if (def.type === 'ImportBinding') {
-      const declaration = def.parent;
-      if (declaration?.type !== AST_NODE_TYPES.ImportDeclaration) return false;
-      const source = declaration.source.value;
-      return typeof source === 'string' && PATH_MODULES.has(source);
-    }
-    // const path = require('node:path')
-    if (def.type === 'Variable' && def.node.init?.type === AST_NODE_TYPES.CallExpression) {
-      const call = def.node.init;
-      if (call.callee.type !== AST_NODE_TYPES.Identifier || call.callee.name !== 'require') return false;
-      const [arg] = call.arguments;
-      return arg?.type === AST_NODE_TYPES.Literal && typeof arg.value === 'string' && PATH_MODULES.has(arg.value);
-    }
-    return false;
-  }
-  return false;
+/**
+ * Does this expression denote one of `members` on a real `path` module?
+ *
+ * Module resolution decides, not the receiver's name, so every spelling counts —
+ * `path.join`, `require('path').join`, `path.posix.join`, `import { join } from 'node:path'`,
+ * `import path = require('path')` — and a reassigned `path` does not.
+ */
+function isPathMember(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+  members: ReadonlySet<string>,
+): boolean {
+  const binding = resolveModuleBinding(node, scope);
+  if (!binding || !PATH_MODULES.has(binding.module)) return false;
+  const [first, ...rest] = binding.path;
+  const [member, ...extra] =
+    first !== undefined && PATH_NAMESPACES.has(first) ? rest : binding.path;
+  return member !== undefined && extra.length === 0 && members.has(member);
 }
 
 /**
@@ -220,12 +227,15 @@ function evaluateNode(
       return true;
 
     case AST_NODE_TYPES.TemplateLiteral:
-      return node.expressions.every((expression) => evaluate(expression, scope, treatConstAsStatic, seen));
+      return node.expressions.every((expression) =>
+        evaluate(expression, scope, treatConstAsStatic, seen),
+      );
 
     case AST_NODE_TYPES.BinaryExpression:
       // `a + b`, `a * b` — static iff both operands are. `in`/`instanceof` are not value math.
       // `in`/`instanceof` are excluded above, so `left` is always an Expression here.
-      if (node.operator === 'in' || node.operator === 'instanceof') return false;
+      if (node.operator === 'in' || node.operator === 'instanceof')
+        return false;
       return (
         evaluate(node.left, scope, treatConstAsStatic, seen) &&
         evaluate(node.right, scope, treatConstAsStatic, seen)
@@ -265,49 +275,39 @@ function evaluateNode(
     }
 
     case AST_NODE_TYPES.MemberExpression: {
-      if (node.computed) return false;
-      if (node.property.type !== AST_NODE_TYPES.Identifier) return false;
-
       // import.meta.url / .dirname / .filename
       if (
         node.object.type === AST_NODE_TYPES.MetaProperty &&
         node.object.meta.name === 'import' &&
         node.object.property.name === 'meta'
       ) {
-        return IMPORT_META_STATIC.has(node.property.name);
+        const name = propertyName(node);
+        return name !== null && IMPORT_META_STATIC.has(name);
       }
 
-      // path.sep / path.delimiter
-      return PATH_CONSTANTS.has(node.property.name) && isPathModuleReference(node.object, scope);
+      // path.sep / path.posix.delimiter
+      return isPathMember(node, scope, PATH_CONSTANTS);
     }
 
     case AST_NODE_TYPES.CallExpression: {
       const { callee } = node;
-      if (callee.type !== AST_NODE_TYPES.MemberExpression || callee.computed) return false;
-      if (callee.property.type !== AST_NODE_TYPES.Identifier) return false;
 
       // `require.resolve('eslint/package.json')` — a module lookup against the
       // dependency tree, fixed once the tree is. Not a value a caller supplies.
       // `fs.readFileSync(require.resolve('eslint/package.json'))` is a case
       // eslint-plugin-security's own corpus marks valid, and we reported it.
-      if (
+      const isRequireResolve =
+        callee.type === AST_NODE_TYPES.MemberExpression &&
         callee.object.type === AST_NODE_TYPES.Identifier &&
         callee.object.name === 'require' &&
-        callee.property.name === 'resolve' &&
+        propertyName(callee) === 'resolve' &&
         // `function f(require) { sink(require.resolve('pkg')) }` — a parameter can return
         // anything. Same reasoning as `__dirname`: the name counts as the environment's
         // exactly when nothing in scope claims it.
-        isModuleLocationGlobal('require', scope, MODULE_LOADER_GLOBALS)
-      ) {
-        return node.arguments.every(
-          (argument) =>
-            argument.type !== AST_NODE_TYPES.SpreadElement &&
-            evaluate(argument, scope, treatConstAsStatic, seen),
-        );
-      }
+        isModuleLocationGlobal('require', scope, MODULE_LOADER_GLOBALS);
 
-      if (!PATH_METHODS.has(callee.property.name)) return false;
-      if (!isPathModuleReference(callee.object, scope)) return false;
+      if (!isRequireResolve && !isPathMember(callee, scope, PATH_METHODS))
+        return false;
       return node.arguments.every(
         (argument) =>
           argument.type !== AST_NODE_TYPES.SpreadElement &&

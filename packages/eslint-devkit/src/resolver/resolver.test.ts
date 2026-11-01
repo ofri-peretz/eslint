@@ -1,11 +1,4 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeAll,
-  afterAll,
-  beforeEach,
-} from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
@@ -320,7 +313,9 @@ describe('resolveModule Integration Tests', () => {
     expect(relative).toBe(path.join(tempDir, 'project', 'src', 'utils.ts'));
 
     const nodeModule = resolveModule('react', fromFile);
-    expect(nodeModule).toBe(path.join(tempDir, 'project', 'node_modules', 'react', 'index.js'));
+    expect(nodeModule).toBe(
+      path.join(tempDir, 'project', 'node_modules', 'react', 'index.js'),
+    );
 
     // Metrics are disabled with oxc-resolver for performance
     const metrics = getResolverPerformanceMetrics();
@@ -487,7 +482,10 @@ describe('resolveModule Integration Tests', () => {
     const fromFile = path.join(tempDir, 'project', 'src', 'index.ts');
     clearResolverCache();
 
-    const resolved = resolveModule('completely-nonexistent-module-xyz-12345', fromFile);
+    const resolved = resolveModule(
+      'completely-nonexistent-module-xyz-12345',
+      fromFile,
+    );
     expect(resolved).toBeNull();
   });
 
@@ -1391,7 +1389,10 @@ describe('resolveModule Integration Tests', () => {
       // Clean up for next iteration
       fs.unlinkSync(indexFile);
     }
-  });
+    // Five cold resolver builds over five freshly written files: ~250 ms alone,
+    // but 12 s+ in the full parallel suite on a machine whose endpoint scanner
+    // inspects every new file. The work is fixed; only contention varies.
+  }, 30_000);
 
   it('should handle TypeScript path when matcher exists but returns empty array', () => {
     const fromFile = path.join(tempDir, 'project', 'src', 'index.ts');
@@ -1519,7 +1520,10 @@ describe('resolveModule Integration Tests', () => {
     clearResolverCache();
 
     // Use a path that will trigger the outer catch (non-existent directory)
-    const resolved = resolveModule('@/nonexistent', '/nonexistent/path/file.ts');
+    const resolved = resolveModule(
+      '@/nonexistent',
+      '/nonexistent/path/file.ts',
+    );
     expect(resolved).toBeNull();
   });
 });

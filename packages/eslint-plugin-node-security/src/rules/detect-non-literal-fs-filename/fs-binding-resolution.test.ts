@@ -15,7 +15,12 @@ import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, expect, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { detectNonLiteralFsFilename, fsMethodName, isFsModule, isFsRequire } from './index';
+import {
+  detectNonLiteralFsFilename,
+  fsMethodName,
+  isFsModule,
+  isFsRequire,
+} from './index';
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -87,11 +92,6 @@ describe('fs binding resolution', () => {
       },
       {
         options: [{ reportUnresolvedPaths: true }],
-        name: 'a nested destructuring pattern is not a method binding',
-        code: "const { promises: { readFile } } = require('fs');\nreadFile(userPath);",
-      },
-      {
-        options: [{ reportUnresolvedPaths: true }],
         name: 'a declarator with no initialiser',
         code: 'let fsLater;\nreadFile(userPath);',
       },
@@ -102,16 +102,24 @@ describe('fs binding resolution', () => {
         name: 'an array-pattern require binds no fs name',
         code: "const [readFile] = require('fs');\nreadFile(userPath);",
       },
-      {
-        options: [{ reportUnresolvedPaths: true }],
-        // A rest element is not a Property and names no single method. That
-        // check used to be fused with the `computed` bail on one line;
-        // splitting them to let computed keys through left this arm uncovered.
-        name: 'a rest element in a require pattern binds no method name',
-        code: "const { ...rest } = require('fs');\nrest.readFile(userPath);",
-      },
     ],
     invalid: [
+      // Both used to be pinned VALID, as resolver limits. They are fs calls:
+      // `{ promises: { readFile } }` binds fs.promises.readFile, and an object
+      // rest copies fs's own methods, so `rest.readFile` is fs.readFile. The
+      // devkit resolver now follows nesting and rest, so both report.
+      {
+        options: [{ reportUnresolvedPaths: true }],
+        name: 'a nested destructuring pattern binds fs.promises.readFile',
+        code: "const { promises: { readFile } } = require('fs');\nreadFile(userPath);",
+        errors: [{ messageId: 'fsPathTraversal' }],
+      },
+      {
+        options: [{ reportUnresolvedPaths: true }],
+        name: 'an object rest of fs carries its methods',
+        code: "const { ...rest } = require('fs');\nrest.readFile(userPath);",
+        errors: [{ messageId: 'fsPathTraversal' }],
+      },
       {
         options: [{ reportUnresolvedPaths: true }],
         name: 'a named import from node:fs/promises',
@@ -242,12 +250,15 @@ describe('isFsModule', () => {
 
 describe('fsMethodName', () => {
   const calleeOf = (code: string): TSESTree.Node => {
-    const stmt = parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement;
+    const stmt = parser.parse(code, { range: true })
+      .body[0] as TSESTree.ExpressionStatement;
     return (stmt.expression as TSESTree.CallExpression).callee;
   };
 
   it('returns undefined for a callee that is neither identifier nor member', () => {
-    expect(fsMethodName(calleeOf('getFs()(p)'), new Set(['fs']), new Map())).toBeUndefined();
+    expect(
+      fsMethodName(calleeOf('getFs()(p)'), new Set(['fs']), new Map()),
+    ).toBeUndefined();
   });
 
   it('resolves a member reached by a string subscript', () => {
@@ -255,30 +266,43 @@ describe('fsMethodName', () => {
     // were the specification. `fs["readFile"]` reaches the same function as
     // `fs.readFile`; there was never a reason to treat it differently, and
     // saying so in a test made the miss look deliberate.
-    expect(fsMethodName(calleeOf('fs["readFile"](p)'), new Set(['fs']), new Map())).toBe(
-      'readFile',
-    );
+    expect(
+      fsMethodName(calleeOf('fs["readFile"](p)'), new Set(['fs']), new Map()),
+    ).toBe('readFile');
   });
 
   it('returns undefined for a genuinely dynamic property', () => {
     // The line the previous test should have been drawing: a name that cannot
     // be resolved statically is still not resolved.
-    expect(fsMethodName(calleeOf('fs[m](p)'), new Set(['fs']), new Map())).toBeUndefined();
+    expect(
+      fsMethodName(calleeOf('fs[m](p)'), new Set(['fs']), new Map()),
+    ).toBeUndefined();
   });
 
   it('resolves a namespace member', () => {
-    expect(fsMethodName(calleeOf('fs.readFile(p)'), new Set(['fs']), new Map())).toBe('readFile');
+    expect(
+      fsMethodName(calleeOf('fs.readFile(p)'), new Set(['fs']), new Map()),
+    ).toBe('readFile');
   });
 
   it('resolves a promises member', () => {
-    expect(fsMethodName(calleeOf('fs.promises.readFile(p)'), new Set(['fs']), new Map())).toBe(
-      'readFile',
-    );
+    expect(
+      fsMethodName(
+        calleeOf('fs.promises.readFile(p)'),
+        new Set(['fs']),
+        new Map(),
+      ),
+    ).toBe('readFile');
   });
 
   it('rejects a promises chain rooted in an unknown binding', () => {
-    expect(fsMethodName(calleeOf('other.promises.readFile(p)'), new Set(['fs']), new Map()))
-      .toBeUndefined();
+    expect(
+      fsMethodName(
+        calleeOf('other.promises.readFile(p)'),
+        new Set(['fs']),
+        new Map(),
+      ),
+    ).toBeUndefined();
   });
 
   it('rejects a computed promises member', () => {
@@ -294,15 +318,22 @@ describe('fsMethodName', () => {
   });
 
   it('maps a named binding to its fs method', () => {
-    expect(fsMethodName(calleeOf('read(p)'), new Set(), new Map([['read', 'readFile']]))).toBe(
-      'readFile',
-    );
+    expect(
+      fsMethodName(
+        calleeOf('read(p)'),
+        new Set(),
+        new Map([['read', 'readFile']]),
+      ),
+    ).toBe('readFile');
   });
 });
 
 describe('isFsRequire', () => {
   const exprOf = (code: string): TSESTree.Node =>
-    (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement).expression;
+    (
+      parser.parse(code, { range: true })
+        .body[0] as TSESTree.ExpressionStatement
+    ).expression;
 
   it('is true for require of any fs specifier', () => {
     expect(isFsRequire(exprOf("require('fs')"))).toBe(true);

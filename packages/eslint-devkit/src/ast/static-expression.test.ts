@@ -4,7 +4,11 @@
  * MIT license that can be found in the LICENSE file.
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { AST_NODE_TYPES, ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
+import {
+  AST_NODE_TYPES,
+  ESLintUtils,
+  type TSESTree,
+} from '@typescript-eslint/utils';
 import { describe } from 'vitest';
 import { isStaticExpression } from './static-expression';
 
@@ -30,14 +34,30 @@ const makeProbe = (treatConstAsStatic: boolean) =>
     create(context) {
       return {
         CallExpression(node: TSESTree.CallExpression) {
-          if (node.callee.type !== AST_NODE_TYPES.Identifier || node.callee.name !== 'sink') return;
+          if (
+            node.callee.type !== AST_NODE_TYPES.Identifier ||
+            node.callee.name !== 'sink'
+          )
+            return;
           const [argument] = node.arguments;
-          if (!argument || argument.type === AST_NODE_TYPES.SpreadElement) return;
+          if (!argument || argument.type === AST_NODE_TYPES.SpreadElement)
+            return;
           const scope = context.sourceCode.getScope(node);
-          const first = isStaticExpression({ node: argument, scope, treatConstAsStatic });
+          const first = isStaticExpression({
+            node: argument,
+            scope,
+            treatConstAsStatic,
+          });
           // Called twice on purpose: the second call must come from the memo and agree.
-          const second = isStaticExpression({ node: argument, scope, treatConstAsStatic });
-          if (first !== second) throw new Error('isStaticExpression memo returned an inconsistent result');
+          const second = isStaticExpression({
+            node: argument,
+            scope,
+            treatConstAsStatic,
+          });
+          if (first !== second)
+            throw new Error(
+              'isStaticExpression memo returned an inconsistent result',
+            );
           if (!first) {
             context.report({ node: argument, messageId: 'dynamic' });
           }
@@ -72,25 +92,85 @@ describe('isStaticExpression', () => {
       // it. All three report on the pre-fix implementation.
       { code: `const A = 'a'; sink(A + A);` },
       { code: `const N = 'x'; sink(\`\${N}-\${N}\`);` },
-      { code: `const path = require('path'); const DIR = 'd'; sink(path.join(DIR, DIR));` },
+      {
+        code: `const path = require('path'); const DIR = 'd'; sink(path.join(DIR, DIR));`,
+      },
+      // Every spelling of a path helper: chained off require, the platform namespaces,
+      // named imports, destructured subpath requires, and TypeScript's `import = require`.
+      { code: `sink(require('path').join('a', 'b'));` },
+      {
+        code: `const path = require('node:path'); sink(path.posix.join('a', 'b'));`,
+      },
+      { code: `import { join } from 'node:path'; sink(join('a', 'b'));` },
+      {
+        code: `const { resolve } = require('path/win32'); sink(resolve('a'));`,
+      },
+      {
+        code: `import path = require('path'); sink(path.basename('a/b'));`,
+        filename: 'a.ts',
+      },
+      { code: `const path = require('path'); sink(path.posix.delimiter);` },
     ],
     invalid: [
       // The whole point: anything an attacker can reach must still be reported.
       { code: `sink(userInput)`, errors: [{ messageId: 'dynamic' }] },
-      { code: `let cmd = 'ls'; cmd = req.query.c; sink(cmd);`, errors: [{ messageId: 'dynamic' }] },
+      // A shadowed `require` is not Node's loader, so its `path` is not node:path
+      // and nothing about `path.join('a')` is fixed.
+      {
+        code: `function f(require) { const path = require('path'); sink(path.join('a')); }`,
+        errors: [{ messageId: 'dynamic' }],
+      },
+      {
+        code: `let cmd = 'ls'; cmd = req.query.c; sink(cmd);`,
+        errors: [{ messageId: 'dynamic' }],
+      },
 
-      { code: `sink(\`prefix-\${req.query.x}\`)`, errors: [{ messageId: 'dynamic' }] },
-      { code: `const A = req.query.a; sink(A);`, errors: [{ messageId: 'dynamic' }] },
-      { code: `import path from 'node:path'; sink(path.join(req.query.p));`, errors: [{ messageId: 'dynamic' }] },
-      { code: `const path = notTheModule; sink(path.join('a'));`, errors: [{ messageId: 'dynamic' }] },
+      {
+        code: `sink(\`prefix-\${req.query.x}\`)`,
+        errors: [{ messageId: 'dynamic' }],
+      },
+      {
+        code: `const A = req.query.a; sink(A);`,
+        errors: [{ messageId: 'dynamic' }],
+      },
+      {
+        code: `import path from 'node:path'; sink(path.join(req.query.p));`,
+        errors: [{ messageId: 'dynamic' }],
+      },
+      {
+        code: `const path = notTheModule; sink(path.join('a'));`,
+        errors: [{ messageId: 'dynamic' }],
+      },
+      // A reassigned `path` may no longer be the module — its `join` can return anything.
+      {
+        code: `let path = require('path'); path = evil; sink(path.join('a'));`,
+        errors: [{ messageId: 'dynamic' }],
+      },
+      // Same helper name, different module.
+      {
+        code: `import { join } from 'some-pkg'; sink(join('a', 'b'));`,
+        errors: [{ messageId: 'dynamic' }],
+      },
       { code: `sink(obj[key])`, errors: [{ messageId: 'dynamic' }] },
       { code: `sink(getCommand())`, errors: [{ messageId: 'dynamic' }] },
-      { code: `const A = 'a'; sink(A + req.query.b);`, errors: [{ messageId: 'dynamic' }] },
-      { code: `const A = 'a', B = req.query.b; sink(cond ? A : B);`, errors: [{ messageId: 'dynamic' }] },
-      { code: `sink(import.meta.resolve);`, errors: [{ messageId: 'dynamic' }] },
+      {
+        code: `const A = 'a'; sink(A + req.query.b);`,
+        errors: [{ messageId: 'dynamic' }],
+      },
+      {
+        code: `const A = 'a', B = req.query.b; sink(cond ? A : B);`,
+        errors: [{ messageId: 'dynamic' }],
+      },
+      {
+        code: `sink(import.meta.resolve);`,
+        errors: [{ messageId: 'dynamic' }],
+      },
       // `path` is never declared, so the scope walk finds no binding to prove it is the
       // path module — abstain rather than assume the name means the builtin.
-      { code: `sink(path.join('a', 'b'));`, errors: [{ messageId: 'dynamic' }] },
+      {
+        code: `sink(path.join('a', 'b'));`,
+        errors: [{ messageId: 'dynamic' }],
+      },
       { code: `sink(path.sep);`, errors: [{ messageId: 'dynamic' }] },
       // Node types with no static interpretation fall through to the default arm.
       { code: `sink([1, 2]);`, errors: [{ messageId: 'dynamic' }] },
@@ -123,18 +203,21 @@ describe('isStaticExpression', () => {
         languageOptions: { globals: { path: 'readonly' } },
         errors: [{ messageId: 'dynamic' }],
       },
-      // `import path = require('path')` resolves through TSImportEqualsDeclaration.
+      // Initialised by a call that is not `require`.
       {
-        code: `import path = require('path'); sink(path.join('a'));`,
-        filename: 'a.ts',
+        code: `const path = load('path'); sink(path.join('a'));`,
         errors: [{ messageId: 'dynamic' }],
       },
-      // Initialised by a call that is not `require`.
-      { code: `const path = load('path'); sink(path.join('a'));`, errors: [{ messageId: 'dynamic' }] },
       // A function parameter is a binding whose definition is not a variable initialiser.
-      { code: `function f(p) { sink(p); }`, errors: [{ messageId: 'dynamic' }] },
+      {
+        code: `function f(p) { sink(p); }`,
+        errors: [{ messageId: 'dynamic' }],
+      },
       // An import binding likewise has no initialiser to fold.
-      { code: `import x from 'somewhere'; sink(x);`, errors: [{ messageId: 'dynamic' }] },
+      {
+        code: `import x from 'somewhere'; sink(x);`,
+        errors: [{ messageId: 'dynamic' }],
+      },
       // Declared but never initialised.
       { code: `let later; sink(later);`, errors: [{ messageId: 'dynamic' }] },
       // The member's object is itself a member expression, not a plain identifier.
@@ -155,24 +238,40 @@ describe('isStaticExpression', () => {
       },
       // A for-in binding is written exactly once but has no initialiser to fold — the
       // write-count check alone would let it through, so the init check must catch it.
-      { code: `for (const k in obj) { sink(k); }`, errors: [{ messageId: 'dynamic' }] },
-      { code: `for (const v of list) { sink(v); }`, errors: [{ messageId: 'dynamic' }] },
+      {
+        code: `for (const k in obj) { sink(k); }`,
+        errors: [{ messageId: 'dynamic' }],
+      },
+      {
+        code: `for (const v of list) { sink(v); }`,
+        errors: [{ messageId: 'dynamic' }],
+      },
     ],
   });
 
-  ruleTester.run('treatConstAsStatic: false hardens further', makeProbe(false), {
-    valid: [{ code: `sink('ls')` }],
-    invalid: [
-      // Same code the default accepts — the escape hatch eslint-plugin-security does not offer.
-      { code: `const CMD = 'ls'; sink(CMD);`, errors: [{ messageId: 'dynamic' }] },
-    ],
-  });
+  ruleTester.run(
+    'treatConstAsStatic: false hardens further',
+    makeProbe(false),
+    {
+      valid: [{ code: `sink('ls')` }],
+      invalid: [
+        // Same code the default accepts — the escape hatch eslint-plugin-security does not offer.
+        {
+          code: `const CMD = 'ls'; sink(CMD);`,
+          errors: [{ messageId: 'dynamic' }],
+        },
+      ],
+    },
+  );
 
   // A cyclic initializer must terminate and report, not hang the lint run.
   ruleTester.run('cyclic initializers terminate', makeProbe(true), {
     valid: [],
     invalid: [
-      { code: `const a = b; const b = a; sink(a);`, errors: [{ messageId: 'dynamic' }] },
+      {
+        code: `const a = b; const b = a; sink(a);`,
+        errors: [{ messageId: 'dynamic' }],
+      },
     ],
   });
 
@@ -180,7 +279,10 @@ describe('isStaticExpression', () => {
   ruleTester.run('conditional test need not be static', makeProbe(true), {
     valid: [{ code: `const P = 'a', D = 'b'; sink(isProd ? P : D);` }],
     invalid: [
-      { code: `const P = 'a'; sink(isProd ? P : req.query.x);`, errors: [{ messageId: 'dynamic' }] },
+      {
+        code: `const P = 'a'; sink(isProd ? P : req.query.x);`,
+        errors: [{ messageId: 'dynamic' }],
+      },
     ],
   });
 });
@@ -216,15 +318,19 @@ describe('module-location globals', () => {
     ],
   });
 
-  ruleTester.run('__dirname is static even without const folding', makeProbe(false), {
-    valid: [{ code: `sink(__dirname)` }],
-    invalid: [
-      {
-        code: `function render(__dirname) { sink(__dirname); }`,
-        errors: [{ messageId: 'dynamic' }],
-      },
-    ],
-  });
+  ruleTester.run(
+    '__dirname is static even without const folding',
+    makeProbe(false),
+    {
+      valid: [{ code: `sink(__dirname)` }],
+      invalid: [
+        {
+          code: `function render(__dirname) { sink(__dirname); }`,
+          errors: [{ messageId: 'dynamic' }],
+        },
+      ],
+    },
+  );
 });
 
 /**
@@ -235,27 +341,31 @@ describe('module-location globals', () => {
  * a shape eslint-plugin-security's own corpus marks valid and we reported.
  */
 describe('require.resolve', () => {
-  ruleTester.run('resolves statically when its argument does', makeProbe(true), {
-    valid: [
-      { code: `sink(require.resolve('eslint/package.json'))` },
-      { code: `const M = 'eslint'; sink(require.resolve(M));` },
-    ],
-    invalid: [
-      // The specifier decides, same as every other composite.
-      {
-        code: `function f(name) { sink(require.resolve(name)); }`,
-        errors: [{ messageId: 'dynamic' }],
-      },
-      // Only `require.resolve` — an unrelated `.resolve` proves nothing.
-      {
-        code: `sink(Promise.resolve('x'))`,
-        errors: [{ messageId: 'dynamic' }],
-      },
-      // A shadowed `require` is not the module loader; a parameter returns anything.
-      {
-        code: `function f(require) { sink(require.resolve('pkg')); }`,
-        errors: [{ messageId: 'dynamic' }],
-      },
-    ],
-  });
+  ruleTester.run(
+    'resolves statically when its argument does',
+    makeProbe(true),
+    {
+      valid: [
+        { code: `sink(require.resolve('eslint/package.json'))` },
+        { code: `const M = 'eslint'; sink(require.resolve(M));` },
+      ],
+      invalid: [
+        // The specifier decides, same as every other composite.
+        {
+          code: `function f(name) { sink(require.resolve(name)); }`,
+          errors: [{ messageId: 'dynamic' }],
+        },
+        // Only `require.resolve` — an unrelated `.resolve` proves nothing.
+        {
+          code: `sink(Promise.resolve('x'))`,
+          errors: [{ messageId: 'dynamic' }],
+        },
+        // A shadowed `require` is not the module loader; a parameter returns anything.
+        {
+          code: `function f(require) { sink(require.resolve('pkg')); }`,
+          errors: [{ messageId: 'dynamic' }],
+        },
+      ],
+    },
+  );
 });

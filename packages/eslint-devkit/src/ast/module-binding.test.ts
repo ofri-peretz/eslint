@@ -78,6 +78,10 @@ describe('resolveModuleBinding', () => {
         {
           code: `let cp = require('child_process'); cp = other; cp.exec('x');`,
         },
+        // A `var` redeclared with a second initializer is a reassignment too.
+        {
+          code: `var cp = require('child_process'); var cp = other; cp.exec('x');`,
+        },
       ],
       invalid: [
         { code: `const cp = require('child_process'); cp.exec(c);`, errors: 1 },
@@ -126,6 +130,22 @@ describe('resolveModuleBinding', () => {
           errors: 1,
         },
         { code: `require('node:child_process')['exec'](c);`, errors: 1 },
+        // A default applies only when the module LACKS `exec`, so `run` is still the module's.
+        {
+          code: `const { exec: run = noop } = require('child_process'); run(c);`,
+          errors: 1,
+        },
+        // An object rest copies the module's own exports.
+        {
+          code: `const { ...cp } = require('node:child_process'); cp.exec(c);`,
+          errors: 1,
+        },
+        // The TypeScript spelling of a CJS require.
+        {
+          code: `import cp = require('node:child_process'); cp.exec(c);`,
+          filename: 'a.ts',
+          errors: 1,
+        },
       ],
     },
   );
@@ -176,6 +196,15 @@ describe('resolveModuleBinding', () => {
           code: `const { ['promises']: p } = require('node:fs'); p['readFile'](f);`,
           errors: 1,
         },
+        // Nested destructuring walks the key at every level.
+        {
+          code: `const { promises: { readFile } } = require('fs'); readFile(f);`,
+          errors: 1,
+        },
+        {
+          code: `const { promises: { readFile: rf } } = require('node:fs'); rf(f);`,
+          errors: 1,
+        },
       ],
     },
   );
@@ -224,14 +253,28 @@ describe('destructuring shapes the resolver cannot follow', () => {
       valid: [
         // Computed key — the source export name is not knowable statically.
         `const key = 'readFile'; const { [key]: fn } = require('fs'); fn(p);`,
-        // Rest element — no key maps to this binding.
-        `const { ...rest } = require('fs'); rest.readFile(p);`,
-        // Nested pattern — the bound name is not a direct property value.
+        // Nested pattern — `c` is `promises.readFile.call`, not `readFile`.
         `const { promises: { readFile: { call: c } } } = require('fs'); c(p);`,
         // Shorthand for a DIFFERENT export.
         `const { writeFile } = require('fs'); writeFile(p);`,
+        // Array patterns index by position, not by export name — top-level or nested.
+        `const { readFile: [fn] } = require('fs'); fn(p);`,
+        // A `require` the code declared itself is not Node's loader: a parameter
+        // or local can return anything, whatever string it is given.
+        `function load(require) { const fs = require('fs'); fs.readFile(p); }`,
+        `const require = makeLoader(); const { readFile } = require('fs'); readFile(p);`,
       ],
       invalid: [
+        // A rest element is the module itself, minus the keys listed before it.
+        {
+          code: `const { ...rest } = require('fs'); rest.readFile(p);`,
+          errors: 1,
+        },
+        // A nested pattern that does not bind the name is skipped, not fatal.
+        {
+          code: `const { promises: { writeFile }, readFile } = require('fs'); readFile(p);`,
+          errors: 1,
+        },
         // String-literal key naming the same export.
         {
           code: `const { 'readFile': alias } = require('fs'); alias(p);`,
@@ -245,11 +288,16 @@ describe('destructuring shapes the resolver cannot follow', () => {
 describe('ESM import forms', () => {
   ruleTester.run('import shapes', makeProbe('fs', ['readFile']), {
     valid: [
-      // `import x = require(...)` resolves through a TSImportEqualsDeclaration, which
-      // carries no `source` — abstain rather than guess.
-      { code: `import fs = require('fs'); fs.readFile(p);`, filename: 'a.ts' },
+      // `import x = A.B` aliases a namespace member, not a module.
+      { code: `import fs = Legacy.Fs; fs.readFile(p);`, filename: 'a.ts' },
     ],
     invalid: [
+      // `import x = require(...)` is a CJS require in TypeScript spelling.
+      {
+        code: `import fs = require('fs'); fs.readFile(p);`,
+        filename: 'a.ts',
+        errors: 1,
+      },
       // String-literal import specifier.
       {
         code: `import { 'readFile' as alias } from 'fs'; alias(p);`,
@@ -281,8 +329,6 @@ describe('defensive paths', () => {
       },
       // Computed property in the destructuring pattern, alongside the target name.
       `const k='x'; const { [k]: a, other: readFile } = require('fs'); readFile(p);`,
-      // Rest element sits before any matching property.
-      `const { ...others } = require('fs'); others.readFile(p);`,
     ],
     invalid: [],
   });

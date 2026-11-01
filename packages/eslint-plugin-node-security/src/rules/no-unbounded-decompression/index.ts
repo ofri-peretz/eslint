@@ -126,10 +126,11 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
     }
 
     /**
-     * The two bindings devkit's `resolveModuleBinding` does not follow:
-     * `import zlib = require('zlib')` (TS) and `await import('node:zlib')`.
-     * Returns the export path under zlib the identifier denotes, or `null`.
-     * Resolved through scope, so a parameter that shadows the name is not it.
+     * The binding devkit's `resolveModuleBinding` does not follow:
+     * `await import('node:zlib')`. (`import zlib = require('zlib')` it now
+     * resolves itself.) Returns the export path under zlib the identifier
+     * denotes, or `null`. Resolved through scope, so a parameter that shadows
+     * the name is not it.
      */
     function extraZlibPath(
       identifier: TSESTree.Identifier,
@@ -142,14 +143,6 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
       }
       const def = variable?.defs[0];
       if (!variable || !def) return null;
-
-      if (
-        def.node.type === AST_NODE_TYPES.TSImportEqualsDeclaration &&
-        def.node.moduleReference.type ===
-          AST_NODE_TYPES.TSExternalModuleReference
-      ) {
-        return isZlibSpecifier(def.node.moduleReference.expression) ? [] : null;
-      }
 
       if (def.node.type !== AST_NODE_TYPES.VariableDeclarator) return null;
       const init = def.node.init;

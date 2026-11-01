@@ -284,6 +284,7 @@ describe('detect-object-injection', () => {
         // A boolean/null literal operand pins nothing useful — only string and
         // numeric literals produce a predictable affix.
         {
+          name: 'a boolean literal operand pins no predictable key prefix',
           code: 'obj[true + userInput] = value;',
           errors: 1,
         },
@@ -339,6 +340,7 @@ describe('detect-object-injection', () => {
         // A parameter has no declaration to inspect — the contract belongs to
         // the caller, so it stays unproven and reported.
         {
+          name: 'a parameter key has no declaration to prove it safe',
           code: 'function put(o, k) { o[k] = 1; }',
           errors: 1,
         },

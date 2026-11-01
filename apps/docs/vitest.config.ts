@@ -37,6 +37,9 @@ export default defineConfig({
       'tests/**/*.test.tsx', // Include TSX test files
       'src/__tests__/**/*.test.ts', // Include src-level tests
       'src/__tests__/**/*.test.tsx',
+      // The plugin-stats lock never ran until this line; the other scripts/*.test.ts
+      // are still dormant and fail, so widen this only once they are fixed.
+      'scripts/sync-plugin-stats.test.ts',
     ],
     // Setting `exclude` replaces vitest's defaults, so we spread them back in
     // and add build-artifact dirs that can shadow real tests (Next.js standalone
@@ -83,7 +86,7 @@ export default defineConfig({
         '.next/',
         '**/*.test.ts',
         '**/*.config.ts',
-        'tests/**'
+        'tests/**',
       ],
       clean: true,
       reporter: ['text', 'text-summary', 'html', 'lcov'],
@@ -91,8 +94,8 @@ export default defineConfig({
         lines: 70,
         branches: 60,
         functions: 70,
-        statements: 70
-      }
+        statements: 70,
+      },
     },
     reporters: ['default', 'verbose'],
   },

@@ -55,46 +55,79 @@ export interface ModuleBindingOptions {
 
 /** `node:fs` and `fs` are the same module; treat them identically. */
 function normalize(specifier: string, options: ModuleBindingOptions): string {
-  const bare = specifier.startsWith('node:') ? specifier.slice('node:'.length) : specifier;
+  const bare = specifier.startsWith('node:')
+    ? specifier.slice('node:'.length)
+    : specifier;
   return options.equivalents?.[bare] ?? bare;
 }
 
 /** `require('x')` / `require('node:x')` — the CJS entry point into a module. */
-function requireTarget(node: TSESTree.Node, options: ModuleBindingOptions): string | undefined {
+function requireTarget(
+  node: TSESTree.Node,
+  options: ModuleBindingOptions,
+): string | undefined {
   if (node.type !== AST_NODE_TYPES.CallExpression) return undefined;
-  if (node.callee.type !== AST_NODE_TYPES.Identifier || node.callee.name !== 'require') return undefined;
+  if (
+    node.callee.type !== AST_NODE_TYPES.Identifier ||
+    node.callee.name !== 'require'
+  )
+    return undefined;
   const [arg] = node.arguments;
   // A non-literal or non-string specifier (`require(name)`, `require(123)`) is not statically knowable.
   if (arg?.type !== AST_NODE_TYPES.Literal) return undefined;
-  return typeof arg.value === 'string' ? normalize(arg.value, options) : undefined;
+  return typeof arg.value === 'string'
+    ? normalize(arg.value, options)
+    : undefined;
 }
 
 /**
- * Given a destructuring pattern and the name bound out of it, return the source key.
+ * Given a binding pattern and the name bound out of it, return the key path read from the
+ * initializer — `[]` when the pattern is the name itself.
  *
- * Handles renames — `var { readFile: alias } = fs` binds `alias` but reads `readFile`.
- * Returns `undefined` for shapes we cannot follow (nested/computed/rest patterns), which
+ * Handles renames (`var { readFile: alias } = fs` reads `readFile`), nesting
+ * (`{ promises: { readFile } }` reads `promises.readFile`), defaults and object rest.
+ * Returns `undefined` for shapes we cannot follow (array patterns, runtime keys), which
  * makes the caller abstain rather than guess.
  */
-function destructuredKey(pattern: TSESTree.Node, boundName: string): string | undefined {
+function destructuredPath(
+  pattern: TSESTree.Node,
+  boundName: string,
+): string[] | undefined {
+  if (pattern.type === AST_NODE_TYPES.Identifier)
+    return pattern.name === boundName ? [] : undefined;
+  // `{ exec: run = noop }` — the default applies only when the export is missing, so a
+  // bound value that is not the default is still the module's.
+  if (pattern.type === AST_NODE_TYPES.AssignmentPattern)
+    return destructuredPath(pattern.left, boundName);
   if (pattern.type !== AST_NODE_TYPES.ObjectPattern) return undefined;
 
   for (const property of pattern.properties) {
-    // Skips RestElement (`{ ...rest }`) and nested patterns, whose value is not the bound
-    // identifier.
-    if (property.type !== AST_NODE_TYPES.Property) continue;
-    if (property.value.type !== AST_NODE_TYPES.Identifier) continue;
-    if (property.value.name !== boundName) continue;
+    const value =
+      property.type === AST_NODE_TYPES.RestElement
+        ? property.argument
+        : property.value;
+    const inner = destructuredPath(value, boundName);
+    if (inner === undefined) continue;
+    // `{ ...rest }` is the object itself, minus the keys listed before it.
+    if (property.type === AST_NODE_TYPES.RestElement) return inner;
 
     // `{ readFile: x }`, `{ 'readFile': x }` and `{ ['readFile']: x }` all name the export;
     // a runtime key (`{ [k]: x }`) names none, so the caller abstains.
-    return objectKeyName(property) ?? undefined;
+    const key = objectKeyName(property);
+    return key === null ? undefined : [key, ...inner];
   }
   return undefined;
 }
 
-function lookup(name: string, scope: TSESLint.Scope.Scope): TSESLint.Scope.Variable | undefined {
-  for (let current: TSESLint.Scope.Scope | null = scope; current; current = current.upper) {
+function lookup(
+  name: string,
+  scope: TSESLint.Scope.Scope,
+): TSESLint.Scope.Variable | undefined {
+  for (
+    let current: TSESLint.Scope.Scope | null = scope;
+    current;
+    current = current.upper
+  ) {
     const variable = current.variables.find((v) => v.name === name);
     if (variable) return variable;
   }
@@ -126,8 +159,13 @@ function resolve(
   seen.add(node);
 
   // require('fs') — including chained forms like require('fs').promises via the member case.
+  // A `require` the code declares itself (a parameter, a local) is not Node's loader and can
+  // return anything; the real one is a global with no declaration in the file.
   const required = requireTarget(node, options);
-  if (required !== undefined) return { module: required, path: [] };
+  if (required !== undefined) {
+    const declared = (lookup('require', scope)?.defs.length ?? 0) > 0;
+    return declared ? undefined : { module: required, path: [] };
+  }
 
   // fs.promises / fs.readFile / require('fs').readFile
   if (node.type === AST_NODE_TYPES.MemberExpression) {
@@ -145,13 +183,22 @@ function resolve(
 
   const variable = lookup(node.name, scope);
   const def = variable?.defs[0];
-  if (!def) return undefined;
+  if (!variable || !def) return undefined;
 
   // import fs from 'fs' / import { readFile as rf } from 'fs' / import * as fs from 'fs'
   if (def.type === 'ImportBinding') {
     const declaration = def.parent;
-    // `import fs = require('fs')` has a TSImportEqualsDeclaration parent and no `source`.
-    if (declaration?.type !== AST_NODE_TYPES.ImportDeclaration) return undefined;
+    // `import fs = require('fs')` — TypeScript's spelling of a CJS require, the module root.
+    // `import fs = Legacy.Fs` aliases a namespace member instead, which names no module.
+    if (declaration.type === AST_NODE_TYPES.TSImportEqualsDeclaration) {
+      const reference = declaration.moduleReference;
+      if (reference.type !== AST_NODE_TYPES.TSExternalModuleReference)
+        return undefined;
+      return {
+        module: normalize(reference.expression.value, options),
+        path: [],
+      };
+    }
     // An ImportDeclaration source is always a string literal — no non-string arm to guard.
     const module = normalize(String(declaration.source.value), options);
 
@@ -159,7 +206,9 @@ function resolve(
       // `imported` is an Identifier, or a string Literal for `import { 'a-b' as x }`.
       const imported = def.node.imported;
       const name =
-        imported.type === AST_NODE_TYPES.Identifier ? imported.name : String(imported.value);
+        imported.type === AST_NODE_TYPES.Identifier
+          ? imported.name
+          : String(imported.value);
       return { module, path: [name] };
     }
     // Default and namespace imports both denote the module root.
@@ -168,18 +217,23 @@ function resolve(
 
   if (def.type !== 'Variable' || !def.node.init) return undefined;
 
-  // A reassigned binding may hold something else by the time it is used.
-  if (variable && variable.references.filter((ref) => ref.isWrite()).length !== 1) return undefined;
+  // A reassigned binding may hold something else by the time it is used: any write outside
+  // the declaration, or a `var` redeclared with a second initializer. Counting writes alone
+  // is wrong — `{ exec: run = noop }` writes `run` twice at declaration (initializer, default).
+  if (
+    variable.defs.length !== 1 ||
+    variable.references.some((ref) => ref.isWrite() && !ref.init)
+  ) {
+    return undefined;
+  }
 
   const base = resolve(def.node.init, scope, options, seen);
   if (!base) return undefined;
 
   // const fs = require('fs')            -> path unchanged
   // const { readFile: rf } = require('fs') -> path + ['readFile']
-  if (def.node.id.type === AST_NODE_TYPES.Identifier) return base;
-
-  const key = destructuredKey(def.node.id, node.name);
-  return key === undefined ? undefined : { module: base.module, path: [...base.path, key] };
+  const keys = destructuredPath(def.node.id, node.name);
+  return keys && { module: base.module, path: [...base.path, ...keys] };
 }
 
 /**
@@ -202,6 +256,7 @@ export function isModuleBinding(
   if (!binding || binding.module !== module) return false;
   if (!exportPath) return true;
   return (
-    binding.path.length === exportPath.length && exportPath.every((part, i) => binding.path[i] === part)
+    binding.path.length === exportPath.length &&
+    exportPath.every((part, i) => binding.path[i] === part)
   );
 }
