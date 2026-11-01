@@ -1,6 +1,26 @@
 {
   "articles": [
     {
+      "id": 4939680,
+      "title": "My Plugin Has 14 Rules. Two of Them Found 60% of Everything.",
+      "description": "I pointed my own React plugin at a public codebase and counted per rule. 308 findings, and two rules produced 184 of them. Six rules produced nothing at all — and the reason that is not a bug is the whole article.",
+      "url": "https://dev.to/ofri-peretz/my-plugin-has-14-rules-two-of-them-found-60-of-everything-o3j",
+      "canonical_url": "https://ofriperetz.dev/articles/rule-yield-distribution-own-plugin",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Frule-yield-distribution-own-plugin.jpg",
+      "published_at": "2026-10-29T08:43:29Z",
+      "readable_publish_date": "Oct 29",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 1,
+      "positive_reactions_count": 1,
+      "comments_count": 0,
+      "tag_list": [
+        "javascript",
+        "react",
+        "webdev"
+      ]
+    },
+    {
       "id": 4876191,
       "title": "Rename the Variable, Change the Security Verdict",
       "description": "One of my own rules flags a Zod schema containing no XPath, and stays silent on textbook XPath injection. Both come from the same heuristic: it decides whether a value is attacker-controlled by substring-matching the variable's name.",
@@ -1987,7 +2007,7 @@
       ]
     }
   ],
-  "total": 97,
-  "lastUpdated": "2026-10-27T19:44:08.392Z",
+  "total": 98,
+  "lastUpdated": "2026-11-01T21:59:01.380Z",
   "source": "public"
 }
