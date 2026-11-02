@@ -37,7 +37,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import {
   bank,
@@ -249,17 +249,19 @@ describe('the committed baseline', () => {
   it.each(Object.keys(baseline.plugins))(
     '%s has a banked score, or a place in its pending backlog, for every rule it ships',
     (plugin) => {
-      const dir = join(
-        ROOT,
-        'packages',
-        `eslint-plugin-${plugin}`,
-        'src',
-        'rules',
-      );
-      const shipped = readdirSync(dir)
-        .map((d) =>
+      const pluginDir = join(ROOT, 'packages', `eslint-plugin-${plugin}`);
+      const dir = join(pluginDir, 'src', 'rules');
+      const utils = join(pluginDir, 'src', 'utils');
+      // Mirrors `shippedRules()` in scripts/mutation.mts — a shared helper
+      // under src/utils is graded as its own unit, same as a rule.
+      const shipped = [
+        ...readdirSync(dir).map((d) =>
           statSync(join(dir, d)).isDirectory() ? d : ruleOf(`src/rules/${d}`),
-        )
+        ),
+        ...(existsSync(utils)
+          ? readdirSync(utils).map((f) => ruleOf(`src/utils/${f}`))
+          : []),
+      ]
         .filter((r): r is string => r !== undefined)
         .toSorted();
       const { rules, pending = [] } = baseline.plugins[plugin];
