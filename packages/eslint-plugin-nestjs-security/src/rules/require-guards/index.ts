@@ -20,6 +20,8 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  objectKeyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 import {
   decoratorCall,
@@ -344,37 +346,38 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
       requiredGuards: [],
       allowPublicDecorator: true,
       assumeGlobalGuards: false,
+      detectGlobalGuards: true,
+      authDecorators: [],
     },
   ],
-  create(
-    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
-  ) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
     // Registering no visitors is both the gate and the cheap path: a file
     // that does not use this SDK does no work at all.
     if (!fileUsesNestjs(context.sourceCode.ast)) return {};
 
+    // Merged with `defaultOptions` before `create` runs. `publicRoutes` has no
+    // default there on purpose (see its schema entry).
     const {
-      allowInTests = true,
-      allowPublicDecorator = true,
-      assumeGlobalGuards = false,
-      detectGlobalGuards = true,
-      requiredGuards = [],
-      authDecorators = [],
+      allowInTests,
+      allowPublicDecorator,
+      assumeGlobalGuards,
+      detectGlobalGuards,
+      requiredGuards,
+      authDecorators,
       publicRoutes,
-    } = options as Options;
+    } = options as Required<Omit<Options, 'publicRoutes'>> &
+      Pick<Options, 'publicRoutes'>;
 
     const publicSet = new Set(
       (publicRoutes ?? DEFAULT_PUBLIC_ROUTES).map((r) =>
-        r.toLowerCase().replace(/^\/+|\/+$/g, ''),
+        r.toLowerCase().split('/').filter(Boolean).join('/'),
       ),
     );
 
     const origins = collectImportOrigins(context.sourceCode.ast);
+    // `UseGuards` stays in the set: `isAuth` below excludes it explicitly,
+    // because its arguments are inspected rather than taken as proof.
     const authNames = new Set([...DEFAULT_AUTH_DECORATORS, ...authDecorators]);
-    // @UseGuards is handled separately: it is the only one whose *arguments*
-    // we can inspect, so an empty argument list is a finding rather than proof.
-    authNames.delete('UseGuards');
 
     // Skip entirely if global guards are assumed (configured in main.ts)
     if (assumeGlobalGuards) {
@@ -469,24 +472,22 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
       const call = decoratorCall(decorator);
       if (!call) return [];
       const out: string[] = [];
-      const push = (v: unknown) => {
-        if (typeof v === 'string')
-          out.push(...v.toLowerCase().split('/').filter(Boolean));
+      const push = (node: TSESTree.Node): void => {
+        const path = staticString(node);
+        if (path !== null)
+          out.push(...path.toLowerCase().split('/').filter(Boolean));
       };
       for (const arg of call.arguments) {
-        if (arg.type === AST_NODE_TYPES.Literal) {
-          push(arg.value);
-        } else if (arg.type === AST_NODE_TYPES.ObjectExpression) {
-          for (const prop of arg.properties) {
-            if (
-              prop.type === AST_NODE_TYPES.Property &&
-              !prop.computed &&
-              prop.key.type === AST_NODE_TYPES.Identifier &&
-              prop.key.name === 'path' &&
-              prop.value.type === AST_NODE_TYPES.Literal
-            ) {
-              push(prop.value.value);
-            }
+        if (arg.type !== AST_NODE_TYPES.ObjectExpression) {
+          push(arg);
+          continue;
+        }
+        for (const prop of arg.properties) {
+          if (
+            prop.type === AST_NODE_TYPES.Property &&
+            objectKeyName(prop) === 'path'
+          ) {
+            push(prop.value);
           }
         }
       }
@@ -673,11 +674,8 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
           if (call === null || expressionName(call.callee) !== 'Headers') {
             return false;
           }
-          return call.arguments.some(
-            (arg) =>
-              arg.type === AST_NODE_TYPES.Literal &&
-              typeof arg.value === 'string' &&
-              CREDENTIAL_NAME.test(arg.value),
+          return call.arguments.some((arg) =>
+            CREDENTIAL_NAME.test(staticString(arg) ?? ''),
           );
         }),
       );
@@ -732,16 +730,14 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
           );
         }
         if (expr.type !== AST_NODE_TYPES.CallExpression) return false;
-        if (expressionName(expr.callee) !== 'get') return false;
         if (expr.callee.type !== AST_NODE_TYPES.MemberExpression) return false;
         // The receiver is usually `this.configService`, a member expression
-        // rather than a bare identifier, so match on its property name.
+        // rather than a bare identifier, so match on its property name. Any
+        // method counts — `get(key, fallback)` and `getOrThrow(key)` both read
+        // the configured value.
         if (!/config/i.test(expressionName(expr.callee.object))) return false;
-        return expr.arguments.some(
-          (arg) =>
-            arg.type === AST_NODE_TYPES.Literal &&
-            typeof arg.value === 'string' &&
-            CREDENTIAL_NAME.test(arg.value),
+        return expr.arguments.some((arg) =>
+          CREDENTIAL_NAME.test(staticString(arg) ?? ''),
         );
       };
 
@@ -842,10 +838,10 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
             continue;
           }
 
-          const applied = [
-            ...(classGuards ?? []),
-            ...(methodGuards ?? []),
-          ].filter(Boolean);
+          const applied = [...(classGuards ?? []), ...(methodGuards ?? [])];
+          // An argument this rule cannot name — `@UseGuards(...APP_GUARDS)`,
+          // `guards[0]` — may be any guard, the required one included.
+          if (applied.includes('')) continue;
 
           // @UseGuards() present but naming nothing — enforces nothing.
           if (applied.length === 0) {

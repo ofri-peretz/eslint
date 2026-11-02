@@ -180,9 +180,13 @@ function suppliesCsrfProtection(
   scope: TSESLint.Scope.Scope,
   sourceCode: TSESLint.SourceCode,
   names: ReadonlySet<string>,
-  depth = 0,
+  seen: Set<TSESTree.Node> = new Set(),
 ): boolean {
-  if (depth > 3) return false;
+  // Every alias hop is followed; only a cycle (`const a = b; const b = a;`)
+  // stops the walk. A four-hop budget reported a route whose verifier sat
+  // five plain aliases away.
+  if (seen.has(node)) return false;
+  seen.add(node);
 
   // `csurf()` / `guard()` / a bare `csurf` reference.
   const callee = node.type === 'CallExpression' ? node.callee : node;
@@ -200,7 +204,7 @@ function suppliesCsrfProtection(
   if (callee.type === 'Identifier') {
     const init = resolveInitializer(callee, sourceCode);
     if (init !== undefined) {
-      return suppliesCsrfProtection(init, scope, sourceCode, names, depth + 1);
+      return suppliesCsrfProtection(init, scope, sourceCode, names, seen);
     }
   }
 
@@ -299,12 +303,13 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
+    // The merged `defaultOptions` supply every field.
     const {
-      allowInTests = false,
+      allowInTests,
       csrfMiddlewarePatterns,
       protectedMethods: customProtectedMethods,
-      ignorePatterns = [],
-    } = options as Options;
+      ignorePatterns,
+    } = options as Required<Options>;
 
     const csrfPatterns =
       csrfMiddlewarePatterns && csrfMiddlewarePatterns.length > 0

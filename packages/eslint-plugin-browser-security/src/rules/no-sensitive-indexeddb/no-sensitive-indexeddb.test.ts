@@ -19,6 +19,10 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-sensitive-indexeddb', noSensitiveIndexeddb, {
   valid: [
+    {
+      name: 'a plain-string record put on a store is a value, not a store name',
+      code: "const store = tx.objectStore('tips'); store.put('Change your password monthly', 'tip-1');",
+    },
     { name: 'an ordinary store', code: `db.createObjectStore('users');` },
     {
       name: 'a non-sensitive store name',
@@ -64,6 +68,11 @@ ruleTester.run('no-sensitive-indexeddb', noSensitiveIndexeddb, {
   ],
   invalid: [
     {
+      name: 'a shorthand property names its key, not the value bound to it',
+      code: "const accessToken = `${header}.${payload}`; const store = tx.objectStore('v'); store.add({ accessToken });",
+      errors: [{ messageId: 'sensitiveInIndexedDB' }],
+    },
+    {
       name: 'an object store named for the secrets it holds',
       code: `db.createObjectStore('passwords');`,
       errors: [
@@ -71,6 +80,7 @@ ruleTester.run('no-sensitive-indexeddb', noSensitiveIndexeddb, {
       ],
     },
     {
+      name: 'an IndexedDB object store named secrets is reported',
       code: `db.createObjectStore('secrets');`,
       errors: [
         { messageId: 'sensitiveInIndexedDB', data: { name: 'secrets' } },
@@ -207,6 +217,10 @@ ruleTester.run('lock: adversarial wave', noSensitiveIndexeddb, {
     },
     // An alias chain that never reaches an object store.
     { code: `const target = somethingElse; target.put({ password: p });` },
+    {
+      name: 'a neutral out-of-line record key is not reported',
+      code: `const store = tx.objectStore('prefs'); store.put(value, 'theme');`,
+    },
   ],
   invalid: [
     // 1. The `idb` package: the STORE NAME is argument 0, the record argument 1.
@@ -241,6 +255,22 @@ ruleTester.run('lock: adversarial wave', noSensitiveIndexeddb, {
       errors: [
         { messageId: 'sensitiveInIndexedDB', data: { name: 'api_key' } },
       ],
+    },
+    {
+      name: 'an out-of-line record key names the record, so store.put(value, password) is reported',
+      code: `const store = db.transaction('vault', 'readwrite').objectStore('vault'); store.put(value, 'password');`,
+      errors: [
+        { messageId: 'sensitiveInIndexedDB', data: { name: 'password' } },
+      ],
+    },
+    {
+      name: 'the idb wrapper takes the out-of-line key third, so db.put(store, value, apiKey) is reported',
+      code: `
+        import { openDB } from 'idb';
+        const db = await openDB('app', 1);
+        await db.put('vault', value, 'apiKey');
+      `,
+      errors: [{ messageId: 'sensitiveInIndexedDB', data: { name: 'apiKey' } }],
     },
     // Shorthand property — the field is still named.
     {

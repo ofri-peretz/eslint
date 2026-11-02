@@ -132,7 +132,6 @@ const apiKey = rand().toString(36);`,
         // Aliasing shapes that are NOT Math.random.
         { code: 'const { floor } = Math; const token = floor(1.5);' },
         { code: 'const { random } = Chance; const token = random();' },
-        { code: 'const { ["random"]: r } = Math; const token = r();' },
         { code: 'const { random: r } = Math; const token = other();' },
         { code: 'const { "floor": f } = Math; const token = f(1);' },
         { code: 'const { random: { z } } = Math; const token = z();' },
@@ -150,8 +149,18 @@ const apiKey = rand().toString(36);`,
         { code: 'const token = obj.thing.random();' },
         { code: 'function random() {} const token = random();' },
         { code: 'const token = unresolvedRandom();' },
-        // Past the two-hop budget on the forward walk.
+      ],
+      invalid: [
+        // Strengthened (batch 8): these two were pinned VALID as FNs. A static
+        // computed key binds the same slot of Math as `{ random: r }`, and the
+        // two-hop budget on the forward walk dropped the fifth binding.
         {
+          name: 'BUG: a static computed key in a Math destructure binds Math.random',
+          code: 'const { ["random"]: r } = Math; const token = r();',
+          errors: [{ messageId: 'mathRandomCrypto' }],
+        },
+        {
+          name: 'BUG: the forward walk follows a binding chain past the old two-hop budget',
           code: `function far() {
   const a = Math.random();
   const b = a;
@@ -160,9 +169,8 @@ const apiKey = rand().toString(36);`,
   const sessionToken = d;
   return sessionToken;
 }`,
+          errors: [{ messageId: 'mathRandomCrypto' }],
         },
-      ],
-      invalid: [
         // Both spellings of the SAME alias were pinned valid — a quoted object
         // KEY and a quoted member READ. `{ ['next']: Math.random }` declares
         // the slot `{ next: … }` declares, and `rng['next']()` reads it, so

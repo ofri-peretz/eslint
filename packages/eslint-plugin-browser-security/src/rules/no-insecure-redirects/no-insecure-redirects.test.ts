@@ -32,6 +32,11 @@ describe('no-insecure-redirects', () => {
         },
         // Test files (if ignoreInTests is true)
         {
+          name: 'a redirect from req.query in a test file is ignored by default',
+          code: 'res.redirect(req.query.url);',
+          filename: 'test.spec.ts',
+        },
+        {
           name: 'a redirect from req.query in a test file is ignored when ignoreInTests is set',
           code: 'res.redirect(req.query.url);',
           filename: 'test.spec.ts',
@@ -94,6 +99,7 @@ describe('no-insecure-redirects', () => {
       valid: [],
       invalid: [
         {
+          name: 'res.redirect to req.query.url is reported',
           code: 'res.redirect(req.query.url);',
           errors: [{ messageId: 'insecureRedirect' }],
         },
@@ -822,3 +828,54 @@ ruleTester.run(
     ],
   },
 );
+
+describe('TypeScript spellings, the bare global and a steerable host', () => {
+  ruleTester.run(
+    'fidelity: CWE-601 shapes the rule missed',
+    noInsecureRedirects,
+    {
+      valid: [
+        {
+          name: 'a local variable called location is not the global',
+          code: 'export function f(req: any) { let location = ""; location = req.query.next; return location; }',
+        },
+        {
+          name: 'a template with a fixed host and a steerable path stays on that host',
+          code: 'window.location.href = `https://app.example.com/${new URLSearchParams(location.search).get("page")}`;',
+        },
+      ],
+      invalid: [
+        {
+          name: 'a non-null assertion does not launder a query parameter into a location write',
+          code: "window.location.href = new URLSearchParams(location.search).get('next')!;",
+          errors: [{ messageId: 'insecureRedirect' }],
+        },
+        {
+          name: 'a non-null assertion does not launder a query parameter into res.redirect',
+          code: "export function h(res: any) { res.redirect(new URLSearchParams(location.search).get('next')!); }",
+          errors: [{ messageId: 'insecureRedirect' }],
+        },
+        {
+          name: 'an as-cast does not launder a query parameter into location.assign',
+          code: "location.assign(new URLSearchParams(location.search).get('next') as string);",
+          errors: [{ messageId: 'insecureRedirect' }],
+        },
+        {
+          name: 'a bare write to the global location navigates the document',
+          code: 'export function f(req: any) { location = req.query.next; }',
+          errors: [{ messageId: 'insecureRedirect' }],
+        },
+        {
+          name: 'a steerable host in a template URL is the open redirect itself',
+          code: "window.location.href = `https://${new URLSearchParams(location.search).get('host')}/home`;",
+          errors: [{ messageId: 'insecureRedirect' }],
+        },
+        {
+          name: 'a steerable host after a protocol-relative prefix is the open redirect itself',
+          code: 'export function h(res: any, req: any) { res.redirect(`//${req.query.host}/home`); }',
+          errors: [{ messageId: 'insecureRedirect' }],
+        },
+      ],
+    },
+  );
+});

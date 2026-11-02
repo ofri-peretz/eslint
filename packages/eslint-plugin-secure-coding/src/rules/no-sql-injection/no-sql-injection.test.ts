@@ -131,6 +131,13 @@ db.query('SELECT * FROM ' + TABLE + ' WHERE active = true');`,
         code: `db.query('SELECT * FROM users ORDER BY ' + escapeIdentifier(req.query.sort));`,
       },
       {
+        name: 'an ambient `declare function` escaper breaks attribution and does not crash',
+        code: `declare function escapeIdentifier(v: string): string;
+export function handler(req: any) {
+  return db.query(\`SELECT * FROM users WHERE id = \${escapeIdentifier(req.params.id)}\`);
+}`,
+      },
+      {
         name: 'a request root with no caller-supplied property is not attributable',
         code: `db.query('SELECT * FROM users WHERE id = ' + req.locals.id);`,
       },
@@ -529,6 +536,7 @@ ruleTester.run('no-sql-injection-ts-cast-taint', noSqlInjection, {
   valid: ["db.query(`SELECT * FROM reports WHERE owner = 'system'`);"],
   invalid: [
     {
+      name: 'an interpolated table name in an expression-bodied arrow is reported despite an unrelated Set',
       code: "db.query(`SELECT * FROM reports WHERE owner = '${req.query.owner as string}'`);",
       errors: [{ messageId: 'sqlInjection' }],
     },

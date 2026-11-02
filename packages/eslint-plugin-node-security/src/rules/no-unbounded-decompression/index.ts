@@ -33,6 +33,7 @@ import {
   objectKeyName,
   propertyName,
   resolveModuleBinding,
+  staticString,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unboundedDecompression';
@@ -117,12 +118,10 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
   ) {
     let isTestFile: boolean;
 
-    function isZlibSpecifier(node: TSESTree.Node | undefined): boolean {
-      return (
-        node?.type === AST_NODE_TYPES.Literal &&
-        typeof node.value === 'string' &&
-        ZLIB_MODULE.test(node.value)
-      );
+    /** `'node:zlib'` and `` `node:zlib` `` are the same specifier. */
+    function isZlibSpecifier(node: TSESTree.Node): boolean {
+      const specifier = staticString(node);
+      return specifier !== null && ZLIB_MODULE.test(specifier);
     }
 
     /**
@@ -260,17 +259,15 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
       if (payload === undefined) return;
       if (isLiteralPayload(payload)) return;
 
-      // Async form is `(buffer[, options], callback)`; the trailing callback is
-      // never the options object, so it is excluded before the search.
+      // Async form is `(buffer[, options], callback)`: with two arguments the
+      // second is the callback. Otherwise zlib reads the second argument as
+      // the options and ignores anything past the callback — so does this
+      // rule (`gunzipSync(input, {}, onDone)` is uncapped; the extra argument
+      // used to make it abstain).
       const isAsync = ASYNC_DECOMPRESSORS.has(fn);
       if (isAsync && args.length < 2) return;
-      const candidates = isAsync
-        ? args.slice(1, args.length - 1)
-        : args.slice(1);
-
-      if (candidates.length > 1) return;
-
-      const optionsArgument = candidates[0];
+      const optionsArgument =
+        isAsync && args.length === 2 ? undefined : args[1];
       if (optionsArgument !== undefined) {
         // An options value this rule cannot read (`opts`, `{...defaults}`)
         // could already carry the cap. Reporting it would be a guess.

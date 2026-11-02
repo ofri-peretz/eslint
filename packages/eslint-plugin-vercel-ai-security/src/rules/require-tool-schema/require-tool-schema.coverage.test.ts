@@ -23,7 +23,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -49,7 +49,6 @@ const xai = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -101,12 +100,16 @@ ruleTester.run('require-tool-schema (branch coverage)', requireToolSchema, {
     // String-literal tool name — resolved via String(key.value).
     {
       code: `generateText({ tools: { 'my-tool': { execute: run } } });`,
-      errors: [{ messageId: 'missingInputSchema', data: { toolName: 'my-tool' } }],
+      errors: [
+        { messageId: 'missingInputSchema', data: { toolName: 'my-tool' } },
+      ],
     },
     // Computed (non-Identifier, non-Literal) tool key — falls back to 'unknown'.
     {
       code: `generateText({ tools: { [cfg.name]: { execute: run } } });`,
-      errors: [{ messageId: 'missingInputSchema', data: { toolName: 'unknown' } }],
+      errors: [
+        { messageId: 'missingInputSchema', data: { toolName: 'unknown' } },
+      ],
     },
   ]),
 });

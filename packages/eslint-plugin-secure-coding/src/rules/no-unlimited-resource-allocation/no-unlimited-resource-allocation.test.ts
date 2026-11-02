@@ -1155,7 +1155,7 @@ describe('corpus regression — ZIP bomb detection', () => {
  * resourceAllocationInLoop reports. A real parser always attaches `loc`, so
  * these arms need a synthetic node.
  */
-describe('resourceAllocationInLoop line fallback', () => {
+describe('resourceAllocationInLoop without a location', () => {
   // `while (req.body)` — a request-surface read on a request root, the shape
   // the rule needs, and one a synthetic node can carry without a resolvable
   // scope.
@@ -1180,7 +1180,7 @@ describe('resourceAllocationInLoop line fallback', () => {
     };
   };
 
-  it('CallExpression falls back to line 0 when loc is missing', () => {
+  it('CallExpression still reports when loc is missing', () => {
     const { listeners, reports } = createWithMockContext(
       noUnlimitedResourceAllocation,
       {
@@ -1194,10 +1194,9 @@ describe('resourceAllocationInLoop line fallback', () => {
       (r) => r.messageId === 'resourceAllocationInLoop',
     );
     expect(inLoop).toHaveLength(1);
-    expect(inLoop[0].data?.line).toBe('0');
   });
 
-  it('NewExpression falls back to line 0 when loc is missing', () => {
+  it('NewExpression still reports when loc is missing', () => {
     const { listeners, reports } = createWithMockContext(
       noUnlimitedResourceAllocation,
       {
@@ -1211,7 +1210,6 @@ describe('resourceAllocationInLoop line fallback', () => {
       (r) => r.messageId === 'resourceAllocationInLoop',
     );
     expect(inLoop).toHaveLength(1);
-    expect(inLoop[0].data?.line).toBe('0');
   });
 });
 
@@ -1450,6 +1448,7 @@ describe('no-unlimited-resource-allocation — option differentials', () => {
       // Same source, default (empty) trustedSanitizers. Membership is exact, so
       // nothing in the built-in SANITIZATION_FUNCTIONS list matches `alloc`.
       {
+        name: 'Buffer.alloc sized by req.body is reported with the default trustedSanitizers',
         code: RAW_ALLOC,
         errors: [{ messageId: 'userControlledResourceSize' }],
       },
@@ -1730,4 +1729,135 @@ describe('no-unlimited-resource-allocation — predicate arms', () => {
       },
     ],
   });
+});
+
+/**
+ * The doc's own correct examples, and the two sinks it names that were missed.
+ *
+ * "Limit allocation size" — parse, compare to MAX_SIZE, throw, then allocate —
+ * and "Limit array size" — `Math.min(..., MAX)` then `new Array(length)` — were
+ * both reported. `new ArrayBuffer(n)` reserves `n` bytes and was not a sink at
+ * all, and a literal length over `maxResourceSize` was honoured for
+ * `Buffer.alloc` but not for `ArrayBuffer` or `Array`.
+ */
+describe('doc contract: validated sizes, ArrayBuffer, large literals', () => {
+  ruleTester.run(
+    'resource allocation contract',
+    noUnlimitedResourceAllocation,
+    {
+      valid: [
+        {
+          name: 'a size rejected above MAX_SIZE by a throwing guard is bounded for Buffer.alloc',
+          code: "function h(req) { const size = parseInt(req.query.size, 10); if (size > MAX_SIZE || size <= 0) { throw new Error('Invalid size'); } return Buffer.alloc(size); }",
+        },
+        {
+          name: 'a braceless throwing guard bounds Buffer.allocUnsafe',
+          code: "function h(req) { const size = parseInt(req.query.size, 10); if (size > MAX_SIZE) throw new Error('Invalid size'); return Buffer.allocUnsafe(size); }",
+        },
+        {
+          name: 'an upper bound on the right of an || chain is still a guard',
+          code: "function h(req) { const size = parseInt(req.query.size, 10); if (size <= 0 || size > MAX_SIZE) throw new Error('x'); return Buffer.alloc(size); }",
+        },
+        {
+          name: 'a spread length passed to new Array is not a single size',
+          code: 'new Array(...sizes);',
+        },
+        {
+          name: 'a reversed comparison with a returning guard bounds new Array',
+          code: 'function h(req) { const size = parseInt(req.query.size, 10); if (MAX_SIZE <= size) return null; return new Array(size); }',
+        },
+        {
+          name: 'a guard at module top level bounds the allocation after it',
+          code: "const size = parseInt(req.query.size, 10); if (size >= MAX_SIZE) throw new Error('x'); new ArrayBuffer(size);",
+        },
+        {
+          name: 'a guard in an enclosing block bounds a nested allocation',
+          code: "function h(req) { const size = Number(req.query.size); if (size > MAX_SIZE) throw new Error('x'); if (size) { return Buffer.alloc(size); } }",
+        },
+        {
+          name: 'a Math.min clamp bounds new Array as it bounds Buffer.alloc',
+          code: 'function h(req) { const size = Math.min(parseInt(req.query.size, 10) || 0, MAX_SIZE); return new Array(size); }',
+        },
+        {
+          name: 'a Math.min clamp bounds the Array() call form',
+          code: 'function h(req) { const size = Math.min(parseInt(req.query.size, 10) || 0, MAX_SIZE); return Array(size); }',
+        },
+        {
+          name: 'a small literal ArrayBuffer is bounded',
+          code: 'new ArrayBuffer(1024);',
+        },
+        {
+          name: 'a small literal Array length is bounded',
+          code: 'Array(1024);',
+        },
+      ],
+      invalid: [
+        {
+          name: 'a guard that only rejects SMALL sizes does not bound the allocation',
+          code: "function h(req) { const size = parseInt(req.query.size, 10); if (size < 1) throw new Error('x'); return Buffer.alloc(size); }",
+          errors: [{ messageId: 'userControlledResourceSize' }],
+        },
+        {
+          name: 'an || chain with no upper bound on either side is not a guard',
+          code: "function h(req) { const size = parseInt(req.query.size, 10); if (size < 1 || size === 7) throw new Error('x'); return Buffer.alloc(size); }",
+          errors: [{ messageId: 'userControlledResourceSize' }],
+        },
+        {
+          name: 'an upper-bound check whose body does not exit is not a guard',
+          code: 'function h(req) { const size = parseInt(req.query.size, 10); if (size > MAX_SIZE) { warn(size); } return Buffer.alloc(size); }',
+          errors: [{ messageId: 'userControlledResourceSize' }],
+        },
+        {
+          name: 'an empty-bodied upper-bound check is not a guard',
+          code: 'function h(req) { const size = parseInt(req.query.size, 10); if (size > MAX_SIZE) {} return Buffer.alloc(size); }',
+          errors: [{ messageId: 'userControlledResourceSize' }],
+        },
+        {
+          name: 'a guard on a different binding does not bound this size',
+          code: "function h(req) { const size = parseInt(req.query.size, 10); if (other > MAX_SIZE) throw new Error('x'); return Buffer.alloc(size); }",
+          errors: [{ messageId: 'userControlledResourceSize' }],
+        },
+        {
+          name: 'a guard written AFTER the allocation does not bound it',
+          code: "function h(req) { const size = parseInt(req.query.size, 10); const b = Buffer.alloc(size); if (size > MAX_SIZE) throw new Error('x'); return b; }",
+          errors: [{ messageId: 'userControlledResourceSize' }],
+        },
+        {
+          name: 'a non-comparison if test is not an upper bound',
+          code: "function h(req) { const size = parseInt(req.query.size, 10); if (isBad(size)) throw new Error('x'); return Buffer.alloc(size); }",
+          errors: [{ messageId: 'userControlledResourceSize' }],
+        },
+        {
+          name: 'new ArrayBuffer sized directly by the request is unbounded',
+          code: 'function h(req) { return new ArrayBuffer(req.query.size); }',
+          errors: [{ messageId: 'userControlledResourceSize' }],
+        },
+        {
+          name: 'new ArrayBuffer sized by a parsed request value is unbounded',
+          code: 'function h(req) { const size = parseInt(req.query.size); return new ArrayBuffer(size); }',
+          errors: [{ messageId: 'userControlledResourceSize' }],
+        },
+        {
+          name: 'new SharedArrayBuffer sized by the request is unbounded',
+          code: 'function h(req) { return new SharedArrayBuffer(req.body.size); }',
+          errors: [{ messageId: 'userControlledResourceSize' }],
+        },
+        {
+          name: 'a 100 MiB literal ArrayBuffer exceeds maxResourceSize',
+          code: 'new ArrayBuffer(104857600);',
+          errors: [{ messageId: 'unlimitedBufferAllocation' }],
+        },
+        {
+          name: 'a 100M-element literal new Array exceeds maxResourceSize',
+          code: 'new Array(104857600);',
+          errors: [{ messageId: 'unlimitedMemoryAllocation' }],
+        },
+        {
+          name: 'a 100M-element literal Array() call exceeds maxResourceSize',
+          code: 'Array(104857600);',
+          errors: [{ messageId: 'unlimitedMemoryAllocation' }],
+        },
+      ],
+    },
+  );
 });

@@ -127,6 +127,7 @@ ruleTester.run('lock-file', lockFile, {
       ],
     },
     {
+      name: 'a project without yarn.lock is reported when packageManager is yarn',
       code: 'const invalidYarn = 1',
       filename: projectWithoutLockFile(),
       options: [{ packageManager: 'yarn' }],

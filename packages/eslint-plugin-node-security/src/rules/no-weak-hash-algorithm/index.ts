@@ -18,6 +18,7 @@ import {
   createRule,
   AST_NODE_TYPES,
   isTestFilePath,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { makeNameTest } from '../../utils/names';
@@ -57,15 +58,13 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
- * Weak hash patterns and their safe alternatives
+ * Weak hash patterns and the algorithm a suggestion replaces them with
  */
 interface WeakHashPattern {
   /** Regex pattern to match (case-insensitive) */
   pattern: RegExp;
   /** Algorithm name for display */
   name: string;
-  /** Safe alternatives */
-  alternatives: string[];
   /** Replacement algorithm */
   replacement: string;
 }
@@ -78,13 +77,11 @@ const WEAK_HASH_PATTERNS: WeakHashPattern[] = [
     // digests byte-identically to bare md5. Same defect class as RIPEMD below.
     pattern: /\bmd5(?:withrsaencryption)?\b/i,
     name: 'MD5',
-    alternatives: ['SHA-256', 'SHA-512', 'SHA-3'],
     replacement: 'sha256',
   },
   {
     pattern: /\bmd4\b/i,
     name: 'MD4',
-    alternatives: ['SHA-256', 'SHA-512', 'SHA-3'],
     replacement: 'sha256',
   },
   {
@@ -93,7 +90,6 @@ const WEAK_HASH_PATTERNS: WeakHashPattern[] = [
     // Node also accepts 'sha-1' / 'SHA-1' for the same digest.
     pattern: /\bsha-?1(?:withrsaencryption)?\b/i,
     name: 'SHA-1',
-    alternatives: ['SHA-256', 'SHA-512', 'SHA-3'],
     replacement: 'sha256',
   },
   {
@@ -102,7 +98,6 @@ const WEAK_HASH_PATTERNS: WeakHashPattern[] = [
     // word boundary between 'd' and '1', so it caught only the bare alias.
     pattern: /\b(?:ripemd(?:160(?:withrsa)?)?|rmd160)\b/i,
     name: 'RIPEMD',
-    alternatives: ['SHA-256', 'SHA-512'],
     replacement: 'sha256',
   },
 ];
@@ -232,9 +227,12 @@ const DEFAULT_SECURITY_USE_NAMES = [
  * the same trade the list already makes for `cert` versus `certificate`.
  */
 
-/** Strip separators and case so `cache_key`, `cache-key` and `cacheKey` unify. */
+/**
+ * Strip separators so `cache_key`, `cache-key` and `cacheKey` unify. Case is
+ * `makeNameTest`'s job: it lower-cases every entry it is given.
+ */
 function normalizeName(name: string): string {
-  return name.replaceAll(/[_-]/g, '').toLowerCase();
+  return name.replaceAll(/[_-]/g, '');
 }
 
 /**
@@ -330,19 +328,22 @@ function assignedName(node: TSESTree.Node): string | null {
     }
     return null;
   }
-  if (parent.type === AST_NODE_TYPES.Property && parent.value === current) {
-    // A computed key is a variable, so its text is not the property name.
-    if (parent.computed) return null;
-    if (parent.key.type === AST_NODE_TYPES.Identifier) return parent.key.name;
-    // `{ 'cache-key': … }` names the same property as `{ cache_key: … }`.
-    // Reading only Identifier keys made the exemption depend on quoting.
-    if (
-      parent.key.type === AST_NODE_TYPES.Literal &&
-      typeof parent.key.value === 'string'
-    ) {
-      return parent.key.value;
-    }
-    return null;
+  // A class field stores the digest under a name exactly as an object
+  // property does: `class Session { token = md5(seed) }`.
+  if (
+    (parent.type === AST_NODE_TYPES.Property ||
+      parent.type === AST_NODE_TYPES.PropertyDefinition) &&
+    parent.value === current
+  ) {
+    // `{ 'cache-key': … }` and `{ ['cache-key']: … }` name the same property
+    // as `{ cache_key: … }` — reading only Identifier keys made the exemption
+    // depend on quoting. A computed key that is a variable names nothing.
+    const named = objectKeyName(parent);
+    if (named !== null) return named;
+    // `class S { #token = md5(seed) }` — a `#private` field still names the
+    // slot, and `objectKeyName` only answers for public keys.
+    const { key } = parent;
+    return key.type === AST_NODE_TYPES.PrivateIdentifier ? key.name : null;
   }
 
   return null;
@@ -457,7 +458,6 @@ function findWeakHash(
       return {
         pattern: regex,
         name: additionalPattern.toUpperCase(),
-        alternatives: ['SHA-256', 'SHA-512'],
         replacement: 'sha256',
       };
     }
@@ -669,10 +669,10 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
         const variable = current.variables.find((v) => v.name === callee.name);
         if (!variable) continue;
         // An ImportBinding is evidence rather than a name: `import { sha1 }
-        // from 'crypto-hash'` really is a bare digest export.
-        return variable.defs.some(
-          (def) => def.type !== 'ImportBinding' && computesHmac(def.node),
-        );
+        // from 'crypto-hash'` really is a bare digest export. Its def node is
+        // the import specifier, which holds no call, so it fails this test
+        // without a case of its own.
+        return variable.defs.some((def) => computesHmac(def.node));
       }
       return false;
     }

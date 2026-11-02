@@ -204,6 +204,17 @@ A webhook receiver authenticates by comparing a shared secret or an HMAC
 signature — what Stripe, GitHub and Stigg all document. There is no NestJS-side
 identity to establish, so there is no guard to demand.
 
+The same holds for a handler that compares its input with a configured secret —
+`process.env.CRON_SECRET`, or any call on a config service with a
+credential-named key (`this.configService.get('WEBHOOK_SECRET', '')`,
+`getOrThrow('WEBHOOK_SECRET')`) — on either side of an equality check.
+
+### The guard list is spread from a constant
+
+`@UseGuards(...APP_GUARDS)` names guards this file cannot see. It is neither an
+empty `@UseGuards()` nor proof that a `requiredGuards` entry is missing, so the
+rule abstains.
+
 ### The route is `GET /` with nothing to identify
 
 ```typescript

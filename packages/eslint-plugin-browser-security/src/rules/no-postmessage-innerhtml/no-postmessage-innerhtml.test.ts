@@ -128,6 +128,7 @@ ruleTester.run('no-postmessage-innerhtml', noPostmessageInnerhtml, {
     },
     // document.write with event.data
     {
+      name: 'document.write of message event data is reported',
       code: `
         window.addEventListener('message', (event) => {
           document.write(event.data);

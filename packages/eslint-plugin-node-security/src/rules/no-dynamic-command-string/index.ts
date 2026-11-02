@@ -41,6 +41,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 import {
@@ -114,15 +115,19 @@ const SHELL_COMMAND_FLAGS: Record<string, Set<string>> = {
 const COMMAND_RUNNERS = new Set(['execaCommand', 'execaCommandSync', '$.raw']);
 
 /**
- * A POSIX shell option cluster whose LAST letter is `c`: `-lc`, `-euc`, `-xc`.
+ * A POSIX shell option cluster that contains `c`: `-lc`, `-euc`, `-ce`.
  *
- * Not a spelling variant — it is the same flag. `-c` takes the next argument,
- * so in a cluster it must come last, which is what makes the shape decidable
- * rather than a guess. CI runners write `bash -lc` constantly so that nvm and
- * rbenv shims are on PATH, and matching only the exact string `-c` missed every
- * one of them.
+ * Not a spelling variant — it is the same flag. POSIX `-c` is a plain option,
+ * not one that takes an argument: it makes the first OPERAND the command
+ * string, so its place inside the cluster does not matter (`sh -ce '…'` and
+ * `sh -ec '…'` run the same command line). Every single-letter POSIX shell
+ * option is a letter, and the only other `c`-like one, noclobber, is an
+ * upper-case `-C`, so the shape is decidable rather than a guess. CI runners
+ * write `bash -lc` constantly so that nvm and rbenv shims are on PATH, and
+ * matching only the exact string `-c` missed every one of them. A long option
+ * (`--norc`) is not a cluster.
  */
-const POSIX_COMMAND_CLUSTER = /^-[a-zA-Z]*c$/;
+const POSIX_COMMAND_CLUSTER = /^-[a-zA-Z]*c[a-zA-Z]*$/;
 
 /** Does this flag make the NEXT argv element a command line for `shell`? */
 function isCommandFlag(
@@ -172,13 +177,13 @@ function shellDialect(
  * (not reported by either rule) test pair.
  */
 function isAssembledString(node: TSESTree.Node): boolean {
-  if (node.type === AST_NODE_TYPES.TemplateLiteral) {
-    return node.expressions.length > 0;
-  }
   if (node.type === AST_NODE_TYPES.BinaryExpression) {
     return node.operator === '+';
   }
+  // A template with nothing interpolated never gets here: `staticStringOf`
+  // resolves it to its text first.
   return (
+    node.type === AST_NODE_TYPES.TemplateLiteral ||
     node.type === AST_NODE_TYPES.Identifier ||
     node.type === AST_NODE_TYPES.MemberExpression ||
     node.type === AST_NODE_TYPES.CallExpression
@@ -296,17 +301,15 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
           : init;
       if (literal.type !== AST_NODE_TYPES.ObjectExpression) return null;
 
-      for (const property of literal.properties) {
-        if (property.type !== AST_NODE_TYPES.Property) continue;
-        if (property.computed) continue;
-        // `{ build: … }` and `{ 'build': … }` are the same property.
-        const key =
-          property.key.type === AST_NODE_TYPES.Identifier
-            ? property.key.name
-            : property.key.type === AST_NODE_TYPES.Literal &&
-                typeof property.key.value === 'string'
-              ? property.key.value
-              : null;
+      // The LAST write of a key is the one the object holds, so read from the
+      // end. A spread or a computed key the file cannot name, met first, may
+      // be that last write (`{ build: 'npm run build', ...overrides }`), so it
+      // ends the search with no evidence.
+      for (const property of [...literal.properties].reverse()) {
+        if (property.type !== AST_NODE_TYPES.Property) return null;
+        // `{ build: … }`, `{ 'build': … }` and `{ ['build']: … }` are one property.
+        const key = objectKeyName(property);
+        if (key === null) return null;
         if (key !== node.property.name) continue;
         return resolveConstantString(sourceCode, property.value)?.value ?? null;
       }
@@ -328,13 +331,10 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
      * local — `run` tells you nothing, its initializer tells you everything.
      */
     function canonicalName(callee: TSESTree.Node): string | null {
+      // The callee's own spelling is the answer only when its binding names
+      // no known function: an import, a destructured or bound alias, or a
+      // const bound to something this file cannot resolve.
       const direct = calleeName(callee);
-      if (
-        direct !== null &&
-        (ARGV_FUNCTIONS.has(direct) || runners.has(direct))
-      ) {
-        return direct;
-      }
       if (callee.type !== AST_NODE_TYPES.Identifier) return direct;
 
       const init = constInitializerOf(sourceCode, callee);

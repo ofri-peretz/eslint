@@ -1,6 +1,6 @@
 ---
 title: no-insecure-redirects
-description: "ESLint Rule: no-insecure-redirects"
+description: 'Detects open redirects: a navigation or HTTP redirect whose destination an attacker can choose.'
 tags: ['security', 'browser']
 category: security
 severity: medium
@@ -11,88 +11,99 @@ autofix: false
 > **Keywords:** no insecure redirects, security, ESLint rule, JavaScript, TypeScript, CWE-601
 
 <!-- @rule-summary -->
-ESLint Rule: no-insecure-redirects
+
+Detects open redirects: a navigation or HTTP redirect whose destination an attacker can choose.
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
-**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
+**CWE:** [CWE-601](https://cwe.mitre.org/data/definitions/601.html)  
+**OWASP:** [Unvalidated Redirects and Forwards](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html)
 
-ESLint Rule: no-insecure-redirects. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
+Detects open redirects: a navigation or HTTP redirect whose destination an attacker can choose. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 
 ## Quick Summary
 
 | Aspect            | Details                                                                    |
 | ----------------- | -------------------------------------------------------------------------- |
 | **CWE Reference** | [CWE-601](https://cwe.mitre.org/data/definitions/601.html) (Open Redirect) |
-| **Severity**      | Medium (security vulnerability)                                            |
+| **Severity**      | Medium (CVSS 6.1)                                                          |
 | **Auto-Fix**      | ❌ No                                                                      |
-| **Category**   | Security |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                    |
+| **Category**      | Security                                                                   |
 | **Best For**      | Web applications with redirection logic                                    |
 
 ## Vulnerability and Risk
 
-**Vulnerability:** Insecure redirects (also known as Open Redirects) occur when an application redirects the user to a URL specified by untrusted user input without validation.
+**Vulnerability:** An open redirect sends the user to a URL taken from untrusted input — the query string, the fragment, a request parameter — without proving where it points.
 
-**Risk:** Attackers can redirect users to phishing sites (to steal credentials) or malicious sites (to download malware), leveraging the trust the user has in the original domain.
+**Risk:** The link starts on your domain, so users and mail filters trust it, and it ends on a phishing or malware page the attacker chose. Redirects are also how OAuth tokens and session-bound links get exfiltrated.
 
 ## Rule Details
 
-```mermaid
-%%{init: {
-  'theme': 'base',
-  'themeVariables': {
-    'primaryColor': '#f8fafc',
-    'primaryTextColor': '#1e293b',
-    'primaryBorderColor': '#334155',
-    'lineColor': '#475569',
-    'c0': '#f8fafc',
-    'c1': '#f1f5f9',
-    'c2': '#e2e8f0',
-    'c3': '#cbd5e1'
-  }
-}}%%
-flowchart TD
-    A[🔍 Detect no insecure redirects] --> B{Valid pattern?}
-    B -->|❌ No| C[🚨 Report violation]
-    B -->|✅ Yes| D[✅ Pass]
+The rule reports when an **attacker-steerable** value reaches a sink that moves the user, and no guard in front of it proves the destination.
 
-    classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
-    classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
+**Sinks this rule owns** (by the navigation API that receives the URL, never by how the receiver is spelled):
 
-    class A startNode
-    class C errorNode
-```
+| Sink                                                          | Example                                                                                                     |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Any write to the current document's `Location` or its `.href` | `window.location.href = x`, `top.location = x`, `window['location'].href = x`, a bare global `location = x` |
+| `location.assign(x)` / `location.replace(x)`                  | `location.assign(next)`                                                                                     |
+| `.redirect(x)`                                                | `res.redirect(x)`, `res['redirect'](x)`                                                                     |
 
-### Why This Matters
+**Attacker-steerable values:** the inbound URL (`location.search`, `location.hash`, `location.href`, `document.URL`), values parsed out of it (`new URLSearchParams(location.search).get('next')`, `new URL(location.href).searchParams`), router hooks that return the query (`useSearchParams()` from Next.js / React Router), and request input (`req.query.next`, `req.params`, `req.body.url`). A TypeScript assertion (`get('next')!`, `get('next') as string`) narrows a type and validates nothing, so the value stays steerable. In a template URL the value decides the destination when it leads the URL (`` `${next}/x` ``) or lands in its **host** (`` `https://${host}/home` ``, `` `//${host}` ``).
 
-| Issue                        | Impact           | Solution            |
-| ---------------------------- | ---------------- | ------------------- |
-| 🔒 **Security/Code Quality** | [Specific issue] | [Solution approach] |
-| 🐛 **Maintainability**       | [Impact]         | [Fix]               |
-| ⚡ **Performance**           | [Impact]         | [Optimization]      |
+**Guards that prove the destination** (all read from the AST): an anchored, dot-escaped host regexp (`/^https:\/\/app\.example\.com\//.test(next)`), a relative-path check that also rejects `//` (`next.startsWith('/') && !next.startsWith('//')`), and an equality against a parsed origin (`new URL(next, location.origin).origin === location.origin`). A prefix check such as `next.startsWith('https://trusted.com')` is **not** a guard: `https://trusted.com.evil.test` passes it.
 
-## Configuration
+Navigating to the page you are already on (`location.assign(location.href)`) is a reload, not a redirect, and is not reported.
 
-**No configuration options available.**
+### Rule partition
+
+| Sink                                                            | Owner                                                                            |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| a `Location` write, `location.assign/replace`, `.redirect(x)`   | **no-insecure-redirects**                                                        |
+| `window.open(x)`, `router.push/replace(x)` on a resolved router | [`require-url-validation`](./require-url-validation.md)                          |
+| `Linking.openURL(x)`, `navigation.navigate(x)`                  | [`no-unvalidated-deeplinks`](./no-unvalidated-deeplinks.md)                      |
+| a credential inside the URL string                              | [`no-password-in-url`](./no-password-in-url.md) (complementary, not partitioned) |
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```typescript
-// Example of incorrect usage
+const next = new URLSearchParams(location.search).get('next');
+window.location.href = next;
+
+// A non-null assertion is not validation
+window.location.href = new URLSearchParams(location.search).get('next')!;
+
+// The bare global is the same Location
+location = new URLSearchParams(location.search).get('next');
+
+// The attacker picks the host
+window.location.href = `https://${new URLSearchParams(location.search).get('host')}/home`;
+
+app.get('/login', (req, res) => {
+  res.redirect(req.query.returnTo);
+});
 ```
 
 ### ✅ Correct
 
 ```typescript
-// Example of correct usage
+const next = new URLSearchParams(location.search).get('next') ?? '/';
+
+// Same-origin relative paths only (rejects `//evil.test`)
+location.assign(next.startsWith('/') && !next.startsWith('//') ? next : '/');
+
+// Parsed-origin equality
+const target = new URL(next, location.origin);
+if (target.origin === location.origin) window.location.href = target.href;
+
+// A fixed host with a steerable path stays on that host
+window.location.href = `https://app.example.com/${encodeURIComponent(page)}`;
+
+res.redirect('/dashboard');
 ```
 
-## Configuration Examples
-
-### Basic Usage
+## Configuration
 
 ```javascript
 // eslint.config.mjs
@@ -105,63 +116,47 @@ export default [
 ];
 ```
 
-## LLM-Optimized Output
+## Options
 
-```
-🚨 no insecure redirects | Description | MEDIUM
-   Fix: Suggestion | Reference
-```
+| Option           | Type       | Default | Description                                     |
+| ---------------- | ---------- | ------- | ----------------------------------------------- |
+| `ignoreInTests`  | `boolean`  | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `allowedDomains` | `string[]` | `[]`    | Redirect target domains treated as safe         |
 
 ## Related Rules
 
-- [`rule-name`](./rule-name.md) - Description
+- [`require-url-validation`](./require-url-validation.md) - `window.open` and framework router navigations
+- [`no-unvalidated-deeplinks`](./no-unvalidated-deeplinks.md) - React Native deep links
+- [`no-password-in-url`](./no-password-in-url.md) - credentials inside a URL
 
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
+### A Location reached through a local alias
 
-### Values from Variables
-
-**Why**: Values stored in variables are not traced.
+**Why**: Proving that `w` in `w.location.assign(x)` is a `Window` needs type information, and matching any `.location` by name is the name inference this rule refuses.
 
 ```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = userInput;
-dangerousOperation(value);
+// ❌ NOT DETECTED
+const w = window;
+w.location.assign(new URLSearchParams(location.search).get('next'));
 ```
 
-**Mitigation**: Validate all user inputs.
+**Mitigation**: Navigate through `window` / `location` directly.
 
-### Wrapper Functions
+### Values passed through opaque functions
 
-**Why**: Custom wrappers not recognized.
+**Why**: An unknown function may validate its argument; only a local helper the rule can read to be the identity passes taint through.
 
 ```typescript
-// ❌ NOT DETECTED - Wrapper
-myWrapper(userInput); // Uses dangerous API internally
+// ❌ NOT DETECTED
+location.assign(
+  normalizeExternally(new URLSearchParams(location.search).get('next')),
+);
 ```
 
-**Mitigation**: Apply rule to wrapper implementations.
-
-### Dynamic Invocation
-
-**Why**: Dynamic calls not analyzed.
-
-```typescript
-// ❌ NOT DETECTED - Dynamic
-obj[method](userInput);
-```
-
-**Mitigation**: Avoid dynamic method invocation.
+**Mitigation**: Keep the validation visible at the redirect.
 
 ## Further Reading
 
 - **[OWASP Unvalidated Redirects Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html)** - Protection guide
 - **[CWE-601: URL Redirection to Untrusted Site](https://cwe.mitre.org/data/definitions/601.html)** - Official CWE entry
-
-## ⚙️ Options
-
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `ignoreInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
-| `allowedDomains` | `string[]` | `[]` | Redirect target domains treated as safe |

@@ -53,6 +53,7 @@ import {
   AST_NODE_TYPES,
   isTestFilePath,
   propertyName,
+  resolveModuleBinding,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unhandledStreamError';
@@ -81,6 +82,18 @@ const STREAM_CONSTRUCTORS: ReadonlySet<string> = new Set([
   'createInflate',
   'createBrotliCompress',
   'createBrotliDecompress',
+]);
+
+/**
+ * `node:stream` classes whose instances are streams. `new PassThrough()` is a
+ * stream constructor exactly as `fs.createReadStream()` is.
+ */
+const STREAM_CLASSES: ReadonlySet<string> = new Set([
+  'PassThrough',
+  'Transform',
+  'Readable',
+  'Writable',
+  'Duplex',
 ]);
 
 /** Methods that register an event listener. */
@@ -157,6 +170,7 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
     currentOptions,
   ) {
     let handled: Set<string>;
+    let escaped: Set<string>;
     let streamBindings: Set<string>;
     let pending: { node: TSESTree.CallExpression; offender: TSESTree.Node }[];
 
@@ -169,11 +183,32 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
      */
     function unhandledStream(node: TSESTree.Node): TSESTree.Node | null {
       // Constructed inline: it has no name, so nothing can have listened to it.
-      if (constructsStream(node)) return node;
+      if (constructsStreamHere(node)) return node;
       if (node.type !== AST_NODE_TYPES.Identifier) return null;
       if (!streamBindings.has(node.name)) return null;
-      if (handled.has(node.name)) return null;
+      if (handled.has(node.name) || escaped.has(node.name)) return null;
       return node;
+    }
+
+    /**
+     * `constructsStream`, plus `new PassThrough()` and the other `node:stream`
+     * classes — resolved to the module, so a local class that shares the name
+     * is not a stream.
+     */
+    function constructsStreamHere(node: TSESTree.Node): boolean {
+      if (constructsStream(node)) return true;
+      if (node.type !== AST_NODE_TYPES.NewExpression) return false;
+      const binding = resolveModuleBinding(
+        node.callee,
+        context.sourceCode.getScope(node),
+      );
+      const name = binding?.path.at(-1);
+      return (
+        binding?.module === 'stream' &&
+        binding.path.length === 1 &&
+        name !== undefined &&
+        STREAM_CLASSES.has(name)
+      );
     }
 
     return {
@@ -186,6 +221,12 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
 
         /** Names that appear with an `'error'` listener anywhere in this file. */
         handled = new Set<string>();
+        /**
+         * Names handed to a call other than `.pipe()`: `attachHandlers(s)`,
+         * `pipeline(s, res)`. The callee may attach the listener, and
+         * unproven is not unhandled.
+         */
+        escaped = new Set<string>();
         /** Names bound to a stream constructor. */
         streamBindings = new Set<string>();
         /** Pipes to judge at Program:exit, once every listener is known. */
@@ -196,7 +237,7 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
         if (
           node.init !== null &&
           node.id.type === AST_NODE_TYPES.Identifier &&
-          constructsStream(node.init)
+          constructsStreamHere(node.init)
         ) {
           streamBindings.add(node.id.name);
         }
@@ -204,6 +245,16 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
 
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
+        const isPipe =
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          propertyName(callee) === 'pipe';
+        if (!isPipe) {
+          for (const argument of node.arguments) {
+            if (argument.type === AST_NODE_TYPES.Identifier) {
+              escaped.add(argument.name);
+            }
+          }
+        }
         if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
         // `stream['on']('error', h)` attaches the same handler.
         const method = propertyName(callee);
@@ -231,9 +282,10 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
           const callee = node.callee as TSESTree.MemberExpression;
           const source = unhandledStream(callee.object);
           const destinationArg = node.arguments[0];
+          // A spread destination (`src.pipe(...dests)`) is neither a call
+          // nor an identifier, so unhandledStream already says null.
           const destination =
-            destinationArg === undefined ||
-            destinationArg.type === AST_NODE_TYPES.SpreadElement
+            destinationArg === undefined
               ? null
               : unhandledStream(destinationArg);
           const offender = source ?? destination;

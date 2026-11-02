@@ -5,7 +5,7 @@ tags: ['security', 'streams', 'cwe-248', 'nodejs', 'denial-of-service']
 category: security
 severity: high
 cwe: CWE-248
-owasp: "A04:2021"
+owasp: 'A04:2021'
 autofix: false
 ---
 
@@ -13,8 +13,8 @@ autofix: false
 > **CWE:** [CWE-248](https://cwe.mitre.org/data/definitions/248.html)  
 > **OWASP:** [A04:2021-Insecure Design](https://owasp.org/Top10/A04_2021-Insecure_Design/)
 
-
 <!-- @rule-summary -->
+
 Require an error listener on streams passed to pipe, which does not forward errors
 <!-- @/rule-summary -->
 
@@ -24,14 +24,14 @@ Detects `.pipe()` on a stream that has no `'error'` listener. This rule is part 
 
 ## Quick Summary
 
-| Aspect            | Details                                                                     |
-| ----------------- | --------------------------------------------------------------------------- |
+| Aspect            | Details                                                                         |
+| ----------------- | ------------------------------------------------------------------------------- |
 | **CWE Reference** | [CWE-248](https://cwe.mitre.org/data/definitions/248.html) (Uncaught Exception) |
-| **Severity**      | High (remote denial of service)                                             |
-| **Auto-Fix**      | 💡 Suggests a listener or `pipeline()`                                      |
-| **Category**      | Security                                                                    |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                     |
-| **Best For**      | HTTP servers that stream files, uploads, or compressed bodies               |
+| **Severity**      | High (remote denial of service)                                                 |
+| **Auto-Fix**      | 💡 Suggests a listener or `pipeline()`                                          |
+| **Category**      | Security                                                                        |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                         |
+| **Best For**      | HTTP servers that stream files, uploads, or compressed bodies                   |
 
 ## Vulnerability and Risk
 
@@ -46,7 +46,11 @@ The rule reports a `.pipe()` whose source or destination is a stream it can **pr
 1. **Constructed inline** — `fs.createReadStream(p).pipe(res)`. The value has no name, so no `'error'` listener can ever have been attached to it. This is a property of the expression, not a heuristic.
 2. **Named but never handled** — a name bound to a stream constructor that never appears with `.on('error')`, `.once('error')`, or `.addListener('error')` anywhere in the file.
 
-The whole file is judged at `Program:exit`, so a listener registered *after* the `.pipe()` still counts. Statement order is not the criterion.
+A stream constructor is a factory call (`createReadStream`, `createWriteStream`, the `zlib` `create*` family) or `new` on a `node:stream` class — `PassThrough`, `Transform`, `Readable`, `Writable`, `Duplex` — resolved to the module, so a local class that shares the name is not one.
+
+A named stream handed to any call other than `.pipe()` — `attachStandardHandlers(s)`, `pipeline(s, res)` — is not reported: the callee may attach the listener, and unproven is not unhandled.
+
+The whole file is judged at `Program:exit`, so a listener registered _after_ the `.pipe()` still counts. Statement order is not the criterion.
 
 `pipeline()` is never reported. It destroys every stream and surfaces the failure through its callback or rejected promise, which is exactly the fix this rule recommends — reporting it would be reporting the mitigation.
 
@@ -99,9 +103,9 @@ async function downloadSafely(req, res) {
 
 ## Configuration
 
-| Option         | Type      | Default | Description                                  |
-| -------------- | --------- | ------- | -------------------------------------------- |
-| `allowInTests` | `boolean` | `true`  | Allow unhandled stream errors in test files  |
+| Option         | Type      | Default | Description                                 |
+| -------------- | --------- | ------- | ------------------------------------------- |
+| `allowInTests` | `boolean` | `true`  | Allow unhandled stream errors in test files |
 
 ```javascript
 {
@@ -115,10 +119,10 @@ async function downloadSafely(req, res) {
 
 ## Security Impact
 
-| Vulnerability            | CWE | OWASP    | CVSS     | Impact                                |
-| ------------------------ | --- | -------- | -------- | ------------------------------------- |
-| Uncaught Exception       | 248 | A04:2021 | 7.5 High | Process exit — remote denial of service |
-| Improper Error Handling  | 391 | A04:2021 | 5.3 Med  | Partial writes, truncated responses    |
+| Vulnerability           | CWE | OWASP    | CVSS     | Impact                                  |
+| ----------------------- | --- | -------- | -------- | --------------------------------------- |
+| Uncaught Exception      | 248 | A04:2021 | 7.5 High | Process exit — remote denial of service |
+| Improper Error Handling | 391 | A04:2021 | 5.3 Med  | Partial writes, truncated responses     |
 
 ## Related Rules
 
@@ -140,14 +144,15 @@ export function forward(incoming, outgoing) {
 
 **Mitigation**: Attach the listener where the stream is created, or use `pipeline()` at the boundary.
 
-### Handlers registered through a helper
+### A helper that does not actually attach a listener
 
-**Why**: The rule looks for a literal `'error'` event name on the stream's own name.
+**Why**: A stream handed to a helper is assumed handled, because the helper may
+attach the listener in a body this file cannot judge.
 
 ```typescript
-// ❌ NOT DETECTED
+// ❌ NOT DETECTED — logStream registers nothing for 'error'
 const s = fs.createReadStream(p);
-attachStandardHandlers(s);
+logStream(s);
 s.pipe(res);
 ```
 
@@ -161,6 +166,6 @@ s.pipe(res);
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Allow unhandled stream errors in test files |
+| Option         | Type      | Default | Description                                 |
+| -------------- | --------- | ------- | ------------------------------------------- |
+| `allowInTests` | `boolean` | `true`  | Allow unhandled stream errors in test files |

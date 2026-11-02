@@ -17,7 +17,7 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const nest = <T,>(cases: T[]): T[] =>
+const nest = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asNest(c) as T;
     const t = c as Case;
@@ -43,7 +43,6 @@ const nest = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester();
 
@@ -310,20 +309,28 @@ ruleTester.run(
   {
     valid: nest([
       // A typed DTO IS validated by a global ValidationPipe.
-      `
+      {
+        name: 'a typed body DTO is validated by a global ValidationPipe',
+        code: `
       @Controller('u')
       class UsersController {
         @Post()
         create(@Body() dto: CreateUserDto) {}
       }
     `,
-      `
+        options: [{ assumeGlobalPipes: true }],
+      },
+      {
+        name: 'a typed query DTO is validated by a global ValidationPipe',
+        code: `
       @Controller('u')
       class UsersController {
         @Get()
         find(@Query() dto: SearchRequestDto) {}
       }
     `,
+        options: [{ assumeGlobalPipes: true }],
+      },
     ]),
     invalid: nest([
       // No annotation: the pipe has no metatype, so nothing is checked.
@@ -371,6 +378,217 @@ ruleTester.run(
         errors: [
           { messageId: 'missingValidation' },
           { messageId: 'missingValidation' },
+        ],
+      },
+    ]),
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quint fidelity model (benchmarks/suites/fidelity/models/nestjs-security)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run(
+  'no-missing-validation-pipe (fidelity)',
+  noMissingValidationPipe,
+  {
+    valid: nest([
+      {
+        name: 'a renamed ValidationPipe in @UsePipes validates the route',
+        code: `
+        import { ValidationPipe as VP } from '@nestjs/common';
+        @Controller('users')
+        export class UsersController {
+          @Post()
+          @UsePipes(new VP())
+          create(@Body() dto: CreateUserDto) { return dto; }
+        }
+      `,
+        options: [{ detectGlobalPipes: false }],
+      },
+    ]),
+    invalid: nest([
+      {
+        name: "the doc's ❌ example — a DTO body with no pipe anywhere — is reported",
+        code: `
+        @Controller('users')
+        export class UsersController {
+          @Post()
+          create(@Body() dto: CreateUserDto) { return dto; }
+        }
+      `,
+        options: [{ detectGlobalPipes: false }],
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      {
+        name: 'a query DTO with no pipe anywhere is reported',
+        code: `
+        @Controller('users')
+        export class UsersController {
+          @Post()
+          create(@Query() dto: CreateUserDto) { return dto; }
+        }
+      `,
+        options: [{ detectGlobalPipes: false }],
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      {
+        name: 'a ParseIntPipe in @UsePipes is not a ValidationPipe',
+        code: `
+        @Controller('users')
+        export class UsersController {
+          @Post()
+          @UsePipes(new ParseIntPipe())
+          create(@Body() dto: CreateUserDto) { return dto; }
+        }
+      `,
+        options: [{ detectGlobalPipes: false }],
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      {
+        name: 'assumeGlobalPipes does not cover a shape no ValidationPipe can validate',
+        code: `
+        @Controller('users')
+        export class UsersController {
+          @Post()
+          create(@Body() dto: any) { return dto; }
+        }
+      `,
+        options: [{ assumeGlobalPipes: true }],
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      {
+        name: 'requireExplicitPipe demands a per-route pipe even when a global one is assumed',
+        code: `
+        @Controller('users')
+        export class UsersController {
+          @Post()
+          create(@Body() dto: CreateUserDto) { return dto; }
+        }
+      `,
+        options: [{ assumeGlobalPipes: true, requireExplicitPipe: true }],
+        errors: [{ messageId: 'missingValidation' }],
+      },
+    ]),
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// `detectGlobalPipes: false` keeps the repo's own files out of the answer.
+// ─────────────────────────────────────────────────────────────────────────────
+const route = (handler: string, decorators = ''): string => `
+  @Controller('users')
+  class UsersController {
+    @Post()
+    ${decorators}
+    ${handler}
+  }
+`;
+const NO_SCAN = [{ detectGlobalPipes: false }];
+ruleTester.run(
+  'no-missing-validation-pipe (mutation audit)',
+  noMissingValidationPipe,
+  {
+    valid: nest([
+      {
+        name: 'a test file is skipped by default (allowInTests)',
+        code: route(`create(@Body() dto: CreateUserDto) {}`),
+        filename: 'users.controller.spec.ts',
+        options: NO_SCAN,
+      },
+      {
+        name: 'a space before the call parenthesis is still a useGlobalPipes call',
+        code: `app.useGlobalPipes (new ValidationPipe());\n${route(`create(@Body() dto: CreateUserDto) {}`)}`,
+      },
+      {
+        name: 'a ValidationPipe listed after another pipe still validates the route',
+        code: route(
+          `create(@Body() dto: CreateUserDto) {}`,
+          `@UsePipes(LoggingPipe, ValidationPipe)`,
+        ),
+        options: NO_SCAN,
+      },
+      {
+        name: 'a custom pipe whose name merely contains Parse…Pipe is a real pipe',
+        code: route(
+          `create(@Body(new ZodParsePipe(schema)) dto: CreateUserDto) {}`,
+        ),
+        options: NO_SCAN,
+      },
+      {
+        name: 'a pipe passed as the first argument is a pipe, not a property key',
+        code: route(`create(@Body(UserPipe) dto: CreateUserDto) {}`),
+        options: NO_SCAN,
+      },
+      {
+        name: 'a method without an HTTP-method decorator is not a route',
+        code: `
+        @Controller('users')
+        class UsersController {
+          helper(@Body() dto: CreateUserDto) {}
+        }
+      `,
+        options: NO_SCAN,
+      },
+    ]),
+    invalid: nest([
+      {
+        name: 'a string property key is not a pipe',
+        code: route(`create(@Body('user') user: CreateUserDto) {}`),
+        options: NO_SCAN,
+        errors: [
+          { messageId: 'missingValidation', data: { param: '@Body() user' } },
+        ],
+      },
+      {
+        // @found mutation testing
+        name: 'FN: a template-literal property key is a key, not a pipe',
+        code: route('create(@Body(`user`) user: CreateUserDto) {}'),
+        options: NO_SCAN,
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      {
+        name: 'a union with a non-scalar member is not a scalar',
+        code: route(`create(@Body() payload: string | CreateUserDto) {}`),
+        options: NO_SCAN,
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      {
+        // @found mutation testing
+        name: 'FN: a destructured DTO body with no pipe is unvalidated',
+        code: route(`create(@Body() { email, password }: LoginDto) {}`),
+        options: NO_SCAN,
+        errors: [
+          {
+            messageId: 'missingValidation',
+            data: { param: '@Body() { email, password }' },
+          },
+        ],
+      },
+    ]),
+  },
+);
+ruleTester.run(
+  'no-missing-validation-pipe (mutation audit, parameter shapes)',
+  noMissingValidationPipe,
+  {
+    valid: nest([
+      {
+        name: 'a rest parameter binds no request input',
+        code: route(`list(...args: unknown[]) {}`),
+        options: NO_SCAN,
+      },
+    ]),
+    invalid: nest([
+      {
+        name: 'a destructured rest element is labelled, not dropped',
+        code: route(`create(@Body() { email, ...rest }: LoginDto) {}`),
+        options: NO_SCAN,
+        errors: [
+          {
+            messageId: 'missingValidation',
+            data: { param: '@Body() { email, … }' },
+          },
         ],
       },
     ]),

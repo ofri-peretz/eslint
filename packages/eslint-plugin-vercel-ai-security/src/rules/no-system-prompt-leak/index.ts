@@ -148,6 +148,22 @@ export const noSystemPromptLeak = createRule<RuleOptions, MessageIds>({
       }
     }
 
+    /** A response payload: an object is checked key by key, a bare value whole. */
+    function checkPayload(payload: TSESTree.Node | undefined): void {
+      if (payload?.type === AST_NODE_TYPES.ObjectExpression) {
+        checkObjectForLeaks(payload, true);
+        return;
+      }
+      const leaked = payload && findSystemPromptVar(payload);
+      if (leaked) {
+        context.report({
+          node: payload,
+          messageId: 'systemPromptLeak',
+          data: { variable: leaked },
+        });
+      }
+    }
+
     return {
       before() {
         const [options] = currentOptions();
@@ -185,15 +201,16 @@ export const noSystemPromptLeak = createRule<RuleOptions, MessageIds>({
         }
       },
 
-      // Response.json / NextResponse.json / res.json / res.send
+      // Response.json / NextResponse.json / res.json / res.jsonp / res.send,
+      // dotted or bracketed.
       CallExpression(node: TSESTree.CallExpression) {
-        const callee = sourceCode.getText(node.callee);
-        if (!callee.match(/\.(json|send)\s*$/)) return;
+        if (
+          node.callee.type !== AST_NODE_TYPES.MemberExpression ||
+          !RESPONSE_METHODS.has(propertyName(node.callee) as string)
+        )
+          return;
 
-        const arg = node.arguments[0];
-        if (arg && arg.type === 'ObjectExpression') {
-          checkObjectForLeaks(arg, true);
-        }
+        checkPayload(node.arguments[0]);
       },
 
       // new Response(JSON.stringify({ ... }))
@@ -206,11 +223,15 @@ export const noSystemPromptLeak = createRule<RuleOptions, MessageIds>({
         const body = node.arguments[0];
         if (body?.type !== AST_NODE_TYPES.CallExpression) return;
         if (memberPath(body.callee)?.join('.') !== 'JSON.stringify') return;
-        const payload = body.arguments[0];
-        if (payload?.type === AST_NODE_TYPES.ObjectExpression) {
-          checkObjectForLeaks(payload, true);
-        }
+        checkPayload(body.arguments[0]);
       },
     };
   },
 });
+
+/** Methods that send their first argument as the response body. */
+const RESPONSE_METHODS: ReadonlySet<string> = new Set([
+  'json',
+  'jsonp',
+  'send',
+]);

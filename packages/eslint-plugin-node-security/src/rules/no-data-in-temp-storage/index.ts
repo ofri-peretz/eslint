@@ -15,12 +15,12 @@ import {
   MessageIcons,
   resolveModuleBinding,
   staticString,
-  namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
-import type { TSESTree } from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
 import { findVariable } from '../../utils/provenance';
+import { undeclaredFsBinding } from '../../utils/module-binding';
 
 type MessageIds = 'violationDetected' | 'predictableTempPath';
 
@@ -34,6 +34,19 @@ type RuleOptions = [Options?];
 const DEFAULT_TEMP_PATHS = ['/tmp', '/var/tmp', 'temp/', '/temp'];
 
 /**
+ * Every resolved spelling of these fs functions, as `module:export.path` keys.
+ *
+ * `fs` reaches them at its root and under `fs.promises`; `fs/promises` at its
+ * root. Anything deeper (`fs.constants.writeFile`) is some other API that
+ * merely shares a method name, and a module called as a function names none.
+ */
+function fsEntryPoints(fns: readonly string[]): ReadonlySet<string> {
+  return new Set(
+    fns.flatMap((fn) => [`fs:${fn}`, `fs:promises.${fn}`, `fs/promises:${fn}`]),
+  );
+}
+
+/**
  * fs entry points whose first argument is a path DATA COMES TO REST AT.
  *
  * `writeFile`/`writeFileSync` alone was the shape the rule's own tests were
@@ -41,7 +54,7 @@ const DEFAULT_TEMP_PATHS = ['/tmp', '/var/tmp', 'temp/', '/temp'];
  * `appendFile*` (an audit trail) and `createWriteStream` (an archive being
  * assembled), and those bytes are just as readable by every local account.
  */
-const FS_WRITE_FUNCTIONS = new Set([
+const FS_WRITE_FUNCTIONS = fsEntryPoints([
   'writeFile',
   'writeFileSync',
   'appendFile',
@@ -59,9 +72,9 @@ const FS_WRITE_FUNCTIONS = new Set([
  *
  * `mkdtemp`/`mkdtempSync` take a PREFIX, append six random characters and
  * create the directory 0700 — so `path.join(os.tmpdir(), 'ingest-')` handed to
- * one of them is not a predictable path, it is the fix. See `flowsIntoMkdtemp`.
+ * one of them is not a predictable path, it is the fix. See `passedAsPathTo`.
  */
-const FS_MKDTEMP_FUNCTIONS = new Set(['mkdtemp', 'mkdtempSync']);
+const FS_MKDTEMP_FUNCTIONS = fsEntryPoints(['mkdtemp', 'mkdtempSync']);
 
 /** Drop-in `fs` replacements, so a rule that guards fs guards them too. */
 const FS_EQUIVALENTS = { 'fs-extra': 'fs', 'graceful-fs': 'fs' } as const;
@@ -92,11 +105,10 @@ function containsPathSegments(haystack: string, needle: string): boolean {
   const target = split(needle);
   if (target.length === 0) return false;
   const segments = split(haystack);
-  for (let start = 0; start + target.length <= segments.length; start += 1) {
-    if (target.every((segment, offset) => segments[start + offset] === segment))
-      return true;
-  }
-  return false;
+  // A start too near the end runs off it, and `undefined` matches no segment.
+  return segments.some((_, start) =>
+    target.every((segment, offset) => segments[start + offset] === segment),
+  );
 }
 
 /**
@@ -151,26 +163,21 @@ function isStaticTmpdirJoin(node: TSESTree.CallExpression): boolean {
  * interpolated form (which is at least as common in real code, because it is
  * shorter) resolved to the identical predictable path and reported nothing.
  *
- * Every OTHER expression must be a string literal, exactly as in the join case:
+ * Every OTHER expression must be a literal, exactly as in the join case:
  * `` `${os.tmpdir()}/${randomUUID()}.bin` `` is unpredictable, which is the
  * mitigation, so it is left alone.
  */
 function isStaticTmpdirTemplate(node: TSESTree.Node): boolean {
   if (node.type !== AST_NODE_TYPES.TemplateLiteral) return false;
-  let sawTmpdir = false;
-  for (const expression of node.expressions) {
-    if (isTmpdirCall(expression)) {
-      sawTmpdir = true;
-      continue;
-    }
-    if (
-      expression.type !== AST_NODE_TYPES.Literal ||
-      typeof expression.value !== 'string'
-    ) {
-      return false;
-    }
-  }
-  return sawTmpdir;
+  // Any literal interpolates to the same text on every run — `${8080}` is as
+  // constant as `${'cache'}`.
+  return (
+    node.expressions.some(isTmpdirCall) &&
+    node.expressions.every(
+      (expression) =>
+        isTmpdirCall(expression) || expression.type === AST_NODE_TYPES.Literal,
+    )
+  );
 }
 
 /**
@@ -188,10 +195,8 @@ function isStaticTmpdirConcat(node: TSESTree.Node): boolean {
     if (isStaticTmpdirConcat(part)) return 'tmpdir';
     return 'other';
   };
-  const left = side(node.left as TSESTree.Node);
-  const right = side(node.right);
-  if (left === 'other' || right === 'other') return false;
-  return left === 'tmpdir' || right === 'tmpdir';
+  const sides = new Set([side(node.left as TSESTree.Node), side(node.right)]);
+  return !sides.has('other') && sides.has('tmpdir');
 }
 
 /** Any spelling of "a constant name inside the shared temp directory". */
@@ -273,17 +278,7 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
     }
 
     /**
-     * A predictable temp path only matters where it becomes the name something
-     * is written to.
-     *
-     * Called from the three sites that produce such a name — a declarator, an
-     * assignment, and the path argument of an fs write — rather than by walking
-     * up from the `path.join` call. That is the same "bound to a name, or
-     * written through" standard the literal scan below already applies, and it
-     * keeps `log(path.join(os.tmpdir(), 'x'))` from reporting.
-     */
-    /**
-     * Which `fs` entry point is this call, if it is one?
+     * Is this call one of the `fs` entry points in `names`?
      *
      * Resolved through the BINDING, not through the receiver's spelling. The
      * old test was `callee.object.name === 'fs'`, which is a name match, and it
@@ -294,64 +289,32 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
      * Each of those puts bytes in exactly the same world-readable directory.
      *
      * The bare `fs.<fn>(…)` fallback survives for the case the resolver cannot
-     * answer — a file where `fs` is an unresolved global, which is how a great
-     * deal of scripting code and every snippet is written. It is pre-existing
-     * debt, deliberately not extended: the resolver is what the new function
-     * names ride on.
+     * answer — a file where `fs` is declared nowhere, which is how a great
+     * deal of scripting code and every snippet is written. A NAME is not
+     * enough: an `fs` the file declares and the resolver cannot trace to the
+     * module (a local object, a parameter) is not the module.
+     *
+     * `fs['writeFileSync']` is `fs.writeFileSync`: `resolveModuleBinding`
+     * resolves a string-literal computed key itself.
      */
-    // `null`, not `undefined`, for "no fs entry point here": that is the absent
-    // value `propertyName` already returns, and mapping between the two was the
-    // only thing the `as string` cast at the member branch was doing.
-    function fsEntryPoint(node: TSESTree.CallExpression): string | null {
-      const callee = node.callee;
-
+    function callsFs(
+      node: TSESTree.CallExpression,
+      names: ReadonlySet<string>,
+    ): boolean {
       const scope = context.sourceCode.getScope(node);
-      // `fs['writeFileSync']` is `fs.writeFileSync`. The resolver abstains on
-      // computed members because a computed key is usually unknowable — but a
-      // string literal key names the export as precisely as dot notation does,
-      // so resolve the RECEIVER and append the key by hand.
-      // The hand-rolled append that stood here worked around
-      // `resolveModuleBinding` refusing every computed member. It resolves the
-      // quoted spelling itself now, so the workaround is gone rather than left
-      // to drift from the resolver it was compensating for.
-      const binding = resolveModuleBinding(callee, scope, {
-        equivalents: FS_EQUIVALENTS,
-      });
-      if (binding) {
-        const fn = binding.path.at(-1);
-        const prefix = binding.path.slice(0, -1);
-        if (fn === undefined) return null;
-        // fs → root or `fs.promises`; fs/promises → root. Anything deeper is
-        // some other API that merely shares a method name.
-        const reachable =
-          (binding.module === 'fs' &&
-            (prefix.length === 0 ||
-              (prefix.length === 1 && prefix[0] === 'promises'))) ||
-          (binding.module === 'fs/promises' && prefix.length === 0);
-        return reachable ? fn : null;
-      }
-
-      if (
-        callee.type === AST_NODE_TYPES.MemberExpression &&
-        callee.object.type === AST_NODE_TYPES.Identifier &&
-        callee.object.name === 'fs' &&
-        // `fs['writeFileSync'](p, data)` writes the same file.
-        propertyName(callee) !== null
-      ) {
-        return propertyName(callee);
-      }
-      return null;
-    }
-
-    /** `fs.writeFile(path, …)` and every other spelling of "bytes land here". */
-    function isFsWriteCall(node: TSESTree.CallExpression): boolean {
-      const fn = fsEntryPoint(node);
-      return namesOneOf(fn, FS_WRITE_FUNCTIONS);
+      const binding =
+        resolveModuleBinding(node.callee, scope, {
+          equivalents: FS_EQUIVALENTS,
+        }) ?? undeclaredFsBinding(node.callee, scope);
+      if (!binding) return false;
+      return names.has(`${binding.module}:${binding.path.join('.')}`);
     }
 
     /**
-     * Does this binding get handed to `fs.mkdtemp`?
+     * Is this binding handed to one of the fs entry points in `names` as the
+     * path (first) argument?
      *
+     * For `FS_MKDTEMP_FUNCTIONS` this is the mitigation:
      * `const PREFIX = path.join(os.tmpdir(), 'ingest-'); await fsp.mkdtemp(PREFIX)`
      * is the remediation this rule's own message prescribes, and the rule
      * reported it: the declarator looked exactly like a constant temp path.
@@ -361,15 +324,17 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
      * inside the mkdtemp argument list, which is the only shape the old rule
      * tolerated — is what makes hoisting the prefix to a `const` legal.
      */
-    function flowsIntoMkdtemp(identifier: TSESTree.Identifier): boolean {
-      const variable = findVariable(context.sourceCode, identifier);
-      if (!variable) return false;
+    function passedAsPathTo(
+      variable: TSESLint.Scope.Variable,
+      names: ReadonlySet<string>,
+    ): boolean {
       return variable.references.some((reference) => {
         const parent = reference.identifier.parent;
-        if (parent?.type !== AST_NODE_TYPES.CallExpression) return false;
-        if (parent.arguments[0] !== reference.identifier) return false;
-        const fn = fsEntryPoint(parent);
-        return namesOneOf(fn, FS_MKDTEMP_FUNCTIONS);
+        return (
+          parent.type === AST_NODE_TYPES.CallExpression &&
+          parent.arguments[0] === reference.identifier &&
+          callsFs(parent, names)
+        );
       });
     }
 
@@ -377,6 +342,11 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
      * A predictable temp path only matters where it becomes a name something is
      * written to — or, when it is bound, where that binding is not immediately
      * randomised by mkdtemp.
+     *
+     * Called from the three sites that produce such a name — a declarator, an
+     * assignment, and the path argument of an fs write — rather than by walking
+     * up from the `path.join` call, which keeps
+     * `log(path.join(os.tmpdir(), 'x'))` from reporting.
      */
     function reportIfPredictable(
       candidate: TSESTree.Node | null | undefined,
@@ -384,12 +354,22 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
     ): void {
       if (!candidate) return;
       if (!isPredictableTempPath(candidate)) return;
-      if (
-        bound !== null &&
-        bound.type === AST_NODE_TYPES.Identifier &&
-        flowsIntoMkdtemp(bound)
-      ) {
-        return;
+      // Bound to a name, the path is a finding only once something writes
+      // through that name — the doc's second condition. `const file =
+      // path.join(os.tmpdir(), 'x.tmp')` that is only logged stores nothing.
+      // A binding that is not a plain name (`obj.p = …`) is not followed.
+      if (bound !== null) {
+        const variable =
+          bound.type === AST_NODE_TYPES.Identifier
+            ? findVariable(context.sourceCode, bound)
+            : null;
+        if (
+          !variable ||
+          passedAsPathTo(variable, FS_MKDTEMP_FUNCTIONS) ||
+          !passedAsPathTo(variable, FS_WRITE_FUNCTIONS)
+        ) {
+          return;
+        }
       }
       context.report({ node: candidate, messageId: 'predictableTempPath' });
     }
@@ -403,9 +383,8 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
      */
     // oxlint-disable-next-line consistent-function-scoping
     function staticPathRuns(node: TSESTree.Node): string[] {
-      if (node.type === AST_NODE_TYPES.Literal) {
-        return typeof node.value === 'string' ? [node.value] : [];
-      }
+      const text = staticString(node);
+      if (text !== null) return [text];
       if (node.type === AST_NODE_TYPES.TemplateLiteral) {
         return node.quasis.map((quasi) => quasi.value.raw);
       }
@@ -438,17 +417,13 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
      * positive whose fix is already applied.
      */
     function resolvedPathRuns(node: TSESTree.Node): string[] {
-      const direct = staticPathRuns(node);
-      if (direct.length > 0) return direct;
-      if (node.type !== AST_NODE_TYPES.Identifier) return [];
-      const variable = findVariable(context.sourceCode, node);
-      if (!variable) return [];
-      const priorWrites = variable.references
-        .map((reference) => reference.writeExpr)
+      if (node.type !== AST_NODE_TYPES.Identifier) return staticPathRuns(node);
+      const lastWrite = findVariable(context.sourceCode, node)
+        ?.references.map((reference) => reference.writeExpr)
         .filter((write): write is TSESTree.Node => write != null)
         .filter((write) => write.range[1] <= node.range[0])
-        .sort((a, b) => a.range[1] - b.range[1]);
-      const lastWrite = priorWrites.at(-1);
+        .sort((a, b) => a.range[1] - b.range[1])
+        .at(-1);
       return lastWrite ? staticPathRuns(lastWrite) : [];
     }
 
@@ -465,7 +440,7 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        if (!isFsWriteCall(node)) return;
+        if (!callsFs(node, FS_WRITE_FUNCTIONS)) return;
 
         const pathArg = node.arguments[0];
         if (pathArg) {

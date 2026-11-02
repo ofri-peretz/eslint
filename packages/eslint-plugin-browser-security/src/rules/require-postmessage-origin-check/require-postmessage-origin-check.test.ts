@@ -52,6 +52,51 @@ ruleTester.run(
         });
       `,
       },
+      {
+        name: 'an exact-match allowlist includes() on event.origin is an origin check, whatever the list is called',
+        code: `
+        const ALLOWED = ['https://trusted.com'];
+        window.addEventListener('message', (event) => {
+          if (!ALLOWED.includes(event.origin)) return;
+          processAction(event.data);
+        });
+      `,
+      },
+      {
+        name: 'a Set allowlist has() on event.origin is an origin check',
+        code: `
+        const TRUSTED = new Set(['https://trusted.com']);
+        self.addEventListener('message', function (e) {
+          if (!TRUSTED.has(e.origin)) return;
+          processAction(e.data);
+        });
+      `,
+      },
+      {
+        name: 'an allowlist read off a config object is an exact-match origin check',
+        code: `
+        window.addEventListener('message', (event) => {
+          if (!config.trusted.includes(event.origin)) return;
+          processAction(event.data);
+        });
+      `,
+      },
+      {
+        name: 'a window.onmessage handler that checks the origin is not reported',
+        code: `
+        window.onmessage = (event) => {
+          if (event.origin !== 'https://trusted.com') return;
+          processAction(event.data);
+        };
+      `,
+      },
+      {
+        name: 'a WebSocket onmessage handler carries no origin to check',
+        code: `
+        const ws = new WebSocket('wss://api.example.com');
+        ws.onmessage = (event) => processAction(event.data);
+      `,
+      },
       // Uses custom validation function
       {
         code: `
@@ -100,6 +145,51 @@ ruleTester.run(
             messageId: 'missingOriginCheck',
           },
         ],
+      },
+      {
+        name: 'includes() on a string literal is a substring test of the origin, not an allowlist',
+        code: `
+        window.addEventListener('message', (event) => {
+          if (!'https://trusted.com'.includes(event.origin)) return;
+          processAction(event.data);
+        });
+      `,
+        errors: [{ messageId: 'missingOriginCheck' }],
+      },
+      {
+        name: 'includes() on a const bound to a string is a substring test of the origin, not an allowlist',
+        code: `
+        const TRUSTED = 'https://trusted.com';
+        window.addEventListener('message', (event) => {
+          if (!TRUSTED.includes(event.origin)) return;
+          processAction(event.data);
+        });
+      `,
+        errors: [{ messageId: 'missingOriginCheck' }],
+      },
+      {
+        name: 'a window.onmessage property handler without an origin check is reported',
+        code: `
+        window.onmessage = (event) => {
+          const { action, data } = event.data;
+          processAction(action, data);
+        };
+      `,
+        errors: [{ messageId: 'missingOriginCheck' }],
+      },
+      {
+        name: 'a truthiness test of event.origin in a window.onmessage function handler is not an origin check',
+        code: `
+        window.onmessage = function (event) {
+          if (event.origin) { processAction(event.data); }
+        };
+      `,
+        errors: [{ messageId: 'missingOriginCheck' }],
+      },
+      {
+        name: 'a bare global onmessage handler without an origin check is reported',
+        code: `onmessage = (event) => processAction(event.data);`,
+        errors: [{ messageId: 'missingOriginCheck' }],
       },
       // Arrow function without origin check
       {
@@ -387,6 +477,7 @@ ruleTester.run(
       },
       // `addEventListener` at global scope has no receiver expression at all.
       {
+        name: 'a bare addEventListener message handler that never checks origin is reported',
         code: `addEventListener('message', (event) => render(event.data));`,
         errors: [{ messageId: 'missingOriginCheck' }],
       },

@@ -27,8 +27,8 @@ Detects unencrypted data transmission (HTTP vs HTTPS, plain text protocols). Thi
 | ----------------- | ------------------------------------------------------------------------------------------------------------ |
 | **CWE Reference** | [CWE-319](https://cwe.mitre.org/data/definitions/319.html) (Cleartext Transmission of Sensitive Information) |
 | **Severity**      | HIGH (security vulnerability)                                                                                |
-| **Auto-Fix**      | ✅ Yes (replaces HTTP with HTTPS, WS with WSS, etc.)                                                         |
-| **Category**   | Security |
+| **Auto-Fix**      | 💡 Suggestion (rewrites the scheme to its TLS twin, string literals only)                                    |
+| **Category**      | Security                                                                                                     |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                                                      |
 | **Best For**      | All applications making network requests, APIs, database connections                                         |
 
@@ -56,21 +56,15 @@ flowchart TD
     B -->|Yes| D{"Is Insecure Protocol?"}
     D -->|No| E["✅ Valid: HTTPS/WSS/etc."]
     D -->|Yes| F{"Protocol Type"}
-    F --> G["HTTP"]
-    F --> H["WS"]
     F --> I["MongoDB"]
     F --> J["Redis"]
     F --> K["MySQL"]
-    G --> L["❌ Report: Use HTTPS"]
-    H --> M["❌ Report: Use WSS"]
     I --> N["❌ Report: Use MongoDB+srv"]
     J --> O["❌ Report: Use Redis TLS"]
     K --> P["❌ Report: Use MySQL SSL"]
 
     style C fill:#d1fae5,stroke:#059669,stroke-width:2px
     style E fill:#d1fae5,stroke:#059669,stroke-width:2px
-    style L fill:#fee2e2,stroke:#dc2626,stroke-width:2px
-    style M fill:#fee2e2,stroke:#dc2626,stroke-width:2px
     style N fill:#fee2e2,stroke:#dc2626,stroke-width:2px
     style O fill:#fee2e2,stroke:#dc2626,stroke-width:2px
     style P fill:#fee2e2,stroke:#dc2626,stroke-width:2px
@@ -89,13 +83,29 @@ flowchart TD
 
 ## Detection Patterns
 
-The rule detects:
+By default the rule detects the cleartext **non-web** protocols, in a string literal or in the static text of a template literal:
 
-- **HTTP URLs**: `http://`, `http://api.example.com`
-- **WebSocket (WS)**: `ws://`, `ws://socket.example.com`
-- **MongoDB**: `mongodb://` (should use `mongodb+srv://`)
-- **Redis**: `redis://` (should use `rediss://` or TLS)
+- **FTP**: `ftp://` (should use `ftps://` / `sftp://`)
+- **TCP**: `tcp://`
+- **MongoDB**: `mongodb://` (should use `mongodb+srv://` or TLS)
+- **Redis**: `redis://` (should use `rediss://`)
 - **MySQL**: `mysql://` (should use SSL)
+
+`http://` and `ws://` are **not** in the defaults. They are owned by the transport partition, so each line draws one finding:
+
+| Shape                                    | Owner                                                 |
+| ---------------------------------------- | ----------------------------------------------------- |
+| URL argument of `fetch` / `axios.<verb>` | [`require-https-only`](./require-https-only)       |
+| `http://` in a subresource position      | [`detect-mixed-content`](./detect-mixed-content)   |
+| any other hardcoded `http://` URL        | [`no-http-urls`](./no-http-urls)                   |
+| URL argument of `new WebSocket(…)`       | [`require-websocket-wss`](./require-websocket-wss) |
+| any other `ws://` URL                    | [`no-insecure-websocket`](./no-insecure-websocket) |
+
+Add them back with `insecureProtocols` if you run this rule without those siblings.
+
+A loopback host on a web scheme, an RFC 2606 reserved domain, an XML namespace URI and a string being tested for its scheme are never reported. On the non-web schemes loopback is **not** exempt by default — a `mongodb://user:pass@localhost` string carries credentials that survive a host swap.
+
+**`allowInTests`** exempts, in test files only, URLs whose **written-down host is loopback** (`redis://localhost:6379`, `` `mongodb://127.0.0.1/${db}` ``) on any scheme, and templates whose host is left to an interpolation. A real host in a test file still reports.
 
 ## Examples
 
@@ -103,11 +113,9 @@ The rule detects:
 
 ```typescript
 // Unencrypted transmission
-fetch('http://api.example.com/data'); // ❌ HTTP instead of HTTPS
-
-const ws = new WebSocket('ws://socket.example.com'); // ❌ WS instead of WSS
-
 const mongoUrl = 'mongodb://localhost:27017/db'; // ❌ MongoDB without encryption
+
+const mongoProd = `mongodb://db.internal:27017/${name}`; // ❌ template, fixed scheme
 
 const redisUrl = 'redis://localhost:6379'; // ❌ Redis without TLS
 
@@ -117,7 +125,12 @@ const mysqlUrl = 'mysql://user:pass@localhost/db'; // ❌ MySQL without SSL
 ### ✅ Correct
 
 ```typescript
-const url = "https://api.example.com";
+const mongoUrl = 'mongodb+srv://cluster0.example.com/app';
+const redisUrl = 'rediss://cache.example.com:6380';
+
+// http:// and ws:// are reported by their owning rules, not this one
+fetch('http://api.example.com/data'); // require-https-only
+const ws = new WebSocket('ws://socket.example.com'); // require-websocket-wss
 ```
 
 ## Configuration
@@ -126,32 +139,31 @@ const url = "https://api.example.com";
 
 ```json
 {
-  "secure-coding/no-unencrypted-transmission": "error"
+  "browser-security/no-unencrypted-transmission": "error"
 }
 ```
 
 ### Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `false` | Allow unencrypted transmission in test files |
-| `insecureProtocols` | `string[]` | `[]` | Insecure protocol patterns to detect |
-| `secureAlternatives` | `object` | `{}` | Mapping of insecure protocols to their secure alternatives |
-| `ignorePatterns` | `string[]` | `[]` | Additional safe patterns to ignore |
+| Option               | Type       | Default | Description                                                                                            |
+| -------------------- | ---------- | ------- | ------------------------------------------------------------------------------------------------------ |
+| `allowInTests`       | `boolean`  | `false` | In test files, exempt URLs whose written-down host is loopback (any scheme); a real host still reports |
+| `insecureProtocols`  | `string[]` | `[]`    | Insecure protocol patterns to detect                                                                   |
+| `secureAlternatives` | `object`   | `{}`    | Mapping of insecure protocols to their secure alternatives                                             |
+| `ignorePatterns`     | `string[]` | `[]`    | Additional safe patterns to ignore                                                                     |
 
 ### Example Configuration
 
 ```json
 {
-  "secure-coding/no-unencrypted-transmission": [
+  "browser-security/no-unencrypted-transmission": [
     "error",
     {
       "allowInTests": true,
-      "insecureProtocols": ["http", "ws", "mongodb"],
+      "insecureProtocols": ["mongodb://", "redis://", "ftp://"],
       "secureAlternatives": {
-        "http": "https",
-        "ws": "wss",
-        "mongodb": "mongodb+srv"
+        "mongodb://": "mongodb+srv://",
+        "redis://": "rediss://"
       },
       "ignorePatterns": ["localhost", "127.0.0.1"]
     }
@@ -161,22 +173,14 @@ const url = "https://api.example.com";
 
 ## Auto-Fix Behavior
 
-The rule provides automatic fixes that:
-
-- ✅ Replace `http://` with `https://`
-- ✅ Replace `ws://` with `wss://`
-- ✅ Replace `mongodb://` with `mongodb+srv://`
-- ✅ Replace `redis://` with `rediss://`
-- ⚠️ Template literals require manual review (too risky for auto-fix)
-
-### Auto-Fix Example
+The rule offers a **suggestion** (not an automatic fix) on string literals that rewrites the scheme to its secure alternative — `mongodb://` to `mongodb+srv://`, `redis://` to `rediss://`, and any pair supplied in `secureAlternatives`. Template literals get no suggestion: rewriting around an interpolation is too risky.
 
 ```typescript
 // Before (triggers rule)
-fetch('http://api.example.com/data');
+const redisUrl = 'redis://cache.example.com:6379';
 
-// After (auto-fixed)
-fetch('https://api.example.com/data');
+// After (suggestion applied)
+const redisUrl = 'rediss://cache.example.com:6379';
 ```
 
 ## Best Practices
@@ -185,7 +189,7 @@ fetch('https://api.example.com/data');
 2. **Use WSS for WebSockets**: Encrypt WebSocket connections
 3. **Database encryption**: Use TLS/SSL for database connections
 4. **Environment variables**: Store URLs in environment variables
-5. **Test exceptions**: Use `allowInTests: true` for localhost in tests
+5. **Test exceptions**: Use `allowInTests: true` for loopback hosts in tests; a real host in a test file still reports
 
 <WhenNotToUse />
 

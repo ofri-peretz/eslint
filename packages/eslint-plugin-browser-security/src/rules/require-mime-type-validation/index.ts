@@ -161,11 +161,11 @@ const MULTER_FIELD_METHODS: ReadonlySet<string> = new Set([
 
 /** Is this literal a media type or a media-type prefix? */
 function isMediaTypeLiteral(node: TSESTree.Node): boolean {
-  // `` `image/` `` is the same string as `'image/'`: a template with no
-  // substitutions is read as its cooked text.
+  // `` `image/` `` is the same string as `'image/'`, and `` `image/${kind}` ``
+  // still opens with it: a template's first quasi is a written prefix of
+  // every string it can build.
   const text =
-    node.type === AST_NODE_TYPES.TemplateLiteral &&
-    node.expressions.length === 0
+    node.type === AST_NODE_TYPES.TemplateLiteral
       ? node.quasis[0].value.cooked
       : node.type === AST_NODE_TYPES.Literal
         ? node.value

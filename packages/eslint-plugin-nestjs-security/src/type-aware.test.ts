@@ -40,7 +40,7 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const nest = <T,>(cases: T[]): T[] =>
+const nest = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asNest(c) as T;
     const t = c as Case;
@@ -67,7 +67,6 @@ const nest = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 /**
  * Every case here builds a real TypeScript program through `projectService`,
  * and the first one pays for the whole program. Under the scheduled coverage
@@ -82,7 +81,8 @@ const TYPE_AWARE_CASE_TIMEOUT_MS = 120_000;
 
 RuleTester.afterAll = afterAll;
 RuleTester.describe = describe;
-RuleTester.it = (text, callback) => it(text, callback, TYPE_AWARE_CASE_TIMEOUT_MS);
+RuleTester.it = (text, callback) =>
+  it(text, callback, TYPE_AWARE_CASE_TIMEOUT_MS);
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -112,6 +112,9 @@ ruleTester.run(
       {
         name: 'a DTO that declares a class-validator rule',
         filename: 'src/case.controller.ts',
+        // A global pipe validates these typed DTOs; the claim is that
+        // `undecoratedDto` does not fire, not that the route needs a pipe.
+        options: [{ assumeGlobalPipes: true }],
         code: `
         import { ValidatedDto } from './type-aware-fixtures/dtos';
 
@@ -127,6 +130,9 @@ ruleTester.run(
       {
         name: 'a DTO with a base class',
         filename: 'src/case.controller.ts',
+        // A global pipe validates these typed DTOs; the claim is that
+        // `undecoratedDto` does not fire, not that the route needs a pipe.
+        options: [{ assumeGlobalPipes: true }],
         code: `
         import { DerivedDto } from './type-aware-fixtures/dtos';
 
@@ -142,6 +148,9 @@ ruleTester.run(
       {
         name: 'a parameter typed as an interface',
         filename: 'src/case.controller.ts',
+        // A global pipe validates these typed DTOs; the claim is that
+        // `undecoratedDto` does not fire, not that the route needs a pipe.
+        options: [{ assumeGlobalPipes: true }],
         code: `
         import { PlainShape } from './type-aware-fixtures/dtos';
 
@@ -156,6 +165,9 @@ ruleTester.run(
       {
         name: 'a DTO declared in node_modules',
         filename: 'src/case.controller.ts',
+        // A global pipe validates these typed DTOs; the claim is that
+        // `undecoratedDto` does not fire, not that the route needs a pipe.
+        options: [{ assumeGlobalPipes: true }],
         code: `
         import { ValidationError } from 'class-validator';
 
@@ -172,6 +184,9 @@ ruleTester.run(
       {
         name: 'a parameter typed as an enum',
         filename: 'src/case.controller.ts',
+        // A global pipe validates these typed DTOs; the claim is that
+        // `undecoratedDto` does not fire, not that the route needs a pipe.
+        options: [{ assumeGlobalPipes: true }],
         code: `
         import { Channel } from './type-aware-fixtures/dtos';
 
@@ -187,6 +202,9 @@ ruleTester.run(
       {
         name: 'a parameter typed as a union of DTOs',
         filename: 'src/case.controller.ts',
+        // A global pipe validates these typed DTOs; the claim is that
+        // `undecoratedDto` does not fire, not that the route needs a pipe.
+        options: [{ assumeGlobalPipes: true }],
         code: `
         import { EitherDto } from './type-aware-fixtures/dtos';
 
@@ -202,6 +220,9 @@ ruleTester.run(
       {
         name: 'a parameter typed as an alias',
         filename: 'src/case.controller.ts',
+        // A global pipe validates these typed DTOs; the claim is that
+        // `undecoratedDto` does not fire, not that the route needs a pipe.
+        options: [{ assumeGlobalPipes: true }],
         code: `
         import { AliasedShape } from './type-aware-fixtures/dtos';
 
@@ -217,6 +238,9 @@ ruleTester.run(
       {
         name: 'an unresolvable DTO type',
         filename: 'src/case.controller.ts',
+        // A global pipe validates these typed DTOs; the claim is that
+        // `undecoratedDto` does not fire, not that the route needs a pipe.
+        options: [{ assumeGlobalPipes: true }],
         code: `
         @Controller('users')
         class UsersController {
@@ -225,8 +249,73 @@ ruleTester.run(
         }
       `,
       },
+      {
+        name: 'a DTO that extends a base is abstained on even when it also implements an interface',
+        filename: 'src/case.controller.ts',
+        options: [{ assumeGlobalPipes: true }],
+        code: `
+        import { DerivedImplementsDto } from './type-aware-fixtures/dtos';
+
+        @Controller('users')
+        class UsersController {
+          @Post()
+          create(@Body() dto: DerivedImplementsDto) {}
+        }
+      `,
+      },
+      {
+        name: 'a DTO with one validated member among undecorated ones is validated',
+        filename: 'src/case.controller.ts',
+        options: [{ assumeGlobalPipes: true }],
+        code: `
+        import { PartlyValidatedDto } from './type-aware-fixtures/dtos';
+
+        @Controller('users')
+        class UsersController {
+          @Post()
+          create(@Body() dto: PartlyValidatedDto) {}
+        }
+      `,
+      },
     ]),
     invalid: nest([
+      {
+        name: 'a decorator that resolves to nothing is not a validator',
+        filename: 'src/case.controller.ts',
+        options: [{ assumeGlobalPipes: true }],
+        code: `
+        class InlineDto {
+          @undeclaredRule()
+          name!: string;
+        }
+
+        @Controller('users')
+        class UsersController {
+          @Post()
+          create(@Body() dto: InlineDto) {}
+        }
+      `,
+        errors: [{ messageId: 'undecoratedDto' }],
+      },
+      {
+        name: 'a decorator imported from a module that does not resolve is not a validator',
+        filename: 'src/case.controller.ts',
+        options: [{ assumeGlobalPipes: true }],
+        code: `
+        import { IsRule } from 'no-such-validator-package';
+        class InlineDto {
+          @IsRule()
+          name!: string;
+        }
+
+        @Controller('users')
+        class UsersController {
+          @Post()
+          create(@Body() dto: InlineDto) {}
+        }
+      `,
+        errors: [{ messageId: 'undecoratedDto' }],
+      },
       // No annotation at all: nothing for this half to resolve, so it falls
       // through to the syntax-only finding rather than double-reporting.
       {

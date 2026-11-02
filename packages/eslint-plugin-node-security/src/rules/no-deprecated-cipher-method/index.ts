@@ -18,9 +18,8 @@ import {
   createRule,
   AST_NODE_TYPES,
   isTestFilePath,
-  namesOneOf,
-  propertyName,
 } from '@interlace/eslint-devkit';
+import { calleeNameOn } from '../../utils/module-binding';
 
 type MessageIds = 'deprecatedCipherMethod' | 'useCipheriv';
 
@@ -97,11 +96,21 @@ export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
     function checkCallExpression(node: TSESTree.CallExpression) {
       if (isTestFile) return;
 
+      // The callee must reach Node's crypto under some binding: a renamed
+      // `import { createCipher as build }` is still createCipher, while
+      // node-forge's `forge.cipher.createCipher(alg, key)` — a different,
+      // non-deprecated API that takes a real key and an IV — is not.
+      const methodName = calleeNameOn(
+        node.callee,
+        context.sourceCode.getScope(node),
+        'crypto',
+      );
+      if (methodName === null || !DEPRECATED_METHODS.has(methodName)) return;
+      const replacementName =
+        methodName === 'createCipher' ? 'createCipheriv' : 'createDecipheriv';
+
       // Check for crypto.createCipher() or crypto.createDecipher()
-      if (
-        node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        namesOneOf(propertyName(node.callee), DEPRECATED_METHODS)
-      ) {
+      if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
         // Capture narrowed type before callback (TypeScript loses narrowing in closures)
         const callee = node.callee;
         const propertyNode = callee.property;
@@ -116,10 +125,6 @@ export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
         // ENCRYPTION call. The cast is what hid both symptoms from the type
         // checker, and hoisting the read into a local is what hid it from
         // `audit-rule-spellings.ts`, whose ratchet matches `.property.name`.
-        const methodName = propertyName(callee);
-        const replacementName =
-          methodName === 'createCipher' ? 'createCipheriv' : 'createDecipheriv';
-
         context.report({
           node: propertyNode,
           messageId: 'deprecatedCipherMethod',
@@ -149,15 +154,11 @@ export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
         });
       }
 
-      // Check for standalone createCipher() / createDecipher()
-      if (
-        node.callee.type === AST_NODE_TYPES.Identifier &&
-        DEPRECATED_METHODS.has(node.callee.name)
-      ) {
-        const methodName = node.callee.name;
-        const replacementName =
-          methodName === 'createCipher' ? 'createCipheriv' : 'createDecipheriv';
-
+      // Check for standalone createCipher() / createDecipher(). A renamed
+      // binding (`build(...)`) gets no suggestion: rewriting the call to
+      // `createCipheriv(...)` would name a function the file never imported.
+      if (node.callee.type === AST_NODE_TYPES.Identifier) {
+        const spelledAsExport = node.callee.name === methodName;
         context.report({
           node: node.callee,
           messageId: 'deprecatedCipherMethod',
@@ -165,14 +166,15 @@ export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
             method: methodName,
             replacement: replacementName,
           },
-          suggest: [
-            {
-              messageId: 'useCipheriv',
-              fix: (fixer: TSESLint.RuleFixer) => {
-                return fixer.replaceText(node.callee, replacementName);
-              },
-            },
-          ],
+          suggest: spelledAsExport
+            ? [
+                {
+                  messageId: 'useCipheriv',
+                  fix: (fixer: TSESLint.RuleFixer) =>
+                    fixer.replaceText(node.callee, replacementName),
+                },
+              ]
+            : [],
         });
       }
     }

@@ -11,14 +11,20 @@
 import {
   createRule,
   formatLLMMessage,
+  isModuleBinding,
   MessageIcons,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   identityArgumentIndex,
+  isGuardedDestination,
+  isOriginEqualityGuard,
+  isRelativePathGuard,
   isSteerableUrlValue,
 } from '../../utils/navigation-targets';
+import { isAnchoredHostGuard } from '../../utils/regexp-anchoring';
 import { resolveInitializer } from '../../utils/resolve-binding';
 
 type MessageIds = 'violationDetected';
@@ -95,16 +101,82 @@ function isRouteParam(
   return false;
 }
 
-/** `Linking.getInitialURL()` / `Linking.addEventListener(…)` and friends. */
-function isLinkingCall(node: TSESTree.Node, method: string): boolean {
-  return (
-    node.type === 'CallExpression' &&
-    node.callee.type === 'MemberExpression' &&
-    node.callee.object.type === 'Identifier' &&
-    node.callee.object.name === 'Linking' &&
+/**
+ * `Linking.getInitialURL()` / `Linking.addEventListener(…)` and friends.
+ *
+ * The receiver is React Native's `Linking` — resolved through the import, so
+ * `import { Linking as RNLinking } from 'react-native'` and
+ * `import * as Linking from 'expo-linking'` count — or, with no import to
+ * resolve, the conventional global spelling `Linking`.
+ */
+function isLinkingCall(
+  node: TSESTree.Node,
+  method: string,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  if (
+    node.type !== 'CallExpression' ||
+    node.callee.type !== 'MemberExpression' ||
     // `Linking['openURL'](u)` opens the same deep link.
-    propertyName(node.callee) === method
+    propertyName(node.callee) !== method
+  ) {
+    return false;
+  }
+  const scope = sourceCode.getScope(node);
+  return (
+    isModuleBinding(node.callee, scope, 'react-native', ['Linking', method]) ||
+    isModuleBinding(node.callee, scope, 'expo-linking', [method]) ||
+    // `RN.Linking.openURL` through a namespace import resolves above; with
+    // no import, only the bare global spelling counts.
+    (node.callee.object.type === 'Identifier' &&
+      node.callee.object.name === 'Linking')
   );
+}
+
+/**
+ * Is this identifier the `url` field DESTRUCTURED off a `'url'` listener's
+ * event — `({ url }) => …` or `const { url: link } = event`?
+ *
+ * The event's `url` is the inbound deep link whichever way it is read;
+ * destructuring is a spelling of `event.url`, not a validation of it.
+ */
+function isDestructuredEventUrl(
+  identifier: TSESTree.Identifier,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  for (
+    let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(identifier);
+    scope !== null;
+    scope = scope.upper
+  ) {
+    const variable = scope.variables.find((v) => v.name === identifier.name);
+    if (variable === undefined) continue;
+    if (variable.defs.length !== 1) return false;
+    const def = variable.defs[0];
+    // `{ url = fallback }` wraps the binding in a default.
+    let property = def.name.parent as TSESTree.Node;
+    if (property.type === 'AssignmentPattern') {
+      property = property.parent as TSESTree.Node;
+    }
+    if (property.type !== 'Property' || objectKeyName(property) !== 'url') {
+      return false;
+    }
+    const pattern = property.parent as TSESTree.Node;
+    if (def.type === 'Parameter') {
+      return (
+        def.node.params[0] === pattern &&
+        deepLinkParamKind(identifier, sourceCode) === 'event'
+      );
+    }
+    const declarator = def.node as TSESTree.Node;
+    return (
+      declarator.type === 'VariableDeclarator' &&
+      declarator.id === pattern &&
+      declarator.init?.type === 'Identifier' &&
+      deepLinkParamKind(declarator.init, sourceCode) === 'event'
+    );
+  }
+  return false;
 }
 
 /**
@@ -141,7 +213,7 @@ function deepLinkParamKind(
     // `Linking.addEventListener('url', fn)` — the handler's first parameter is
     // the `{ url }` event payload.
     if (
-      isLinkingCall(call, 'addEventListener') &&
+      isLinkingCall(call, 'addEventListener', sourceCode) &&
       call.arguments[0]?.type === 'Literal' &&
       call.arguments[0].value === 'url'
     ) {
@@ -152,7 +224,7 @@ function deepLinkParamKind(
     if (
       call.callee.type === 'MemberExpression' &&
       propertyName(call.callee) === 'then' &&
-      isLinkingCall(call.callee.object, 'getInitialURL')
+      isLinkingCall(call.callee.object, 'getInitialURL', sourceCode)
     ) {
       return 'url';
     }
@@ -192,17 +264,17 @@ function isDeepLinkSteerable(
     const index = identityArgumentIndex(node, sourceCode);
     if (index !== null) {
       const argument = node.arguments[index];
+      // A spread argument is no source this rule recognises, so it is
+      // simply not steerable.
       return (
-        argument !== undefined &&
-        argument.type !== 'SpreadElement' &&
-        isDeepLinkSteerable(argument, sourceCode)
+        argument !== undefined && isDeepLinkSteerable(argument, sourceCode)
       );
     }
   }
 
   // `await Linking.getInitialURL()`.
   if (node.type === 'AwaitExpression') {
-    return isLinkingCall(node.argument, 'getInitialURL');
+    return isLinkingCall(node.argument, 'getInitialURL', sourceCode);
   }
 
   // `event.url` on a `'url'` listener parameter.
@@ -218,12 +290,34 @@ function isDeepLinkSteerable(
   if (node.type === 'Identifier') {
     // The `.then((url) => …)` parameter is the deep link itself.
     if (deepLinkParamKind(node, sourceCode) === 'url') return true;
+    // `({ url }) => …` / `const { url } = event` on a `'url'` listener.
+    if (isDestructuredEventUrl(node, sourceCode)) return true;
     // Otherwise fall through to what the binding was declared with.
     const init = resolveInitializer(node, sourceCode);
     return init !== undefined && isDeepLinkSteerable(init, sourceCode);
   }
 
   return false;
+}
+
+/** A `navigate()` target an attacker chose: a web source or the inbound deep link. */
+function isNavigateTargetSteerable(
+  node: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  if (isSteerableUrlValue(node, sourceCode)) return true;
+  if (node.type === 'MemberExpression') {
+    return (
+      propertyName(node) === 'url' &&
+      node.object.type === 'Identifier' &&
+      deepLinkParamKind(node.object, sourceCode) === 'event'
+    );
+  }
+  return (
+    node.type === 'Identifier' &&
+    (deepLinkParamKind(node, sourceCode) === 'url' ||
+      isDestructuredEventUrl(node, sourceCode))
+  );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface -- Rule has no configurable options
@@ -260,7 +354,33 @@ export const noUnvalidatedDeeplinks = createRule<RuleOptions, MessageIds>({
   createOnce(context) {
     let sourceCode: Readonly<TSESLint.SourceCode>;
 
-    function report(node: TSESTree.Node) {
+    /**
+     * Report unless a guard in front of the call validates the destination.
+     *
+     * The rule is about UNVALIDATED deep links, and it used to report the
+     * validated ones too: `if (ALLOWED.has(url)) Linking.openURL(url)` drew the
+     * same finding as the bare call. The guards are the ones the redirect
+     * rules accept — an anchored host regexp, a relative-path check, an origin
+     * equality, or a validator call over the target — via the shared
+     * `isGuardedDestination`. A truthiness check is none of them.
+     */
+    function reportUnlessGuarded(
+      node: TSESTree.CallExpression,
+      target: TSESTree.Node,
+    ) {
+      if (
+        isGuardedDestination(
+          node,
+          target,
+          sourceCode,
+          (test) =>
+            isAnchoredHostGuard(test, sourceCode) ||
+            isRelativePathGuard(test, sourceCode) ||
+            isOriginEqualityGuard(test, sourceCode),
+        )
+      ) {
+        return;
+      }
       context.report({ node, messageId: 'violationDetected' });
     }
 
@@ -277,10 +397,10 @@ export const noUnvalidatedDeeplinks = createRule<RuleOptions, MessageIds>({
         // predicate reported every Identifier and every MemberExpression, so
         // `const SUPPORT = 'https://help.example.com'; Linking.openURL(SUPPORT)`
         // was a finding while the deep link arriving on `event.url` was not.
-        if (isLinkingCall(node, 'openURL')) {
+        if (isLinkingCall(node, 'openURL', sourceCode)) {
           const urlArg = node.arguments[0];
           if (urlArg && isDeepLinkSteerable(urlArg, sourceCode)) {
-            report(node);
+            reportUnlessGuarded(node, urlArg);
           }
         }
 
@@ -302,9 +422,14 @@ export const noUnvalidatedDeeplinks = createRule<RuleOptions, MessageIds>({
           node.callee.type === 'MemberExpression' &&
           propertyName(node.callee) === 'navigate'
         ) {
+          // The web sources (`isSteerableUrlValue`) plus the React Native
+          // deep-link entry points — `event.url` on a `'url'` listener and
+          // `getInitialURL()` are as externally chosen as `location.search`.
+          // Route params stay out: `navigate(route.params.screen)` names an
+          // in-app screen.
           const urlArg = node.arguments[0];
-          if (urlArg && isSteerableUrlValue(urlArg, context.sourceCode)) {
-            report(node);
+          if (urlArg && isNavigateTargetSteerable(urlArg, sourceCode)) {
+            reportUnlessGuarded(node, urlArg);
           }
         }
       },

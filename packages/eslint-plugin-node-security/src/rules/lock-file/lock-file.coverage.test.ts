@@ -21,7 +21,7 @@ writeFileSync(
 );
 
 describe('lock-file coverage gaps (Layer 2)', () => {
-  it('reports a missing lock file once and skips subsequent Program visits', () => {
+  it('reports a missing lock file once and skips other files of the run', () => {
     const { listeners, reports } = createWithMockContext(lockFile as never, {
       // A real project with a manifest and no lock file. A bare virtual path
       // no longer works: the rule keys its once-per-project report on the
@@ -40,11 +40,16 @@ describe('lock-file coverage gaps (Layer 2)', () => {
     expect(report.messageId).toBe('violationDetected');
     expect(report.data.packageManager).toBe('any');
     expect(report.data.lockFile).toBe(
-      'package-lock.json | yarn.lock | pnpm-lock.yaml'
+      'package-lock.json | yarn.lock | pnpm-lock.yaml',
     );
 
-    // Second Program visit → `checked` guard short-circuits, no new report.
-    (listeners.Program as (n: unknown) => void)(program);
-    expect(reports).toHaveLength(1);
+    // Another file of the same project in the same run → no new report. (The
+    // SAME file visited again is a new lint run, and reports again: see
+    // fidelity.test.ts.)
+    const other = createWithMockContext(lockFile as never, {
+      filename: join(coverageProject, 'src', 'other.ts'),
+    });
+    (other.listeners.Program as (n: unknown) => void)(program);
+    expect(other.reports).toHaveLength(0);
   });
 });

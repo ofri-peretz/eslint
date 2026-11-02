@@ -14,6 +14,30 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-unvalidated-deeplinks', noUnvalidatedDeeplinks, {
   valid: [
+    {
+      name: 'a re-declared binding is not provably the destructured event url',
+      code: 'function f(a, b) { var url = a; var url = b; Linking.openURL(url); }',
+    },
+    {
+      name: 'the inbound deep link opened inside an allowlist check is validated',
+      code: "const ALLOWED = new Set(['myapp://home']); Linking.addEventListener('url', ({ url }) => { if (ALLOWED.has(url)) Linking.openURL(url); });",
+    },
+    {
+      name: 'an early return on a failed allowlist check validates the deep link handed to navigate',
+      code: "Linking.addEventListener('url', (ev) => { if (!isAllowedDeepLink(ev.url)) return; navigation.navigate(ev.url); });",
+    },
+    {
+      name: 'a non-url field destructured off the listener event is not the deep link',
+      code: "Linking.addEventListener('url', (ev) => { const { type } = ev; Linking.openURL(type); });",
+    },
+    {
+      name: 'a url field destructured from an unrelated object is not the deep link',
+      code: 'const { url } = config; Linking.openURL(url);',
+    },
+    {
+      name: 'a Linking-shaped object from another module is not react-native Linking',
+      code: "import { Linking as L } from './my-linking'; L.addEventListener('url', (ev) => { L.openURL(ev.url); });",
+    },
     { name: 'a numeric constant involves no deep link', code: 'const x = 42;' },
     'const flag = true;',
     'function noop() {}',
@@ -79,6 +103,41 @@ ruleTester.run('no-unvalidated-deeplinks', noUnvalidatedDeeplinks, {
   ],
 
   invalid: [
+    {
+      name: 'a destructured event url with a default is still the inbound deep link',
+      code: "Linking.addEventListener('url', ({ url = '' }) => { Linking.openURL(url); });",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a truthiness check is not validation of the inbound deep link',
+      code: 'Linking.getInitialURL().then((url) => { if (url) navigation.navigate(url); });',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'the url destructured off a url-listener event is the inbound deep link',
+      code: "Linking.addEventListener('url', (ev) => { const { url: link } = ev; Linking.openURL(link); });",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a url destructured in the listener parameter is the inbound deep link',
+      code: "Linking.addEventListener('url', ({ url }) => { Linking.openURL(url); });",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a renamed react-native Linking import is the same Linking',
+      code: "import { Linking as RNLinking } from 'react-native'; RNLinking.addEventListener('url', (ev) => { RNLinking.openURL(ev.url); });",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'an expo-linking namespace import is a Linking module',
+      code: "import * as DeepLink from 'expo-linking'; DeepLink.addEventListener('url', (ev) => { DeepLink.openURL(ev.url); });",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'the inbound deep link handed to navigation.navigate is reported',
+      code: "Linking.addEventListener('url', (ev) => { navigation.navigate(ev.url); });",
+      errors: [{ messageId: 'violationDetected' }],
+    },
     // ---- openURL FN lock ---------------------------------------------------
     // The three ways React Native hands an app a URL somebody else chose.
     {
@@ -110,6 +169,7 @@ ruleTester.run('no-unvalidated-deeplinks', noUnvalidatedDeeplinks, {
     },
     // Web sources reach the same sink in Expo-for-web builds.
     {
+      name: 'Linking.openURL with location.search is reported',
       code: 'Linking.openURL(location.search);',
       errors: [{ messageId: 'violationDetected' }],
     },

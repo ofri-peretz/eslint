@@ -132,6 +132,9 @@ const PROBES: Probe[] = [
         create(@Body() payload: CreateUserDto) {}
       }
     `,
+    // A typed DTO is validated by a global pipe; with none at all it is as
+    // unvalidated as the vulnerable half.
+    options: { assumeGlobalPipes: true },
   },
   {
     rule: 'require-throttler',

@@ -22,7 +22,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -48,7 +48,6 @@ const xai = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -167,60 +166,73 @@ ruleTester.run('no-dynamic-system-prompt', noDynamicSystemPrompt, {
 // ─────────────────────────────────────────────────────────────────────────────
 // Coverage-gap fixtures: argument shapes and non-Identifier keys
 // ─────────────────────────────────────────────────────────────────────────────
-ruleTester.run('no-dynamic-system-prompt (coverage gaps)', noDynamicSystemPrompt, {
-  valid: xai([
-    // no arguments at all
-    { code: `generateText();` },
-    // non-object first argument
-    { code: `generateText(cfg);` },
-    // spread-only options object
-    { code: `generateText({ ...cfg });` },
-    // computed key — the name genuinely isn't statically known
-    { code: `generateText({ [k]: buildPrompt() });` },
-  ]),
-  invalid: xai([
-    // Quoted keys are the same property as bare ones. This used to sit in
-    // `valid` with the note "keyName resolves to null", which recorded the gap
-    // as if it were intended: a rule that stops firing because someone put
-    // quotes round the key is a silent miss, not a design decision.
-    { code: `generateText({ 'system': buildPrompt() });`, errors: [{ messageId: 'dynamicSystemPrompt' }] },
-    { code: `streamText({ "instructions": \`\${userInput}\` });`, errors: [{ messageId: 'dynamicSystemPrompt' }] },
-  ]),
-});
+ruleTester.run(
+  'no-dynamic-system-prompt (coverage gaps)',
+  noDynamicSystemPrompt,
+  {
+    valid: xai([
+      // no arguments at all
+      { code: `generateText();` },
+      // non-object first argument
+      { code: `generateText(cfg);` },
+      // spread-only options object
+      { code: `generateText({ ...cfg });` },
+      // computed key — the name genuinely isn't statically known
+      { code: `generateText({ [k]: buildPrompt() });` },
+    ]),
+    invalid: xai([
+      // Quoted keys are the same property as bare ones. This used to sit in
+      // `valid` with the note "keyName resolves to null", which recorded the gap
+      // as if it were intended: a rule that stops firing because someone put
+      // quotes round the key is a silent miss, not a design decision.
+      {
+        code: `generateText({ 'system': buildPrompt() });`,
+        errors: [{ messageId: 'dynamicSystemPrompt' }],
+      },
+      {
+        code: `streamText({ "instructions": \`\${userInput}\` });`,
+        errors: [{ messageId: 'dynamicSystemPrompt' }],
+      },
+    ]),
+  },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AI SDK v7: `instructions` is the system prompt; `system` is deprecated.
 // Regression lock — before this was fixed the rule matched only `system`, so it
 // was inert on any code written against current AI SDK docs.
 // ─────────────────────────────────────────────────────────────────────────────
-ruleTester.run('no-dynamic-system-prompt (instructions prop)', noDynamicSystemPrompt, {
-  valid: xai([
-    {
-      code: `
+ruleTester.run(
+  'no-dynamic-system-prompt (instructions prop)',
+  noDynamicSystemPrompt,
+  {
+    valid: xai([
+      {
+        code: `
         await streamText({
           model,
           instructions: 'You are a helpful assistant.',
           prompt: userInput,
         });
       `,
-    },
-  ]),
-  invalid: xai([
-    {
-      code: `
+      },
+    ]),
+    invalid: xai([
+      {
+        code: `
         await streamText({
           model,
           instructions: \`You are a helpful assistant. \${userName}\`,
           prompt: userInput,
         });
       `,
-      errors: [{ messageId: 'dynamicSystemPrompt' }],
-    },
-    // The shape actually found in nuxt-ui-templates/chat
-    // (server/api/chats/[id].post.ts) — a conditional interpolating the
-    // session username straight into the system prompt.
-    {
-      code: `
+        errors: [{ messageId: 'dynamicSystemPrompt' }],
+      },
+      // The shape actually found in nuxt-ui-templates/chat
+      // (server/api/chats/[id].post.ts) — a conditional interpolating the
+      // session username straight into the system prompt.
+      {
+        code: `
         const result = streamText({
           abortSignal: abortController.signal,
           model,
@@ -228,21 +240,25 @@ ruleTester.run('no-dynamic-system-prompt (instructions prop)', noDynamicSystemPr
           messages,
         });
       `,
-      errors: [{ messageId: 'dynamicSystemPrompt' }],
-    },
-    // Both props present: each is reported on its own.
-    {
-      code: `
+        errors: [{ messageId: 'dynamicSystemPrompt' }],
+      },
+      // Both props present: each is reported on its own.
+      {
+        code: `
         await generateText({
           model,
           instructions: \`\${a}\`,
           system: \`\${b}\`,
         });
       `,
-      errors: [{ messageId: 'dynamicSystemPrompt' }, { messageId: 'dynamicSystemPrompt' }],
-    },
-  ]),
-});
+        errors: [
+          { messageId: 'dynamicSystemPrompt' },
+          { messageId: 'dynamicSystemPrompt' },
+        ],
+      },
+    ]),
+  },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // A computed key whose variable is named exactly like the property.
@@ -251,102 +267,109 @@ ruleTester.run('no-dynamic-system-prompt (instructions prop)', noDynamicSystemPr
 // literal name made these rules treat an arbitrary property as the system
 // prompt. The collision case is the only one that was broken.
 // ─────────────────────────────────────────────────────────────────────────────
-ruleTester.run('no-dynamic-system-prompt (computed key collision)', noDynamicSystemPrompt, {
-  valid: xai([
-    {
-      code: `
+ruleTester.run(
+  'no-dynamic-system-prompt (computed key collision)',
+  noDynamicSystemPrompt,
+  {
+    valid: xai([
+      {
+        code: `
         const instructions = 'temperature';
         streamText({ model, [instructions]: \`\${x}\` });
       `,
-    },
-    {
-      code: `
+      },
+      {
+        code: `
         const system = 'topP';
         generateText({ model, [system]: buildValue() });
       `,
-    },
-    // Numeric literal key — not a string, so not a statically known name.
-    { code: 'generateText({ model, 0: buildValue() });' },
-  ]),
-  invalid: xai([]),
-});
+      },
+      // Numeric literal key — not a string, so not a statically known name.
+      { code: 'generateText({ model, 0: buildValue() });' },
+    ]),
+    invalid: xai([]),
+  },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FP/FN audit 2026-10-10: a prompt built only from constants (or today's date)
 // is static; a system prompt read straight out of the request body is the
 // injection this rule exists for.
 // ─────────────────────────────────────────────────────────────────────────────
-ruleTester.run('no-dynamic-system-prompt (fp-fn audit)', noDynamicSystemPrompt, {
-  valid: xai([
-    {
-      name: 'template literal of module constants',
-      code: `
+ruleTester.run(
+  'no-dynamic-system-prompt (fp-fn audit)',
+  noDynamicSystemPrompt,
+  {
+    valid: xai([
+      {
+        name: 'template literal of module constants',
+        code: `
         const BASE_PROMPT = 'You are Acme support.';
         const TOOL_RULES = \`Only call tools when needed.\`;
         await generateText({ model, system: \`\${BASE_PROMPT}\\n\\n\${TOOL_RULES}\`, prompt: 'hi' });
       `,
-    },
-    {
-      name: "today's date in the system prompt",
-      code: `
+      },
+      {
+        name: "today's date in the system prompt",
+        code: `
         const BASE_PROMPT = 'You are Acme support.';
         await generateText({ model, system: \`\${BASE_PROMPT} Today is \${new Date().toISOString()}.\`, prompt: 'hi' });
         await generateText({ model, system: \`Now: \${Date.now()} / \${new Date()}\`, prompt: 'hi' });
         await generateText({ model, system: new Date().toDateString(), prompt: 'hi' });
       `,
-    },
-    {
-      name: 'concatenation of constants, through a constant built from constants',
-      code: `
+      },
+      {
+        name: 'concatenation of constants, through a constant built from constants',
+        code: `
         const A = 'You are Acme support. ';
         const B = A + 'Be brief.';
         await generateText({ model, system: B + \`\${A}\` + 42, prompt: 'hi' });
       `,
-    },
-    {
-      name: 'a .json() on something other than the handler parameter is not the request',
-      code: `
+      },
+      {
+        name: 'a .json() on something other than the handler parameter is not the request',
+        code: `
         export async function POST(req) {
           const { system } = await loadConfig().json();
           return streamText({ model, system, prompt: 'hello' });
         }
       `,
-    },
-    {
-      name: 'a variable that is not read from the request is not reported',
-      code: `
+      },
+      {
+        name: 'a variable that is not read from the request is not reported',
+        code: `
         export async function POST(req) {
           const persona = lookupPersona();
           return streamText({ model, system: persona, prompt: 'hello' });
         }
       `,
-    },
-  ]),
-  invalid: xai([
-    {
-      name: 'system destructured straight out of await req.json()',
-      code: `
+      },
+    ]),
+    invalid: xai([
+      {
+        name: 'system destructured straight out of await req.json()',
+        code: `
         export async function POST(req) {
           const { messages, system } = await req.json();
           const result = streamText({ model, system, messages: convertToModelMessages(messages) });
           return result.toUIMessageStreamResponse();
         }
       `,
-      errors: [{ messageId: 'userControlledSystemPrompt' }],
-    },
-    {
-      name: 'a member of the parsed body',
-      code: `
+        errors: [{ messageId: 'userControlledSystemPrompt' }],
+      },
+      {
+        name: 'a member of the parsed body',
+        code: `
         export async function POST(request) {
           const body = await request.json();
           return streamText({ model, instructions: body.systemPrompt, prompt: 'hello' });
         }
       `,
-      errors: [{ messageId: 'userControlledSystemPrompt' }],
-    },
-    {
-      name: 'type assertions and non-null assertions do not hide the request',
-      code: `
+        errors: [{ messageId: 'userControlledSystemPrompt' }],
+      },
+      {
+        name: 'type assertions and non-null assertions do not hide the request',
+        code: `
         export async function POST(req: Request) {
           const { system } = (await req.json()) as { system: string };
           const body = (await req.json()) satisfies unknown;
@@ -354,36 +377,40 @@ ruleTester.run('no-dynamic-system-prompt (fp-fn audit)', noDynamicSystemPrompt, 
           return streamText({ model, system: body.system, prompt: 'b' });
         }
       `,
-      errors: [{ messageId: 'userControlledSystemPrompt' }, { messageId: 'userControlledSystemPrompt' }],
-    },
-    {
-      name: 'Express req.body',
-      code: `
+        errors: [
+          { messageId: 'userControlledSystemPrompt' },
+          { messageId: 'userControlledSystemPrompt' },
+        ],
+      },
+      {
+        name: 'Express req.body',
+        code: `
         app.post('/chat', async (req, res) => {
           const result = await generateText({ model, system: req.body.system, prompt: req.body.prompt });
           res.json(result.text);
         });
       `,
-      errors: [{ messageId: 'userControlledSystemPrompt' }],
-    },
-    {
-      name: 'a let binding can be reassigned, so it is not a constant',
-      code: `
+        errors: [{ messageId: 'userControlledSystemPrompt' }],
+      },
+      {
+        name: 'a let binding can be reassigned, so it is not a constant',
+        code: `
         let BASE = 'You are Acme support.';
         await generateText({ model, system: \`\${BASE}\`, prompt: 'hi' });
       `,
-      errors: [{ messageId: 'dynamicSystemPrompt' }],
-    },
-    {
-      name: 'a constant holding a call result is still dynamic',
-      code: `
+        errors: [{ messageId: 'dynamicSystemPrompt' }],
+      },
+      {
+        name: 'a constant holding a call result is still dynamic',
+        code: `
         const PERSONA = loadPersona();
         await generateText({ model, system: \`You are \${PERSONA}\`, prompt: 'hi' });
       `,
-      errors: [{ messageId: 'dynamicSystemPrompt' }],
-    },
-  ]),
-});
+        errors: [{ messageId: 'dynamicSystemPrompt' }],
+      },
+    ]),
+  },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Zero-deferral pass 2026-10-11: the request value is followed through any
@@ -448,3 +475,27 @@ ruleTester.run('no-dynamic-system-prompt (multi-hop)', noDynamicSystemPrompt, {
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run(
+  'no-dynamic-system-prompt (mutation audit)',
+  noDynamicSystemPrompt,
+  {
+    valid: xai([
+      {
+        name: 'a nullish default between two names builds no prompt text, like a plain name',
+        code: `await generateText({ system: persona ?? DEFAULT_SYSTEM_PROMPT, prompt: 'x' });`,
+      },
+    ]),
+    invalid: xai([
+      {
+        name: 'allowStaticTemplates: false reports a template with nothing interpolated',
+        code: 'await generateText({ system: `You are helpful.`, prompt: "x" });',
+        options: [{ allowStaticTemplates: false }],
+        errors: [{ messageId: 'dynamicSystemPrompt' }],
+      },
+    ]),
+  },
+);

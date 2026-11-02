@@ -30,7 +30,6 @@ const AI_PROGRAM = {
   comments: [],
 };
 
-
 /**
  * Every fixture imports the AI SDK, because the rules now abstain in files with
  * no `ai` / `@ai-sdk` in them. Wrapping the arrays rather than editing each
@@ -48,7 +47,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -74,7 +73,6 @@ const xai = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -103,14 +101,24 @@ ruleTester.run('require-audit-logging (branch coverage)', requireAuditLogging, {
     {
       code: `if (generateText({ prompt: p })) {}`,
       options: [{ allowInTests: false }],
-      errors: [{ messageId: 'missingAuditLogging', data: { function: 'generateText' } }],
+      errors: [
+        {
+          messageId: 'missingAuditLogging',
+          data: { function: 'generateText' },
+        },
+      ],
     },
     // Unbraced if-consequent: containing "block" is the IfStatement, not a
     // BlockStatement/Program — hasNearbyLogging returns false.
     {
       code: `if (ready) generateText({ prompt: p });`,
       options: [{ allowInTests: false }],
-      errors: [{ messageId: 'missingAuditLogging', data: { function: 'generateText' } }],
+      errors: [
+        {
+          messageId: 'missingAuditLogging',
+          data: { function: 'generateText' },
+        },
+      ],
     },
     // Preceding statement is a VariableDeclaration — not a logging statement.
     {
@@ -119,7 +127,12 @@ ruleTester.run('require-audit-logging (branch coverage)', requireAuditLogging, {
         generateText({ prompt: p });
       `,
       options: [{ allowInTests: false }],
-      errors: [{ messageId: 'missingAuditLogging', data: { function: 'generateText' } }],
+      errors: [
+        {
+          messageId: 'missingAuditLogging',
+          data: { function: 'generateText' },
+        },
+      ],
     },
     // Preceding ExpressionStatement that is not a call — not a logging statement.
     {
@@ -128,7 +141,12 @@ ruleTester.run('require-audit-logging (branch coverage)', requireAuditLogging, {
         generateText({ prompt: p });
       `,
       options: [{ allowInTests: false }],
-      errors: [{ messageId: 'missingAuditLogging', data: { function: 'generateText' } }],
+      errors: [
+        {
+          messageId: 'missingAuditLogging',
+          data: { function: 'generateText' },
+        },
+      ],
     },
     // Three non-logging calls before — window scanned, nothing matches.
     {
@@ -139,7 +157,12 @@ ruleTester.run('require-audit-logging (branch coverage)', requireAuditLogging, {
         generateText({ prompt: p });
       `,
       options: [{ allowInTests: false }],
-      errors: [{ messageId: 'missingAuditLogging', data: { function: 'generateText' } }],
+      errors: [
+        {
+          messageId: 'missingAuditLogging',
+          data: { function: 'generateText' },
+        },
+      ],
     },
   ]),
 });
@@ -154,7 +177,7 @@ type Listener = (node: unknown) => void;
 
 function runCallListener(node: unknown) {
   const { listeners, reports } = createWithMockContext(requireAuditLogging, {
-      ast: AI_PROGRAM,
+    ast: AI_PROGRAM,
     options: [{ allowInTests: false }],
     sourceText: 'generateText',
   });
@@ -164,8 +187,12 @@ function runCallListener(node: unknown) {
 
 describe('require-audit-logging — synthetic AST', () => {
   it('reports when the call node has no parent at all', () => {
-    const node = { type: 'CallExpression', callee: { type: 'Identifier', name: 'generateText' },
-      arguments: [], parent: null };
+    const node = {
+      type: 'CallExpression',
+      callee: { type: 'Identifier', name: 'generateText' },
+      arguments: [],
+      parent: null,
+    };
     const reports = runCallListener(node);
     expect(reports).toHaveLength(1);
     expect(reports[0]).toMatchObject({
@@ -175,7 +202,10 @@ describe('require-audit-logging — synthetic AST', () => {
   });
 
   it('reports when the containing statement is detached from any block', () => {
-    const stmt: Record<string, unknown> = { type: 'ExpressionStatement', parent: undefined };
+    const stmt: Record<string, unknown> = {
+      type: 'ExpressionStatement',
+      parent: undefined,
+    };
     const node = {
       type: 'CallExpression',
       callee: { type: 'Identifier', name: 'generateText' },
@@ -191,7 +221,10 @@ describe('require-audit-logging — synthetic AST', () => {
   });
 
   it('reports when the statement is not found in its own block body (idx === -1)', () => {
-    const block = { type: 'BlockStatement', body: [{ type: 'EmptyStatement' }] };
+    const block = {
+      type: 'BlockStatement',
+      body: [{ type: 'EmptyStatement' }],
+    };
     const stmt = { type: 'ExpressionStatement', parent: block };
     const node = {
       type: 'CallExpression',

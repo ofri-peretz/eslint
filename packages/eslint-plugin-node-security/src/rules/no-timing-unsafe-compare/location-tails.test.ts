@@ -39,63 +39,67 @@ const ruleTester = new RuleTester({
  */
 const NAME_ONLY = [{ reportUnverifiedComparisons: true }];
 
-ruleTester.run('no-timing-unsafe-compare — location tails', noTimingUnsafeCompare, {
-  valid: [
-    {
-      // The corpus shape, under DEFAULT options — one operand attacker-readable
-      // via req.url, the other a route constant. This is what fired.
-      name: 'routing an attacker-supplied pathname against a route constant',
-      code: `const STORE_AUTH_CALLBACK_PATH = '/callback';
+ruleTester.run(
+  'no-timing-unsafe-compare — location tails',
+  noTimingUnsafeCompare,
+  {
+    valid: [
+      {
+        // The corpus shape, under DEFAULT options — one operand attacker-readable
+        // via req.url, the other a route constant. This is what fired.
+        name: 'routing an attacker-supplied pathname against a route constant',
+        code: `const STORE_AUTH_CALLBACK_PATH = '/callback';
              export function handle(req) {
                const requestUrl = new URL(req.url ?? '/', 'http://127.0.0.1');
                return requestUrl.pathname !== STORE_AUTH_CALLBACK_PATH;
              }`,
-    },
-    {
-      name: 'a route constant is not a secret, name-only',
-      code: 'if (p === STORE_AUTH_CALLBACK_PATH) route();',
-      options: NAME_ONLY,
-    },
-    {
-      name: 'an auth endpoint is a location',
-      code: 'if (p === AUTH_ENDPOINT) route();',
-      options: NAME_ONLY,
-    },
-    {
-      name: 'an auth host is a location',
-      code: 'if (h === AUTH_HOST) connect();',
-      options: NAME_ONLY,
-    },
-  ],
-  invalid: [
-    {
-      // FN GUARD: the same name with a SECRET tail. This is what proves the
-      // tail does the excluding, not the `auth` word.
-      name: 'STORE_AUTH_CALLBACK_TOKEN still reports',
-      code: 'if (userToken === STORE_AUTH_CALLBACK_TOKEN) grant();',
-      options: NAME_ONLY,
-      errors: [{ messageId: 'timingUnsafeCompare' }],
-    },
-    {
-      // FN GUARD for the deliberate omission. `url` is NOT a tail, because a
-      // presigned URL carries its signature in the query string and IS the
-      // credential. `signatureUrl` matches `signature` and ends in `url`, so
-      // adding `url` to the tails would silence it.
-      //
-      // Note the name: `signedUrl` does NOT work here, because `signed` is not
-      // among the secret patterns — only `signature` is. I used `signedUrl`
-      // first and it passed for the wrong reason.
-      name: 'a signature url still reports',
-      code: 'if (signatureUrl === expected) grant();',
-      options: NAME_ONLY,
-      errors: [{ messageId: 'timingUnsafeCompare' }],
-    },
-    {
-      // FN GUARD: the canonical shape from the main suite, untouched.
-      name: 'an api token still reports',
-      code: 'if (userToken === process.env.API_TOKEN) grant();',
-      options: NAME_ONLY,
-      errors: [{ messageId: 'timingUnsafeCompare' }],
-    },
-  ],
-});
+      },
+      {
+        name: 'a route constant is not a secret, name-only',
+        code: 'if (p === STORE_AUTH_CALLBACK_PATH) route();',
+        options: NAME_ONLY,
+      },
+      {
+        name: 'an auth endpoint is a location',
+        code: 'if (p === AUTH_ENDPOINT) route();',
+        options: NAME_ONLY,
+      },
+      {
+        name: 'an auth host is a location',
+        code: 'if (h === AUTH_HOST) connect();',
+        options: NAME_ONLY,
+      },
+    ],
+    invalid: [
+      {
+        // FN GUARD: the same name with a SECRET tail. This is what proves the
+        // tail does the excluding, not the `auth` word.
+        name: 'STORE_AUTH_CALLBACK_TOKEN still reports',
+        code: 'if (userToken === STORE_AUTH_CALLBACK_TOKEN) grant();',
+        options: NAME_ONLY,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        // FN GUARD for the deliberate omission. `url` is NOT a tail, because a
+        // presigned URL carries its signature in the query string and IS the
+        // credential. `signatureUrl` matches `signature` and ends in `url`, so
+        // adding `url` to the tails would silence it.
+        //
+        // Note the name: `signedUrl` does NOT work here, because `signed` is not
+        // among the secret patterns — only `signature` is. I used `signedUrl`
+        // first and it passed for the wrong reason.
+        name: 'a signature url still reports',
+        code: 'if (signatureUrl === expected) grant();',
+        options: NAME_ONLY,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        // FN GUARD: the canonical shape from the main suite, untouched.
+        name: 'an api token still reports',
+        code: 'if (userToken === process.env.API_TOKEN) grant();',
+        options: NAME_ONLY,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+    ],
+  },
+);

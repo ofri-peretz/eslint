@@ -263,8 +263,6 @@ describe('no-insecure-key-derivation', () => {
           code: 'import { promisify } from "node:util";\nconst kdf = promisify(kdf);\nkdf(p, s, 1000, 32, "sha256");',
         },
         { code: 'const R = R + 1;\ncrypto.pbkdf2Sync(p, s, R, 32, "sha256");' },
-        // Arithmetic nested past the fold budget stays unresolved.
-        { code: 'crypto.pbkdf2Sync(p, s, 1+1+1+1+1+1+1+1, 32, "sha256");' },
         // Expressions foldNumber has no arm for: a call, a `+` unary, a template.
         { code: 'crypto.pbkdf2Sync(p, s, computeRounds(), 32, "sha256");' },
         { code: 'crypto.pbkdf2Sync(p, s, +1000, 32, "sha256");' },
@@ -297,6 +295,26 @@ describe('no-insecure-key-derivation', () => {
         },
       ],
       invalid: [
+        // STRENGTHENED: this was a `valid` case ("arithmetic nested past the
+        // fold budget stays unresolved") that pinned a false negative — eight
+        // rounds is eight rounds however long the sum. The budget is gone; a
+        // visited set ends the only walk that can loop.
+        {
+          name: 'BUG: a sum nested past the old fold budget still folds',
+          code: 'crypto.pbkdf2Sync(p, s, 1+1+1+1+1+1+1+1, 32, "sha256");',
+          errors: [
+            {
+              messageId: 'insufficientIterations',
+              data: { actual: '8', minimum: '100000' },
+              suggestions: [
+                {
+                  messageId: 'useMinIterations',
+                  output: 'crypto.pbkdf2Sync(p, s, 100000, 32, "sha256");',
+                },
+              ],
+            },
+          ],
+        },
         // Promisified, aliased and inline.
         {
           code: [

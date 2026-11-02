@@ -105,6 +105,18 @@ describe('no-cryptojs', () => {
       },
       // A require call with no arguments at all.
       { code: 'const x = require();' },
+      {
+        name: 'a method that merely mentions the package name loads nothing',
+        code: 'const flagged = lockfile.packages.includes("crypto-js");',
+      },
+      {
+        name: 'a local function that is not called require and was not built by createRequire loads nothing',
+        code: 'const isBanned = createDenylist();\nexport const hit = isBanned("crypto-js");',
+      },
+      {
+        name: 'a local require written as a function expression is not the CommonJS loader',
+        code: 'const require = function (id) { return { "crypto-js": {} }[id]; };\nexport const s = () => require("crypto-js");',
+      },
       // `import x = A.B` — an import-equals whose reference is a namespace, not
       // a module specifier.
       {
@@ -130,6 +142,7 @@ describe('no-cryptojs', () => {
         errors: [{ messageId: 'deprecatedCryptojs' }],
       },
       {
+        name: 'a named import from the crypto-js/aes subpath is reported',
         code: 'export * from "crypto-js";',
         errors: [{ messageId: 'deprecatedCryptojs' }],
       },

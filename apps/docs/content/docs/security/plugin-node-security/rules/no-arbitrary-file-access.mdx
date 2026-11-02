@@ -68,7 +68,24 @@ function readSafe(safePath) {
   return fs.readFileSync(safePath);
 }
 readSafe(req.query.file);
+
+// Spread into a join, or iterated — every element of a request array is request input
+fs.readFileSync(path.join('/srv/files', ...req.body.segments));
+for (const file of req.body.files) fs.readFileSync(file);
+
+// A helper reached as a method — `{ load(file) {} }`, `{ 'load': … }`,
+// `exports.load = …` or a class method — is judged by its callers too
+exports.load = (file) => fs.readFileSync(file);
+exports.load(req.query.file);
+
+// A basename result overwritten later is no longer a basename
+let name = path.basename(req.query.file);
+name = req.query.raw;
+fs.readFileSync(name);
 ```
+
+Aliases are followed to any depth (`const a2 = a1; const a3 = a2; …`), not a
+fixed number of hops; a cycle of aliases terminates.
 
 ### ✅ Correct
 

@@ -51,6 +51,21 @@ function isCryptoJs(module: string): boolean {
 }
 
 /**
+ * The export path under `CryptoJS` that a crypto-js binding denotes.
+ *
+ * Every entry point exports `CryptoJS` itself or a member of it, and one of
+ * them exports `WordArray`: `crypto-js/lib-typedarrays` ends in
+ * `return CryptoJS.lib.WordArray`. So `require('crypto-js/lib-typedarrays')
+ * .random(16)` IS the weak generator, while its binding path is only
+ * `['random']`.
+ */
+function cryptoJsPath(binding: ModuleBinding): readonly string[] {
+  return binding.module === 'crypto-js/lib-typedarrays'
+    ? ['lib', 'WordArray', ...binding.path]
+    : binding.path;
+}
+
+/**
  * `…WordArray.random` — the last two hops, wherever the binding was split.
  *
  * `const { WordArray } = CryptoJS.lib`, `const random = lib.WordArray.random`
@@ -58,9 +73,8 @@ function isCryptoJs(module: string): boolean {
  * covers every way a file can carry the generator to its call site.
  */
 function endsWithWordArrayRandom(path: readonly string[]): boolean {
-  return (
-    path.length >= 2 && path.at(-2) === 'WordArray' && path.at(-1) === 'random'
-  );
+  // No length guard: `at(-2)` of a shorter path is undefined.
+  return path.at(-2) === 'WordArray' && path.at(-1) === 'random';
 }
 
 /**
@@ -132,7 +146,10 @@ function isWeakRandomCall(
 ): boolean {
   const binding = resolveBinding(sourceCode, callee);
   if (binding !== undefined) {
-    return isCryptoJs(binding.module) && endsWithWordArrayRandom(binding.path);
+    return (
+      isCryptoJs(binding.module) &&
+      endsWithWordArrayRandom(cryptoJsPath(binding))
+    );
   }
 
   const spelled = syntacticPath(sourceCode, callee);

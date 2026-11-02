@@ -103,6 +103,23 @@ diskStorage({
 Omitting `filename` entirely is also correct — multer then generates a random
 name with no extension, which is the safest default of all.
 
+## Which files
+
+Files that import NestJS (`@nestjs/*`) or `multer` itself. Multer storage often
+lives in a module of its own that imports only `multer`, like the first ❌
+example above.
+
+The file argument may be destructured: in
+`filename(req, { originalname }, cb)` the `originalname` local is the client's
+value, exactly as `file.originalname` is.
+
+Conditionals and fallbacks are transparent too
+(`cb(null, keep ? name : 'upload.bin')`), and so is a nested function: the
+common `fs.mkdir(dest, { recursive: true }, () => cb(null, file.originalname))`
+still stores the client's name. Only a nested function that rebinds `cb`,
+`file` or a tainted local is skipped, because inside it that name is a
+different value.
+
 ## What this rule deliberately does not report
 
 Any value that reaches the callback through a **function call**. `extname()`,
@@ -121,9 +138,9 @@ The value went from the wire to the filesystem untouched.
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| Option         | Type      | Default | Description                                     |
+| -------------- | --------- | ------- | ----------------------------------------------- |
+| `allowInTests` | `boolean` | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files |
 
 ```ts
 {

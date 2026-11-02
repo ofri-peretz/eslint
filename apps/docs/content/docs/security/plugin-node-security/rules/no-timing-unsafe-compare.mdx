@@ -38,7 +38,14 @@ Detects timing-unsafe comparison of secrets using `===` or `==` operators. This 
 
 ## Rule Details
 
-This rule detects `===`, `==`, `!==`, and `!=` comparisons where at least one operand has a name suggesting it's a secret (token, password, key, secret, hash, signature, etc.).
+This rule detects `===`, `==`, `!==`, and `!=` comparisons of a secret against a value an attacker controls. Both halves are required by default:
+
+- one operand reads off a request (`req`, `request`, `ctx`, `event` — see `untrustedSources`), and
+- the other has a name suggesting it is a secret (`token`, `secret`, `password`, `hash`, `signature`, … — see `secretPatterns`).
+
+Two secret-named values with no request operand (`submittedToken === validToken`) are not reported: nothing shows an attacker can time the comparison. `reportUnverifiedComparisons: true` reports on the secret-looking name alone.
+
+The same comparison through a helper counts too: `buf.equals(other)`, `Buffer.compare(a, b)`, `_.isEqual(a, b)` and its siblings — whose first two arguments are the values even when a customizer or options bag follows (`_.isEqualWith(a, b, fn)`, `deepEqual(a, b, { strict: true })`) — and a local wrapper that compares two of its parameters. A crypto derivation (`createHmac(…).digest()`, a `.sign()` or `#hmac()` method) is a secret by shape whatever it is named, and so is a value read from `req.session`/`req.user`/`await`, however many aliases away. A value compared with itself or a reading of itself (`token !== token.trim()`, `token !== token`) is one value, and is not reported.
 
 ## Why This Matters
 
@@ -50,19 +57,14 @@ This rule detects `===`, `==`, `!==`, and `!=` comparisons where at least one op
 
 ## Configuration
 
-| Option           | Type       | Default                           | Description                        |
-| ---------------- | ---------- | --------------------------------- | ---------------------------------- |
-| `secretPatterns` | `string[]` | `['token', 'secret', 'key', ...]` | Variable name patterns for secrets |
+The options and their defaults are listed under [⚙️ Options](#️-options) below.
 
 ```javascript
 {
   rules: {
     'node-security/no-timing-unsafe-compare': ['error', {
-      secretPatterns: [
-        'token', 'secret', 'key', 'password', 'hash', 'signature',
-        'mac', 'hmac', 'digest', 'apiKey', 'api_key', 'auth',
-        'credential', 'bearer', 'jwt', 'csrf', 'nonce'
-      ]
+      // also report a secret-named comparison with no request operand
+      reportUnverifiedComparisons: true,
     }]
   }
 }
@@ -73,22 +75,30 @@ This rule detects `===`, `==`, `!==`, and `!=` comparisons where at least one op
 ### ❌ Incorrect
 
 ```typescript
-// Timing-unsafe comparison of API key - HIGH risk
-function validateApiKey(userKey: string, storedKey: string) {
-  return userKey === storedKey; // ❌ Leaks timing information
+// A request header compared to a stored API key - HIGH risk
+function check(req) {
+  return req.headers['x-api-key'] === process.env.API_SECRET; // ❌ Leaks timing information
 }
 
-// Comparing tokens with ===
-if (submittedToken === validToken) {
+// A request token compared with ===
+if (req.body.token === validToken) {
   // ❌ Vulnerable
   grantAccess();
 }
 
 // HMAC verification with ===
-const expectedHash = crypto.createHmac('sha256', secret).update(data).digest();
-if (receivedHash === expectedHash) {
+const expectedHash = crypto
+  .createHmac('sha256', secret)
+  .update(data)
+  .digest('hex');
+if (req.headers['x-signature'] === expectedHash) {
   // ❌ Timing attack possible
   processData();
+}
+
+// With reportUnverifiedComparisons: true, the names alone are enough
+if (submittedToken === validToken) {
+  // ❌ only under reportUnverifiedComparisons
 }
 ```
 
@@ -165,8 +175,8 @@ Each additional matching character adds measurable time, allowing attackers to d
 
 ```javascript
 // Replace === with timingSafeEqual
-if (userToken === validToken)  // ❌ Before
-if (crypto.timingSafeEqual(Buffer.from(userToken), Buffer.from(validToken)))  // ✅ After
+if (req.body.token === validToken)  // ❌ Before
+if (crypto.timingSafeEqual(Buffer.from(req.body.token), Buffer.from(validToken)))  // ✅ After
 ```
 
 ### Phase 3: Enforcement

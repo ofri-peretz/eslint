@@ -17,7 +17,7 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const nest = <T,>(cases: T[]): T[] =>
+const nest = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asNest(c) as T;
     const t = c as Case;
@@ -43,7 +43,6 @@ const nest = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester();
 
@@ -616,3 +615,180 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// Every fixture mounts the serializer, so only the handler body decides.
+// ─────────────────────────────────────────────────────────────────────────────
+const serialized = (handler: string): string => `
+  @Controller('users')
+  @UseInterceptors(ClassSerializerInterceptor)
+  class UsersController {
+    @Get()
+    ${handler}
+  }
+`;
+ruleTester.run(
+  'no-res-bypass-serialization (mutation audit)',
+  noResBypassSerialization,
+  {
+    valid: nest([
+      {
+        name: 'a passthrough response is not a bypass, whatever the handler writes',
+        code: serialized(
+          `findAll(@Res({ passthrough: true }) res: Response) { res.json(this.users); }`,
+        ),
+      },
+      {
+        name: 'an inner callback that rebinds res among other parameters is a different response',
+        code: serialized(
+          `findAll(@Res() res: Response) { this.bus.on('x', (req, res) => res.json(req.body)); }`,
+        ),
+      },
+      {
+        name: 'a .toString() result is a string, not a serialized object',
+        code: serialized(
+          `findAll(@Res() res: Response) { res.send(readFileSync('index.html').toString()); }`,
+        ),
+      },
+      {
+        name: 'res.contentType() declares the content type like res.type()',
+        code: serialized(
+          `findAll(@Res() res: Response) { res.contentType('text/html'); res.send(renderPage(this.users)); }`,
+        ),
+      },
+      {
+        // @found mutation testing
+        name: "FP: res.set('Content-Type', …) declares a non-JSON document",
+        code: serialized(
+          `findAll(@Res() res: Response) { res.set('Content-Type', 'text/xml'); res.send(buildSitemap(this.urls)); }`,
+        ),
+      },
+      {
+        // @found mutation testing
+        name: "FP: res.header('Content-Type', …) declares a non-JSON document",
+        code: serialized(
+          `findAll(@Res() res: Response) { res.header('Content-Type', 'text/csv'); res.send(toCsv(this.rows)); }`,
+        ),
+      },
+      {
+        // @found mutation testing
+        name: 'FP: a template-literal content type is read like a string',
+        code: serialized(
+          'findAll(@Res() res: Response) { res.type(`html`); res.send(renderPage(this.users)); }',
+        ),
+      },
+      {
+        name: 'a route method outside a @Controller class is not a handler',
+        code: `
+          @UseInterceptors(ClassSerializerInterceptor)
+          class UsersHelper {
+            @Get()
+            findAll(@Res() res: Response) { res.json(this.users); }
+          }
+        `,
+      },
+    ]),
+    invalid: nest([
+      {
+        // @found mutation testing
+        name: 'FN: a namespace-qualified ClassSerializerInterceptor mounts the serializer',
+        code: `
+          import * as common from '@nestjs/common';
+          @Controller('users')
+          @UseInterceptors(common.ClassSerializerInterceptor)
+          class UsersController {
+            @Get()
+            findAll(@Res() res: Response) { res.json(this.users); }
+          }
+        `,
+        errors: [{ messageId: 'bypassesSerialization' }],
+      },
+      {
+        name: 'a bare (uncalled) @Res decorator is a non-passthrough response',
+        code: serialized(
+          `findAll(@Res res: Response) { res.json(this.users); }`,
+        ),
+        errors: [{ messageId: 'bypassesSerialization' }],
+      },
+      {
+        name: "a helper call's result may be an object",
+        code: serialized(
+          `findAll(@Res() res: Response) { res.json(toDto(this.user)); }`,
+        ),
+        errors: [{ messageId: 'bypassesSerialization' }],
+      },
+      {
+        name: 'a method call result may be an object',
+        code: serialized(
+          `findAll(@Res() res: Response) { res.json(this.mapper.toDto(this.user)); }`,
+        ),
+        errors: [{ messageId: 'bypassesSerialization' }],
+      },
+      {
+        name: 'JSON.parse returns an object, not a string',
+        code: serialized(
+          `findAll(@Res() res: Response) { res.json(JSON.parse(this.raw)); }`,
+        ),
+        errors: [{ messageId: 'bypassesSerialization' }],
+      },
+      {
+        name: 'only JSON.stringify is known to return a string',
+        code: serialized(
+          `findAll(@Res() res: Response) { res.send(this.serializer.stringify(this.user)); }`,
+        ),
+        errors: [{ messageId: 'bypassesSerialization' }],
+      },
+      {
+        name: 'a stringify on a call result is not JSON.stringify',
+        code: serialized(
+          `findAll(@Res() res: Response) { res.send(getSerializer().stringify(this.user)); }`,
+        ),
+        errors: [{ messageId: 'bypassesSerialization' }],
+      },
+      {
+        name: 'a file path argument is not a content type — only type setters declare one',
+        code: serialized(`
+          findAll(@Res() res: Response, @Query('file') file: boolean) {
+            if (file) { res.download('text/report.csv'); return; }
+            res.json(this.users);
+          }
+        `),
+        errors: [{ messageId: 'bypassesSerialization' }],
+      },
+      {
+        name: 'a numeric header value declares no content type',
+        code: serialized(
+          `findAll(@Res() res: Response) { res.setHeader('Content-Length', 42); res.json(this.users); }`,
+        ),
+        errors: [{ messageId: 'bypassesSerialization' }],
+      },
+      {
+        name: 'a header value that merely mentions a text/ type is not the content type',
+        code: serialized(
+          `findAll(@Res() res: Response) { res.set('Link', '<https://cdn.example.com/a.css>; rel=preload; type=text/css'); res.json(this.users); }`,
+        ),
+        errors: [{ messageId: 'bypassesSerialization' }],
+      },
+      {
+        name: 'an array pattern with a hole in the handler does not stop the walk',
+        code: serialized(
+          `findAll(@Res() res: Response) { const [, first] = this.users; res.json(first); }`,
+        ),
+        errors: [{ messageId: 'bypassesSerialization' }],
+      },
+      {
+        name: 'the first body write is the one reported',
+        code: serialized(
+          `findAll(@Res() res: Response) { res.status(200).json(this.users); res.send(this.users); }`,
+        ),
+        errors: [
+          {
+            messageId: 'bypassesSerialization',
+            data: { writer: 'res.json()' },
+          },
+        ],
+      },
+    ]),
+  },
+);

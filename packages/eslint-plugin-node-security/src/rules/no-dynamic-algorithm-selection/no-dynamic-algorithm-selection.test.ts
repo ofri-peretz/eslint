@@ -33,6 +33,10 @@ describe('no-dynamic-algorithm-selection', () => {
         { code: 'customCrypto.createHash(algo)' },
         // Different method — not checked
         { code: 'crypto.randomBytes(32)' },
+        {
+          name: 'a crypto export that takes no algorithm is not an algorithm choice, whatever its first argument',
+          code: 'crypto.randomBytes(size)',
+        },
       ],
       invalid: [
         {
@@ -149,6 +153,7 @@ describe('no-dynamic-algorithm-selection', () => {
         },
         // A spread argument is not a name to resolve.
         {
+          name: 'createHash with an algorithm taken from req.query is reported',
           code: 'crypto.createHash(...algos);',
           errors: [{ messageId: 'dynamicAlgorithm' }],
         },

@@ -199,19 +199,25 @@ const inputDir = process.argv[2];
 export const all = () => readdirSync(inputDir).map((file) => readFileSync(join(inputDir, file), 'utf8'));`,
       },
       {
+        name: 'serverless: argv base with a computed relative segment',
+        code: `import { stat } from 'fs/promises';
+import path from 'path';
+const packageDir = process.argv[2];
+export const check = (from, to) => stat(path.join(packageDir, path.relative(from, to)));`,
+      },
+    ],
+    invalid: [
+      {
         /**
-         * The recursion bound, stated honestly.
-         *
-         * `containsUntrustedRoot` stops after 6 binding hops — without a bound,
-         * `const a = b; const b = a;` recurses forever. Past that depth it
-         * answers "no untrusted root found", so a request laundered through
-         * SEVEN aliases keeps the invoker-base exemption and goes quiet.
-         *
-         * That is a known false negative and it is the price of terminating. It
-         * is pinned here rather than left undiscovered: if the bound ever
-         * changes, this case changes with it.
+         * Formerly pinned as valid: "BOUND: a request seven binding hops deep is
+         * past the recursion limit". `containsUntrustedRoot` stopped after 6
+         * binding hops and answered "no untrusted root found", so a request
+         * laundered through seven aliases kept the invoker-base exemption and
+         * went quiet. The bound existed only to stop `const a = b; const b = a;`;
+         * the walks now cut that cycle directly (an initialiser already on the
+         * path is refused), so depth no longer drops findings.
          */
-        name: 'BOUND: a request seven binding hops deep is past the recursion limit',
+        name: 'a request seven binding hops deep is still a request',
         code: `import fs from 'fs';
 import path from 'path';
 export const read = (req) => {
@@ -224,16 +230,8 @@ export const read = (req) => {
   const g = f;
   return fs.readFileSync(path.join(process.argv[2], g), 'utf8');
 };`,
+        errors: [{ messageId: 'fsPathTraversal' }],
       },
-      {
-        name: 'serverless: argv base with a computed relative segment',
-        code: `import { stat } from 'fs/promises';
-import path from 'path';
-const packageDir = process.argv[2];
-export const check = (from, to) => stat(path.join(packageDir, path.relative(from, to)));`,
-      },
-    ],
-    invalid: [
       {
         // Reaches `containsUntrustedRoot` through a TEMPLATE. The base is
         // argv, so the exemption path is taken and the walk has to find the

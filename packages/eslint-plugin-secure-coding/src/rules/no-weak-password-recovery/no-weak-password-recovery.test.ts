@@ -68,9 +68,16 @@ describe('no-weak-password-recovery', () => {
           'const token = Math.random().toString(36);',
           'const token = "reset_" + Math.random();',
           'const token = "id_" + Date.now();',
-          // Variables without BOTH password AND reset/recovery keywords are valid
-          'const resetToken = Date.now();', // Only has 'reset', not 'password'
+          // A password word without a recovery word is not a recovery flow.
           'const passwordToken = Date.now();', // Only has 'password', not 'reset/forgot'
+          {
+            name: 'a code substring inside another word is not a recovery secret',
+            code: 'const resetEncoder = Date.now().toString();',
+          },
+          {
+            name: 'a secret word without a recovery word is not a recovery secret',
+            code: 'const inviteCode = Math.random().toString(36).slice(2);',
+          },
         ],
         invalid: [
           // Password-recovery-specific variable names with BOTH keywords still trigger
@@ -79,6 +86,30 @@ describe('no-weak-password-recovery', () => {
             name: 'a reset token from Math.random()',
             code: 'const passwordResetToken = String(Math.random()).slice(2);',
             errors: [{ messageId: 'predictableRecoveryToken' }],
+          },
+          // A recovery word plus a recovery-secret word names the secret
+          // CWE-640 is about, with or without the word "password". This was
+          // pinned valid for `resetToken`, against the documented contract
+          // that reset / recover / forgot identify a recovery flow.
+          {
+            name: 'a Math.random() recovery code is a predictable recovery secret',
+            code: 'const recoveryCode = Math.random().toString(36).slice(2);',
+            errors: [{ messageId: 'predictableRecoveryToken' }],
+          },
+          {
+            name: 'a Date.now() recovery code is a predictable recovery secret',
+            code: 'const recoveryCode = Date.now().toString();',
+            errors: [{ messageId: 'predictableRecoveryToken' }],
+          },
+          {
+            name: 'a Math.random() reset code is a predictable recovery secret',
+            code: 'const resetCode = Math.random().toString(36).slice(2);',
+            errors: [{ messageId: 'predictableRecoveryToken' }],
+          },
+          {
+            name: 'a reset token built from Date.now() is a low-entropy recovery secret',
+            code: "const reset_token = 'r' + Date.now();",
+            errors: [{ messageId: 'insufficientTokenEntropy' }],
           },
           // forgotPassword token
           {
@@ -699,6 +730,42 @@ describe('option branches', () => {
         {
           code: 'logger.info(resetPasswordToken);',
           errors: [{ messageId: 'recoveryLoggingSensitiveData' }],
+        },
+      ],
+    },
+  );
+  ruleTester.run(
+    'recoveryWords and recoverySecretWords decide which names are recovery secrets',
+    noWeakPasswordRecovery,
+    {
+      valid: [
+        {
+          name: 'dropping code from recoverySecretWords leaves a reset code alone',
+          code: 'const resetCode = Math.random().toString(36).slice(2);',
+          options: [{ recoverySecretWords: ['token', 'otp'] }],
+        },
+        {
+          name: 'dropping reset from recoveryWords leaves a reset code alone',
+          code: 'const resetCode = Math.random().toString(36).slice(2);',
+          options: [{ recoveryWords: ['recover', 'forgot'] }],
+        },
+        {
+          name: 'by default an unlock code is not a recovery secret',
+          code: 'const unlockCode = Math.random().toString(36).slice(2);',
+        },
+      ],
+      invalid: [
+        {
+          name: 'a word added to recoveryWords makes an unlock code a recovery secret',
+          code: 'const unlockCode = Math.random().toString(36).slice(2);',
+          options: [{ recoveryWords: ['unlock'] }],
+          errors: [{ messageId: 'predictableRecoveryToken' }],
+        },
+        {
+          name: 'a word added to recoverySecretWords makes a reset passcode a recovery secret',
+          code: 'const resetPasscode = Math.random().toString(36).slice(2);',
+          options: [{ recoverySecretWords: ['passcode'] }],
+          errors: [{ messageId: 'predictableRecoveryToken' }],
         },
       ],
     },

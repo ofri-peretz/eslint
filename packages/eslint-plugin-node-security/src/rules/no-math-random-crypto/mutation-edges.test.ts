@@ -153,3 +153,66 @@ ruleTester.run('mutation-guided edges', noMathRandomCrypto, {
     },
   ],
 });
+
+// Batch 8: survivors of the second mutation run.
+ruleTester.run('mutation-guided edges (batch 8)', noMathRandomCrypto, {
+  valid: [
+    {
+      name: 'a random method on another property of a global is not Math.random',
+      code: 'const sessionToken = window.rng.random();',
+    },
+    {
+      name: 'a read by a runtime key names no slot of an RNG registry',
+      code: 'const impls = { [ALGORITHM]: Math.random };\nconst token = impls[name]();',
+    },
+    {
+      name: 'a for-of binding has no initializer to resolve',
+      code: 'for (const next of generators) {\n  const token = next();\n}',
+    },
+    {
+      name: 'a rest element beside a destructured Math slot is not the random slot',
+      code: 'const { floor, ...mathRest } = Math;\nconst token = floor(seed);',
+    },
+    {
+      name: 'a draw in a default parameter does not flow out through a concise arrow body',
+      code: 'const refreshToken = (jitter = Math.random() * 100) => schedule(jitter);',
+    },
+    {
+      name: 'a return inside a nested function declaration does not carry the draw out of the enclosing arrow',
+      code: `const refreshToken = () => {
+  function backoff() {
+    return Math.random() * 1000;
+  }
+  setTimeout(refresh, backoff());
+};`,
+    },
+    {
+      name: 'a variable named after the random string it holds is not a crypto name',
+      code: 'const randomString = Math.random().toString(36).slice(2);',
+    },
+    {
+      name: 'a binding cycle on the forward walk terminates',
+      code: 'var a = Math.random() + b;\nvar b = a;',
+    },
+  ],
+  invalid: [
+    {
+      name: 'BUG: a template-literal subscript reads Math.random',
+      code: 'const token = Math[`random`]().toString(36);',
+      errors: [error],
+    },
+    {
+      name: 'a random-string builder named for a message keeps its random-string claim',
+      code: 'function randomStringForMessage() {\n  return Math.random().toString(36).slice(2);\n}',
+      errors: [error],
+    },
+    {
+      name: 'BUG: a relay of four locals still reaches the api key',
+      code: `const raw = Math.random().toString(36).slice(2);
+const padded = raw.padEnd(32, '0');
+const upper = padded.toUpperCase();
+const apiKey = upper;`,
+      errors: [error],
+    },
+  ],
+});

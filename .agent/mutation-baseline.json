@@ -311,446 +311,679 @@
     "node-security": {
       "rules": {
         "detect-child-process": {
-          "score": 79.1,
-          "killed": 789,
-          "survived": 208,
+          "score": 92.8,
+          "killed": 837,
+          "survived": 65,
           "noCoverage": 0,
-          "timeout": 0
+          "timeout": 2
         },
         "detect-eval-with-expression": {
-          "score": 84.8,
-          "killed": 392,
-          "survived": 70,
+          "score": 92.8,
+          "killed": 362,
+          "survived": 28,
+          "noCoverage": 0,
+          "timeout": 2
+        },
+        "detect-non-literal-fs-filename": {
+          "score": 95.5,
+          "killed": 620,
+          "survived": 29,
           "noCoverage": 0,
           "timeout": 1
         },
+        "detect-suspicious-dependencies": {
+          "score": 96.4,
+          "killed": 134,
+          "survived": 5,
+          "noCoverage": 0,
+          "timeout": 3
+        },
+        "lock-file": {
+          "score": 98.2,
+          "killed": 53,
+          "survived": 1,
+          "noCoverage": 0,
+          "timeout": 2
+        },
         "no-arbitrary-file-access": {
-          "score": 90.5,
-          "killed": 439,
-          "survived": 46,
-          "noCoverage": 0,
-          "timeout": 3
-        },
-        "no-math-random-crypto": {
-          "score": 93.3,
-          "killed": 433,
-          "survived": 29,
-          "noCoverage": 2,
-          "timeout": 5
-        },
-        "no-self-signed-certs": {
-          "score": 90.6,
-          "killed": 78,
-          "survived": 7,
-          "noCoverage": 1,
-          "timeout": 0
-        },
-        "no-shell-injection": {
           "score": 91.8,
-          "killed": 113,
-          "survived": 9,
-          "noCoverage": 1,
-          "timeout": 0
-        },
-        "no-timing-unsafe-compare": {
-          "score": 82.9,
-          "killed": 442,
-          "survived": 89,
-          "noCoverage": 2,
-          "timeout": 2
-        },
-        "no-toctou-vulnerability": {
-          "score": 87.8,
-          "killed": 300,
-          "survived": 42,
+          "killed": 413,
+          "survived": 37,
           "noCoverage": 0,
           "timeout": 3
         },
-        "no-unsafe-dynamic-require": {
-          "score": 89.7,
-          "killed": 131,
-          "survived": 15,
+        "no-buffer-overread": {
+          "score": 94.8,
+          "killed": 638,
+          "survived": 35,
           "noCoverage": 0,
-          "timeout": 0
+          "timeout": 3
         },
-        "no-weak-hash-algorithm": {
-          "score": 91.2,
-          "killed": 358,
-          "survived": 33,
-          "noCoverage": 2,
-          "timeout": 5
-        },
-        "no-zip-slip": {
-          "score": 94.2,
-          "killed": 525,
-          "survived": 32,
-          "noCoverage": 0,
-          "timeout": 2
-        },
-        "require-stream-error-handler": {
-          "score": 91.7,
-          "killed": 89,
-          "survived": 7,
-          "noCoverage": 1,
-          "timeout": 0
-        }
-      },
-      "pending": [
-        "detect-non-literal-fs-filename",
-        "detect-suspicious-dependencies",
-        "lock-file",
-        "no-buffer-overread",
-        "no-cryptojs",
-        "no-cryptojs-weak-random",
-        "no-data-in-temp-storage",
-        "no-deprecated-buffer",
-        "no-deprecated-cipher-method",
-        "no-dynamic-algorithm-selection",
-        "no-dynamic-command-string",
-        "no-dynamic-dependency-loading",
-        "no-dynamic-require",
-        "no-ecb-mode",
-        "no-env-injection",
-        "no-insecure-http-parser",
-        "no-insecure-key-derivation",
-        "no-insecure-rsa-padding",
-        "no-sha1-hash",
-        "no-ssrf",
-        "no-static-iv",
-        "no-unbounded-decompression",
-        "no-unsafe-buffer-alloc",
-        "no-weak-cipher-algorithm",
-        "no-weak-dh-parameters",
-        "prefer-native-crypto",
-        "require-aead-tag-verification",
-        "require-dependency-integrity",
-        "require-secure-credential-storage",
-        "require-secure-deletion",
-        "require-storage-encryption"
-      ]
-    },
-    "browser-security": {
-      "rules": {
-        "detect-mixed-content": {
-          "score": 88.2,
-          "killed": 30,
-          "survived": 4,
-          "noCoverage": 0,
-          "timeout": 0
-        },
-        "no-allow-arbitrary-loads": {
-          "score": 87.5,
-          "killed": 21,
+        "no-cryptojs": {
+          "score": 96.2,
+          "killed": 76,
           "survived": 3,
           "noCoverage": 0,
           "timeout": 0
         },
-        "no-clickjacking": {
-          "score": 76.7,
-          "killed": 527,
-          "survived": 160,
+        "no-cryptojs-weak-random": {
+          "score": 93.2,
+          "killed": 95,
+          "survived": 6,
+          "noCoverage": 1,
+          "timeout": 1
+        },
+        "no-data-in-temp-storage": {
+          "score": 95.2,
+          "killed": 260,
+          "survived": 13,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-deprecated-buffer": {
+          "score": 93.8,
+          "killed": 196,
+          "survived": 13,
           "noCoverage": 0,
           "timeout": 2
         },
-        "no-client-side-auth-logic": {
-          "score": 94.7,
-          "killed": 105,
+        "no-deprecated-cipher-method": {
+          "score": 89.5,
+          "killed": 43,
           "survived": 4,
-          "noCoverage": 2,
-          "timeout": 3
-        },
-        "no-cookie-auth-tokens": {
-          "score": 93.1,
-          "killed": 27,
-          "survived": 1,
           "noCoverage": 1,
           "timeout": 0
         },
-        "no-credentials-in-query-params": {
-          "score": 88.7,
-          "killed": 79,
-          "survived": 10,
+        "no-dynamic-algorithm-selection": {
+          "score": 90.3,
+          "killed": 28,
+          "survived": 3,
           "noCoverage": 0,
           "timeout": 0
         },
-        "no-disabled-certificate-validation": {
-          "score": 94.3,
-          "killed": 134,
+        "no-dynamic-command-string": {
+          "score": 92.7,
+          "killed": 215,
+          "survived": 17,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "no-dynamic-dependency-loading": {
+          "score": 94.1,
+          "killed": 81,
+          "survived": 5,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-dynamic-require": {
+          "score": 92.9,
+          "killed": 145,
+          "survived": 11,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-ecb-mode": {
+          "score": 79.5,
+          "killed": 35,
+          "survived": 8,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "no-env-injection": {
+          "score": 93.5,
+          "killed": 114,
           "survived": 8,
           "noCoverage": 0,
+          "timeout": 2
+        },
+        "no-insecure-http-parser": {
+          "score": 92.4,
+          "killed": 61,
+          "survived": 4,
+          "noCoverage": 1,
           "timeout": 0
         },
-        "no-dynamic-service-worker-url": {
-          "score": 95.4,
-          "killed": 168,
+        "no-insecure-key-derivation": {
+          "score": 96.5,
+          "killed": 223,
+          "survived": 8,
+          "noCoverage": 0,
+          "timeout": 2
+        },
+        "no-insecure-rsa-padding": {
+          "score": 84.4,
+          "killed": 49,
+          "survived": 8,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "no-math-random-crypto": {
+          "score": 96.7,
+          "killed": 416,
+          "survived": 12,
+          "noCoverage": 2,
+          "timeout": 5
+        },
+        "no-self-signed-certs": {
+          "score": 94.7,
+          "killed": 91,
+          "survived": 4,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "no-sha1-hash": {
+          "score": 92.5,
+          "killed": 62,
+          "survived": 4,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "no-shell-injection": {
+          "score": 93.1,
+          "killed": 109,
           "survived": 7,
           "noCoverage": 1,
           "timeout": 0
         },
-        "no-eval": {
-          "score": 95.3,
-          "killed": 62,
-          "survived": 1,
+        "no-ssrf": {
+          "score": 97.2,
+          "killed": 277,
+          "survived": 8,
+          "noCoverage": 0,
+          "timeout": 9
+        },
+        "no-static-iv": {
+          "score": 93.6,
+          "killed": 176,
+          "survived": 11,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "no-timing-unsafe-compare": {
+          "score": 94.8,
+          "killed": 512,
+          "survived": 26,
+          "noCoverage": 2,
+          "timeout": 1
+        },
+        "no-toctou-vulnerability": {
+          "score": 96.5,
+          "killed": 336,
+          "survived": 12,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "no-unbounded-decompression": {
+          "score": 93,
+          "killed": 174,
+          "survived": 12,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "no-unsafe-buffer-alloc": {
+          "score": 90.5,
+          "killed": 754,
+          "survived": 79,
+          "noCoverage": 0,
+          "timeout": 7
+        },
+        "no-unsafe-dynamic-require": {
+          "score": 93.1,
+          "killed": 122,
+          "survived": 9,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-weak-cipher-algorithm": {
+          "score": 90.1,
+          "killed": 55,
+          "survived": 4,
           "noCoverage": 2,
           "timeout": 0
         },
-        "no-filereader-innerhtml": {
-          "score": 95.5,
-          "killed": 63,
-          "survived": 2,
+        "no-weak-dh-parameters": {
+          "score": 92.9,
+          "killed": 79,
+          "survived": 6,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-weak-hash-algorithm": {
+          "score": 93.7,
+          "killed": 354,
+          "survived": 22,
+          "noCoverage": 2,
+          "timeout": 5
+        },
+        "no-zip-slip": {
+          "score": 96.8,
+          "killed": 513,
+          "survived": 17,
+          "noCoverage": 0,
+          "timeout": 2
+        },
+        "prefer-native-crypto": {
+          "score": 96.3,
+          "killed": 80,
+          "survived": 3,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-aead-tag-verification": {
+          "score": 90.4,
+          "killed": 76,
+          "survived": 7,
           "noCoverage": 1,
+          "timeout": 0
+        },
+        "require-dependency-integrity": {
+          "score": 97.1,
+          "killed": 172,
+          "survived": 5,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-secure-credential-storage": {
+          "score": 96.1,
+          "killed": 100,
+          "survived": 4,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-secure-deletion": {
+          "score": 93.1,
+          "killed": 68,
+          "survived": 4,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "require-storage-encryption": {
+          "score": 91.6,
+          "killed": 11,
+          "survived": 1,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-stream-error-handler": {
+          "score": 92.8,
+          "killed": 129,
+          "survived": 9,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "utils/const-value": {
+          "score": 91.5,
+          "killed": 140,
+          "survived": 13,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/constant-folding": {
+          "score": 82.3,
+          "killed": 182,
+          "survived": 40,
+          "noCoverage": 0,
+          "timeout": 5
+        },
+        "utils/credential-evidence": {
+          "score": 84.6,
+          "killed": 235,
+          "survived": 43,
+          "noCoverage": 0,
+          "timeout": 2
+        },
+        "utils/module-binding": {
+          "score": 90.5,
+          "killed": 47,
+          "survived": 5,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "utils/names": {
+          "score": 86.6,
+          "killed": 26,
+          "survived": 4,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/provenance": {
+          "score": 80.5,
+          "killed": 148,
+          "survived": 36,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "utils/separator-anchored": {
+          "score": 85.9,
+          "killed": 61,
+          "survived": 10,
+          "noCoverage": 0,
+          "timeout": 0
+        }
+      }
+    },
+    "browser-security": {
+      "rules": {
+        "detect-mixed-content": {
+          "score": 90.9,
+          "killed": 30,
+          "survived": 3,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-allow-arbitrary-loads": {
+          "score": 92,
+          "killed": 23,
+          "survived": 2,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-clickjacking": {
+          "score": 92.5,
+          "killed": 583,
+          "survived": 48,
+          "noCoverage": 0,
+          "timeout": 10
+        },
+        "no-client-side-auth-logic": {
+          "score": 98.1,
+          "killed": 104,
+          "survived": 2,
+          "noCoverage": 0,
+          "timeout": 3
+        },
+        "no-cookie-auth-tokens": {
+          "score": 100,
+          "killed": 31,
+          "survived": 0,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-credentials-in-query-params": {
+          "score": 94,
+          "killed": 94,
+          "survived": 6,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-disabled-certificate-validation": {
+          "score": 95.6,
+          "killed": 150,
+          "survived": 7,
+          "noCoverage": 0,
+          "timeout": 3
+        },
+        "no-dynamic-service-worker-url": {
+          "score": 96.3,
+          "killed": 155,
+          "survived": 6,
+          "noCoverage": 0,
+          "timeout": 4
+        },
+        "no-eval": {
+          "score": 98.4,
+          "killed": 65,
+          "survived": 1,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-filereader-innerhtml": {
+          "score": 98.5,
+          "killed": 67,
+          "survived": 1,
+          "noCoverage": 0,
           "timeout": 1
         },
         "no-http-urls": {
-          "score": 90.6,
-          "killed": 87,
+          "score": 91.4,
+          "killed": 96,
           "survived": 9,
           "noCoverage": 0,
           "timeout": 0
         },
         "no-incomplete-url-sanitization": {
-          "score": 95.3,
-          "killed": 305,
-          "survived": 15,
+          "score": 96.1,
+          "killed": 297,
+          "survived": 12,
           "noCoverage": 0,
           "timeout": 1
         },
         "no-innerhtml": {
-          "score": 91.7,
-          "killed": 330,
-          "survived": 27,
-          "noCoverage": 3,
+          "score": 95.8,
+          "killed": 363,
+          "survived": 16,
+          "noCoverage": 0,
           "timeout": 2
         },
         "no-insecure-redirects": {
-          "score": 93.6,
-          "killed": 88,
-          "survived": 6,
+          "score": 96.6,
+          "killed": 87,
+          "survived": 3,
           "noCoverage": 0,
           "timeout": 0
         },
         "no-insecure-websocket": {
-          "score": 91.3,
-          "killed": 21,
+          "score": 94.2,
+          "killed": 33,
           "survived": 2,
           "noCoverage": 0,
           "timeout": 0
         },
         "no-jwt-in-storage": {
-          "score": 91.2,
-          "killed": 73,
-          "survived": 6,
-          "noCoverage": 1,
+          "score": 98.7,
+          "killed": 81,
+          "survived": 1,
+          "noCoverage": 0,
           "timeout": 0
         },
         "no-missing-cors-check": {
-          "score": 72,
-          "killed": 267,
-          "survived": 103,
-          "noCoverage": 3,
-          "timeout": 6
+          "score": 97.5,
+          "killed": 159,
+          "survived": 4,
+          "noCoverage": 0,
+          "timeout": 0
         },
         "no-missing-csrf-protection": {
-          "score": 85.6,
-          "killed": 166,
-          "survived": 26,
-          "noCoverage": 2,
-          "timeout": 1
+          "score": 97.3,
+          "killed": 183,
+          "survived": 5,
+          "noCoverage": 0,
+          "timeout": 3
         },
         "no-missing-security-headers": {
-          "score": 83.8,
-          "killed": 464,
-          "survived": 90,
+          "score": 97.7,
+          "killed": 440,
+          "survived": 10,
           "noCoverage": 0,
-          "timeout": 2
+          "timeout": 1
         },
         "no-password-in-url": {
-          "score": 88.2,
-          "killed": 83,
-          "survived": 11,
+          "score": 94.8,
+          "killed": 93,
+          "survived": 5,
           "noCoverage": 0,
           "timeout": 0
         },
         "no-permissive-cors": {
-          "score": 95,
-          "killed": 172,
-          "survived": 9,
+          "score": 97.3,
+          "killed": 145,
+          "survived": 4,
+          "noCoverage": 0,
+          "timeout": 4
+        },
+        "no-postmessage-innerhtml": {
+          "score": 97.5,
+          "killed": 40,
+          "survived": 1,
           "noCoverage": 0,
           "timeout": 0
         },
-        "no-postmessage-innerhtml": {
-          "score": 92.3,
-          "killed": 36,
-          "survived": 2,
-          "noCoverage": 1,
-          "timeout": 0
-        },
         "no-postmessage-wildcard-origin": {
-          "score": 96.1,
-          "killed": 50,
-          "survived": 1,
-          "noCoverage": 1,
+          "score": 100,
+          "killed": 54,
+          "survived": 0,
+          "noCoverage": 0,
           "timeout": 0
         },
         "no-sensitive-cookie-js": {
-          "score": 90.3,
-          "killed": 28,
-          "survived": 1,
-          "noCoverage": 2,
+          "score": 100,
+          "killed": 32,
+          "survived": 0,
+          "noCoverage": 0,
           "timeout": 0
         },
         "no-sensitive-data-in-analytics": {
-          "score": 87.2,
-          "killed": 41,
-          "survived": 5,
-          "noCoverage": 1,
-          "timeout": 0
+          "score": 100,
+          "killed": 39,
+          "survived": 0,
+          "noCoverage": 0,
+          "timeout": 2
         },
         "no-sensitive-data-in-cache": {
-          "score": 91.6,
-          "killed": 66,
-          "survived": 5,
-          "noCoverage": 1,
+          "score": 97.1,
+          "killed": 68,
+          "survived": 2,
+          "noCoverage": 0,
           "timeout": 0
         },
         "no-sensitive-indexeddb": {
-          "score": 90.5,
-          "killed": 77,
-          "survived": 6,
-          "noCoverage": 2,
+          "score": 97.3,
+          "killed": 73,
+          "survived": 2,
+          "noCoverage": 0,
           "timeout": 0
         },
         "no-sensitive-localstorage": {
-          "score": 91.6,
+          "score": 98.2,
           "killed": 55,
-          "survived": 2,
-          "noCoverage": 3,
+          "survived": 1,
+          "noCoverage": 0,
           "timeout": 0
         },
         "no-sensitive-sessionstorage": {
-          "score": 90.7,
-          "killed": 49,
-          "survived": 3,
-          "noCoverage": 2,
+          "score": 98,
+          "killed": 50,
+          "survived": 1,
+          "noCoverage": 0,
           "timeout": 0
         },
         "no-tracking-without-consent": {
-          "score": 89.3,
-          "killed": 182,
-          "survived": 22,
+          "score": 96.5,
+          "killed": 193,
+          "survived": 7,
           "noCoverage": 0,
           "timeout": 2
         },
         "no-unencrypted-transmission": {
-          "score": 90.4,
-          "killed": 123,
-          "survived": 11,
-          "noCoverage": 2,
+          "score": 96.5,
+          "killed": 139,
+          "survived": 5,
+          "noCoverage": 0,
           "timeout": 0
         },
         "no-unescaped-url-parameter": {
-          "score": 79.7,
-          "killed": 513,
-          "survived": 130,
-          "noCoverage": 2,
+          "score": 90.6,
+          "killed": 574,
+          "survived": 60,
+          "noCoverage": 0,
           "timeout": 8
         },
         "no-unsafe-eval-csp": {
-          "score": 93.1,
-          "killed": 27,
-          "survived": 1,
-          "noCoverage": 1,
+          "score": 100,
+          "killed": 31,
+          "survived": 0,
+          "noCoverage": 0,
           "timeout": 0
         },
         "no-unsafe-inline-csp": {
-          "score": 92.1,
-          "killed": 117,
-          "survived": 9,
-          "noCoverage": 1,
+          "score": 95.4,
+          "killed": 127,
+          "survived": 6,
+          "noCoverage": 0,
           "timeout": 0
         },
         "no-unvalidated-deeplinks": {
-          "score": 95.6,
-          "killed": 195,
-          "survived": 9,
+          "score": 96.4,
+          "killed": 292,
+          "survived": 11,
           "noCoverage": 0,
-          "timeout": 2
+          "timeout": 3
         },
         "no-websocket-eval": {
-          "score": 90,
-          "killed": 27,
-          "survived": 2,
-          "noCoverage": 1,
+          "score": 100,
+          "killed": 29,
+          "survived": 0,
+          "noCoverage": 0,
           "timeout": 0
         },
         "no-websocket-innerhtml": {
-          "score": 94.8,
-          "killed": 37,
-          "survived": 1,
-          "noCoverage": 1,
-          "timeout": 0
-        },
-        "no-worker-message-innerhtml": {
-          "score": 94.8,
-          "killed": 37,
-          "survived": 1,
-          "noCoverage": 1,
-          "timeout": 0
-        },
-        "require-blob-url-revocation": {
-          "score": 97.7,
-          "killed": 130,
-          "survived": 2,
-          "noCoverage": 1,
-          "timeout": 0
-        },
-        "require-cookie-secure-attrs": {
-          "score": 95.1,
-          "killed": 39,
-          "survived": 1,
-          "noCoverage": 1,
-          "timeout": 0
-        },
-        "require-csp-headers": {
-          "score": 82.2,
-          "killed": 412,
-          "survived": 89,
+          "score": 100,
+          "killed": 41,
+          "survived": 0,
           "noCoverage": 0,
           "timeout": 0
         },
+        "no-worker-message-innerhtml": {
+          "score": 100,
+          "killed": 41,
+          "survived": 0,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-blob-url-revocation": {
+          "score": 99.2,
+          "killed": 134,
+          "survived": 1,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-cookie-secure-attrs": {
+          "score": 100,
+          "killed": 43,
+          "survived": 0,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-csp-headers": {
+          "score": 94.8,
+          "killed": 405,
+          "survived": 22,
+          "noCoverage": 0,
+          "timeout": 3
+        },
         "require-https-only": {
-          "score": 85.9,
-          "killed": 48,
-          "survived": 8,
+          "score": 94.1,
+          "killed": 47,
+          "survived": 3,
           "noCoverage": 0,
           "timeout": 1
         },
         "require-mime-type-validation": {
-          "score": 92.6,
-          "killed": 188,
-          "survived": 15,
+          "score": 94.5,
+          "killed": 189,
+          "survived": 11,
           "noCoverage": 0,
           "timeout": 0
         },
         "require-postmessage-origin-check": {
-          "score": 90.4,
-          "killed": 190,
-          "survived": 19,
-          "noCoverage": 1,
+          "score": 95.3,
+          "killed": 248,
+          "survived": 12,
+          "noCoverage": 0,
           "timeout": 0
         },
         "require-url-validation": {
-          "score": 85.9,
-          "killed": 49,
-          "survived": 8,
+          "score": 96.3,
+          "killed": 53,
+          "survived": 2,
           "noCoverage": 0,
           "timeout": 0
         },
         "require-websocket-wss": {
-          "score": 82.7,
-          "killed": 72,
-          "survived": 13,
-          "noCoverage": 2,
+          "score": 93,
+          "killed": 67,
+          "survived": 5,
+          "noCoverage": 0,
           "timeout": 0
         }
       }
@@ -812,6 +1045,27 @@
           "survived": 22,
           "noCoverage": 3,
           "timeout": 1
+        },
+        "utils/redos-oracle": {
+          "score": 78.9,
+          "killed": 45,
+          "survived": 12,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/regexp-intrinsic": {
+          "score": 78.8,
+          "killed": 138,
+          "survived": 37,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/resolve-reference": {
+          "score": 81.8,
+          "killed": 9,
+          "survived": 2,
+          "noCoverage": 0,
+          "timeout": 0
         }
       },
       "pending": [
@@ -844,6 +1098,252 @@
         "require-backend-authorization",
         "require-secure-defaults"
       ]
+    },
+    "nestjs-security": {
+      "rules": {
+        "no-exposed-private-fields": {
+          "score": 99.2,
+          "killed": 132,
+          "survived": 1,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-hybrid-app-config-loss": {
+          "score": 100,
+          "killed": 60,
+          "survived": 0,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-missing-validation-pipe": {
+          "score": 96,
+          "killed": 193,
+          "survived": 8,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-permissive-cors": {
+          "score": 94.2,
+          "killed": 262,
+          "survived": 16,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-res-bypass-serialization": {
+          "score": 97.3,
+          "killed": 256,
+          "survived": 7,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-unguarded-swagger": {
+          "score": 97.8,
+          "killed": 87,
+          "survived": 2,
+          "noCoverage": 0,
+          "timeout": 2
+        },
+        "no-unsafe-multer-filename": {
+          "score": 94.3,
+          "killed": 185,
+          "survived": 11,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-guards": {
+          "score": 95.9,
+          "killed": 374,
+          "survived": 16,
+          "noCoverage": 0,
+          "timeout": 5
+        },
+        "require-throttler": {
+          "score": 97,
+          "killed": 99,
+          "survived": 3,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-validation-pipe-whitelist": {
+          "score": 97.8,
+          "killed": 89,
+          "survived": 2,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/nest-ast": {
+          "score": 90.8,
+          "killed": 242,
+          "survived": 25,
+          "noCoverage": 0,
+          "timeout": 5
+        },
+        "utils/nestjs-evidence": {
+          "score": 100,
+          "killed": 8,
+          "survived": 0,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/project-context": {
+          "score": 74.6,
+          "killed": 191,
+          "survived": 67,
+          "noCoverage": 0,
+          "timeout": 6
+        },
+        "utils/sensitive-names": {
+          "score": 65.8,
+          "killed": 27,
+          "survived": 14,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/typescript-peer": {
+          "score": 88.8,
+          "killed": 8,
+          "survived": 1,
+          "noCoverage": 0,
+          "timeout": 0
+        }
+      }
+    },
+    "vercel-ai-security": {
+      "rules": {
+        "no-dynamic-system-prompt": {
+          "score": 100,
+          "killed": 57,
+          "survived": 0,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-hardcoded-api-keys": {
+          "score": 92.5,
+          "killed": 136,
+          "survived": 11,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-sensitive-in-prompt": {
+          "score": 99,
+          "killed": 106,
+          "survived": 1,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-system-prompt-leak": {
+          "score": 99.1,
+          "killed": 113,
+          "survived": 1,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-training-data-exposure": {
+          "score": 97.7,
+          "killed": 44,
+          "survived": 1,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-unsafe-output-handling": {
+          "score": 98.6,
+          "killed": 220,
+          "survived": 3,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-abort-signal": {
+          "score": 100,
+          "killed": 28,
+          "survived": 0,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-audit-logging": {
+          "score": 100,
+          "killed": 117,
+          "survived": 0,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "require-embedding-validation": {
+          "score": 98.8,
+          "killed": 83,
+          "survived": 1,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-error-handling": {
+          "score": 95.2,
+          "killed": 80,
+          "survived": 4,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "require-max-steps": {
+          "score": 93.4,
+          "killed": 71,
+          "survived": 5,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-max-tokens": {
+          "score": 100,
+          "killed": 28,
+          "survived": 0,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-output-filtering": {
+          "score": 100,
+          "killed": 102,
+          "survived": 0,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "require-output-validation": {
+          "score": 95.1,
+          "killed": 59,
+          "survived": 3,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-rag-content-validation": {
+          "score": 100,
+          "killed": 66,
+          "survived": 0,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-request-timeout": {
+          "score": 100,
+          "killed": 34,
+          "survived": 0,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-tool-confirmation": {
+          "score": 98.6,
+          "killed": 71,
+          "survived": 1,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-tool-schema": {
+          "score": 97.7,
+          "killed": 85,
+          "survived": 2,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-validated-prompt": {
+          "score": 100,
+          "killed": 132,
+          "survived": 0,
+          "noCoverage": 0,
+          "timeout": 0
+        }
+      }
     }
   }
 }

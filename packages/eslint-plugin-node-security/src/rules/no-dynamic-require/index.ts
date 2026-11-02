@@ -21,7 +21,11 @@ import { isModuleLoader } from './module-loader';
 type MessageIds = 'dynamicRequire';
 
 export interface Options {
-  /** Allow dynamic requires in specific contexts. Default: `[]` */
+  /**
+   * Allow dynamic requires in files whose PATH marks a context. Default: `[]`.
+   * Each context is a substring test on the linted filename — see
+   * `isInAllowedContext`.
+   */
   allowContexts?: ('test' | 'config' | 'build' | 'runtime')[];
   /**
    * Regex patterns matched against the SOURCE TEXT of the require argument. A
@@ -76,7 +80,8 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
               enum: ['test', 'config', 'build', 'runtime'],
             },
             default: [],
-            description: 'Allow dynamic requires in specific contexts.',
+            description:
+              'Allow dynamic requires in files whose path marks a context — a substring test on the linted file path: test (.test., .spec., /__tests__/), config (config, webpack, rollup), build (build, scripts, tools), runtime (runtime, dynamic).',
           },
           allowPatterns: {
             type: 'array',
@@ -180,12 +185,15 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
         // them, while the sibling `no-dynamic-dependency-loading` resolved
         // them — so the two rules disagreed about what a loader is, and
         // `module.require(x)` fell through both.
+        //
+        // The loader reads its FIRST argument and ignores the rest, so
+        // `require(name, 'utf8')` loads `name` as surely as `require(name)`;
+        // demanding exactly one argument let a stray second one hide it.
+        const [requireArg] = node.arguments;
         if (
-          isModuleLoader(node.callee, context.sourceCode) &&
-          node.arguments.length === 1
+          requireArg !== undefined &&
+          isModuleLoader(node.callee, context.sourceCode)
         ) {
-          const requireArg = node.arguments[0];
-
           if (isInAllowedContext()) {
             return;
           }
@@ -207,11 +215,14 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
           // text match that suppresses costs recall in the config that asked
           // for it; a text match that reports costs a stranger's trust. Only
           // the second is the defect class the doctrine is about.
-          if (allowed.length > 0) {
-            const text = context.sourceCode.getText(requireArg);
-            if (matchesAnyUserPattern(allowed, text)) {
-              return;
-            }
+          // With no patterns configured nothing matches.
+          if (
+            matchesAnyUserPattern(
+              allowed,
+              context.sourceCode.getText(requireArg),
+            )
+          ) {
+            return;
           }
 
           // Report dynamic require

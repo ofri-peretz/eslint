@@ -467,7 +467,14 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       const reads = variable.references.filter((ref) => ref.isRead());
       // No reads at all: the value's destination is unknown, not safe.
       if (reads.length === 0) return false;
-      return reads.every((ref) => !reachesXpathSink(ref.identifier));
+      // A `return expr` hands the string to a caller this file cannot follow —
+      // the same unresolved destination as having no use at all, so it never
+      // counts as a demonstrably harmless use.
+      return reads.every(
+        (ref) =>
+          ref.identifier.parent.type !== AST_NODE_TYPES.ReturnStatement &&
+          !reachesXpathSink(ref.identifier),
+      );
     }
 
     /**

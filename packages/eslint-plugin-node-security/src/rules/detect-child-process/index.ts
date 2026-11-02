@@ -20,6 +20,7 @@ import {
   objectKeyName,
   propertyName,
   staticString,
+  unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 import { createRule, isStaticExpression } from '@interlace/eslint-devkit';
 
@@ -214,130 +215,11 @@ interface CommandPattern {
   effort: string;
 }
 
-const COMMAND_PATTERNS: CommandPattern[] = [
-  {
-    method: 'exec',
-    dangerous: true,
-    vulnerability: 'command-injection',
-    safeAlternatives: ['execFile', 'spawn'],
-    example: {
-      // oxlint-disable-next-line no-template-curly-in-string
-      bad: 'exec(`git clone ${repoUrl}`)',
-      good: [
-        "execFile('git', ['clone', repoUrl], {shell: false})",
-        "spawn('git', ['clone', repoUrl], {shell: false})",
-      ],
-    },
-    effort: '15-25 minutes',
-  },
-  {
-    method: 'execSync',
-    dangerous: true,
-    vulnerability: 'command-injection',
-    safeAlternatives: ['execFileSync', 'spawnSync'],
-    // oxlint-disable-next-line no-template-curly-in-string
-    example: {
-      // oxlint-disable-next-line no-template-curly-in-string
-      bad: 'execSync(`npm install ${packageName}`)',
-      good: [
-        "execFileSync('npm', ['install', packageName], {shell: false})",
-        "spawnSync('npm', ['install', packageName], {shell: false})",
-      ],
-    },
-    effort: '15-25 minutes',
-  },
-  {
-    method: 'spawn',
-    dangerous: false,
-    vulnerability: 'argument-injection',
-    safeAlternatives: ['spawn with validation'],
-    example: {
-      bad: "spawn('bash', ['-c', userCommand])",
-      good: [
-        'spawn(validatedCommand, validatedArgs, {shell: false})',
-        '// Validate command and args first',
-      ],
-    },
-    effort: '20-30 minutes',
-  },
-  {
-    method: 'execFile',
-    dangerous: true,
-    vulnerability: 'command-injection',
-    safeAlternatives: ['spawn'],
-    example: {
-      bad: 'execFile(userCommand, userArgs, callback)',
-      good: [
-        'spawn(validatedCommand, validatedArgs, {shell: false})',
-        '// Validate command and args first',
-      ],
-    },
-    effort: '10-15 minutes',
-  },
-  {
-    method: 'execFileSync',
-    dangerous: true,
-    vulnerability: 'command-injection',
-    safeAlternatives: ['spawnSync'],
-    example: {
-      bad: 'execFileSync(userCommand, userArgs)',
-      good: [
-        'spawnSync(validatedCommand, validatedArgs, {shell: false})',
-        '// Validate command and args first',
-      ],
-    },
-    effort: '10-15 minutes',
-  },
-  {
-    method: 'spawnSync',
-    dangerous: false,
-    vulnerability: 'argument-injection',
-    safeAlternatives: ['spawnSync with validation'],
-    example: {
-      bad: "spawnSync('bash', ['-c', userCommand])",
-      good: [
-        'spawnSync(validatedCommand, validatedArgs, {shell: false})',
-        '// Validate command and args first',
-      ],
-    },
-    effort: '15-20 minutes',
-  },
-  {
-    method: 'fork',
-    dangerous: true,
-    vulnerability: 'command-injection',
-    safeAlternatives: ['spawn'],
-    example: {
-      bad: 'fork(userScript)',
-      good: [
-        "spawn('node', [validatedScript], {shell: false})",
-        '// Validate script path first',
-      ],
-    },
-    effort: '15-20 minutes',
-  },
-  {
-    method: 'forkSync',
-    dangerous: true,
-    vulnerability: 'command-injection',
-    safeAlternatives: ['spawnSync'],
-    example: {
-      bad: 'forkSync(userScript)',
-      good: [
-        "spawnSync('node', [validatedScript], {shell: false, stdio: 'inherit'})",
-        '// Validate script path first',
-      ],
-    },
-    effort: '15-20 minutes',
-  },
-];
-
 /**
  * Generate refactoring steps based on the pattern.
  *
- * Module-scope (rather than inline in `create()`) so the `default` branch —
- * unreachable through COMMAND_PATTERNS, which only contains methods with
- * dedicated cases — is directly unit-testable.
+ * Not read by the rule: none of its messages has a `{{steps}}` placeholder.
+ * Kept exported; its unit tests pin the per-method text.
  */
 export const generateRefactoringSteps = (pattern: CommandPattern): string => {
   switch (pattern.method) {
@@ -532,16 +414,10 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     let readsRemoteTaintSource: (node: TSESTree.Node) => boolean;
     let reportUnresolvedCommands: boolean;
     let dangerousMethodsSet: Set<string>;
-    let moduleAliases: Set<string>;
-    let importedMethods: Set<string>;
 
     /**
-     * Track imported child_process identifiers so we can flag calls like
-     * `exec()` or `cp.exec()` in addition to `child_process.exec()`.
-     */
-    /**
-     * `node:child_process` and `child_process` are the same module. The trackers below
-     * compared the specifier literally, so every `node:`-prefixed import was invisible.
+     * `node:child_process` and `child_process` are the same module. Comparing the
+     * specifier literally made every `node:`-prefixed import invisible.
      */
     const isChildProcessSpecifier = (value: unknown): boolean =>
       value === 'child_process' || value === 'node:child_process';
@@ -600,6 +476,59 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         node: argument,
         scope: context.sourceCode.getScope(argument),
       });
+
+    /**
+     * Provenance that IS resolved, even though it is not constant: a literal, or
+     * a value the operator supplies through `process.argv` / `process.env`,
+     * possibly spliced into a template or concatenation of such parts.
+     *
+     * `reportUnresolvedCommands` is about a command "whose provenance cannot be
+     * resolved". `spawn(cmd)` with `cmd` a parameter qualifies;
+     * `exec(process.env.DEPLOY_CMD)` does not — it is resolved, and the "Not a
+     * finding" table says why it is silent.
+     */
+    const hasResolvedProvenance = (
+      written: TSESTree.Node,
+      depth = 0,
+    ): boolean => {
+      if (depth > 6) return false;
+      // `process.env.CMD as string` is the same value; the cast is erased.
+      const argument = unwrapTypeSyntax(written);
+      if (isStaticArg(argument)) return true;
+      switch (argument.type) {
+        case AST_NODE_TYPES.MemberExpression: {
+          let root: TSESTree.MemberExpression = argument;
+          while (root.object.type === AST_NODE_TYPES.MemberExpression) {
+            root = root.object;
+          }
+          const surface = propertyName(root);
+          return (
+            root.object.type === AST_NODE_TYPES.Identifier &&
+            root.object.name === LOCAL_TAINT_ROOT &&
+            (surface === 'argv' || surface === 'env')
+          );
+        }
+        // A template or a `+` is a finite tree of its own source, so walking
+        // it cannot loop; only the `const` hop below can (`const a = b, b = a`),
+        // and only that hop spends depth. Counting every `+` capped a command
+        // concatenated from seven or more `process.env` parts as unresolved.
+        case AST_NODE_TYPES.TemplateLiteral:
+          return argument.expressions.every((part) =>
+            hasResolvedProvenance(part, depth),
+          );
+        case AST_NODE_TYPES.BinaryExpression:
+          return (
+            hasResolvedProvenance(argument.left, depth) &&
+            hasResolvedProvenance(argument.right, depth)
+          );
+        case AST_NODE_TYPES.Identifier: {
+          const init = constInitializerOf(context.sourceCode, argument);
+          return init !== null && hasResolvedProvenance(init, depth + 1);
+        }
+        default:
+          return false;
+      }
+    };
 
     const hasOnlyLiteralArgs = (args: TSESTree.Node[]): boolean => {
       if (args.length === 0) return false;
@@ -785,16 +714,12 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
           return null;
         }
         if (!readsRemoteTaintSource(element)) continue;
-        // A spread cannot be proven flag-proof: nothing here knows what is in
-        // the array, and `[...userWords]` is precisely the tar fixture.
-        const target =
-          element.type === AST_NODE_TYPES.SpreadElement
-            ? element.argument
-            : element;
         // A value an allowlist guard proved cannot be an option the list does
-        // not contain.
-        if (isValidatedBy(validated, target)) continue;
-        if (cannotStartWithDash(target)) continue;
+        // not contain. A spread is neither: its text (`...x`) is not a value a
+        // guard checked, nothing here knows what the array holds, and
+        // `[...userWords]` is precisely the tar fixture.
+        if (isValidatedBy(validated, element)) continue;
+        if (cannotStartWithDash(element)) continue;
         return element;
       }
       return null;
@@ -991,62 +916,15 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Extract command and arguments for analysis.
-     * `method` comes from getChildProcessCall, which already resolved the
-     * callee shape — re-deriving it here would duplicate that logic behind
-     * an unreachable defensive branch.
+     * Is the command (argument 0) not provably constant?
+     *
+     * Read only for `exec`/`execSync`, whose second argument is an options
+     * object or a callback — never argv — so the command is the one position
+     * that can carry injected input. A FunctionExpression callback is never
+     * "static"; scanning it would mark every `exec(cmd, cb)` dynamic.
      */
-    const extractCommandInfo = (
-      node: TSESTree.CallExpression,
-      method: string,
-    ): {
-      args: string;
-      pattern: CommandPattern | null;
-      isDynamic: boolean;
-    } => {
-      const sourceCode = context.sourceCode;
-      const args = node.arguments
-        .map((arg: TSESTree.Node) => sourceCode.getText(arg))
-        .join(', ');
-
-      const pattern = COMMAND_PATTERNS.find((p) => p.method === method) || null;
-
-      // Check if arguments contain dynamic content
-      // Only the command (arg 0) and an explicit argv array (arg 1) can carry injected
-      // input. Arg 1+ is otherwise an options object or a callback — a FunctionExpression
-      // is never "static", so including it here would mark every `exec(cmd, cb)` dynamic.
-      const injectableArgs: TSESTree.Node[] = node.arguments.slice(0, 1);
-      const argvArray = node.arguments[1];
-      if (argvArray?.type === AST_NODE_TYPES.ArrayExpression) {
-        injectableArgs.push(
-          ...argvArray.elements.filter(
-            (el): el is TSESTree.Expression => el !== null,
-          ),
-        );
-      }
-      const isDynamic = injectableArgs.some((arg: TSESTree.Node) =>
-        containsDynamicStrings(arg),
-      );
-
-      return { args, pattern, isDynamic };
-    };
-
-    /**
-     * Determine risk level based on the call pattern
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    const determineRiskLevel = (
-      pattern: CommandPattern | null,
-      isDynamic: boolean,
-    ): 'critical' | 'high' | 'medium' => {
-      if (pattern?.dangerous && isDynamic) {
-        return 'critical';
-      }
-      if (pattern?.dangerous || isDynamic) {
-        return 'high';
-      }
-      return 'medium';
-    };
+    const isDynamicCommand = (node: TSESTree.CallExpression): boolean =>
+      node.arguments.length > 0 && containsDynamicStrings(node.arguments[0]);
 
     /**
      * Determine whether the callee refers to a child_process API.
@@ -1108,8 +986,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
           for (const property of declarator.id.properties) {
             // The key is read with `objectKeyName`, not as an Identifier:
             // `{ 'exec': run }` and `{ ['exec']: run }` bind exec exactly as
-            // `{ exec: run }` does, and `trackChildProcessRequire` already
-            // accepts those spellings.
+            // `{ exec: run }` does.
             if (
               property.type === AST_NODE_TYPES.Property &&
               property.value.type === AST_NODE_TYPES.Identifier &&
@@ -1127,8 +1004,8 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     /**
      * Does this name still refer to child_process HERE?
      *
-     * `moduleAliases` / `importedMethods` are flat name sets, so an inner binding that
-     * reuses the name kept the alias alive:
+     * This used to be answered from flat name sets recorded at each import and require,
+     * so an inner binding that reused the name kept the alias alive:
      *
      * ```js
      * var foo = require('child_process');
@@ -1145,12 +1022,15 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
      * the require call. Treating only the first as legitimate silently suppressed the
      * CWE-088 argument-injection fixtures, both written with the destructured require.
      *
-     * @param fallback names recorded from shapes scope analysis does not model — reached
-     *   only when the identifier resolves to no declaration in this file.
+     * Those name sets are gone: an import or a require declares its binding in this
+     * file, so the scope walk below always found it first and never consulted them.
+     *
+     * @param globalName what an identifier declared nowhere in this file means — the
+     *   bare `child_process` global for a receiver, nothing for a called name.
      */
     const resolvesToChildProcess = (
       node: TSESTree.Node,
-      fallback: ReadonlySet<string>,
+      globalName: string | null,
     ): boolean => {
       if (node.type !== AST_NODE_TYPES.Identifier) return false;
 
@@ -1184,9 +1064,8 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         return false;
       }
 
-      // Declared nowhere in this file: the bare `child_process` global name, or an
-      // alias recorded from a shape scope analysis does not model.
-      return fallback.has(node.name);
+      // Declared nowhere in this file: only the bare `child_process` global name.
+      return node.name === globalName;
     };
 
     const getChildProcessCall = (
@@ -1209,12 +1088,12 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         }
 
         // child_process.exec(...) or alias.exec(...)
-        if (resolvesToChildProcess(node.callee.object, moduleAliases)) {
+        if (resolvesToChildProcess(node.callee.object, 'child_process')) {
           return { method: methodName, calleeNode: node.callee };
         }
 
         // require('child_process').exec(...) — chained straight off the require, so the
-        // module never gets a name for `moduleAliases` to hold.
+        // module never gets a name to resolve.
         if (isChildProcessRequire(node.callee.object)) {
           return { method: methodName, calleeNode: node.callee };
         }
@@ -1237,7 +1116,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       ) {
         // Same shadowing question for a directly-imported method: an inner
         // `const exec = /re/.exec` must not inherit the import's meaning.
-        if (resolvesToChildProcess(node.callee, importedMethods)) {
+        if (resolvesToChildProcess(node.callee, null)) {
           return { method: node.callee.name, calleeNode: node.callee };
         }
       }
@@ -1255,7 +1134,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       }
 
       const { method } = detected;
-      const { args, pattern, isDynamic } = extractCommandInfo(node, method);
+      const isDynamic = isDynamicCommand(node);
 
       // Allow literal strings if configured (legacy option, kept for
       // backward compat with existing user configs). Checked first: the
@@ -1344,7 +1223,6 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       }
       /** Request data the guards above did not validate. */
       const readsUnvalidatedTaint = (argument: TSESTree.Node): boolean => {
-        if (validated.size === 0) return readsTaintSource(argument);
         if (argument.type === AST_NODE_TYPES.ArrayExpression) {
           return argument.elements.some(
             (el) => el !== null && readsUnvalidatedTaint(el),
@@ -1398,7 +1276,9 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       const commandIsSteerable =
         command === undefined ||
         (!isValidatedBy(validated, command) &&
-          (isFreeReference(command) || readsRemoteTaintSource(command)));
+          (isFreeReference(command) ||
+            readsRemoteTaintSource(command) ||
+            (reportUnresolvedCommands && !hasResolvedProvenance(command))));
       if (!usesShell(node, method) && !commandIsSteerable) {
         // …but the paragraph above says argument injection is real and that a
         // rule which cannot name the binary cannot judge it. Here the binary IS
@@ -1458,22 +1338,28 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
           !isValidatedBy(validated, argument) && isFreeReference(argument),
       );
 
+      // The option's sweep reports every call that reaches here, except one whose
+      // command is operator configuration (`process.env`, `process.argv`): that
+      // provenance IS resolved, so the option has nothing to add to it.
+      const argvUnresolved =
+        saferMethods.has(method) &&
+        argvVector !== undefined &&
+        argvVector.type !== AST_NODE_TYPES.ArrayExpression &&
+        argvVector.type !== AST_NODE_TYPES.ObjectExpression;
+      const operatorConfigured =
+        injectablePositions.every((argument) =>
+          hasResolvedProvenance(argument),
+        ) &&
+        !injectablePositions.every(isStaticArg) &&
+        !argvUnresolved;
+      const unresolved = reportUnresolvedCommands && !operatorConfigured;
       if (
-        !reportUnresolvedCommands &&
+        !unresolved &&
         !unknowable &&
         !node.arguments.some((argument) => readsUnvalidatedTaint(argument))
       ) {
         return;
       }
-
-      // Report the security issue
-      const riskLevel = determineRiskLevel(pattern, isDynamic);
-      const steps = pattern
-        ? generateRefactoringSteps(pattern)
-        : 'Review and secure command execution';
-      const alternatives =
-        pattern?.safeAlternatives.join(', ') ||
-        'execFile, spawn with validation';
 
       // CWE-78 is a claim about a SHELL parsing metacharacters. Make it only
       // when a shell is actually in the picture; otherwise say what is true.
@@ -1482,85 +1368,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         messageId: usesShell(node, method)
           ? 'childProcessCommandInjection'
           : 'untrustedProgram',
-        data: {
-          method,
-          args,
-          riskLevel,
-          vulnerability: pattern?.vulnerability || 'command injection',
-          alternatives,
-          steps,
-          effort: pattern?.effort || '15-30 minutes',
-        },
       });
-    };
-
-    /**
-     * Track imports/requires of child_process to catch alias usage.
-     */
-    const trackChildProcessImport = (node: TSESTree.ImportDeclaration) => {
-      if (!isChildProcessSpecifier(node.source.value)) {
-        return;
-      }
-
-      for (const specifier of node.specifiers) {
-        if (
-          specifier.type === 'ImportDefaultSpecifier' ||
-          specifier.type === 'ImportNamespaceSpecifier'
-        ) {
-          moduleAliases.add(specifier.local.name);
-        }
-
-        if (specifier.type === 'ImportSpecifier') {
-          importedMethods.add(specifier.local.name);
-        }
-      }
-    };
-
-    /**
-     * Track CommonJS require patterns.
-     */
-    const trackChildProcessRequire = (node: TSESTree.VariableDeclarator) => {
-      if (!node.init) {
-        return;
-      }
-
-      // const cp = require('child_process');
-      if (
-        node.id.type === 'Identifier' &&
-        node.init.type === 'CallExpression' &&
-        node.init.callee.type === 'Identifier' &&
-        node.init.callee.name === 'require' &&
-        node.init.arguments[0] &&
-        node.init.arguments[0].type === 'Literal' &&
-        isChildProcessSpecifier(node.init.arguments[0].value)
-      ) {
-        moduleAliases.add(node.id.name);
-        return;
-      }
-
-      // const { exec } = require('child_process');
-      if (
-        node.id.type === 'ObjectPattern' &&
-        node.init?.type === 'CallExpression' &&
-        node.init.callee.type === 'Identifier' &&
-        node.init.callee.name === 'require' &&
-        node.init.arguments[0] &&
-        node.init.arguments[0].type === 'Literal' &&
-        isChildProcessSpecifier(node.init.arguments[0].value)
-      ) {
-        for (const prop of node.id.properties) {
-          if (prop.type !== 'Property') continue;
-          // The key spelling does not change which method is imported:
-          // `const { ['exec']: run } = require('child_process')` binds exec
-          // exactly as the bare form does. Gating on an Identifier key made
-          // the rule blind to the notation a bundler emits.
-          const imported =
-            prop.value.type === 'Identifier'
-              ? prop.value.name
-              : objectKeyName(prop);
-          if (imported !== null) importedMethods.add(imported);
-        }
-      }
     };
 
     /**
@@ -1571,7 +1379,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
      * ever producing an `alias.exec(...)` call for the visitor above to see.
      *
      * Skipped when the require is:
-     *   - a VariableDeclarator init  -> `trackChildProcessRequire` registers the alias and any
+     *   - a VariableDeclarator init  -> the binding resolves back to this require, so any
      *                                   real call site reports instead; reporting here too
      *                                   would emit two findings for one issue
      *   - the object of a member expression -> `require('cp').exec(x)` already reports as a call
@@ -1593,17 +1401,6 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       context.report({
         node,
         messageId: 'childProcessCommandInjection',
-        data: {
-          method: 'require',
-          riskLevel: 'MEDIUM',
-          vulnerability: 'command-injection',
-          safeAlternatives: 'execFile, spawn',
-          refactoringSteps:
-            '   1. Avoid importing child_process where it is not needed\n   2. If required, prefer execFile()/spawn() with {shell: false}\n   3. Validate any command or argument that is not a literal',
-          effort: '10-15 minutes',
-          badExample: "require('child_process')",
-          goodExample: "const { execFile } = require('node:child_process')",
-        },
       });
     };
 
@@ -1620,7 +1417,17 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
             source.toLowerCase(),
           ),
         );
-        readsTaintSource = makeReadsTaintSource(context.sourceCode, taintRoots);
+        /*
+         * `process.env` is configuration, set by whoever runs the process — the
+         * "Not a finding" table. `process.argv` stays a root: spliced into a
+         * shell string, an argument becomes code.
+         */
+        const operatorConfig = new Set(['env']);
+        readsTaintSource = makeReadsTaintSource(
+          context.sourceCode,
+          taintRoots,
+          operatorConfig,
+        );
 
         /**
          * The same reader minus `process` — "can a party who is NOT already at this
@@ -1658,6 +1465,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         readsRemoteTaintSource = makeReadsTaintSource(
           context.sourceCode,
           new Set([...taintRoots].filter((root) => root !== LOCAL_TAINT_ROOT)),
+          operatorConfig,
         );
         reportUnresolvedCommands = options.reportUnresolvedCommands ?? false;
 
@@ -1675,16 +1483,11 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
           'forkSync',
           ...additionalMethods,
         ]);
-
-        moduleAliases = new Set<string>(['child_process']);
-        importedMethods = new Set<string>();
       },
       CallExpression(node: TSESTree.CallExpression) {
         checkChildProcessCall(node);
         checkBareChildProcessRequire(node);
       },
-      ImportDeclaration: trackChildProcessImport,
-      VariableDeclarator: trackChildProcessRequire,
     };
   },
 });

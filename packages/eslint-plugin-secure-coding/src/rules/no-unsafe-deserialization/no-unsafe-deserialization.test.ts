@@ -141,8 +141,22 @@ describe('no-unsafe-deserialization', () => {
       'invalid - dangerous deserialization libraries',
       noUnsafeDeserialization,
       {
-        valid: [],
+        valid: [
+          {
+            name: 'node-serialize unserialize of a string literal deserializes no untrusted data',
+            code: `const serialize = require('node-serialize'); serialize.unserialize('{"a":1}');`,
+          },
+          {
+            name: 'node-serialize unserialize of a const-bound literal is authored, not untrusted',
+            code: `const serialize = require('node-serialize'); const STATE = '{"a":1}'; serialize.unserialize(STATE);`,
+          },
+        ],
         invalid: [
+          {
+            name: 'node-serialize unserialize of a parameter stays unconditionally unsafe',
+            code: 'const serialize = require("node-serialize"); export function load(blob) { return serialize.unserialize(blob); }',
+            errors: [{ messageId: 'unsafeDeserialization' }],
+          },
           {
             code: 'const serialize = require("node-serialize"); serialize.unserialize(userInput);',
             errors: [{ messageId: 'unsafeDeserialization' }],
@@ -1077,7 +1091,13 @@ describe('the binding is the sink, not the name', () => {
     noUnsafeDeserialization,
     {
       valid: [],
-      invalid: [{ code: 'new Function(req.body.code);', errors: 1 }],
+      invalid: [
+        {
+          name: 'new Function on req.body code is reported',
+          code: 'new Function(req.body.code);',
+          errors: 1,
+        },
+      ],
     },
   );
 });

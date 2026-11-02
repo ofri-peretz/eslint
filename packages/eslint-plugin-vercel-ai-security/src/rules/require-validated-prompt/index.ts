@@ -145,7 +145,6 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
     let allowInTests: boolean;
     let sourceCode: typeof context.sourceCode;
     let pathPatterns: string[][];
-    let namePatterns: string[];
 
     /** A configured validator, or a schema parse (`schema.parse(x)`, `safeParse`, `parseAsync`). */
     function isValidatedCall(node: TSESTree.Node): boolean {
@@ -165,8 +164,12 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
       );
     }
 
+    /**
+     * A name whose trailing words are a pattern's words. A dotted pattern counts
+     * too: `req.body` read off the request is `reqBody` once bound to a name.
+     */
     function nameLooksLikeInput(name: string): boolean {
-      return namePatterns.some((pattern: string) =>
+      return userInputPatterns.some((pattern: string) =>
         nameEndsWithWords(name, pattern),
       );
     }
@@ -206,8 +209,19 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
           nameLooksLikeInput(propertyName(node) ?? '');
         return unsafe ? sourceCode.getText(node) : null;
       }
-      // Calls are not inspected: a validator makes the value safe, and any
-      // other call transforms its input into something this rule cannot see.
+      // Only a configured validator or a schema parse makes the value safe.
+      // Any other call — `x.trim()`, `String(x)`, a helper not listed in
+      // `validatorFunctions` — passes its receiver and arguments through.
+      if (node.type === 'CallExpression' && !isValidatedCall(node)) {
+        const operands =
+          node.callee.type === 'MemberExpression'
+            ? [node.callee.object, ...node.arguments]
+            : node.arguments;
+        for (const operand of operands) {
+          const found = findUserInput(operand);
+          if (found) return found;
+        }
+      }
       return null;
     }
 
@@ -231,17 +245,14 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
           return false;
         }
 
-        // `req.body` / `request.body` are member PATHS; the rest are name head nouns.
+        // `req.body` / `request.body` are also member PATHS.
         pathPatterns = userInputPatterns
           .filter((p: string) => p.includes('.'))
           .map((p: string) => p.split('.'));
-        namePatterns = userInputPatterns.filter(
-          (p: string) => !p.includes('.'),
-        );
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        const matchedFunction = sdkCallName(node);
+        const matchedFunction = sdkCallName(node, context.sourceCode);
         if (!matchedFunction) return;
 
         const optionsArg = node.arguments[0];

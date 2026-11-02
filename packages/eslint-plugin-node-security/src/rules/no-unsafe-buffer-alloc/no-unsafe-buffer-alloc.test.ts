@@ -395,6 +395,7 @@ describe('no-unsafe-buffer-alloc', () => {
             errors: [{ messageId: 'unsafeAlloc' }],
           },
           {
+            name: 'Buffer.allocUnsafe() with no size is reported with a Buffer.alloc suggestion',
             code: 'const slot = Buffer["allocUnsafeSlow"](64);\nsend(slot);',
             errors: [{ messageId: 'unsafeAllocSlow' }],
           },

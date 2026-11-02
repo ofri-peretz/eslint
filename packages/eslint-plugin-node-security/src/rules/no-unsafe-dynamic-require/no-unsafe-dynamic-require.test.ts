@@ -202,6 +202,7 @@ describe('no-unsafe-dynamic-require', () => {
         },
         // argv names the module.
         {
+          name: 'a declaration with no initializer is not reported',
           code: `const plugin = require(process.argv[2]);`,
           errors: [{ messageId: 'unsafeDynamicRequire' }],
         },

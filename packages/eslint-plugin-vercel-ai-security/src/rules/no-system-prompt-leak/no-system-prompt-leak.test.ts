@@ -22,7 +22,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -48,7 +48,6 @@ const xai = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -191,6 +190,89 @@ ruleTester.run('no-system-prompt-leak (fp-fn audit)', noSystemPromptLeak, {
           return new Response(JSON.stringify({ systemPrompt: SYSTEM_PROMPT }));
         }
       `,
+      errors: [{ messageId: 'systemPromptLeak' }],
+    },
+  ]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quint fidelity model (benchmarks/suites/fidelity/models/vercel-ai-security)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-system-prompt-leak (fidelity)', noSystemPromptLeak, {
+  valid: xai([
+    {
+      name: 'a bare response value that is not a system prompt is not reported',
+      code: `export function GET() { return Response.json(answer); }`,
+    },
+    {
+      name: 'a response with no body is not reported',
+      code: `export function GET(res) { res.send(); }`,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'a system prompt passed straight to Response.json leaks it',
+      code: `export function GET() { return Response.json(systemPrompt); }`,
+      errors: [{ messageId: 'systemPromptLeak' }],
+    },
+    {
+      name: 'a system prompt passed straight to res.json leaks it',
+      code: `export function GET(req, res) { res.json(systemPrompt); }`,
+      errors: [{ messageId: 'systemPromptLeak' }],
+    },
+    {
+      name: 'a system prompt serialised straight into new Response leaks it',
+      code: `export function GET() { return new Response(JSON.stringify(systemPrompt)); }`,
+      errors: [{ messageId: 'systemPromptLeak' }],
+    },
+  ]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-system-prompt-leak (mutation audit)', noSystemPromptLeak, {
+  valid: xai([
+    {
+      name: 'a computed member read names no system prompt',
+      code: `function pick(prompts, name) { return prompts[name]; }`,
+    },
+    {
+      name: "a returned object's key is not evidence outside a response payload",
+      code: `function buildOptions(persona) { return { system: persona }; }`,
+    },
+    {
+      name: 'a computed key in a response payload names nothing',
+      code: `Response.json({ [field]: value });`,
+    },
+    {
+      name: 'a method that only starts with send is not a response',
+      code: `logger.sendMetrics({ systemPrompt });`,
+    },
+    {
+      name: 'a non-Response constructor is not a response',
+      code: `queue.push(new QueueMessage(JSON.stringify({ systemPrompt })));`,
+    },
+    {
+      name: 'an empty Response has no payload',
+      code: `export function GET() { return new Response(); }`,
+    },
+    {
+      name: 'a digest of the system prompt is not the prompt',
+      code: `export function GET() { return new Response(sha256(SYSTEM_PROMPT)); }`,
+    },
+  ]),
+  invalid: xai([
+    {
+      // @found mutation testing
+      name: 'FN: an Express JSONP response sends the payload like res.json',
+      code: `res.jsonp({ systemPrompt });`,
+      errors: [{ messageId: 'systemPromptLeak' }],
+    },
+    {
+      // @found mutation testing
+      name: "FN: res['json'] is the same response call",
+      code: `res['json']({ systemPrompt });`,
       errors: [{ messageId: 'systemPromptLeak' }],
     },
   ]),

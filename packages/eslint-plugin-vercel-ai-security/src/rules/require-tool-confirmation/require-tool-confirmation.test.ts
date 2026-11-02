@@ -22,7 +22,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -48,7 +48,6 @@ const xai = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -232,83 +231,146 @@ ruleTester.run('require-tool-confirmation', requireToolConfirmation, {
   ]),
 });
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md)
 // ─────────────────────────────────────────────────────────────────────────────
-ruleTester.run('require-tool-confirmation (fp-fn audit)', requireToolConfirmation, {
-  valid: xai([
-    {
-      name: 'needsApproval — the SDK\'s own tool-level approval flag — counts as confirmation',
-      code: `
+ruleTester.run(
+  'require-tool-confirmation (fp-fn audit)',
+  requireToolConfirmation,
+  {
+    valid: xai([
+      {
+        name: "needsApproval — the SDK's own tool-level approval flag — counts as confirmation",
+        code: `
         await streamText({
           tools: {
             removeItemFromCart: { description: 'x', inputSchema, needsApproval: true, execute: async ({ sku }) => sku },
           },
         });
       `,
-    },
-    {
-      name: 'call-level toolApproval covers every tool in the call',
-      code: `
+      },
+      {
+        name: 'call-level toolApproval covers every tool in the call',
+        code: `
         await streamText({
           toolApproval: { mode: 'always' },
           tools: { deleteAccount: tool({ description: 'x', inputSchema, execute: async () => {} }) },
         });
       `,
-    },
-    {
-      name: 'a tool with no execute is confirmed on the client — the SDK never runs it unattended',
-      code: `
+      },
+      {
+        name: 'a tool with no execute is confirmed on the client — the SDK never runs it unattended',
+        code: `
         await streamText({
           tools: { deleteAccount: tool({ description: 'Delete account', inputSchema }) },
         });
       `,
-    },
-    {
-      name: 'a non-destructive "create" tool is not destructive by default',
-      code: `
+      },
+      {
+        name: 'a non-destructive "create" tool is not destructive by default',
+        code: `
         await streamText({
           tools: { createChart: { description: 'Render a chart', inputSchema, execute: async ({ values }) => values } },
         });
       `,
-    },
-    {
-      name: 'whole-word match: "display" does not contain the word "pay"',
-      code: `
+      },
+      {
+        name: 'whole-word match: "display" does not contain the word "pay"',
+        code: `
         await streamText({
           tools: { displayInvoice: { description: 'x', execute: async () => {} } },
         });
       `,
-    },
-  ]),
-  invalid: xai([
-    {
-      name: 'documented default patterns apply: sendEmail is flagged (lock for the context.options bug)',
-      code: `
+      },
+    ]),
+    invalid: xai([
+      {
+        name: 'documented default patterns apply: sendEmail is flagged (lock for the context.options bug)',
+        code: `
         await streamText({
           tools: {
             sendEmail: { description: 'Send an email', inputSchema, execute: async ({ to, body }) => sendEmail(to, body) },
           },
         });
       `,
-      errors: [{ messageId: 'missingConfirmation', data: { toolName: 'sendEmail', operation: 'send' } }],
-    },
-    {
-      name: 'a destructive tool written with the idiomatic tool() helper is checked',
-      code: `
+        errors: [
+          {
+            messageId: 'missingConfirmation',
+            data: { toolName: 'sendEmail', operation: 'send' },
+          },
+        ],
+      },
+      {
+        name: 'a destructive tool written with the idiomatic tool() helper is checked',
+        code: `
         await streamText({
           tools: {
             deleteAccount: tool({ description: 'Delete the account', inputSchema, execute: async ({ userId }) => db.user.delete({ where: { id: userId } }) }),
           },
         });
       `,
-      errors: [{ messageId: 'missingConfirmation', data: { toolName: 'deleteAccount', operation: 'delete' } }],
-    },
-    {
-      name: 'a quoted tools key is still the tools object',
-      code: `generateText({ 'tools': { deleteUser: { execute: run } } });`,
-      errors: [{ messageId: 'missingConfirmation' }],
-    },
-  ]),
-});
+        errors: [
+          {
+            messageId: 'missingConfirmation',
+            data: { toolName: 'deleteAccount', operation: 'delete' },
+          },
+        ],
+      },
+      {
+        name: 'a quoted tools key is still the tools object',
+        code: `generateText({ 'tools': { deleteUser: { execute: run } } });`,
+        errors: [{ messageId: 'missingConfirmation' }],
+      },
+    ]),
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quint fidelity model (benchmarks/suites/fidelity/models/vercel-ai-security)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run(
+  'require-tool-confirmation (fidelity)',
+  requireToolConfirmation,
+  {
+    valid: xai([
+      {
+        name: 'confirm: true — the documented "Execute with confirmation" example — confirms the tool',
+        code: `
+        generateText({
+          tools: {
+            executeCommand: { confirm: true, execute: async ({ cmd }) => run(cmd) },
+          },
+        });
+      `,
+      },
+      {
+        name: 'confirm: true inside the tool() helper confirms the tool',
+        code: `
+        generateText({
+          tools: {
+            deleteFile: tool({ confirm: true, execute: async ({ id }) => backend.perform(id) }),
+          },
+        });
+      `,
+      },
+    ]),
+    invalid: [],
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run(
+  'require-tool-confirmation (mutation audit)',
+  requireToolConfirmation,
+  {
+    valid: xai([
+      {
+        name: 'a tool() call with no definition has nothing to check',
+        code: `await generateText({ model, prompt: 'x', tools: { deleteFile: tool() } });`,
+      },
+    ]),
+    invalid: [],
+  },
+);

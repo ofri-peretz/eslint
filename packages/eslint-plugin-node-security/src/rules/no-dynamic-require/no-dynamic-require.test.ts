@@ -122,6 +122,7 @@ describe('no-dynamic-require', () => {
         },
         // CONTROL for case 2.
         {
+          name: 'require of a variable in rollup.js is allowed under the config context',
           code: 'const mod = require(pluginName);',
           errors: [{ messageId: 'dynamicRequire' }],
         },

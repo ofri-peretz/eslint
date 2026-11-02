@@ -10,8 +10,8 @@ autofix: false
 
 > Suggests audit logging for AI SDK operations.
 
-
 <!-- @rule-summary -->
+
 This rule identifies AI SDK calls that aren't preceded by logging statements
 <!-- @/rule-summary -->
 
@@ -24,7 +24,7 @@ This rule identifies AI SDK calls that aren't preceded by logging statements
 | **OWASP Agentic**  | [ASI10: Logging & Monitoring](https://owasp.org)                                 |
 | **CWE**            | [CWE-778: Insufficient Logging](https://cwe.mitre.org/data/definitions/778.html) |
 | **CVSS**           | 4.0                                                                              |
-| **Config Default** | `off` (recommended), `warn` (strict)                                                      |
+| **Config Default** | `off` (recommended), `warn` (strict)                                             |
 
 ## 🔍 What This Rule Detects
 
@@ -52,14 +52,25 @@ export async function processRequest(req) {
 ## ✅ Correct Code
 
 ```typescript
-Hello
+// A log statement within the three statements before the call
+async function handler(req) {
+  logger.info('generateText', { user: req.user.id });
+  const result = await generateText({ prompt: req.body.q });
+  return result.text;
+}
+
+// The SDK's own OpenTelemetry trail
+await generateText({
+  prompt,
+  experimental_telemetry: { isEnabled: true },
+});
 ```
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Allow missing logging in test files |
+| Option         | Type      | Default | Description                         |
+| -------------- | --------- | ------- | ----------------------------------- |
+| `allowInTests` | `boolean` | `true`  | Allow missing logging in test files |
 
 ## 🛡️ Why This Matters
 
@@ -147,10 +158,10 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-778](https://cwe.mitre.org/data/definitions/778.html) [OWASP:A09](https://owasp.org/Top10/A09_2021-Injection/) [CVSS:5.3](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Insufficient Logging detected` |
-| **Severity & Compliance** | Impact assessment | `MEDIUM [SOC2,ISO27001,PCI-DSS,NIST-CSF]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A09_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                       |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-778](https://cwe.mitre.org/data/definitions/778.html) [OWASP:A09](https://owasp.org/Top10/A09_2021-Injection/) [CVSS:5.3](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Insufficient Logging detected`                                                                                                                                                                                                                               |
+| **Severity & Compliance** | Impact assessment      | `MEDIUM [SOC2,ISO27001,PCI-DSS,NIST-CSF]`                                                                                                                                                                                                                     |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                          |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A09_2021-Injection/)                                                                                                                                                                                                   |

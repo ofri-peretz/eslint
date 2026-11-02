@@ -144,9 +144,9 @@ function looksNumeric(
   node: TSESTree.Node,
   countNames: ReadonlySet<string>,
 ): boolean {
+  // No `Literal` arm: a literal size can never read wire, so judging it or not
+  // changes nothing.
   switch (node.type) {
-    case AST_NODE_TYPES.Literal:
-      return typeof node.value === 'number';
     case AST_NODE_TYPES.BinaryExpression:
       return ['+', '-', '*', '/', '%', '<<', '>>', '>>>'].includes(
         node.operator,
@@ -303,14 +303,16 @@ function isWriteMethod(name: string): boolean {
 /**
  * Calls whose FIRST argument is the destination being written.
  *
- * `src.copy(dest, …)` and `crypto.randomFillSync(dest, …)` write through an
- * argument rather than through the receiver, so a buffer that appears only as
- * `arguments[0]` of one of these is being filled, not read.
+ * `src.copy(dest, …)`, `crypto.randomFillSync(dest, …)` and
+ * `crypto.getRandomValues(dest)` write through an argument rather than through
+ * the receiver, so a buffer that appears only as `arguments[0]` of one of these
+ * is being filled, not read.
  */
 const DESTINATION_ARGUMENT_CALLS: ReadonlySet<string> = new Set([
   'copy',
   'randomFill',
   'randomFillSync',
+  'getRandomValues',
 ]);
 
 /** Properties that report the buffer's shape, not its contents. */
@@ -366,16 +368,34 @@ const WRITE_WIDTHS: ReadonlyMap<string, number> = new Map([
  */
 const MAX_TRACKED_ALLOCATION = 4096;
 
+/**
+ * Assignments that bind the allocation to the left-hand identifier. The
+ * logical forms are the lazy-initialisation spelling — `scratch ??=
+ * Buffer.allocUnsafe(8)` — and whichever value the binding ends up holding,
+ * the uses that follow are the uses of it. A compound arithmetic assignment
+ * (`s += …`) stores a number or a string, never the buffer.
+ */
+const ASSIGNING_OPERATORS: ReadonlySet<string> = new Set([
+  '=',
+  '??=',
+  '||=',
+  '&&=',
+]);
+
 /** The two specifiers that resolve to Node's built-in `buffer` module. */
 const BUFFER_MODULES: ReadonlySet<string> = new Set(['buffer', 'node:buffer']);
 
 /** The two specifiers that resolve to Node's built-in `crypto` module. */
 const CRYPTO_MODULES: ReadonlySet<string> = new Set(['crypto', 'node:crypto']);
 
-/** Entropy writers that fill their FIRST argument. */
+/**
+ * Entropy writers that fill their FIRST argument. `getRandomValues` is the Web
+ * Crypto spelling, which `node:crypto` also exports.
+ */
 const RANDOM_FILL_CALLS: ReadonlySet<string> = new Set([
   'randomFill',
   'randomFillSync',
+  'getRandomValues',
 ]);
 
 /** `require('crypto')` / `require('node:crypto')`. */
@@ -435,79 +455,22 @@ function isInsideLoop(node: TSESTree.Node): boolean {
   return false;
 }
 
-/**
- * How much of the buffer does this write cover?
- *
- * `fill` runs to the end of the buffer by definition. A one-argument
- * `copy`/`set`/`write` starts at offset 0 and runs for the source's whole
- * length — the "copy the whole thing in" idiom. Everything else carries an
- * explicit destination offset at `arguments[1]`, and then coverage depends on
- * whether that offset MOVES: a variable offset inside a loop is a buffer being
- * walked, a literal offset is one fixed field being stamped and the rest of the
- * allocation left as the allocator handed it over.
- */
-function coversWholeBuffer(
-  call: TSESTree.CallExpression,
-  method: string,
-): boolean {
-  if (method === 'fill') return true;
-  const width = WRITE_WIDTHS.get(method);
-  if (width !== undefined) {
-    // A fixed-width writer puts down `width` bytes wherever it lands, so a
-    // one-argument call is NOT the "copy the whole thing in" idiom — the
-    // omitted offset just means 0. Only a MOVING offset inside a loop walks
-    // the allocation.
-    const offset = call.arguments[1];
-    return (
-      offset !== undefined &&
-      offset.type !== AST_NODE_TYPES.Literal &&
-      isInsideLoop(call)
-    );
-  }
-  if (call.arguments.length === 1) return true;
-  const offset = call.arguments[1];
-  return offset.type !== AST_NODE_TYPES.Literal && isInsideLoop(call);
-}
-
-/**
- * The byte range a fixed-width write covers, when both ends are decidable.
- *
- * `header.writeUInt32BE(streamId, 4)` covers bytes 4..7. The offset must be a
- * numeric literal (or omitted, which means 0); anything computed leaves the
- * span unknown and the write stays merely partial.
- */
-function fixedWriteSpan(
-  call: TSESTree.CallExpression,
-  method: string,
-): { start: number; end: number } | null {
-  const width = WRITE_WIDTHS.get(method);
-  if (width === undefined) return null;
-  const offset = call.arguments[1];
-  if (offset === undefined) return { start: 0, end: width };
-  if (
-    offset.type !== AST_NODE_TYPES.Literal ||
-    typeof offset.value !== 'number'
-  ) {
-    return null;
-  }
-  return { start: offset.value, end: offset.value + width };
-}
-
 /** The name a callee resolves to, for `f()`, `o.f()` and `this.#f()`. */
 function calleeName(callee: TSESTree.Node): string | null {
   if (callee.type === AST_NODE_TYPES.Identifier) return callee.name;
   if (callee.type === AST_NODE_TYPES.MemberExpression) {
-    // A `#private` method carries a name too, and `propertyName` — which
-    // answers "what member does this name?" — deliberately does not return it.
-    // Dropping this arm silently lost `this.#b(len)` from the call graph.
-    if (
-      !callee.computed &&
-      callee.property.type === AST_NODE_TYPES.PrivateIdentifier
-    ) {
-      return callee.property.name;
-    }
-    // `chunk['readUInt32BE'](0)` reads the same length prefix.
-    return propertyName(callee);
+    // `chunk.readUInt32BE(0)`, `chunk['readUInt32BE'](0)` and
+    // ``chunk[`readUInt32BE`](0)`` read the same length prefix.
+    const named = propertyName(callee);
+    if (named !== null) return named;
+    // A `#private` name is the one non-computed key `propertyName` —
+    // which answers "what public member does this name?" — deliberately does
+    // not return. Dropping this arm silently lost `this.#b(len)` from the call
+    // graph.
+    const { property } = callee;
+    return property.type === AST_NODE_TYPES.PrivateIdentifier
+      ? property.name
+      : null;
   }
   return null;
 }
@@ -519,6 +482,16 @@ function declaredName(node: TSESTree.Node): string | null {
   const parent = node.parent;
   if (parent?.type === AST_NODE_TYPES.VariableDeclarator) {
     return parent.id.type === AST_NODE_TYPES.Identifier ? parent.id.name : null;
+  }
+  // `new Frame(len)` reaches `class Frame { constructor(len) {…} }`: the
+  // constructor is called by the CLASS's name — its own, or the binding an
+  // anonymous class expression is assigned to — not by `constructor`.
+  if (
+    parent?.type === AST_NODE_TYPES.MethodDefinition &&
+    parent.kind === 'constructor'
+  ) {
+    const owner = parent.parent.parent;
+    return owner.id?.name ?? declaredName(owner);
   }
   if (
     (parent?.type === AST_NODE_TYPES.MethodDefinition ||
@@ -637,21 +610,32 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
     // analyser's own write references subsume it and honour shadowing, so the
     // map is gone.
 
-    /** Does this expression read bytes off the wire? */
-    function readsWire(node: TSESTree.Node, depth = 0): boolean {
-      // Raised from 5: following a size back through a local binding costs
-      // hops the decoder-only version never spent. `Buffer.alloc(size)` where
-      // `size` is `Number(url.searchParams.get('size'))` and `url` is
-      // `new URL(req.url, base)` is eight links from the request, and it is
-      // ordinary handler code — see
-      // benchmarks/corpus/CWE-770/vulnerable/buffer-alloc-user.js.
-      if (depth > 10) return false;
+    /**
+     * Does this expression read bytes off the wire?
+     *
+     * There is no hop budget. One used to sit here (`depth > 10`), raised from
+     * 5 when `Buffer.alloc(size)` with `size` from `new URL(req.url, base)`
+     * turned out to be eight links from the request — and a budget is a
+     * finding dropped silently at link eleven. The walk needs none to stop:
+     * every step goes to a node strictly inside the current one, or to a write
+     * that ENDS before the current one starts, so it can never come back
+     * around. `seen` is for cost, not termination: `n = n + n` repeated reads
+     * each earlier write twice, and without it the walk doubles per line. A
+     * node already in `seen` has already answered `false` — a `true` returns
+     * all the way up at once.
+     */
+    function readsWire(
+      node: TSESTree.Node,
+      seen: Set<TSESTree.Node> = new Set(),
+    ): boolean {
+      if (seen.has(node)) return false;
+      seen.add(node);
       // `chunk.readUInt32BE(0) as number` reads exactly what the call reads —
       // the cast is erased at compile time. Without this the switch below falls
       // through to `default: return false`, and a TypeScript decoder (which
       // must write the cast to compile) silences the whole CWE-789 arm.
       const bare = unwrapTypeSyntax(node);
-      if (bare !== node) return readsWire(bare, depth + 1);
+      if (bare !== node) return readsWire(bare, seen);
 
       switch (node.type) {
         case AST_NODE_TYPES.Identifier: {
@@ -668,40 +652,40 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
           const lower = node.name.toLowerCase();
           if (vocab.wireNames.has(lower) || vocab.requestRoots.has(lower)) {
             // A name is evidence only where the ORIGIN is invisible — a
-            // parameter, or a binding this file never declares. When the
-            // identifier resolves to a local variable the initializer is right
-            // there, so follow it rather than trusting the spelling. Same move
-            // the `Buffer` case above makes, generalised.
+            // parameter, an import, or a binding this file never declares.
+            // When the identifier resolves to a local variable its writes are
+            // right there, so follow them rather than trusting the spelling.
+            // Same move the `Buffer` case above makes, generalised.
             //
             // `const chunk = buildPngChunk('pHYs', phys)` then
             // `new Uint8Array(bytes.length + chunk.length)` was reported as "the
             // peer picks the allocation" on the strength of the word `chunk`, in
             // a PNG writer at IGNF/cartes.gouv.fr-entree-carto that never touches
-            // a socket. Following the initializer answers it; the name cannot.
+            // a socket. Following the write answers it; the name cannot.
             //
-            // Recursing rather than returning false keeps the true case: a
-            // `const chunk = req.body.raw` still reads wire, now for a reason
-            // rather than for a spelling.
-            const bound = findVariable(sourceCode, node);
-            const def = bound === null ? undefined : bound.defs[0];
-            if (
-              def !== undefined &&
-              def.type === 'Variable' &&
-              def.node.init !== null &&
-              def.node.init !== undefined
-            ) {
-              return readsWire(def.node.init, depth + 1);
+            // Falling through to the last-write walk below rather than
+            // returning false keeps the true case: a `const chunk = req.body.raw`
+            // still reads wire, now for a reason rather than for a spelling. It
+            // also reads `let chunk; chunk = encodeChunk(meta)` — which used to
+            // follow the absent initializer, find nothing, and fall back to the
+            // name.
+            //
+            // A `for…of` head is not a visible origin: its write is the
+            // ITERABLE, and the element it binds is whatever that yields —
+            // `for await (const chunk of socket)` is the decoder shape this
+            // list was built for. (A `for…in` key is a property name, and
+            // following its write to the object is the right question.)
+            const def = findVariable(sourceCode, node)?.defs[0];
+            if (def?.type !== 'Variable') return true;
+            if (def.parent.parent.type === AST_NODE_TYPES.ForOfStatement) {
+              return true;
             }
-            return true;
           }
           const owner = enclosingFunction(node);
           if (owner !== null) {
             const name = declaredName(owner);
             const indices = name === null ? undefined : wireParams.get(name);
-            if (indices !== undefined) {
-              const index = paramIndexOf(node, owner);
-              if (index !== null && indices.has(index)) return true;
-            }
+            if (indices?.has(paramIndexOf(node, owner))) return true;
           }
           // The LAST write before this use, not the declarator.
           // `let capacity = 1024; if (…) capacity = Number(req.query.capacity);
@@ -717,7 +701,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
             .filter((write) => write.range[1] <= node.range[0])
             .sort((a, b) => a.range[1] - b.range[1])
             .at(-1);
-          return lastWrite !== undefined && readsWire(lastWrite, depth + 1);
+          return lastWrite !== undefined && readsWire(lastWrite, seen);
         }
         case AST_NODE_TYPES.MemberExpression:
           // Ask the SHAPE before walking to the root. `REQUEST_ROOTS` below is
@@ -735,32 +719,25 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
           // parameter. The name arm stays for the wire-decoder vocabulary it
           // was actually built for.
           if (readsRequestShape(node, sourceCode)) return true;
-          return readsWire(node.object, depth + 1);
+          return readsWire(node.object, seen);
         // `new URL(req.url, base)` is a request that has been through a
         // constructor; the searchParams read off it are still the peer's.
+        // A spread argument falls to `default` and reads nothing.
         case AST_NODE_TYPES.NewExpression:
-          return node.arguments.some(
-            (argument) =>
-              argument.type !== AST_NODE_TYPES.SpreadElement &&
-              readsWire(argument, depth + 1),
-          );
+          return node.arguments.some((argument) => readsWire(argument, seen));
         case AST_NODE_TYPES.CallExpression:
           // `this.#decodeUnsignedNumber(0, chunk)` — a decode helper handed the
           // wire buffer returns a number the peer chose. `chunk.readUInt32BE(0)`
           // is the same fact written as a method ON the buffer, so the receiver
           // counts as well as the arguments.
           return (
-            readsWire(node.callee, depth + 1) ||
-            node.arguments.some(
-              (argument) =>
-                argument.type !== AST_NODE_TYPES.SpreadElement &&
-                readsWire(argument, depth + 1),
-            )
+            readsWire(node.callee, seen) ||
+            node.arguments.some((argument) => readsWire(argument, seen))
           );
         case AST_NODE_TYPES.BinaryExpression:
           return (
-            readsWire(node.left as TSESTree.Node, depth + 1) ||
-            readsWire(node.right, depth + 1)
+            readsWire(node.left as TSESTree.Node, seen) ||
+            readsWire(node.right, seen)
           );
         default:
           return false;
@@ -783,18 +760,24 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
       return null;
     }
 
-    /** If this identifier is a parameter of `owner`, its index. */
+    /**
+     * If this identifier is a parameter of `owner`, its index; -1 otherwise,
+     * which no call site ever records. A defaulted parameter — `(len = 16)` —
+     * is still the parameter at that position.
+     */
     // oxlint-disable-next-line consistent-function-scoping
     function paramIndexOf(
       node: TSESTree.Identifier,
       owner: TSESTree.Node,
-    ): number | null {
+    ): number {
       const params = (owner as TSESTree.FunctionDeclaration).params;
-      const index = params.findIndex(
-        (param) =>
-          param.type === AST_NODE_TYPES.Identifier && param.name === node.name,
-      );
-      return index === -1 ? null : index;
+      return params.findIndex((param) => {
+        const bound =
+          param.type === AST_NODE_TYPES.AssignmentPattern ? param.left : param;
+        return (
+          bound.type === AST_NODE_TYPES.Identifier && bound.name === node.name
+        );
+      });
     }
 
     /**
@@ -874,12 +857,15 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
     function allocationSize(
       node: TSESTree.CallExpression | TSESTree.NewExpression,
     ): TSESTree.Node | null {
+      // A spread size reads nothing off the wire (`readsWire` default), so it
+      // needs no arm of its own.
       const size = node.arguments[0];
-      if (size === undefined || size.type === AST_NODE_TYPES.SpreadElement)
-        return null;
+      if (size === undefined) return null;
       const callee = node.callee;
+      // With or without `new`: `Array(n)` allocates exactly what `new Array(n)`
+      // does, and `Buffer(n)` is the legacy spelling of `new Buffer(n)`. A typed
+      // array called without `new` throws before it allocates.
       if (
-        node.type === AST_NODE_TYPES.NewExpression &&
         callee.type === AST_NODE_TYPES.Identifier &&
         SIZED_ALLOCATORS.has(callee.name)
       ) {
@@ -903,8 +889,9 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
     ): void {
       const name = calleeName(node.callee);
       if (name === null) return;
+      // A spread argument reads nothing (`readsWire` default), so it records
+      // nothing.
       node.arguments.forEach((argument, index) => {
-        if (argument.type === AST_NODE_TYPES.SpreadElement) return;
         if (!readsWire(argument)) return;
         const indices = wireParams.get(name) ?? new Set<number>();
         indices.add(index);
@@ -964,7 +951,8 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
             ? 'covering'
             : 'partial';
         }
-        if (parent.property.type !== AST_NODE_TYPES.Identifier) return 'read';
+        // A non-computed key is an Identifier or a `#private` name; a Buffer
+        // carries no class private field, so `buf.#x` throws before it reads.
         const name = parent.property.name;
         if (METADATA_PROPERTIES.has(name)) return 'metadata';
         const grandparent = parent.parent;
@@ -1036,6 +1024,70 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
     }
 
     /**
+     * Where a write starts, as far as it is decidable.
+     *
+     * `'start'` is an omitted offset, or a STRING in the offset position —
+     * the encoding (`buf.write(s, 'utf8')`, `buf.fill(v, 'hex')`) — so the
+     * write begins at 0 and runs for the source's whole length. A numeric
+     * literal or its `const` alias is a fixed offset: `h.writeUInt32BE(len,
+     * LENGTH_OFFSET)` stamps the same field as `h.writeUInt32BE(len, 4)`.
+     * Anything else may move, and is `null`.
+     */
+    function offsetOf(
+      argument: TSESTree.CallExpressionArgument | undefined,
+    ): 'start' | number | null {
+      if (argument === undefined) return 'start';
+      const resolved = resolveConstant(sourceCode, argument);
+      if (resolved === null) return null;
+      return typeof resolved.value === 'string' ? 'start' : resolved.value;
+    }
+
+    /**
+     * How much of the buffer does this write cover?
+     *
+     * A write with no offset — `src.copy(buf)`, `buf.set(src)`, `buf.write(s)`,
+     * `buf.fill(v)`, or the same with only an encoding — starts at 0 and runs
+     * for the source's whole length, or to the end of the buffer for `fill`:
+     * the "copy the whole thing in" idiom. `buf.fill(0, 4)` is not that idiom:
+     * it starts at 4 and leaves bytes 0..3 as the allocator handed them over.
+     *
+     * With an offset, coverage depends on whether it MOVES: a non-constant
+     * offset inside a loop is a buffer being walked, a constant one is a fixed
+     * field being stamped and the rest of the allocation left alone.
+     *
+     * A fixed-width writer puts down `width` bytes wherever it lands, so even
+     * with no offset it is a field, not the idiom — `header.writeUInt32BE(len)`
+     * writes four bytes of a sixteen-byte header. Its fixed-offset coverage is
+     * counted byte by byte instead (`markFixedWrite`).
+     */
+    function coversWholeBuffer(
+      call: TSESTree.CallExpression,
+      method: string,
+    ): boolean {
+      const offset = offsetOf(call.arguments[1]);
+      if (offset === 'start') return !WRITE_WIDTHS.has(method);
+      return offset === null && isInsideLoop(call);
+    }
+
+    /**
+     * The byte range a fixed-width write covers, when both ends are decidable.
+     *
+     * `header.writeUInt32BE(streamId, 4)` covers bytes 4..7. Anything computed
+     * leaves the span unknown and the write stays merely partial.
+     */
+    function fixedWriteSpan(
+      call: TSESTree.CallExpression,
+      method: string,
+    ): { start: number; end: number } | null {
+      const width = WRITE_WIDTHS.get(method);
+      if (width === undefined) return null;
+      const offset = offsetOf(call.arguments[1]);
+      if (offset === null) return null;
+      const start = offset === 'start' ? 0 : offset;
+      return { start, end: start + width };
+    }
+
+    /**
      * Is every byte written before anything reads this allocation?
      *
      * Only a `const`/`let` declarator binding an identifier is analysed —
@@ -1062,46 +1114,39 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
       // them a buffer this analysis would have cleared had the binding been a
       // declarator.
       const parent = call.parent;
-      let target: TSESTree.Identifier | undefined;
-      let variable: TSESLint.Scope.Variable | undefined;
+      let variable: TSESLint.Scope.Variable | null = null;
 
       if (
         parent.type === AST_NODE_TYPES.VariableDeclarator &&
-        parent.init === call &&
         parent.id.type === AST_NODE_TYPES.Identifier
       ) {
-        target = parent.id;
-        // A declarator binding a plain identifier declares exactly one
-        // variable, so the lookup cannot come back empty.
+        // A call whose parent is a declarator is its `init`, and a declarator
+        // binding a plain identifier declares exactly one variable, so the
+        // lookup cannot come back empty.
         variable = context.sourceCode.getDeclaredVariables(
           parent,
         )[0] as TSESLint.Scope.Variable;
       } else if (
         parent.type === AST_NODE_TYPES.AssignmentExpression &&
-        parent.operator === '=' &&
-        parent.right === call &&
+        ASSIGNING_OPERATORS.has(parent.operator) &&
         parent.left.type === AST_NODE_TYPES.Identifier
       ) {
-        target = parent.left;
-        variable = findVariable(context.sourceCode, target) ?? undefined;
+        // A call whose parent is an assignment is its right-hand side: a call
+        // is never an assignment target.
+        variable = findVariable(context.sourceCode, parent.left);
       }
 
-      if (target === undefined || variable === undefined) {
-        return false;
-      }
+      if (variable === null) return false;
 
       // Only uses AFTER the allocation. A declarator's other references are
-      // all later by construction; an assignment's are not — the `let buf;`
-      // declaration and any earlier use sit before it, and counting those as
-      // writes to THIS allocation would clear a buffer the previous value
-      // filled.
-      const uses = variable.references
-        .filter(
-          (reference) =>
-            reference.identifier !== target &&
-            reference.identifier.range[0] > call.range[1],
-        )
-        .sort((a, b) => a.identifier.range[0] - b.identifier.range[0]);
+      // all later by construction; an assignment's are not — the binding
+      // itself, the `let buf;` declaration and any earlier use sit before it,
+      // and counting those as writes to THIS allocation would clear a buffer
+      // the previous value filled. The scope manager records references in
+      // source order, so the filtered list needs no sort.
+      const uses = variable.references.filter(
+        (reference) => reference.identifier.range[0] > call.range[1],
+      );
 
       // Byte map for the fixed-offset case. A header stamped field by field at
       // LITERAL offsets — `writeUInt32BE(id, 0); writeUInt32BE(len, 4)` on an
@@ -1140,12 +1185,8 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
     // oxlint-disable-next-line consistent-function-scoping
     function byteMapFor(call: TSESTree.CallExpression): Uint8Array | null {
       const argument = call.arguments[0];
-      if (
-        argument === undefined ||
-        argument.type === AST_NODE_TYPES.SpreadElement
-      ) {
-        return null;
-      }
+      // A spread resolves to no constant, like any other non-literal.
+      if (argument === undefined) return null;
       const resolved = resolveConstant(sourceCode, argument);
       if (resolved === null || typeof resolved.value !== 'number') return null;
       const size = resolved.value;
@@ -1182,8 +1223,10 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
       const call = member.parent;
       if (call.type !== AST_NODE_TYPES.CallExpression) return 0;
       const span = fixedWriteSpan(call, member.property.name);
-      if (span === null || span.start < 0 || span.end > covered.length)
-        return 0;
+      // No `start < 0` test: `offsetOf` resolves only literals and their
+      // `const` aliases, and a numeric literal is never negative (`-1` is a
+      // UnaryExpression).
+      if (span === null || span.end > covered.length) return 0;
       let added = 0;
       for (let index = span.start; index < span.end; index += 1) {
         if (covered[index] === 0) {
@@ -1249,7 +1292,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
     function isFilledInPlace(node: TSESTree.CallExpression): boolean {
       const parent = node.parent;
       if (
-        parent?.type !== AST_NODE_TYPES.MemberExpression ||
+        parent.type !== AST_NODE_TYPES.MemberExpression ||
         parent.object !== node ||
         parent.computed ||
         parent.property.type !== AST_NODE_TYPES.Identifier ||
@@ -1261,7 +1304,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
       // around, it does not zero anything.
       const grandparent = parent.parent;
       return (
-        grandparent?.type === AST_NODE_TYPES.CallExpression &&
+        grandparent.type === AST_NODE_TYPES.CallExpression &&
         grandparent.callee === parent
       );
     }

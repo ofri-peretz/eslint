@@ -82,6 +82,48 @@ const NON_AI_SOURCES: ReadonlyArray<readonly [string, string]> = [
   ],
 ];
 
+/** A violation of every rule, keyed by rule name; each is that rule's doc ❌ example. */
+const RULE_VIOLATIONS: Readonly<Record<string, string>> = {
+  'no-dynamic-system-prompt': `await generateText({ system: \`You are a \${role} assistant.\`, prompt: userInput });`,
+  'no-hardcoded-api-keys': `const openai = createOpenAI({ apiKey: 'sk-proj-1234567890abcdefghijklmnopqrstuvwxyz123456' });`,
+  'no-sensitive-in-prompt': `await generateText({ prompt: \`Current password: \${userPassword}\` });`,
+  'no-system-prompt-leak': `export function GET() {
+       return Response.json({ systemPrompt: SYSTEM_PROMPT });
+     }`,
+  'no-training-data-exposure': `const config = { training: true };`,
+  'no-unsafe-output-handling': `const result = await generateText({ prompt: 'Generate code' });
+     eval(result.text);`,
+  'require-abort-signal': `await streamText({ model: openai('gpt-4'), prompt: 'Stream a long response' });`,
+  'require-audit-logging': `async function handler() {
+       const result = await generateText({ prompt: userInput });
+       return result.text;
+     }`,
+  'require-embedding-validation': `await vectorStore.upsert({ id: docId, embedding: await embed(text) });`,
+  'require-error-handling': `async function handler() {
+       const result = await generateText({ prompt: 'Hello' });
+       return result.text;
+     }`,
+  'require-max-steps': `await generateText({ model, tools, stopWhen: hasToolCall('finalAnswer'), prompt: 'research' });`,
+  'require-max-tokens': `await generateText({ model: openai('gpt-4'), prompt: 'Write a story' });`,
+  'require-output-filtering': `const tools = { search: { execute: async ({ sql }) => db.query(sql) } };`,
+  'require-output-validation': `display(result.text);`,
+  'require-rag-content-validation': `const docs = await vectorStore.search(query);
+     await generateText({ prompt: \`Based on these documents: \${docs}\` });`,
+  'require-request-timeout': `await generateText({ model: openai('gpt-4'), prompt: 'Hello' });`,
+  'require-tool-confirmation': `await generateText({
+       model: openai('gpt-4'),
+       prompt: 'Delete the temp files',
+       tools: {
+         deleteFile: {
+           description: 'Delete a file',
+           execute: async ({ path }) => fs.unlinkSync(path),
+         },
+       },
+     });`,
+  'require-tool-schema': `const tools = { weather: { execute: async (params) => getWeather(params.location) } };`,
+  'require-validated-prompt': `await generateText({ prompt: req.body.question });`,
+};
+
 const lint = (code: string, rule: string): Linter.LintMessage[] => {
   // `configType: 'flat'` is explicit because the declared ESLint floor for this
   // package still defaults `new Linter()` to eslintrc, where a flat config is
@@ -122,6 +164,27 @@ describe('Vercel AI module gate', () => {
       // asserted away rather than counted as a pass.
       expect(messages.filter((m) => !m.ruleId)).toHaveLength(0);
       expect(messages).toHaveLength(0);
+    });
+  });
+
+  // One real violation per rule, from that rule's own doc. The sweep above
+  // only proves silence; a rule whose shapes none of those sources contains
+  // would pass it with its gate deleted. Each fixture here must report with the
+  // SDK imported and stay silent without it, so reverting the gate in any one
+  // rule turns exactly that rule's row red.
+  describe.each(RULES)('xp/%s — its own violation', (rule) => {
+    const code = RULE_VIOLATIONS[rule];
+
+    it('has a fixture, so a rule added later cannot skip this lock', () => {
+      expect(code).toBeTypeOf('string');
+    });
+
+    it("reports once the file imports 'ai'", () => {
+      expect(lint(`import 'ai';\n${code}`, rule).length).toBeGreaterThan(0);
+    });
+
+    it('is silent with the import removed', () => {
+      expect(lint(code, rule)).toHaveLength(0);
     });
   });
 

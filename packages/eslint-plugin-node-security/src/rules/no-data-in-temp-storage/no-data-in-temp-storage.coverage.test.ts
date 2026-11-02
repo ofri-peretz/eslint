@@ -43,7 +43,10 @@ describe('no-data-in-temp-storage coverage gaps', () => {
       // Zero-argument fs call → pathArg undefined
       { code: 'fs.writeFileSync();' },
       // An empty tempPaths entry has no segments to anchor against.
-      { code: "const p = '/tmp/x'; fs.writeFileSync(p, d);", options: [{ tempPaths: ['/'] }] },
+      {
+        code: "const p = '/tmp/x'; fs.writeFileSync(p, d);",
+        options: [{ tempPaths: ['/'] }],
+      },
       // A name that resolves to no variable at all (never declared).
       { code: "undeclared = '/tmp/x'; fs.writeFileSync(undeclared, d);" },
     ],

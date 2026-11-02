@@ -51,6 +51,7 @@ ruleTester.run('no-unsafe-eval-csp', noUnsafeEvalCsp, {
     },
     // Template literal
     {
+      name: 'unsafe-eval in a template-literal script-src CSP is reported',
       code: `const csp = \`script-src 'unsafe-eval'\`;`,
       errors: [{ messageId: 'unsafeEval' }],
     },

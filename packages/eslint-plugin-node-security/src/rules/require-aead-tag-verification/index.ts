@@ -30,8 +30,8 @@ import {
   AST_NODE_TYPES,
   isTestFilePath,
   memberPropertyName,
-  propertyName,
 } from '@interlace/eslint-devkit';
+import { calleeNameOn } from '../../utils/module-binding';
 
 type MessageIds = 'missingAuthTag' | 'missingFinal';
 
@@ -44,10 +44,13 @@ type RuleOptions = [Options?];
 
 /**
  * Authenticated-encryption modes Node's `crypto` exposes. Matched on the
- * algorithm suffix so key sizes (`aes-128-gcm`, `aes-256-gcm`) and the
- * standalone AEAD stream cipher (`chacha20-poly1305`) all resolve.
+ * mode segment so key sizes (`aes-128-gcm`, `aes-256-gcm`), the standalone
+ * AEAD stream cipher (`chacha20-poly1305`) and the misuse-resistant variant
+ * (`aes-256-gcm-siv`) all resolve. Not anchored at the end: it was, and
+ * `-gcm-siv` then read as non-AEAD. Every name in `crypto.getCiphers()` that
+ * carries one of these segments is an AEAD mode.
  */
-const AEAD_SUFFIX = /-(gcm|ccm|ocb|poly1305)$/;
+const AEAD_MODE = /-(gcm|ccm|ocb|poly1305)/;
 
 /**
  * Methods that mean the decipher is being driven as a stream rather than with
@@ -124,17 +127,17 @@ export const requireAeadTagVerification = createRule<RuleOptions, MessageIds>({
   ) {
     let isTestFile: boolean;
 
-    /** `crypto.createDecipheriv(...)` or a bare `createDecipheriv(...)`. */
+    /**
+     * `crypto.createDecipheriv(...)`, `crypto['createDecipheriv'](…)`, a bare
+     * `createDecipheriv(...)`, or the same function under any binding —
+     * `import { createDecipheriv as openBox }` opens the same AEAD decipher.
+     */
     function isCreateDecipheriv(
       callee: TSESTree.CallExpression['callee'],
     ): boolean {
-      if (callee.type === AST_NODE_TYPES.MemberExpression) {
-        // `crypto['createDecipheriv'](…)` opens the same AEAD decipher.
-        return propertyName(callee) === 'createDecipheriv';
-      }
       return (
-        callee.type === AST_NODE_TYPES.Identifier &&
-        callee.name === 'createDecipheriv'
+        calleeNameOn(callee, context.sourceCode.getScope(callee), 'crypto') ===
+        'createDecipheriv'
       );
     }
 
@@ -150,7 +153,7 @@ export const requireAeadTagVerification = createRule<RuleOptions, MessageIds>({
         argument !== undefined &&
         argument.type === AST_NODE_TYPES.Literal &&
         typeof argument.value === 'string' &&
-        AEAD_SUFFIX.test(argument.value.toLowerCase())
+        AEAD_MODE.test(argument.value.toLowerCase())
       );
     }
 

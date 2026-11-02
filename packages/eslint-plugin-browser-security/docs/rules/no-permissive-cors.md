@@ -1,6 +1,6 @@
 ---
 title: no-permissive-cors
-description: "CWE: [CWE-942](https://cwe.mitre.org/data/definitions/942.html)"
+description: 'CWE: [CWE-942](https://cwe.mitre.org/data/definitions/942.html)'
 tags: ['security', 'browser']
 category: security
 severity: medium
@@ -12,10 +12,15 @@ autofix: false
 > **CWE:** [CWE-942: Permissive Write of Outbound HTTP Headers](https://cwe.mitre.org/data/definitions/942.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M8: Security Misconfiguration](https://owasp.org/www-project-mobile-top-10/)
 
-
 <!-- @rule-summary -->
+
 CWE: [CWE-942](https://cwe.mitre.org/data/definitions/942.html)
 <!-- @/rule-summary -->
+
+> **⚠️ Deprecated.** This rule is deprecated and no longer in any preset. Use
+> [`express-security/no-permissive-cors`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-permissive-cors.md),
+> its Express-specific successor. The rule is still exported and still works when enabled explicitly,
+> until the next major removes it.
 
 ESLint Rule: no-permissive-cors. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 
@@ -25,7 +30,7 @@ ESLint Rule: no-permissive-cors. This rule is part of [`eslint-plugin-browser-se
 | --------------- | ---------------------------------------------- |
 | **Severity**    | High (Data Exposure)                           |
 | **Auto-Fix**    | ❌ No (requires allowlist logic)               |
-| **Category**   | Security |
+| **Category**    | Security                                       |
 | **ESLint MCP**  | ✅ Optimized for ESLint MCP integration        |
 | **Best For**    | Node.js servers with public APIs               |
 | **Suggestions** | ✅ Advice on using origin validation functions |
@@ -107,7 +112,17 @@ app.use((req, res, next) => {
 // Using the cors middleware with wildcard origin
 const cors = require('cors');
 app.use(cors({ origin: '*' })); // ❌ HIGH RISK
+
+// The cors package under any import name
+import corsMiddleware from 'cors';
+app.use(corsMiddleware({ origin: true })); // ❌ reflects every origin
+
+// Reflecting the request Origin header directly
+res.setHeader('Access-Control-Allow-Origin', req.headers.origin); // ❌
 ```
+
+`cors` is recognised through its import or `require`, so a renamed binding is
+still the package and a local function called `cors` from another module is not.
 
 ### ✅ Correct
 
@@ -132,16 +147,6 @@ app.use(cors(corsOptions));
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Origin Reflection
-
-**Why**: If the server reflects the `Origin` header without validation, it's effectively a wildcard.
-
-```javascript
-res.setHeader('Access-Control-Allow-Origin', req.headers.origin); // ❌ NOT DETECTED
-```
-
-**Mitigation**: Always validate the `Origin` header against a strict allowlist.
 
 ### Environment Variable Wildcards
 

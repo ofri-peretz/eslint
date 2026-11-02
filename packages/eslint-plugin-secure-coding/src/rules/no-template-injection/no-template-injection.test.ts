@@ -47,8 +47,64 @@ describe('no-template-injection', () => {
       // Known engine + known method, but called with zero arguments
       { code: 'Handlebars.compile()' },
       { code: 'ejs.render()' },
+      {
+        name: 'lodash is matched on template alone, so _.create is not a template API',
+        code: "const _ = require('lodash'); _.create(userInput);",
+      },
+      {
+        name: 'a static string to an imported _.template is data-free',
+        code: "const _ = require('lodash'); _.template('<h1><%= name %></h1>');",
+      },
+      {
+        name: 'a non-template export of an engine package is not a sink',
+        code: "const { escapeExpression } = require('handlebars'); escapeExpression(userInput);",
+      },
+      {
+        name: 'a nested export path of an engine package is not a template entry point',
+        code: "const hbs = require('handlebars'); hbs.Utils.compile(userTemplate);",
+      },
     ],
     invalid: [
+      {
+        name: 'a destructured handlebars compile is bound to the engine import',
+        code: "const { compile } = require('handlebars'); compile(req.query.template);",
+        errors: [{ messageId: 'templateInjection' }],
+      },
+      {
+        name: 'a destructured handlebars compile of a concatenated template reports',
+        code: "const { compile } = require('handlebars'); compile('<h1>Hello ' + req.body.name + '</h1>');",
+        errors: [{ messageId: 'templateInjection' }],
+      },
+      {
+        name: 'lodash _.template of a request template reports',
+        code: "const _ = require('lodash'); _.template(req.query.template);",
+        errors: [{ messageId: 'templateInjection' }],
+      },
+      {
+        name: 'lodash _.template of a concatenated template reports',
+        code: "const _ = require('lodash'); _.template('<h1>Hello ' + req.body.name + '</h1>');",
+        errors: [{ messageId: 'templateInjection' }],
+      },
+      {
+        name: 'the documented lodash example with a user-supplied layout reports',
+        code: "const _ = require('lodash'); _.template(`<div>${userSuppliedLayout}</div>`);",
+        errors: [{ messageId: 'templateInjection' }],
+      },
+      {
+        name: 'an underscore template imported under any name reports',
+        code: "import u from 'underscore'; u.template(req.body.tpl);",
+        errors: [{ messageId: 'templateInjection' }],
+      },
+      {
+        name: 'a handlebars import under an alias name is still the engine',
+        code: "import hbs from 'handlebars'; hbs.compile(req.query.template);",
+        errors: [{ messageId: 'templateInjection' }],
+      },
+      {
+        name: 'an inline require receiver resolves to the engine',
+        code: "require('handlebars').compile(req.query.template);",
+        errors: [{ messageId: 'templateInjection' }],
+      },
       // Was pinned as valid alongside the runtime-key form, as though the two
       // were the same refusal. `Handlebars['compile']` names `compile` and
       // compiles the same user-supplied template.
@@ -281,6 +337,7 @@ ruleTester.run('no-template-injection-ts-cast-taint', noTemplateInjection, {
   valid: [],
   invalid: [
     {
+      name: 'Mustache.render of a payload-supplied template is reported',
       code: `Handlebars.compile(req.body.template as string);`,
       errors: [{ messageId: 'templateInjection' }],
     },

@@ -41,13 +41,19 @@ GDPR Article 32 (security of processing) and HIPAA §164.312 (technical safeguar
 
 The rule flags PII patterns whether they enter the log call as a literal, a templated string, or a member access on an `user`/`person`/`account` identifier:
 
-| Pattern                          | Detected as                          |
-| :------------------------------- | :----------------------------------- |
-| Hard-coded email regex match     | `email`                              |
-| `user.email`, `account.ssn`      | inferred via identifier shape        |
-| 16-digit number passing Luhn     | `credit-card`                        |
-| ITU-formatted phone number       | `phone`                              |
-| US SSN (`\d{3}-\d{2}-\d{4}`)     | `ssn`                                |
+| Pattern                                   | Detected as                          |
+| :---------------------------------------- | :----------------------------------- |
+| Hard-coded email regex match              | `email`                              |
+| `user.email`, `account.ssn`               | inferred via identifier shape        |
+| `JSON.stringify(user)`                    | a whole person record, serialized    |
+| 13–19 digit number passing Luhn           | `credit-card`                        |
+| US SSN (`\d{3}-\d{2}-\d{4}`)              | `ssn`                                |
+
+The sinks are `console.log` / `error` / `warn` / `info` (configurable through
+`consoleMethods`) and every level method — `trace`, `debug`, `verbose`, `info`,
+`log`, `warn`, `error`, `fatal` — of a logger receiver: `logger.info(…)`,
+`log.warn(…)`, `this.logger.error(…)` (receiver names configurable through
+`loggers`).
 
 ## Examples
 
@@ -88,7 +94,8 @@ logger.debug({ user: redactPii(user) });
 
 ## Known False Negatives
 
-- Custom logger wrappers (`logEvent`, `audit`, `track`) are detected via the `loggers` rule option allowlist; loggers not on the allowlist are skipped.
+- Custom logger wrappers called as bare functions (`logEvent(…)`, `audit(…)`, `track(…)`) are not sinks. A logger OBJECT under another name is added through the `additionalLoggers` option; receivers not on the list are skipped.
+- A hard-coded phone number in a log line is not detected: phone formats overlap with order numbers and support lines too much to judge from text.
 - PII reached via aliasing (`const e = user.email; log(e);`) is tracked one assignment hop; deeper chains require type-aware enabling.
 - PII embedded inside an HTTP request body that incidentally surfaces in an error message (e.g. `JSON.stringify(req.body)` in a `catch` block) is not always reached without type info.
 
@@ -102,3 +109,7 @@ logger.debug({ user: redactPii(user) });
 | `additionalPiiTerms` | `string[]` | `[]` | Extra PII field terms, on top of `piiTerms`. |
 | `piiLabels` | `string[]` | `["email:","ssn:","password:","credit card:","creditcard:"]` | String literals that are EXACTLY a field label announcing the next argument. Compared case-insensitively after trimming. Replaces the built-in list. |
 | `additionalPiiLabels` | `string[]` | `[]` | Extra field labels, on top of `piiLabels`. |
+| `loggers` | `string[]` | `["logger","log"]` | Receiver names that denote an application logger (`logger.info`, `this.logger.error`); every level method on one is a log sink. Replaces the built-in list. |
+| `additionalLoggers` | `string[]` | `[]` | Extra logger receiver names, on top of `loggers`. |
+| `piiRecords` | `string[]` | `["user","person","customer","account","applicant","patient"]` | Words naming a whole person record, matched as WHOLE WORDS of an identifier. `JSON.stringify` of one is reported. Replaces the built-in list. |
+| `additionalPiiRecords` | `string[]` | `[]` | Extra person-record words, on top of `piiRecords`. |

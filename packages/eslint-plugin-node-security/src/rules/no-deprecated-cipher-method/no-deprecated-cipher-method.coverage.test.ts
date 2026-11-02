@@ -25,6 +25,7 @@ describe('no-deprecated-cipher-method coverage gaps', () => {
     valid: [
       // allowInTests + test filename → listener bails out on deprecated call
       {
+        name: 'createCipher in a test file is not reported when allowInTests is on',
         code: 'crypto.createCipher("aes192", pw);',
         options: [{ allowInTests: true }],
         filename: 'cipher.test.ts',
@@ -37,6 +38,23 @@ describe('no-deprecated-cipher-method coverage gaps', () => {
       },
     ],
     invalid: [
+      {
+        name: 'allowInTests does not exempt a file that is not a test',
+        code: 'crypto.createCipher("aes192", pw);',
+        options: [{ allowInTests: true }],
+        filename: 'cipher.ts',
+        errors: [
+          {
+            messageId: 'deprecatedCipherMethod',
+            suggestions: [
+              {
+                messageId: 'useCipheriv',
+                output: 'crypto.createCipheriv("aes192", pw);',
+              },
+            ],
+          },
+        ],
+      },
       // Standalone createDecipher → ternary picks createDecipheriv
       {
         name: 'a bare createDecipher call is offered createDecipheriv',

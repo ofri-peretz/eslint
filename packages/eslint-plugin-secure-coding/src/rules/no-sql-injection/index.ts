@@ -1102,7 +1102,12 @@ function resolveLocalFunction(
   // that escaped resolution.
   const declared = variable.defs.find((def) => def.type === 'FunctionName');
   if (declared !== undefined) {
-    return declared.node as TSESTree.FunctionDeclaration;
+    // `declare function escapeIdentifier(v: string): string;` is ALSO a
+    // `FunctionName` definition, but a bodiless TSDeclareFunction: there is no
+    // returned string to inline, so it is opaque like any imported escaper.
+    return declared.node.type === AST_NODE_TYPES.FunctionDeclaration
+      ? declared.node
+      : null;
   }
   const init = singleAssignedInit(variable);
   if (

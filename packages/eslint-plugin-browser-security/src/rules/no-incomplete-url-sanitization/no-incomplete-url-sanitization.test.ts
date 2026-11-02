@@ -273,6 +273,7 @@ ruleTester.run('no-incomplete-url-sanitization', noIncompleteUrlSanitization, {
       errors: [{ messageId: 'substringHostCheck' }],
     },
     {
+      name: 'url.includes() used as a host check is reported as a substring host check',
       code: "const ok = url.includes('trusted.com');",
       errors: [{ messageId: 'substringHostCheck' }],
     },

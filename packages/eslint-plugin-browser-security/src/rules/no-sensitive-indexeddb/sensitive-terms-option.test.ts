@@ -9,9 +9,10 @@
  * guess: a project could add forever and still never stop the report on a word
  * we picked wrongly. If your `token` is a lexer token, only replacement helps.
  *
- * What is NOT replaceable, deliberately: the bearer-credential half matches the
- * HTTP Authorization scheme and the JWT shape — RFC 6750 and RFC 7519, published
- * formats rather than guesses — so it reports whatever the vocabulary says.
+ * The bearer-credential words are part of the DEFAULT vocabulary, and nothing
+ * more: `sensitiveTerms` replaces the whole list, bearer words included, exactly
+ * as the option's documentation says. A replaced vocabulary that kept matching
+ * `accessToken` was the divergence the fidelity model found.
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe as suite, it, afterAll } from 'vitest';
@@ -45,6 +46,21 @@ suite(
           code: store('passwords'),
           options: [{ sensitiveTerms: ['contrasena'] }],
         },
+        {
+          name: 'a replaced vocabulary replaces the bearer words too: accessToken store with sensitiveTerms [pin]',
+          code: store('accessToken'),
+          options: [{ sensitiveTerms: ['pin'] }],
+        },
+        {
+          name: 'a replaced vocabulary replaces the bearer words too: accessToken field with sensitiveTerms [pin]',
+          code: `const store = tx.objectStore('v'); store.add({ accessToken: value });`,
+          options: [{ sensitiveTerms: ['pin'] }],
+        },
+        {
+          name: 'an emptied vocabulary reports no bearer credential',
+          code: store('accessTokens'),
+          options: [{ sensitiveTerms: [] }],
+        },
       ],
       invalid: [
         {
@@ -59,10 +75,19 @@ suite(
           errors: 1,
         },
         {
-          // The published-format half is not silenced by an empty vocabulary.
-          name: 'a bearer credential reports with the vocabulary emptied',
+          name: 'a bearer credential reports under the default vocabulary',
           code: store('accessTokens'),
-          options: [{ sensitiveTerms: [] }],
+          errors: 1,
+        },
+        {
+          name: 'additionalPatterns still applies on top of a replaced vocabulary',
+          code: `const store = tx.objectStore('v'); store.put(value, 'entitlementGrant');`,
+          options: [
+            {
+              sensitiveTerms: ['pin'],
+              additionalPatterns: ['entitlementGrant'],
+            },
+          ],
           errors: 1,
         },
       ],

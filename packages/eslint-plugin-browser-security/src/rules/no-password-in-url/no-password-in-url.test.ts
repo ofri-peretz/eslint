@@ -16,6 +16,14 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-password-in-url', noPasswordInUrl, {
   valid: [
+    {
+      name: 'a password query parameter is owned by no-credentials-in-query-params',
+      code: "const target = 'https://example.com/login?user=bob&password=hunter2';",
+    },
+    {
+      name: 'a fragment that only names a password route is not a password value',
+      code: "const target = 'https://example.com/#/settings/password';",
+    },
     'const x = 42;',
     {
       name: 'a boolean declaration contains no URL',
@@ -54,6 +62,21 @@ ruleTester.run('no-password-in-url', noPasswordInUrl, {
   ],
 
   invalid: [
+    {
+      name: 'a password in the URL fragment is reported',
+      code: "const target = 'https://example.com/login#password=hunter2';",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a pwd parameter in the URL fragment is reported',
+      code: "location.href = 'https://example.com/app#user=bob&pwd=hunter2';",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'ftp userinfo carries a password exactly as http userinfo does',
+      code: "const target = 'ftp://deploy:hunter2@files.example.com/pub';",
+      errors: [{ messageId: 'violationDetected' }],
+    },
     {
       name: 'credentials in the URL userinfo',
       code: "const url = 'https://user:password@example.com'",
@@ -148,14 +171,20 @@ ruleTester.run('no-password-in-url — fold refusals', noPasswordInUrl, {
     'const x = a - b;',
     'const y = count + 1;',
     'const t = `a${1 + 2}b`;',
-    // A concatenation deeper than the fold budget is refused rather than
-    // walked: `a + b + c` groups to the LEFT, so the leading literal — the one
-    // carrying the authority — sits at the depth of the whole chain.
-    `const deep = 'https://svc:s3cr3t@host'${" + 'x'".repeat(10)};`,
     // A template whose only interpolation is opaque and whose text has no URL.
     'const u = `${a}/${b}`;',
   ],
   invalid: [
+    // @found Stryker mutation-survivor triage, 2026-11-02. A fold budget of 8
+    // used to refuse this: `a + b + c` groups to the LEFT, so the leading
+    // literal — the one carrying the authority — sits at the depth of the
+    // whole chain, and any URL built from ten or more pieces lost its
+    // credentials. The AST is finite; the fold needs no budget.
+    {
+      name: 'FN: a concatenation of ten pieces still carries its leading userinfo',
+      code: `const deep = 'https://svc:s3cr3t@host'${" + 'x'".repeat(10)};`,
+      errors: [{ messageId: 'violationDetected' }],
+    },
     // A nested concatenation still reports ONCE, at the outermost expression.
     {
       code: "fetch(('https://svc:s3cr3t' + '@') + HOST);",

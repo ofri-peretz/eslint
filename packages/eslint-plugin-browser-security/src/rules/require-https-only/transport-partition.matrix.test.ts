@@ -76,7 +76,10 @@ function reportingRules(code: string, filename = 'component.tsx'): RuleName[] {
 
   return [
     ...new Set(
-      messages.map((message) => (message.ruleId as string).replace('family/', '') as RuleName),
+      messages.map(
+        (message) =>
+          (message.ruleId as string).replace('family/', '') as RuleName,
+      ),
     ),
   ].sort() as RuleName[];
 }
@@ -86,7 +89,11 @@ function reportingRules(code: string, filename = 'component.tsx'): RuleName[] {
  * would mean the shape is uncovered, and two entries would mean the user sees
  * the same fact twice.
  */
-const MATRIX: ReadonlyArray<{ shape: string; code: string; owner: RuleName[] }> = [
+const MATRIX: ReadonlyArray<{
+  shape: string;
+  code: string;
+  owner: RuleName[];
+}> = [
   // --- http://, by role ---------------------------------------------------
   {
     shape: 'fetch() URL argument',
@@ -242,8 +249,11 @@ describe('cleartext transport family — partition matrix', () => {
   });
 
   it('every shape draws exactly one report — no doubles, no holes', () => {
-    const offenders = MATRIX.filter(({ code }) => reportingRules(code).length !== 1).map(
-      ({ shape, code }) => `${shape}: ${reportingRules(code).join(' + ') || '(NOBODY)'}`,
+    const offenders = MATRIX.filter(
+      ({ code }) => reportingRules(code).length !== 1,
+    ).map(
+      ({ shape, code }) =>
+        `${shape}: ${reportingRules(code).join(' + ') || '(NOBODY)'}`,
     );
     expect(offenders).toEqual([]);
   });
@@ -259,7 +269,10 @@ describe('cleartext transport family — partition matrix', () => {
  */
 const SILENT: ReadonlyArray<{ shape: string; code: string }> = [
   { shape: 'https fetch', code: 'fetch("https://api.acme-corp.io/v1");' },
-  { shape: 'wss constructor', code: 'new WebSocket("wss://live.acme-corp.io");' },
+  {
+    shape: 'wss constructor',
+    code: 'new WebSocket("wss://live.acme-corp.io");',
+  },
   { shape: 'loopback dev server', code: 'fetch("http://localhost:3000/api");' },
   { shape: 'RFC 2606 reserved host', code: 'fetch("http://example.com");' },
   {

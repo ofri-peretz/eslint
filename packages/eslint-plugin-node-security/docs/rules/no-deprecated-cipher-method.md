@@ -5,7 +5,7 @@ tags: ['security', 'cryptography', 'cwe-327', 'nodejs', 'deprecated']
 category: security
 severity: high
 cwe: CWE-327
-owasp: "A02:2021"
+owasp: 'A02:2021'
 autofix: false
 ---
 
@@ -13,8 +13,8 @@ autofix: false
 > **CWE:** [CWE-327](https://cwe.mitre.org/data/definitions/327.html)  
 > **OWASP:** [A02:2021-Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 
-
 <!-- @rule-summary -->
+
 Disallow deprecated crypto.createCipher/createDecipher methods
 <!-- @/rule-summary -->
 
@@ -45,6 +45,13 @@ This rule detects calls to:
 
 - `crypto.createCipher(algorithm, password)`
 - `crypto.createDecipher(algorithm, password)`
+
+The callee is resolved to Node's `crypto`, however it is bound: `crypto.createCipher`,
+a destructured or renamed import (`import { createCipher as build } from 'crypto'`),
+or a `require('node:crypto')`. A `createCipher` from another library is not this API —
+node-forge's `forge.cipher.createCipher(alg, key)` takes a real key and an IV at
+`start({ iv })`, is not deprecated, and is not reported. A renamed import is reported
+without the rename suggestion, which would name a function the file never imported.
 
 ## Why This Matters
 
@@ -234,6 +241,6 @@ This section previously claimed otherwise.
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
+| Option         | Type      | Default | Description                            |
+| -------------- | --------- | ------- | -------------------------------------- |
 | `allowInTests` | `boolean` | `false` | Allow deprecated methods in test files |

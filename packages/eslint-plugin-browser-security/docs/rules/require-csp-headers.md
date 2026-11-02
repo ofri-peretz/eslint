@@ -57,7 +57,21 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ## Rule Details
 
-This rule flags Express response methods like `res.render()` or `res.send()` when they appear to be sending HTML content without a corresponding CSP header being configured.
+This rule flags an Express response that emits an HTML **document** without a Content-Security-Policy being configured:
+
+- `res.send(…)` / `res.write(…)` / `res.end(…)` whose body is a document — a doctype or an `<html>` tag, including a page accumulated across statements;
+- `<response>.render(view)`, where the receiver is one of `responseReceivers` (template engines' own `render` returns a string and is not a response);
+- `res.sendFile(…)` of an `.html` / `.htm` file.
+
+A markup **fragment** (`res.send('<div>…</div>')`) is not reported: it is a partial for a page whose policy was set by whatever served that page. JSON and plain-text bodies are not documents.
+
+A policy counts as configured when the file establishes one anywhere:
+
+- helmet **applied** with CSP on — `app.use(helmet())`, `helmet({ contentSecurityPolicy: { … } })`, `helmet.contentSecurityPolicy(…)`, `import { contentSecurityPolicy } from 'helmet'`. Importing helmet without calling it, `helmet({ contentSecurityPolicy: false })` (helmet's switch for turning CSP off), and other helmet middleware such as `helmet.frameguard()` do **not** count;
+- the `Content-Security-Policy` header name in a header-setting position (`res.setHeader`, `res.set`, `res.header`, `res.writeHead`, a `headers` object, a Next.js `{ key, value }` entry);
+- a `<meta httpEquiv="Content-Security-Policy">`.
+
+Setting **other** headers (`X-Frame-Options`, `X-Content-Type-Options`) is not a policy, and the response is still reported. (That case used to be left to `no-missing-security-headers`, which is deprecated; enabling it explicitly adds its broader finding beside this one.)
 
 ```mermaid
 %%{init: {
@@ -90,8 +104,8 @@ flowchart TD
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
+| Option              | Type       | Default                      | Description                                                                                                                                                           |
+| ------------------- | ---------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `responseReceivers` | `string[]` | `["res","response","reply"]` | Identifiers that name a response object, so `<name>.render(view)` emits a response rather than returning a string. Anything unlisted is treated as a template engine. |
 
 `<name>.render(view)` is only a response emission when `<name>` is a response
@@ -131,12 +145,32 @@ app.get('/', (req, res) => {
 app.get('/home', (req, res) => {
   res.render('index', { title: 'Home' });
 });
+
+// helmet imported but never applied, or applied with CSP switched off
+import helmet from 'helmet';
+app.use(helmet({ contentSecurityPolicy: false }));
+
+// Some security header, but no policy
+app.get('/', (req, res) => {
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.render('index');
+});
 ```
 
 ### ✅ Correct
 
 ```javascript
+app.use(helmet());
+
+app.get('/', (req, res) => {
+  res.setHeader('Content-Security-Policy', "default-src 'self'");
+  res.render('index');
+});
+
 res.send({ data: 'json' });
+
+// A fragment for a page served elsewhere
+res.send('<div class="greeting">Hello</div>');
 ```
 
 ## Known False Negatives

@@ -21,7 +21,7 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const nest = <T,>(cases: T[]): T[] =>
+const nest = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asNest(c) as T;
     const t = c as Case;
@@ -48,7 +48,6 @@ const nest = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 const ruleTester = new RuleTester({
   languageOptions: { ecmaVersion: 2022, sourceType: 'module' },
 });
@@ -58,7 +57,10 @@ ruleTester.run(
   requireValidationPipeWhitelist,
   {
     valid: nest([
-      { name: 'whitelist is on', code: `app.useGlobalPipes(new ValidationPipe({ whitelist: true }));` },
+      {
+        name: 'whitelist is on',
+        code: `app.useGlobalPipes(new ValidationPipe({ whitelist: true }));`,
+      },
       {
         code: `app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));`,
       },
@@ -108,11 +110,6 @@ ruleTester.run(
       // whitelist explicitly disabled.
       {
         code: `new ValidationPipe({ whitelist: false });`,
-        errors: [{ messageId: 'missingWhitelist' }],
-      },
-      // Non-literal value isn't a guarantee.
-      {
-        code: `new ValidationPipe({ whitelist: isProd });`,
         errors: [{ messageId: 'missingWhitelist' }],
       },
       // Locally-declared options object that is wrong.
@@ -239,5 +236,90 @@ ruleTester.run(
       },
     ]),
     invalid: [],
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quint fidelity model (benchmarks/suites/fidelity/models/nestjs-security)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run(
+  'require-validation-pipe-whitelist (fidelity)',
+  requireValidationPipeWhitelist,
+  {
+    valid: nest([
+      {
+        name: 'a computed whitelist value may be true at runtime and is left alone',
+        code: `app.useGlobalPipes(new ValidationPipe({ whitelist: cfg.strip }));`,
+      },
+      {
+        name: 'a computed whitelist with forbidNonWhitelisted set satisfies the strict option',
+        code: `new ValidationPipe({ whitelist: cfg.strip, forbidNonWhitelisted: true });`,
+        options: [{ requireForbidNonWhitelisted: true }],
+      },
+      {
+        name: 'a spread after an explicit whitelist: false may override it',
+        code: `new ValidationPipe({ whitelist: false, ...base });`,
+      },
+      {
+        name: 'a ValidationPipe imported from another package is not the NestJS pipe',
+        code: `
+          import { ValidationPipe } from './my-pipes';
+          new ValidationPipe();
+        `,
+      },
+    ]),
+    invalid: nest([
+      {
+        name: 'a renamed ValidationPipe import is still the NestJS pipe',
+        code: `
+          import { ValidationPipe as VP } from '@nestjs/common';
+          app.useGlobalPipes(new VP());
+        `,
+        errors: [{ messageId: 'missingWhitelist' }],
+      },
+      {
+        name: 'a namespace-imported ValidationPipe is still the NestJS pipe',
+        code: `
+          import * as common from '@nestjs/common';
+          app.useGlobalPipes(new common.ValidationPipe({ transform: true }));
+        `,
+        errors: [{ messageId: 'missingWhitelist' }],
+      },
+      {
+        name: 'an explicit whitelist: false after a spread overrides whatever the spread carried',
+        code: `app.useGlobalPipes(new ValidationPipe({ ...base, whitelist: false }));`,
+        errors: [{ messageId: 'missingWhitelist' }],
+      },
+      {
+        name: 'a computed whitelist without forbidNonWhitelisted fails the strict option',
+        code: `new ValidationPipe({ whitelist: cfg.strip });`,
+        options: [{ requireForbidNonWhitelisted: true }],
+        errors: [{ messageId: 'missingWhitelist' }],
+      },
+    ]),
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run(
+  'require-validation-pipe-whitelist (mutation audit)',
+  requireValidationPipeWhitelist,
+  {
+    valid: nest([
+      {
+        // @found mutation testing
+        name: 'FP: a computed string-literal whitelist key is the same option',
+        code: `new ValidationPipe({ ['whitelist']: true });`,
+      },
+    ]),
+    invalid: nest([
+      {
+        name: 'a computed key named by a variable is not the whitelist option',
+        code: `new ValidationPipe({ [whitelist]: true });`,
+        errors: [{ messageId: 'missingWhitelist' }],
+      },
+    ]),
   },
 );

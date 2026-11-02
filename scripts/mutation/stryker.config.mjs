@@ -54,17 +54,14 @@ export default {
     'src/rules/**/*.ts',
     '!src/rules/**/*.{test,spec}.ts',
     '!src/rules/**/__tests__/**',
+    // Shared helpers the rules import, graded as `utils/<file>`.
+    'src/utils/*.ts',
+    '!src/utils/*.{test,spec}.ts',
   ],
-  // Keep the sandbox small: the plugin's docs, specs and build output are not
-  // inputs to its tests.
-  ignorePatterns: [
-    'dist',
-    'coverage',
-    'test-results',
-    'docs',
-    'benchmark',
-    'reports',
-  ],
+  // Keep the sandbox small: build output and reports are not inputs to the
+  // tests. `docs/` stays: nestjs-security's docs-options-sync.test.ts reads
+  // docs/rules/*.md, and without it the dry run fails before any mutant runs.
+  ignorePatterns: ['dist', 'coverage', 'test-results', 'benchmark', 'reports'],
 
   mutator: {
     excludedMutations: [

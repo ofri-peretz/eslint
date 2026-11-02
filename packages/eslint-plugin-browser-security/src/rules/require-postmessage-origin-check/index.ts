@@ -20,8 +20,10 @@ import {
   isTestFilePath,
   objectKeyName,
   propertyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { isAnchoredRegexpTest } from '../../utils/regexp-anchoring';
+import { resolveInitializer } from '../../utils/resolve-binding';
 
 type MessageIds = 'missingOriginCheck';
 
@@ -98,6 +100,34 @@ function receiverKey(node: TSESTree.Node): string | undefined {
   return undefined;
 }
 
+/**
+ * Names that denote the global object, whose `onmessage` property receives
+ * cross-window `postMessage` traffic exactly as `addEventListener('message')`
+ * does. Any other receiver's `onmessage` (`ws.onmessage`, `worker.onmessage`,
+ * `port.onmessage`) belongs to a channel whose peer is fixed at construction.
+ */
+const GLOBAL_RECEIVERS = new Set(['window', 'self', 'globalThis']);
+
+/**
+ * Is `allowlist.includes(x.origin)` / `allowlist.has(x.origin)` an EXACT-match
+ * test?
+ *
+ * On an array or a Set it is — membership compares whole strings, which is the
+ * allowlist OWASP recommends. On a STRING it is a substring test:
+ * `'https://trusted.com'.includes(event.origin)` accepts `https://trusted.co`.
+ * So the receiver must not be a string, spelled inline or bound to one.
+ */
+function isMembershipReceiver(
+  node: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  if (staticString(node) !== null) return false;
+  if (node.type === 'Identifier') {
+    return staticString(resolveInitializer(node, sourceCode)) === null;
+  }
+  return true;
+}
+
 /** `this.<field>` for a class field key, or `undefined` for a computed one. */
 function fieldKey(node: TSESTree.PropertyDefinition): string | undefined {
   // A private name has exactly one spelling; it can never be computed.
@@ -140,6 +170,14 @@ function hasOriginCheck(
   ];
 
   return originPatterns.some((pattern) => pattern.test(text));
+}
+
+/**
+ * Does this `addEventListener` call name the `message` event? A template
+ * `\`message\`` names it exactly as the quoted spelling does.
+ */
+function isMessageEvent(node: TSESTree.CallExpression): boolean {
+  return staticString(node.arguments[0]) === 'message';
 }
 
 export const requirePostmessageOriginCheck = createRule<
@@ -213,7 +251,7 @@ export const requirePostmessageOriginCheck = createRule<
     return {
       before() {
         const [options = {}] = currentOptions();
-        const { allowInTests = false } = options as Options;
+        const { allowInTests } = options as Options;
 
         const filename = context.filename;
         const isTestFile = allowInTests && isTestFilePath(filename);
@@ -244,7 +282,11 @@ export const requirePostmessageOriginCheck = createRule<
          */
         nonWindowReceivers = new Set<string>();
 
-        /** Ranges of `ALLOWED.test(x.origin)` calls with a fully anchored pattern. */
+        /**
+         * Ranges of calls that prove the origin: `ALLOWED.test(x.origin)` with a
+         * fully anchored pattern, and `ALLOWED.includes(x.origin)` /
+         * `ALLOWED.has(x.origin)` on a non-string allowlist.
+         */
         anchoredOriginTests = [];
         return true;
       },
@@ -270,21 +312,21 @@ export const requirePostmessageOriginCheck = createRule<
       NewExpression(node: TSESTree.NewExpression) {
         if (node.callee.type !== 'Identifier') return;
         const typeName = node.callee.name;
-        const parent = node.parent as TSESTree.Node | undefined;
+        const parent = node.parent as TSESTree.Node;
         // A `new` expression is never a declarator's id, an assignment's
         // target or a field's key, so its parent position needs no check.
-        if (parent?.type === 'VariableDeclarator') {
+        if (parent.type === 'VariableDeclarator') {
           // A destructuring pattern names no receiver, and `receiverKey`
           // answers `undefined` for it.
           rememberIfNonWindow(receiverKey(parent.id), typeName);
           return;
         }
-        if (parent?.type === 'AssignmentExpression') {
+        if (parent.type === 'AssignmentExpression') {
           rememberIfNonWindow(receiverKey(parent.left), typeName);
           return;
         }
         // `class Feed { socket = new WebSocket(url) }` / `#socket = …`
-        if (parent?.type === 'PropertyDefinition') {
+        if (parent.type === 'PropertyDefinition') {
           rememberIfNonWindow(fieldKey(parent), typeName);
         }
       },
@@ -295,7 +337,11 @@ export const requirePostmessageOriginCheck = createRule<
         if (
           node.arguments.length === 1 &&
           isOriginRead(node.arguments[0]) &&
-          isAnchoredRegexpTest(node, sourceCode)
+          (isAnchoredRegexpTest(node, sourceCode) ||
+            (callee.type === 'MemberExpression' &&
+              (propertyName(callee) === 'includes' ||
+                propertyName(callee) === 'has') &&
+              isMembershipReceiver(callee.object, sourceCode)))
         ) {
           anchoredOriginTests.push([node.range[0], node.range[1]]);
         }
@@ -312,12 +358,7 @@ export const requirePostmessageOriginCheck = createRule<
           // unchecked listener.
           propertyName(callee) === 'addEventListener'
         ) {
-          const eventArg = node.arguments[0];
-          if (
-            eventArg &&
-            eventArg.type === 'Literal' &&
-            eventArg.value === 'message'
-          ) {
+          if (isMessageEvent(node)) {
             isMessageListener = true;
             receiver = receiverKey(callee.object);
             // `new WebSocket(url).addEventListener('message', …)` — the
@@ -335,16 +376,10 @@ export const requirePostmessageOriginCheck = createRule<
         // Direct addEventListener('message', ...) - global scope
         if (
           callee.type === 'Identifier' &&
-          callee.name === 'addEventListener'
+          callee.name === 'addEventListener' &&
+          isMessageEvent(node)
         ) {
-          const eventArg = node.arguments[0];
-          if (
-            eventArg &&
-            eventArg.type === 'Literal' &&
-            eventArg.value === 'message'
-          ) {
-            isMessageListener = true;
-          }
+          isMessageListener = true;
         }
 
         if (!isMessageListener) {
@@ -369,6 +404,27 @@ export const requirePostmessageOriginCheck = createRule<
 
         // A handler passed by reference (`addEventListener('message', onMsg)`)
         // is not analysed: it may be validated where it is defined.
+      },
+
+      // `window.onmessage = (e) => …` / bare `onmessage = …` registers the same
+      // cross-window listener as `addEventListener('message', …)`.
+      AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        const target = node.left;
+        const onGlobal =
+          target.type === 'MemberExpression'
+            ? propertyName(target) === 'onmessage' &&
+              target.object.type === 'Identifier' &&
+              GLOBAL_RECEIVERS.has(target.object.name)
+            : target.type === 'Identifier' && target.name === 'onmessage';
+        const handler = node.right;
+        if (
+          onGlobal &&
+          (handler.type === 'FunctionExpression' ||
+            handler.type === 'ArrowFunctionExpression') &&
+          !hasOriginCheck(handler, sourceCode)
+        ) {
+          unverified.push({ handler, receiver: undefined });
+        }
       },
 
       'Program:exit'() {

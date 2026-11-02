@@ -28,6 +28,30 @@ ruleTester.run(
   requirePostmessageOriginCheck,
   {
     valid: [
+      {
+        name: 'an origin check that is the whole expression body still guards the handler',
+        code: `
+          const TRUSTED = new Set(['https://app.example.com']);
+          window.addEventListener('message', (e) => TRUSTED.has(e.origin));
+        `,
+      },
+      // Stryker triage 2026-11-02
+      {
+        name: 'addEventListener with no arguments registers no message listener',
+        code: 'window.addEventListener();',
+      },
+      {
+        name: 'assigning a function to another window property is not a message listener',
+        code: 'window.onresize = (e) => render(e.data);',
+      },
+      {
+        name: 'assigning a function to an ordinary variable is not a message listener',
+        code: 'let handler; handler = (e) => render(e.data);',
+      },
+      {
+        name: 'a handler assigned to window.onmessage by reference is not analysed',
+        code: 'window.onmessage = onMessage;',
+      },
       // @found Stryker mutation-survivor triage, 2026-10-18
       {
         name: 'FP: a WebSocket held in a class field initialiser has no origin to check',
@@ -136,6 +160,32 @@ ruleTester.run(
       },
     ],
     invalid: [
+      {
+        name: 'a computed WebSocket field names no receiver, not one called null',
+        code: `
+          class Feed {
+            [slot] = new WebSocket(url);
+            constructor() {
+              this.null.addEventListener('message', (e) => render(e.data));
+            }
+          }
+        `,
+        errors: missing,
+      },
+      // @found Stryker mutation-survivor triage, 2026-11-02
+      {
+        name: 'FN: a template-literal message event name registers the same listener',
+        code: 'window.addEventListener(`message`, (e) => render(e.data));',
+        errors: missing,
+      },
+      {
+        name: 'a computed member receiver proves nothing about the socket',
+        code: `
+          this[a] = new WebSocket(url);
+          this[b].addEventListener('message', (e) => render(e.data));
+        `,
+        errors: missing,
+      },
       {
         name: 'a receiver named on another object is a different receiver',
         code: `

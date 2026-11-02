@@ -16,6 +16,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
+  objectKeyName,
   staticString,
   namesOneOf,
   propertyName,
@@ -68,8 +69,6 @@ interface EvalPattern {
   pattern: string;
   category: 'json' | 'math' | 'template' | 'object' | 'dynamic' | 'other';
   safeAlternative: string;
-  example: { bad: string; good: string };
-  effort: string;
 }
 
 const EVAL_PATTERNS: EvalPattern[] = [
@@ -77,42 +76,21 @@ const EVAL_PATTERNS: EvalPattern[] = [
     pattern: 'JSON\\.parse|parse\\(.*\\)',
     category: 'json',
     safeAlternative: 'JSON.parse()',
-    example: {
-      bad: 'eval(\'{"key": "\' + value + \'"}"\')',
-      good: 'JSON.parse(\'{"key": "\' + value + \'"}"\')',
-    },
-    effort: '2 minutes',
   },
   {
     pattern: 'Math\\.|parseInt|parseFloat',
     category: 'math',
     safeAlternative: 'Math functions or parseInt/parseFloat',
-    example: {
-      bad: "eval('Math.' + method + '(' + arg + ')')",
-      good: 'const mathMethods = {sin: Math.sin, cos: Math.cos}; mathMethods[method](arg)',
-    },
-    effort: '5 minutes',
   },
   {
     pattern: '\\$\\{|template|interpolat',
     category: 'template',
     safeAlternative: 'Template literals or template engine',
-    example: {
-      bad: "eval('Hello ' + userName + '!')",
-      // oxlint-disable-next-line no-template-curly-in-string
-      good: 'const template = `Hello ${userName}!`;',
-    },
-    effort: '3 minutes',
   },
   {
     pattern: '\\[.*\\]|object\\[|obj\\.|\\.',
     category: 'object',
     safeAlternative: 'Direct property access or Map',
-    example: {
-      bad: "eval('obj.' + property)",
-      good: 'const allowedProps = {name: true, age: true}; if (allowedProps[property]) obj[property]',
-    },
-    effort: '8 minutes',
   },
 ];
 
@@ -181,10 +159,9 @@ function resolveModuleMember(
   name: string | null,
 ): string | null {
   if (name === null) return null;
-  if (callee.type === 'Identifier') {
-    const bound = bindings.get(name);
-    return bound !== undefined && bound !== NAMESPACE ? bound : null;
-  }
+  // A local bound to the whole module comes back as NAMESPACE, which is in no
+  // sink set: `vm(code)` calls nothing.
+  if (callee.type === 'Identifier') return bindings.get(name) ?? null;
   // A non-null `name` came from `calleeTrailingName`/`trailingName`, and both
   // produce one only for an Identifier or a MemberExpression — the Identifier
   // case returned above, so this is the member form. A `!== 'MemberExpression'`
@@ -204,11 +181,12 @@ function calleeTrailingName(callee: TSESTree.Node): string | null {
   return callee.property.type === 'Identifier' ? callee.property.name : null;
 }
 
-/** A string written out in full — no runtime assembly, nothing to steer. */
+/**
+ * A string written out in full — no runtime assembly, nothing to steer: a
+ * string literal or a template with nothing interpolated.
+ */
 function isStaticStringNode(node: TSESTree.Node): boolean {
-  if (node.type === 'Literal') return staticString(node) !== null;
-  if (node.type === 'TemplateLiteral') return node.expressions.length === 0;
-  return false;
+  return staticString(node) !== null;
 }
 
 /**
@@ -429,14 +407,6 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     let pendingVmNews: TSESTree.NewExpression[];
 
     /**
-     * Check if a node is a literal string (safe)
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    const isLiteralString = (node: TSESTree.Node): boolean => {
-      return staticString(node) !== null;
-    };
-
-    /**
      * Select message ID based on strategy
      */
     const selectStrategyMessage = (pattern: EvalPattern | null): MessageIds => {
@@ -514,11 +484,21 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       return !variable || variable.defs.length === 0;
     };
 
+    /**
+     * `visited` holds the const initialisers already followed, so `const a = b;
+     * const b = a;` terminates. It used to be a depth budget of 3, which also
+     * cut off an honest alias chain: `const a5 = a4`, …, `const a1 = eval`
+     * went silent at the fourth hop.
+     */
     const evalCalleeName = (
       callee: TSESTree.Node,
-      depth = 0,
+      visited = new Set<TSESTree.Node>(),
     ): string | null => {
-      if (depth > 3) return null;
+      const follow = (init: TSESTree.Node | null): string | null => {
+        if (init === null || visited.has(init)) return null;
+        visited.add(init);
+        return evalCalleeName(init, visited);
+      };
       if (callee.type === 'Identifier') {
         if (evalFunctions.has(callee.name)) {
           // The NAME is not the sink — the binding is. `Function` imported from
@@ -534,18 +514,15 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
           // `const Function = globalThis.Function` is still caught, and an
           // unresolved identifier still reports, because that IS the global.
           if (isGlobalBinding(callee)) return callee.name;
-          const aliased = constInitializerOf(context.sourceCode, callee);
-          return aliased ? evalCalleeName(aliased, depth + 1) : null;
         }
-        const init = constInitializerOf(context.sourceCode, callee);
-        return init ? evalCalleeName(init, depth + 1) : null;
+        return follow(constInitializerOf(context.sourceCode, callee));
       }
       if (callee.type === 'SequenceExpression') {
         // The grammar gives a sequence at least two operands, so the last one
         // always exists; a `?:` for the empty case would be a branch no input
         // can reach.
         const [last] = callee.expressions.slice(-1) as [TSESTree.Expression];
-        return evalCalleeName(last, depth + 1);
+        return evalCalleeName(last, visited);
       }
       if (
         callee.type === 'MemberExpression' &&
@@ -574,19 +551,20 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         // drop-in gate measured on this rule.
         if (node.arguments.length === 0) return;
 
-        // Skip if it's a literal string and literals are allowed
-        if (allowLiteralStrings && isLiteralString(node.arguments[0])) {
+        // Skip a program the author wrote out when literals are allowed —
+        // including one hop of single-write constant, the same reading the vm
+        // sinks use.
+        if (allowLiteralStrings && isStaticCode(node.arguments[0])) {
           return;
         }
 
         // Skip if it's a direct string literal (safe)
-        if (evalName === 'eval' && isLiteralString(node.arguments[0])) {
+        if (evalName === 'eval' && isStaticStringNode(node.arguments[0])) {
           return;
         }
 
         const expression = extractExpression(node);
         const pattern = detectPattern(expression);
-        const steps = generateRefactoringSteps(pattern);
 
         // The `suggest:` array that used to hang off this report offered ONE
         // suggestion, repeating the report's own messageId, with
@@ -606,12 +584,10 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         context.report({
           node,
           messageId: selectStrategyMessage(pattern),
+          // Only `safeAlternative` is a placeholder (strategyRefactor's fix);
+          // no message reads anything else.
           data: {
-            expression,
-            patternCategory: pattern?.category || 'dynamic code execution',
             safeAlternative: pattern?.safeAlternative || 'Remove eval entirely',
-            steps,
-            effort: pattern?.effort || '15-30 minutes',
           },
         });
       }
@@ -637,7 +613,14 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       if (
         node.callee.type === 'Identifier' &&
         node.callee.name === 'Function' &&
-        isGlobalBinding(node.callee)
+        isGlobalBinding(node.callee) &&
+        // `new Function('price', 'total = price * 2')` is an eval-like sink
+        // whose parameters and body the author wrote out: with literals
+        // allowed, it is as exempt as `eval('…')`.
+        !(
+          allowLiteralStrings &&
+          node.arguments.every((argument) => isStaticCode(argument))
+        )
       ) {
         const sourceCode = context.sourceCode;
         const expression = node.arguments
@@ -648,18 +631,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         context.report({
           node,
           messageId: selectStrategyMessage(pattern),
-          data: {
-            expression: `new Function(${expression})`,
-            patternCategory: 'function constructor',
-            safeAlternative: 'Arrow function or regular function',
-            steps: [
-              '   1. Replace Function constructor with arrow function',
-              '   2. Use regular function declaration',
-              '   3. Validate any dynamic parts',
-              '   4. Consider module imports instead',
-            ].join('\n'),
-            effort: '10 minutes',
-          },
+          data: { safeAlternative: 'Arrow function or regular function' },
         });
       }
     };
@@ -712,13 +684,13 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       // where the literal is assigned AFTER the sink has already run the
       // parameter. No write before the use means unresolved, which stays
       // reported.
+      // A read's `writeExpr` is null, so the null filter keeps exactly the
+      // writes; references are recorded in source order, so the last one
+      // ending before the call is the last write.
       const lastWrite = variable.references
-        .filter((ref) => ref.isWrite())
         .map((ref) => ref.writeExpr)
         .filter((write): write is TSESTree.Node => write != null)
-        .filter((write) => write.range[1] <= node.range[0])
-        .sort((a, b) => a.range[1] - b.range[1])
-        .at(-1);
+        .findLast((write) => write.range[1] <= node.range[0]);
       return lastWrite !== undefined && isStaticStringNode(lastWrite);
     };
 
@@ -743,9 +715,11 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       if (node.id.type !== 'ObjectPattern') return;
       for (const property of node.id.properties) {
         if (property.type !== 'Property') continue;
-        if (property.key.type !== 'Identifier') continue;
+        // `{ runInNewContext: run }` and `{ 'runInNewContext': run }` alike.
+        const imported = objectKeyName(property);
+        if (imported === null) continue;
         if (property.value.type !== 'Identifier') continue;
-        bindModuleName(moduleName, property.value.name, property.key.name);
+        bindModuleName(moduleName, property.value.name, imported);
       }
     };
 
@@ -900,48 +874,28 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       },
       CallExpression(node: TSESTree.CallExpression) {
         checkCallExpression(node);
-        // A LOCAL name is not the export name. `import { runInThisContext as
-        // runIt } from 'node:vm'` calls the sink as `runIt(…)`, so filtering
-        // identifier callees by the sink vocabulary threw the renamed import
-        // away before `resolveModuleMember` — which exists to resolve exactly
-        // that rename — ever saw it. Every identifier callee is carried; the
-        // binding decides at Program:exit, which is the whole point of
-        // deferring.
-        if (node.callee.type === 'Identifier') {
-          pendingVmCalls.push(node);
-          return;
-        }
-        const name = trailingName(node.callee);
-        if (
-          name !== null &&
-          (VM_CODE_SINK_METHODS.has(name) || name === 'run')
-        ) {
-          pendingVmCalls.push(node);
-        }
+        // Every call is carried; the binding decides at Program:exit, which is
+        // the whole point of deferring. A LOCAL name is not the export name —
+        // `import { runInThisContext as runIt } from 'node:vm'` calls the sink
+        // as `runIt(…)` — and `judgeVmSites` already checks the resolved export
+        // against the sink vocabulary, so a pre-filter here only duplicated it.
+        pendingVmCalls.push(node);
       },
       NewExpression(node: TSESTree.NewExpression) {
         checkNewExpression(node);
-        if (node.callee.type === 'Identifier') {
-          pendingVmNews.push(node);
-          return;
-        }
-        const name = trailingName(node.callee);
-        if (
-          name !== null &&
-          (VM_CODE_CONSTRUCTORS.has(name) || VM2_CODE_CONSTRUCTORS.has(name))
-        ) {
-          pendingVmNews.push(node);
-        }
+        pendingVmNews.push(node);
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const moduleName = node.source.value;
         for (const specifier of node.specifiers) {
           if (specifier.type === 'ImportSpecifier') {
-            if (specifier.imported.type !== 'Identifier') continue;
+            // `import { 'runInNewContext' as run }` — an ES2022 string name.
             bindModuleName(
               moduleName,
               specifier.local.name,
-              specifier.imported.name,
+              specifier.imported.type === 'Identifier'
+                ? specifier.imported.name
+                : specifier.imported.value,
             );
             continue;
           }

@@ -168,6 +168,7 @@ describe('no-dynamic-command-string', () => {
         errors: [{ messageId: 'commandStringInterpolation' as const }],
       },
       {
+        name: 'execaCommand with a variable command line is reported',
         code: `execaCommand(commandLine);`,
         errors: [{ messageId: 'commandStringInterpolation' as const }],
       },

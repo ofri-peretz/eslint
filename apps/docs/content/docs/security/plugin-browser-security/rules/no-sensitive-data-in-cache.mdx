@@ -52,7 +52,9 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ## Rule Details
 
-This rule flags calls to storage methods (`set`, `put`, `store`) where the key name suggests it might contain sensitive information (e.g., keys containing "password", "token", "credit", "ssn").
+This rule flags writes to the browser's **Cache Storage API** — `put`, `add` and `addAll` on a `Cache` the file proves came from `caches.open(…)` (awaited, through `.then(cache => …)`, or a `const` bound to either) — whose cached resource URL names a credential or a regulated identifier. The URL is read from a string, a `const` bound to one, `new Request('/url')` or `new URL('/url', base)` (Cache keys a URL object by the request it names), and matched as whole words: `password`, `token`, `secret`, `api key`, `credit card`, `ssn`, and the rest of the shared secret vocabulary.
+
+A free `cache` object of unknown type is **not** the Cache API: `cacheMap.set('creditLimit', 5000)`, an LRU's `.set`, a Redux `store.put(…)` and a memoizer's `.store` were all reported before the rule proved its receiver, and none of them is a browser cache. Sensitive values in Web Storage, IndexedDB or cookies belong to [`no-sensitive-localstorage`](./no-sensitive-localstorage), [`no-sensitive-sessionstorage`](./no-sensitive-sessionstorage), [`no-jwt-in-storage`](./no-jwt-in-storage) and [`no-sensitive-indexeddb`](./no-sensitive-indexeddb).
 
 ```mermaid
 %%{init: {
@@ -69,7 +71,9 @@ This rule flags calls to storage methods (`set`, `put`, `store`) where the key n
   }
 }}%%
 flowchart TD
-    A["Storage Call"] --> B{"Key Name Analysis"}
+    A["Cache write"] --> P{"Receiver from caches.open?"}
+    P -->|No| D
+    P -->|Yes| B{"Resource URL names a secret?"}
     B -->|Matches Sensitive Keywords| C["🚨 High Risk Storage"]
     B -->|Generic Name| D["✅ Safe Storage"]
     C --> E["💡 Suggest Encryption or HttpOnly"]
@@ -87,19 +91,32 @@ flowchart TD
 
 ## Configuration
 
-This rule has no configuration options in the current version.
+See [Options](#️-options).
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```javascript
-cache.put('token', authToken)
+const cache = await caches.open('v1');
+cache.put('/api/token', tokenResponse);
+cache.put(new Request('/account/password'), response);
+cache.add(new URL('/api/token', location.origin));
+
+caches.open('v1').then((c) => c.addAll(['/api/ssn-lookup', '/app.js']));
 ```
 
 ### ✅ Correct
 
 ```javascript
+// Cache static assets only
+const cache = await caches.open('v1');
+cache.addAll(['/app.js', '/styles.css']);
+
+// Not the Cache API: an application map or LRU is out of scope
+const lru = new Map();
+lru.set('token', value);
+
 // Store non-sensitive identifiers instead
 localStorage.setItem('user_preferences', JSON.stringify({ theme: 'dark' }));
 

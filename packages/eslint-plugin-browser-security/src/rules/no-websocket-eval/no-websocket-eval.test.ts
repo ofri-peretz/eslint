@@ -123,6 +123,7 @@ ruleTester.run('no-websocket-eval', noWebsocketEval, {
     },
     // Nested property
     {
+      name: 'eval of a property of WebSocket message data is reported',
       code: `
         const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {

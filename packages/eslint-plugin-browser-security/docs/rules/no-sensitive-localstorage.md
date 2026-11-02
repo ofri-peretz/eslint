@@ -11,6 +11,7 @@ autofix: false
 > **Keywords:** localStorage, sessionStorage, tokens, CWE-922, security, XSS, sensitive data
 
 <!-- @rule-summary -->
+
 Detects storage of sensitive data (tokens, passwords, PII) in localStorage
 <!-- @/rule-summary -->
 
@@ -28,7 +29,7 @@ Detects storage of sensitive data (tokens, passwords, PII) in localStorage. This
 | **CWE Reference** | CWE-922 (Insecure Storage of Sensitive Information) |
 | **Severity**      | 🔴 High                                             |
 | **Auto-Fix**      | ❌ No (requires architecture change)                |
-| **Category**   | Security |
+| **Category**      | Security                                            |
 | **Best For**      | SPAs, frontend apps handling authentication         |
 
 ## Vulnerability and Risk
@@ -79,23 +80,17 @@ flowchart TD
 ### ❌ Incorrect
 
 ```javascript
-// Storing tokens - VULNERABLE to XSS
-localStorage.setItem('token', jwtToken);
+// Storing secrets - VULNERABLE to XSS
+localStorage.setItem('password', userPassword);
+localStorage.setItem('apiKey', key);
+localStorage['ssn'] = ssn;
+
+// Session storage has the same issue (with checkSessionStorage)
+sessionStorage.setItem('client_secret', secret);
+
+// Bearer credentials — token, accessToken, refreshToken, authToken — are
+// reported by no-jwt-in-storage, not this rule:
 localStorage.setItem('accessToken', response.accessToken);
-localStorage.setItem('refreshToken', response.refreshToken);
-
-// Storing sensitive user data - VULNERABLE
-localStorage.setItem(
-  'user',
-  JSON.stringify({
-    email: 'user@example.com',
-    ssn: '123-45-6789',
-    password: 'secret',
-  }),
-);
-
-// Session storage has same issues
-sessionStorage.setItem('authToken', token);
 ```
 
 ### ✅ Correct
@@ -136,11 +131,11 @@ const tokenStore = (() => {
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `false` | Skip this rule in `*.test.*` / `*.spec.*` files |
-| `sensitivePatterns` | `string[]` | `["password","passwd","pwd","passphrase","secret","api key","apikey","private key","secret key","encryption key","signing key","client secret","credit card","card number","cvv","cvc","ssn","social security","seed phrase","mnemonic","recovery code"]` | Key substrings considered sensitive |
-| `checkSessionStorage` | `boolean` | `false` | Also flag `sessionStorage` writes |
+| Option                | Type       | Default                                                                                                                                                                                                                                                   | Description                                     |
+| --------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `allowInTests`        | `boolean`  | `false`                                                                                                                                                                                                                                                   | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `sensitivePatterns`   | `string[]` | `["password","passwd","pwd","passphrase","secret","api key","apikey","private key","secret key","encryption key","signing key","client secret","credit card","card number","cvv","cvc","ssn","social security","seed phrase","mnemonic","recovery code"]` | Key substrings considered sensitive             |
+| `checkSessionStorage` | `boolean`  | `false`                                                                                                                                                                                                                                                   | Also flag `sessionStorage` writes               |
 
 ```json
 {

@@ -22,7 +22,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -48,7 +48,6 @@ const xai = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -166,64 +165,131 @@ ruleTester.run('require-output-filtering', requireOutputFiltering, {
 // object or method (`db.user.findUnique`, `supabase.from().select`), matched by
 // whole word; a block-bodied or method-form execute is checked too.
 // ─────────────────────────────────────────────────────────────────────────────
-ruleTester.run('require-output-filtering (fp-fn audit)', requireOutputFiltering, {
-  valid: xai([
-    {
-      name: 'the canonical weather tool',
-      code: `const weather = tool({ inputSchema, execute: async ({ city }) => getWeather(city) });`,
-    },
-    {
-      name: "the AI SDK RAG guide's getInformation tool",
-      code: `const tools = { getInformation: tool({ inputSchema, execute: async ({ question }) => findRelevantContent(question) }) };`,
-    },
-    {
-      name: 'a member call that is not data access',
-      code: `const t = tool({ inputSchema, execute: async ({ city }) => weatherApi.getForecast(city) });`,
-    },
-    {
-      name: 'a block body returning a computed value',
-      code: `
+ruleTester.run(
+  'require-output-filtering (fp-fn audit)',
+  requireOutputFiltering,
+  {
+    valid: xai([
+      {
+        name: 'the canonical weather tool',
+        code: `const weather = tool({ inputSchema, execute: async ({ city }) => getWeather(city) });`,
+      },
+      {
+        name: "the AI SDK RAG guide's getInformation tool",
+        code: `const tools = { getInformation: tool({ inputSchema, execute: async ({ question }) => findRelevantContent(question) }) };`,
+      },
+      {
+        name: 'a member call that is not data access',
+        code: `const t = tool({ inputSchema, execute: async ({ city }) => weatherApi.getForecast(city) });`,
+      },
+      {
+        name: 'a block body returning a computed value',
+        code: `
         const t = tool({ inputSchema, execute: async ({ id }) => {
           const n = count + 1;
           return n;
         } });
       `,
-    },
-    {
-      name: 'a filtered result in a block body',
-      code: `
+      },
+      {
+        name: 'a filtered result in a block body',
+        code: `
         const t = tool({ inputSchema, async execute({ id }) {
           return redactUser(await db.user.findUnique({ where: { id } }));
         } });
       `,
-    },
-    {
-      name: 'a return inside a nested callback is not the tool result',
-      code: `
+      },
+      {
+        name: 'a return inside a nested callback is not the tool result',
+        code: `
         const t = tool({ inputSchema, execute: async ({ ids }) => {
           ids.forEach((id) => { return db.user.findUnique({ where: { id } }); });
           return { ok: true };
         } });
       `,
-    },
-  ]),
-  invalid: xai([
-    {
-      name: 'a block body returning the full user row',
-      code: `
+      },
+    ]),
+    invalid: xai([
+      {
+        name: 'a block body returning the full user row',
+        code: `
         const lookupUser = tool({
           inputSchema,
           execute: async ({ id }) => { const u = await db.user.findUnique({ where: { id } }); return u; },
         });
       `,
-      errors: [{ messageId: 'missingOutputFilter' }],
-    },
-    {
-      name: 'a method-form execute returning a query result directly',
-      code: `
+        errors: [{ messageId: 'missingOutputFilter' }],
+      },
+      {
+        name: 'a method-form execute returning a query result directly',
+        code: `
         const tools = { search: tool({ inputSchema, async execute({ q }) { return await supabase.from('users').select('*'); } }) };
       `,
-      errors: [{ messageId: 'missingOutputFilter' }],
-    },
-  ]),
-});
+        errors: [{ messageId: 'missingOutputFilter' }],
+      },
+    ]),
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run(
+  'require-output-filtering (mutation audit)',
+  requireOutputFiltering,
+  {
+    valid: xai([
+      {
+        name: 'an undeclared global returned from execute has no visible data source',
+        code: `const t = { execute: async () => { return cachedRows; } };`,
+      },
+      {
+        name: 'a configured global returned from execute has no declaration to read',
+        code: `const t = { execute: async () => { return cachedRows; } };`,
+        languageOptions: { globals: { cachedRows: 'readonly' } },
+      },
+      {
+        name: 'a for-of loop variable has no initialiser to read',
+        code: `const t = { execute: async ({ ids }) => { for (const id of ids) return id; } };`,
+      },
+      {
+        name: "a return in a helper declared inside execute is the helper's, not the tool's",
+        code: `
+        const t = {
+          execute: async ({ sql }) => {
+            function load() { return db.query(sql); }
+            return redact(await load());
+          },
+        };
+      `,
+      },
+    ]),
+    invalid: xai([
+      {
+        name: 'a tool under a computed key is reported with an unknown name',
+        code: `generateText({ tools: { [toolId]: { execute: () => db.findUser(id) } } });`,
+        errors: [
+          {
+            messageId: 'missingOutputFilter',
+            data: { toolName: 'unknown', source: 'db.findUser' },
+          },
+        ],
+      },
+      {
+        name: 'a tools map wrapped in a helper call is still checked',
+        code: `generateText({ tools: withLogging({ getUser: { execute: () => db.findUser(id) } }) });`,
+        errors: [{ messageId: 'missingOutputFilter' }],
+      },
+      {
+        name: "a tools map under a quoted 'tools' key still names the tool",
+        code: `generateText({ 'tools': { getUser: { execute: () => db.findUser(id) } } });`,
+        errors: [
+          {
+            messageId: 'missingOutputFilter',
+            data: { toolName: 'getUser', source: 'db.findUser' },
+          },
+        ],
+      },
+    ]),
+  },
+);

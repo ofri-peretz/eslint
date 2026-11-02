@@ -146,20 +146,24 @@ export const noSensitiveDataInAnalytics = createRule<RuleOptions, MessageIds>({
   createOnce(context, currentOptions) {
     let sensitiveFields: string[];
 
-    function report(node: TSESTree.Node, field: string) {
-      context.report({ node, messageId: 'violationDetected', data: { field } });
+    function report(node: TSESTree.Node) {
+      context.report({ node, messageId: 'violationDetected' });
     }
 
     /**
      * Walk a payload object, including the nested `{ traits: { email } }` and
      * `{ user: { email } }` shapes every vendor's docs use.
      *
-     * Depth-limited because a payload deep enough to exhaust it is not a
-     * payload — it is a serialised blob, and guessing about it would be the
-     * same mistake as guessing from a name.
+     * No depth limit — PII six objects down is still PII. The only way the
+     * walk could fail to end is a binding that names itself
+     * (`const p = { next: p }`), and each node is visited once.
      */
-    function scanPayload(node: TSESTree.Node, depth = 0): void {
-      if (depth > 4) return;
+    function scanPayload(
+      node: TSESTree.Node,
+      seen: Set<TSESTree.Node> = new Set(),
+    ): void {
+      if (seen.has(node)) return;
+      seen.add(node);
       // `const p = { passport: … }; mixpanel.track('e7', p);` — naming the
       // payload does not change what is in it. Resolved through SCOPE, so a
       // different `p` in another block cannot be mistaken for this one, and a
@@ -167,7 +171,7 @@ export const noSensitiveDataInAnalytics = createRule<RuleOptions, MessageIds>({
       // because there is nothing to read.
       if (node.type === AST_NODE_TYPES.Identifier) {
         const init = resolveInitializer(node, context.sourceCode);
-        if (init !== undefined) scanPayload(init, depth + 1);
+        if (init !== undefined) scanPayload(init, seen);
         return;
       }
       if (node.type !== AST_NODE_TYPES.ObjectExpression) return;
@@ -175,17 +179,17 @@ export const noSensitiveDataInAnalytics = createRule<RuleOptions, MessageIds>({
         if (property.type !== AST_NODE_TYPES.Property) continue;
         const key = propertyKeyName(property);
         if (key !== null && nameHasAnyWord(key, sensitiveFields)) {
-          report(property, key);
+          report(property);
           continue;
         }
-        scanPayload(property.value, depth + 1);
+        scanPayload(property.value, seen);
       }
     }
 
     return {
       before() {
         const [options = {}] = currentOptions();
-        ({ sensitiveFields = [...DEFAULT_SENSITIVE_FIELDS] } = options);
+        ({ sensitiveFields } = options as Required<Options>);
       },
       CallExpression(node: TSESTree.CallExpression) {
         if (!isAnalyticsTransmission(node)) return;
@@ -193,10 +197,9 @@ export const noSensitiveDataInAnalytics = createRule<RuleOptions, MessageIds>({
         // puts the payload third, `dataLayer.push({…})` puts it first, and
         // `analytics.identify(id, traits)` second — hardcoding one index is
         // how this rule came to see only Segment's `track`.
-        for (const argument of node.arguments) {
-          if (argument.type === AST_NODE_TYPES.SpreadElement) continue;
-          scanPayload(argument);
-        }
+        // A spread argument is neither a binding nor an object literal, so
+        // the scan reads nothing from it.
+        for (const argument of node.arguments) scanPayload(argument);
       },
     };
   },

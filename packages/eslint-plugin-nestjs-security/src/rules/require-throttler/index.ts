@@ -19,6 +19,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  staticString,
 } from '@interlace/eslint-devkit';
 import {
   decoratorCall,
@@ -42,7 +43,7 @@ type MessageIds = 'missingThrottler';
 export interface Options {
   /** Allow in test files. Default: true */
   allowInTests?: boolean;
-  /** Skip checking specific routes. Default: [] */
+  /** Route paths (as declared on the HTTP-method decorator) to skip. Default: [] */
   skipRoutes?: string[];
   /** Skip rule if ThrottlerModule is configured globally in AppModule. Default: false */
   assumeGlobalThrottler?: boolean;
@@ -179,7 +180,8 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Route paths exempt from the throttling requirement',
+            description:
+              'Route paths (as declared on the HTTP-method decorator) exempt from the throttling requirement',
           },
           assumeGlobalThrottler: {
             type: 'boolean',
@@ -199,7 +201,13 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [
-    { allowInTests: true, skipRoutes: [], assumeGlobalThrottler: false },
+    {
+      allowInTests: true,
+      detectGlobalThrottler: true,
+      skipRoutes: [],
+      assumeGlobalThrottler: false,
+      onlySensitiveRoutes: true,
+    },
   ],
   createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
@@ -232,33 +240,42 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
       return hasDecorator(decorators, THROTTLE_DECORATORS);
     }
 
-    /** Route paths declared by an HTTP-method decorator, without slashes. */
+    /**
+     * Route paths declared by an HTTP-method decorator, without leading or
+     * trailing slashes. `@Post(['login', 'sign-in'])` serves every path in the
+     * array, and a template with nothing interpolated is a string path.
+     */
     function routePaths(routeDecorator: TSESTree.Decorator): string[] {
       const call = decoratorCall(routeDecorator);
       if (!call) return [];
-      return call.arguments
-        .filter(
-          (arg): arg is TSESTree.StringLiteral =>
-            arg.type === AST_NODE_TYPES.Literal &&
-            typeof arg.value === 'string',
-        )
-        .map((arg) => arg.value.replace(/^\/+|\/+$/g, ''));
+      const paths: string[] = [];
+      for (const arg of call.arguments) {
+        const declared =
+          arg.type === AST_NODE_TYPES.ArrayExpression ? arg.elements : [arg];
+        for (const element of declared) {
+          const path = staticString(element);
+          if (path !== null)
+            paths.push(path.split('/').filter(Boolean).join('/'));
+        }
+      }
+      return paths;
     }
 
     return {
       before() {
-        const [options = {}] = currentOptions();
+        const [options] = currentOptions();
         // Registering no visitors is both the gate and the cheap path: a file
         // that does not use this SDK does no work at all.
         if (!fileUsesNestjs(context.sourceCode.ast)) return false;
 
+        // Merged with `defaultOptions` before `create` runs.
         ({
-          allowInTests = true,
-          assumeGlobalThrottler = false,
-          detectGlobalThrottler = true,
-          skipRoutes = [],
-          onlySensitiveRoutes = true,
-        } = options as Options);
+          allowInTests,
+          assumeGlobalThrottler,
+          detectGlobalThrottler,
+          skipRoutes,
+          onlySensitiveRoutes,
+        } = options as Required<Options>);
 
         // Skip entirely if global ThrottlerModule is assumed (configured in AppModule)
         if (assumeGlobalThrottler) {
@@ -311,10 +328,10 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
         // authentication entry points that this rule protects.
         if (
           onlySensitiveRoutes &&
-          ((node.decorators ?? []).some((d) =>
+          (node.decorators.some((d) =>
             isAccessControlDecorator(d, origins, EMPTY_NAMES),
           ) ||
-            (cls.decorators ?? []).some((d) =>
+            cls.decorators.some((d) =>
               isAccessControlDecorator(d, origins, EMPTY_NAMES),
             ))
         ) {
@@ -324,8 +341,10 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
         const methodName = memberName(node) ?? '<anonymous>';
         const paths = routePaths(routeDecorator);
 
-        // `skipRoutes` matches either the handler name or a declared route path.
-        if (skipped.has(methodName) || paths.some((p) => skipped.has(p))) {
+        // `skipRoutes` lists route PATHS. Matching the handler name too let
+        // `skipRoutes: ['login']` silence a `login()` handler served at
+        // `/profile` — a route the list never named.
+        if (paths.some((p) => skipped.has(p))) {
           return;
         }
 

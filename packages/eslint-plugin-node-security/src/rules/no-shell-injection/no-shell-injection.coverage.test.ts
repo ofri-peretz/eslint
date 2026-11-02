@@ -40,6 +40,7 @@ describe('no-shell-injection coverage gaps', () => {
       },
       // Identifier + TemplateLiteral → only the RIGHT operand matches (template)
       {
+        name: 'exec of user input concatenated with a template literal is reported',
         code: 'import { exec } from "node:child_process";\nexec(userInput + `tail`);',
         errors: [{ messageId: 'shellInjection' }],
       },

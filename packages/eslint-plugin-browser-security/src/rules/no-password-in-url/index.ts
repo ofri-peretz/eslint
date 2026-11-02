@@ -13,6 +13,7 @@
 import {
   createRule,
   formatLLMMessage,
+  identifierWords,
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
@@ -40,7 +41,49 @@ type RuleOptions = [Options?];
  * and a port plus an `@` anywhere later in the path was reported as
  * credentials in a URL at CVSS 6.5.
  */
-const HTTP_URL = /https?:\/\/([^/?#\s'"`<>]*)/gi;
+const HTTP_URL = /\b(?:https?|ftps?|wss?):\/\/([^/?#\s'"`<>]*)/gi;
+
+/*
+ * The scheme list is the URLs a browser or `fetch` sends — http, ftp and
+ * websocket, each with its TLS twin. `ftp://deploy:hunter2@files…` puts the
+ * password in the same userinfo position `https://` does, and matching only
+ * `https?` made it invisible. Database connection strings
+ * (`postgres://u:p@db`) are deliberately absent: they are server
+ * configuration, never navigated or logged as a URL, and a hardcoded one is the
+ * hardcoded-credentials rules' finding.
+ *
+ * ## Rule partition
+ *
+ * Owns the two places a URL carries a password that are NOT its query string:
+ * the userinfo (`scheme://user:pass@host`) and a password-named parameter in the
+ * FRAGMENT (`#password=…`, `#pwd=…`). A password in the QUERY string
+ * (`?password=`, `?pwd=`) is `no-credentials-in-query-params`' finding — one
+ * fact, one report.
+ */
+
+/** Password words a fragment parameter name ends in. Each is a single word. */
+const PASSWORD_WORDS: ReadonlySet<string> = new Set([
+  'password',
+  'passwd',
+  'pwd',
+  'passphrase',
+]);
+
+/** `name=` parameters in a fragment: `#a=1&password=x` gives `a`, `password`. */
+// The U+0001 interpolation sentinel is matched on purpose (see above).
+// oxlint-disable-next-line no-control-regex
+const FRAGMENT_PARAMETER = /[#&]([^=&#\s\u0001]+)=/g;
+
+/** Does the fragment of this string carry a password-named parameter? */
+function hasFragmentPassword(value: string): boolean {
+  // With no `#`, `slice(-1)` keeps one character — too short for `#name=`.
+  return [...value.slice(value.indexOf('#')).matchAll(FRAGMENT_PARAMETER)].some(
+    ([, name]) =>
+      identifierWords(name)
+        .slice(-1)
+        .some((word) => PASSWORD_WORDS.has(word)),
+  );
+}
 
 /**
  * A stand-in for a value we cannot read, chosen so it cannot be mistaken for
@@ -69,8 +112,7 @@ const OPAQUE = '\u0001';
  *
  * Returns `null` when nothing string-shaped can be recovered.
  */
-function foldUrlText(node: TSESTree.Node, depth = 0): string | null {
-  if (depth > 8) return null;
+function foldUrlText(node: TSESTree.Node): string | null {
   switch (node.type) {
     case 'Literal':
       return typeof node.value === 'string' ? node.value : null;
@@ -84,7 +126,7 @@ function foldUrlText(node: TSESTree.Node, depth = 0): string | null {
         // the credential must stay readable.
         text += quasi.value.cooked ?? quasi.value.raw;
         if (index < node.expressions.length) {
-          text += foldUrlText(node.expressions[index], depth + 1) ?? OPAQUE;
+          text += foldUrlText(node.expressions[index]) ?? OPAQUE;
         }
       });
       return text;
@@ -92,10 +134,12 @@ function foldUrlText(node: TSESTree.Node, depth = 0): string | null {
 
     case 'BinaryExpression': {
       if (node.operator !== '+') return null;
-      const left = foldUrlText(node.left as TSESTree.Node, depth + 1);
-      const right = foldUrlText(node.right, depth + 1);
-      if (left === null && right === null) return null;
-      return (left ?? OPAQUE) + (right ?? OPAQUE);
+      // Two unreadable halves fold to placeholders only, which no URL test
+      // can match, so there is no need to tell them apart from `null`.
+      return (
+        (foldUrlText(node.left as TSESTree.Node) ?? OPAQUE) +
+        (foldUrlText(node.right) ?? OPAQUE)
+      );
     }
 
     default:
@@ -173,7 +217,10 @@ export const noPasswordInUrl = createRule<RuleOptions, MessageIds>({
     function check(node: TSESTree.Node) {
       if (isNestedStringPart(node)) return;
       const text = foldUrlText(node);
-      if (text !== null && hasUserinfoPassword(text)) {
+      if (
+        text !== null &&
+        (hasUserinfoPassword(text) || hasFragmentPassword(text))
+      ) {
         report(node);
       }
     }

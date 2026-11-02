@@ -14,6 +14,10 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-sensitive-data-in-analytics', noSensitiveDataInAnalytics, {
   valid: [
+    {
+      name: 'a self-referential payload binding is scanned once and terminates',
+      code: "const payload = { page: '/home', next: payload }; analytics.track('page_view', payload);",
+    },
     // Non-sensitive analytics
     {
       name: 'a page path',
@@ -31,6 +35,13 @@ ruleTester.run('no-sensitive-data-in-analytics', noSensitiveDataInAnalytics, {
   ],
 
   invalid: [
+    // @found Stryker mutation-survivor triage, 2026-11-02: a depth budget of 4
+    // stopped the walk, so PII nested five objects down was never seen.
+    {
+      name: 'FN: PII nested six objects deep in the payload is still PII',
+      code: "analytics.track('signup', { event: { context: { traits: { user: { profile: { email: user.email } } } } } })",
+      errors: [{ messageId: 'violationDetected' }],
+    },
     // Email in analytics
     {
       name: 'an email address sent to the analytics provider',
@@ -151,8 +162,8 @@ ruleTester.run(
       // A method shorthand is not a Property with a readable key/value pair we
       // treat as PII.
       "analytics.track('e', { plan() { return 'pro'; } });",
-      // A payload nested past the scan budget is refused rather than walked.
-      "analytics.track('e', { a: { b: { c: { d: { e: { email: x } } } } } });",
+      // (A payload nested past a scan budget used to be pinned here as valid;
+      // see 'FN: PII nested six objects deep in the payload is still PII'.)
       // The client name is right but the method is not a transmission.
       'analytics.reset({ email: user.email });',
       // A qualified client on a global that is not a window alias.

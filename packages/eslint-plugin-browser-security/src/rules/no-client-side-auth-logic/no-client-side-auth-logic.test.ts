@@ -61,6 +61,7 @@ ruleTester.run('no-client-side-auth-logic', noClientSideAuthLogic, {
     },
     // Password comparison
     {
+      name: 'comparing user.password to input on the client is reported',
       code: 'if (user.password === input) { login() }',
       errors: [{ messageId: 'violationDetected' }],
     },

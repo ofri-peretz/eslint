@@ -108,17 +108,24 @@ describe('no-clickjacking (layer 2: synthetic nodes without loc)', () => {
     const { listeners, reports } = createWithMockContext(noClickjacking, {
       sourceText: 'style opacity: 0',
     });
+    // A Literal always has a parent; the rule reads it to tell a header value
+    // from a style string, so the synthetic node carries a neutral one.
     call(listeners, 'Literal', {
       type: 'Literal',
       value: 'style= opacity: 0',
-      parent: null,
+      parent: { type: 'ExpressionStatement' },
       loc: undefined,
     });
     // The CSS is read from the literal chunks now, not from the printed
     // source of the whole template, so the synthetic node has to carry them.
     call(listeners, 'TemplateLiteral', {
       type: 'TemplateLiteral',
-      quasis: [{ type: 'TemplateElement', value: { raw: 'style opacity: 0', cooked: 'style opacity: 0' } }],
+      quasis: [
+        {
+          type: 'TemplateElement',
+          value: { raw: 'style opacity: 0', cooked: 'style opacity: 0' },
+        },
+      ],
       expressions: [],
       parent: null,
       loc: undefined,
@@ -185,7 +192,11 @@ describe('no-insecure-redirects (layer 2)', () => {
     const { listeners, reports } = createWithMockContext(noInsecureRedirects, {
       sourceText: 'res.redirect(req.query.next)',
     });
-    call(listeners, 'CallExpression', redirectCall({ start: { line: 1, column: 0 }, end: undefined }));
+    call(
+      listeners,
+      'CallExpression',
+      redirectCall({ start: { line: 1, column: 0 }, end: undefined }),
+    );
     expect(reports).toHaveLength(1);
     expect(reports[0]).toMatchObject({ messageId: 'insecureRedirect' });
   });
@@ -220,10 +231,13 @@ describe('no-missing-cors-check (layer 2)', () => {
 
 describe('no-missing-security-headers (layer 2)', () => {
   it('treats null options as an empty options object', () => {
-    const { listeners, reports } = createWithMockContext(noMissingSecurityHeaders, {
-      options: [null],
-      sourceText: 'res.json({})',
-    });
+    const { listeners, reports } = createWithMockContext(
+      noMissingSecurityHeaders,
+      {
+        options: [null],
+        sourceText: 'res.json({})',
+      },
+    );
     // Sanity: listeners exist and a harmless node reports nothing.
     call(listeners, 'CallExpression', {
       type: 'CallExpression',
@@ -257,9 +271,12 @@ describe('no-sensitive-cookie-js (layer 2)', () => {
 
 describe('no-sensitive-data-in-cache (layer 2)', () => {
   it('treats a Literal key with undefined value as an empty key', () => {
-    const { listeners, reports } = createWithMockContext(noSensitiveDataInCache, {
-      sourceText: '',
-    });
+    const { listeners, reports } = createWithMockContext(
+      noSensitiveDataInCache,
+      {
+        sourceText: '',
+      },
+    );
     const node = {
       type: 'CallExpression',
       callee: {

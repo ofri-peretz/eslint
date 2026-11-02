@@ -24,7 +24,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -51,7 +51,6 @@ const xai = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -59,26 +58,35 @@ const ruleTester = new RuleTester({
   },
 });
 
-ruleTester.run('require-error-handling (branch coverage)', requireErrorHandling, {
-  valid: xai([
-    // Test file with default options — rule disables itself entirely.
-    {
-      code: `async function f() { const r = await generateText({ prompt: p }); }`,
-      filename: 'handler.test.ts',
-    },
-    // Spec-suffixed file also matches the test-file pattern.
-    {
-      code: `async function f() { const r = await streamText({ prompt: p }); }`,
-      filename: 'handler.spec.tsx',
-    },
-  ]),
-  invalid: xai([
-    // allowInTests: false — test filename no longer exempts the call.
-    {
-      code: `async function f() { const r = await generateText({ prompt: p }); }`,
-      filename: 'handler.test.ts',
-      options: [{ allowInTests: false }],
-      errors: [{ messageId: 'missingErrorHandling', data: { function: 'generateText' } }],
-    },
-  ]),
-});
+ruleTester.run(
+  'require-error-handling (branch coverage)',
+  requireErrorHandling,
+  {
+    valid: xai([
+      // Test file with default options — rule disables itself entirely.
+      {
+        code: `async function f() { const r = await generateText({ prompt: p }); }`,
+        filename: 'handler.test.ts',
+      },
+      // Spec-suffixed file also matches the test-file pattern.
+      {
+        code: `async function f() { const r = await streamText({ prompt: p }); }`,
+        filename: 'handler.spec.tsx',
+      },
+    ]),
+    invalid: xai([
+      // allowInTests: false — test filename no longer exempts the call.
+      {
+        code: `async function f() { const r = await generateText({ prompt: p }); }`,
+        filename: 'handler.test.ts',
+        options: [{ allowInTests: false }],
+        errors: [
+          {
+            messageId: 'missingErrorHandling',
+            data: { function: 'generateText' },
+          },
+        ],
+      },
+    ]),
+  },
+);

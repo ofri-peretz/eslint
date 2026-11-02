@@ -42,6 +42,7 @@ describe('no-insecure-rsa-padding coverage gaps', () => {
     invalid: [
       // Bare identifier RSA call → second operand group of isRsaCall
       {
+        name: 'privateDecrypt with RSA_PKCS1_PADDING is reported with an OAEP suggestion',
         code: 'privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_PADDING }, buf);',
         errors: [
           {

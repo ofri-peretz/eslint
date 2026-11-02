@@ -65,7 +65,7 @@ export const requireStorageEncryption = createRule<RuleOptions, MessageIds>({
        * require evidence that what is being stored is a credential.
        */
       CallExpression(node: TSESTree.CallExpression) {
-        if (!isFileWrite(node)) return;
+        if (!isFileWrite(node, context.sourceCode)) return;
         if (!storesACredential(node) || isEncrypted(node, context.sourceCode))
           return;
         context.report({ node, messageId: 'violationDetected' });

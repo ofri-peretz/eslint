@@ -21,7 +21,12 @@ import {
   objectKeyName,
 } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
-import { declaresOption, optionValue, sdkCallName } from '../../utils/sdk';
+import {
+  declaresOption,
+  nameEndsWithWords,
+  optionValue,
+  sdkCallName,
+} from '../../utils/sdk';
 
 type MessageIds = 'missingInputSchema' | 'emptyToolsObject';
 
@@ -99,6 +104,30 @@ export const requireToolSchema = createRule<RuleOptions, MessageIds>({
         : null;
     }
 
+    /**
+     * Report each object-literal tool in a tools map that declares no schema;
+     * `tool(...)` values are checked where the call is visited. A map bound
+     * to a name (`const tools = {…}`) is known to hold tools only by that
+     * name, so there an entry must also have an `execute` to count as one.
+     */
+    function checkToolsObject(
+      tools: TSESTree.ObjectExpression,
+      byName: boolean,
+    ): void {
+      for (const toolDef of tools.properties) {
+        if (toolDef.type !== AST_NODE_TYPES.Property) continue;
+        if (toolDef.value.type !== AST_NODE_TYPES.ObjectExpression) continue;
+        if (byName && !optionValue(toolDef.value, 'execute')) continue;
+        if (!declaresOption(toolDef.value, SCHEMA_KEYS)) {
+          context.report({
+            node: toolDef.value,
+            messageId: 'missingInputSchema',
+            data: { toolName: objectKeyName(toolDef) ?? 'unknown' },
+          });
+        }
+      }
+    }
+
     return {
       before() {
         const [options] = currentOptions();
@@ -139,7 +168,7 @@ export const requireToolSchema = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        if (!sdkCallName(node)) return;
+        if (!sdkCallName(node, context.sourceCode)) return;
 
         const optionsArg = node.arguments[0];
         if (optionsArg?.type !== AST_NODE_TYPES.ObjectExpression) return;
@@ -147,17 +176,17 @@ export const requireToolSchema = createRule<RuleOptions, MessageIds>({
         const tools = optionValue(optionsArg, 'tools');
         if (tools?.type !== AST_NODE_TYPES.ObjectExpression) return;
 
-        // Object-literal tools here; tool(...) values are checked by the branch above.
-        for (const toolDef of tools.properties) {
-          if (toolDef.type !== AST_NODE_TYPES.Property) continue;
-          if (toolDef.value.type !== AST_NODE_TYPES.ObjectExpression) continue;
-          if (!declaresOption(toolDef.value, SCHEMA_KEYS)) {
-            context.report({
-              node: toolDef.value,
-              messageId: 'missingInputSchema',
-              data: { toolName: objectKeyName(toolDef) ?? 'unknown' },
-            });
-          }
+        checkToolsObject(tools, false);
+      },
+      // `const tools = { weather: { execute } }` — a tools map built apart
+      // from the call it is later handed to.
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        if (
+          node.id.type === AST_NODE_TYPES.Identifier &&
+          nameEndsWithWords(node.id.name, 'tools') &&
+          node.init?.type === AST_NODE_TYPES.ObjectExpression
+        ) {
+          checkToolsObject(node.init, true);
         }
       },
     };

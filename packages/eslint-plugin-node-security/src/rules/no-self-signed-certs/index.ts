@@ -21,7 +21,9 @@ import {
   objectKeyName,
   propertyName,
   staticString,
+  unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
+import { constInitializerOf } from '../../utils/const-value';
 
 type MessageIds = 'insecureTls' | 'enableValidation';
 
@@ -94,12 +96,10 @@ export const noSelfSignedCerts = createRule<RuleOptions, MessageIds>({
     function checkProperty(node: TSESTree.Property) {
       if (isTestFile) return;
 
-      // Check for rejectUnauthorized: false
-      if (
-        objectKeyName(node) === 'rejectUnauthorized' &&
-        node.value.type === AST_NODE_TYPES.Literal &&
-        node.value.value === false
-      ) {
+      // Check for rejectUnauthorized: false — written inline, cast
+      // (`false as boolean`), or through a `const` in scope
+      // (`const verifyPeer = false`), which is the same value.
+      if (objectKeyName(node) === 'rejectUnauthorized' && isFalse(node.value)) {
         context.report({
           node,
           messageId: 'insecureTls',
@@ -113,6 +113,18 @@ export const noSelfSignedCerts = createRule<RuleOptions, MessageIds>({
           ],
         });
       }
+    }
+
+    /** A literal `false`, through type syntax and one `const` hop. */
+    function isFalse(value: TSESTree.Node): boolean {
+      const bare = unwrapTypeSyntax(value);
+      const resolved =
+        bare.type === AST_NODE_TYPES.Identifier
+          ? constInitializerOf(context.sourceCode, bare)
+          : bare;
+      if (resolved === null) return false;
+      const literal = unwrapTypeSyntax(resolved);
+      return literal.type === AST_NODE_TYPES.Literal && literal.value === false;
     }
 
     function isProcess(node: TSESTree.Expression): boolean {
@@ -138,10 +150,13 @@ export const noSelfSignedCerts = createRule<RuleOptions, MessageIds>({
         propertyName(node.left.object) === 'env' &&
         propertyName(node.left) === 'NODE_TLS_REJECT_UNAUTHORIZED'
       ) {
-        // An env var is a string: `'0'`, `` `0` `` and `0` all store '0'.
+        // An env var is a string: `'0'`, `` `0` `` and `0` all store '0'. In a
+        // .ts file `0 as any` is the only way to write the number, and the
+        // cast is erased at runtime.
+        const value = unwrapTypeSyntax(node.right);
         if (
-          staticString(node.right) === '0' ||
-          (node.right.type === AST_NODE_TYPES.Literal && node.right.value === 0)
+          staticString(value) === '0' ||
+          (value.type === AST_NODE_TYPES.Literal && value.value === 0)
         ) {
           context.report({
             node,

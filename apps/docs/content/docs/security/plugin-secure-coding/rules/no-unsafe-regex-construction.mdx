@@ -127,13 +127,22 @@ This rule accepts an options object:
 const pattern = new RegExp(req.query.search);
 
 // Template literal with user input
-const pattern2 = new RegExp(`^${userPrefix}`);
+const pattern2 = new RegExp(`^${req.query.prefix}`);
 
-// Passing variables without sanitization
-function search(term) {
+// Passing request input through a variable without sanitization
+function search(req) {
+  const term = req.query.term;
   return new RegExp(term, 'i');
 }
 ```
+
+This rule reports only a pattern whose source it can name: a request member
+(directly, through a local, or spliced into a template), `process.argv`, or
+bytes read from a file or response body. A pattern built from a bare function
+parameter or another value of unknown provenance — `function search(term) {
+return new RegExp(term, 'i'); }` — is not attributed here; it is reported by
+[`detect-non-literal-regexp`](./detect-non-literal-regexp), so the two rules
+never report the same line twice at two severities.
 
 ### ✅ Correct
 
@@ -155,18 +164,6 @@ The rule provides guidance on how to fix detected patterns:
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
-
-### Values from Variables
-
-**Why**: Values stored in variables are not traced.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = userInput;
-dangerousOperation(value);
-```
-
-**Mitigation**: Validate all user inputs.
 
 ### Wrapper Functions
 

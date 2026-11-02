@@ -17,6 +17,10 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-permissive-cors', noPermissiveCors, {
   valid: [
     {
+      name: 'a local function named cors is not the cors package',
+      code: "import cors from './my-cors'; app.use(cors({ origin: '*' }));",
+    },
+    {
       name: 'a number declaration is not a policy object',
       code: 'const x = 42;',
     },
@@ -62,6 +66,11 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
   ],
 
   invalid: [
+    {
+      name: 'a renamed default import of cors is still the cors package',
+      code: "import corsMiddleware from 'cors'; app.use(corsMiddleware({ origin: '*' }));",
+      errors: [{ messageId: 'violationDetected' }],
+    },
     {
       name: "origin '*'",
       code: "cors({ origin: '*' })",
@@ -270,17 +279,13 @@ ruleTester.run('edge shapes', noPermissiveCors, {
   ],
 });
 
-/** The folds are BOUNDED. */
+/**
+ * The folds follow every alias hop and stop only on a cycle. They used to be
+ * bounded at four hops, and the six-hop chains that pinned the bound here as
+ * valid are now findings — see mutation-edges.test.ts.
+ */
 ruleTester.run('bounded folding', noPermissiveCors, {
   valid: [
-    // Six hops past the bound: the wildcard is no longer readable.
-    {
-      code: `const a = '*'; const b = a; const c = b; const d = c; const e = d; const f = e; res.setHeader('Access-Control-Allow-Origin', f);`,
-    },
-    // The same for the cors() options object.
-    {
-      code: `const a = { origin: '*' }; const b = a; const c = b; const d = c; const e = d; const f = e; app.use(cors(f));`,
-    },
     // Neither literal nor identifier: nothing to fold.
     { code: `app.use(cors(makeOptions()));` },
   ],

@@ -5,14 +5,14 @@ tags: ['security', 'browser']
 category: security
 severity: medium
 cwe: CWE-922
-owasp: "A02:2021"
+owasp: 'A02:2021'
 autofix: false
 ---
 
 > No Sensitive Sessionstorage
 
-
 <!-- @rule-summary -->
+
 Prevent storing sensitive data in sessionStorage.
 <!-- @/rule-summary -->
 
@@ -37,10 +37,13 @@ sessionStorage is accessible via JavaScript and vulnerable to XSS attacks. While
 // Storing sensitive data
 sessionStorage.setItem('password', pwd);
 sessionStorage.setItem('apiKey', key);
-sessionStorage.setItem('accessToken', token);
 
 // Bracket notation
-sessionStorage['authToken'] = token;
+sessionStorage['client_secret'] = secret;
+
+// Bearer credentials (accessToken, authToken) are reported by
+// no-jwt-in-storage, not this rule:
+sessionStorage.setItem('accessToken', token);
 ```
 
 ## ✅ Correct
@@ -56,11 +59,10 @@ sessionStorage.setItem('searchQuery', query);
 
 ## 🛠️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
-| `additionalPatterns` | `string[]` | `[]` | Extra whole-word key terms to treat as sensitive |
-
+| Option               | Type       | Default | Description                                      |
+| -------------------- | ---------- | ------- | ------------------------------------------------ |
+| `allowInTests`       | `boolean`  | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files  |
+| `additionalPatterns` | `string[]` | `[]`    | Extra whole-word key terms to treat as sensitive |
 
 ```json
 {

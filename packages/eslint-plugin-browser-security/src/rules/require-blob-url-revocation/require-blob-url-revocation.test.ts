@@ -144,6 +144,7 @@ ruleTester.run(
       },
       // Stored nowhere at all: unreachable, therefore unrevocable.
       {
+        name: 'a blob URL that is used but never revoked is reported',
         code: `URL.createObjectURL(blob);`,
         errors: [{ messageId: 'missingRevoke' }],
       },

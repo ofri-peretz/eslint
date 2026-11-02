@@ -167,9 +167,101 @@ ruleTester.run('no-data-in-temp-storage', noDataInTempStorage, {
     // The module itself called as a function: a resolved binding whose export
     // path is empty names no entry point.
     { code: "const fs = require('fs');\nfs('/tmp/x', data);" },
+    // The doc's second condition: a constant temp path bound to a name that
+    // nothing writes through stores nothing.
+    {
+      name: 'a constant temp path that nothing writes through is not a finding',
+      code: "const file = path.join(os.tmpdir(), 'report-cache.tmp');\nconsole.log(file);",
+    },
+    // An undeclared assignment target cannot be followed to a write.
+    {
+      name: 'an undeclared assignment target cannot be followed to a write',
+      code: "tmpPrefix = path.join(os.tmpdir(), 'ingest-');",
+    },
     // Concatenation with a non-constant operand is not a constant path.
     { code: 'const p = os.tmpdir() + suffix;' },
     { code: "const p = base + '/state.json';" },
+
+    // ── Each shape below is WRITTEN through, so the write condition cannot be
+    // what keeps it quiet: the predictable-path test itself has to reject it.
+    {
+      name: 'a project path whose only shared segment with /var/tmp is /var is not a temp path',
+      code: "fs.writeFileSync('/var/log/app/audit.log', line);",
+    },
+    {
+      name: 'a written path built from a receiver other than os is not the shared temp directory',
+      code: "fs.writeFileSync(path.join(sandbox.tmpdir(), 'report.tmp'), data);",
+    },
+    {
+      name: 'a written path under os.homedir() is not the shared temp directory',
+      code: "fs.writeFileSync(path.join(os.homedir(), '.app-cache'), data);",
+    },
+    {
+      name: 'path.relative from tmpdir names a path relative to it, not a file inside it',
+      code: "fs.writeFileSync(path.relative(os.tmpdir(), 'report.tmp'), data);",
+    },
+    {
+      name: 'url.resolve against tmpdir replaces its last segment rather than joining under it',
+      code: "fs.writeFileSync(url.resolve(os.tmpdir(), 'report.tmp'), data);",
+    },
+    {
+      name: 'a single-argument path.resolve of a project file is not a tmpdir join',
+      code: 'fs.writeFileSync(path.resolve(outFile), data);',
+    },
+    {
+      name: 'a tmpdir join with one non-literal segment is unpredictable even beside a literal one',
+      code: "fs.writeFileSync(path.join(os.tmpdir(), 'cache', jobId), data);",
+    },
+    {
+      name: 'a written template with no interpolation and no tmpdir is not a predictable temp path',
+      code: 'fs.writeFileSync(`./out/state.json`, data);',
+    },
+    {
+      name: 'a written template interpolating a project directory is not a predictable temp path',
+      code: 'fs.writeFileSync(`${outDir}/state.json`, data);',
+    },
+    {
+      name: 'a written tmpdir template with a random segment is unpredictable',
+      code: 'fs.writeFileSync(`${os.tmpdir()}/${randomUUID()}.bin`, data);',
+    },
+    {
+      name: 'a written concatenation onto a project directory is not a predictable temp path',
+      code: "fs.writeFileSync(outDir + '/state.json', data);",
+    },
+    {
+      name: 'a written tmpdir concatenation with a non-constant suffix is unpredictable',
+      code: 'fs.writeFileSync(os.tmpdir() + suffix, data);',
+    },
+    {
+      name: 'a written concatenation of constants with no tmpdir is not a predictable temp path',
+      code: "fs.writeFileSync('./out' + '/state.json', data);",
+    },
+    {
+      name: 'a unary plus is not a concatenation',
+      code: 'const port = +process.env.PORT;',
+    },
+    {
+      name: 'a tmpdir join handed to a write as its CONTENT is not the path written to',
+      code: "const p = path.join(os.tmpdir(), 'report.tmp');\nfs.writeFileSync(target, p);",
+    },
+    {
+      name: 'a tmpdir prefix randomised by mkdtemp before the binding is reused for the write is the mitigation',
+      code: "const fs = require('fs');\nlet target = path.join(os.tmpdir(), 'export-');\ntarget = fs.mkdtempSync(target);\ntarget = path.join(target, 'out.json');\nfs.writeFileSync(target, data);",
+    },
+    {
+      name: 'a temp path assigned only after the write is not what was written',
+      code: "let out = './out/state.json';\nfs.writeFileSync(out, data);\nout = '/tmp/state.json';",
+    },
+    {
+      name: 'a tmpdir join bound to a member is not followed to its write (documented false negative)',
+      code: "job.out = path.join(os.tmpdir(), 'report.tmp');\nfs.writeFileSync(job.out, data);",
+    },
+    {
+      name: 'a file matched by ignoreFiles is not checked even where it writes to /tmp',
+      code: "fs.writeFileSync('/tmp/seed.json', data);",
+      options: [{ ignoreFiles: ['scripts/'] }],
+      filename: '/proj/scripts/seed.ts',
+    },
   ],
 
   invalid: [
@@ -206,7 +298,8 @@ ruleTester.run('no-data-in-temp-storage', noDataInTempStorage, {
     // (corpus/CWE-377/vulnerable/static-tmp-write.js) reported: the literal
     // scan never sees the os.tmpdir() spelling.
     {
-      code: "const file = path.join(os.tmpdir(), 'report-cache.tmp');",
+      name: 'a constant tmpdir join written through its const reports',
+      code: "const file = path.join(os.tmpdir(), 'report-cache.tmp');\nfs.writeFileSync(file, data);",
       errors: [{ messageId: 'predictableTempPath' }],
     },
     // Handed straight to the write, without a binding.
@@ -216,11 +309,13 @@ ruleTester.run('no-data-in-temp-storage', noDataInTempStorage, {
     },
     // Reassignment, and the multi-segment / path.resolve spellings.
     {
-      code: "let file; file = path.join(os.tmpdir(), 'cache', 'report.tmp');",
+      name: 'a reassigned tmpdir join written through reports',
+      code: "let file; file = path.join(os.tmpdir(), 'cache', 'report.tmp');\nfs.writeFileSync(file, data);",
       errors: [{ messageId: 'predictableTempPath' }],
     },
     {
-      code: "const file = path.resolve(os.tmpdir(), 'report-cache.tmp');",
+      name: 'a constant tmpdir resolve written through reports',
+      code: "const file = path.resolve(os.tmpdir(), 'report-cache.tmp');\nfs.writeFileSync(file, data);",
       errors: [{ messageId: 'predictableTempPath' }],
     },
 
@@ -290,33 +385,44 @@ ruleTester.run('no-data-in-temp-storage', noDataInTempStorage, {
       errors: [{ messageId: 'predictableTempPath' }],
     },
     {
-      code: 'const p = `${os.tmpdir()}/state.json`;',
+      name: 'a tmpdir template written through reports',
+      code: 'const p = `${os.tmpdir()}/state.json`;\nfs.writeFileSync(p, data);',
       errors: [{ messageId: 'predictableTempPath' }],
     },
     {
-      code: 'const p = `${os.tmpdir()}/${"cache"}/state.json`;',
+      name: 'a tmpdir template of constants written through reports',
+      code: 'const p = `${os.tmpdir()}/${"cache"}/state.json`;\nfs.writeFileSync(p, data);',
       errors: [{ messageId: 'predictableTempPath' }],
     },
     // vulnerable/14 — and so is concatenation.
     {
-      code: "const p = os.tmpdir() + '/agent-state.json';",
+      name: 'a tmpdir concatenation written through reports',
+      code: "const p = os.tmpdir() + '/agent-state.json';\nfs.writeFileSync(p, data);",
       errors: [{ messageId: 'predictableTempPath' }],
     },
     {
-      code: "const p = '/prefix' + (os.tmpdir() + '/agent-state.json');",
+      name: 'a nested tmpdir concatenation written through reports',
+      code: "const p = '/prefix' + (os.tmpdir() + '/agent-state.json');\nfs.writeFileSync(p, data);",
       errors: [{ messageId: 'predictableTempPath' }],
     },
-    // The mkdtemp exemption needs a resolvable binding AND the prefix in the
-    // first argument. An undeclared target resolves to nothing…
+    // The mkdtemp exemption needs the prefix in the first argument: a constant
+    // temp path passed as mkdtemp's SECOND argument is an encoding option, not
+    // the prefix it randomises, so a later write through it still reports.
     {
-      code: "tmpPrefix = path.join(os.tmpdir(), 'ingest-');",
+      name: "mkdtemp's second argument is not a randomised prefix",
+      code: "const fs = require('fs');\nconst P = path.join(os.tmpdir(), 'ingest-');\nfs.mkdtempSync(base, P);\nfs.writeFileSync(P, data);",
       errors: [{ messageId: 'predictableTempPath' }],
     },
-    // …and a constant temp path passed as mkdtemp's SECOND argument is an
-    // encoding option, not the prefix it randomises.
     {
-      code: "const fs = require('fs');\nconst P = path.join(os.tmpdir(), 'ingest-');\nfs.mkdtempSync(base, P);",
+      // @found mutation testing
+      name: 'FN: a tmpdir template interpolating a numeric literal is as constant as a string one',
+      code: 'fs.writeFileSync(`${os.tmpdir()}/worker-${8080}.lock`, pid);',
       errors: [{ messageId: 'predictableTempPath' }],
+    },
+    {
+      name: 'a path.resolve with a literal /tmp segment written to reports',
+      code: "fs.writeFileSync(path.resolve('/tmp', 'session.json'), token);",
+      errors: [{ messageId: 'violationDetected' }],
     },
   ],
 });

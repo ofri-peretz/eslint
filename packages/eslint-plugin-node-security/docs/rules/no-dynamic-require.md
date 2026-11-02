@@ -9,8 +9,8 @@ autofix: false
 
 > **Keywords:** dynamic require, CommonJS, static analysis, bundler, ESLint rule, webpack, LLM-optimized
 
-
 <!-- @rule-summary -->
+
 Forbid require() calls with non-literal arguments
 <!-- @/rule-summary -->
 
@@ -18,25 +18,27 @@ Forbid `require()` calls with non-literal arguments. This rule is part of [`esli
 
 ## Quick Summary
 
-| Aspect         | Details                                                              |
-| -------------- | -------------------------------------------------------------------- |
-| **Severity**   | Warning (architecture)                                               |
-| **Auto-Fix**   | ❌ No (requires architecture change)                                 |
-| **Category**   | Security |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration                              |
-| **Best For**   | Bundler optimization, static analysis                                |
+| Aspect         | Details                                 |
+| -------------- | --------------------------------------- |
+| **Severity**   | Warning (architecture)                  |
+| **Auto-Fix**   | ❌ No (requires architecture change)    |
+| **Category**   | Security                                |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For**   | Bundler optimization, static analysis   |
 
 ## Rule Details
 
 Dynamic `require()` calls prevent static analysis and break tree-shaking in bundlers.
 
+The loader reads only its first argument, so that is the one judged: `require(path.join(dir, name), 'utf8')` loads `name` exactly as `require(path.join(dir, name))` does, and is reported the same way.
+
 ### Why This Matters
 
-| Issue                     | Impact                          | Solution                  |
-| ------------------------- | ------------------------------- | ------------------------- |
-| 📦 **Bundle size**        | Can't tree-shake                | Static imports            |
-| 🔍 **Static analysis**    | Tools can't analyze deps        | Literal paths             |
-| 🔒 **Security**           | Arbitrary module loading        | Explicit imports          |
+| Issue                  | Impact                   | Solution         |
+| ---------------------- | ------------------------ | ---------------- |
+| 📦 **Bundle size**     | Can't tree-shake         | Static imports   |
+| 🔍 **Static analysis** | Tools can't analyze deps | Literal paths    |
+| 🔒 **Security**        | Arbitrary module loading | Explicit imports |
 
 ## Examples
 
@@ -44,11 +46,11 @@ Dynamic `require()` calls prevent static analysis and break tree-shaking in bund
 
 ```typescript
 const moduleName = getModuleName();
-const mod = require(moduleName);  // Dynamic
+const mod = require(moduleName); // Dynamic
 
-const plugin = require(`./plugins/${name}`);  // Template literal
+const plugin = require(`./plugins/${name}`); // Template literal
 
-const handler = require(path.join(__dirname, name));  // Computed
+const handler = require(path.join(__dirname, name)); // Computed
 ```
 
 ### ✅ Correct
@@ -88,6 +90,7 @@ const plugin = plugins[name];
 ## Further Reading
 
 - **[Webpack Dynamic Imports](https://webpack.js.org/guides/code-splitting/#dynamic-imports)** - Code splitting guide
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -132,22 +135,38 @@ processValue(getValue()); // Cross-file not tracked
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowContexts` | `string[]` | `[]` | Allow dynamic requires in specific contexts. |
+| Option          | Type       | Default | Description                                                                                                                                                                                                                             |
+| --------------- | ---------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `allowContexts` | `string[]` | `[]`    | Allow dynamic requires in files whose path marks a context — a substring test on the linted file path: test (.test., .spec., /**tests**/), config (config, webpack, rollup), build (build, scripts, tools), runtime (runtime, dynamic). |
+
+### `allowContexts`
+
+Each context names a kind of file, recognised by a **substring of the linted file's
+path**. In a file that matches a listed context, the rule reports nothing.
+
+| Context   | The path contains                   | Example                    |
+| --------- | ----------------------------------- | -------------------------- |
+| `test`    | `.test.`, `.spec.` or `/__tests__/` | `src/loader.test.ts`       |
+| `config`  | `config`, `webpack` or `rollup`     | `webpack.config.js`        |
+| `build`   | `build`, `scripts` or `tools`       | `scripts/build-plugins.js` |
+| `runtime` | `runtime` or `dynamic`              | `src/runtime/loader.ts`    |
+
+It is a substring test, not a path-segment test: `src/configure.ts` matches `config`
+and `src/rebuild.ts` matches `build`. Prefer `allowPatterns` when the exemption is about
+the specifier rather than about the file.
 | `allowPatterns` | `string[]` | `[]` | Regex patterns matched against the source text of the require argument; a match suppresses the report. |
 
 ## Not a finding
 
-The question is whether a specifier can *change*, not whether it is spelled as a literal.
+The question is whether a specifier can _change_, not whether it is spelled as a literal.
 Resolution runs through ESLint's scope analysis, so all of these are silent:
 
-| Code | Why it is silent |
-| --- | --- |
-| `` require(`b`) `` | A template with no interpolation is a literal. |
-| `` const d = 'debounce'; require(`lodash/${d}`) `` | Every interpolated part resolves to a constant. |
-| `require(__dirname + '/utils')` | `__dirname` is where the module sits on disk, fixed at load. |
-| `require.resolve('eslint/package.json')` | A lookup against the dependency tree. |
+| Code                                             | Why it is silent                                             |
+| ------------------------------------------------ | ------------------------------------------------------------ |
+| ``require(`b`)``                                 | A template with no interpolation is a literal.               |
+| ``const d = 'debounce'; require(`lodash/${d}`)`` | Every interpolated part resolves to a constant.              |
+| `require(__dirname + '/utils')`                  | `__dirname` is where the module sits on disk, fixed at load. |
+| `require.resolve('eslint/package.json')`         | A lookup against the dependency tree.                        |
 
 **If it fires**, the specifier reaches a name this file cannot resolve — a parameter, an
 import, a variable written more than once. That is genuinely unknowable here, which is

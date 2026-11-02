@@ -143,7 +143,7 @@ export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        ({ allowInTests = true, additionalPatterns = [] } = options as Options);
+        ({ allowInTests, additionalPatterns } = options as Required<Options>);
         const isTestFile = isTestFilePath(context.filename);
 
         if (allowInTests && isTestFile) {
@@ -164,9 +164,9 @@ export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
         )
           return;
 
-        const keyArg = node.arguments[0];
-        const valueArg = node.arguments[1];
-        if (keyArg === undefined || valueArg === undefined) return;
+        // A second argument implies a first.
+        const [keyArg, valueArg] = node.arguments;
+        if (valueArg === undefined) return;
 
         check(node, resolveKeyText(keyArg, context.sourceCode), valueArg);
       },

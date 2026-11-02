@@ -658,7 +658,11 @@ describe('a flag is not a credential', () => {
   ruleTester.run('invalid - real credentials still report', noJwtInStorage, {
     valid: [],
     invalid: [
-      { code: "localStorage.setItem('token', jwt);", errors: 1 },
+      {
+        name: 'a JWT written to localStorage under the bracket key token is reported',
+        code: "localStorage.setItem('token', jwt);",
+        errors: 1,
+      },
       {
         code: "localStorage.setItem('auth:token', resp.accessToken);",
         errors: 1,

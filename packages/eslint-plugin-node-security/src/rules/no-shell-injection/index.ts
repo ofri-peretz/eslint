@@ -45,7 +45,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
-  isModuleBinding,
+  resolveModuleBinding,
   objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
@@ -143,11 +143,9 @@ function hasTruthyShellOption(node: TSESTree.CallExpression): boolean {
 }
 
 function isStringConcatOrTemplate(node: TSESTree.Node): boolean {
-  if (
-    node.type === AST_NODE_TYPES.TemplateLiteral &&
-    node.expressions.length > 0
-  )
-    return true;
+  // A template with no expressions is let through too: `isLiteralConstant`
+  // folds it to a literal and clears it.
+  if (node.type === AST_NODE_TYPES.TemplateLiteral) return true;
   // Any `+`, whatever its operands. `exec(cmd + args)` — two identifiers, no
   // literal in sight — is the exact shape this rule's own message cites, and
   // it was silent: the operand-type test demanded a literal or template on one
@@ -222,20 +220,37 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
       },
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
-        let fnName: string | null = null;
 
-        // exec('cmd') / execSync('cmd') — bare call
-        if (callee.type === AST_NODE_TYPES.Identifier) {
-          fnName = callee.name;
-        }
-        // require('child_process').exec('cmd') — member access
-        // `child_process['exec'](cmd)` spawns the same shell.
-        // `fnName` is already `string | null`, and the `!fnName` test below
-        // is the one that acts on an unresolved name — so the resolver's
-        // answer is assigned straight through, guard and cast both gone.
-        else if (callee.type === AST_NODE_TYPES.MemberExpression) {
-          fnName = propertyName(callee);
-        }
+        // The name `exec` is not evidence that this is child_process.
+        //
+        // A spelled name made EVERY `.exec()` in the ecosystem match:
+        // better-sqlite3's `db.exec(sql)`, knex, and any local helper. Probed on
+        // the shipped rule, this reported CVSS 9.8 "Shell command injection" on
+        // a SQLite DDL statement — while detect-child-process, which does
+        // resolve the binding, stayed correctly quiet on the same file.
+        //
+        // And it lost the other direction: `const { exec: run } =
+        // require('node:child_process'); run(cmd)` IS child_process's exec,
+        // spelled `run`. The export the callee resolves to names the function;
+        // its local spelling does not. Same doctrine as the rest of this
+        // ecosystem: a rule decides on a resolved binding, never on a spelling.
+        const binding = resolveModuleBinding(
+          callee,
+          context.sourceCode.getScope(node),
+        );
+        const resolved =
+          binding?.module === 'child_process' && binding.path.length === 1
+            ? binding.path[0]
+            : null;
+        // `requireModuleEvidence: false` restores the spelling fallback for a
+        // callee the resolver cannot trace — `exec(cmd)` with no import.
+        const spelled =
+          callee.type === AST_NODE_TYPES.Identifier
+            ? callee.name
+            : callee.type === AST_NODE_TYPES.MemberExpression
+              ? propertyName(callee)
+              : null;
+        const fnName = resolved ?? (requireModuleEvidence ? null : spelled);
 
         if (!fnName) return;
 
@@ -246,33 +261,8 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
           (SHELL_OPTION_FUNCTIONS.has(fnName) && hasTruthyShellOption(node));
         if (!runsAShell) return;
 
-        // The name `exec` is not evidence that this is child_process.
-        //
-        // `fnName` comes from `callee.property.name`, so EVERY `.exec()` in the
-        // ecosystem matched: better-sqlite3's `db.exec(sql)`, knex, and any
-        // local helper. Probed on the shipped rule, this reported CVSS 9.8
-        // "Shell command injection" on a SQLite DDL statement — while
-        // detect-child-process, which does resolve the binding, stayed
-        // correctly quiet on the same file. The rule is `error` in
-        // `recommended` and had `schema: []`, so a consumer using better-sqlite3
-        // got a CRITICAL false positive with no way to configure it away.
-        //
-        // Same doctrine as the rest of this ecosystem: a rule decides on a
-        // resolved binding, never on a spelling.
-        if (
-          requireModuleEvidence &&
-          !isModuleBinding(
-            callee,
-            context.sourceCode.getScope(node),
-            'child_process',
-          )
-        ) {
-          return;
-        }
-
         /** A built string whose parts do not all fold to literals here. */
         const isInjectable = (arg: TSESTree.Node): boolean =>
-          arg.type !== AST_NODE_TYPES.SpreadElement &&
           isStringConcatOrTemplate(arg) &&
           // Every interpolated part folds to a literal written in this file:
           // there is nothing for an attacker to supply. See the header note.

@@ -1,6 +1,6 @@
 ---
 title: require-max-steps
-description: "This rule identifies tool-calling AI SDK calls whose step limit does not bound the loop: a hasToolCall-only stopWhen, Infinity, or a limit read from the request"
+description: 'This rule identifies tool-calling AI SDK calls whose step limit does not bound the loop: a hasToolCall-only stopWhen, Infinity, or a limit read from the request'
 tags: ['security', 'ai']
 category: security
 severity: medium
@@ -10,8 +10,8 @@ autofix: false
 
 > Prevents unbounded tool calling loops in multi-step agents.
 
-
 <!-- @rule-summary -->
+
 This rule identifies tool-calling AI SDK calls whose step limit does not bound the loop: a hasToolCall-only stopWhen, Infinity, or a limit read from the request
 <!-- @/rule-summary -->
 
@@ -51,7 +51,12 @@ The rule reports a step setting that is present but does not bound the loop:
 
 ```typescript
 // Stops only if the model calls finalAnswer
-await generateText({ model, tools, stopWhen: hasToolCall('finalAnswer'), prompt: 'research' });
+await generateText({
+  model,
+  tools,
+  stopWhen: hasToolCall('finalAnswer'),
+  prompt: 'research',
+});
 
 // The caller chooses the step budget
 export async function POST(req: Request) {
@@ -69,13 +74,26 @@ export async function PUT(req: Request) {
 
 ```typescript
 // No step option: the SDK runs a single step
-await generateText({ model, tools: { getWeather }, prompt: 'Weather in Paris?' });
+await generateText({
+  model,
+  tools: { getWeather },
+  prompt: 'Weather in Paris?',
+});
 
 // AI SDK v5+
-await streamText({ model, messages, tools: { getWeather }, stopWhen: stepCountIs(5) });
+await streamText({
+  model,
+  messages,
+  tools: { getWeather },
+  stopWhen: stepCountIs(5),
+});
 
 // hasToolCall bounded by a step count
-await generateText({ model, tools, stopWhen: [hasToolCall('finalize'), stepCountIs(20)] });
+await generateText({
+  model,
+  tools,
+  stopWhen: [hasToolCall('finalize'), stepCountIs(20)],
+});
 
 // AI SDK v4
 await generateText({ model, tools, maxSteps: 5 });
@@ -83,9 +101,9 @@ await generateText({ model, tools, maxSteps: 5 });
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `suggestedMaxSteps` | `number` | `5` | Default max steps limit to suggest |
+| Option              | Type     | Default | Description                                                         |
+| ------------------- | -------- | ------- | ------------------------------------------------------------------- |
+| `suggestedMaxSteps` | `number` | `5`     | Step limit the fix text suggests (`stepCountIs(n)` / `maxSteps: n`) |
 
 ## 🛡️ Why This Matters
 

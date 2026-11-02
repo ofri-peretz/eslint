@@ -93,9 +93,10 @@ export class UsersController {
 ### When to set `assumeGlobalSerializer`
 
 By default this rule only reports a handler whose controller (or the handler
-itself) carries `@UseInterceptors(ClassSerializerInterceptor)` or
-`@SerializeOptions()`. The reason is that the harm it names — `@Exclude()`
-stops applying — needs a serializer to have been applying in the first place.
+itself) carries `@UseInterceptors(ClassSerializerInterceptor)` (also
+`new ClassSerializerInterceptor(…)`, or `common.ClassSerializerInterceptor`
+through a namespace import) or `@SerializeOptions()`. The reason is that the
+harm it names — `@Exclude()` stops applying — needs a serializer to have been applying in the first place.
 
 If your app registers the serializer globally, a controller file has no way to
 know that, and the rule would stay silent on real findings:
@@ -140,6 +141,11 @@ res.sendFile(path); // streams a file
 res.redirect(url); // no body
 res.status(200).send('ok'); // a string literal cannot carry @Exclude()
 return this.service.run(res); // res handed off — this file cannot follow it
+res.send(JSON.stringify(dto)); // already a string; also String(x), x.toString()
+// A declared non-JSON content type — a document, not a DTO. Any of
+// res.type() / contentType() / set() / header() / setHeader():
+res.set('Content-Type', 'text/xml');
+res.send(buildSitemap(urls));
 ```
 
 ## When Not To Use It

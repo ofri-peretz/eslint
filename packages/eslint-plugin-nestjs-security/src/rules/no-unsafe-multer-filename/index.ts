@@ -53,9 +53,11 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
-import { fileUsesNestjs } from '../../utils/nestjs-evidence';
+import { fileUsesNestjsOrMulter } from '../../utils/nestjs-evidence';
+import { expressionName } from '../../utils/nest-ast';
 
 type MessageIds = 'clientControlledFilename';
 
@@ -70,10 +72,10 @@ type RuleOptions = [Options?];
 type FunctionNode =
   TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression;
 
-function isFunctionNode(node: TSESTree.Node | undefined): node is FunctionNode {
+function isFunctionNode(node: TSESTree.Node): node is FunctionNode {
   return (
-    node?.type === AST_NODE_TYPES.FunctionExpression ||
-    node?.type === AST_NODE_TYPES.ArrowFunctionExpression
+    node.type === AST_NODE_TYPES.FunctionExpression ||
+    node.type === AST_NODE_TYPES.ArrowFunctionExpression
   );
 }
 
@@ -88,60 +90,31 @@ function filenameHandler(node: TSESTree.CallExpression): FunctionNode | null {
   if (options?.type !== AST_NODE_TYPES.ObjectExpression) return null;
   for (const prop of options.properties) {
     if (prop.type !== AST_NODE_TYPES.Property) continue;
-    if (prop.computed) continue;
-    if (
-      prop.key.type !== AST_NODE_TYPES.Identifier ||
-      prop.key.name !== 'filename'
-    )
-      continue;
+    // `filename`, `'filename'` and `['filename']` are the same key.
+    if (objectKeyName(prop) !== 'filename') continue;
     return isFunctionNode(prop.value) ? prop.value : null;
   }
   return null;
 }
 
 /**
- * Whether an expression reads `.originalname` off the handler's `file` param
- * without any call in between.
- *
- * Concatenation, template literals and parentheses are transparent: they carry
- * the attacker's bytes through unchanged. A `CallExpression` anywhere on the
- * path is where this stops — see the header.
+ * The local `originalname` is bound to when the file parameter is
+ * destructured: `{ originalname }` → `originalname`, `{ originalname: name }`
+ * → `name`, with or without a default. Empty for an identifier parameter.
  */
-function readsOriginalNameRaw(
-  node: TSESTree.Node | null | undefined,
-  fileParam: string,
-): boolean {
-  if (!node) return false;
-  switch (node.type) {
-    case AST_NODE_TYPES.MemberExpression:
-      return (
-        propertyName(node) === 'originalname' &&
-        node.object.type === AST_NODE_TYPES.Identifier &&
-        node.object.name === fileParam
-      );
-    case AST_NODE_TYPES.BinaryExpression:
-      // `a + b`. Any other operator produces a number or a boolean, neither of
-      // which can carry a path separator.
-      return (
-        node.operator === '+' &&
-        (readsOriginalNameRaw(node.left, fileParam) ||
-          readsOriginalNameRaw(node.right, fileParam))
-      );
-    case AST_NODE_TYPES.TemplateLiteral:
-      return node.expressions.some((e) => readsOriginalNameRaw(e, fileParam));
-    case AST_NODE_TYPES.ConditionalExpression:
-      return (
-        readsOriginalNameRaw(node.consequent, fileParam) ||
-        readsOriginalNameRaw(node.alternate, fileParam)
-      );
-    case AST_NODE_TYPES.LogicalExpression:
-      return (
-        readsOriginalNameRaw(node.left, fileParam) ||
-        readsOriginalNameRaw(node.right, fileParam)
-      );
-    default:
-      return false;
+function destructuredOriginalName(param: TSESTree.Parameter): string[] {
+  if (param.type !== AST_NODE_TYPES.ObjectPattern) return [];
+  const names: string[] = [];
+  for (const prop of param.properties) {
+    if (prop.type !== AST_NODE_TYPES.Property) continue;
+    if (objectKeyName(prop) !== 'originalname') continue;
+    const value =
+      prop.value.type === AST_NODE_TYPES.AssignmentPattern
+        ? prop.value.left
+        : prop.value;
+    if (value.type === AST_NODE_TYPES.Identifier) names.push(value.name);
   }
+  return names;
 }
 
 export const noUnsafeMulterFilename = createRule<RuleOptions, MessageIds>({
@@ -202,40 +175,88 @@ export const noUnsafeMulterFilename = createRule<RuleOptions, MessageIds>({
      * check would have missed two of the five real findings.
      */
     function checkHandler(handler: FunctionNode): void {
-      const fileParam = paramName(handler.params[1]);
       const callbackParam = paramName(handler.params[2]);
-      if (!fileParam || !callbackParam) return;
+      if (!callbackParam) return;
+      // A third parameter means a second one exists.
+      const fileParam = handler.params[1];
+      const fileName = paramName(fileParam);
 
-      /** Locals assigned a raw `file.originalname`, so `let x = …; cb(null, x)`. */
-      const tainted = new Set<string>();
+      /**
+       * Locals holding a raw `file.originalname`: assigned one
+       * (`let x = …; cb(null, x)`), or bound by destructuring the file
+       * parameter (`filename(req, { originalname }, cb)`).
+       */
+      const tainted = new Set<string>(destructuredOriginalName(fileParam));
 
-      /** Whether an expression is tainted directly or through a tainted local. */
+      /**
+       * Whether an expression carries the raw client name: `file.originalname`
+       * itself or a tainted local, with no call in between.
+       *
+       * Concatenation, template literals, conditionals, `||`/`??` and
+       * parentheses are transparent: they carry the attacker's bytes through
+       * unchanged. A `CallExpression` anywhere on the path is where this
+       * stops — see the header.
+       */
       const isTainted = (node: TSESTree.Node | null | undefined): boolean => {
-        if (readsOriginalNameRaw(node, fileParam)) return true;
         if (!node) return false;
-        if (node.type === AST_NODE_TYPES.Identifier)
-          return tainted.has(node.name);
-        if (node.type === AST_NODE_TYPES.BinaryExpression)
-          return (
-            node.operator === '+' &&
-            (isTainted(node.left) || isTainted(node.right))
-          );
-        if (node.type === AST_NODE_TYPES.TemplateLiteral)
-          return node.expressions.some(isTainted);
-        return false;
+        switch (node.type) {
+          case AST_NODE_TYPES.Identifier:
+            return tainted.has(node.name);
+          case AST_NODE_TYPES.MemberExpression:
+            return (
+              propertyName(node) === 'originalname' &&
+              node.object.type === AST_NODE_TYPES.Identifier &&
+              node.object.name === fileName
+            );
+          case AST_NODE_TYPES.BinaryExpression:
+            // `a + b`. Any other operator produces a number or a boolean,
+            // neither of which can carry a path separator.
+            return (
+              node.operator === '+' &&
+              (isTainted(node.left) || isTainted(node.right))
+            );
+          case AST_NODE_TYPES.TemplateLiteral:
+            return node.expressions.some(isTainted);
+          case AST_NODE_TYPES.ConditionalExpression:
+            return isTainted(node.consequent) || isTainted(node.alternate);
+          case AST_NODE_TYPES.LogicalExpression:
+            return isTainted(node.left) || isTainted(node.right);
+          default:
+            return false;
+        }
       };
+
+      /**
+       * Whether a nested function rebinds a name this walk tracks — the
+       * callback, the file, or a tainted local — so that inside it the name
+       * means something else. Any other nested function (`fs.mkdir(dir, () =>
+       * cb(null, file.originalname))`) still hands the client's name to multer
+       * whenever it runs.
+       */
+      const rebindsTrackedName = (fn: FunctionNode): boolean =>
+        fn.params.some(
+          (p) =>
+            p.type === AST_NODE_TYPES.Identifier &&
+            (p.name === callbackParam ||
+              p.name === fileName ||
+              tainted.has(p.name)),
+        );
 
       let reported = false;
 
       /**
        * Walk the handler body in source order, so a local is marked tainted
-       * before the `cb(…)` that consumes it. Nested functions are skipped: a
-       * callback declared inside the handler has its own `file` binding, and
-       * following it would mean guessing at when it runs.
+       * before the `cb(…)` that consumes it. A nested function that rebinds a
+       * tracked name is skipped: inside it, that name is a different value.
        */
       const visit = (node: TSESTree.Node): void => {
         if (reported) return;
-        if (node !== handler && isFunctionNode(node)) return;
+        if (
+          node !== handler &&
+          isFunctionNode(node) &&
+          rebindsTrackedName(node)
+        )
+          return;
 
         if (
           node.type === AST_NODE_TYPES.VariableDeclarator &&
@@ -283,27 +304,20 @@ export const noUnsafeMulterFilename = createRule<RuleOptions, MessageIds>({
 
     return {
       before() {
-        const [options = {}] = currentOptions();
+        const [options] = currentOptions();
         // Registering no visitors is both the gate and the cheap path: a file
         // that does not use this SDK does no work at all.
-        if (!fileUsesNestjs(context.sourceCode.ast)) return false;
+        if (!fileUsesNestjsOrMulter(context.sourceCode.ast)) return false;
 
-        const { allowInTests = true } = options;
+        // Merged with `defaultOptions` before `create` runs.
+        const { allowInTests } = options as Required<Options>;
         if (allowInTests && isTestFilePath(context.filename)) return false;
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        // `diskStorage({…})` and `multer.diskStorage({…})` are the same call.
-        const callee = node.callee;
-        const name =
-          callee.type === AST_NODE_TYPES.Identifier
-            ? callee.name
-            : callee.type === AST_NODE_TYPES.MemberExpression &&
-                !callee.computed &&
-                callee.property.type === AST_NODE_TYPES.Identifier
-              ? callee.property.name
-              : null;
-        if (name !== 'diskStorage') return;
+        // `diskStorage({…})`, `multer.diskStorage({…})` and
+        // `multer['diskStorage']({…})` are the same call.
+        if (expressionName(node.callee) !== 'diskStorage') return;
         const handler = filenameHandler(node);
         if (handler) checkHandler(handler);
       },

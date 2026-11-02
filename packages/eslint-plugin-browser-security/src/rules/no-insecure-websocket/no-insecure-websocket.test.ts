@@ -21,6 +21,22 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-insecure-websocket', noInsecureWebsocket, {
   valid: [
+    {
+      name: 'a ws:// template at the constructor is owned by require-websocket-wss',
+      code: 'const socket = new WebSocket(`ws://${host}/updates`);',
+    },
+    {
+      name: 'a ws:// template to a written-down loopback host never leaves the machine',
+      code: 'const socketUrl = `ws://localhost:${port}/hmr`;',
+    },
+    {
+      name: 'a template that tests for the ws:// scheme is a guard, not a destination',
+      code: 'if (url.startsWith(`ws://`)) { throw new Error("cleartext"); }',
+    },
+    {
+      name: 'a wss:// template is encrypted',
+      code: 'const socketUrl = `wss://${host}/updates`;',
+    },
     'const x = 42;',
     {
       name: 'a boolean declaration opens no socket',
@@ -51,6 +67,16 @@ ruleTester.run('no-insecure-websocket', noInsecureWebsocket, {
   ],
 
   invalid: [
+    {
+      name: 'a template with a fixed ws:// scheme outside the constructor is cleartext whatever the host',
+      code: 'const socketUrl = `ws://${host}/updates`;',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a template with a written-down remote ws:// host is reported',
+      code: 'export const feeds = { live: `WS://feed.acmecorp.io/${channel}` };',
+      errors: [{ messageId: 'violationDetected' }],
+    },
     // ws:// in a standalone string literal — this rule's remaining territory.
     {
       name: 'a ws:// endpoint',
@@ -61,6 +87,7 @@ ruleTester.run('no-insecure-websocket', noInsecureWebsocket, {
     // never sees this shape, so the partition would be a coverage hole without
     // it.
     {
+      name: 'a ws:// URL in an object literal property is reported',
       code: "const SOCKETS = { live: 'ws://live.acmecorp.io' };",
       errors: [{ messageId: 'violationDetected' }],
     },

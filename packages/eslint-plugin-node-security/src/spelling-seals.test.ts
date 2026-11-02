@@ -64,7 +64,7 @@ suite('spellings these rules used to miss', () => {
         // 9 mutations of this rule's own true positives went
         // silent when its quoted strings became template literals.
         name: 'FN: the same code with template literals instead of quoted strings',
-        code: 'const file = path.join(os.tmpdir(), `report-cache.tmp`);',
+        code: 'const file = path.join(os.tmpdir(), `report-cache.tmp`);\nfs.writeFileSync(file, data);',
         errors: [{ messageId: 'predictableTempPath' }],
       },
     ],

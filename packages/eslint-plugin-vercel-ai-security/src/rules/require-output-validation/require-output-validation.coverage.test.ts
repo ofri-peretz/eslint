@@ -23,7 +23,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -50,7 +50,6 @@ const xai = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -58,35 +57,39 @@ const ruleTester = new RuleTester({
   },
 });
 
-ruleTester.run('require-output-validation (branch coverage)', requireOutputValidation, {
-  valid: xai([
-    // Destructuring declarator — id is not an Identifier, tracking skipped.
-    {
-      code: `const { a } = result;`,
-    },
-    // Declarator with no initializer.
-    {
-      code: `let pendingOutput;`,
-    },
-    // Initializer that is not a MemberExpression.
-    {
-      code: `const n = 42;`,
-    },
-    // MemberExpression initializer that matches no AI output pattern.
-    {
-      code: `const x = obj.data;`,
-    },
-    // Display call with a spread-only object argument — non-Property skipped.
-    {
-      code: `render({ ...props });`,
-    },
-  ]),
-  invalid: xai([
-    // Spread + AI output property in the same displayed object: spread is
-    // skipped, the AI-output property is still reported.
-    {
-      code: `render({ ...props, body: result.text });`,
-      errors: [{ messageId: 'unvalidatedOutput' }],
-    },
-  ]),
-});
+ruleTester.run(
+  'require-output-validation (branch coverage)',
+  requireOutputValidation,
+  {
+    valid: xai([
+      // Destructuring declarator — id is not an Identifier, tracking skipped.
+      {
+        code: `const { a } = result;`,
+      },
+      // Declarator with no initializer.
+      {
+        code: `let pendingOutput;`,
+      },
+      // Initializer that is not a MemberExpression.
+      {
+        code: `const n = 42;`,
+      },
+      // MemberExpression initializer that matches no AI output pattern.
+      {
+        code: `const x = obj.data;`,
+      },
+      // Display call with a spread-only object argument — non-Property skipped.
+      {
+        code: `render({ ...props });`,
+      },
+    ]),
+    invalid: xai([
+      // Spread + AI output property in the same displayed object: spread is
+      // skipped, the AI-output property is still reported.
+      {
+        code: `render({ ...props, body: result.text });`,
+        errors: [{ messageId: 'unvalidatedOutput' }],
+      },
+    ]),
+  },
+);

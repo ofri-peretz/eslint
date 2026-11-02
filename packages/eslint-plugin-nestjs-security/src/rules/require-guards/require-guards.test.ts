@@ -17,7 +17,7 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const nest = <T,>(cases: T[]): T[] =>
+const nest = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asNest(c) as T;
     const t = c as Case;
@@ -43,7 +43,6 @@ const nest = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester();
 
@@ -971,4 +970,241 @@ describe('reported severity metadata', () => {
     expect(requireGuards.meta.docs.cwe).toBe('CWE-306');
     expect(requireGuards.meta.docs.cvss).toBe(7.5);
   });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// Several older valid cases are public by design for more than one reason
+// (`@Controller('health') @Public()`), so the exemption under test is
+// re-asserted here on a route nothing else would clear.
+// ─────────────────────────────────────────────────────────────────────────────
+const ctl = (
+  members: string,
+  controller = `@Controller('billing')`,
+): string => `
+  ${controller}
+  class BillingController {
+    ${members}
+  }
+`;
+ruleTester.run('require-guards (mutation audit)', requireGuards, {
+  valid: nest([
+    {
+      name: 'a test file is skipped by default (allowInTests)',
+      code: ctl(`@Get('invoices') list() {}`),
+      filename: 'billing.controller.spec.ts',
+    },
+    {
+      name: 'a class-level @Public() exempts a route nothing else would clear',
+      code: ctl(
+        `@Get('invoices') list() {}`,
+        `@Public() @Controller('billing')`,
+      ),
+    },
+    {
+      name: 'a GET handler whose last name token is a probe term is a probe',
+      code: ctl(`@Get('state') getStatus() {}`),
+    },
+    {
+      name: 'a GET handler whose first name token is a probe term is a probe',
+      code: ctl(`@Get('state') readyCheck() {}`),
+    },
+    {
+      name: 'a provider-qualified sign-in is the sign-in entry point',
+      code: ctl(`@Post('google') googleSignIn() {}`),
+    },
+    {
+      name: 'a handler named exactly a configured public route is public',
+      code: ctl(`@Post('x') healthCheck() {}`),
+      options: [{ publicRoutes: ['healthcheck'] }],
+    },
+    {
+      name: 'a configured public route written with slashes matches its path',
+      code: ctl(`@Get('statements') list() {}`),
+      options: [{ publicRoutes: ['/statements/'] }],
+    },
+    {
+      name: 'adjacent path segments join to meet a hyphenated public route',
+      code: ctl(`@Post('stripe') receive() {}`, `@Controller('webhooks')`),
+      options: [{ publicRoutes: ['webhooks-stripe'] }],
+    },
+    {
+      name: 'a hyphenated path segment spelling password recovery is public',
+      code: ctl(
+        `@Post('request-password-reset') handle() {}`,
+        `@Controller('account')`,
+      ),
+    },
+    {
+      name: 'a public word in the path property of a versioned @Controller({…}) counts',
+      code: ctl(
+        `@Post() handle() {}`,
+        `@Controller({ path: 'oauth', version: '1' })`,
+      ),
+    },
+    {
+      name: 'an x-apikey header is a credential header',
+      code: ctl(`@Post('hook') receive(@Headers('x-apikey') key: string) {}`),
+    },
+    {
+      name: 'an x-api-key header is a credential header',
+      code: ctl(`@Post('hook') receive(@Headers('x-api-key') key: string) {}`),
+    },
+    {
+      name: 'a config read with a default value is still a secret source',
+      code: ctl(`
+        @Post('hook') receive(@Query('token') token: string) {
+          if (this.configService.get('WEBHOOK_SECRET', '') !== token) throw new Error();
+        }
+      `),
+    },
+    {
+      // @found mutation testing
+      name: 'FP: configService.getOrThrow(secret) is the same secret source',
+      code: ctl(`
+        @Post('hook') receive(@Query('token') token: string) {
+          if (this.configService.getOrThrow('WEBHOOK_SECRET') !== token) throw new Error();
+        }
+      `),
+    },
+    {
+      name: 'a required guard listed beside another guard is satisfied',
+      code: ctl(
+        `@Get('invoices') list() {}`,
+        `@Controller('billing') @UseGuards(AuthGuard, AdminGuard)`,
+      ),
+      options: [{ requiredGuards: ['AdminGuard'] }],
+    },
+    {
+      // @found mutation testing
+      name: 'FP: spread guards are not an empty @UseGuards()',
+      code: ctl(
+        `@Get('invoices') list() {}`,
+        `@Controller('billing') @UseGuards(...APP_GUARDS)`,
+      ),
+    },
+  ]),
+  invalid: nest([
+    {
+      name: 'a POST probe-named handler is a write, never a probe',
+      code: ctl(`@Post('state') getStatus() {}`),
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    {
+      name: 'a recovery verb without "password" is not password recovery',
+      code: ctl(`@Post('invoices') requestInvoice() {}`),
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    {
+      name: 'a POST at the root with no input is still a write',
+      code: ctl(`@Post() trigger() {}`, `@Controller()`),
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    {
+      name: 'only the path property of a @Controller({…}) is a path',
+      code: ctl(
+        `@Post() handle() {}`,
+        `@Controller({ path: 'billing', version: 'public' })`,
+      ),
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    {
+      name: 'a spread in @Controller({…}) options does not stop the path read',
+      code: ctl(
+        `@Post() handle() {}`,
+        `@Controller({ ...versioned, path: 'billing' })`,
+      ),
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    {
+      name: 'a method-level @UseGuards() naming nothing enforces nothing',
+      code: ctl(`@Get('invoices') @UseGuards() list() {}`),
+      errors: [{ messageId: 'emptyGuards' }],
+    },
+    {
+      name: 'comparing two request values is not a secret check',
+      code: ctl(`
+        @Post('hook') receive(@Body() dto: HookDto, @Query('token') token: string) {
+          if (dto.token !== token) throw new Error();
+        }
+      `),
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    {
+      name: 'reading a token from a non-config object is not a configured secret',
+      code: ctl(`
+        @Post('hook') receive(@Query() query: Record<string, string>, @Body('token') token: string) {
+          const params = new URLSearchParams(query);
+          if (params.get('token') !== token) throw new Error();
+        }
+      `),
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    {
+      name: 'a comparison inside a function-expression callback is data processing',
+      code: ctl(`
+        @Get('items') list() {
+          return this.items.filter(function (item) { return item.secret !== process.env.FILTER_TOKEN; });
+        }
+      `),
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    {
+      name: 'using a secret without comparing it is not authentication',
+      code: ctl(`
+        @Get('items') list() {
+          const header = 'Bearer ' + process.env.API_TOKEN;
+          return this.http.get(this.url, header);
+        }
+      `),
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    {
+      name: 'an array pattern with a hole in the handler does not stop the walk',
+      code: ctl(`
+        @Get('items') list() {
+          const [, second] = this.items;
+          return second;
+        }
+      `),
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    {
+      name: 'a bare (uncalled) parameter decorator is not a Headers read',
+      code: ctl(`@Get('items') list(@CurrentUser user: User) {}`),
+      errors: [{ messageId: 'missingGuards' }],
+    },
+  ]),
+});
+ruleTester.run(
+  'require-guards (mutation audit, spread guards)',
+  requireGuards,
+  {
+    valid: nest([
+      {
+        // @found mutation testing
+        name: 'FP: spread guards may include the required guard',
+        code: ctl(
+          `@Get('invoices') list() {}`,
+          `@Controller('billing') @UseGuards(...APP_GUARDS)`,
+        ),
+        options: [{ requiredGuards: ['AdminGuard'] }],
+      },
+    ]),
+    invalid: [],
+  },
+);
+ruleTester.run('require-guards (mutation audit, config keys)', requireGuards, {
+  valid: [],
+  invalid: nest([
+    {
+      name: 'a config key held in a constant is not provably a secret',
+      code: ctl(`
+        @Post('hook') receive(@Query('token') token: string) {
+          if (this.configService.get(HOOK_KEY) !== token) throw new Error();
+        }
+      `),
+      errors: [{ messageId: 'missingGuards' }],
+    },
+  ]),
 });

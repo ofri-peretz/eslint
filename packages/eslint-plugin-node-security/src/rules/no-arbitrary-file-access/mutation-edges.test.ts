@@ -202,3 +202,168 @@ ruleTester.run('mutation-guided edges', noArbitraryFileAccess, {
     },
   ],
 });
+
+ruleTester.run('mutation-guided edges, batch 6', noArbitraryFileAccess, {
+  valid: [
+    {
+      name: 'a safe-named parameter copied elsewhere is still trusted when no caller passes a request',
+      code: `function load(safePath) {
+  lastPath = safePath;
+  return fs.readFileSync(safePath);
+}
+load(config.file);`,
+    },
+    {
+      name: 'a safe-named declared global keeps the naming convention',
+      code: '/* global safePath */\nfs.readFileSync(safePath);',
+    },
+    {
+      name: 'a guard written with no space before the read still guards it',
+      code: "function h(req){const file=req.query.name;if(!file.startsWith('/srv/files/'))return;fs.readFileSync(file)}",
+    },
+    {
+      name: 'a local named query holding a basename result is a basename, not a request',
+      code: `function handler(req, res) {
+  const query = path.basename(req.query.file);
+  res.send(fs.readFileSync(query));
+}`,
+    },
+    {
+      name: 'a basename result is sanitised even when it is the only write',
+      code: `function handler(req, res) {
+  const name = path.basename(req.query.file);
+  res.send(fs.readFileSync(name));
+}`,
+    },
+  ],
+  invalid: [
+    {
+      name: 'a safe-named parameter copied elsewhere is contradicted by a caller passing a request',
+      code: `function load(safePath) {
+  lastPath = safePath;
+  return fs.readFileSync(safePath);
+}
+load(req.query.file);`,
+      errors: [error],
+    },
+    {
+      name: 'a basename method on an object that is not path does not launder',
+      code: 'fs.readFileSync(helpers.basename(req.query.file));',
+      errors: [error],
+    },
+    {
+      name: 'process.argv is CLI input when process is a configured global',
+      code: 'fs.readFileSync(process.argv[2]);',
+      languageOptions: { globals: { process: 'readonly' } },
+      errors: [error],
+    },
+    {
+      name: 'one name of a multi-name destructure from req.query is user input',
+      code: `function handler(req, res) {
+  const { file, encoding } = req.query;
+  res.send(fs.readFileSync(file, encoding));
+}`,
+      errors: [error],
+    },
+    {
+      name: 'a custom validator call is not a startsWith guard',
+      code: `function handler(req, res) {
+  const file = req.query.name;
+  if (!isAllowed(file)) throw new Error('bad');
+  res.send(fs.readFileSync(file));
+}`,
+      errors: [error],
+    },
+    {
+      name: 'BUG: an alias chain longer than six hops still reaches the request',
+      code: `function handler(req) {
+  const a1 = req.query.file;
+  const a2 = a1;
+  const a3 = a2;
+  const a4 = a3;
+  const a5 = a4;
+  const a6 = a5;
+  const a7 = a6;
+  const a8 = a7;
+  return fs.readFileSync(path.join('/srv/files', a8));
+}`,
+      errors: [error],
+    },
+    {
+      name: 'BUG: a request array spread into path.join is user input',
+      code: "fs.readFileSync(path.join('/srv/files', ...req.body.segments));",
+      errors: [error],
+    },
+    {
+      name: 'BUG: a request array spread into a helper reaches its parameter',
+      code: 'function load(file) { return fs.readFileSync(file); }\nload(...req.body.files);',
+      errors: [error],
+    },
+    {
+      name: 'BUG: a string-keyed method is reachable by its key',
+      code: "const files = { 'load': (file) => fs.readFileSync(file) };\nfiles.load(req.query.file);",
+      errors: [error],
+    },
+    {
+      name: 'BUG: a function assigned to an object property is reachable by that property name',
+      code: 'exports.load = function (file) { return fs.readFileSync(file); };\nexports.load(req.query.file);',
+      errors: [error],
+    },
+    {
+      name: 'BUG: a class method is reachable by its name',
+      code: 'class Files { load(file) { return fs.readFileSync(file); } }\nnew Files().load(req.query.file);',
+      errors: [error],
+    },
+    {
+      name: 'BUG: a basename result later overwritten with a request value is not sanitised',
+      code: `function handler(req, res) {
+  let name = path.basename(req.query.file);
+  name = req.query.raw;
+  res.send(fs.readFileSync(name));
+}`,
+      errors: [error],
+    },
+    {
+      name: 'BUG: a loop variable over a request array is user input',
+      code: 'for (const file of req.body.files) fs.readFileSync(file);',
+      errors: [error],
+    },
+    {
+      name: 'BUG: a loop key over the request query is user input',
+      code: 'for (const key in req.query) fs.readFileSync(key);',
+      errors: [error],
+    },
+  ],
+});
+
+ruleTester.run(
+  'mutation-guided edges, batch 6 (cycles)',
+  noArbitraryFileAccess,
+  {
+    valid: [
+      {
+        name: 'a cycle of assignments between two locals terminates',
+        code: 'let a = b; let b = a;\na = b;\nfs.readFileSync(`${a}`);',
+      },
+    ],
+    invalid: [],
+  },
+);
+
+ruleTester.run(
+  'mutation-guided edges, batch 6 (names)',
+  noArbitraryFileAccess,
+  {
+    valid: [
+      {
+        name: 'a method under a computed key has no name a caller can be matched by',
+        code: 'const handlers = { [kind]: (file) => fs.readFileSync(file) };\nhandlers[kind](req.query.file);',
+      },
+      {
+        name: 'a function assigned through a computed member has no static name',
+        code: 'handlers[kind] = (file) => fs.readFileSync(file);\nhandlers[kind](req.query.file);',
+      },
+    ],
+    invalid: [],
+  },
+);

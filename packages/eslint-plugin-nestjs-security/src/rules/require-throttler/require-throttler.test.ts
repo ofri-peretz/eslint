@@ -17,7 +17,7 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const nest = <T,>(cases: T[]): T[] =>
+const nest = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asNest(c) as T;
     const t = c as Case;
@@ -43,7 +43,6 @@ const nest = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester();
 
@@ -244,12 +243,13 @@ ruleTester.run('require-throttler', requireThrottler, {
 // Lock for `skipRoutes`, which was declared in the schema but never read.
 ruleTester.run('require-throttler (skipRoutes)', requireThrottler, {
   valid: nest([
-    // Matches the handler name (a route that would otherwise be reported).
+    // Matches a declared route path (a route that would otherwise be reported).
     {
+      name: 'skipRoutes matches the declared route path',
       code: `
         @Controller('u')
         class UsersController {
-          @Post()
+          @Post('login')
           login() {}
         }
       `,
@@ -268,7 +268,7 @@ ruleTester.run('require-throttler (skipRoutes)', requireThrottler, {
     },
   ]),
   invalid: nest([
-    // A bare (uninvoked) @Get declares no path, so only the name can match.
+    // A bare (uninvoked) @Get declares no path, so nothing can match.
     {
       code: `
         @Controller('u')
@@ -375,6 +375,160 @@ ruleTester.run('require-throttler (sensitive routes)', requireThrottler, {
         class MfaController {
           @Post('resend-otp')
           resend() {}
+        }
+      `,
+      errors: [{ messageId: 'missingThrottler' }],
+    },
+  ]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quint fidelity model (benchmarks/suites/fidelity/models/nestjs-security)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-throttler (fidelity)', requireThrottler, {
+  valid: [],
+  invalid: nest([
+    {
+      name: 'skipRoutes lists paths, so it does not match a handler NAME at another path',
+      code: `
+        @Controller('auth')
+        export class AuthController {
+          @Post('profile')
+          login() { return 1; }
+        }
+      `,
+      options: [{ detectGlobalThrottler: false, skipRoutes: ['login'] }],
+      errors: [{ messageId: 'missingThrottler' }],
+    },
+  ]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02. Several older valid cases above are vacuous under
+// the sensitive-routes default (`@Get() findAll()` is never reported), so the
+// option, test-file and ThrottlerGuard exemptions are re-asserted here on a
+// route that WOULD be reported.
+// ─────────────────────────────────────────────────────────────────────────────
+const LOGIN = `
+  @Controller('auth')
+  class AuthController {
+    @Post('login')
+    login() {}
+  }
+`;
+ruleTester.run('require-throttler (mutation audit)', requireThrottler, {
+  valid: nest([
+    {
+      name: 'a login route in a test file is skipped by default (allowInTests)',
+      code: LOGIN,
+      filename: 'auth.controller.spec.ts',
+    },
+    {
+      name: 'assumeGlobalThrottler silences a login route',
+      code: LOGIN,
+      options: [{ assumeGlobalThrottler: true }],
+    },
+    {
+      name: 'a class-level @UseGuards(ThrottlerGuard) throttles every route, sensitive or not',
+      code: `
+        @Controller('users')
+        @UseGuards(ThrottlerGuard)
+        class UsersController {
+          @Get()
+          findAll() {}
+        }
+      `,
+      options: [{ onlySensitiveRoutes: false }],
+    },
+    {
+      name: 'a ThrottlerGuard listed beside another guard still throttles the route',
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Get()
+          @UseGuards(AuthGuard, ThrottlerGuard)
+          findAll() {}
+        }
+      `,
+      options: [{ onlySensitiveRoutes: false }],
+    },
+    {
+      name: 'an HTTP-method decorator outside a @Controller class is not a route',
+      code: `
+        class AuthHelpers {
+          @Post('login')
+          login() {}
+        }
+      `,
+    },
+    {
+      name: 'skipRoutes matches a multi-segment route path',
+      code: `
+        @Controller('u')
+        class UsersController {
+          @Post('/auth/login/')
+          handle() {}
+        }
+      `,
+      options: [{ skipRoutes: ['auth/login'] }],
+    },
+  ]),
+  invalid: nest([
+    {
+      name: 'a guard that is not ThrottlerGuard does not throttle the route',
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Get()
+          @UseGuards(JwtAuthGuard)
+          findAll() {}
+        }
+      `,
+      options: [{ onlySensitiveRoutes: false }],
+      errors: [{ messageId: 'missingThrottler' }],
+    },
+    {
+      name: 'a sensitive token among ordinary words still marks the route',
+      code: `
+        @Controller('mfa')
+        class MfaController {
+          @Post('send-otp')
+          sendCode() {}
+        }
+      `,
+      errors: [{ messageId: 'missingThrottler' }],
+    },
+    {
+      // @found mutation testing
+      name: 'FN: a route declared with an array of paths is sensitive when any path is',
+      code: `
+        @Controller('auth')
+        class AuthController {
+          @Post(['sign-in', 'login'])
+          handle() {}
+        }
+      `,
+      errors: [{ messageId: 'missingThrottler' }],
+    },
+    {
+      // @found mutation testing
+      name: 'FN: a template-literal route path is read like a string path',
+      code: `
+        @Controller('auth')
+        class AuthController {
+          @Post(\`login\`)
+          handle() {}
+        }
+      `,
+      errors: [{ messageId: 'missingThrottler' }],
+    },
+    {
+      name: 'a route path from a variable is unknown and leaves the handler name to decide',
+      code: `
+        @Controller('auth')
+        class AuthController {
+          @Post(LOGIN_PATH)
+          login() {}
         }
       `,
       errors: [{ messageId: 'missingThrottler' }],

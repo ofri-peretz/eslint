@@ -22,7 +22,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -48,7 +48,6 @@ const xai = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -229,3 +228,132 @@ ruleTester.run('require-error-handling (fp-fn audit)', requireErrorHandling, {
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quint fidelity model (benchmarks/suites/fidelity/models/vercel-ai-security)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-error-handling (fidelity)', requireErrorHandling, {
+  valid: xai([
+    {
+      name: 'a callback whose promise is awaited through Promise.all is inside the try',
+      code: `
+        export async function handler() {
+          try {
+            await Promise.all([items.map(async (item) => generateText({ prompt: item }))]);
+          } catch (error) {
+            logger.error(error);
+          }
+        }
+      `,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'a renamed import of generateText is still the SDK call',
+      code: `
+        import { generateText as callModel } from 'ai';
+        export async function POST() { return callModel({ model: m, prompt: 'Hello' }); }
+      `,
+      errors: [{ messageId: 'missingErrorHandling' }],
+    },
+    {
+      name: 'try/finally with no catch does not handle the rejection',
+      code: `
+        export async function handler() {
+          try {
+            return await generateText({ model: m, prompt: 'Hello' });
+          } finally {
+            logger.info('done');
+          }
+        }
+      `,
+      errors: [{ messageId: 'missingErrorHandling' }],
+    },
+    {
+      name: 'a call in the catch clause is not protected by that try',
+      code: `
+        export async function handler() {
+          try {
+            work();
+          } catch (error) {
+            await generateText({ model: m, prompt: 'Hello' });
+          }
+        }
+      `,
+      errors: [{ messageId: 'missingErrorHandling' }],
+    },
+    {
+      name: 'a try around a callback whose promise is dropped does not catch its rejection',
+      code: `
+        export async function handler() {
+          try {
+            items.forEach(async (item) => { await generateText({ model: m, prompt: item }); });
+          } catch (error) {
+            logger.error(error);
+          }
+        }
+      `,
+      errors: [{ messageId: 'missingErrorHandling' }],
+    },
+    {
+      name: 'a top-level await outside any try is reported',
+      code: `await generateText({ model: m, prompt: 'Hello' });`,
+      errors: [{ messageId: 'missingErrorHandling' }],
+    },
+  ]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run(
+  'require-error-handling (mutation audit)',
+  requireErrorHandling,
+  {
+    valid: xai([]),
+    invalid: xai([
+      {
+        name: 'a try around a function-expression callback whose promise is dropped does not catch its rejection',
+        code: `
+        export async function handler() {
+          try {
+            items.forEach(async function (item) { await generateText({ model: m, prompt: item }); });
+          } catch (error) {
+            logger.error(error);
+          }
+        }
+      `,
+        errors: [{ messageId: 'missingErrorHandling' }],
+      },
+      {
+        name: 'a function declared inside a try runs outside it — its call is not protected',
+        code: `
+        export async function handler() {
+          try {
+            async function run() { return generateText({ model: m, prompt: 'Hello' }); }
+            run();
+          } catch (error) {
+            logger.error(error);
+          }
+        }
+      `,
+        errors: [{ messageId: 'missingErrorHandling' }],
+      },
+      {
+        name: 'generateText throws — an onError option does not handle its rejection',
+        code: `await generateText({ model: m, prompt: 'Hello', onError: (e) => log(e) });`,
+        errors: [{ messageId: 'missingErrorHandling' }],
+      },
+      {
+        name: 'streamText given an options variable shows no onError and is reported',
+        code: `const result = streamText(options);`,
+        errors: [{ messageId: 'missingErrorHandling' }],
+      },
+      {
+        name: 'streamText with no options at all has no onError and is reported',
+        code: `const result = streamText();`,
+        errors: [{ messageId: 'missingErrorHandling' }],
+      },
+    ]),
+  },
+);

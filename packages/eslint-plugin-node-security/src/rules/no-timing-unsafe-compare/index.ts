@@ -319,14 +319,14 @@ function memberRoot(node: TSESTree.Node): TSESTree.Identifier | null {
  * oracle to reveal. The comparison is a formatting assertion, and its duration
  * tells an attacker only about the token they already sent.
  *
- * Requires one side to be a bare identifier and the other to be a chain rooted
- * at that same identifier, so two genuinely different values that merely share
- * a receiver (`a.expected !== a.actual`) are untouched.
+ * Requires one side to be a bare identifier and the other to be that same
+ * identifier or a chain rooted at it, so two genuinely different values that
+ * merely share a receiver (`a.expected !== a.actual`) are untouched.
  */
 function isSelfComparison(left: TSESTree.Node, right: TSESTree.Node): boolean {
   const pair = (bare: TSESTree.Node, derived: TSESTree.Node): boolean => {
     if (bare.type !== AST_NODE_TYPES.Identifier) return false;
-    if (derived.type === AST_NODE_TYPES.Identifier) return false;
+    // `token !== token` — the NaN idiom — is one value too.
     return memberRoot(derived)?.name === bare.name;
   };
   return pair(left, right) || pair(right, left);
@@ -501,7 +501,12 @@ const RECEIVER_COMPARE_METHODS: ReadonlySet<string> = new Set([
   'localeCompare',
 ]);
 
-/** Deep-equality helpers, called with the two values as arguments. */
+/**
+ * Deep-equality helpers, called with the two values as the FIRST two arguments.
+ * A third is a customizer or an options bag — `isEqualWith(a, b, fn)` always
+ * has one, and `deepEqual(a, b, { strict: true })` often does — so the count
+ * is a floor, not an exact match.
+ */
 const BINARY_EQUALITY_FUNCTIONS: ReadonlySet<string> = new Set([
   'isEqual',
   'isEqualWith',
@@ -719,7 +724,8 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       }
       if (callee.type !== AST_NODE_TYPES.MemberExpression || callee.computed)
         return false;
-      if (callee.property.type !== AST_NODE_TYPES.Identifier) return false;
+      // A `#private` method is named by its author like a public one:
+      // `this.#hmac(body)` derives what `this.hmac(body)` would.
       if (CRYPTO_DERIVATIONS.has(callee.property.name)) return true;
       // `pbkdf2Sync(…).toString('hex')` — the derivation is the receiver.
       return isCryptoDerivation(callee.object);
@@ -773,10 +779,17 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
      *   and what came out is the thing being protected
      * - `process.env` — configuration, loaded at boot
      */
-    function isServerDerived(node: TSESTree.Node, depth = 0): boolean {
-      if (depth > 4) return false;
+    function isServerDerived(
+      node: TSESTree.Node,
+      // The walk is one path (no branching), so one set serves it. It used to
+      // be a depth cap of four, which dropped `req.session` five hops up an
+      // alias chain and silenced the finding; the set only stops a cycle.
+      visited: Set<TSESTree.Node> = new Set(),
+    ): boolean {
+      if (visited.has(node)) return false;
+      visited.add(node);
       const bare = unwrapTypeSyntax(node);
-      if (bare !== node) return isServerDerived(bare, depth + 1);
+      if (bare !== node) return isServerDerived(bare, visited);
 
       if (node.type === AST_NODE_TYPES.AwaitExpression) return true;
       if (containsCryptoDerivation(node)) return true;
@@ -793,11 +806,11 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         ) {
           return true;
         }
-        return isServerDerived(node.object, depth + 1);
+        return isServerDerived(node.object, visited);
       }
       if (node.type === AST_NODE_TYPES.Identifier) {
         const init = bindingInit(sourceCode, node);
-        return init !== undefined && isServerDerived(init, depth + 1);
+        return init !== undefined && isServerDerived(init, visited);
       }
       if (node.type === AST_NODE_TYPES.CallExpression) {
         const callee = unwrapChain(node.callee);
@@ -809,7 +822,7 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         // was called on, the result is the server's.
         return (
           !readsUntrusted(callee.object) ||
-          isServerDerived(callee.object, depth + 1)
+          isServerDerived(callee.object, visited)
         );
       }
       return false;
@@ -990,7 +1003,7 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       const callee = node.callee;
 
       if (callee.type === AST_NODE_TYPES.Identifier) {
-        if (BINARY_EQUALITY_FUNCTIONS.has(callee.name) && args.length === 2) {
+        if (BINARY_EQUALITY_FUNCTIONS.has(callee.name) && args.length >= 2) {
           return [args[0] as TSESTree.Node, args[1] as TSESTree.Node];
         }
         const wrapped = equalityWrapperParams(callee);
@@ -1019,7 +1032,7 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       }
 
       // `_.isEqual(a, b)` — namespaced deep equality.
-      if (BINARY_EQUALITY_FUNCTIONS.has(method) && args.length === 2) {
+      if (BINARY_EQUALITY_FUNCTIONS.has(method) && args.length >= 2) {
         return [args[0] as TSESTree.Node, args[1] as TSESTree.Node];
       }
 

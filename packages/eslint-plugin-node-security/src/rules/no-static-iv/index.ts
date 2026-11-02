@@ -20,7 +20,7 @@ import {
   isModuleBinding,
   unwrapTypeSyntax,
   isTestFilePath,
-  staticString,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import {
   constInitializerOf,
@@ -43,14 +43,6 @@ export interface Options {
 }
 
 type RuleOptions = [Options?];
-
-/**
- * Patterns that indicate a hardcoded IV
- */
-const STATIC_IV_PATTERNS = [
-  /^[0-9a-f]+$/i, // Hex string
-  /^[A-Za-z0-9+/]+=*$/, // Base64
-];
 
 /** The two `crypto` factories that take an explicit IV as their third argument. */
 const CIPHERIV_FACTORIES = ['createCipheriv', 'createDecipheriv'] as const;
@@ -105,12 +97,8 @@ const RANDOM_FILL_FUNCTIONS = new Set([
  * thing anyone reaches for to slip past a dotted-name check.
  */
 function calleeMemberName(callee: TSESTree.Node): string | null {
-  if (callee.type !== AST_NODE_TYPES.MemberExpression) return null;
-  if (callee.property.type === AST_NODE_TYPES.Identifier && !callee.computed) {
-    return callee.property.name;
-  }
-  return staticString(callee.property) !== null
-    ? staticString(callee.property)
+  return callee.type === AST_NODE_TYPES.MemberExpression
+    ? propertyName(callee)
     : null;
 }
 
@@ -201,13 +189,17 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
       }
     }
 
-    /** An array literal of nothing but numbers — sixteen bytes typed out by hand. */
+    /**
+     * An array literal of nothing but literals — sixteen bytes typed out by
+     * hand. Any literal, not only numbers: `Buffer.from(['1', '2', …])` coerces
+     * each element to the same byte on every run.
+     */
     function isStaticByteArray(node: TSESTree.Node): boolean {
       return (
         node.type === AST_NODE_TYPES.ArrayExpression &&
         node.elements.every(
           (el: TSESTree.Expression | TSESTree.SpreadElement | null): boolean =>
-            el?.type === AST_NODE_TYPES.Literal && typeof el.value === 'number',
+            el?.type === AST_NODE_TYPES.Literal,
         )
       );
     }
@@ -228,7 +220,7 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
     function isRandomlyFilled(variable: TSESLint.Scope.Variable): boolean {
       return variable.references.some((ref) => {
         const parent = ref.identifier.parent;
-        if (parent?.type !== AST_NODE_TYPES.CallExpression) return false;
+        if (parent.type !== AST_NODE_TYPES.CallExpression) return false;
         if (!parent.arguments.includes(ref.identifier as TSESTree.Expression))
           return false;
         const callee = parent.callee;
@@ -262,11 +254,13 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
       // test — a template literal with no expressions IS a string constant, and
       // a corpus fixture that only changed the quote character escaped
       // detection entirely.
+      //
+      // Any non-empty string is a fixed IV. A hex/base64/length>=8 filter used
+      // to sit here, so `createCipheriv('aes-256-gcm', key, '@#!')` — a valid
+      // three-byte GCM nonce, identical on every call — was silent. Only the
+      // empty string is no IV at all.
       const constant = resolveConstantString(context.sourceCode, value);
-      if (constant !== null) {
-        const text = constant.value;
-        return STATIC_IV_PATTERNS.some((p) => p.test(text)) || text.length >= 8;
-      }
+      if (constant !== null) return constant.value.length > 0;
 
       // `new Uint8Array([...])` — the TypeScript spelling of a typed-out IV.
       // The old code carried a comment claiming to check this while actually
@@ -324,8 +318,8 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
       // because it reads as allocation rather than as a hardcoded constant.
       // Quiet only when the binding is demonstrably filled with random bytes
       // afterwards.
-      const size = resolveConstant(context.sourceCode, source);
-      if (size === null || typeof size.value !== 'number') return false;
+      // A string constant returned above, so a resolved constant is a number.
+      if (resolveConstant(context.sourceCode, source) === null) return false;
       return binding === null || !isRandomlyFilled(binding);
     }
 
@@ -354,16 +348,18 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
       // work and add a `null` arm no input could reach.
       if (variable.defs.length !== 1) return null;
       const def = variable.defs[0];
-      if (def.type !== 'Variable' || def.parent.kind === 'const') return null;
+      // A plain-identifier `const` was answered by `constInitializerOf`
+      // above, so a `const` reaching here is destructured — refused below.
+      if (def.type !== 'Variable') return null;
       if (def.node.id.type !== AST_NODE_TYPES.Identifier) return null;
 
-      const candidates: TSESTree.Node[] = def.node.init ? [def.node.init] : [];
+      // The declaration's initializer is itself a write reference, so the
+      // writes alone are every value the binding is given.
+      const candidates: TSESTree.Node[] = [];
       for (const ref of variable.references) {
         if (!ref.isWrite()) continue;
         if (!ref.writeExpr) return null;
-        // The declaration's initializer is also a write reference; adding it
-        // twice would be harmless but reads as a bug, so skip the duplicate.
-        if (ref.writeExpr !== def.node.init) candidates.push(ref.writeExpr);
+        candidates.push(ref.writeExpr);
       }
       // Nothing to judge. An empty list would make `.every` vacuously true and
       // report a binding the rule never saw a value for.

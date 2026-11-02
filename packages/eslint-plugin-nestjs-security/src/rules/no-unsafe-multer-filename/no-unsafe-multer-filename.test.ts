@@ -26,7 +26,7 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const nest = <T,>(cases: T[]): T[] =>
+const nest = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asNest(c) as T;
     const t = c as Case;
@@ -52,7 +52,6 @@ const nest = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: { ecmaVersion: 2022, sourceType: 'module' },
@@ -120,12 +119,14 @@ ruleTester.run('no-unsafe-multer-filename', noUnsafeMulterFilename, {
         [filename]: (req, file, cb) => { cb(null, file.originalname); },
       });
     `,
-    // Destructured parameters: there is no `file` binding to track.
-    `
+    {
+      name: 'a destructured file parameter that never binds originalname',
+      code: `
       diskStorage({
-        filename: (req, { originalname }, cb) => { cb(null, originalname); },
+        filename: (req, { mimetype }, cb) => { cb(null, mimetype); },
       });
     `,
+    },
     // A nested callback has its own `file`; following it would mean guessing
     // when it runs and against which value.
     `
@@ -175,8 +176,6 @@ ruleTester.run('no-unsafe-multer-filename', noUnsafeMulterFilename, {
         },
       });
     `,
-    // A computed callee is not provably `diskStorage`.
-    `storage['diskStorage']({ filename(req, file, cb) { cb(null, file.originalname); } });`,
     // Test files are exempt by default.
     {
       name: 'a spec file is exempt by default',
@@ -296,3 +295,190 @@ ruleTester.run('no-unsafe-multer-filename', noUnsafeMulterFilename, {
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quint fidelity model (benchmarks/suites/fidelity/models/nestjs-security)
+// These fixtures are NOT wrapped in `nest()`: the file-level gate is the claim.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-unsafe-multer-filename (fidelity)', noUnsafeMulterFilename, {
+  valid: [
+    {
+      name: 'a handler with no callback parameter hands nothing to multer',
+      code: `
+        import { diskStorage } from 'multer';
+        diskStorage({ filename(req, file) { return file.originalname; } });
+      `,
+    },
+    {
+      name: 'a file importing neither NestJS nor multer is not checked',
+      code: `
+        export const storage = diskStorage({
+          filename(req, file, cb) { cb(null, file.originalname); },
+        });
+      `,
+    },
+  ],
+  invalid: [
+    {
+      name: "the doc's ❌ example — a multer-only storage module — is reported",
+      code: `
+        import { diskStorage } from 'multer';
+        export const storage = diskStorage({
+          filename(req, file, cb) { cb(null, file.originalname); },
+        });
+      `,
+      errors: [{ messageId: 'clientControlledFilename' }],
+    },
+    {
+      name: 'a destructured originalname arrives from the wire untouched',
+      code: `
+        import '@nestjs/common';
+        diskStorage({ filename(req, { originalname }, cb) { cb(null, originalname); } });
+      `,
+      errors: [{ messageId: 'clientControlledFilename' }],
+    },
+    {
+      name: 'a rest element beside a destructured originalname does not hide it',
+      code: `
+        import { diskStorage } from 'multer';
+        diskStorage({ filename(req, { originalname, ...rest }, cb) { cb(null, originalname); } });
+      `,
+      errors: [{ messageId: 'clientControlledFilename' }],
+    },
+    {
+      name: 'a renamed destructured originalname with a default is still tracked',
+      code: `
+        import multer from 'multer';
+        multer.diskStorage({
+          filename: (req, { originalname: name = 'upload' }, cb) => cb(null, 'x-' + name),
+        });
+      `,
+      errors: [{ messageId: 'clientControlledFilename' }],
+    },
+  ],
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+const storage = (handler: string): string =>
+  `diskStorage({ filename(req, file, cb) { ${handler} } });`;
+ruleTester.run(
+  'no-unsafe-multer-filename (mutation audit)',
+  noUnsafeMulterFilename,
+  {
+    valid: nest([
+      {
+        name: 'a conditional choosing between two server-made names is safe',
+        code: storage(`cb(null, isImage ? 'image.bin' : 'file.bin');`),
+      },
+      {
+        name: 'a fallback between two server-made names is safe',
+        code: storage(`cb(null, customName || 'upload.bin');`),
+      },
+      {
+        name: 'a server-side file field is not the client name',
+        code: storage('cb(null, `${Date.now()}-${file.size}`);'),
+      },
+      {
+        name: "another object's originalname is not the uploaded file's",
+        code: storage(`cb(null, saved.originalname);`),
+      },
+      {
+        name: 'concatenating the client name onto a local does not taint that local',
+        code: storage(
+          `const stored = base + file.originalname; log(stored); cb(null, base);`,
+        ),
+      },
+      {
+        name: 'passing the client name to another function is not storing it',
+        code: storage(
+          `audit('upload', file.originalname); cb(null, randomUUID());`,
+        ),
+      },
+      {
+        name: 'a nested function that rebinds the file parameter reads a different file',
+        code: storage(`others.forEach((file) => cb(null, file.originalname));`),
+      },
+      {
+        name: 'a nested function that rebinds the callback calls a different callback',
+        code: storage(
+          `save(file, (err, cb) => cb(null, file.originalname)); cb(null, randomUUID());`,
+        ),
+      },
+    ]),
+    invalid: nest([
+      {
+        // @found mutation testing
+        name: 'FN: a bracketed diskStorage is the same call',
+        code: `storage['diskStorage']({ filename(req, file, cb) { cb(null, file.originalname); } });`,
+        errors: [{ messageId: 'clientControlledFilename' }],
+      },
+      {
+        // @found mutation testing
+        name: "FN: a string-literal 'filename' key is the same handler",
+        code: `diskStorage({ 'filename': (req, file, cb) => cb(null, file.originalname) });`,
+        errors: [{ messageId: 'clientControlledFilename' }],
+      },
+      {
+        // @found mutation testing
+        name: 'FN: cb called inside a callback after mkdir still stores the client name',
+        code: storage(
+          `fs.mkdir(dest, { recursive: true }, () => cb(null, file.originalname));`,
+        ),
+        errors: [{ messageId: 'clientControlledFilename' }],
+      },
+      {
+        // @found mutation testing
+        name: 'FN: a tainted local inside a conditional is still the client name',
+        code: storage(
+          `const name = file.originalname; cb(null, keep ? name : 'upload.bin');`,
+        ),
+        errors: [{ messageId: 'clientControlledFilename' }],
+      },
+      {
+        name: 'a tainted local interpolated into a template is still the client name',
+        code: storage(
+          'const name = file.originalname; cb(null, `${Date.now()}-${name}`);',
+        ),
+        errors: [{ messageId: 'clientControlledFilename' }],
+      },
+      {
+        name: 'an array pattern with a hole in the handler does not stop the walk',
+        code: storage(
+          `const [, ext] = file.mimetype.split('/'); cb(null, file.originalname);`,
+        ),
+        errors: [{ messageId: 'clientControlledFilename' }],
+      },
+    ]),
+  },
+);
+ruleTester.run(
+  'no-unsafe-multer-filename (mutation audit, rebinding)',
+  noUnsafeMulterFilename,
+  {
+    valid: nest([
+      {
+        name: 'a nested function that rebinds a tainted local reads its own value',
+        code: storage(
+          `const name = file.originalname; pick(names, (name) => cb(null, name));`,
+        ),
+      },
+    ]),
+    invalid: [],
+  },
+);
+ruleTester.run(
+  'no-unsafe-multer-filename (mutation audit, untracked params)',
+  noUnsafeMulterFilename,
+  {
+    valid: [],
+    invalid: nest([
+      {
+        name: 'a nested callback whose parameters rebind nothing tracked still stores the client name',
+        code: storage(`fs.mkdir(dest, (err) => cb(null, file.originalname));`),
+        errors: [{ messageId: 'clientControlledFilename' }],
+      },
+    ]),
+  },
+);

@@ -156,6 +156,7 @@ ruleTester.run('no-eval', noEval, {
     },
     // Zero arguments is also "nothing dynamic".
     {
+      name: 'eval() with no arguments is still reported',
       code: `eval();`,
       errors: [{ messageId: 'dangerousEval' }],
     },

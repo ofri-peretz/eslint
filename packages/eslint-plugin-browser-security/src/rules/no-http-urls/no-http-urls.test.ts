@@ -84,6 +84,27 @@ ruleTester.run('no-http-urls', noHttpUrls, {
     // position rather than by who minted it.
     { code: "const el = { xmlns: 'http://acmecorp.io/ns' }" },
     { code: "const el = { 'xmlns:custom': 'http://acmecorp.io/ns' }" },
+    // @found Stryker mutation-survivor triage, 2026-11-02
+    {
+      name: 'FP: an xmlns class field holds a namespace, not a destination',
+      code: "class Icon { xmlns = 'http://acmecorp.io/ns'; }",
+    },
+    {
+      name: 'prose that mentions http:// mid-string is not a URL',
+      code: "const help = 'Never load assets over http://cdn.acmecorp.io';",
+    },
+    {
+      name: 'an xmlns property holding a template literal is a namespace, whatever the host',
+      code: 'const attrs = { xmlns: `http://api.example.com/v1/auth${suffix}` }',
+    },
+    {
+      name: 'an xmlns:ext property holding a template literal is a namespace',
+      code: "const attrs = { 'xmlns:ext': `http://acmecorp.io/ns/${version}` }",
+    },
+    {
+      name: 'a template nested in another template under xmlns climbs to the outermost declaration',
+      code: 'const attrs = { xmlns: `${`http://acmecorp.io/ns/${version}`}` }',
+    },
 
     // HTTPS URLs
     { code: "const apiUrl = 'https://api.acmecorp.io/data'" },
@@ -396,7 +417,11 @@ ruleTester.run('lock: reserved example domains are not endpoints', noHttpUrls, {
   invalid: [
     // A lookalike subdomain is a real remote host.
     { code: "const u = 'http://example.com.attacker.io';", errors: 1 },
-    { code: "const u = 'http://notexample.com';", errors: 1 },
+    {
+      name: 'an http URL in a template literal with no interpolation is reported',
+      code: "const u = 'http://notexample.com';",
+      errors: 1,
+    },
   ],
 });
 

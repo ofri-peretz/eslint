@@ -31,13 +31,15 @@ import {
   createSafetyChecker,
   type SecurityRuleOptions,
 } from '@interlace/eslint-devkit';
+import { parsePolicy } from '../../utils/csp-directive';
 import { resolveInitializer } from '../../utils/resolve-binding';
 
 type MessageIds =
   | 'missingFrameBusting'
   | 'unsafeIframeUsage'
   | 'transparentFrameOverlay'
-  | 'frameManipulation';
+  | 'frameManipulation'
+  | 'weakFrameProtection';
 
 export interface Options extends SecurityRuleOptions {
   /** Trusted iframe sources */
@@ -64,6 +66,25 @@ type RuleOptions = [Options?];
  * widening it would read an ordinary object comparison as frame busting.
  */
 const FRAME_REFS = new Set(['top', 'self', 'parent', 'window']);
+
+/**
+ * Is this text a Content-Security-Policy that leaves framing open?
+ *
+ * A policy — at least one fetch directive, so a lone `'sandbox'` attribute
+ * value is not one — whose `frame-ancestors` is missing or `*`. Read through
+ * the directive grammar, never by substring.
+ */
+function isPolicyPermittingFraming(text: string): boolean {
+  const directives = parsePolicy(text);
+  return (
+    directives.some((directive) => directive.name.endsWith('-src')) &&
+    !directives.some(
+      (directive) =>
+        directive.name === 'frame-ancestors' &&
+        directive.sources.join(' ') !== '*',
+    )
+  );
+}
 
 /** Does this expression read one of the frame references? */
 function isFrameRef(node: TSESTree.Node): boolean {
@@ -100,8 +121,9 @@ function isFrameBustingTest(test: TSESTree.Node): boolean {
  * are frame-busting tests that compare LOCATIONS rather than windows, so the
  * window comparison above does not see them.
  */
-function readsFrameLocation(node: TSESTree.Node, depth = 0): boolean {
-  if (depth > 8) return false;
+function readsFrameLocation(node: TSESTree.Node): boolean {
+  // Unbounded on purpose: it walks one finite expression, and a long
+  // `top.location && a && b && …` test still reads the frame's location.
   if (
     node.type === 'MemberExpression' &&
     propertyName(node) === 'location' &&
@@ -111,12 +133,12 @@ function readsFrameLocation(node: TSESTree.Node, depth = 0): boolean {
   }
   if (node.type === 'BinaryExpression' || node.type === 'LogicalExpression') {
     return (
-      readsFrameLocation(node.left as TSESTree.Node, depth + 1) ||
-      readsFrameLocation(node.right, depth + 1)
+      readsFrameLocation(node.left as TSESTree.Node) ||
+      readsFrameLocation(node.right)
     );
   }
   if (node.type === 'UnaryExpression') {
-    return readsFrameLocation(node.argument, depth + 1);
+    return readsFrameLocation(node.argument);
   }
   return false;
 }
@@ -160,53 +182,6 @@ function hasDeclaration(
 }
 
 /**
- * CSS properties an overlay is described with. Closed set, exact membership.
- *
- * This exists to answer "is this text CSS at all". The gate used to be
- * `text.includes('style=') || text.includes('css')`, which is a test of the
- * AUTHOR'S PHRASING rather than of the content: a styled-components block or a
- * plain style string names neither word, so
- *
- * ```js
- * const style = 'position: absolute; top: 0; left: 0; z-index: -1';
- * ```
- *
- * was invisible, and so was every CSS-in-JS rule in the corpus. One recognised
- * declaration is enough to distinguish a stylesheet from a sentence that
- * happens to contain a colon — `style='opacity: 0'` is a whole overlay in a
- * single declaration, and requiring two silenced it.
- *
- * @protocol-constant CSS property names from the CSS specification, used only to
- * tell a style declaration from prose containing a colon. They are not a domain
- * vocabulary and no consumer's codebase adds to them; editing the set changes
- * what counts as CSS, which is not a decision a consumer should be making.
- */
-const CSS_PROPERTIES: ReadonlySet<string> = new Set([
-  'position',
-  'top',
-  'left',
-  'right',
-  'bottom',
-  'width',
-  'height',
-  'opacity',
-  'visibility',
-  'display',
-  'z-index',
-  'background',
-  'background-color',
-  'pointer-events',
-  'transform',
-  'margin',
-  'padding',
-  'border',
-  'overflow',
-  'content',
-  'transition',
-  'animation',
-]);
-
-/**
  * Is this property being ANIMATED rather than pinned invisible?
  *
  * `opacity: 0; transition: opacity 0.3s` is a fade-IN: the element is
@@ -233,13 +208,6 @@ function animatesProperty(
   });
 }
 
-/** Does this text read as CSS rather than as prose containing a colon? */
-function looksLikeCss(
-  declarations: ReadonlyArray<readonly [string, string]>,
-): boolean {
-  return declarations.some(([prop]) => CSS_PROPERTIES.has(prop));
-}
-
 /**
  * The string an iframe `src` expression is KNOWN to be, folded through scope.
  *
@@ -250,27 +218,20 @@ function looksLikeCss(
 function foldToString(
   node: TSESTree.Node,
   sourceCode: TSESLint.SourceCode,
-  depth: number,
+  seen: Set<TSESTree.Node> = new Set(),
 ): string | null {
-  if (depth > 4) return null;
   if (node.type === 'Literal') {
     return typeof node.value === 'string' ? node.value : null;
   }
   if (node.type === 'Identifier') {
     const init = resolveInitializer(node, sourceCode);
-    return init === undefined
+    return init === undefined || !visit(seen, init)
       ? null
-      : foldToString(init, sourceCode, depth + 1);
+      : foldToString(init, sourceCode, seen);
   }
-  if (node.type === 'MemberExpression' && node.computed) {
-    const index = node.property;
-    if (index.type !== 'Literal' || typeof index.value !== 'number')
-      return null;
-    const array = foldToArrayExpression(node.object, sourceCode, depth + 1);
-    const element = array?.elements[index.value];
-    return element == null
-      ? null
-      : foldToString(element, sourceCode, depth + 1);
+  if (node.type === 'MemberExpression') {
+    const element = tableElement(node, sourceCode, seen);
+    return element === null ? null : foldToString(element, sourceCode, seen);
   }
   return null;
 }
@@ -278,28 +239,63 @@ function foldToString(
 function foldToArrayExpression(
   node: TSESTree.Node,
   sourceCode: TSESLint.SourceCode,
-  depth: number,
+  seen: Set<TSESTree.Node>,
 ): TSESTree.ArrayExpression | null {
-  if (depth > 4) return null;
   if (node.type === 'ArrayExpression') return node;
   if (node.type === 'Identifier') {
     const init = resolveInitializer(node, sourceCode);
-    return init === undefined
+    return init === undefined || !visit(seen, init)
       ? null
-      : foldToArrayExpression(init, sourceCode, depth + 1);
+      : foldToArrayExpression(init, sourceCode, seen);
   }
   // A nested table — `EMBEDS[0][1]`, one row per environment.
-  if (node.type === 'MemberExpression' && node.computed) {
-    const index = node.property;
-    if (index.type !== 'Literal' || typeof index.value !== 'number')
-      return null;
-    const outer = foldToArrayExpression(node.object, sourceCode, depth + 1);
-    const element = outer?.elements[index.value];
-    return element == null
+  if (node.type === 'MemberExpression') {
+    const element = tableElement(node, sourceCode, seen);
+    return element === null
       ? null
-      : foldToArrayExpression(element, sourceCode, depth + 1);
+      : foldToArrayExpression(element, sourceCode, seen);
   }
   return null;
+}
+
+/**
+ * The element `table[<literal>]` reads, when the table folds to an array.
+ *
+ * Indexed exactly as the runtime indexes: by the literal's property key, so
+ * `EMBEDS['0']` is element 0 too, while `EMBEDS['01']`, `EMBEDS[null]` and a
+ * hole name no element. A dotted key is an Identifier, never a Literal.
+ */
+function tableElement(
+  node: TSESTree.MemberExpression,
+  sourceCode: TSESLint.SourceCode,
+  seen: Set<TSESTree.Node>,
+): TSESTree.Node | null {
+  const index = node.property;
+  if (index.type !== 'Literal') return null;
+  const array = foldToArrayExpression(node.object, sourceCode, seen);
+  if (array === null) return null;
+  const element: unknown = (
+    array.elements as unknown as Record<string, unknown>
+  )[String(index.value)];
+  return isNode(element) ? element : null;
+}
+
+/** Is this value an AST node (an array hole is `null`)? */
+function isNode(value: unknown): value is TSESTree.Node {
+  return typeof value === 'object' && value !== null;
+}
+
+/**
+ * Record an alias hop; false when it was already taken.
+ *
+ * The folds follow `const` aliases as far as they go — a hop budget gave up on
+ * a longer chain and let a foreign embed through — so a cycle
+ * (`const a = b; const b = a;`) is what has to stop them.
+ */
+function visit(seen: Set<TSESTree.Node>, node: TSESTree.Node): boolean {
+  if (seen.has(node)) return false;
+  seen.add(node);
+  return true;
 }
 
 /** `https://host:port` of an absolute or protocol-relative URL, else null. */
@@ -340,23 +336,19 @@ function runsOnlyInsideGuard(
   guard: TSESTree.Node,
   sourceCode: TSESLint.SourceCode,
 ): boolean {
-  const parent = fn.parent as TSESTree.Node | undefined;
+  // A function node always has a parent.
+  const parent = fn.parent as TSESTree.Node;
 
-  // An inline callback or IIFE is invoked where it is written.
-  if (
-    parent?.type === 'CallExpression' &&
-    (parent.arguments as TSESTree.Node[]).includes(fn)
-  ) {
-    return true;
-  }
-  if (parent?.type === 'CallExpression' && parent.callee === fn) return true;
+  // An inline callback or IIFE is invoked where it is written: a function
+  // whose parent is a call is that call's callee or one of its arguments.
+  if (parent.type === 'CallExpression') return true;
 
   // A named binding is reachable wherever its name is in scope. Ask the scope
   // manager where it is actually referenced rather than guessing from shape.
   const declarator =
     fn.type === 'FunctionDeclaration'
       ? fn
-      : parent?.type === 'VariableDeclarator'
+      : parent.type === 'VariableDeclarator'
         ? parent
         : undefined;
   if (declarator === undefined) return false;
@@ -459,6 +451,17 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html',
       }),
+      weakFrameProtection: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Frame Protection Permits Framing',
+        cwe: 'CWE-1021',
+        description:
+          'This X-Frame-Options value or Content-Security-Policy does not forbid framing',
+        severity: 'MEDIUM',
+        fix: "Use X-Frame-Options: DENY / SAMEORIGIN, or CSP frame-ancestors 'none' / 'self'",
+        documentationLink:
+          'https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html',
+      }),
       frameManipulation: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Frame Manipulation',
@@ -478,7 +481,8 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: ['self', 'same-origin'],
-            description: 'Frame-ancestor sources treated as safe',
+            description:
+              'Iframe src origins treated as safe (self / same-origin accept relative URLs)',
           },
           requireFrameBusting: {
             type: 'boolean',
@@ -543,6 +547,8 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
     let buildsDocumentShell: boolean;
     let hasDeclaredFrameProtection: boolean;
     let DOCUMENT_SHELL_TAGS: ReadonlySet<string>;
+    /** Declarations that do not forbid framing, reported at `Program:exit`. */
+    let weakDeclarations: TSESTree.Node[];
     let HEADER_SETTERS: Set<string>;
 
     /**
@@ -590,8 +596,8 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
      *   `res.setHeader('X-Frame-Options', 'DENY')`   — Express / Node
      */
     const isFrameOptionsValue = (node: TSESTree.Literal): boolean => {
+      // A Literal always has a parent.
       const parent = node.parent;
-      if (!parent) return false;
 
       if (parent.type === AST_NODE_TYPES.Property && parent.value === node) {
         const key = objectKeyName(parent)?.toLowerCase() ?? '';
@@ -695,8 +701,9 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
      */
     // oxlint-disable-next-line consistent-function-scoping
     const hasTransparentStyles = (styleText: string): boolean => {
+      // No "is this CSS at all" gate: every signal read below is a CSS
+      // property, so prose that merely contains a colon names none of them.
       const declarations = cssDeclarations(styleText);
-      if (!looksLikeCss(declarations)) return false;
 
       // Removed from layout entirely, so it receives no clicks and cannot
       // swallow one. See the note above: this is the OPPOSITE of an overlay.
@@ -779,6 +786,7 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
 
         /** Does the file establish frame protection by header or meta tag? */
         hasDeclaredFrameProtection = false;
+        weakDeclarations = [];
 
         /**
          * @protocol-constant The three HTML elements that make a document a
@@ -823,7 +831,7 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
         ) {
           // Check iframe attributes
           const attributes = node.openingElement.attributes;
-          let hasSrc = false;
+          // An empty `srcValue` is "no readable src": nothing to judge.
           let srcValue = '';
 
           for (const attr of attributes) {
@@ -833,7 +841,6 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
               attr.name.name === 'src' &&
               attr.value
             ) {
-              hasSrc = true;
               if (
                 attr.value.type === 'Literal' &&
                 typeof attr.value.value === 'string'
@@ -847,12 +854,12 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
                 attr.value.type === 'JSXExpressionContainer'
               ) {
                 srcValue =
-                  foldToString(attr.value.expression, sourceCode, 0) ?? '';
+                  foldToString(attr.value.expression, sourceCode) ?? '';
               }
             }
           }
 
-          if (hasSrc && srcValue && !isTrustedSource(srcValue)) {
+          if (srcValue && !isTrustedSource(srcValue)) {
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
@@ -887,42 +894,13 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
             propertyName(node) === 'location' ||
             propertyName(node) === 'top'
           ) {
-            // Check if this is being assigned or compared
-            let current: TSESTree.Node | undefined = node;
-            let isFrameManipulation = false;
-
-            // Walk up to see if this is an assignment or comparison. Every
-            // path that sets `isFrameManipulation = true` is followed by
-            // `break`, so the negation in the loop condition is redundant
-            // (CodeQL: `js/useless-conditional`).
-            while (current) {
-              if (
-                current.type === 'AssignmentExpression' &&
-                current.left === node
-              ) {
-                isFrameManipulation = true;
-                break;
-              }
-              if (
-                current.type === 'BinaryExpression' &&
-                (current.left === node || current.right === node)
-              ) {
-                // Comparison like top != self
-                const operator = current.operator;
-                if (
-                  operator === '!=' ||
-                  operator === '!==' ||
-                  operator === '==' ||
-                  operator === '==='
-                ) {
-                  // This might be frame-busting code
-                  break;
-                }
-                isFrameManipulation = true;
-                break;
-              }
-              current = current.parent as TSESTree.Node;
-            }
+            // Only a WRITE manipulates the frame. A comparison is the
+            // frame-busting test itself, and any other read — `'framed at ' +
+            // top.location` — navigates nothing; it used to be reported as
+            // manipulation all the same.
+            const isFrameManipulation =
+              node.parent.type === 'AssignmentExpression' &&
+              node.parent.left === node;
 
             if (isFrameManipulation) {
               if (safetyChecker.isSafe(node, context)) {
@@ -951,17 +929,23 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
 
       // Check for CSS that could hide clickjacking attacks
       Literal(node: TSESTree.Literal) {
-        if (
-          typeof node.value === 'string' &&
-          declaresFrameProtection(node.value, isFrameOptionsValue(node))
-        ) {
-          hasDeclaredFrameProtection = true;
+        if (typeof node.value === 'string') {
+          const inFrameOptionsSlot = isFrameOptionsValue(node);
+          if (declaresFrameProtection(node.value, inFrameOptionsSlot)) {
+            hasDeclaredFrameProtection = true;
+          } else if (
+            // `ALLOWALL` / `ALLOW-FROM` in the header's value slot, or a policy
+            // that leaves `frame-ancestors` open.
+            inFrameOptionsSlot ||
+            isPolicyPermittingFraming(node.value)
+          ) {
+            weakDeclarations.push(node);
+          }
         }
         if (typeof node.value === 'string' && detectTransparentOverlays) {
-          // Whether this is CSS is decided by PARSING it — see looksLikeCss.
-          const text = node.value.toLowerCase();
-
-          if (hasTransparentStyles(text)) {
+          // Whether this is CSS is decided by PARSING it (cssDeclarations
+          // lower-cases what it parses).
+          if (hasTransparentStyles(node.value)) {
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
@@ -984,15 +968,18 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
         // cooked value at all, and a CSP directive carries no escapes anyway.
         if (node.quasis.some((q) => declaresFrameProtection(q.value.raw))) {
           hasDeclaredFrameProtection = true;
+        } else if (
+          isPolicyPermittingFraming(
+            node.quasis.map((q) => q.value.raw).join(' '),
+          )
+        ) {
+          weakDeclarations.push(node);
         }
         if (detectTransparentOverlays) {
           // The LITERAL chunks only. `sourceCode.getText(node)` would also
           // print the source of every `${…}` interpolation, so a variable
           // spelled `opacity_0` inside one read as a CSS declaration.
-          const text = node.quasis
-            .map((q) => q.value.raw)
-            .join(' ')
-            .toLowerCase();
+          const text = node.quasis.map((q) => q.value.raw).join(' ');
 
           if (hasTransparentStyles(text)) {
             if (safetyChecker.isSafe(node, context)) {
@@ -1024,11 +1011,17 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
           context.report({
             node: context.sourceCode.ast,
             messageId: 'missingFrameBusting',
-            data: {
-              filePath: filename,
-              line: '1',
-            },
           });
+          // The shell finding already says this file is frameable; one report
+          // per fact, not one per declaration that failed to prevent it.
+          return;
+        }
+        // A declaration that permits framing is only a finding when nothing
+        // else in the file forbids it — `frame-ancestors 'none'` supersedes an
+        // `X-Frame-Options: ALLOWALL` written beside it.
+        if (hasDeclaredFrameProtection) return;
+        for (const node of weakDeclarations) {
+          context.report({ node, messageId: 'weakFrameProtection' });
         }
       },
     };

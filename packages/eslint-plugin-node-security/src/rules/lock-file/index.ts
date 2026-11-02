@@ -31,13 +31,31 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
- * Project roots already reported in this process, so the finding is emitted
- * once per project rather than once per file. Module scope is deliberate:
- * ESLint builds a fresh rule context for every file, so state inside
- * `create()` cannot deduplicate across them — which is exactly how the
- * original per-file guard failed.
+ * Per project root and required lock file, the files linted since the finding
+ * was last reported — so it is emitted once per lint RUN of that project
+ * rather than once per file. Module scope is deliberate: ESLint builds a fresh
+ * rule context for every file, so state inside `create()` cannot deduplicate
+ * across them — which is exactly how the original per-file guard failed.
+ *
+ * It used to be a plain `Set` of reported roots, and that reported at most
+ * once per PROCESS: in an editor language server or `eslint_d` a missing lock
+ * file was never reported again, and a second config asking for a different
+ * `packageManager` was never checked at all. No rule hook marks where one lint
+ * run ends and the next begins, but a run lints each file once — so a file
+ * seen AGAIN is the start of a new run, and the finding is owed again.
  */
-const reportedRoots = new Set<string>();
+const runs = new Map<string, Set<string>>();
+
+/** Should this file carry the finding for `key` in the current run? */
+function claimsFinding(key: string, filename: string): boolean {
+  const seen = runs.get(key);
+  if (seen === undefined || seen.has(filename)) {
+    runs.set(key, new Set([filename]));
+    return true;
+  }
+  seen.add(filename);
+  return false;
+}
 
 export const lockFile = createRule<RuleOptions, MessageIds>({
   name: 'lock-file',
@@ -180,8 +198,11 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
             'package.json',
           ]);
           if (root === undefined) return;
-          if (reportedRoots.has(root)) return;
-          reportedRoots.add(root);
+          // Keyed by the lock file required too: `packageManager: 'yarn'` and
+          // `'pnpm'` are two different facts about the same root.
+          if (!claimsFinding(`${root}\0${targetLockFile}`, context.filename)) {
+            return;
+          }
 
           context.report({
             node,

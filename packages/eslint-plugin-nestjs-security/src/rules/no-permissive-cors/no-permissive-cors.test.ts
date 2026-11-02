@@ -21,7 +21,7 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const nest = <T,>(cases: T[]): T[] =>
+const nest = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asNest(c) as T;
     const t = c as Case;
@@ -47,7 +47,6 @@ const nest = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: { ecmaVersion: 2022, sourceType: 'module' },
@@ -179,7 +178,10 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
     `app.enableCors({ origin: [] });`,
 
     // Explicit allowlist — the shape we want people to reach for.
-    { name: 'an explicit origin list', code: `app.enableCors({ origin: ['https://app.example.com'] });` },
+    {
+      name: 'an explicit origin list',
+      code: `app.enableCors({ origin: ['https://app.example.com'] });`,
+    },
     { code: `app.enableCors({ origin: 'https://app.example.com' });` },
     // Explicitly disabled.
     { code: `app.enableCors({ origin: false });` },
@@ -373,8 +375,11 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
 // ─────────────────────────────────────────────────────────────────────────────
 ruleTester.run('no-permissive-cors (coverage gaps)', noPermissiveCors, {
   valid: nest([
-    // Callee is a member expression whose property is computed, not `enableCors`.
-    { code: `app['enableCors']();` },
+    // Callee is a member expression whose property is computed at runtime.
+    {
+      name: 'a member computed at runtime names no method',
+      code: `app[method]();`,
+    },
     // Callee is not a member expression at all.
     { code: `enableCors({ origin: true });` },
     // Identifier never declared anywhere — scope walk exhausts, returns null.
@@ -571,19 +576,19 @@ ruleTester.run(
   noPermissiveCors,
   {
     valid: [
-    // `STAGE` is this project's environment flag; the default list has never
-    // heard of it, so the guard was invisible and a dev-only CORS opening was
-    // reported as if it shipped.
-    {
-      name: 'an environment flag the consumer named',
-      code: `
+      // `STAGE` is this project's environment flag; the default list has never
+      // heard of it, so the guard was invisible and a dev-only CORS opening was
+      // reported as if it shipped.
+      {
+        name: 'an environment flag the consumer named',
+        code: `
         if (process.env.STAGE === 'development') {
           app.enableCors({ origin: '*', credentials: true });
         }
       `,
-      options: [{ environmentHintNames: ['STAGE'] }],
-    },
-  ],
+        options: [{ environmentHintNames: ['STAGE'] }],
+      },
+    ],
     invalid: nest([
       // The mirror: replacing the list drops `NODE_ENV`, so the guard the
       // default would have accepted stops being an excuse.
@@ -607,3 +612,148 @@ ruleTester.run(
     ]),
   },
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quint fidelity model (benchmarks/suites/fidelity/models/nestjs-security)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-permissive-cors (fidelity)', noPermissiveCors, {
+  valid: nest([
+    {
+      name: 'the else of a production check runs only outside production',
+      code: `
+        if (process.env.NODE_ENV === 'production') {
+          app.enableCors({ origin: ['https://app.example.com'] });
+        } else {
+          app.enableCors({ origin: '*' });
+        }
+      `,
+    },
+    {
+      name: 'the right of || after a production check runs only outside production',
+      code: `isProd || app.enableCors({ origin: '*' });`,
+    },
+    {
+      name: 'a custom environmentHintNames entry marks the condition as an environment check',
+      code: `if (stage === 'local') { app.enableCors({ origin: '*' }); }`,
+      options: [{ environmentHintNames: ['stage'] }],
+    },
+  ]),
+  invalid: nest([
+    {
+      name: "app['enableCors'] is the same call as app.enableCors",
+      code: `app['enableCors']({ origin: true, credentials: true });`,
+      errors: [{ messageId: 'reflectedOrigin' }],
+    },
+    {
+      name: 'the else of a development check runs in production',
+      code: `
+        if (process.env.NODE_ENV === 'development') {
+          app.enableCors({ origin: ['https://app.example.com'] });
+        } else {
+          app.enableCors({ origin: '*' });
+        }
+      `,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+    {
+      name: 'the alternate of a development ternary runs in production',
+      code: `isDev ? undefined : app.enableCors({ origin: '*' });`,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+    {
+      name: 'a call inside the condition itself runs in every environment',
+      code: `if (app.enableCors({ origin: '*' }) && isDev) { start(); }`,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+    {
+      name: 'a condition on a flag outside environmentHintNames is not an environment check',
+      code: `if (stage === 'local') { app.enableCors({ origin: '*' }); }`,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+  ]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-permissive-cors (mutation audit)', noPermissiveCors, {
+  valid: nest([
+    {
+      name: 'a CorsOptions type from a local ./cors module is not the cors package',
+      code: `
+        import { CorsOptions } from './cors';
+        export const corsOptions: CorsOptions = { origin: true };
+      `,
+    },
+    {
+      name: 'a CorsOptions type from a package that merely starts with "cors" is not the cors package',
+      code: `
+        import { CorsOptions } from 'cors-gate';
+        export const corsOptions: CorsOptions = { origin: true };
+      `,
+    },
+    {
+      name: 'a CorsOptions binding built by a call is not an object literal to read',
+      code: `
+        import { CorsOptions } from '@nestjs/common';
+        export const corsOptions: CorsOptions = buildCorsOptions();
+      `,
+    },
+    {
+      // @found mutation testing
+      name: 'FP: a standalone application context serves no HTTP, so it has no CORS',
+      code: `const ctx = await NestFactory.createApplicationContext(AppModule, { cors: true });`,
+    },
+    {
+      name: 'a microservice serves no HTTP, so a cors key there is not CORS',
+      code: `const app = await NestFactory.createMicroservice(AppModule, { cors: true });`,
+    },
+  ]),
+  invalid: nest([
+    {
+      name: 'a CorsOptions type from a @nestjs/platform-* package is the CORS interface',
+      code: `
+        import { CorsOptions } from '@nestjs/platform-express';
+        export const corsOptions: CorsOptions = { origin: true, credentials: true };
+      `,
+      errors: [{ messageId: 'reflectedOrigin' }],
+    },
+    {
+      name: 'a negation inside a later operand does not negate a production check',
+      code: `if (isProduction && !verbose) { app.enableCors({ origin: '*' }); }`,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+    {
+      name: 'a negation with no space before it, after the production word, does not negate it',
+      code: `if (isProduction&&!verbose) { app.enableCors({ origin: '*' }); }`,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+    {
+      name: 'a call inside a production condition still runs in every environment',
+      code: `if (app.enableCors({ origin: '*' }) || isProduction) { start(); }`,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+    {
+      name: 'an assignment target that names production does not gate the call',
+      code: `status.production = app.enableCors({ origin: '*' });`,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+    {
+      name: 'the left operand of && runs unconditionally, however the chain continues',
+      code: `app.enableCors({ origin: '*' }) && isDev && start();`,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+    {
+      // @found mutation testing
+      name: 'FN: a computed string-literal origin key is the same property',
+      code: `app.enableCors({ ['origin']: '*' });`,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+    {
+      // @found mutation testing
+      name: 'FN: a template-literal wildcard with nothing interpolated is the wildcard',
+      code: 'app.enableCors({ origin: `*` });',
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+  ]),
+});

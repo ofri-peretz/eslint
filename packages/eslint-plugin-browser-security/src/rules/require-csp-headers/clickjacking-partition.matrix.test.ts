@@ -90,7 +90,9 @@ function findings(code: string, filename = 'handler.tsx'): string[] {
   if (crashes.length > 0) {
     throw new Error(`rule crashed: ${crashes[0].message}`);
   }
-  return messages.map((m) => `${m.ruleId as string}:${m.messageId as string}`).sort();
+  return messages
+    .map((m) => `${m.ruleId as string}:${m.messageId as string}`)
+    .sort();
 }
 
 describe('partition: require-csp-headers vs no-clickjacking (CWE-1021)', () => {
@@ -119,8 +121,11 @@ describe('partition: require-csp-headers vs no-clickjacking (CWE-1021)', () => {
   });
 
   it('a transparent overlay is owned by no-clickjacking alone', () => {
-    const code = "el.style.cssText = 'position: absolute; opacity: 0; z-index: 9999;';";
-    expect(findings(code)).toEqual(['p/no-clickjacking:transparentFrameOverlay']);
+    const code =
+      "el.style.cssText = 'position: absolute; opacity: 0; z-index: 9999;';";
+    expect(findings(code)).toEqual([
+      'p/no-clickjacking:transparentFrameOverlay',
+    ]);
   });
 
   it('complementary, not duplicate: one line, two DIFFERENT defects', () => {

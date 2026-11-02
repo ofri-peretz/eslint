@@ -19,10 +19,10 @@ import {
   formatLLMMessage,
   isTestFilePath,
   MessageIcons,
-  namesOneOf,
   objectKeyName,
-  propertyName,
 } from '@interlace/eslint-devkit';
+import { constInitializerOf } from '../../utils/const-value';
+import { calleeNameOn } from '../../utils/module-binding';
 
 type MessageIds = 'insecureRsaPadding' | 'useOaep';
 
@@ -34,11 +34,8 @@ export interface Options {
 type RuleOptions = [Options?];
 
 // Constants for PKCS#1 v1.5 padding (insecure)
-const PKCS1_PADDING_NAMES = new Set([
-  'RSA_PKCS1_PADDING',
-  'constants.RSA_PKCS1_PADDING',
-  'crypto.constants.RSA_PKCS1_PADDING',
-]);
+/** The numeric value of `crypto.constants.RSA_PKCS1_PADDING`. */
+const RSA_PKCS1_PADDING_VALUE = 1;
 
 export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
   name: 'no-insecure-rsa-padding',
@@ -112,14 +109,22 @@ export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
         'publicEncrypt',
       ]);
 
-      const isRsaCall =
-        (node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          namesOneOf(propertyName(node.callee), rsaMethods)) ||
-        (node.callee.type === AST_NODE_TYPES.Identifier &&
-          rsaMethods.has(node.callee.name));
+      const calleeName = calleeNameOn(
+        node.callee,
+        sourceCode.getScope(node),
+        'crypto',
+      );
+      const isRsaCall = calleeName !== null && rsaMethods.has(calleeName);
 
       if (isRsaCall && node.arguments.length >= 1) {
-        const keyArg = node.arguments[0];
+        // The options object written inline, or hoisted to a `const` in scope
+        // — `const opts = { key, padding: … }; privateDecrypt(opts, data)` is
+        // the common way to write these calls.
+        const written = node.arguments[0];
+        const keyArg =
+          written.type === AST_NODE_TYPES.Identifier
+            ? (constInitializerOf(sourceCode, written) ?? written)
+            : written;
 
         // Check if first argument is an object with padding property
         if (keyArg.type === AST_NODE_TYPES.ObjectExpression) {
@@ -130,8 +135,11 @@ export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
             ) {
               const paddingText = sourceCode.getText(prop.value);
               if (
-                PKCS1_PADDING_NAMES.has(paddingText) ||
-                paddingText.includes('RSA_PKCS1_PADDING')
+                // Any spelling of the constant — bare, `constants.`, `crypto.constants.`.
+                paddingText.includes('RSA_PKCS1_PADDING') ||
+                // `1` IS `crypto.constants.RSA_PKCS1_PADDING`.
+                (prop.value.type === AST_NODE_TYPES.Literal &&
+                  prop.value.value === RSA_PKCS1_PADDING_VALUE)
               ) {
                 context.report({
                   node: prop,

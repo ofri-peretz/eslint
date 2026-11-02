@@ -5,7 +5,7 @@ tags: ['security', 'node']
 category: security
 severity: critical
 cwe: CWE-95
-owasp: "A03:2021"
+owasp: 'A03:2021'
 autofix: false
 ---
 
@@ -13,8 +13,8 @@ autofix: false
 > **CWE:** [CWE-95](https://cwe.mitre.org/data/definitions/95.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
-
 <!-- @rule-summary -->
+
 Detects eval(variable) which can allow an attacker to run arbitrary code inside your process
 <!-- @/rule-summary -->
 
@@ -29,7 +29,7 @@ Detects `eval(variable)` which can allow an attacker to run arbitrary code insid
 | **CWE Reference** | [CWE-95](https://cwe.mitre.org/data/definitions/95.html) (Code Injection) |
 | **Severity**      | Critical (security vulnerability)                                         |
 | **Auto-Fix**      | ⚠️ Suggests fixes (manual application)                                    |
-| **Category**   | Security |
+| **Category**      | Security                                                                  |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                   |
 | **Best For**      | All applications, especially those handling user input                    |
 
@@ -37,13 +37,13 @@ Detects `eval(variable)` which can allow an attacker to run arbitrary code insid
 
 > Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
 
-| Dimension | Value |
-| :--- | :--- |
-| **CWE** | [CWE-95](https://cwe.mitre.org/data/definitions/95.html) — Improper Neutralization of Directives in Dynamically Evaluated Code (eval injection) |
-| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| Dimension                    | Value                                                                                                                                                                                                                                                                              |
+| :--------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CWE**                      | [CWE-95](https://cwe.mitre.org/data/definitions/95.html) — Improper Neutralization of Directives in Dynamically Evaluated Code (eval injection)                                                                                                                                    |
+| **Feedback-loop tier**       | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment)                                                          |
 | **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · **10,000+× cheaper than disclosure** — `eval`-injection is a Remote Code Execution class ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
-| **Niche relevance** | **Critical:** infra/devtools (downstream consumers of compromised tooling), fintech, cybersecurity · **High:** B2B SaaS, healthtech · **Medium:** B2C, marketplaces |
-| **Investor-frame impact** | Dynamic `eval` of user input → RCE. Single bug class that gives an attacker full process control. The single highest-payoff rule for any codebase parsing untrusted text; lint-time catch is the cheapest possible defense against the highest-cost defect class. |
+| **Niche relevance**          | **Critical:** infra/devtools (downstream consumers of compromised tooling), fintech, cybersecurity · **High:** B2B SaaS, healthtech · **Medium:** B2C, marketplaces                                                                                                                |
+| **Investor-frame impact**    | Dynamic `eval` of user input → RCE. Single bug class that gives an attacker full process control. The single highest-payoff rule for any codebase parsing untrusted text; lint-time catch is the cheapest possible defense against the highest-cost defect class.                  |
 
 **Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
 
@@ -101,20 +101,27 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component                 | Purpose                | Example                                                                                                                                                                                                                       |
-| :------------------------ | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                     |
+| :------------------------ | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Risk Standards**        | Security benchmarks    | [CWE-95](https://cwe.mitre.org/data/definitions/95.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description**     | Specific vulnerability | `Eval Injection detected`                                                                                                                                                                                                     |
-| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,ISO27001]`                                                                                                                                                                                            |
-| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                          |
-| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/)                                                                                                                                                                   |
+| **Issue Description**     | Specific vulnerability | `Eval Injection detected`                                                                                                                                                                                                                                   |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,ISO27001]`                                                                                                                                                                                                                          |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                        |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/)                                                                                                                                                                                                 |
 
 ## Configuration
 
-| Option                    | Type       | Default | Description                                |
-| ------------------------- | ---------- | ------- | ------------------------------------------ |
-| `allowLiteralStrings`     | `boolean`  | `false` | Allow eval with literal strings            |
-| `additionalEvalFunctions` | `string[]` | `[]`    | Additional functions to treat as eval-like |
+| Option                    | Type       | Default | Description                                                    |
+| ------------------------- | ---------- | ------- | -------------------------------------------------------------- |
+| `allowLiteralStrings`     | `boolean`  | `false` | Allow every eval-like sink with a program the author wrote out |
+| `additionalEvalFunctions` | `string[]` | `[]`    | Additional functions to treat as eval-like                     |
+
+`eval('…')` with a string literal is never reported: there is nothing dynamic in it to
+inject. With the default `allowLiteralStrings: false`, every _other_ author-written
+program is still reported — `new Function('price', 'total = price * 2')`, a string
+`setTimeout('…')`, and `eval(SCRIPT)` through a constant. `allowLiteralStrings: true`
+exempts all of them: a literal argument, or one hop of single-write constant
+(`const SCRIPT = '…'; eval(SCRIPT)`), for every eval-like sink, `new Function` included.
 
 ## Examples
 
@@ -262,7 +269,7 @@ const vm = require('vm');
 const value = vm.runInNewContext(req.query.expr, { Math }); // ❌ vmCodeExecution
 ```
 
-The context object makes this *look* contained, and Node's own documentation says plainly that the module is not a security mechanism. Every object handed into the context carries its own constructor chain, and `this.constructor.constructor('return process')()` is the one-liner that walks back out to the host.
+The context object makes this _look_ contained, and Node's own documentation says plainly that the module is not a security mechanism. Every object handed into the context carries its own constructor chain, and `this.constructor.constructor('return process')()` is the one-liner that walks back out to the host.
 
 All four entry points take the source at argument 0 and are covered: `runInNewContext`, `runInThisContext`, `runInContext`, `compileFunction` — plus `new vm.Script(...)` and `new vm.SourceTextModule(...)`, which compile now and run later.
 
@@ -283,7 +290,11 @@ A program the author wrote out is not a finding, including one hop of constant r
 ```javascript
 const vm = require('vm');
 const SCRIPT = 'total = price * quantity * (1 - discount)'; // ✅ not reported
-vm.runInNewContext(SCRIPT, { price, quantity, discount, total: 0 }, { timeout: 50 });
+vm.runInNewContext(
+  SCRIPT,
+  { price, quantity, discount, total: 0 },
+  { timeout: 50 },
+);
 ```
 
 The single-write requirement is load-bearing. A binding assigned more than once could hold anything by the time the call runs, so proving its initializer constant proves nothing — those report.
@@ -301,15 +312,22 @@ The following patterns are **not detected** due to static analysis limitations:
 
 ### Aliased Functions
 
-**Why**: Aliased dangerous functions not traced.
+**Why**: `const` aliases are followed to any depth (`const execute = eval;
+const run = execute; run(userInput)` is reported, and a cycle of aliases
+stops), but a reassignable binding has no single value to follow.
 
 ```typescript
-// ❌ NOT DETECTED - Aliased function
-const execute = eval;
+// ❌ NOT DETECTED - a `let` alias
+let execute = eval;
 execute(userInput);
 ```
 
 **Mitigation**: Never alias dangerous functions.
+
+The vm sinks are bound by export name however the import spells it:
+`const { 'runInNewContext': run } = require('vm')`, a constant computed key, and
+an ES2022 string export name (`import { 'runInNewContext' as run } from 'vm'`)
+are all `vm.runInNewContext`.
 
 ### Dynamic Invocation
 
@@ -354,8 +372,8 @@ runScript(req.body.code);
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowLiteralStrings` | `boolean` | `false` | Allow eval with literal strings (false = stricter) |
-| `additionalEvalFunctions` | `string[]` | `[]` | Additional functions to treat as eval-like |
-| `strategy` | `"remove"` \| `"refactor"` \| `"validate"` \| `"auto"` | `"auto"` | Strategy for fixing eval usage (auto = smart detection) |
+| Option                    | Type                                                   | Default  | Description                                                                                                                                                     |
+| ------------------------- | ------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `allowLiteralStrings`     | `boolean`                                              | `false`  | Allow every eval-like sink, `new Function` included, with a literal or single-write-constant program. `eval('literal')` is silent either way (false = stricter) |
+| `additionalEvalFunctions` | `string[]`                                             | `[]`     | Additional functions to treat as eval-like                                                                                                                      |
+| `strategy`                | `"remove"` \| `"refactor"` \| `"validate"` \| `"auto"` | `"auto"` | Strategy for fixing eval usage (auto = smart detection)                                                                                                         |

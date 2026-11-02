@@ -131,7 +131,7 @@ function recurse(data, depth = 0, maxDepth = 100) {
 | ------------------------- | ---------- | ---------------------------------------------------------- | -------------------------------------------------------- |
 | `maxStaticIterations`     | `number`   | `10000`                                                    | Literal iteration count above which a loop is reported   |
 | `userInputVariables`      | `string[]` | `["req","request","body","query","params","input","data"]` | Variable names treated as user-controlled input          |
-| `allowWhileTrueWithBreak` | `boolean`  | `true`                                                     | Allow `while (true)` when the body contains a `break`    |
+| `allowWhileTrueWithBreak` | `boolean`  | `true`                                                     | Allow an infinite-loop form (`while (true)`, `while (1)`, `do … while (true)`, `for (;;)`) whose body leaves it: a `break` of that loop, a `return` or a `throw` |
 | `maxRecursionDepth`       | `number`   | `10`                                                       | Recursion depth above which a call is reported           |
 | `trustedSanitizers`       | `string[]` | `[]`                                                       | Additional function names to consider as loop protectors |
 | `trustedAnnotations`      | `string[]` | `[]`                                                       | Additional JSDoc annotations to consider as safe markers |

@@ -140,6 +140,11 @@ if (hasConsent) {
 } else {
   gtag('event', 'login');
 }
+
+// An OR is true when EITHER side is: every admin is tracked, consent or not
+if (hasConsent || isAdmin) {
+  analytics.track('Item Purchased');
+}
 ```
 
 ### ✅ Correct

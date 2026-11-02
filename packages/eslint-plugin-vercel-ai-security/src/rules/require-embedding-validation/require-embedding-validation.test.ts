@@ -22,7 +22,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -49,7 +49,6 @@ const xai = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -59,8 +58,8 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-embedding-validation', requireEmbeddingValidation, {
   valid: xai([
-        'const x = 42;',
-        'const flag = true;',
+    'const x = 42;',
+    'const flag = true;',
     // Validated embedding
     {
       name: 'the embedding is validated before upsert',
@@ -133,18 +132,99 @@ ruleTester.run('require-embedding-validation', requireEmbeddingValidation, {
 // FP/FN audit 2026-10-10: store operations and embedding calls are matched by
 // whole word of the call chain — `addressService` is not an `add`.
 // ─────────────────────────────────────────────────────────────────────────────
-ruleTester.run('require-embedding-validation (fp-fn audit)', requireEmbeddingValidation, {
-  valid: xai([
-    {
-      name: 'a call whose name merely contains "add"',
-      code: `await addressService.lookup({ vector: await embed(q) });`,
-    },
-  ]),
-  invalid: xai([
-    {
-      name: 'embedMany written straight to a store',
-      code: `await vectorStore.upsert({ values: await embedMany(chunks) });`,
-      errors: [{ messageId: 'unvalidatedEmbedding' }],
-    },
-  ]),
-});
+ruleTester.run(
+  'require-embedding-validation (fp-fn audit)',
+  requireEmbeddingValidation,
+  {
+    valid: xai([
+      {
+        name: 'a call whose name merely contains "add"',
+        code: `await addressService.lookup({ vector: await embed(q) });`,
+      },
+    ]),
+    invalid: xai([
+      {
+        name: 'embedMany written straight to a store',
+        code: `await vectorStore.upsert({ values: await embedMany(chunks) });`,
+        errors: [{ messageId: 'unvalidatedEmbedding' }],
+      },
+    ]),
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quint fidelity model (benchmarks/suites/fidelity/models/vercel-ai-security)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run(
+  'require-embedding-validation (fidelity)',
+  requireEmbeddingValidation,
+  {
+    valid: xai([
+      {
+        name: 'an embedding bound from a validator call is validated',
+        code: `
+        async function f(doc, text) {
+          const vec = validateEmbedding(await embed(text));
+          await vectorStore.upsert({ id: doc.id, embedding: vec });
+        }
+      `,
+      },
+      {
+        name: 'a reassigned binding is not followed',
+        code: `
+        async function f(doc, text) {
+          let vec = await embed(text);
+          vec = normalize(vec);
+          await vectorStore.upsert({ id: doc.id, embedding: vec });
+        }
+      `,
+      },
+      {
+        name: 'a parameter holds no visible embedding call',
+        code: `async function f(doc, vec) { await vectorStore.upsert({ id: doc.id, embedding: vec }); }`,
+      },
+      {
+        name: 'a binding that is not a call result is not an embedding call',
+        code: `
+        async function f(doc) {
+          const vec = doc.vector;
+          await vectorStore.upsert({ id: doc.id, embedding: vec });
+        }
+      `,
+      },
+    ]),
+    invalid: xai([
+      {
+        name: 'an embedding stored through a same-file const binding is reported',
+        code: `
+        async function f(doc, text) {
+          const vec = await embed(text);
+          await vectorStore.upsert({ id: doc.id, embedding: vec });
+        }
+      `,
+        errors: [{ messageId: 'unvalidatedEmbedding' }],
+      },
+    ]),
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run(
+  'require-embedding-validation (mutation audit)',
+  requireEmbeddingValidation,
+  {
+    valid: xai([
+      {
+        name: 'a for-of loop variable holds no visible embedding call',
+        code: `for (const vec of vectors) await index.upsert({ id: vec.id, embedding: vec });`,
+      },
+      {
+        name: 'only the embedding / vector / values field is the stored vector',
+        code: `await cache.save({ tokens: encode(prompt) });`,
+      },
+    ]),
+    invalid: xai([]),
+  },
+);

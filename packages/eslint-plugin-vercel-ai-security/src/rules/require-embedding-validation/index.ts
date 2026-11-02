@@ -11,6 +11,7 @@
  */
 
 import {
+  AST_NODE_TYPES,
   TSESTree,
   createRule,
   formatLLMMessage,
@@ -19,7 +20,7 @@ import {
   objectKeyName,
 } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
-import { calleeChain } from '../../utils/sdk';
+import { calleeChain, lookupVariable, unwrap } from '../../utils/sdk';
 
 type MessageIds = 'unvalidatedEmbedding';
 
@@ -137,6 +138,31 @@ export const requireEmbeddingValidation = createRule<RuleOptions, MessageIds>({
       return vectorStoreOps.some((op) => nameHasWord(chain, op));
     }
 
+    /**
+     * The call a stored value comes from: inline (`embedding: await embed(t)`)
+     * or through a same-file binding never reassigned
+     * (`const vec = await embed(t); … embedding: vec`).
+     */
+    function sourceCall(value: TSESTree.Node): TSESTree.CallExpression | null {
+      let target = unwrap(value);
+      if (target.type === AST_NODE_TYPES.Identifier) {
+        const variable = lookupVariable(
+          target.name,
+          sourceCode.getScope(target),
+        );
+        const def = variable?.defs[0];
+        if (
+          def?.type !== 'Variable' ||
+          def.node.init === null ||
+          variable?.references.some((ref) => ref.isWrite() && !ref.init)
+        ) {
+          return null;
+        }
+        target = unwrap(def.node.init);
+      }
+      return target.type === AST_NODE_TYPES.CallExpression ? target : null;
+    }
+
     return {
       before() {
         const [options] = currentOptions();
@@ -173,12 +199,9 @@ export const requireEmbeddingValidation = createRule<RuleOptions, MessageIds>({
                 keyName === 'values'
               ) {
                 // Check if value is an unvalidated embedding call
-                let valueNode = prop.value;
-                if (valueNode.type === 'AwaitExpression') {
-                  valueNode = valueNode.argument;
-                }
+                const valueNode = sourceCall(prop.value);
 
-                if (valueNode.type === 'CallExpression') {
+                if (valueNode) {
                   const embeddingSource = isEmbeddingCall(valueNode);
                   if (embeddingSource && !isValidated(valueNode)) {
                     context.report({

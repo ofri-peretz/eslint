@@ -11,6 +11,7 @@ autofix: false
 > **Keywords:** command injection, CWE-77, argument injection, shell flag, bash -c, spawn, execFile, execa, execaCommand, zx, $.raw, ESLint rule, LLM-optimized
 
 <!-- @rule-summary -->
+
 Detects dynamically assembled command strings handed to a shell flag (bash -c) or to a command-runner that does not escape (execaCommand, $.raw)
 <!-- @/rule-summary -->
 
@@ -19,13 +20,13 @@ Detects dynamically assembled command strings handed to a shell flag (bash -c) o
 
 ## Quick Summary
 
-| Aspect            | Details                                                        |
-| ----------------- | -------------------------------------------------------------- |
-| **CWE Reference** | [CWE-77](https://cwe.mitre.org/data/definitions/77.html)        |
-| **Severity**      | Critical                                                        |
-| **Auto-Fix**      | ❌ None — the safe form is a different call shape               |
-| **Detection**     | structural-api                                                  |
-| **Recommended**   | `error`                                                         |
+| Aspect            | Details                                                  |
+| ----------------- | -------------------------------------------------------- |
+| **CWE Reference** | [CWE-77](https://cwe.mitre.org/data/definitions/77.html) |
+| **Severity**      | Critical                                                 |
+| **Auto-Fix**      | ❌ None — the safe form is a different call shape        |
+| **Detection**     | structural-api                                           |
+| **Recommended**   | `error`                                                  |
 
 ## Rule Details
 
@@ -41,13 +42,23 @@ The array is real, but its second element is handed to `bash`, which parses it a
 
 The command flags are tracked **per interpreter**, because they do not mean the same thing everywhere:
 
-| Interpreter                          | Flags that make the next argv element a command string |
-| ------------------------------------ | ------------------------------------------------------ |
-| `sh`, `bash`, `zsh`, `dash`, `ksh`, `busybox` | `-c`                                          |
-| `cmd`, `cmd.exe`                     | `/c`, `/C`, `/k`, `/K`                                 |
-| `powershell`, `pwsh`                 | `-Command`, `-c`, `-EncodedCommand`, `-e`, `-ec`       |
+| Interpreter                                   | Flags that make the next argv element a command string |
+| --------------------------------------------- | ------------------------------------------------------ |
+| `sh`, `bash`, `zsh`, `dash`, `ksh`, `busybox` | `-c`                                                   |
+| `cmd`, `cmd.exe`                              | `/c`, `/C`, `/k`, `/K`                                 |
+| `powershell`, `pwsh`                          | `-Command`, `-c`, `-EncodedCommand`, `-e`, `-ec`       |
 
 `spawn('bash', ['-e', script])` is therefore **not** a finding: to a POSIX shell `-e` is `set -e`, and the next element is a script path, not a command string.
+
+A POSIX option cluster that contains `c` is the same flag wherever the `c`
+sits — `-lc`, `-euc` and `-ce` all make the next element the command string —
+while a long option such as `--norc` is not a cluster.
+
+A command string read from a `const` object literal (`SCRIPTS.build`) is static
+only when the file can see the last write of that key: a later spread
+(`{ build: 'npm run build', ...overrides }`), a later computed key the file
+cannot name, or a later duplicate of the key may replace the literal, and the
+read is then reported like any other runtime value.
 
 ### 2. Command-runner libraries that take a whole command line
 
@@ -60,10 +71,10 @@ execa's and zx's **tagged-template** forms escape interpolated values — that i
 
 ### How this differs from the neighbouring rules
 
-| Rule                          | CWE    | Shape                                                       |
-| ----------------------------- | ------ | ----------------------------------------------------------- |
-| `no-shell-injection`          | CWE-78 | `exec()` / `execSync()` with a concatenated command string   |
-| `detect-child-process`        | CWE-78 | broad, medium-confidence net over all `child_process` usage  |
+| Rule                            | CWE        | Shape                                                                                   |
+| ------------------------------- | ---------- | --------------------------------------------------------------------------------------- |
+| `no-shell-injection`            | CWE-78     | `exec()` / `execSync()` with a concatenated command string                              |
+| `detect-child-process`          | CWE-78     | broad, medium-confidence net over all `child_process` usage                             |
 | **`no-dynamic-command-string`** | **CWE-77** | **the command string is re-parsed by a shell the argument array was supposed to avoid** |
 
 ## Examples
@@ -110,9 +121,9 @@ execa('git', ['clone', url]);
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `extraCommandRunners` | `string[]` | `[]` | Extra functions that accept a full command line without escaping. Added to the built-in runners, not a replacement for them. |
+| Option                | Type       | Default | Description                                                                                                                  |
+| --------------------- | ---------- | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `extraCommandRunners` | `string[]` | `[]`    | Extra functions that accept a full command line without escaping. Added to the built-in runners, not a replacement for them. |
 
 ```json
 {

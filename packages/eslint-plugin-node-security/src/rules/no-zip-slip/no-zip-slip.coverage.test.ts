@@ -74,6 +74,7 @@ describe('no-zip-slip coverage gaps', () => {
       },
       // Method call named in archiveFunctions with a single argument
       {
+        name: 'zip.extract with no destination check is reported',
         code: "zip.extract('a.zip');",
         errors: [{ messageId: 'unsafeArchiveExtraction' }],
       },

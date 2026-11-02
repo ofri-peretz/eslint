@@ -20,7 +20,12 @@
  * - JSDoc annotations (@secure-recovery, @rate-limited)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, namesOneOf, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  nameHasAnyWord,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -54,9 +59,38 @@ export interface Options extends SecurityRuleOptions {
 
   /** Secure token generation functions */
   secureTokenFunctions?: string[];
+
+  /**
+   * Whole words that name a recovery ACTION in an identifier. **Replaces** the
+   * default (`reset`, `recover`, `recovery`, `forgot`, `restore`).
+   */
+  recoveryWords?: string[];
+
+  /**
+   * Whole words that name the one-time secret a recovery flow hands out.
+   * **Replaces** the default (`token`, `code`, `otp`, `pin`).
+   */
+  recoverySecretWords?: string[];
 }
 
 type RuleOptions = [Options?];
+
+/** Whole words that name a recovery ACTION in an identifier. */
+const RECOVERY_WORDS: readonly string[] = [
+  'reset',
+  'recover',
+  'recovery',
+  'forgot',
+  'restore',
+];
+
+/** Whole words that name the one-time secret a recovery flow hands out. */
+const RECOVERY_SECRET_WORDS: readonly string[] = [
+  'token',
+  'code',
+  'otp',
+  'pin',
+];
 
 /**
  * APIs whose whole purpose is to mint an unguessable value. A call to one
@@ -181,6 +215,20 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
             default: false,
             description: 'Disable all false positive detection (strict mode)',
           },
+          recoveryWords: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...RECOVERY_WORDS],
+            description:
+              'Whole words naming a recovery action in an identifier (replaces the default)',
+          },
+          recoverySecretWords: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...RECOVERY_SECRET_WORDS],
+            description:
+              'Whole words naming a recovery secret in an identifier (replaces the default)',
+          },
         },
         additionalProperties: false,
       },
@@ -197,6 +245,8 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
       trustedSanitizers: [],
       trustedAnnotations: ['secure-recovery', 'rate-limited'],
       strictMode: false,
+      recoveryWords: [...RECOVERY_WORDS],
+      recoverySecretWords: [...RECOVERY_SECRET_WORDS],
     },
   ],
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -204,6 +254,8 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
     let trustedSanitizers: string[];
     let trustedAnnotations: string[];
     let strictMode: boolean;
+    let recoveryWords: readonly string[];
+    let recoverySecretWords: readonly string[];
     let sourceCode: Readonly<TSESLint.SourceCode>;
     let filename: string;
     let safetyChecker: {
@@ -269,6 +321,20 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
         lowerText.includes(pattern),
       );
     };
+
+    /**
+     * Does this identifier name a recovery SECRET — a reset code, a recovery
+     * token, a forgot-flow OTP — even without the word "password"?
+     *
+     * `recoveryCode` and `resetCode` are the low-entropy value CWE-640 is about,
+     * yet neither carries a password word, so `isRecoveryRelated` let them
+     * through. Judged on WHOLE words of the split identifier, so `resetEncoder`
+     * or `restoreBarcode` (a `code` substring only) are not recovery secrets.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    const namesRecoverySecret = (name: string): boolean =>
+      nameHasAnyWord(name, recoveryWords) &&
+      nameHasAnyWord(name, recoverySecretWords);
 
     /**
      * Check if token generation is cryptographically secure
@@ -458,6 +524,8 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
           trustedSanitizers = [],
           trustedAnnotations = ['secure-recovery', 'rate-limited'],
           strictMode = false,
+          recoveryWords = RECOVERY_WORDS,
+          recoverySecretWords = RECOVERY_SECRET_WORDS,
         } = options);
 
         sourceCode = context.sourceCode;
@@ -480,7 +548,7 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
         const varName = node.id.name.toLowerCase();
 
         // Check if variable is specifically password-recovery-related (not just any token)
-        if (isRecoveryRelated(varName)) {
+        if (isRecoveryRelated(varName) || namesRecoverySecret(node.id.name)) {
           const initText = sourceCode.getText(node.init);
 
           // Check for weak token generation

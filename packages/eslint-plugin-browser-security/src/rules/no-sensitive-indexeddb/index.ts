@@ -27,6 +27,8 @@
  *
  * Bearer credentials are in scope here — `no-jwt-in-storage` only covers Web
  * Storage, so deferring them would be a false negative rather than a partition.
+ * They are in scope as part of the DEFAULT vocabulary (`DEFAULT_TERMS`), so a
+ * consumer who replaces `sensitiveTerms` replaces them too.
  *
  * @see https://cwe.mitre.org/data/definitions/922.html
  */
@@ -40,10 +42,10 @@ import {
 } from '@interlace/eslint-devkit';
 
 import {
+  BEARER_CREDENTIAL_TERMS,
   isIdbWrapperDatabase,
   isIndexedDbStoreReceiver,
   memberName,
-  namesBearerCredential,
   namesNonBearerSecret,
   NON_BEARER_SECRET_TERMS,
   resolveKeyText,
@@ -83,6 +85,19 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
+ * The default `sensitiveTerms`: every non-bearer secret plus the bearer words.
+ *
+ * The bearer half used to be matched OUTSIDE the vocabulary, unconditionally,
+ * so `{ sensitiveTerms: ['pin'] }` still reported `accessToken` — an option
+ * documented as "Replaces the default vocabulary" that replaced only part of
+ * it. Folding both halves into the one default makes replacement total.
+ */
+const DEFAULT_TERMS: readonly string[] = [
+  ...NON_BEARER_SECRET_TERMS,
+  ...BEARER_CREDENTIAL_TERMS,
+];
+
+/**
  * Any secret at all — IndexedDB has no sibling rule to split the vocabulary
  * with.
  *
@@ -100,14 +115,7 @@ function isSensitive(
   extra: readonly string[],
   base: readonly string[],
 ): boolean {
-  const terms = [...base, ...extra];
-  return (
-    namesNonBearerSecret(name, terms) ||
-    // Not configurable: `namesBearerCredential` matches the Authorization
-    // scheme and the JWT shape, which are RFC 6750 and RFC 7519 — published
-    // formats rather than a guess at what this project calls things.
-    namesBearerCredential(name)
-  );
+  return namesNonBearerSecret(name, [...base, ...extra]);
 }
 
 export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
@@ -144,7 +152,7 @@ export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
           sensitiveTerms: {
             type: 'array',
             items: { type: 'string' },
-            default: [...NON_BEARER_SECRET_TERMS],
+            default: [...DEFAULT_TERMS],
             description:
               'Whole-word terms that mark a stored field as sensitive. Replaces the default vocabulary.',
           },
@@ -172,14 +180,36 @@ export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
     let additionalPatterns: string[];
     let sensitiveTerms: readonly string[];
 
+    /** Report `nameArg` when it statically names a sensitive store or key. */
+    function reportIfSensitiveName(
+      node: TSESTree.CallExpression,
+      nameArg: TSESTree.Node | undefined,
+    ): void {
+      if (nameArg === undefined) return;
+      const name = resolveKeyText(nameArg, context.sourceCode);
+      if (
+        name !== null &&
+        isSensitive(name, additionalPatterns, sensitiveTerms)
+      ) {
+        context.report({
+          node,
+          messageId: 'sensitiveInIndexedDB',
+          data: { name },
+        });
+      }
+    }
+
     return {
       before() {
         const [options = {}] = currentOptions();
         ({
-          allowInTests = true,
-          additionalPatterns = [],
-          sensitiveTerms = NON_BEARER_SECRET_TERMS,
-        } = options as Options);
+          allowInTests,
+          additionalPatterns,
+          sensitiveTerms = DEFAULT_TERMS,
+        } = options as Required<
+          Pick<Options, 'allowInTests' | 'additionalPatterns'>
+        > &
+          Options);
         const isTestFile = isTestFilePath(context.filename);
 
         if (allowInTests && isTestFile) {
@@ -193,19 +223,7 @@ export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
 
         // 1. db.createObjectStore('vault') — the method name IS the medium proof.
         if (method === 'createObjectStore') {
-          const nameArg = node.arguments[0];
-          if (nameArg === undefined) return;
-          const storeName = resolveKeyText(nameArg, context.sourceCode);
-          if (
-            storeName !== null &&
-            isSensitive(storeName, additionalPatterns, sensitiveTerms)
-          ) {
-            context.report({
-              node,
-              messageId: 'sensitiveInIndexedDB',
-              data: { name: storeName },
-            });
-          }
+          reportIfSensitiveName(node, node.arguments[0]);
           return;
         }
 
@@ -224,23 +242,13 @@ export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        if (viaWrapper) {
-          // The first argument is the store NAME, the second the record.
-          const storeArg = node.arguments[0];
-          if (storeArg !== undefined) {
-            const storeName = resolveKeyText(storeArg, context.sourceCode);
-            if (
-              storeName !== null &&
-              isSensitive(storeName, additionalPatterns, sensitiveTerms)
-            ) {
-              context.report({
-                node,
-                messageId: 'sensitiveInIndexedDB',
-                data: { name: storeName },
-              });
-            }
-          }
-        }
+        // The first argument is the store NAME, the second the record.
+        if (viaWrapper) reportIfSensitiveName(node, node.arguments[0]);
+
+        // The out-of-line record key follows the record:
+        // `store.put(value, 'password')` / `db.put('vault', value, 'password')`.
+        // It names the record exactly as a field name does.
+        reportIfSensitiveName(node, node.arguments[viaWrapper ? 2 : 1]);
 
         const dataArg = viaWrapper ? node.arguments[1] : node.arguments[0];
         if (dataArg === undefined) return;

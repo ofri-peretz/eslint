@@ -64,10 +64,9 @@ async function bootstrap() {
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
-
+| Option         | Type      | Default | Description                                     |
+| -------------- | --------- | ------- | ----------------------------------------------- |
+| `allowInTests` | `boolean` | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files |
 
 ```typescript
 {
@@ -75,6 +74,13 @@ async function bootstrap() {
   allowInTests?: boolean;
 }
 ```
+
+## Which `SwaggerModule`
+
+`SwaggerModule` from `@nestjs/swagger` however it is imported:
+`import { SwaggerModule as SM }`, a namespace import
+(`swagger.SwaggerModule.setup(…)`) or `require`. A `SwaggerModule` imported from
+any other module is that module's and is not checked.
 
 ## Scope
 

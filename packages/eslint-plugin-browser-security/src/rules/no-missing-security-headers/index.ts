@@ -23,8 +23,12 @@
  *   is set at all, which this rule structurally cannot see because it has no
  *   call or block to trigger on.
  *
- * The deferral lives on the other side, in `require-csp-headers`, and is
- * pinned by `../require-csp-headers/partition-matrix.test.ts`.
+ * The deferral lived on the other side, in `require-csp-headers`, and has been
+ * WITHDRAWN: this rule is deprecated and out of every preset, so a live rule
+ * deferring to it left a header-setting handler with no CSP reported by
+ * nobody. `require-csp-headers` now reports every document without a CSP;
+ * enabling this rule explicitly adds its broader finding beside that one.
+ * Pinned by `../require-csp-headers/partition-matrix.test.ts`.
  *
  * @see https://cwe.mitre.org/data/definitions/693.html
  * @see https://owasp.org/www-project-secure-headers/
@@ -36,6 +40,7 @@ import {
   isTestFilePath,
   staticString,
   namesOneOf,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
@@ -181,7 +186,7 @@ function extractHeaderName(
 ): HeaderName | null {
   const arg = node.arguments[0];
   if (arg === undefined) return null;
-  const folded = staticStringValue(arg, sourceCode, 0);
+  const folded = staticStringValue(arg, sourceCode);
   if (folded !== null) return folded;
   const viaParameter = parameterLiterals(arg, sourceCode);
   if (viaParameter.length === 1) return viaParameter[0];
@@ -195,15 +200,18 @@ function extractHeaderName(
  * name, and an entry reached by index out of a `const` array. Everything else
  * returns `null`, because a rule that guesses a value it cannot fold is back
  * to deciding by spelling.
+ *
+ * Followed as far as the aliases go. A hop budget of four gave up on a longer
+ * `const` chain and made the scope unjudgeable; `seen` is what stops a cycle
+ * (`const a = b; const b = a;`) instead.
  */
 function staticStringValue(
   node: TSESTree.Node,
   sourceCode: TSESLint.SourceCode,
-  depth: number,
+  seen = new Set<TSESTree.Node>(),
 ): string | null {
-  // A header table is `HEADERS[0][0]` at worst; deeper is not a header table.
-  if (depth > 4) return null;
-
+  if (seen.has(node)) return null;
+  seen.add(node);
   if (node.type === 'Literal') {
     return typeof node.value === 'string' ? node.value : null;
   }
@@ -211,17 +219,16 @@ function staticStringValue(
     const init = resolveInitializer(node, sourceCode);
     return init === undefined
       ? null
-      : staticStringValue(init, sourceCode, depth + 1);
+      : staticStringValue(init, sourceCode, seen);
   }
-  if (node.type === 'MemberExpression' && node.computed) {
-    const index = node.property;
-    if (index.type !== 'Literal' || typeof index.value !== 'number')
-      return null;
-    const container = foldToArray(node.object, sourceCode, depth + 1);
-    const element = container?.elements[index.value];
+  if (node.type === 'MemberExpression') {
+    const element = elementAt(
+      foldToArray(node.object, sourceCode, seen),
+      node.property,
+    );
     return element == null
       ? null
-      : staticStringValue(element, sourceCode, depth + 1);
+      : staticStringValue(element, sourceCode, seen);
   }
   return null;
 }
@@ -230,23 +237,40 @@ function staticStringValue(
 function foldToArray(
   node: TSESTree.Node,
   sourceCode: TSESLint.SourceCode,
-  depth: number,
+  seen: Set<TSESTree.Node>,
 ): TSESTree.ArrayExpression | null {
-  if (depth > 4) return null;
+  if (seen.has(node)) return null;
+  seen.add(node);
   if (node.type === 'ArrayExpression') return node;
   if (node.type === 'Identifier') {
     const init = resolveInitializer(node, sourceCode);
-    return init === undefined ? null : foldToArray(init, sourceCode, depth + 1);
+    return init === undefined ? null : foldToArray(init, sourceCode, seen);
   }
-  if (node.type === 'MemberExpression' && node.computed) {
-    const index = node.property;
-    if (index.type !== 'Literal' || typeof index.value !== 'number')
-      return null;
-    const outer = foldToArray(node.object, sourceCode, depth + 1);
-    const element = outer?.elements[index.value];
-    return element == null ? null : foldToArray(element, sourceCode, depth + 1);
+  if (node.type === 'MemberExpression') {
+    const element = elementAt(
+      foldToArray(node.object, sourceCode, seen),
+      node.property,
+    );
+    return element == null ? null : foldToArray(element, sourceCode, seen);
   }
   return null;
+}
+
+/**
+ * The element a literal index names, read the way the runtime reads it.
+ *
+ * A property key is a string: `T[0]`, `T['0']` and `T[0n]` are the same
+ * element, while `T['01']` and `T.x` name none. A dotted member's key is an
+ * Identifier, not a Literal, so it answers here too.
+ */
+function elementAt(
+  array: TSESTree.ArrayExpression | null,
+  index: TSESTree.Node,
+): TSESTree.ArrayExpression['elements'][number] | undefined {
+  if (array === null || index.type !== 'Literal') return undefined;
+  const key = String(index.value);
+  const position = Number(key);
+  return String(position) === key ? array.elements[position] : undefined;
 }
 
 /**
@@ -266,8 +290,8 @@ function parameterLiterals(
   arg: TSESTree.Node,
   sourceCode: TSESLint.SourceCode,
 ): string[] {
-  if (arg.type !== 'Identifier') return [];
-
+  // A non-Identifier argument is referenced by nothing, so it resolves to no
+  // parameter.
   const variable = sourceCode
     .getScope(arg)
     .references.find((ref) => ref.identifier === arg)?.resolved;
@@ -275,31 +299,26 @@ function parameterLiterals(
   if (def === undefined || def.type !== 'Parameter') return [];
 
   const fn = def.node;
+  // -1 for a destructured or defaulted parameter, and `arguments[-1]` is
+  // undefined at every call site, so it reads as unknowable below.
   const position = fn.params.indexOf(def.name as TSESTree.Parameter);
-  if (position === -1) return [];
 
-  // The function must be reachable by name for its call sites to be findable.
-  const declarator =
-    fn.type === 'FunctionDeclaration'
-      ? fn
-      : fn.parent?.type === 'VariableDeclarator'
-        ? fn.parent
-        : undefined;
-  if (declarator === undefined) return [];
+  // The function is reachable by the name it declares, or by the `const` it
+  // is bound to. An anonymous function elsewhere declares only its
+  // parameters, none of which is ever called.
+  const owner = fn.parent.type === 'VariableDeclarator' ? fn.parent : fn;
 
   const names = new Set<string>();
-  for (const declared of sourceCode.getDeclaredVariables(declarator)) {
+  for (const declared of sourceCode.getDeclaredVariables(owner)) {
     for (const reference of declared.references) {
       const call = reference.identifier.parent;
-      if (
-        call?.type !== 'CallExpression' ||
-        call.callee !== reference.identifier
-      ) {
+      // A `new` passes its arguments exactly as a call does.
+      if (!('callee' in call) || call.callee !== reference.identifier) {
         continue;
       }
       const passed = call.arguments[position];
       if (passed === undefined) return [];
-      const value = staticStringValue(passed, sourceCode, 0);
+      const value = staticStringValue(passed, sourceCode);
       if (value === null) return [];
       names.add(value);
     }
@@ -362,11 +381,29 @@ function isDocumentMediaType(contentType: string): boolean {
   return DOCUMENT_MEDIA_TYPES.has(mediaType);
 }
 
+const FUNCTION_TYPES: ReadonlySet<string> = new Set([
+  'FunctionDeclaration',
+  'FunctionExpression',
+  'ArrowFunctionExpression',
+]);
+
+/**
+ * The function a header call belongs to, or the Program at module level: the
+ * scope whose headers are judged together, and judged once.
+ */
+function enclosingScope(node: TSESTree.Node): TSESTree.Node {
+  let current = node;
+  while (!FUNCTION_TYPES.has(current.type) && current.parent) {
+    current = current.parent;
+  }
+  return current;
+}
+
 /**
  * Check if all security headers are set in the current scope
  */
 function checkFunctionForSecurityHeaders(
-  node: TSESTree.CallExpression,
+  scopeNode: TSESTree.Node,
   requiredHeaders: string[],
   context: TSESLint.RuleContext<MessageIds, RuleOptions>,
 ): string[] {
@@ -381,28 +418,6 @@ function checkFunctionForSecurityHeaders(
   let scopeIsOpaque = false;
   /** The Content-Type this scope declares, when it declares one statically. */
   let declaredContentType: string | null = null;
-
-  // Find the function that contains this setHeader call
-  let current: TSESTree.Node | null = node;
-  let scopeNode: TSESTree.Node | null = null;
-
-  while (current) {
-    if (
-      current.type === 'FunctionDeclaration' ||
-      current.type === 'FunctionExpression' ||
-      current.type === 'ArrowFunctionExpression'
-    ) {
-      scopeNode = current;
-      break;
-    }
-    current =
-      (current as TSESTree.Node & { parent?: TSESTree.Node }).parent ?? null;
-  }
-
-  // If no function found, use the program scope (for test cases)
-  if (!scopeNode) {
-    scopeNode = context.sourceCode.ast;
-  }
 
   // Collect all setHeader calls in this scope
   function collectHeaders(astNode: TSESTree.Node): void {
@@ -420,7 +435,7 @@ function checkFunctionForSecurityHeaders(
           declaredContentType =
             value === undefined
               ? null
-              : staticStringValue(value, context.sourceCode, 0);
+              : staticStringValue(value, context.sourceCode);
         }
       }
     }
@@ -451,8 +466,6 @@ function checkFunctionForSecurityHeaders(
     }
   }
 
-  // scopeNode is always set: either the enclosing function or (fallback
-  // above) the Program node itself.
   collectHeaders(scopeNode);
 
   // The scope sets a header whose name this rule cannot read, so it cannot
@@ -511,15 +524,8 @@ function checkFunctionForSecurityHeaders(
 function declaredResponseHeaders(
   property: TSESTree.Property,
 ): DeclaredBlock | null {
-  if (property.computed) return null;
-  const key = property.key;
-  const keyName =
-    key.type === 'Identifier'
-      ? key.name
-      : staticString(key) !== null
-        ? staticString(key)
-        : null;
-  if (keyName !== 'headers') return null;
+  // `'headers'` and `['headers']` name the same option.
+  if (objectKeyName(property) !== 'headers') return null;
 
   const value = property.value;
 
@@ -531,10 +537,10 @@ function declaredResponseHeaders(
     for (const element of value.elements) {
       if (element === null || element.type !== 'ObjectExpression') continue;
       for (const entry of element.properties) {
-        if (entry.type !== 'Property' || entry.computed) continue;
-        const entryKey =
-          entry.key.type === 'Identifier' ? entry.key.name : null;
-        if (entryKey !== 'key') continue;
+        // `key`, `'key'` and `['key']` are the same entry field.
+        if (entry.type !== 'Property' || objectKeyName(entry) !== 'key') {
+          continue;
+        }
         const staticText = staticString(entry.value);
         if (staticText !== null) {
           names.push(staticText);
@@ -542,16 +548,15 @@ function declaredResponseHeaders(
             contentType =
               element.properties.find(
                 (p): p is TSESTree.Property =>
-                  p.type === 'Property' &&
-                  !p.computed &&
-                  p.key.type === 'Identifier' &&
-                  p.key.name === 'value',
+                  p.type === 'Property' && objectKeyName(p) === 'value',
               )?.value ?? null;
           }
         }
       }
     }
-    return names.length > 0 ? { names, contentType } : null;
+    // An empty list is judged like any block: it names no document header,
+    // and reportDeclaredBlock leaves a block with no names alone.
+    return { names, contentType };
   }
 
   if (value.type !== 'ObjectExpression') return null;
@@ -583,21 +588,23 @@ function objectHeaderNames(
   let contentType: TSESTree.Node | null = null;
   for (const entry of object.properties) {
     if (entry.type === 'SpreadElement') return null;
-    if (entry.computed) return null;
+    // `['X-Frame-Options']` names the header `'X-Frame-Options'` does.
     const name =
-      staticString(entry.key) !== null
-        ? staticString(entry.key)
-        : entry.key.type === 'Identifier'
-          ? entry.key.name
-          : null;
-    if (name === null) continue;
+      entry.key.type === 'Identifier' && !entry.computed
+        ? entry.key.name
+        : staticString(entry.key);
+    if (name === null) {
+      // A key chosen at runtime may be any header; a numeric one names none.
+      if (entry.computed) return null;
+      continue;
+    }
     names.push(name);
     // Read in the SAME pass. A second loop over the same block would have to
     // re-handle spreads and computed keys that this one has already rejected,
     // and those branches would be unreachable by construction.
     if (name.toLowerCase() === 'content-type') contentType = entry.value;
   }
-  return names.length > 0 ? { names, contentType } : null;
+  return { names, contentType };
 }
 
 /**
@@ -621,6 +628,12 @@ function writeHeadHeaders(
   return block ?? null;
 }
 
+/** Fields only a `ResponseInit` carries. */
+const RESPONSE_ONLY_FIELDS: ReadonlySet<string> = new Set([
+  'status',
+  'statusText',
+]);
+
 /** Response constructors whose second argument is a `ResponseInit`. */
 const RESPONSE_FACTORIES: ReadonlySet<string> = new Set([
   'json',
@@ -641,9 +654,8 @@ function isResponseInit(init: TSESTree.ObjectExpression): boolean {
   const hasResponseOnlyField = init.properties.some(
     (p) =>
       p.type === 'Property' &&
-      !p.computed &&
-      p.key.type === 'Identifier' &&
-      (p.key.name === 'status' || p.key.name === 'statusText'),
+      // `'status'` and `['status']` are the same field.
+      namesOneOf(objectKeyName(p), RESPONSE_ONLY_FIELDS),
   );
   if (hasResponseOnlyField) return true;
 
@@ -723,29 +735,7 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
   ) {
     let requiredHeaders: string[];
     let ignoreInTests: boolean;
-    let reportedScopes: Set<string>;
-
-    /**
-     * Get a unique key for the current scope
-     */
-    function getScopeKey(node: TSESTree.CallExpression): string {
-      // Find the function that contains this call
-      let current: TSESTree.Node | null = node;
-      while (current) {
-        if (
-          current.type === 'FunctionDeclaration' ||
-          current.type === 'FunctionExpression' ||
-          current.type === 'ArrowFunctionExpression'
-        ) {
-          return `${current.range?.[0]}-${current.range?.[1]}`;
-        }
-        current =
-          (current as TSESTree.Node & { parent?: TSESTree.Node }).parent ??
-          null;
-      }
-      // If no function found, use program scope
-      return 'program';
-    }
+    let reportedScopes: Set<TSESTree.Node>;
 
     /**
      * Check for response header setting
@@ -757,21 +747,21 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      const scopeKey = getScopeKey(node);
+      const scope = enclosingScope(node);
 
       // Only check once per scope
-      if (reportedScopes.has(scopeKey)) {
+      if (reportedScopes.has(scope)) {
         return;
       }
 
       const missing = checkFunctionForSecurityHeaders(
-        node,
+        scope,
         requiredHeaders,
         context,
       );
 
       // Mark as checked either way
-      reportedScopes.add(scopeKey);
+      reportedScopes.add(scope);
 
       if (missing.length > 0) {
         context.report({
@@ -792,7 +782,7 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
       const contentType =
         block.contentType === null
           ? null
-          : staticStringValue(block.contentType, context.sourceCode, 0);
+          : staticStringValue(block.contentType, context.sourceCode);
       const present = new Set(block.names.map((h) => h.toLowerCase()));
       if ([...present].every((h) => NON_DOCUMENT_HEADERS.has(h))) return;
       if (contentType !== null && !isDocumentMediaType(contentType)) return;
@@ -818,8 +808,9 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        ({ requiredHeaders = DEFAULT_REQUIRED_HEADERS, ignoreInTests = true } =
-          options || {});
+        // The merged `defaultOptions` supply every field.
+        ({ requiredHeaders, ignoreInTests } = (options ||
+          {}) as Required<Options>);
 
         const filename = context.filename;
         const isTestFile = ignoreInTests && isTestFilePath(filename);
@@ -828,7 +819,7 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
           return false;
         }
 
-        reportedScopes = new Set<string>();
+        reportedScopes = new Set<TSESTree.Node>();
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {

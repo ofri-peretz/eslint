@@ -35,6 +35,7 @@ describe('prefer-native-crypto', () => {
         errors: [{ messageId: 'preferNative' }],
       },
       {
+        name: 'a default import of sjcl is reported',
         code: 'import sjcl from "sjcl";',
         errors: [{ messageId: 'preferNative' }],
       },

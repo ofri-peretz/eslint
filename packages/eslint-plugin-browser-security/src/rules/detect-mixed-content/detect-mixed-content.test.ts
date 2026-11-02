@@ -133,6 +133,7 @@ ruleTester.run('detect-mixed-content', detectMixedContent, {
     // Starts with http:// but does not parse as a URL, so the loopback guard
     // cannot vouch for it. It must fail closed, not throw.
     {
+      name: 'a bare http:// URL assigned to an element src is reported as mixed content',
       code: "el.src = 'http://'",
       errors: [{ messageId: 'violationDetected' }],
     },

@@ -88,6 +88,7 @@ ruleTester.run('no-allow-arbitrary-loads', noAllowArbitraryLoads, {
     },
     // A quoted key is the same key.
     {
+      name: 'NSAllowsArbitraryLoads: true nested under NSAppTransportSecurity in module.exports is reported',
       code: 'module.exports = { NSAppTransportSecurity: { "NSAllowsArbitraryLoads": true } };',
       errors: [{ messageId: 'violationDetected' }],
     },

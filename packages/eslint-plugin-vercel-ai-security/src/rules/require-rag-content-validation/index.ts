@@ -171,7 +171,7 @@ export const requireRagContentValidation = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Check if this is an AI SDK function (exact name, not a substring)
-        if (!sdkCallName(node)) return;
+        if (!sdkCallName(node, context.sourceCode)) return;
 
         // Check first argument (options object)
         const optionsArg = node.arguments[0];

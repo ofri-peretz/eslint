@@ -145,14 +145,7 @@ function isStaticUrlConstruction(
   if (pathArg === undefined) return false;
   if (!isStaticExpression({ node: pathArg, scope })) return false;
   if (baseArg === undefined) return true;
-  // `import.meta.url` is the module's own location — the bundler's anchor.
-  if (
-    baseArg.type === AST_NODE_TYPES.MemberExpression &&
-    propertyName(baseArg) === 'url' &&
-    baseArg.object.type === AST_NODE_TYPES.MetaProperty
-  ) {
-    return true;
-  }
+  // `import.meta.url` is static to `isStaticExpression`: the bundler fixes it.
   return isStaticExpression({ node: baseArg, scope });
 }
 
@@ -205,7 +198,7 @@ export const noDynamicServiceWorkerUrl = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        const { allowInTests = true } = options as Options;
+        const { allowInTests } = options as Options;
         const filename = context.filename;
         const isTestFile = isTestFilePath(filename);
 

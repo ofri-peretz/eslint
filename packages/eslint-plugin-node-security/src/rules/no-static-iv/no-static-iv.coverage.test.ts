@@ -26,9 +26,10 @@ describe('no-static-iv coverage gaps', () => {
     valid: [
       // Declarator without call initializer → tracking guard false
       { code: 'let pendingIv;' },
-      // Short literal IV that matches no static pattern (not hex, not
-      // base64) and is < 8 chars → length operand evaluates and stays false
-      { code: 'crypto.createCipheriv("aes-256-gcm", key, "@#!");' },
+      // (`createCipheriv("aes-256-gcm", key, "@#!")` used to be asserted VALID
+      //  here: a short non-hex, non-base64 string slipped the old pattern
+      //  filter. It is a fixed three-byte GCM nonce — now INVALID, see
+      //  mutation-edges.test.ts, 'BUG: a short string IV is still a fixed IV'.)
       // Buffer.from(variable) → literal-string check false, array check false
       {
         name: 'an IV built by Buffer.from over a variable is not a static IV',

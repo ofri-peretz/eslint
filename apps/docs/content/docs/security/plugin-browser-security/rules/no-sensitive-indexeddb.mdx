@@ -5,7 +5,7 @@ tags: ['security', 'browser']
 category: security
 severity: medium
 cwe: CWE-922
-owasp: "A02:2021"
+owasp: 'A02:2021'
 autofix: false
 type_aware: false
 type_aware_status: unaware
@@ -30,6 +30,17 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 IndexedDB is accessible via JavaScript and can be stolen through XSS attacks. Sensitive data like passwords, tokens, and API keys should not be stored in client-side databases.
 
+The rule reports a sensitive **name** written to IndexedDB, matched as whole words (plurals folded, so `passwords` matches `password`; `tokenizer` does not match `token`):
+
+- the store name in `db.createObjectStore(name)`;
+- a field name in the record of `store.add({ … })` / `store.put({ … })`;
+- the out-of-line record key in `store.put(value, key)` / `store.add(value, key)`;
+- with the [`idb`](https://github.com/jakearchibald/idb) wrapper, the store name and record of `db.put(storeName, value, key)` and the key in its third argument.
+
+`.add` / `.put` count only when the receiver **resolves** to an `objectStore()` / `createObjectStore()` call (or an `idb` database) in the file: `jobQueue.add({ password })` is a job queue, not IndexedDB.
+
+The vocabulary is `sensitiveTerms` — by default every non-bearer secret word plus the bearer-credential words (`token`, `jwt`, `session`, …). Setting `sensitiveTerms` **replaces the whole list**, bearer words included; `additionalPatterns` is appended to whatever the list is.
+
 ## ❌ Incorrect
 
 ```javascript
@@ -39,8 +50,10 @@ db.createObjectStore('secrets');
 db.createObjectStore('apiKeys');
 
 // Storing sensitive data
+const store = db.transaction('vault', 'readwrite').objectStore('vault');
 store.add({ password: userPassword });
 store.put({ apiKey: key });
+store.put(value, 'password'); // out-of-line key
 ```
 
 ## ✅ Correct
@@ -51,16 +64,24 @@ db.createObjectStore('preferences');
 db.createObjectStore('cachedData');
 
 // Store user preferences
-store.add({ theme: 'dark', language: 'en' });
+const prefs = db.transaction('prefs', 'readwrite').objectStore('prefs');
+prefs.add({ theme: 'dark', language: 'en' });
+
+// Not IndexedDB: an unrelated receiver
+jobQueue.add({ password: tempPassword });
+
+// A replaced vocabulary replaces everything
+// { "sensitiveTerms": ["pin"] }
+db.createObjectStore('accessToken'); // not reported under this config
 ```
 
 ## 🛠️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
-| `sensitiveTerms` | `string[]` | `["password","passwd","pwd","passphrase","secret","api key","apikey","private key","secret key","encryption key","signing key","client secret","credit card","card number","cvv","cvc","ssn","social security","seed phrase","mnemonic","recovery code"]` | Whole-word terms that mark a stored field as sensitive. Replaces the default vocabulary. |
-| `additionalPatterns` | `string[]` | `[]` | Extra terms that name a secret, added to the built-in vocabulary rather than replacing it. Matched as whole words against the store or key name, never as a substring — so `token` does not match `tokenizer`. Use this for domain secrets the built-in list cannot know about, e.g. `entitlementGrant`. |
+| Option               | Type       | Default                                                                                                                                                                                                                                                                                                                                            | Description                                                                                                                                                                                                                                                                                              |
+| -------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `allowInTests`       | `boolean`  | `true`                                                                                                                                                                                                                                                                                                                                             | Skip this rule in `*.test.*` / `*.spec.*` files                                                                                                                                                                                                                                                          |
+| `sensitiveTerms`     | `string[]` | `["password","passwd","pwd","passphrase","secret","api key","apikey","private key","secret key","encryption key","signing key","client secret","credit card","card number","cvv","cvc","ssn","social security","seed phrase","mnemonic","recovery code","jwt","token","bearer","auth","authorization","session","sid","credential","credentials"]` | Whole-word terms that mark a stored field as sensitive. Replaces the default vocabulary.                                                                                                                                                                                                                 |
+| `additionalPatterns` | `string[]` | `[]`                                                                                                                                                                                                                                                                                                                                               | Extra terms that name a secret, added to the built-in vocabulary rather than replacing it. Matched as whole words against the store or key name, never as a substring — so `token` does not match `tokenizer`. Use this for domain secrets the built-in list cannot know about, e.g. `entitlementGrant`. |
 
 ```json
 {

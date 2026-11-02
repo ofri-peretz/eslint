@@ -414,6 +414,12 @@ ruleTester.run(
         errors: [{ messageId: 'shellInjection' }],
       },
       {
+        name: 'with module evidence off, a bare exec call is judged by its spelling',
+        code: 'exec(`git clone ${req.query.url}`);',
+        options: [{ requireModuleEvidence: false }],
+        errors: [{ messageId: 'shellInjection' }],
+      },
+      {
         code: 'const cp = require("child_process"); cp.exec("git clone " + req.query.url);',
         errors: [{ messageId: 'shellInjection' }],
       },

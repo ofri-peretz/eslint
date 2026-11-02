@@ -13,6 +13,18 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-permissive-cors (mutation edges)', noPermissiveCors, {
   valid: [
     {
+      name: 'a template with an interpolation after * is not the bare wildcard',
+      code: "res.setHeader('Access-Control-Allow-Origin', `*${suffix}`);",
+    },
+    {
+      name: 'a cyclic alias of the origin value folds to nothing and terminates',
+      code: "const a = b; const b = a; res.setHeader('Access-Control-Allow-Origin', a);",
+    },
+    {
+      name: 'a cyclic alias of the cors options folds to nothing and terminates',
+      code: "import cors from 'cors'; const a = b; const b = a; app.use(cors(a));",
+    },
+    {
       name: 'a numeric computed key on a headers bag is not the origin',
       code: "res.setHeader('Access-Control-Allow-Origin', req.headers[1]);",
     },
@@ -58,6 +70,25 @@ ruleTester.run('no-permissive-cors (mutation edges)', noPermissiveCors, {
     },
   ],
   invalid: [
+    // @found 2026-11-02 (Stryker triage): a fold budget of four hops gave up
+    // on a longer alias chain and let the wildcard through.
+    {
+      // @found mutation testing
+      name: 'FN: a six-hop alias chain still folds to the wildcard',
+      code: "const a = '*'; const b = a; const c = b; const d = c; const e = d; const f = e; res.setHeader('Access-Control-Allow-Origin', f);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      // @found mutation testing
+      name: 'FN: a six-hop alias chain still folds to the cors options object',
+      code: "import cors from 'cors'; const a = { origin: '*' }; const b = a; const c = b; const d = c; const e = d; const f = e; app.use(cors(f));",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a four-hop alias chain folds to the wildcard',
+      code: "const a = '*'; const b = a; const c = b; const d = c; res.setHeader('Access-Control-Allow-Origin', d);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
     {
       name: 'a spread before the wildcard origin in cors()',
       code: "app.use(cors({ ...base, origin: '*' }));",

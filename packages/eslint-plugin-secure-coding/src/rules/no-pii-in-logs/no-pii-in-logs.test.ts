@@ -32,8 +32,8 @@ ruleTester.run('no-pii-in-logs', noPiiInLogs, {
     // Callee is not a MemberExpression at all — fails the first condition
     // of the console.log/error/warn/info type-guard chain.
     { code: 'log(user.email)' },
-    // MemberExpression callee, but the object is not `console`.
-    { code: 'logger.log(user.email)' },
+    // MemberExpression callee, but the object is neither `console` nor a logger.
+    { code: 'cache.log(user.email)' },
     // `console` object, but the method is not one of log/error/warn/info.
     { code: 'console.debug(user.email)' },
     // MemberExpression argument whose property name matches none of the
@@ -53,6 +53,7 @@ ruleTester.run('no-pii-in-logs', noPiiInLogs, {
       errors: [{ messageId: 'violationDetected' }],
     },
     {
+      name: 'logging data.ssn is reported',
       code: 'console.log(data.ssn)',
       errors: [{ messageId: 'violationDetected' }],
     },
@@ -292,3 +293,156 @@ ruleTester.run(
     ],
   },
 );
+
+/**
+ * The doc's own incorrect examples: an application logger is a sink, a
+ * `JSON.stringify`ed person record leaks every field it holds, and a literal
+ * email address, SSN or card number is PII in the line. All three were silent:
+ * only `console.*` member reads were inspected.
+ */
+ruleTester.run(
+  'doc contract: loggers, serialized records, literal PII',
+  noPiiInLogs,
+  {
+    valid: [
+      {
+        name: 'a logger level method logging a non-PII field is clean',
+        code: "logger.info('signed in', user.id)",
+      },
+      {
+        name: 'a hashed value through a logger is the documented fix',
+        code: "logger.info('signed in', hashStable(record.ssn))",
+      },
+      {
+        name: 'a non-level method on a logger is not a sink',
+        code: 'logger.child(user.email)',
+      },
+      {
+        name: 'a method of a member receiver that is not a logger is not a sink',
+        code: 'this.cache.info(user.email)',
+      },
+      {
+        name: 'a runtime-keyed receiver names no logger',
+        code: 'this[key].info(user.email)',
+      },
+      {
+        name: 'serializing a non-person object is not a record leak',
+        code: 'console.log(JSON.stringify(config))',
+      },
+      {
+        name: 'serializing a computed expression names no record',
+        code: 'console.log(JSON.stringify(getUser()))',
+      },
+      {
+        name: 'JSON.stringify with no argument serializes nothing',
+        code: 'console.log(JSON.stringify())',
+      },
+      {
+        name: 'JSON.stringify of a spread argument names no record',
+        code: 'console.log(JSON.stringify(...parts))',
+      },
+      {
+        name: 'a stringify on some other receiver is not JSON serialization',
+        code: 'console.log(qs.stringify(user))',
+      },
+      {
+        name: 'a long order number that fails Luhn is not a card',
+        code: "console.log('order 1234567890123')",
+      },
+      {
+        name: 'a numeric literal is not PII text',
+        code: 'console.log(42)',
+      },
+      {
+        name: 'console.debug is not in the default console sinks even for a literal email',
+        code: "console.debug('signed in', 'john.doe@example.com')",
+      },
+    ],
+    invalid: [
+      {
+        name: 'a logger interpolating a card field is a sink',
+        code: 'logger.info(`payment from ${customer.creditCard}`)',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'a logger.log of an email field is a sink',
+        code: 'logger.log(user.email)',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'a NestJS-style this.logger is a sink',
+        code: 'this.logger.error(record.ssn)',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'a JSON.stringify-ed user record through a logger leaks its fields',
+        code: 'logger.debug(JSON.stringify(user))',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'a JSON.stringify-ed user record in a console template leaks its fields',
+        code: 'console.error(`signed in ${JSON.stringify(user)}`)',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'JSON.stringify of a PII field serializes the field verbatim',
+        code: 'console.log(JSON.stringify(user.email))',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'a literal email address argument is PII',
+        code: "console.log('signed in', 'john.doe@example.com')",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'a literal email address in a template is PII',
+        code: 'logger.info(`signed in john.doe@example.com`)',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'a literal SSN is PII',
+        code: "console.log('ssn 123-45-6789')",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'a literal SSN in a no-substitution template is the same constant string',
+        code: 'console.log(`ssn 123-45-6789`)',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'a literal Luhn-valid card number is PII',
+        code: "console.log('card 4111 1111 1111 1111')",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+    ],
+  },
+);
+
+ruleTester.run('options: logger and record vocabularies', noPiiInLogs, {
+  valid: [
+    {
+      name: 'loggers replaces the default receivers',
+      code: 'logger.info(user.email)',
+      options: [{ loggers: ['audit'] }],
+    },
+    {
+      name: 'piiRecords replaces the default record words',
+      code: 'console.log(JSON.stringify(user))',
+      options: [{ piiRecords: ['member'] }],
+    },
+  ],
+  invalid: [
+    {
+      name: 'additionalLoggers adds a receiver',
+      code: 'audit.info(user.email)',
+      options: [{ additionalLoggers: ['audit'] }],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'additionalPiiRecords adds a record word',
+      code: 'console.log(JSON.stringify(member))',
+      options: [{ additionalPiiRecords: ['member'] }],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+  ],
+});

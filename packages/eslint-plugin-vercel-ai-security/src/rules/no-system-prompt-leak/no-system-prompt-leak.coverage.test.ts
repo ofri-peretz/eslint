@@ -23,7 +23,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -49,7 +49,6 @@ const xai = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -82,7 +81,9 @@ ruleTester.run('no-system-prompt-leak (branch coverage)', noSystemPromptLeak, {
     // skipped but the leaking property is still reported.
     {
       code: `function f() { return { ...meta, prompt: systemPrompt }; }`,
-      errors: [{ messageId: 'systemPromptLeak', data: { variable: 'systemPrompt' } }],
+      errors: [
+        { messageId: 'systemPromptLeak', data: { variable: 'systemPrompt' } },
+      ],
     },
   ]),
 });

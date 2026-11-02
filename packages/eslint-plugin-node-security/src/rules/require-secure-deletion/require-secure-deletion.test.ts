@@ -20,6 +20,10 @@ ruleTester.run('require-secure-deletion', requireSecureDeletion, {
     // Secure deletion patterns
     { name: 'an explicit secure delete', code: 'secureDelete(file)' },
     {
+      name: 'a negated or typeof read of a sensitive property is not a delete',
+      code: 'if (!user.password || typeof user.apiKey !== "string") reject();',
+    },
+    {
       code: 'data = null; gc()',
       name: 'nulling a value and forcing a collection is not a file deletion',
     },
@@ -51,7 +55,11 @@ ruleTester.run('require-secure-deletion', requireSecureDeletion, {
       code: 'delete sensitiveData.token',
       errors: [{ messageId: 'violationDetected' }],
     },
-    { code: 'delete obj.secret', errors: [{ messageId: 'violationDetected' }] },
+    {
+      name: 'delete of a secret property is reported',
+      code: 'delete obj.secret',
+      errors: [{ messageId: 'violationDetected' }],
+    },
     // True positives kept across naming conventions and computed access.
     {
       code: 'delete session.refreshToken',

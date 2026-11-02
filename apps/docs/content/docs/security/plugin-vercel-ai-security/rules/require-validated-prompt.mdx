@@ -81,11 +81,11 @@ await streamText({
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `validatorFunctions` | `string[]` | `["validateInput","sanitizeInput","validatePrompt","sanitizePrompt","escapeInput","cleanInput"]` | Function names considered as input validators |
-| `userInputPatterns` | `string[]` | `["userInput","userPrompt","userMessage","userQuery","userContent","input","query","message","req.body","request.body"]` | Variable patterns that suggest user input (regex) |
-| `allowInTests` | `boolean` | `false` | Allow unsafe patterns in test files |
+| Option               | Type       | Default                                                                                                                  | Description                                       |
+| -------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| `validatorFunctions` | `string[]` | `["validateInput","sanitizeInput","validatePrompt","sanitizePrompt","escapeInput","cleanInput"]`                         | Function names considered as input validators     |
+| `userInputPatterns`  | `string[]` | `["userInput","userPrompt","userMessage","userQuery","userContent","input","query","message","req.body","request.body"]` | Variable patterns that suggest user input (regex) |
+| `allowInTests`       | `boolean`  | `false`                                                                                                                  | Allow unsafe patterns in test files               |
 
 ### Example Configuration
 
@@ -121,9 +121,14 @@ Prompt injection is the #1 security risk for LLM applications according to OWASP
   query string (see `no-dynamic-system-prompt`), whatever it is named.
 - Name patterns are matched as the name's **head noun**, by whole word:
   `userInput` and `searchQuery` match; `inputTokens` and `queryTimeout` do not.
-  `req.body` / `request.body` match as member paths.
+  `req.body` / `request.body` match as member paths, and as the names they are
+  bound to (`reqBody`, `requestBody`).
 - A value parsed through a schema (`.parse`, `.safeParse`, `.parseAsync`, …) or
   bound from a configured validator call is validated.
+- No other call validates: `req.body.question.trim()`, `String(input)` or a
+  helper missing from `validatorFunctions` still carries the input it was given.
+  Add your own sanitizer to `validatorFunctions` to have it count.
+- `req.query` is the query string, the same as `searchParams.get(...)`.
 - **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
 
 <WhenNotToUse />

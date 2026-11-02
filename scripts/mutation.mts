@@ -116,13 +116,19 @@ if (ALLOW_REGRESSION && !UPDATE)
 /** Rule names a plugin ships: `src/rules/<rule>/` or flat `src/rules/<rule>.ts`. */
 function shippedRules(pluginDir: string): string[] {
   const dir = path.join(pluginDir, 'src', 'rules');
-  return fs
-    .readdirSync(dir)
-    .map((d) =>
-      fs.statSync(path.join(dir, d)).isDirectory()
-        ? d
-        : ruleOf(`src/rules/${d}`),
-    )
+  const utils = path.join(pluginDir, 'src', 'utils');
+  return [
+    ...fs
+      .readdirSync(dir)
+      .map((d) =>
+        fs.statSync(path.join(dir, d)).isDirectory()
+          ? d
+          : ruleOf(`src/rules/${d}`),
+      ),
+    ...(fs.existsSync(utils)
+      ? fs.readdirSync(utils).map((f) => ruleOf(`src/utils/${f}`))
+      : []),
+  ]
     .filter((r): r is string => r !== undefined)
     .toSorted();
 }
@@ -134,9 +140,11 @@ function shippedRules(pluginDir: string): string[] {
 function ruleGlobs(pluginDir: string, rules: string[]): string[] {
   return [
     ...rules.map((r) =>
-      fs.existsSync(path.join(pluginDir, 'src', 'rules', r))
-        ? `src/rules/${r}/**/*.ts`
-        : `src/rules/${r}.ts`,
+      r.startsWith('utils/')
+        ? `src/${r}.ts`
+        : fs.existsSync(path.join(pluginDir, 'src', 'rules', r))
+          ? `src/rules/${r}/**/*.ts`
+          : `src/rules/${r}.ts`,
     ),
     '!src/rules/**/*.test.ts',
     '!src/rules/**/*.spec.ts',

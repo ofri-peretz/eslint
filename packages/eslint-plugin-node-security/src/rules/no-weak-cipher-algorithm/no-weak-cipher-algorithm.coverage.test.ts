@@ -35,6 +35,11 @@ describe('no-weak-cipher-algorithm coverage gaps', () => {
         options: [{ allowInTests: true }],
         filename: 'cipher.ts',
       },
+      {
+        name: 'additionalWeakCiphers adds names; it does not make every cipher weak',
+        code: 'crypto.createCipheriv("aes-256-gcm", key, iv);',
+        options: [{ additionalWeakCiphers: ['cast5'] }],
+      },
       // Zero-argument cipher call → firstArg is undefined (?. short-circuit)
       { code: 'crypto.createCipheriv();' },
       { code: 'createCipheriv();' },

@@ -62,13 +62,26 @@ class UsersController {
 }
 ```
 
+## Which files and which exclusions
+
+The rule checks files that import NestJS (`@nestjs/*`), the serializer
+(`class-transformer`) or a persistence layer whose classes are returned
+(`typeorm`, `mongoose`, `sequelize-typescript`, `@mikro-orm/*`, `@typegoose/*`).
+An entity file usually imports only its ORM and `class-transformer`, and it is
+checked like any other.
+
+`@Exclude()` and `@Exclude({ toPlainOnly: true })` hide a field from responses.
+`@Exclude({ toClassOnly: true })` does **not**: it strips the field only when
+plain data is turned into the class (`plainToInstance`), and
+`ClassSerializerInterceptor` (`instanceToPlain`) still writes it out — so the
+field is reported. The same holds for the class-level `@Exclude()`.
+
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
-| `sensitivePatterns` | `string[]` | `[]` | Extra field-name patterns to treat as sensitive |
-
+| Option              | Type       | Default | Description                                     |
+| ------------------- | ---------- | ------- | ----------------------------------------------- |
+| `allowInTests`      | `boolean`  | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `sensitivePatterns` | `string[]` | `[]`    | Extra field-name patterns to treat as sensitive |
 
 ```typescript
 {

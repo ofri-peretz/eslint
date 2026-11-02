@@ -389,6 +389,7 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
           },
           // JWT
           {
+            name: 'a CSRF token compared with !== against the session copy is reported',
             code: 'if (jwt === stored) {}',
             errors: [{ messageId: 'timingUnsafeCompare' }],
           },

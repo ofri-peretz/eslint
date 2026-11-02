@@ -18,7 +18,7 @@ autofix: false
 Require AEAD decryption to verify the authentication tag (setAuthTag + final)
 <!-- @/rule-summary -->
 
-Detects `crypto.createDecipheriv()` with an AEAD mode (GCM, CCM, OCB, ChaCha20-Poly1305) whose authentication tag is never actually verified. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages.
+Detects `crypto.createDecipheriv()` with an AEAD mode (GCM, GCM-SIV, CCM, OCB, ChaCha20-Poly1305) whose authentication tag is never actually verified. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages.
 
 **🚨 Security rule** | **⚠️ Set to error in `recommended`**
 

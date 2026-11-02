@@ -22,6 +22,10 @@ const MULTER = `import multer from 'multer';\n`;
 
 ruleTester.run('require-mime-type-validation', requireMimeTypeValidation, {
   valid: [
+    {
+      name: 'a two-argument call that is neither append nor send uploads nothing',
+      code: "function show(input) { console.log('picked', input.files[0]); }",
+    },
     { name: 'a numeric constant handles no upload', code: 'const x = 42;' },
     'const flag = true;',
     'const x = 1',
@@ -87,6 +91,11 @@ ruleTester.run('require-mime-type-validation', requireMimeTypeValidation, {
   ],
 
   invalid: [
+    {
+      name: 'a slash-less word that starts with a top-level type is no media type',
+      code: "function upload(input) { const fd = new FormData(); fd.append('images', input.files[0]); fetch('/upload', { method: 'POST', body: fd }); }",
+      errors: [{ messageId: 'missingMimeValidation' }],
+    },
     // ---- Multer, resolved through the binding.
     //
     // The idiomatic two-step spelling was QUIET: the check required
@@ -102,6 +111,7 @@ ruleTester.run('require-mime-type-validation', requireMimeTypeValidation, {
       errors: [{ messageId: 'violationDetected' }],
     },
     {
+      name: 'multer().array() with no fileFilter is reported',
       code: `${MULTER}multer().array('photos')`,
       errors: [{ messageId: 'violationDetected' }],
     },

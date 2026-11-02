@@ -16,6 +16,14 @@ const ruleTester = new RuleTester({
 ruleTester.run('require-https-only (mutation edges)', requireHttpsOnly, {
   valid: [
     {
+      name: 'a unary plus argument is a number, not a written URL',
+      code: 'fetch(+port);',
+    },
+    {
+      name: 'a comparison whose left operand is an http URL fetches a boolean, not that URL',
+      code: "fetch('http://legacy.internal' === target);",
+    },
+    {
       name: 'http:// in the query of a relative fetch is not the request scheme',
       code: "fetch('/proxy?url=http://api.acme-corp.io/v1')",
     },

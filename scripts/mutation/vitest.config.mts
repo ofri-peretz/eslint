@@ -22,6 +22,7 @@
  * MUTATION_PLUGIN_DIR is set by scripts/mutation.mts.
  */
 
+import fs from 'node:fs';
 import path from 'node:path';
 import { loadConfigFromFile } from 'vite';
 import type { UserConfig } from 'vitest/config';
@@ -43,6 +44,20 @@ const loaded = await loadConfigFromFile(
 if (!loaded) throw new Error(`no vitest.config.mts in ${pluginDir}`);
 const base = loaded.config as UserConfig;
 
+/** Test files (relative to the plugin) that import a sibling plugin by path. */
+function siblingImportingTests(): string[] {
+  return (
+    fs.readdirSync(path.join(pluginDir, 'src'), { recursive: true }) as string[]
+  )
+    .filter((f) => /\.test\.tsx?$/.test(f))
+    .filter((f) =>
+      fs
+        .readFileSync(path.join(pluginDir, 'src', f), 'utf8')
+        .includes("'../../eslint-plugin-"),
+    )
+    .map((f) => path.join('src', f));
+}
+
 export default {
   ...base,
   root: process.cwd(),
@@ -52,5 +67,11 @@ export default {
     reporters: ['default'],
     outputFile: undefined,
     coverage: { ...base.test?.coverage, enabled: false },
+    // A test that imports a sibling plugin by relative path
+    // (`../../eslint-plugin-x/src`) cannot resolve from the sandbox, two
+    // levels deeper, and fails the dry run before any mutant runs. Such tests
+    // check cross-plugin consistency, not this plugin's rule behaviour, so
+    // they kill no mutants here; the plugin's own suite still runs them.
+    exclude: [...(base.test?.exclude ?? []), ...siblingImportingTests()],
   },
 } satisfies UserConfig;

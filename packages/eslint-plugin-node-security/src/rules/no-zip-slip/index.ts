@@ -28,6 +28,7 @@ import {
   resolveModuleBinding,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { constInitializerOf } from '../../utils/const-value';
 /**
  * Six more used to sit here: `zipSlipVulnerability`, `validateArchivePaths`,
  * `sanitizeArchiveNames`, `strategyPathValidation`, `strategySafeLibraries` and
@@ -180,18 +181,23 @@ const DEFAULT_ARCHIVE_MODULES = [
   'node-7z',
 ];
 
+/** Extractor methods whose FIRST argument is the destination directory. */
+const DESTINATION_FIRST: ReadonlySet<string> = new Set([
+  'extractAllTo',
+  'unzip',
+]);
+
 /**
- * Check if path contains dangerous traversal sequences
+ * Does this path text climb out of its directory?
+ *
+ * A `..` SEGMENT — bounded by the start or end of the text, `/`, or the Windows
+ * `\\` on both sides. `..` inside a segment (`v1..2/`, `./out/..cache/`,
+ * `notes../`) is part of a file or directory name and climbs nowhere. A bare
+ * `'..'` is the parent directory, exactly as `'../'` is.
  */
-const containsPathTraversal = (pathText: string): boolean => {
-  // Check for ../ sequences
-  return (
-    /\.\.\//.test(pathText) ||
-    /\.\.\\/.test(pathText) || // Windows paths
-    pathText.startsWith('..') ||
-    /\/\.\./.test(pathText)
-  ); // Embedded /..
-};
+const PARENT_SEGMENT = /(?:^|[/\\])\.\.(?:[/\\]|$)/;
+const containsPathTraversal = (pathText: string): boolean =>
+  PARENT_SEGMENT.test(pathText);
 
 /**
  * Check if destination is dangerous (sensitive system directories)
@@ -373,9 +379,8 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       /zip|tarball|archive|gzip|gunzip|untar|tarstream|\btar\b/i;
     let pending: (() => void)[];
     let EXITS: Set<string>;
-    const isArchiveModule = (specifier: unknown): boolean =>
-      typeof specifier === 'string' &&
-      archiveModuleSet.has(specifier.toLowerCase());
+    const isArchiveModule = (specifier: string | null): boolean =>
+      specifier !== null && archiveModuleSet.has(specifier.toLowerCase());
     const namesArchive = (node: TSESTree.Node): boolean => {
       if (node.type === 'Identifier') return ARCHIVE_NAME.test(node.name);
       if (node.type === 'MemberExpression') {
@@ -389,6 +394,13 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
 
     // Safety checks are implemented directly in the handlers
 
+    /** Is this receiver a `const` bound to an object literal? */
+    const isLocalObjectLiteral = (receiver: TSESTree.Node): boolean => {
+      if (receiver.type !== 'Identifier') return false;
+      const init = constInitializerOf(context.sourceCode, receiver);
+      return init !== null && init.type === 'ObjectExpression';
+    };
+
     /**
      * Check if this is an archive extraction operation
      */
@@ -399,6 +411,11 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       const method =
         callee.type === 'MemberExpression' ? propertyName(callee) : null;
       if (method !== null && archiveFunctions.includes(method)) {
+        // A receiver the file binds to an object literal is a plain object it
+        // wrote itself — `const zip = { extractAllTo: (d) => d }` — not an
+        // archive handle, whatever its methods are called.
+        if (isLocalObjectLiteral((callee as TSESTree.MemberExpression).object))
+          return false;
         // `extractAllTo` and `extractArchive` belong to adm-zip and collide
         // with nothing. `extract`, `extractAll`, `unzip` and `untar` are
         // ordinary English: a collection extracts a field, a propagator
@@ -534,8 +551,8 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
      * reported: the validation search walked only the join's ancestors, and
      * the check sits beside the declaration, not above it.
      */
-    const isCheckedAfterBinding = (call: TSESTree.Node): boolean => {
-      const declarator = call.parent;
+    const isCheckedAfterBinding = (init: TSESTree.Node): boolean => {
+      const declarator = init.parent;
       if (
         declarator?.type !== 'VariableDeclarator' ||
         declarator.id.type !== 'Identifier'
@@ -613,12 +630,10 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           return true;
         }
 
-        if (
-          current.type === 'CallExpression' &&
-          isCheckedAfterBinding(current)
-        ) {
-          return true;
-        }
+        // The join need not be the whole initializer: `const tmp =
+        // path.join(dest, entry.name) + '.part'` binds the same path, and the
+        // guard that reads `tmp` checks it.
+        if (isCheckedAfterBinding(current)) return true;
 
         if (current.type === 'IfStatement') {
           const safe = safeOutcome(current.test);
@@ -667,7 +682,6 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         const name = callee.name.toLowerCase();
         if (
           name === 'extract' ||
-          name === 'unzipper' ||
           safeLibraries.some((lib) => name.includes(lib.toLowerCase()))
         ) {
           return true;
@@ -752,8 +766,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         if (
           node.callee.type === 'Identifier' &&
           node.callee.name === 'require' &&
-          node.arguments[0]?.type === 'Literal' &&
-          isArchiveModule(node.arguments[0].value)
+          isArchiveModule(staticString(node.arguments[0]))
         ) {
           hasArchiveContext = true;
         }
@@ -795,34 +808,23 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           }
 
           // Check if destination is dangerous
+          // adm-zip's `extractAllTo(dest)` and `unzip(dest)` take the
+          // destination first; every other extractor, method or bare
+          // function (`extractArchive(file, dest)`), takes it second. A
+          // missing argument is `undefined` either way, which names no text.
           const args = node.arguments;
-          let destArg: TSESTree.Node | undefined;
-
-          // Determine which argument is the destination based on the function
           const extractor =
             node.callee.type === 'MemberExpression'
               ? propertyName(node.callee)
               : null;
-          if (extractor !== null) {
-            const methodName = extractor;
-            if (['extractAllTo', 'unzip'].includes(methodName)) {
-              // Destination is the first argument
-              destArg = args[0];
-            } else {
-              // For other archive functions, destination is typically the
-              // second argument. isArchiveExtraction() already guaranteed
-              // methodName is listed in archiveFunctions for member callees.
-              destArg = args.length >= 2 ? args[1] : undefined;
-            }
-          } else {
-            // For standalone functions like extractArchive(file, dest);
-            // isArchiveExtraction() already guaranteed the callee is an
-            // Identifier naming an archive function.
-            destArg = args.length >= 2 ? args[1] : undefined;
-          }
+          const destArg: TSESTree.Node | undefined = namesOneOf(
+            extractor,
+            DESTINATION_FIRST,
+          )
+            ? args[0]
+            : args[1];
 
-          const destText =
-            (destArg === undefined ? null : staticString(destArg)) ?? '';
+          const destText = staticString(destArg) ?? '';
           const isDestDangerous = isDangerousDestination(destText);
           const isMethodCall = node.callee.type === 'MemberExpression';
 
@@ -938,13 +940,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const text = node.value;
-        if (
-          !(text.includes('/') || text.includes('\\')) ||
-          !containsPathTraversal(text)
-        ) {
-          return;
-        }
+        if (!containsPathTraversal(node.value)) return;
 
         let current: TSESTree.Node | undefined = node;
         while (current) {

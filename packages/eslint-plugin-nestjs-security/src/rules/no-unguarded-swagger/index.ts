@@ -35,7 +35,7 @@ import {
   isTestFilePath,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { expressionName } from '../../utils/nest-ast';
+import { expressionName, isModuleExport } from '../../utils/nest-ast';
 import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 
 type MessageIds = 'unguardedSwagger';
@@ -168,7 +168,17 @@ export const noUnguardedSwagger = createRule<RuleOptions, MessageIds>({
       },
       CallExpression(node: TSESTree.CallExpression) {
         if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return;
-        if (expressionName(node.callee.object) !== 'SwaggerModule') return;
+        // `SwaggerModule`, however `@nestjs/swagger` was imported
+        // (`import { SwaggerModule as SM }`, a namespace, `require`).
+        if (
+          !isModuleExport(
+            node.callee.object,
+            context.sourceCode.getScope(node),
+            '@nestjs/swagger',
+            'SwaggerModule',
+          )
+        )
+          return;
         if (expressionName(node.callee) !== 'setup') return;
 
         const { fn, branched } = enclosing(node);

@@ -3,6 +3,8 @@
  */
 
 import { RuleTester } from '@typescript-eslint/rule-tester';
+import { Linter } from 'eslint';
+import { describe, expect, it } from 'vitest';
 import { requireMaxTokens } from './index';
 
 /**
@@ -22,7 +24,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -48,7 +50,6 @@ const xai = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -208,31 +209,34 @@ ruleTester.run('require-max-tokens (coverage gaps)', requireMaxTokens, {
 // (CallSettings.maxOutputTokens — `maxTokens` no longer exists in ai@6).
 // Both must satisfy the rule, or every v5+ codebase gets a false positive.
 // ─────────────────────────────────────────────────────────────────────────────
-ruleTester.run('require-max-tokens (AI SDK v4 + v5 option names)', requireMaxTokens, {
-  valid: xai([
-    // v5+: generateText with maxOutputTokens
-    {
-      code: `
+ruleTester.run(
+  'require-max-tokens (AI SDK v4 + v5 option names)',
+  requireMaxTokens,
+  {
+    valid: xai([
+      // v5+: generateText with maxOutputTokens
+      {
+        code: `
         await generateText({
           model: openai('gpt-4'),
           prompt: 'Hello',
           maxOutputTokens: 4096,
         });
       `,
-    },
-    // v5+: streamText with maxOutputTokens
-    {
-      code: `
+      },
+      // v5+: streamText with maxOutputTokens
+      {
+        code: `
         await streamText({
           model: anthropic('claude-3'),
           prompt: 'Hello',
           maxOutputTokens: 2048,
         });
       `,
-    },
-    // v5+: generateObject with maxOutputTokens
-    {
-      code: `
+      },
+      // v5+: generateObject with maxOutputTokens
+      {
+        code: `
         await generateObject({
           model: openai('gpt-4'),
           prompt: 'Generate user',
@@ -240,33 +244,34 @@ ruleTester.run('require-max-tokens (AI SDK v4 + v5 option names)', requireMaxTok
           schema: z.object({ name: z.string() }),
         });
       `,
-    },
-    // v5+: snake_case variant (OpenAI-shaped proxies)
-    { code: `generateText({ max_output_tokens: 100, prompt: 'x' });` },
-    // v5+: string-literal key
-    { code: `generateText({ 'maxOutputTokens': 100, prompt: 'x' });` },
-    // v4 spelling still accepted
-    { code: `generateText({ maxTokens: 100, prompt: 'x' });` },
-  ]),
-  invalid: xai([
-    // v5+ call with no token limit at all is still reported
-    {
-      code: `
+      },
+      // v5+: snake_case variant (OpenAI-shaped proxies)
+      { code: `generateText({ max_output_tokens: 100, prompt: 'x' });` },
+      // v5+: string-literal key
+      { code: `generateText({ 'maxOutputTokens': 100, prompt: 'x' });` },
+      // v4 spelling still accepted
+      { code: `generateText({ maxTokens: 100, prompt: 'x' });` },
+    ]),
+    invalid: xai([
+      // v5+ call with no token limit at all is still reported
+      {
+        code: `
         await generateText({
           model: openai('gpt-4'),
           prompt: 'Hello',
           temperature: 0.7,
         });
       `,
-      errors: [{ messageId: 'missingMaxTokens' }],
-    },
-    // near-miss key must not be mistaken for the real option
-    {
-      code: `generateText({ maxOutputTokenCount: 100, prompt: 'x' });`,
-      errors: [{ messageId: 'missingMaxTokens' }],
-    },
-  ]),
-});
+        errors: [{ messageId: 'missingMaxTokens' }],
+      },
+      // near-miss key must not be mistaken for the real option
+      {
+        code: `generateText({ maxOutputTokenCount: 100, prompt: 'x' });`,
+        errors: [{ messageId: 'missingMaxTokens' }],
+      },
+    ]),
+  },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md)
@@ -286,4 +291,64 @@ ruleTester.run('require-max-tokens (fp-fn audit)', requireMaxTokens, {
     },
   ]),
   invalid: xai([]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quint fidelity model (benchmarks/suites/fidelity/models/vercel-ai-security)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-max-tokens (fidelity)', requireMaxTokens, {
+  valid: [],
+  invalid: xai([
+    {
+      name: 'a renamed import of generateText is still the SDK call',
+      code: `
+        import { generateText as callModel } from 'ai';
+        export async function POST() { return callModel({ model: m, prompt: 'Hello' }); }
+      `,
+      errors: [{ messageId: 'missingMaxTokens' }],
+    },
+    {
+      name: 'a renamed generateText imported through require is still the SDK call',
+      code: `
+        const { generateText: callModel } = require('ai');
+        export async function POST() { return callModel({ model: m, prompt: 'Hello' }); }
+      `,
+      errors: [{ messageId: 'missingMaxTokens' }],
+    },
+  ]),
+});
+
+/**
+ * Mutation audit 2026-11-02: `suggestedLimit` was declared, documented and
+ * defaulted, and read by nothing — the fix text hard-coded 4096. It now names
+ * the configured limit.
+ */
+describe('require-max-tokens suggestedLimit', () => {
+  const unbounded = `import 'ai';\nawait generateText({ model, prompt: 'x' });`;
+  const lint = (options: unknown[]): string[] => {
+    const linter = new Linter({ configType: 'flat' });
+    return linter
+      .verify(
+        unbounded,
+        {
+          files: ['**/*.js'],
+          plugins: {
+            v: { rules: { r: requireMaxTokens } } as unknown as Linter.Plugin,
+          },
+          rules: { 'v/r': ['error', ...options] as Linter.RuleEntry },
+        },
+        'route.js',
+      )
+      .map((m) => m.message);
+  };
+
+  it('the fix suggests the default limit of 4096', () => {
+    const [message] = lint([]);
+    expect(message).toContain('maxOutputTokens: 4096');
+  });
+
+  it('the fix suggests the configured limit', () => {
+    const [message] = lint([{ suggestedLimit: 1024 }]);
+    expect(message).toContain('maxOutputTokens: 1024');
+  });
 });

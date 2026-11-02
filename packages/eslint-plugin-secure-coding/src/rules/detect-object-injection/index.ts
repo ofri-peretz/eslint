@@ -308,18 +308,22 @@ const TYPED_ARRAY_CTORS = new Set([
  */
 interface ObjectInjectionPattern {
   pattern: string;
-  dangerous: boolean;
-  vulnerability:
-    'prototype-pollution' | 'property-injection' | 'method-injection';
   safeAlternative: string;
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  riskLevel: 'medium' | 'high' | 'critical';
 }
 
 /**
  * Message metadata for the three property names prototype pollution travels
  * through. This table does NOT decide whether to report — it only selects the
- * risk level and the `vulnerability` / `safeAlternative` wording of a finding
- * already made.
+ * risk level and the `safeAlternative` wording of a finding already made, and
+ * only for a key whose value is statically one of the three names.
+ *
+ * Until 2026-11 a row was picked by matching each name as a regex against the
+ * key's SOURCE TEXT, or-ed with "the key is on `dangerousProperties`". The
+ * second disjunct is true for every row at once, so any listed literal took the
+ * first (`__proto__`) row, and the first made `o[constructorName] = v` a
+ * CRITICAL constructor finding because of an identifier's spelling. Pinned by
+ * message-wording.test.ts.
  *
  * It used to add "that decision is the `dangerousProperties` option", which was
  * false: that option reaches only the literal-name path, and cannot reach the
@@ -339,22 +343,16 @@ interface ObjectInjectionPattern {
 const OBJECT_INJECTION_PATTERNS: ObjectInjectionPattern[] = [
   {
     pattern: '__proto__',
-    dangerous: true,
-    vulnerability: 'prototype-pollution',
     safeAlternative: 'Object.create(null) or Map',
     riskLevel: 'critical',
   },
   {
     pattern: 'prototype',
-    dangerous: true,
-    vulnerability: 'prototype-pollution',
     safeAlternative: 'Avoid prototype manipulation',
     riskLevel: 'high',
   },
   {
     pattern: 'constructor',
-    dangerous: true,
-    vulnerability: 'method-injection',
     safeAlternative: 'Validate property names against whitelist',
     riskLevel: 'medium',
   },
@@ -677,7 +675,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/detect-object-injection.md',
       description:
-        'Detects variable[key] as a left- or right-hand assignment operand',
+        'Detects variable[key] written as an assignment target, or read and then invoked',
       cwe: 'CWE-915',
       confidence: 'low',
     },
@@ -777,7 +775,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     },
   ],
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    let _allowLiterals: boolean;
     let dangerousProperties: string[];
     let handledMemberExpressions: WeakSet<TSESTree.MemberExpression>;
     let openCopyLoops: { keyName: string; reported: boolean }[];
@@ -949,19 +946,26 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
        * only un-negated. That is an accident of where the unwrap was written,
        * not a judgement about which guards are trustworthy: `!guard() → return`
        * excludes exactly the keys `guard() → proceed` admits.
+       *
+       * Unwrapped WITH its polarity (2026-11). The unwrap used to discard the
+       * `!`, so `if (!ALLOWED.includes(k)) { o[k] = v; }` — a write reached
+       * only by a key the allowlist REJECTS — and `if (ALLOWED.includes(k))
+       * return; o[k] = v;` both counted as guarded. Returns 1 when the test is
+       * true only for a validated key, -1 when only for an unvalidated one, 0
+       * when it proves nothing.
        */
-      const hasValidation = (testNode: TSESTree.Node): boolean => {
+      const validationPolarity = (testNode: TSESTree.Node): number => {
         if (
           testNode.type === AST_NODE_TYPES.UnaryExpression &&
           testNode.operator === '!'
         ) {
-          return hasValidation(testNode.argument);
+          return -validationPolarity(testNode.argument);
         }
-        return (
-          isIncludesCall(testNode) ||
+        return isIncludesCall(testNode) ||
           isHasOwnPropertyCall(testNode) ||
           isInOperator(testNode)
-        );
+          ? 1
+          : 0;
       };
 
       const hasEarlyExit = (consequent: TSESTree.Statement): boolean => {
@@ -980,13 +984,20 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       };
 
       // Walk up to find enclosing IfStatement with validation
+      let child: TSESTree.Node = node;
       let current: TSESTree.Node | undefined = node.parent;
       let foundFunctionBody = false;
 
       while (current && !foundFunctionBody) {
-        // Check if we're inside an if-block with validation in the condition
+        // Inside the branch a validation admits: `if (valid) { write }` or
+        // `if (!valid) { … } else { write }`.
         if (current.type === AST_NODE_TYPES.IfStatement) {
-          if (hasValidation(current.test)) {
+          const polarity = validationPolarity(current.test);
+          if (
+            child === current.consequent
+              ? polarity > 0
+              : child === current.alternate && polarity < 0
+          ) {
             return true;
           }
         }
@@ -1001,21 +1012,15 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         ) {
           foundFunctionBody = true;
           const blockBody = current.body;
-          const nodeIndex = blockBody.findIndex((stmt: TSESTree.Statement) => {
-            let check: TSESTree.Node | undefined = node;
-            while (check) {
-              if (check === stmt) return true;
-              check = check.parent;
-            }
-            return false;
-          });
+          // `child` is the statement of this body that holds the access.
+          const nodeIndex = blockBody.indexOf(child as TSESTree.Statement);
 
           // Look at preceding statements for validation patterns with early exit
           for (let i = 0; i < nodeIndex; i++) {
             const stmt = blockBody[i];
             if (
               stmt.type === AST_NODE_TYPES.IfStatement &&
-              hasValidation(stmt.test) &&
+              validationPolarity(stmt.test) < 0 &&
               hasEarlyExit(stmt.consequent)
             ) {
               return true;
@@ -1023,6 +1028,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           }
         }
 
+        child = current;
         current = current.parent;
       }
 
@@ -1690,61 +1696,14 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       );
     };
 
-    /**
-     * Extract property access information
-     */
-    const extractPropertyAccess = (
-      node: TSESTree.AssignmentExpression | TSESTree.MemberExpression,
-    ): {
-      object: string;
-      property: string;
-      propertyNode: TSESTree.Node;
-      isAssignment: boolean;
-      pattern: ObjectInjectionPattern | null;
-    } => {
-      let object: string;
-      let property: string;
-      let propertyNode: TSESTree.Node;
-      let isAssignment = false;
-
-      // Note: the `node.left.type !== MemberExpression` / plain-MemberExpression
-      // shapes are the only two forms ever passed in — every call site
-      // (highRiskTarget / isHighRiskMemberAccess and their two
-      // downstream checkAssignmentExpression / checkMemberExpression callers)
-      // already guards on the same discriminants before calling this
-      // function, so a "neither shape matched" fallback is unreachable dead
-      // code. The `if`/`else if` below is kept (rather than a non-null
-      // assertion) purely for TypeScript exhaustiveness over the declared
-      // union parameter type.
-      const left =
-        node.type === AST_NODE_TYPES.AssignmentExpression
-          ? assignmentTarget(node)
-          : null;
-      if (left !== null && left.type === AST_NODE_TYPES.MemberExpression) {
-        // Assignment: obj[key] = value
-        object = sourceCode.getText(left.object);
-        property = sourceCode.getText(left.property);
-        propertyNode = left.property;
-        isAssignment = true;
-      } else {
-        // Access: obj[key]. By contract with every call site, `node` is a
-        // plain MemberExpression whenever the branch above doesn't match.
-        const memberNode = node as TSESTree.MemberExpression;
-        object = sourceCode.getText(memberNode.object);
-        property = sourceCode.getText(memberNode.property);
-        propertyNode = memberNode.property;
-        isAssignment = false;
-      }
-
-      // Check if property matches dangerous patterns
-      const pattern =
-        OBJECT_INJECTION_PATTERNS.find(
-          (p) =>
-            new RegExp(p.pattern, 'i').test(property) ||
-            dangerousProperties.includes(property.replace(/['"]/g, '')),
-        ) || null;
-
-      return { object, property, propertyNode, isAssignment, pattern };
+    /** The table row for the accessor this key statically names, if any. */
+    const injectionPattern = (
+      propertyNode: TSESTree.Node,
+    ): ObjectInjectionPattern | null => {
+      // Keyed on the NAME the key is proven to hold, never on how its source
+      // text is spelled: `o[constructorName]` names no prototype accessor.
+      const name = staticString(propertyNode);
+      return OBJECT_INJECTION_PATTERNS.find((p) => p.pattern === name) ?? null;
     };
 
     /**
@@ -1752,19 +1711,16 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      *
      * `o.constructor` and `o['constructor']` are the same traversal and both
      * pollute; keying on `computed` would see only one of them.
+     *
+     * A step with no static name — `o[k]`, `items[0]` — is an OPAQUE step, not
+     * the end of the question. It used to abort the walk, so
+     * `items[0].constructor.prototype.p = 1` and `o[k].__proto__.p = 1` were
+     * never called CWE-1321, though the steps AFTER the opaque one are exactly
+     * the shape `o.a.__proto__.p = 1` is reported for. Its name is `''`, which
+     * no prototype accessor is.
      */
-    const stepName = (m: TSESTree.MemberExpression): string | null => {
-      if (!m.computed && m.property.type === AST_NODE_TYPES.Identifier)
-        return m.property.name;
-      if (
-        m.computed &&
-        m.property.type === AST_NODE_TYPES.Literal &&
-        typeof m.property.value === 'string'
-      ) {
-        return m.property.value;
-      }
-      return null;
-    };
+    const stepName = (m: TSESTree.MemberExpression): string =>
+      propertyName(m) ?? '';
 
     /**
      * Does this assignment WRITE THROUGH a prototype-reaching step, landing on
@@ -1808,9 +1764,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       const steps: string[] = [];
       let cur: TSESTree.Node = withoutTsWrapper(left.object);
       while (cur.type === AST_NODE_TYPES.MemberExpression) {
-        const name = stepName(cur);
-        if (name === null) return null; // a dynamic step — not provably this shape
-        steps.unshift(name);
+        steps.unshift(stepName(cur));
         cur = withoutTsWrapper(cur.object);
       }
 
@@ -1857,13 +1811,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return null;
       }
 
-      const { propertyNode } = extractPropertyAccess(node);
-
-      // SAFE: numeric keys can't pollute Object prototypes (typed-array
-      // / numeric-array assignment is structurally safe).
-      if (isNumericKey(propertyNode)) {
-        return null;
-      }
+      // Numeric keys are cleared by `isDangerousPropertyAccess` below; every
+      // check in between only ever clears, so asking here first decided nothing.
+      const propertyNode = left.property;
 
       // SAFE: the key is bound by `for (const k of KEYS)` over a const array of
       // string literals, so every value it can hold is written out in the file
@@ -1936,17 +1886,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return false;
       }
 
-      const { propertyNode } = extractPropertyAccess(node);
-
-      // Numeric keys cannot pollute Object prototypes — typed-array and
-      // numeric-array access (`arr[0]`, `arr[i]` where i is a for-loop
-      // counter) is structurally safe. This eliminates the bulk of false
-      // positives on numeric/buffer-heavy codebases (Three.js, webpack,
-      // image/audio/geometry libraries) without weakening detection of
-      // string-key prototype pollution.
-      if (isNumericKey(propertyNode)) {
-        return false;
-      }
+      // Numeric keys (`arr[0]`, `arr[i]` over a counter) are cleared by
+      // `isDangerousPropertyAccess` below; the checks in between only clear.
+      const propertyNode = node.property;
 
       // SAFE: key originates from for..in or Object.keys/entries iteration
       if (isForInOrObjectKeysKey(propertyNode)) {
@@ -2051,7 +1993,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       }
       const method = propertyName(call.callee);
       if (method === null || !ELEMENT_FIRST_ITERATORS.has(method)) return null;
-      if (call.callee.object.type !== AST_NODE_TYPES.Identifier) return null;
+      // Any receiver: the caller resolves an identifier, unwraps
+      // `Object.freeze`, and accepts only an array literal of strings, so an
+      // inline `['a', 'b'].forEach(...)` is decided by its own elements.
       return call.callee.object;
     };
 
@@ -2599,23 +2543,29 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       return false;
     };
 
-    /**
-     * Determine risk level based on the pattern and context
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    const determineRiskLevel = (
-      pattern: ObjectInjectionPattern | null,
+    /** Report a CWE-915 finding, worded for the accessor the key names. */
+    const reportInjection = (
+      node: TSESTree.Node,
+      propertyNode: TSESTree.Node,
       isAssignment: boolean,
-    ): string => {
-      if (pattern?.riskLevel === 'critical' || (pattern && isAssignment)) {
-        return 'CRITICAL';
-      }
-
-      if (pattern?.riskLevel === 'high' || isAssignment) {
-        return 'HIGH';
-      }
-
-      return 'MEDIUM';
+    ): void => {
+      const pattern = injectionPattern(propertyNode);
+      context.report({
+        node,
+        messageId: 'objectInjection',
+        data: {
+          // An assignment through a prototype accessor is the worst case
+          // whichever accessor it is; any other write is HIGH. A read takes the
+          // accessor's own level, and an unnamed key the lowest.
+          riskLevel: isAssignment
+            ? pattern
+              ? 'CRITICAL'
+              : 'HIGH'
+            : (pattern?.riskLevel ?? 'medium').toUpperCase(),
+          safeAlternative:
+            pattern?.safeAlternative ?? 'Use Map or property whitelisting',
+        },
+      });
     };
 
     /**
@@ -2665,35 +2615,22 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // would fire again for the INNER `a[b]` access. We walk the object
       // chain and mark every intermediate computed MemberExpression so the
       // MemberExpression visitor skips them — preventing exact duplicates.
-      let me = target;
-      handledMemberExpressions.add(me);
-      // Walk into chained computed accesses: a[b][c] → also mark a[b], and
-      // a[b]![c] → also mark a[b] (the wrapper is erased at compile time).
+
+      // `a[b][c] = v` is one finding, reported here on the assignment. The
+      // inner `a[b]` would be reported again by the MemberExpression visitor
+      // when a type-only wrapper separates it from its parent — `a[b]![c] = v`,
+      // `(a[b] as T)[c] = v` — so every computed access inside the target is
+      // marked handled. (The target itself, and an unwrapped inner access,
+      // are already skipped there by position.)
       for (
-        let inner = withoutTsWrapper(me.object);
+        let inner = withoutTsWrapper(target.object);
         inner.type === AST_NODE_TYPES.MemberExpression && inner.computed;
-        inner = withoutTsWrapper(me.object)
+        inner = withoutTsWrapper(inner.object)
       ) {
-        me = inner;
-        handledMemberExpressions.add(me);
+        handledMemberExpressions.add(inner);
       }
 
-      const { object, property, isAssignment, pattern } =
-        extractPropertyAccess(node);
-
-      const riskLevel = determineRiskLevel(pattern, isAssignment);
-
-      context.report({
-        node,
-        messageId: 'objectInjection',
-        data: {
-          pattern: `${object}[${property}]`,
-          riskLevel,
-          vulnerability: pattern?.vulnerability || 'object injection',
-          safeAlternative:
-            pattern?.safeAlternative || 'Use Map or property whitelisting',
-        },
-      });
+      reportInjection(node, target.property, true);
     };
 
     /**
@@ -2813,15 +2750,23 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * Two shapes: called immediately, or bound once and then called in the same
      * scope. Beyond one hop is L1.
      */
+    /** Is `parent` a call or `new` whose callee is `callee`? */
+    const isInvocationOf = (
+      parent: TSESTree.Node,
+      callee: TSESTree.Node,
+    ): boolean =>
+      (parent.type === AST_NODE_TYPES.CallExpression ||
+        parent.type === AST_NODE_TYPES.NewExpression) &&
+      parent.callee === callee;
+
     const isInvokedRead = (node: TSESTree.MemberExpression): boolean => {
       const parent = node.parent as TSESTree.Node | undefined;
       if (parent === undefined) return false;
 
-      // `handlers[k](...)`
-      if (
-        parent.type === AST_NODE_TYPES.CallExpression &&
-        parent.callee === node
-      ) {
+      // `handlers[k](...)` and `new handlers[k](...)` — both invoke what the
+      // key selected. `new` was missed until 2026-11, though it runs the
+      // selected function exactly as a call does.
+      if (isInvocationOf(parent, node)) {
         return true;
       }
 
@@ -2833,22 +2778,14 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       ) {
         return false;
       }
-      const variable = context.sourceCode
-        .getDeclaredVariables(parent as never)
-        .find(
-          (candidate) =>
-            candidate.name === (parent.id as TSESTree.Identifier).name,
+      // An Identifier declarator declares exactly one variable.
+      return context.sourceCode
+        .getDeclaredVariables(parent)
+        .some((variable) =>
+          variable.references.some((reference) =>
+            isInvocationOf(reference.identifier.parent, reference.identifier),
+          ),
         );
-      return (
-        variable?.references.some((reference) => {
-          const referenceParent = reference.identifier.parent as
-            TSESTree.Node | undefined;
-          return (
-            referenceParent?.type === AST_NODE_TYPES.CallExpression &&
-            referenceParent.callee === reference.identifier
-          );
-        }) ?? false
-      );
     };
 
     /**
@@ -2884,7 +2821,14 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         }
         // A type-only wrapper is erased at compile time: `o[a]! = v` and
         // `(o[a] as T) = v` emit `o[a] = v`, so the wrapper is the same position.
-        if (isTsTypeWrapper(parent) && parent.expression === current) {
+        // So is an optional chain around the access: `delete o?.[k]` deletes
+        // `o[k]` whenever `o` is not nullish. It used to end the climb, so the
+        // optional spelling of a delete was never a write.
+        if (
+          (isTsTypeWrapper(parent) ||
+            parent.type === AST_NODE_TYPES.ChainExpression) &&
+          parent.expression === current
+        ) {
           current = parent;
           parent = parent.parent;
           continue;
@@ -2957,7 +2901,8 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // `user[req.query.field]` can hand back a password hash. That is CWE-200,
       // information exposure — a different weakness needing a different message,
       // and it is tracked as a gap rather than smuggled in under this one.
-      if (!isWriteTarget(node) && !isInvokedRead(node)) {
+      const isWrite = isWriteTarget(node);
+      if (!isWrite && !isInvokedRead(node)) {
         return;
       }
 
@@ -2965,7 +2910,15 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      if (isReadFromConstObjectLiteral(node)) {
+      if (isWrite) {
+        if (isReadFromConstObjectLiteral(node)) {
+          return;
+        }
+      } else if (isPrototypelessObject(node.object)) {
+        // An INVOKED read is method injection only through the prototype: on a
+        // const object literal `{ a, b }[k]()` still reaches `constructor`, so
+        // the closed-shape exemption is a write-side argument and does not
+        // apply here — while `Object.create(null)` has no `constructor` to reach.
         return;
       }
 
@@ -3013,22 +2966,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      const { object, property, isAssignment, pattern } =
-        extractPropertyAccess(node);
-
-      const riskLevel = determineRiskLevel(pattern, isAssignment);
-
-      context.report({
-        node,
-        messageId: 'objectInjection',
-        data: {
-          pattern: `${object}[${property}]`,
-          riskLevel,
-          vulnerability: pattern?.vulnerability || 'object injection',
-          safeAlternative:
-            pattern?.safeAlternative || 'Use Map or property whitelisting',
-        },
-      });
+      reportInjection(node, node.property, false);
     };
 
     /**
@@ -3165,7 +3103,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           context.report({
             node: n,
             messageId: 'massAssignment',
-            data: { key: keyName },
           });
           return;
         }
@@ -3436,7 +3373,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     };
 
     const checkPrototypePollutingCopyLoop = (node: TSESTree.ForInStatement) => {
-      if (isInCodemodContext) return;
+      // No codemod check here: arming a loop reports nothing by itself, and the
+      // AssignmentExpression handler that would report its writes already
+      // returns in a codemod file.
 
       // The binding introduced by `for (const k in ...)`.
       const keyName =
@@ -3563,13 +3502,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const options = context.options[0] || {};
-        ({
-          // `allowLiterals` is accepted for backward-compatible schema/options
-          // parity (see comment near `isTypedUnionAccess` usage below) but no
-          // longer changes runtime behavior, so it is intentionally unused here.
-          allowLiterals: _allowLiterals = false,
-          dangerousProperties = ['__proto__', 'prototype', 'constructor'],
-        } = options);
+        // `allowLiterals` is accepted for backward-compatible schema/options
+        // parity but no longer changes runtime behavior, so it is not read.
+        ({ dangerousProperties = ['__proto__', 'prototype', 'constructor'] } =
+          options);
 
         // Track MemberExpressions that are part of AssignmentExpressions to avoid double-reporting
         handledMemberExpressions = new WeakSet<TSESTree.MemberExpression>();

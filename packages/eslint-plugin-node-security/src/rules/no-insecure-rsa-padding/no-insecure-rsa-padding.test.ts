@@ -38,8 +38,34 @@ describe('no-insecure-rsa-padding', () => {
         code: 'crypto.sign(algorithm, data, key);',
         name: 'sign is not an RSA encryption call and is not reported',
       },
+      {
+        name: 'a padding of 1 handed to a layout helper is not RSA padding',
+        code: 'Date.now(); layout({ padding: 1 });',
+      },
+      {
+        name: 'spread key options beside OAEP padding are not PKCS#1 v1.5',
+        code: 'crypto.privateDecrypt({ ...keyOptions, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buffer);',
+      },
     ],
     invalid: [
+      {
+        name: 'allowInTests does not exempt a file that is not a test',
+        code: 'crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_PADDING }, buffer);',
+        options: [{ allowInTests: true }],
+        filename: 'src/rsa.ts',
+        errors: [
+          {
+            messageId: 'insecureRsaPadding',
+            suggestions: [
+              {
+                messageId: 'useOaep',
+                output:
+                  'crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buffer);',
+              },
+            ],
+          },
+        ],
+      },
       // Invalid: PKCS#1 v1.5 padding on privateDecrypt
       {
         name: 'PKCS#1 v1.5 decryption padding — the Bleichenbacher oracle',

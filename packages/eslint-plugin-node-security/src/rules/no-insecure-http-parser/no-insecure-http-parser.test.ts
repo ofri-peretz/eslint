@@ -115,6 +115,7 @@ describe('no-insecure-http-parser', () => {
       // Built once, passed to http.createServer somewhere else — anchoring on
       // the property is what makes this reachable at all.
       {
+        name: 'insecureHTTPParser = true on an options object is reported with a false suggestion',
         code: `serverOptions.insecureHTTPParser = true;`,
         errors: [
           {

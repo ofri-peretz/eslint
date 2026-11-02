@@ -107,10 +107,9 @@ export const noDynamicSystemPrompt = createRule<RuleOptions, MessageIds>({
         if (node.expressions.length === 0) return !allowStaticTemplates;
         return !isStaticText(node, sourceCode);
       }
-      if (node.type === 'BinaryExpression' && node.operator === '+') {
-        return !isStaticText(node, sourceCode);
-      }
-      if (node.type === 'CallExpression')
+      // isStaticText accepts only a `+` of static parts; any other binary is
+      // computed at runtime.
+      if (node.type === 'BinaryExpression' || node.type === 'CallExpression')
         return !isStaticText(node, sourceCode);
       return node.type === 'AwaitExpression';
     }
@@ -131,7 +130,7 @@ export const noDynamicSystemPrompt = createRule<RuleOptions, MessageIds>({
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        if (!sdkCallName(node)) return;
+        if (!sdkCallName(node, context.sourceCode)) return;
 
         // Check first argument (options object)
         const optionsArg = node.arguments[0];

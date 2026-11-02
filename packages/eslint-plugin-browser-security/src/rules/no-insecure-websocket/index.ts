@@ -115,6 +115,28 @@ export const noInsecureWebsocket = createRule<RuleOptions, MessageIds>({
           report(node);
         }
       },
+
+      // `ws://${host}/updates` fixes the cleartext scheme in static text; the
+      // interpolated host cannot make it encrypted. Only a host the template
+      // WRITES DOWN can exempt it (loopback, RFC 2606), exactly as in
+      // `require-websocket-wss`, which owns the constructor-argument form.
+      TemplateLiteral(node: TSESTree.TemplateLiteral) {
+        const first = node.quasis[0].value.raw;
+        if (!CLEARTEXT_WS_SCHEME.test(first)) return;
+        // The scheme test above guarantees a match. A port left to an
+        // interpolation (`localhost:${port}`) leaves a dangling colon that is
+        // not part of the host.
+        const [, host] = /^ws:\/\/([^/?#]*)/i.exec(first) as RegExpExecArray;
+        const authority = host.replace(/:$/, '');
+        if (
+          isNonTransmittingUrl(`ws://${authority}`) ||
+          isProtocolInspection(node, node.parent as TSESTree.Node) ||
+          isWebSocketConstructorUrl(node)
+        ) {
+          return;
+        }
+        report(node);
+      },
     };
   },
 });

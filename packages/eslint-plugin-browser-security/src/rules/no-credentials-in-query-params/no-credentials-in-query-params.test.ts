@@ -51,9 +51,42 @@ ruleTester.run('no-credentials-in-query-params', noCredentialsInQueryParams, {
     // An interpolation cannot form `?token=` by straddling the boundary —
     // each one is a placeholder, not empty string.
     { code: 'const url = `${prefix}?${key}token=${v}`' },
+    {
+      name: 'a pagination pageToken is not a credential',
+      code: "fetch('/api/items?pageToken=abc&limit=10')",
+    },
+    {
+      name: 'a parameter that merely starts with a credential word is not one',
+      code: "const url = '/api/report?secret_name=db&password_policy=strict'",
+    },
   ],
 
   invalid: [
+    {
+      name: 'an RFC 6750 access_token query parameter is a bearer credential',
+      code: "fetch('/api/login?access_token=abc123&lang=en')",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'api_key after another parameter is the apikey credential',
+      code: "const url = '/api/login?lang=en&api_key=abc123'",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a client_secret in a template query string is a credential',
+      code: 'fetch(`/api/login?client_secret=${v}&lang=en`)',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'pwd and passwd are password parameters',
+      code: "const url = '/login?user=bob&pwd=hunter2'",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a camelCase apiKey parameter is the apikey credential',
+      code: "const url = '/maps?apiKey=abc123'",
+      errors: [{ messageId: 'violationDetected' }],
+    },
     // A template that really does put a credential in a query string still
     // reports — okta/okta-signin-widget RouterUtil.js:34 is exactly this.
     {
@@ -62,6 +95,7 @@ ruleTester.run('no-credentials-in-query-params', noCredentialsInQueryParams, {
       errors: [{ messageId: 'violationDetected' }],
     },
     {
+      name: 'a password query parameter interpolated into a template URL is reported',
       code: 'const u = `${base}?password=${pw}`',
       errors: [{ messageId: 'violationDetected' }],
     },
@@ -207,6 +241,46 @@ describe('option: bodyProperties extends the payload vocabulary', () => {
         {
           code: 'fetch(url, { body: `client_id=${id}&token=${t}` });',
           options: [{ bodyProperties: ['form'] }],
+          errors: 1,
+        },
+      ],
+    },
+  );
+});
+
+describe('option: credentialSuffixes replaces the credential vocabulary', () => {
+  ruleTester.run(
+    'credentialSuffixes decides which parameter names are credentials',
+    noCredentialsInQueryParams,
+    {
+      valid: [
+        {
+          name: 'a suffix dropped from credentialSuffixes no longer reports: ?pwd= is a working directory here',
+          code: "const url = 'https://files.example.com/list?pwd=/home'",
+          options: [{ credentialSuffixes: ['password', 'secret'] }],
+        },
+        {
+          name: 'a bare ?token= on an out-of-band reset flow stays exempt with an empty credentialSuffixes',
+          code: "const url = 'https://app.example.com/reset?token=abc'",
+          options: [{ credentialSuffixes: [] }],
+        },
+      ],
+      invalid: [
+        {
+          name: 'the default credentialSuffixes reports ?pwd=',
+          code: "const url = 'https://files.example.com/list?pwd=/home'",
+          errors: 1,
+        },
+        {
+          name: 'a suffix added to credentialSuffixes reports a parameter the default ignores',
+          code: "const url = 'https://api.example.com/v1?license_key=abc'",
+          options: [{ credentialSuffixes: ['license key'] }],
+          errors: 1,
+        },
+        {
+          name: 'an empty credentialSuffixes still reports a bare ?token=',
+          code: "const url = 'https://api.example.com/v1?token=abc'",
+          options: [{ credentialSuffixes: [] }],
           errors: 1,
         },
       ],

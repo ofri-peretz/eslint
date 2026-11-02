@@ -124,8 +124,8 @@ export const noCookieAuthTokens = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        ({ allowInTests = true, bearerPatterns = BEARER_CREDENTIAL_TERMS } =
-          options as Options);
+        ({ allowInTests, bearerPatterns = BEARER_CREDENTIAL_TERMS } =
+          options as Options & Required<Pick<Options, 'allowInTests'>>);
         const isTestFile = isTestFilePath(context.filename);
 
         if (allowInTests && isTestFile) {

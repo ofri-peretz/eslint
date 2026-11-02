@@ -11,12 +11,16 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
+  isModuleBinding,
   MessageIcons,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { findVariable, makeReadsTaintSource } from '../../utils/provenance';
-import { resolveConstantString } from '../../utils/const-value';
+import {
+  isClosedStringTableLookup,
+  resolveConstantString,
+} from '../../utils/const-value';
 
 type MessageIds = 'unsafeDynamicRequire' | 'unsafeDynamicImport';
 
@@ -134,7 +138,7 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
     let readsTaintSource: (node: TSESTree.Node) => boolean;
     let reportUnresolvedSpecifiers: boolean;
     let allowDynamicImport: boolean;
-    let requireVariables: Set<string>;
+    let requireVariables: Set<TSESLint.Scope.Variable>;
 
     /**
      * Check if a node is a reference to require
@@ -145,11 +149,10 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
      * guess: in a CommonJS file `module` IS the module object.
      */
     const isRequireReference = (node: TSESTree.Node): boolean => {
-      if (node.type === 'Identifier' && node.name === 'require') {
-        return true;
-      }
-      if (node.type === 'Identifier' && requireVariables.has(node.name)) {
-        return true;
+      if (node.type === 'Identifier') {
+        if (node.name === 'require') return true;
+        const variable = findVariable(context.sourceCode, node);
+        return variable !== null && requireVariables.has(variable);
       }
       return (
         node.type === 'MemberExpression' &&
@@ -183,16 +186,23 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
      * cannot see. `reportUnresolvedSpecifiers` restores the old sweep.
      */
     const isDangerousSpecifier = (arg: TSESTree.Expression): boolean => {
-      if (arg.type === 'Literal') return false;
-      if (arg.type === 'TemplateLiteral' && arg.expressions.length === 0)
-        return false;
-
-      // A `const` bound to a string literal is that string. Webpack's resolver
+      // A string literal, a backtick string with no `${}`, and a `const` bound
+      // to either are that string. (A non-string literal makes the loader
+      // throw ERR_INVALID_ARG_TYPE before anything loads.)
+      //
+      // The `const` case matters beyond tidiness. Webpack's resolver
       // vocabulary calls a specifier a `request`, so `const request =
       // './loaders/babel-loader.js'` collides head-on with the taint ROOTS,
       // which match a name: without this the rule reported a hard-coded path
       // because of how it was spelled.
       if (resolveConstantString(context.sourceCode, arg) !== null) return false;
+
+      // `require(ALLOWED[req.query.plugin])` with `ALLOWED` a closed table of
+      // string literals is the allowlist this rule's own message recommends.
+      // Whatever the key, the specifier is one the author wrote: its
+      // provenance IS resolved, so even `reportUnresolvedSpecifiers` has
+      // nothing to say about it.
+      if (isClosedStringTableLookup(context.sourceCode, arg)) return false;
 
       // A bare parameter is a caller-side fact, whatever it is named. The
       // rule's own contract says so — `reportUnresolvedSpecifiers` exists to
@@ -233,28 +243,36 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
          * Track variables that reference require
          * Maps variable name to the node where it was assigned
          */
-        requireVariables = new Set<string>();
+        requireVariables = new Set<TSESLint.Scope.Variable>();
       },
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         // Track when require is assigned to a variable
-        if (node.id.type === 'Identifier' && node.init) {
-          if (node.init.type === 'Identifier' && node.init.name === 'require') {
-            requireVariables.add(node.id.name);
-          }
-          // `const requireCjs = createRequire(import.meta.url)` is the
-          // documented way to reach the CJS loader from ESM — the same binding
-          // one call deeper, and the shape every ESM plugin host uses.
-          // `module.createRequire(…)` (the `node:module` default import) is
-          // the same function.
-          if (
-            node.init.type === 'CallExpression' &&
-            ((node.init.callee.type === 'Identifier' &&
-              node.init.callee.name === 'createRequire') ||
-              (node.init.callee.type === 'MemberExpression' &&
-                propertyName(node.init.callee) === 'createRequire'))
-          ) {
-            requireVariables.add(node.id.name);
-          }
+        if (node.id.type !== 'Identifier' || !node.init) return;
+        const init = node.init;
+        // `const requireCjs = createRequire(import.meta.url)` is the documented
+        // way to reach the CJS loader from ESM — the same binding one call
+        // deeper, and the shape every ESM plugin host uses. The callee has to
+        // RESOLVE to `node:module`'s `createRequire` (named, renamed, the
+        // `module.createRequire` default import, a require of it): a local
+        // function that merely shares the name loads nothing. A
+        // `createRequire` declared nowhere in the file (a snippet that elides
+        // its import) cannot be such a local, so it keeps counting.
+        const callee = init.type === 'CallExpression' ? init.callee : null;
+        const aliasesRequire =
+          (init.type === 'Identifier' && init.name === 'require') ||
+          (callee !== null &&
+            (isModuleBinding(
+              callee,
+              context.sourceCode.getScope(node),
+              'module',
+              ['createRequire'],
+            ) ||
+              (callee.type === 'Identifier' &&
+                callee.name === 'createRequire' &&
+                !findVariable(context.sourceCode, callee)?.defs.length)));
+        if (!aliasesRequire) return;
+        for (const variable of context.sourceCode.getDeclaredVariables(node)) {
+          requireVariables.add(variable);
         }
       },
 
@@ -271,15 +289,8 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
       },
 
       CallExpression(node: TSESTree.CallExpression) {
-        // Check for require() calls (direct, via variable, or module.require)
-        if (
-          node.callee.type !== 'Identifier' &&
-          node.callee.type !== 'MemberExpression'
-        ) {
-          return;
-        }
-
-        // Check if callee is require or a variable that references require
+        // Check if callee is require, a variable that references require, or
+        // module.require — any other callee shape is none of them.
         if (!isRequireReference(node.callee)) {
           return;
         }
@@ -287,11 +298,14 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
         // Must have at least one argument
         if (node.arguments.length === 0) return;
 
+        // `require(...modules)` loads `modules[0]`: the spread array is where
+        // the specifier comes from, and it is judged on the same evidence.
         const firstArg = node.arguments[0];
-        if (firstArg.type === 'SpreadElement') return;
+        const specifier =
+          firstArg.type === 'SpreadElement' ? firstArg.argument : firstArg;
 
         // Report only on evidence that an attacker names the module.
-        if (!isDangerousSpecifier(firstArg)) return;
+        if (!isDangerousSpecifier(specifier)) return;
 
         context.report({
           node,

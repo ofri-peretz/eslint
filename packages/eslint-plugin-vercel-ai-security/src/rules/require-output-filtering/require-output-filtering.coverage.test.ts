@@ -30,7 +30,6 @@ const AI_PROGRAM = {
   comments: [],
 };
 
-
 /**
  * Every fixture imports the AI SDK, because the rules now abstain in files with
  * no `ai` / `@ai-sdk` in them. Wrapping the arrays rather than editing each
@@ -48,7 +47,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -75,7 +74,6 @@ const xai = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -83,70 +81,75 @@ const ruleTester = new RuleTester({
   },
 });
 
-ruleTester.run('require-output-filtering (branch coverage)', requireOutputFiltering, {
-  valid: xai([
-    // Arrow not attached to a Property at all.
-    {
-      code: `const cb = () => db.queryAll();`,
-    },
-    // A data-source chain that ends in a filter is filtered.
-    {
-      name: 'a data-source chain that ends in a filter is filtered',
-      code: `const t = { execute: () => db.users.filter(isPublic) };`,
-    },
-    // Returning a parameter: not bound to a data-source call.
-    {
-      name: 'returning a parameter is not returning a data-source result',
-      code: `const t = { execute: async (row) => { return row; } };`,
-    },
-    // A bare return inside execute.
-    {
-      name: 'a bare return inside execute reports nothing',
-      code: `const t = { execute: async () => { if (done) return; return { ok: true }; } };`,
-    },
-  ]),
-  invalid: xai([
-    // (Moved 2026-10-10 from valid) a quoted 'execute' key is the same
-    // property; it used to be skipped.
-    {
-      name: 'a quoted execute key is the same property and is checked',
-      code: `const w = { 'execute': () => db.queryAll() };`,
-      errors: [{ messageId: 'missingOutputFilter' }],
-    },
-    // Full tools nesting: tool name resolved from the tools object property.
-    {
-      code: `generateText({ tools: { fetchUser: { execute: () => db.queryUsers(id) } } });`,
-      errors: [
-        {
-          messageId: 'missingOutputFilter',
-          data: { toolName: 'fetchUser', source: 'db.queryUsers' },
-        },
-      ],
-    },
-    // String-literal tool name inside tools — key is not an Identifier, the
-    // walk keeps going and falls back to 'unknown'.
-    {
-      code: `generateText({ tools: { 'fetch-user': { execute: () => db.queryUsers(id) } } });`,
-      errors: [
-        {
-          messageId: 'missingOutputFilter',
-          data: { toolName: 'unknown', source: 'db.queryUsers' },
-        },
-      ],
-    },
-    // execute outside any tools object — grandparent is never a 'tools'
-    // Property, so the name falls back to 'unknown'.
-    {
-      code: `const worker = { execute: () => db.queryAll() };`,
-      errors: [
-        {
-          messageId: 'missingOutputFilter',
-          data: { toolName: 'unknown', source: 'db.queryAll' },
-        },
-      ],
-    },
-  ]),
-});
+ruleTester.run(
+  'require-output-filtering (branch coverage)',
+  requireOutputFiltering,
+  {
+    valid: xai([
+      // Arrow not attached to a Property at all.
+      {
+        code: `const cb = () => db.queryAll();`,
+      },
+      // A data-source chain that ends in a filter is filtered.
+      {
+        name: 'a data-source chain that ends in a filter is filtered',
+        code: `const t = { execute: () => db.users.filter(isPublic) };`,
+      },
+      // Returning a parameter: not bound to a data-source call.
+      {
+        name: 'returning a parameter is not returning a data-source result',
+        code: `const t = { execute: async (row) => { return row; } };`,
+      },
+      // A bare return inside execute.
+      {
+        name: 'a bare return inside execute reports nothing',
+        code: `const t = { execute: async () => { if (done) return; return { ok: true }; } };`,
+      },
+    ]),
+    invalid: xai([
+      // (Moved 2026-10-10 from valid) a quoted 'execute' key is the same
+      // property; it used to be skipped.
+      {
+        name: 'a quoted execute key is the same property and is checked',
+        code: `const w = { 'execute': () => db.queryAll() };`,
+        errors: [{ messageId: 'missingOutputFilter' }],
+      },
+      // Full tools nesting: tool name resolved from the tools object property.
+      {
+        code: `generateText({ tools: { fetchUser: { execute: () => db.queryUsers(id) } } });`,
+        errors: [
+          {
+            messageId: 'missingOutputFilter',
+            data: { toolName: 'fetchUser', source: 'db.queryUsers' },
+          },
+        ],
+      },
+      // A string-literal tool name inside tools is that tool's name (it used to
+      // fall back to 'unknown').
+      {
+        name: 'a quoted tool name is reported by its name',
+        code: `generateText({ tools: { 'fetch-user': { execute: () => db.queryUsers(id) } } });`,
+        errors: [
+          {
+            messageId: 'missingOutputFilter',
+            data: { toolName: 'fetch-user', source: 'db.queryUsers' },
+          },
+        ],
+      },
+      // execute outside any tools object — grandparent is never a 'tools'
+      // Property, so the name falls back to 'unknown'.
+      {
+        code: `const worker = { execute: () => db.queryAll() };`,
+        errors: [
+          {
+            messageId: 'missingOutputFilter',
+            data: { toolName: 'unknown', source: 'db.queryAll' },
+          },
+        ],
+      },
+    ]),
+  },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Layer 2: synthetic AST for parser-unreachable guards.
@@ -156,29 +159,41 @@ type Listener = (node: unknown) => void;
 
 describe('require-output-filtering — synthetic AST', () => {
   it('does not report for an orphan arrow function (parent undefined)', () => {
-    const { listeners, reports } = createWithMockContext(requireOutputFiltering, {
-      ast: AI_PROGRAM,
-      options: [{}],
-      sourceText: 'db.queryAll',
-    });
+    const { listeners, reports } = createWithMockContext(
+      requireOutputFiltering,
+      {
+        ast: AI_PROGRAM,
+        options: [{}],
+        sourceText: 'db.queryAll',
+      },
+    );
     const orphanArrow = {
       type: 'ArrowFunctionExpression',
       parent: undefined,
-      body: { type: 'CallExpression', callee: { type: 'Identifier', name: 'q' } },
+      body: {
+        type: 'CallExpression',
+        callee: { type: 'Identifier', name: 'q' },
+      },
     };
     (listeners.ArrowFunctionExpression as Listener)(orphanArrow);
     expect(reports).toEqual([]);
   });
 
   it('falls back to "unknown" when the object chain detaches above execute', () => {
-    const { listeners, reports } = createWithMockContext(requireOutputFiltering, {
-      ast: AI_PROGRAM,
-      options: [{}],
-      sourceText: 'db.queryAll',
-    });
+    const { listeners, reports } = createWithMockContext(
+      requireOutputFiltering,
+      {
+        ast: AI_PROGRAM,
+        options: [{}],
+        sourceText: 'db.queryAll',
+      },
+    );
     // execute Property whose ObjectExpression has no parent — the getToolName
     // walk hits the detached top and returns 'unknown'.
-    const detachedObject: Record<string, unknown> = { type: 'ObjectExpression', parent: undefined };
+    const detachedObject: Record<string, unknown> = {
+      type: 'ObjectExpression',
+      parent: undefined,
+    };
     const executeProp: Record<string, unknown> = {
       type: 'Property',
       key: { type: 'Identifier', name: 'execute' },

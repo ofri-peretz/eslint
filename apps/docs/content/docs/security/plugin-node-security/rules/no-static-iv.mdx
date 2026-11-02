@@ -5,7 +5,7 @@ tags: ['security', 'cryptography', 'cwe-329', 'nodejs']
 category: security
 severity: high
 cwe: CWE-329
-owasp: "A02:2021"
+owasp: 'A02:2021'
 autofix: false
 type_aware: false
 type_aware_status: unaware
@@ -40,10 +40,11 @@ Detects usage of hardcoded or static initialization vectors (IVs) in encryption 
 
 This rule detects hardcoded IVs passed to `crypto.createCipheriv()` including:
 
-- String literal IVs
+- String literal IVs — any non-empty string, whatever its alphabet or length
+  (`'@#!'` is a valid three-byte GCM nonce, identical on every call)
 - `Buffer.from('static-string')`
 - `Buffer.alloc()` with literal values
-- Hardcoded hex or base64 strings
+- Byte arrays typed out as literals (`Buffer.from([0, 1, …])`, `new Uint8Array([…])`)
 
 ## Why This Matters
 
@@ -189,6 +190,6 @@ crypto.createCipheriv('aes-256-gcm', key, iv);
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
+| Option         | Type      | Default | Description                    |
+| -------------- | --------- | ------- | ------------------------------ |
 | `allowInTests` | `boolean` | `false` | Allow static IVs in test files |

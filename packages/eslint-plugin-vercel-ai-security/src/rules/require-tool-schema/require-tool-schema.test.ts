@@ -22,7 +22,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -48,7 +48,6 @@ const xai = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -254,7 +253,6 @@ ruleTester.run('require-tool-schema', requireToolSchema, {
   ]),
 });
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // FP/FN audit 2026-10-10: a spread may supply the schema, so it is not proof
 // of absence; a tool() inside tools is named by its key.
@@ -287,7 +285,84 @@ ruleTester.run('require-tool-schema (fp-fn audit)', requireToolSchema, {
     {
       name: 'a tool() with no schema is named by its key in the tools object',
       code: `await streamText({ tools: { lookupUser: tool({ description: 'x', execute: async () => ({}) }) } });`,
-      errors: [{ messageId: 'missingInputSchema', data: { toolName: 'lookupUser' } }],
+      errors: [
+        { messageId: 'missingInputSchema', data: { toolName: 'lookupUser' } },
+      ],
+    },
+  ]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quint fidelity model (benchmarks/suites/fidelity/models/vercel-ai-security)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-tool-schema (fidelity)', requireToolSchema, {
+  valid: xai([
+    {
+      name: 'a tools map whose tool declares inputSchema is not reported',
+      code: `export const tools = { weather: { inputSchema: schema, execute: async (p) => get(p) } };`,
+    },
+    {
+      name: 'an entry with no execute in a map bound by name is not a tool',
+      code: `const tools = { hammer: { weight: 2 } };`,
+    },
+    {
+      name: 'a map whose name is not tools is not a tools map',
+      code: `const handlers = { weather: { execute: async (p) => get(p) } };`,
+    },
+    {
+      name: 'a tools binding that is not an object literal is not inspected',
+      code: `const tools = buildTools();`,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'the doc\'s "No schema" example — a const tools map — is reported',
+      code: `
+        export const tools = {
+          weather: {
+            description: 'Get weather',
+            execute: async (params) => getWeather(params.location),
+          },
+        };
+      `,
+      errors: [{ messageId: 'missingInputSchema' }],
+    },
+  ]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-tool-schema (mutation audit)', requireToolSchema, {
+  valid: xai([
+    {
+      name: 'a tools binding declared without a value is not a tools map',
+      code: `let tools;`,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'a test file is still checked by default (allowInTests is off)',
+      code: `const t = tool({ execute: async (p) => run(p) });`,
+      filename: 'handler.test.ts',
+      errors: [{ messageId: 'missingInputSchema' }],
+    },
+    {
+      name: 'allowInTests only exempts test files — a source file is still checked',
+      code: `const t = tool({ execute: async (p) => run(p) });`,
+      filename: 'handler.ts',
+      options: [{ allowInTests: true }],
+      errors: [{ messageId: 'missingInputSchema' }],
+    },
+    {
+      name: 'a namespace-qualified ai.tool() helper is the same helper',
+      code: `const t = ai.tool({ execute: async (p) => run(p) });`,
+      errors: [{ messageId: 'missingInputSchema' }],
+    },
+    {
+      name: 'every entry of an inline tools map in an SDK call is a tool, execute or not',
+      code: `await generateText({ model, tools: { weather: { description: 'Get weather' } } });`,
+      errors: [{ messageId: 'missingInputSchema' }],
     },
   ]),
 });

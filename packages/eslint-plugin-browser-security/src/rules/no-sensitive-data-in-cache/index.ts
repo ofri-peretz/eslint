@@ -63,6 +63,9 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+/** Constructors whose first argument is the URL of the request they build. */
+const RESOURCE_CONSTRUCTORS: ReadonlySet<string> = new Set(['Request', 'URL']);
+
 /**
  * The three Cache methods that WRITE. `match`/`keys`/`delete` do not.
  *
@@ -129,14 +132,16 @@ export const noSensitiveDataInCache = createRule<RuleOptions, MessageIds>({
     /**
      * The URL a cache-write argument names, or `null`.
      *
-     * Accepts the string form and `new Request('/url')`; anything else — a
-     * `Request` from a fetch event, a computed URL — is unknowable and abstains.
+     * Accepts the string form, `new Request('/url')` and `new URL('/url', base)`
+     * — Cache keys a URL object by the request it names, so it caches the
+     * same response as the string. Anything else — a `Request` from a fetch
+     * event, a computed URL, another constructor — is unknowable and abstains.
      */
     function resourceUrl(node: TSESTree.Node): string | null {
       if (
         node.type === AST_NODE_TYPES.NewExpression &&
         node.callee.type === AST_NODE_TYPES.Identifier &&
-        node.callee.name === 'Request'
+        RESOURCE_CONSTRUCTORS.has(node.callee.name)
       ) {
         const first = node.arguments[0];
         return first === undefined
@@ -165,7 +170,7 @@ export const noSensitiveDataInCache = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        const { allowInTests = true } = options as Options;
+        const { allowInTests } = options as Required<Options>;
         const isTestFile = isTestFilePath(context.filename);
 
         if (allowInTests && isTestFile) {
@@ -188,8 +193,8 @@ export const noSensitiveDataInCache = createRule<RuleOptions, MessageIds>({
         if (method === 'addAll') {
           if (first.type !== AST_NODE_TYPES.ArrayExpression) return;
           for (const element of first.elements) {
+            // A spread element has no readable URL: resourceUrl gives null.
             if (element === null) continue;
-            if (element.type === AST_NODE_TYPES.SpreadElement) continue;
             report(node, resourceUrl(element));
           }
           return;

@@ -105,7 +105,10 @@ const FIXTURES: Fixture[] = [
         list(@Query() query: GetSubscribersDto) {}
       }
     `,
-    expected: {},
+    // Linted alone, nothing validates this typed query DTO: no pipe here, and
+    // no global registration in view. In the repository the cross-file scan
+    // finds the app-wide pipe and silences it (global-registration.test.ts).
+    expected: { 'no-missing-validation-pipe': 1 },
   },
   {
     from: 'awesome-nest-boilerplate',
@@ -159,7 +162,9 @@ const FIXTURES: Fixture[] = [
     `,
     // Public by design, so no guard is required — but an unthrottled login is
     // brute-forceable, which is exactly the division of labour between the two.
-    expected: { 'require-throttler': 1 },
+    // The typed body is reported because this file alone shows no pipe; the
+    // repository's global pipe is the cross-file scan's to find.
+    expected: { 'require-throttler': 1, 'no-missing-validation-pipe': 1 },
   },
   {
     from: 'novu',

@@ -71,6 +71,7 @@ ruleTester.run(
       // The enclosing-function name is still read when the digest is stored
       // nowhere — that arm is narrowed, not removed.
       {
+        name: 'a sha1 helper used to derive a session token is reported in the default mode',
         code: `function signRequest(body) { return md5(body); }`,
         errors: 1,
       },

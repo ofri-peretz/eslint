@@ -5,7 +5,7 @@ tags: ['security', 'cryptography', 'cwe-916', 'nodejs', 'password']
 category: security
 severity: high
 cwe: CWE-916
-owasp: "A02:2021"
+owasp: 'A02:2021'
 autofix: false
 ---
 
@@ -13,8 +13,8 @@ autofix: false
 > **CWE:** [CWE-916](https://cwe.mitre.org/data/definitions/916.html)  
 > **OWASP:** [A02:2021-Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 
-
 <!-- @rule-summary -->
+
 Disallow PBKDF2 with insufficient iterations (< 100,000)
 <!-- @/rule-summary -->
 
@@ -173,6 +173,13 @@ crypto.pbkdf2(password, salt, iterations, 32, 'sha256', cb);
 
 **Mitigation**: Validate configuration at startup.
 
+A count built from `const` bindings, one key of a `const` object literal and
+`+ - * **` arithmetic is folded however long the chain is
+(`const R2 = R1; … crypto.pbkdf2Sync(pw, salt, R8, …)`); only a `let`, a
+parameter or a runtime value stays unresolved. A pbkdf2 handed to anything other
+than `util.promisify` (`partial(crypto.pbkdf2Sync, password)`) is not judged,
+because the wrapper moves the iteration count to another position.
+
 ## Further Reading
 
 - **[OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)** - Current recommendations
@@ -181,6 +188,6 @@ crypto.pbkdf2(password, salt, iterations, 32, 'sha256', cb);
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
+| Option          | Type     | Default  | Description                        |
+| --------------- | -------- | -------- | ---------------------------------- |
 | `minIterations` | `number` | `100000` | Minimum required PBKDF2 iterations |

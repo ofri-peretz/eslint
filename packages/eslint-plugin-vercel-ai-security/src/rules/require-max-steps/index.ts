@@ -58,7 +58,7 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
           '{{function}} with tools sets a step limit that does not bound the loop ({{reason}}).',
         severity: 'MEDIUM',
         compliance: ['SOC2'],
-        fix: 'Bound the loop with a server-side constant: stopWhen: [hasToolCall(...), stepCountIs(20)] (v5+) or maxSteps: 20 (v4)',
+        fix: 'Bound the loop with a server-side constant: stopWhen: [hasToolCall(...), stepCountIs({{limit}})] (v5+) or maxSteps: {{limit}} (v4)',
         documentationLink:
           'https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling#multi-step-calls-using-stopwhen',
       }),
@@ -69,7 +69,8 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
         properties: {
           suggestedMaxSteps: {
             type: 'number',
-            description: 'Default max steps limit to suggest',
+            description:
+              'Step limit the fix text suggests (`stepCountIs(n)` / `maxSteps: n`)',
             default: 5,
           },
         },
@@ -82,8 +83,9 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
       suggestedMaxSteps: 5,
     },
   ],
-  createOnce(context) {
+  createOnce(context, currentOptions) {
     let sourceCode: typeof context.sourceCode;
+    let suggestedMaxSteps: number;
 
     /**
      * Why this step setting fails to bound the loop, or `null` if it does.
@@ -133,10 +135,16 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
         if (!fileUsesVercelAi(context.sourceCode.ast)) return false;
 
         sourceCode = context.sourceCode;
+        // Merged with `defaultOptions` before `create` runs.
+        ({ suggestedMaxSteps } = currentOptions()[0] as Required<Options>);
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        const matchedFunction = sdkCallName(node, FUNCTIONS_WITH_TOOLS);
+        const matchedFunction = sdkCallName(
+          node,
+          context.sourceCode,
+          FUNCTIONS_WITH_TOOLS,
+        );
         if (!matchedFunction) return;
 
         const optionsArg = node.arguments[0];
@@ -150,7 +158,11 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
             context.report({
               node: value,
               messageId: 'unboundedSteps',
-              data: { function: matchedFunction, reason },
+              data: {
+                function: matchedFunction,
+                reason,
+                limit: String(suggestedMaxSteps),
+              },
             });
           }
         }

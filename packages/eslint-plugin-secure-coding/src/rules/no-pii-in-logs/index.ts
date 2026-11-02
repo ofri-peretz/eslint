@@ -19,6 +19,7 @@ import {
   namesOneOf,
   memberPropertyName,
   propertyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
@@ -51,6 +52,25 @@ export interface Options {
 
   /** Extra field labels, ON TOP of the built-ins. Default: [] */
   additionalPiiLabels?: string[];
+
+  /**
+   * Receiver names that denote an application logger; every level method on
+   * one is a log sink. REPLACES the built-in list. Default: DEFAULT_LOGGERS
+   */
+  loggers?: string[];
+
+  /** Extra logger receiver names, ON TOP of the built-ins. Default: [] */
+  additionalLoggers?: string[];
+
+  /**
+   * Words naming a whole person record, matched as WHOLE WORDS of an
+   * identifier. Serializing one (`JSON.stringify(user)`) logs every field it
+   * holds. REPLACES the built-in list. Default: DEFAULT_PII_RECORDS
+   */
+  piiRecords?: string[];
+
+  /** Extra person-record words, ON TOP of the built-ins. Default: [] */
+  additionalPiiRecords?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -108,6 +128,110 @@ const DEFAULT_PII_LABELS = [
 ];
 
 /**
+ * Receiver names that denote an application logger.
+ *
+ * `logger.info(...)` is the doc's own first incorrect example, and it was
+ * silent: only `console` was a sink. Matched on the receiver's own name — the
+ * identifier, or the last property of `this.logger` — so a domain object
+ * called `log` that is not a logger can be dropped through `loggers`.
+ */
+const DEFAULT_LOGGERS = ['logger', 'log'];
+
+/**
+ * The level methods a logger writes through.
+ *
+ * @protocol-constant The union of the level names pino, winston, bunyan,
+ * log4js and NestJS's `Logger` publish. Consulted only once the receiver is a
+ * logger, so it never judges a bare `info()` or `error()`. Unlike `console`,
+ * every level of an application logger is configured to ship somewhere — the
+ * level gates verbosity, not destination.
+ */
+const LOGGER_METHODS: ReadonlySet<string> = new Set([
+  'trace',
+  'debug',
+  'verbose',
+  'info',
+  'log',
+  'warn',
+  'error',
+  'fatal',
+]);
+
+/**
+ * Words naming a whole person record. `JSON.stringify(user)` serializes every
+ * field the record holds — its email and phone included — so the call leaks
+ * what `user.email` leaks, concealed. Matched as whole words, so `userRecord`
+ * is a user record by name and `username` (one word) is not.
+ */
+const DEFAULT_PII_RECORDS = [
+  'user',
+  'person',
+  'customer',
+  'account',
+  'applicant',
+  'patient',
+];
+
+/**
+ * PII written as a literal, per the doc's detection table: an email address,
+ * a US SSN, and a 13–19 digit card number that passes Luhn. A literal cannot
+ * hold a USER's data, but a hard-coded address or card number is still
+ * personal data landing in the log.
+ */
+const EMAIL_IN_TEXT =
+  /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/;
+const SSN_IN_TEXT = /(?<!\d)\d{3}-\d{2}-\d{4}(?!\d)/;
+const CARD_IN_TEXT = /(?<![\d-])\d(?:[ -]?\d){12,18}(?![\d-])/g;
+
+function passesLuhn(digits: string): boolean {
+  let sum = 0;
+  for (let i = 0; i < digits.length; i++) {
+    let digit = Number(digits[digits.length - 1 - i]);
+    if (i % 2 === 1) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
+    }
+    sum += digit;
+  }
+  return sum % 10 === 0;
+}
+
+/** Does this logged node's constant text carry an email, an SSN or a card number? */
+function constantTextHasPii(node: TSESTree.Node): boolean {
+  // `'a@b.co'` and `` `a@b.co` `` are the same constant string.
+  const constant = staticString(node);
+  let text: string;
+  if (constant !== null) {
+    text = constant;
+  } else if (node.type === AST_NODE_TYPES.TemplateLiteral) {
+    text = node.quasis.map((quasi) => quasi.value.raw).join(' ');
+  } else {
+    return false;
+  }
+  if (EMAIL_IN_TEXT.test(text) || SSN_IN_TEXT.test(text)) return true;
+  return [...text.matchAll(CARD_IN_TEXT)].some((match) =>
+    passesLuhn(match[0].replace(/[ -]/g, '')),
+  );
+}
+
+/** `JSON.stringify(x)` — serializes `x` verbatim into the logged string. */
+function stringifiedValue(node: TSESTree.Node): TSESTree.Node | null {
+  if (
+    node.type !== AST_NODE_TYPES.CallExpression ||
+    node.callee.type !== AST_NODE_TYPES.MemberExpression ||
+    node.callee.object.type !== AST_NODE_TYPES.Identifier ||
+    node.callee.object.name !== 'JSON' ||
+    propertyName(node.callee) !== 'stringify'
+  ) {
+    return null;
+  }
+  const [value] = node.arguments;
+  return value === undefined || value.type === AST_NODE_TYPES.SpreadElement
+    ? null
+    : value;
+}
+
+/**
  * The sub-expressions that place a value VERBATIM into the logged output.
  *
  * Template interpolation, `+` concatenation, an object literal's property
@@ -118,7 +242,8 @@ const DEFAULT_PII_LABELS = [
  *
  * A CallExpression is deliberately NOT traversed. `hash(user.email)` logs a
  * digest, not the address — traversing into call arguments would report the
- * recommended remediation as the vulnerability.
+ * recommended remediation as the vulnerability. `JSON.stringify` is the one
+ * exception: it serializes, it does not digest.
  */
 function collectLoggedValues(root: TSESTree.Node): TSESTree.Node[] {
   const found: TSESTree.Node[] = [];
@@ -145,6 +270,11 @@ function collectLoggedValues(root: TSESTree.Node): TSESTree.Node[] {
       }
     } else if (node.type === AST_NODE_TYPES.ConditionalExpression) {
       pending.push(node.consequent, node.alternate);
+    } else {
+      // `JSON.stringify(user.email)` is the one call that IS value-preserving:
+      // it serializes its argument into the string, it does not digest it.
+      const serialized = stringifiedValue(node);
+      if (serialized !== null) pending.push(serialized);
     }
   }
 
@@ -234,6 +364,32 @@ export const noPiiInLogs = createRule<RuleOptions, MessageIds>({
             default: [],
             description: 'Extra field labels, on top of `piiLabels`.',
           },
+          loggers: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_LOGGERS,
+            description:
+              'Receiver names that denote an application logger (`logger.info`, `this.logger.error`); every level method on one is a log sink. Replaces the built-in list.',
+          },
+          additionalLoggers: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra logger receiver names, on top of `loggers`.',
+          },
+          piiRecords: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_PII_RECORDS,
+            description:
+              'Words naming a whole person record, matched as WHOLE WORDS of an identifier. `JSON.stringify` of one is reported. Replaces the built-in list.',
+          },
+          additionalPiiRecords: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra person-record words, on top of `piiRecords`.',
+          },
         },
         additionalProperties: false,
       },
@@ -247,12 +403,19 @@ export const noPiiInLogs = createRule<RuleOptions, MessageIds>({
       additionalPiiTerms: [],
       piiLabels: DEFAULT_PII_LABELS,
       additionalPiiLabels: [],
+      loggers: DEFAULT_LOGGERS,
+      additionalLoggers: [],
+      piiRecords: DEFAULT_PII_RECORDS,
+      additionalPiiRecords: [],
     },
   ],
   createOnce(context, currentOptions) {
     let logMethods: Set<string>;
     let terms: string[];
     let labels: Set<string>;
+    // `string | null` so a runtime-keyed receiver's null name is simply absent.
+    let loggerNames: Set<string | null>;
+    let records: string[];
     let sourceCode: Readonly<TSESLint.SourceCode>;
 
     function report(node: TSESTree.Node) {
@@ -304,6 +467,38 @@ export const noPiiInLogs = createRule<RuleOptions, MessageIds>({
       });
     }
 
+    /**
+     * `console.log(…)` with a configured console method, or any level method
+     * of a logger receiver: `logger.info(…)`, `this.logger.error(…)`.
+     */
+    function isLogSink(callee: TSESTree.Expression): boolean {
+      if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+      // `console['log'](user.email)` writes the same line to the same
+      // stream. A method chosen at runtime names no sink and is skipped.
+      const method = propertyName(callee);
+      const receiver = callee.object;
+      if (receiver.type === AST_NODE_TYPES.Identifier) {
+        return receiver.name === 'console'
+          ? namesOneOf(method, logMethods)
+          : loggerNames.has(receiver.name) &&
+              namesOneOf(method, LOGGER_METHODS);
+      }
+      return (
+        receiver.type === AST_NODE_TYPES.MemberExpression &&
+        loggerNames.has(propertyName(receiver)) &&
+        namesOneOf(method, LOGGER_METHODS)
+      );
+    }
+
+    /** `JSON.stringify(user)` — a whole person record serialized into the line. */
+    function isSerializedRecord(node: TSESTree.Node): boolean {
+      const serialized = stringifiedValue(node);
+      return (
+        serialized?.type === AST_NODE_TYPES.Identifier &&
+        nameHasAnyWord(serialized.name, records)
+      );
+    }
+
     return {
       before() {
         const [options = {}] = currentOptions();
@@ -314,7 +509,13 @@ export const noPiiInLogs = createRule<RuleOptions, MessageIds>({
           additionalPiiTerms = [],
           piiLabels = DEFAULT_PII_LABELS,
           additionalPiiLabels = [],
+          loggers = DEFAULT_LOGGERS,
+          additionalLoggers = [],
+          piiRecords = DEFAULT_PII_RECORDS,
+          additionalPiiRecords = [],
         } = options as Options;
+        loggerNames = new Set([...loggers, ...additionalLoggers]);
+        records = [...piiRecords, ...additionalPiiRecords];
 
         logMethods = new Set([...consoleMethods, ...additionalConsoleMethods]);
         terms = [...piiTerms, ...additionalPiiTerms];
@@ -329,14 +530,7 @@ export const noPiiInLogs = createRule<RuleOptions, MessageIds>({
         sourceCode = context.sourceCode;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        if (
-          node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          node.callee.object.type !== AST_NODE_TYPES.Identifier ||
-          node.callee.object.name !== 'console' ||
-          // `console['log'](user.email)` writes the same line to the same
-          // stream. A method chosen at runtime names no sink and is skipped.
-          !namesOneOf(propertyName(node.callee), logMethods)
-        ) {
+        if (!isLogSink(node.callee)) {
           return;
         }
 
@@ -354,7 +548,12 @@ export const noPiiInLogs = createRule<RuleOptions, MessageIds>({
           }
 
           for (const value of collectLoggedValues(arg)) {
-            if (isPiiFieldAccess(value, terms) || isPiiBinding(value)) {
+            if (
+              isPiiFieldAccess(value, terms) ||
+              isPiiBinding(value) ||
+              isSerializedRecord(value) ||
+              constantTextHasPii(value)
+            ) {
               report(node);
               return;
             }

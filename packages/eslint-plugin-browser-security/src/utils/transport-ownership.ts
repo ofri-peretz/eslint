@@ -74,7 +74,8 @@ function argumentAncestor(node: TSESTree.Node): TSESTree.Node {
   while (
     parent !== undefined &&
     (parent.type === AST_NODE_TYPES.TemplateLiteral ||
-      (parent.type === AST_NODE_TYPES.BinaryExpression && parent.operator === '+'))
+      (parent.type === AST_NODE_TYPES.BinaryExpression &&
+        parent.operator === '+'))
   ) {
     current = parent;
     parent = current.parent;
@@ -158,11 +159,16 @@ export function isRequestCall(
  * "purer" (1) would have silently un-reported every codebase that does not
  * import axios in the same file, which is a recall loss dressed up as rigour.
  */
-function isAxiosClient(receiver: TSESTree.Node, scope: TSESLint.Scope.Scope): boolean {
+function isAxiosClient(
+  receiver: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): boolean {
   if (isModuleBinding(receiver, scope, 'axios')) {
     return true;
   }
-  return receiver.type === AST_NODE_TYPES.Identifier && receiver.name === 'axios';
+  return (
+    receiver.type === AST_NODE_TYPES.Identifier && receiver.name === 'axios'
+  );
 }
 
 /**
@@ -179,10 +185,22 @@ export function isWebSocketConstructorUrl(node: TSESTree.Node): boolean {
   const call = argument.parent;
   return (
     call?.type === AST_NODE_TYPES.NewExpression &&
-    call.callee.type === AST_NODE_TYPES.Identifier &&
-    call.callee.name === 'WebSocket' &&
+    isWebSocketConstructor(call.callee) &&
     call.arguments[0] === argument
   );
+}
+
+const WEBSOCKET_NAMES: ReadonlySet<string> = new Set(['WebSocket']);
+
+/**
+ * Does this callee denote the `WebSocket` constructor?
+ *
+ * `new window.WebSocket(url)` and `new globalThis.WebSocket(url)` open the same
+ * socket as the bare spelling; matching only the identifier made the qualified
+ * form invisible to the one rule that owns the constructor argument.
+ */
+export function isWebSocketConstructor(callee: TSESTree.Node): boolean {
+  return isGlobalObject(callee, WEBSOCKET_NAMES);
 }
 
 /**
@@ -199,7 +217,10 @@ export function isWebSocketConstructorUrl(node: TSESTree.Node): boolean {
  *
  * @see https://w3c.github.io/webappsec-mixed-content/
  */
-const SUBRESOURCE_ATTRIBUTES: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+const SUBRESOURCE_ATTRIBUTES: ReadonlyMap<
+  string,
+  ReadonlySet<string>
+> = new Map([
   ['img', new Set(['src', 'srcSet', 'srcset'])],
   ['image', new Set(['src', 'href', 'xlinkHref'])],
   ['script', new Set(['src'])],

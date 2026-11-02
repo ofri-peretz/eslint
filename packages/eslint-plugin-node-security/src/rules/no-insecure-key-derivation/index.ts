@@ -68,16 +68,21 @@ interface FoldedNumber {
  * `const` only, one hop into an object literal only. A `let` can be raised
  * between the declaration and the call, and a parameter is decided by a caller;
  * both stay unresolved, which is "no evidence", never "safe".
+ *
+ * There is no depth budget: a budget silently drops a long but perfectly
+ * resolvable chain (`1 + 1 + … + 1`, an alias of an alias of …). The only way
+ * the walk can loop is back through a binding it is already resolving
+ * (`const R = R + 1`), so `resolving` holds the initializers on the current
+ * path and a repeat resolves to nothing. They come off on the way back up, so
+ * `W + W` reads the same constant twice.
  */
 function foldNumber(
   sourceCode: SourceCode,
   node: TSESTree.Node,
-  depth = 0,
+  resolving: Set<TSESTree.Node> = new Set(),
 ): FoldedNumber | null {
-  if (depth > 6) return null;
-
   const bare = unwrapTypeSyntax(node);
-  if (bare !== node) return foldNumber(sourceCode, bare, depth + 1);
+  if (bare !== node) return foldNumber(sourceCode, bare, resolving);
 
   if (node.type === AST_NODE_TYPES.Literal) {
     return typeof node.value === 'number'
@@ -86,13 +91,13 @@ function foldNumber(
   }
 
   if (node.type === AST_NODE_TYPES.UnaryExpression && node.operator === '-') {
-    const inner = foldNumber(sourceCode, node.argument, depth + 1);
+    const inner = foldNumber(sourceCode, node.argument, resolving);
     return inner === null ? null : { value: -inner.value, source: node };
   }
 
   if (node.type === AST_NODE_TYPES.BinaryExpression) {
-    const left = foldNumber(sourceCode, node.left as TSESTree.Node, depth + 1);
-    const right = foldNumber(sourceCode, node.right, depth + 1);
+    const left = foldNumber(sourceCode, node.left as TSESTree.Node, resolving);
+    const right = foldNumber(sourceCode, node.right, resolving);
     if (left === null || right === null) return null;
     switch (node.operator) {
       case '*':
@@ -109,8 +114,11 @@ function foldNumber(
   }
 
   if (node.type === AST_NODE_TYPES.Identifier) {
-    const init = constInitializerOf(sourceCode, node);
-    return init === null ? null : foldNumber(sourceCode, init, depth + 1);
+    return foldBinding(
+      sourceCode,
+      constInitializerOf(sourceCode, node),
+      resolving,
+    );
   }
 
   if (node.type === AST_NODE_TYPES.MemberExpression) {
@@ -119,10 +127,23 @@ function foldNumber(
       node.object,
       propertyKey(sourceCode, node),
     );
-    return value === null ? null : foldNumber(sourceCode, value, depth + 1);
+    return foldBinding(sourceCode, value, resolving);
   }
 
   return null;
+}
+
+/** Fold the value a binding or object key holds, unless it is already being folded. */
+function foldBinding(
+  sourceCode: SourceCode,
+  value: TSESTree.Node | null,
+  resolving: Set<TSESTree.Node>,
+): FoldedNumber | null {
+  if (value === null || resolving.has(value)) return null;
+  resolving.add(value);
+  const folded = foldNumber(sourceCode, value, resolving);
+  resolving.delete(value);
+  return folded;
 }
 
 /** The property name a member expression reads, resolving a constant computed key. */
@@ -147,7 +168,6 @@ function objectPropertyValue(
   node: TSESTree.Node,
   key: string | null,
 ): TSESTree.Node | null {
-  if (key === null) return null;
   let object = unwrapTypeSyntax(node);
   if (object.type === AST_NODE_TYPES.Identifier) {
     const init = constInitializerOf(sourceCode, object);
@@ -189,14 +209,15 @@ function isPromisifyCall(
  * ```
  *
  * The last two were the majority of modern Node code and both were silent.
+ *
+ * `seen` holds the promisify initializers already followed, so a binding that
+ * names itself (`const kdf = promisify(kdf)`) ends instead of recursing.
  */
 function isPbkdf2Callee(
   sourceCode: SourceCode,
   callee: TSESTree.Node,
-  depth = 0,
+  seen: Set<TSESTree.Node> = new Set(),
 ): boolean {
-  if (depth > 4) return false;
-
   if (
     callee.type === AST_NODE_TYPES.MemberExpression &&
     namesOneOf(propertyName(callee), PBKDF2_EXPORTS)
@@ -219,16 +240,17 @@ function isPbkdf2Callee(
     return (
       isPromisifyCall(sourceCode, callee) &&
       callee.arguments.length > 0 &&
-      isPbkdf2Callee(sourceCode, callee.arguments[0], depth + 1)
+      isPbkdf2Callee(sourceCode, callee.arguments[0], seen)
     );
   }
   if (callee.type === AST_NODE_TYPES.Identifier) {
     const init = constInitializerOf(sourceCode, callee);
+    if (init === null || seen.has(init)) return false;
+    seen.add(init);
     return (
-      init !== null &&
       isPromisifyCall(sourceCode, init) &&
       init.arguments.length > 0 &&
-      isPbkdf2Callee(sourceCode, init.arguments[0], depth + 1)
+      isPbkdf2Callee(sourceCode, init.arguments[0], seen)
     );
   }
   return false;

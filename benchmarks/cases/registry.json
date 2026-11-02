@@ -1124,7 +1124,7 @@
       },
       "references": [],
       "occurrences": [],
-      "code": "const file = path.join(os.tmpdir(), `report-cache.tmp`);",
+      "code": "const file = path.join(os.tmpdir(), `report-cache.tmp`);\nfs.writeFileSync(file, data);",
       "kind": "defect",
       "coverage": [
         {

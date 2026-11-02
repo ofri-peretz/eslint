@@ -20,7 +20,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 | -------------- | --------------------------------------- |
 | **Severity**   | High (Data at Rest Exposure)            |
 | **Auto-Fix**   | ❌ No (requires encryption logic)       |
-| **Category**   | Security |
+| **Category**   | Security                                |
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
 | **Best For**   | Applications storing PII or tokens      |
 
@@ -51,7 +51,7 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ## Rule Details
 
-This rule flags `writeFile`/`writeFileSync`/`appendFile`/`appendFileSync` calls that put a credential on disk without an encryption wrapper around the value. Client storage (`localStorage`, `sessionStorage`, `AsyncStorage`) belongs to [`require-secure-credential-storage`](./require-secure-credential-storage); the two rules used to share both receivers and reported every match twice.
+This rule flags `writeFile`/`writeFileSync`/`appendFile`/`appendFileSync` calls that put a credential on disk without a provable encryption call around the value. Client storage (`localStorage`, `sessionStorage`, `AsyncStorage`) belongs to [`require-secure-credential-storage`](./require-secure-credential-storage); the two rules used to share both receivers and reported every match twice.
 
 ```mermaid
 %%{init: {
@@ -122,7 +122,7 @@ The following patterns are **not detected** due to static analysis limitations:
 
 ### Weak Encryption
 
-**Why**: This rule only checks for the _presence_ of a function call containing "encrypt". It does not verify the strength of the algorithm used.
+**Why**: This rule checks that the value provably comes out of a cryptographic encryption API. It does not verify the strength of the algorithm used.
 
 **Mitigation**: Use a trusted crypto library and follow the Node Security Crypto Standard (planned).
 
@@ -138,11 +138,24 @@ This rule owns the **filesystem**. Client storage — `localStorage`, `sessionSt
 [`require-secure-credential-storage`](./require-secure-credential-storage). Both
 require evidence that what is being stored is a credential:
 
-| Code | Why it is silent |
-| --- | --- |
-| `fs.writeFile(sitemapPath, sitemap)` | A write, but nothing says a credential is in it. |
-| `fs.writeFileSync('creds.json', encrypt(password))` | Encrypted on the way out. |
+| Code                                                             | Why it is silent                                                                                                                   |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `fs.writeFile(sitemapPath, sitemap)`                             | A write, but nothing says a credential is in it.                                                                                   |
+| `fs.writeFileSync('session_token.txt', encrypt(token))`          | Encrypted on the way out — where `encrypt` **provably** encrypts (below).                                                          |
 | `const key = fs.readFileSync(path.join(__dirname, './ssl.key'))` | A read, not a write — and reading a TLS key at startup is how TLS works. `key` on its own is deliberately not treated as evidence. |
+
+The write is recognised through the `fs` module however it is bound —
+`fs.writeFileSync`, `fs.promises.writeFile`, or a named
+`import { writeFile } from 'node:fs/promises'`.
+
+**What counts as encrypted** is decided by where the call comes from, never by what it is
+called: the call resolves to an encryption API of a crypto module (`node:crypto`'s
+`publicEncrypt`, a `createCipheriv` cipher's `update`/`final`, `crypto-js`, WebCrypto), or
+to a function declared in this file whose return value does. An `encrypt` imported from a
+project module (`import { encrypt } from './vault'`), ambient-declared, or declared
+nowhere is **unproven**, and unproven is not encrypted — with a credential named, it
+reports. Same contract as
+[`require-secure-credential-storage`](./require-secure-credential-storage).
 
 **If it fires**, either the filename or the value named a credential. If that name is
 misleading — a variable called `tokenizer`, say — renaming it is the better fix than a

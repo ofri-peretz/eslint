@@ -172,6 +172,7 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
     },
     // document.write (though rarely used with WS)
     {
+      name: 'document.write of WebSocket message data is reported',
       code: `
         const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {

@@ -203,20 +203,22 @@ rejectUnauthorized: false;
 
 ## Known False Negatives
 
-The rule matches a literal `false` on a `rejectUnauthorized` key, and a static
-`'0'` / `` `0` `` / `0` written to `process.env.NODE_TLS_REJECT_UNAUTHORIZED`
-(or `globalThis.process.env…`). Where the object or the assignment sits does
-not matter — an agent built inside an axios interceptor is reported like any
-other.
+The rule matches a `false` on a `rejectUnauthorized` key — written inline,
+cast (`false as boolean`), or through a `const` in scope
+(`const verifyPeer = false`) — and a static `'0'` / `` `0` `` / `0` (also
+`0 as any`, the only way to write the number in a `.ts` file) written to
+`process.env.NODE_TLS_REJECT_UNAUTHORIZED` (or `globalThis.process.env…`).
+Where the object or the assignment sits does not matter — an agent built inside
+an axios interceptor is reported like any other.
 
-### Values that are not a literal
+### Values computed at runtime
 
-**Why**: The rule does not follow data flow.
+**Why**: The rule follows one `const` hop, not data flow in general.
 
 ```typescript
 // ❌ NOT DETECTED
-const insecure = false;
-new https.Agent({ rejectUnauthorized: insecure });
+const insecure = process.env.TLS_VERIFY === 'off' ? false : true;
+new https.Agent({ rejectUnauthorized: !insecure });
 ```
 
 ### The env switch passed to a child process

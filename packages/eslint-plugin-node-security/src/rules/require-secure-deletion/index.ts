@@ -121,10 +121,12 @@ const SENSITIVE_PROPERTY_NAMES = [
  */
 function isSensitiveName(name: string, phrases: readonly string[]): boolean {
   const words = identifierWords(name);
-  if (words.length === 0) return false;
   return phrases.some((phrase) => {
     const needle = identifierWords(phrase);
-    if (needle.length === 0 || needle.length > words.length) return false;
+    // An empty phrase would match every name (`every` of nothing is true).
+    if (needle.length === 0) return false;
+    // A needle longer than the name starts at a negative index, which reads
+    // `undefined` and fails on the first word — no length check is needed.
     const start = words.length - needle.length;
     return needle.every((word, offset) => words[start + offset] === word);
   });

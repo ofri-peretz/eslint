@@ -43,7 +43,7 @@ export interface Options extends SecurityRuleOptions {
   /** Variables that contain user input */
   userInputVariables?: string[];
 
-  /** Allow while(true) loops with breaks */
+  /** Allow infinite-loop forms whose body leaves them (break / return / throw) */
   allowWhileTrueWithBreak?: boolean;
 
   /** Maximum recursion depth to allow */
@@ -148,7 +148,7 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
             type: 'boolean',
             default: true,
             description:
-              'Allow `while (true)` when the body contains a `break`',
+              'Allow an infinite-loop form (`while (true)`, `while (1)`, `do … while (true)`, `for (;;)`) whose body leaves it: a `break` of that loop, a `return` or a `throw`',
           },
           maxRecursionDepth: {
             type: 'number',
@@ -424,6 +424,16 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
         current;
         current = current.parent as TSESTree.Node | undefined
       ) {
+        // Checked BEFORE the function's own siblings: a guard clause above a
+        // `function run() { … }` declaration has run by the time `run` is
+        // declared, not by the time it is called.
+        if (
+          current.type === 'FunctionDeclaration' ||
+          current.type === 'FunctionExpression' ||
+          current.type === 'ArrowFunctionExpression'
+        ) {
+          break;
+        }
         const parent = current.parent as TSESTree.Node | undefined;
         if (parent?.type === 'BlockStatement' || parent?.type === 'Program') {
           const body = parent.body as TSESTree.Statement[];
@@ -435,13 +445,6 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
             if (statement.type === 'IfStatement' && validates(statement.test))
               return true;
           }
-        }
-        if (
-          current.type === 'FunctionDeclaration' ||
-          current.type === 'FunctionExpression' ||
-          current.type === 'ArrowFunctionExpression'
-        ) {
-          break;
         }
       }
 
@@ -511,16 +514,20 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       ) {
         return true;
       }
+      // A clamp bounds the value only if nothing unclamped joins it:
+      // `Math.min(req.query.n, 100) + 1` is bounded, while
+      // `parseInt(req.query.n) || Math.min(fallback, 10)` passes the request
+      // value straight through whenever it is truthy. Each side must be a
+      // clamp or carry no request value at all. (A ConditionalExpression needs
+      // no case here: `involvesUserInput` does not follow one, so a ternary
+      // side is always "no request value".)
       if (
         expression.type === 'BinaryExpression' ||
         expression.type === 'LogicalExpression'
       ) {
-        return isClamped(expression.left) || isClamped(expression.right);
-      }
-      if (expression.type === 'ConditionalExpression') {
-        return (
-          isClamped(expression.consequent) && isClamped(expression.alternate)
-        );
+        const bounded = (side: TSESTree.Node): boolean =>
+          isClamped(side) || !involvesUserInput(side as TSESTree.Expression);
+        return bounded(expression.left) && bounded(expression.right);
       }
       return false;
     };
@@ -561,12 +568,8 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
           if (propertyName(node) === 'length') {
             return false;
           }
-          // Check object part (e.g., req, request, body, query, params)
-          const objectText = sourceCode.getText(node.object);
-          if (isUserInput(objectText)) {
-            return true;
-          }
-          // Recursively check nested member expressions
+          // The object decides: `req.body.count` is user input because `req`
+          // is, which the recursion reaches.
           return checkExpression(node.object);
         }
         if (node.type === 'Identifier') {
@@ -626,51 +629,10 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Check if a loop has a break statement
-     */
-    const hasBreakStatement = (loopBody: TSESTree.Statement): boolean => {
-      let hasBreak = false;
-      const visited = new Set<TSESTree.Node>();
-
-      const checkNode = (node: TSESTree.Node, depth = 0): void => {
-        // Prevent infinite recursion
-        if (depth > 10 || visited.has(node)) {
-          return;
-        }
-        visited.add(node);
-
-        if (node.type === 'BreakStatement') {
-          hasBreak = true;
-          return;
-        }
-
-        // Check child nodes
-        for (const key in node) {
-          const child = (node as unknown as Record<string, unknown>)[key];
-          if (child && typeof child === 'object') {
-            if ('type' in child) {
-              checkNode(child as TSESTree.Node, depth + 1);
-            } else if (Array.isArray(child)) {
-              child.forEach((item) => {
-                if (item && typeof item === 'object' && 'type' in item) {
-                  checkNode(item, depth + 1);
-                }
-              });
-            }
-          }
-        }
-      };
-
-      checkNode(loopBody);
-      return hasBreak;
-    };
-
-    /**
      * Does this loop body contain a statement that leaves the loop?
      *
-     * Stricter than `hasBreakStatement`, which counts any `break` anywhere below —
-     * including one belonging to a nested loop or `switch`, which does not end the
-     * outer loop. Nested functions are not descended into: a `return` inside a
+     * A `break` counts only when it leaves THIS loop — one belonging to a nested
+     * loop or `switch` does not end the outer loop. Nested functions are not descended into: a `return` inside a
      * callback returns from the callback.
      *
      * `return` and `throw` count alongside `break`, because a `for (;;)` that returns
@@ -766,12 +728,13 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
         'TryStatement',
         'CatchClause',
       ]);
-      let child: TSESTree.Node = call;
+      // The call is only ever tracked inside a FunctionDeclaration (the
+      // recursion stack holds nothing else), so this walk always meets a
+      // function before it runs out of parents.
       for (
-        let current: TSESTree.Node | undefined = call.parent as
-          TSESTree.Node | undefined;
-        current;
-        child = current, current = current.parent as TSESTree.Node | undefined
+        let child: TSESTree.Node = call, current = call.parent as TSESTree.Node;
+        ;
+        child = current, current = current.parent as TSESTree.Node
       ) {
         if (BRANCHING.has(current.type)) return false;
         // A guard clause EARLIER in the block is a base case even though it is
@@ -799,15 +762,18 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
             return false;
           }
         }
+        // A self-call inside a callback runs only when the callback does:
+        // `node.children.forEach((c) => walk(c))` recurses once per child and
+        // stops at a leaf. Only reaching the declaration itself with nothing
+        // in between makes the call unconditional.
         if (
-          current.type === 'FunctionDeclaration' ||
           current.type === 'FunctionExpression' ||
           current.type === 'ArrowFunctionExpression'
         ) {
-          return true;
+          return false;
         }
+        if (current.type === 'FunctionDeclaration') return true;
       }
-      return false;
     };
 
     /** Does this subtree contain a `return` or a `throw`? */
@@ -837,18 +803,13 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
     /**
      * Estimate loop iterations from static analysis.
      *
-     * Only ever called from the ForStatement visitor below with its own
-     * `node`, so `loop` is always a ForStatement in practice; the parameter
-     * type reflects that (a prior `TSESTree.ForStatement | WhileStatement |
-     * DoWhileStatement` signature carried a redundant `loop.type ===
-     * 'ForStatement'` guard around the whole body that could never be
-     * false through any real call site).
+     * Takes the loop's TEST, so a `for` and a `while` with the same literal
+     * bound are judged the same way.
      */
     // oxlint-disable-next-line consistent-function-scoping
-    const estimateIterations = (loop: TSESTree.ForStatement): number | null => {
-      // Try to parse for loop bounds
-      const test = loop.test;
-      if (test && test.type === 'BinaryExpression') {
+    const estimateIterations = (test: TSESTree.Expression): number | null => {
+      // Try to parse loop bounds
+      if (test.type === 'BinaryExpression') {
         // Look for patterns like i < limit or i <= limit
         if (
           test.operator === '<' ||
@@ -864,6 +825,63 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       }
 
       return null;
+    };
+
+    /**
+     * `while (true)`, `while (1)`, `do … while (true)` and `for (;;)` are the
+     * same loop. Each is reported unless its body leaves it: a `break` of THIS
+     * loop, a `return` or a `throw` — `hasLoopExit`, for all four spellings.
+     * `while (true)` used to accept any `break` anywhere below, including one
+     * that only left a nested `for`, and did not count `return` / `throw` at
+     * all; `while (1)` and `do … while (true)` were not checked.
+     */
+    const checkInfiniteLoop = (
+      node:
+        | TSESTree.WhileStatement
+        | TSESTree.DoWhileStatement
+        | TSESTree.ForStatement,
+    ): void => {
+      if (safetyChecker.isSafe(node, context)) {
+        return;
+      }
+      if (allowWhileTrueWithBreak && hasLoopExit(node.body)) {
+        return;
+      }
+      context.report({
+        node,
+        messageId: 'infiniteLoop',
+        data: {
+          filePath: filename,
+          line: String(node.loc?.start.line ?? 0),
+        },
+      });
+    };
+
+    /** A literal condition that is always truthy: `true`, `1`, `'x'`. */
+    // oxlint-disable-next-line consistent-function-scoping
+    const isConstantlyTrue = (test: TSESTree.Expression): boolean =>
+      test.type === 'Literal' && Boolean(test.value);
+
+    /** A literal iteration bound above `maxStaticIterations`, for `for` and `while` alike. */
+    const checkLargeBound = (
+      node: TSESTree.WhileStatement | TSESTree.ForStatement,
+      test: TSESTree.Expression,
+    ): void => {
+      const estimatedIterations = estimateIterations(test);
+      if (estimatedIterations && estimatedIterations > maxStaticIterations) {
+        if (safetyChecker.isSafe(node, context)) {
+          return;
+        }
+
+        context.report({
+          node: test,
+          messageId: 'largeLoopBound',
+          data: {
+            filePath: filename,
+            line: String(node.loc?.start.line ?? 0),
+          },
+        });
+      }
     };
 
     return {
@@ -1048,25 +1066,9 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       WhileStatement(node: TSESTree.WhileStatement) {
         const test = node.test;
 
-        // Check for while(true) or while(true) with potential infinite loop
-        if (test.type === 'Literal' && test.value === true) {
-          // Check if it has a break statement
-          const hasBreak = hasBreakStatement(node.body);
-
-          if (allowWhileTrueWithBreak && hasBreak) {
-            // Allow while(true) with break if configured
-            return;
-          }
-
-          // Report infinite loop for while(true) without break
-          context.report({
-            node,
-            messageId: 'infiniteLoop',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-            },
-          });
+        // while (true) / while (1) with no exit
+        if (isConstantlyTrue(test)) {
+          checkInfiniteLoop(node);
           return;
         }
 
@@ -1086,6 +1088,9 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
           });
           return;
         }
+
+        // `while (i < 1000000)` is the same bound `for (…; i < 1000000; …)` is.
+        checkLargeBound(node, test);
 
         // REMOVED: a state-dependent-flag check that read the CONDITION
         // VARIABLE'S NAME:
@@ -1108,24 +1113,9 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       ForStatement(node: TSESTree.ForStatement) {
         // Check for for(;;) infinite loops
         if (!node.test && !node.update) {
-          if (safetyChecker.isSafe(node, context)) {
-            return;
-          }
-
           // `for (;;)` is `while (true)` written the other way, so it gets the same
           // exemption: a body that breaks, returns or throws is not an infinite loop.
-          if (allowWhileTrueWithBreak && hasLoopExit(node.body)) {
-            return;
-          }
-
-          context.report({
-            node,
-            messageId: 'infiniteLoop',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-            },
-          });
+          checkInfiniteLoop(node);
           return;
         }
 
@@ -1164,26 +1154,18 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for potentially large iteration counts
-        const estimatedIterations = estimateIterations(node);
-        if (estimatedIterations && estimatedIterations > maxStaticIterations) {
-          if (safetyChecker.isSafe(node, context)) {
-            return;
-          }
-
-          context.report({
-            node: node.test,
-            messageId: 'largeLoopBound',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-            },
-          });
-        }
+        checkLargeBound(node, node.test);
       },
 
       // Check do-while statements
       DoWhileStatement(node: TSESTree.DoWhileStatement) {
         const test = node.test;
+
+        // do { … } while (true) is `while (true)` with the test moved.
+        if (isConstantlyTrue(test)) {
+          checkInfiniteLoop(node);
+          return;
+        }
 
         // Check for user-controlled conditions
         if (involvesUserInput(test)) {

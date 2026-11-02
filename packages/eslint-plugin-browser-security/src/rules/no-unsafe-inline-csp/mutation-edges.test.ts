@@ -59,11 +59,34 @@ jsxTester.run('no-unsafe-inline-csp (mutation edges)', noUnsafeInlineCsp, {
       code: 'const m = <meta http-equiv-note="Content-Security-Policy" content="\'unsafe-inline\'" />;',
     },
     {
+      name: 'prose with a URL in it at a header sink is still prose, not a source list',
+      code: "res.setHeader('Content-Security-Policy', \"See https://csp.example.com before adding 'unsafe-inline'\");",
+    },
+    {
+      name: 'a regular expression that matches a policy is not a policy',
+      code: "const detector = /'unsafe-inline'.*script-src/;",
+    },
+    {
       name: 'a bare httpEquiv with no value declares nothing',
       code: 'const m = <meta httpEquiv content="\'unsafe-inline\'" />;',
     },
   ],
   invalid: [
+    {
+      name: 'a nonce beside unsafe-inline at a header sink is a source list: the grammar, not a keyword table, decides',
+      code: "res.setHeader('Content-Security-Policy', \"'nonce-r4nd0m' 'unsafe-inline'\");",
+      errors: [{ messageId: 'unsafeInline' }],
+    },
+    {
+      name: 'scheme, host and wildcard sources beside unsafe-inline at a header sink are a source list',
+      code: "res.setHeader('Content-Security-Policy', \"'self' https: https://cdn.example.com *.example.com * 'unsafe-inline'\");",
+      errors: [{ messageId: 'unsafeInline' }],
+    },
+    {
+      name: 'a padded, irregularly spaced source list at a header sink is still a source list',
+      code: "res.setHeader('Content-Security-Policy', \"  'self'   'unsafe-inline' \");",
+      errors: [{ messageId: 'unsafeInline' }],
+    },
     {
       name: 'a directive-less value on a meta http-equiv policy reports',
       code: 'const m = <meta httpEquiv="Content-Security-Policy" content="\'unsafe-inline\'" />;',

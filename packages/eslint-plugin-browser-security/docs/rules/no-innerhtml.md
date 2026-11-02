@@ -11,10 +11,11 @@ autofix: false
 > **Keywords:** XSS, innerHTML, outerHTML, CWE-79, security, DOM manipulation, sanitization, DOMPurify
 
 <!-- @rule-summary -->
+
 Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Scripting (XSS)
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**CWE:** [CWE-79](https://cwe.mitre.org/data/definitions/79.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Scripting (XSS). This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
@@ -28,7 +29,7 @@ Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Sc
 | **CWE Reference** | CWE-79 (Cross-site Scripting)                      |
 | **Severity**      | 🔴 Critical                                        |
 | **Auto-Fix**      | ✅ Yes (suggests DOMPurify)                        |
-| **Category**   | Security |
+| **Category**      | Security                                           |
 | **Best For**      | Frontend apps, React/Vue/Angular, DOM manipulation |
 
 ## Vulnerability and Risk
@@ -110,11 +111,11 @@ container.appendChild(div);
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `false` | Skip this rule in `*.test.*` / `*.spec.*` files |
-| `trustedSanitizers` | `string[]` | `["DOMPurify.sanitize","sanitize","sanitizeHtml","xss","purify","escapeHtml","escapeHTML","escape"]` | Extra function names to treat as sanitizers |
-| `allowLiteralStrings` | `boolean` | `true` | Allow innerHTML with literal strings |
+| Option                | Type       | Default                                                                                              | Description                                     |
+| --------------------- | ---------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `allowInTests`        | `boolean`  | `false`                                                                                              | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `trustedSanitizers`   | `string[]` | `["DOMPurify.sanitize","sanitize","sanitizeHtml","xss","purify","escapeHtml","escapeHTML","escape"]` | Extra function names to treat as sanitizers     |
+| `allowLiteralStrings` | `boolean`  | `true`                                                                                               | Allow innerHTML with literal strings            |
 
 ```json
 {
@@ -249,10 +250,10 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-79](https://cwe.mitre.org/data/definitions/79.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:6.1](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Cross-site Scripting (XSS) detected` |
-| **Severity & Compliance** | Impact assessment | `MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                     |
+| :------------------------ | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-79](https://cwe.mitre.org/data/definitions/79.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:6.1](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Cross-site Scripting (XSS) detected`                                                                                                                                                                                                                       |
+| **Severity & Compliance** | Impact assessment      | `MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]`                                                                                                                                                                                                                       |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                        |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/)                                                                                                                                                                                                 |

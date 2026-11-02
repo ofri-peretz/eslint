@@ -104,6 +104,7 @@ ruleTester.run(
         errors: [{ messageId: 'violationDetected' }],
       },
       {
+        name: 'localStorage.setItem of an encryptData()-wrapped value under a computed key is not reported',
         code: "fs.appendFile('log.txt', authToken)",
         errors: [{ messageId: 'violationDetected' }],
       },

@@ -526,6 +526,7 @@ ruleTester.run('lock: chained route registrations', noMissingCsrfProtection, {
   ],
   invalid: [
     {
+      name: 'a POST handler chained on router.route() without CSRF middleware is reported',
       code: `const express = require('express'); const r = express.Router(); r.route('/invoices').get(list).post(create);`,
       errors: 1,
     },
@@ -638,13 +639,13 @@ ruleTester.run('edge shapes', noMissingCsrfProtection, {
 });
 
 /**
- * The alias walk is BOUNDED.
+ * The alias walk follows every hop and stops only on a cycle.
  *
- * `isModuleBinding` follows a `require`/`import` chain itself, so the bound
- * here only governs the NAME-list fallback — a hand-rolled verifier reached
- * through a chain of plain aliases. Past the bound the rule reports rather
- * than assuming a protection it can no longer see, which is the safe
- * direction.
+ * `isModuleBinding` follows a `require`/`import` chain itself, so this walk
+ * only governs the NAME-list fallback — a hand-rolled verifier reached through
+ * a chain of plain aliases. It used to be bounded at four hops, and the
+ * five-alias case pinned here as a finding is now valid (see
+ * mutation-edges.test.ts): an alias chain is as strong as its first hop.
  */
 ruleTester.run('bounded middleware resolution', noMissingCsrfProtection, {
   valid: [
@@ -658,9 +659,9 @@ ruleTester.run('bounded middleware resolution', noMissingCsrfProtection, {
     },
   ],
   invalid: [
-    // Five plain aliases before the recognised name — past the bound.
+    // An alias chain that never reaches a recognised verifier.
     {
-      code: `const express = require('express'); const a = verifyCsrfToken; const b = a; const c = b; const d = c; const e = d; const app = express(); app.use(e); app.post('/x', h);`,
+      code: `const express = require('express'); const a = metrics; const b = a; const c = b; const d = c; const e = d; const app = express(); app.use(e); app.post('/x', h);`,
       errors: 1,
     },
   ],

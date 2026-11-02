@@ -46,6 +46,10 @@ describe('no-unescaped-url-parameter', () => {
   describe('FALSE POSITIVES THAT SHIPPED — every one was REPORTED by the old rule', () => {
     ruleTester.run('no verdict from a spelling', noUnescapedUrlParameter, {
       valid: [
+        {
+          name: 'parenthesised arithmetic in a + chain is a number, as in the template form',
+          code: "export function build(term) { return 'https://internal.example.com/v1/report?filter=' + (term + 1); }",
+        },
         // `input` is in the printed text, and the value is a NUMBER.
         {
           name: 'a number formatted with toFixed in a URL query cannot carry markup',
@@ -177,6 +181,7 @@ describe('no-unescaped-url-parameter', () => {
       valid: [],
       invalid: [
         {
+          name: 'location[search] interpolated unescaped into a query string is reported',
           code: 'const u = `https://a.example.com/v1/r?s=${location["search"]}`;',
           errors: ERROR,
         },

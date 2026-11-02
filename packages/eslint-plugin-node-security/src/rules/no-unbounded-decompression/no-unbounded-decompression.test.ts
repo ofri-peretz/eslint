@@ -176,6 +176,7 @@ describe('no-unbounded-decompression', () => {
         errors: [{ messageId: 'unboundedDecompression' }],
       },
       {
+        name: 'zlib.gunzipSync with no maxOutputLength is reported',
         code: `${REQUIRE}zlib.gunzipSync(body);`,
         errors: [{ messageId: 'unboundedDecompression' }],
       },

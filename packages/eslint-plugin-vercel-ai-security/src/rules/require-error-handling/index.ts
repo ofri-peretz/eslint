@@ -77,14 +77,52 @@ export const requireErrorHandling = createRule<RuleOptions, MessageIds>({
     },
   ],
   createOnce(context, currentOptions) {
+    /**
+     * Is `fn` a callback whose promise the caller awaits — `await
+     * Promise.all(items.map(async (i) => …))`? Its rejection then reaches the
+     * enclosing try. `items.forEach(async (i) => …)` drops the promise, and the
+     * rejection escapes any try around it.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    function isAwaitedCallback(fn: TSESTree.Node): boolean {
+      let current: TSESTree.Node = fn;
+      while (
+        current.parent?.type === 'CallExpression' ||
+        current.parent?.type === 'ArrayExpression'
+      ) {
+        current = current.parent;
+      }
+      return current.parent?.type === 'AwaitExpression';
+    }
+
+    /**
+     * Is the call in the `try` block of a try that has a `catch`? A
+     * try/finally catches nothing, and a call in a callback whose promise is
+     * dropped rejects after the try has already exited.
+     */
     // oxlint-disable-next-line consistent-function-scoping
     function isInsideTryBlock(node: TSESTree.Node): boolean {
-      let parent = node.parent;
-      while (parent) {
-        if (parent.type === 'TryStatement') {
+      let child: TSESTree.Node = node;
+      for (
+        let parent = node.parent;
+        parent;
+        child = parent, parent = parent.parent
+      ) {
+        if (
+          parent.type === 'TryStatement' &&
+          parent.block === child &&
+          parent.handler
+        ) {
           return true;
         }
-        parent = parent.parent;
+        if (
+          (child.type === 'ArrowFunctionExpression' ||
+            child.type === 'FunctionExpression' ||
+            child.type === 'FunctionDeclaration') &&
+          !isAwaitedCallback(child)
+        ) {
+          return false;
+        }
       }
       return false;
     }
@@ -125,7 +163,7 @@ export const requireErrorHandling = createRule<RuleOptions, MessageIds>({
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        const matchedFunction = sdkCallName(node);
+        const matchedFunction = sdkCallName(node, context.sourceCode);
         if (!matchedFunction) return;
         if (hasStreamErrorHandler(node, matchedFunction)) return;
 

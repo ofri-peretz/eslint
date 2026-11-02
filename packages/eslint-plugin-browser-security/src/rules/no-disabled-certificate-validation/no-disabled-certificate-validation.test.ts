@@ -85,6 +85,7 @@ ruleTester.run(
         errors: [{ messageId: 'violationDetected' }],
       },
       {
+        name: 'an object literal with verify: false is reported',
         code: 'const config = { verify: false }',
         errors: [{ messageId: 'violationDetected' }],
       },
@@ -162,6 +163,41 @@ ruleTester.run(
       {
         code: `const opts = { ssl: { rejectUnauthorized: false } };`,
         filename: 'lib/connection.js',
+        errors: 1,
+      },
+    ],
+  },
+);
+
+ruleTester.run(
+  'no-disabled-certificate-validation (TypeScript wrappers on process.env)',
+  noDisabledCertificateValidation,
+  {
+    valid: [
+      {
+        name: 'a cast process.env set to 1 keeps verification on',
+        code: "(process.env as any).NODE_TLS_REJECT_UNAUTHORIZED = '1';",
+      },
+    ],
+    invalid: [
+      {
+        name: 'an as-cast on process.env is the same environment write',
+        code: "(process.env as any).NODE_TLS_REJECT_UNAUTHORIZED = '0';",
+        errors: 1,
+      },
+      {
+        name: 'an angle-bracket assertion on process.env is the same environment write',
+        code: "(<any>process.env).NODE_TLS_REJECT_UNAUTHORIZED = '0';",
+        errors: 1,
+      },
+      {
+        name: 'a satisfies clause on process.env is the same environment write',
+        code: "(process.env satisfies object as any)['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';",
+        errors: 1,
+      },
+      {
+        name: 'a non-null assertion on process.env is the same environment write',
+        code: 'process.env!.NODE_TLS_REJECT_UNAUTHORIZED = 0;',
         errors: 1,
       },
     ],

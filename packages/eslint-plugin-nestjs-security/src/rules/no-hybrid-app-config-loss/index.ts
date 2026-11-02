@@ -58,10 +58,11 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesNestjs } from '../../utils/nestjs-evidence';
-import { expressionName, objectProperties } from '../../utils/nest-ast';
+import { expressionName } from '../../utils/nest-ast';
 
 type MessageIds = 'configNotInherited';
 
@@ -115,9 +116,11 @@ export const noHybridAppConfigLoss = createRule<RuleOptions, MessageIds>({
     /**
      * Whether the hybrid options argument opts into inheritance.
      *
-     * A spread means the flag could be in there and this cannot prove
-     * otherwise, so it counts as inherited — the rule accuses only where the
-     * absence is visible.
+     * Read in order, the way JavaScript builds the object: the last write
+     * wins. A spread, or a key computed at runtime, may carry the flag, so
+     * either counts as inherited — the rule accuses only where the absence is
+     * visible. An explicit `inheritAppConfig: false` AFTER a spread overrides
+     * whatever the spread carried, so that is visible too.
      */
     function inheritsAppConfig(argument: TSESTree.Node | undefined): boolean {
       if (argument === undefined) return false;
@@ -125,15 +128,25 @@ export const noHybridAppConfigLoss = createRule<RuleOptions, MessageIds>({
         // An options object built elsewhere is not knowable here.
         return true;
       }
-      const props = objectProperties(argument);
-      if (props === null) return true;
-      const flag = props.get('inheritAppConfig');
-      if (flag === undefined) return false;
-      // NestJS inherits on a *truthy* value, so `0`, `''` and `null` leave the
-      // config behind exactly as `false` does. Only a literal is decidable;
-      // anything else — a config lookup, a variable — could be true at runtime.
-      if (flag.type === AST_NODE_TYPES.Literal) return Boolean(flag.value);
-      return true;
+      let inherits = false;
+      for (const prop of argument.properties) {
+        if (prop.type === AST_NODE_TYPES.SpreadElement) {
+          inherits = true;
+          continue;
+        }
+        const key = objectKeyName(prop);
+        if (key === null) inherits = true;
+        else if (key === 'inheritAppConfig') {
+          // NestJS inherits on a *truthy* value, so `0`, `''` and `null` leave
+          // the config behind exactly as `false` does. Only a literal is
+          // decidable; anything else — a config lookup, a variable — could be
+          // true at runtime.
+          inherits =
+            prop.value.type !== AST_NODE_TYPES.Literal ||
+            Boolean(prop.value.value);
+        }
+      }
+      return inherits;
     }
 
     return {

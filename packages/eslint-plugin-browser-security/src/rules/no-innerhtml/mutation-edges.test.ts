@@ -22,6 +22,47 @@ const sink = (property: string, source: string) => [
 
 ruleTester.run('no-innerhtml — mutation edges', noInnerhtml, {
   valid: [
+    // ── a value that cannot carry markup ─────────────────────────────────────
+    // @found 2026-11-02 (Stryker triage): every operator but binary `+` yields a
+    // number, a boolean, a `typeof` word or undefined — none of them can hold a
+    // tag — and the rule reported them as XSS.
+    {
+      name: 'FP: a unary plus yields a number, which carries no markup',
+      code: 'el.innerHTML = +count;',
+    },
+    {
+      // @found mutation testing
+      name: 'FP: an arithmetic result carries no markup',
+      code: 'el.innerHTML = items.length * price;',
+    },
+    {
+      // @found mutation testing
+      name: 'FP: an increment yields a number, which carries no markup',
+      code: 'el.innerHTML = counter++;',
+    },
+    {
+      // @found mutation testing
+      name: 'FP: a numeric part of a concatenation needs no sanitiser',
+      code: "el.innerHTML = '<b>' + (total - discount) + '</b>';",
+    },
+    {
+      name: 'an increment write leaves a let holding a number, not markup',
+      code: "let n = '0'; n++; el.innerHTML = n;",
+    },
+    // ── trustedSanitizers: a qualified entry matches only that receiver ─────
+    {
+      name: 'a qualified trusted sanitiser matches its own receiver',
+      code: 'el.innerHTML = Purify.clean(html);',
+      options: [{ trustedSanitizers: ['Purify.clean'] }],
+    },
+    {
+      name: 'an xterm writeln on a terminal is not a document write',
+      code: 'terminal.writeln(output);',
+    },
+    {
+      name: 'an assign method on another receiver is not Object.assign',
+      code: 'state.assign(draft, { innerHTML: html });',
+    },
     {
       name: 'a concatenation of a literal and a sanitised value',
       code: "el.innerHTML = '<b>' + DOMPurify.sanitize(name) + '</b>';",
@@ -80,6 +121,17 @@ ruleTester.run('no-innerhtml — mutation edges', noInnerhtml, {
     },
   ],
   invalid: [
+    {
+      name: 'a qualified trusted sanitiser does not trust the same method on another receiver',
+      code: 'el.innerHTML = Other.clean(html);',
+      options: [{ trustedSanitizers: ['Purify.clean'] }],
+      errors: sink('innerHTML', 'function call result'),
+    },
+    {
+      name: 'a sanitiser name also declared as a local function is not trusted',
+      code: 'var escapeHtml = DOMPurify.sanitize;\nfunction escapeHtml(s) { return s; }\nel.innerHTML = escapeHtml(input);',
+      errors: sink('innerHTML', 'function call result'),
+    },
     {
       name: 'one unsanitised operand in a concatenation',
       code: "el.innerHTML = '<b>' + escapeHtml(a) + b;",

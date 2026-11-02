@@ -39,6 +39,53 @@ const VIOLATION = `@Entity()
        apiSecret: string;
      }`;
 
+/** A violation of every rule, keyed by rule name; each is that rule's doc ❌ example. */
+const RULE_VIOLATIONS: Readonly<Record<string, string>> = {
+  'no-exposed-private-fields': VIOLATION,
+  'no-hybrid-app-config-loss': `async function bootstrap() {
+       const app = await NestFactory.create(AppModule);
+       app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+       app.connectMicroservice(createNestjsKafkaConfig());
+       await app.startAllMicroservices();
+       await app.listen(3000);
+     }`,
+  'no-missing-validation-pipe': `@Controller('users')
+     class UsersController {
+       @Post()
+       create(@Body() dto: CreateUserDto) {}
+     }`,
+  'no-permissive-cors': `app.enableCors({ origin: '*' });`,
+  'no-res-bypass-serialization': `@Controller('users')
+     @UseInterceptors(ClassSerializerInterceptor)
+     export class UsersController {
+       @Get(':id')
+       async findOne(@Param('id') id: string, @Res() res: Response) {
+         res.json(await this.usersService.findOne(id));
+       }
+     }`,
+  'no-unguarded-swagger': `async function bootstrap() {
+       const app = await NestFactory.create(ApplicationModule);
+       const document = SwaggerModule.createDocument(app, options);
+       SwaggerModule.setup('/docs', app, document);
+       await app.listen(3000);
+     }`,
+  'no-unsafe-multer-filename': `diskStorage({
+       destination: './uploads',
+       filename(req, file, cb) { cb(null, file.originalname); },
+     });`,
+  'require-guards': `@Controller('users')
+     class UsersController {
+       @Get()
+       findAll() {}
+     }`,
+  'require-throttler': `@Controller('auth')
+     class AuthController {
+       @Post('login')
+       login() {}
+     }`,
+  'require-validation-pipe-whitelist': `app.useGlobalPipes(new ValidationPipe());`,
+};
+
 /** Files that use no NestJS at all. */
 const NON_SDK_SOURCES: ReadonlyArray<readonly [string, string]> = [
   ['the violation itself, minus the import', VIOLATION],
@@ -97,9 +144,32 @@ describe('NestJS module gate', () => {
     });
   });
 
+  // One real violation per rule, from that rule's own doc. The sweep above
+  // only proves silence; a rule whose shapes none of those sources contains
+  // would pass it with its gate deleted. Each fixture here must report with the
+  // SDK imported and stay silent without it, so reverting the gate in any one
+  // rule turns exactly that rule's row red.
+  describe.each(RULES)('%s — its own violation', (rule) => {
+    const code = RULE_VIOLATIONS[rule];
+
+    it('has a fixture, so a rule added later cannot skip this lock', () => {
+      expect(code).toBeTypeOf('string');
+    });
+
+    it('reports once the file imports the SDK', () => {
+      expect(lint(`${SDK}\n${code}`, rule).length).toBeGreaterThan(0);
+    });
+
+    it('is silent with the import removed', () => {
+      expect(lint(code, rule)).toHaveLength(0);
+    });
+  });
+
   describe('positive control — the gate must open for real NestJS code', () => {
     it('the same violation reports once the file imports the SDK', () => {
-      expect(lint(`${SDK}\n${VIOLATION}`, 'no-exposed-private-fields').length).toBeGreaterThan(0);
+      expect(
+        lint(`${SDK}\n${VIOLATION}`, 'no-exposed-private-fields').length,
+      ).toBeGreaterThan(0);
     });
 
     it('and is silent with the import removed', () => {
