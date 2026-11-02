@@ -18,7 +18,7 @@ Forbid `require()` calls with non-literal arguments. This rule is part of [`esli
 ## Quick Summary
 
 | Aspect         | Details                                 |
-| -------------- | ---------------------------------------- |
+| -------------- | --------------------------------------- |
 | **Severity**   | Warning (architecture)                  |
 | **Auto-Fix**   | ❌ No (requires architecture change)    |
 | **Category**   | Security                                |
@@ -139,7 +139,7 @@ processValue(getValue()); // Cross-file not tracked
 ## ⚙️ Options
 
 | Option          | Type       | Default | Description                                                                                                                                                                                                                                      |
-| --------------- | ---------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| --------------- | ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `allowContexts` | `string[]` | `[]`    | Allow dynamic requires in files whose path marks a context — a substring test on the linted file path: test (.test., .spec., /**tests**/), config (config, webpack, rollup), build (build, scripts, tools), runtime (runtime, dynamic).          |
 | `allowPatterns` | `string[]` | `[]`    | Regex patterns matched against the source text of the require argument; a match suppresses the report. A pattern that is an invalid regex or matches a catastrophic-backtracking shape falls back to a case-insensitive literal substring match. |
 
@@ -165,7 +165,7 @@ The question is whether a specifier can _change_, not whether it is spelled as a
 Resolution runs through ESLint's scope analysis, so all of these are silent:
 
 | Code                                             | Why it is silent                                             |
-| ------------------------------------------------ | -------------------------------------------------------------- |
+| ------------------------------------------------ | ------------------------------------------------------------ |
 | ``require(`b`)``                                 | A template with no interpolation is a literal.               |
 | ``const d = 'debounce'; require(`lodash/${d}`)`` | Every interpolated part resolves to a constant.              |
 | `require(__dirname + '/utils')`                  | `__dirname` is where the module sits on disk, fixed at load. |
