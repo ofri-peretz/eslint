@@ -5,6 +5,20 @@ All notable changes to `eslint-plugin-vercel-ai-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.4.1
+
+### Patch Changes
+
+- **🐛 Fix** — a renamed SDK import is still the SDK call
+
+  Checked against a Quint model of each rule's documented contract (`npm run fidelity`) and by Stryker mutation testing.
+
+  - `import { generateText as callModel } from 'ai'` is now recognised by every rule.
+  - `require-error-handling` does not count `try/finally` or a dropped callback promise as handling.
+  - `require-validated-prompt` treats `req.query` as user input, and only listed validators as validation.
+  - `require-tool-confirmation` accepts `confirm: true`.
+  - `no-system-prompt-leak` catches a system prompt sent through `Response.json` / `res.json`.
+
 ## 2.4.0
 
 ### Minor Changes

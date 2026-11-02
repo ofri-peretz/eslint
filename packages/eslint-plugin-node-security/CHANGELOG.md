@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.8.2
+
+### Patch Changes
+
+- **🐛 Fix** — sinks are found by resolving the import, not by name
+
+  Checked against a Quint model of each rule's documented contract (`npm run fidelity`) and by Stryker mutation testing. Rules now resolve `crypto`, `fs`, `child_process` and friends through their import. So a renamed or destructured import (`import { createCipheriv as x }`, `const { exec: run } = require('node:child_process')`) is reported, and a local object that merely shares the name (`const fs = {...}`) is not. Lines that a rule's doc lists as "Not a finding" are no longer reported. `lock-file` reports a missing lock file on every lint run in a long-lived process, not once per process.
+
 ## 5.8.1
 
 ### Patch Changes
