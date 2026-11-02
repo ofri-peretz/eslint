@@ -190,6 +190,10 @@ describe('no-self-signed-certs', () => {
         code: "config.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';",
       },
       {
+        name: 'an env bag on a class instance is not process.env',
+        code: "class Child { start() { this.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; } }",
+      },
+      {
         name: 'a process property of an object other than globalThis is not the process',
         code: "sandbox.process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';",
       },

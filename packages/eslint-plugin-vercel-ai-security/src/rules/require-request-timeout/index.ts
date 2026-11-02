@@ -95,7 +95,7 @@ export const requireRequestTimeout = createRule<RuleOptions, MessageIds>({
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        const matchedFunction = sdkCallName(node);
+        const matchedFunction = sdkCallName(node, context.sourceCode);
         if (!matchedFunction) return;
 
         const optionsArg = node.arguments[0];

@@ -10,8 +10,8 @@ autofix: false
 
 > Ensures all AI calls have token limits to prevent resource exhaustion.
 
-
 <!-- @rule-summary -->
+
 This rule identifies AI SDK calls that don't specify a token limit (maxTokens or maxOutputTokens)
 <!-- @/rule-summary -->
 
@@ -78,10 +78,10 @@ await generateText({
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `suggestedLimit` | `number` | `4096` | Default max tokens limit to suggest |
-| `targetFunctions` | `string[]` | `["generateText","streamText","generateObject","streamObject"]` | Function names that require max tokens |
+| Option            | Type       | Default                                                         | Description                                              |
+| ----------------- | ---------- | --------------------------------------------------------------- | -------------------------------------------------------- |
+| `suggestedLimit`  | `number`   | `4096`                                                          | Token limit the fix text suggests (`maxOutputTokens: n`) |
+| `targetFunctions` | `string[]` | `["generateText","streamText","generateObject","streamObject"]` | Function names that require max tokens                   |
 
 ## 🛡️ Why This Matters
 
@@ -103,6 +103,12 @@ Unbounded token consumption can cause:
   are matched by exact name (`generateTextureAtlas` is not `generateText`).
 - Now `warn` in `recommended` (CVSS 6.5).
 - **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
+
+## 🔄 Changes from the fidelity model
+
+- A renamed import (`import { generateText as callModel } from 'ai'`, or the
+  same through `require`) is resolved through the import: `callModel()` is the
+  SDK function and is checked like it.
 
 ## Known False Negatives
 

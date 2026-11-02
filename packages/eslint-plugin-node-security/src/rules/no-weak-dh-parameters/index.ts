@@ -265,8 +265,9 @@ export const noWeakDhParameters = createRule<RuleOptions, MessageIds>({
         return true;
       },
       CallExpression(node: TSESTree.CallExpression): void {
+        // A callee with no static name (`null`) is one of none of the sets
+        // below: `namesOneOf(null, …)` is false.
         const name = calleeName(node);
-        if (name === null) return;
 
         const firstArg = node.arguments[0];
         if (firstArg === undefined) return;

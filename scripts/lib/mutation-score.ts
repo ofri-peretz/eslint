@@ -54,6 +54,8 @@ export type Verdict =
 // `src/rules/<rule>/<any>.ts` (most plugins) or `src/rules/<rule>.ts` (the
 // flat layout import-next and react-a11y use; its `index.ts` is a barrel).
 const RULE_FILE = /(?:^|\/)src\/rules\/(?:([^/]+)\/[^/]+|([^/]+))\.ts$/;
+// `src/utils/<file>.ts` — a helper shared by the rules (top level only).
+const UTIL_FILE = /(?:^|\/)src\/utils\/([^/]+)\.ts$/;
 
 /**
  * `src/rules/<rule>/index.ts` or `src/rules/<rule>.ts` → `<rule>`. Test files are never mutated, but a
@@ -62,6 +64,9 @@ const RULE_FILE = /(?:^|\/)src\/rules\/(?:([^/]+)\/[^/]+|([^/]+))\.ts$/;
 export function ruleOf(file: string): string | undefined {
   if (/\.(test|spec)\.ts$/.test(file) || file.includes('/__tests__/'))
     return undefined;
+  // A shared helper the rules import is graded as its own unit.
+  const util = UTIL_FILE.exec(file.replaceAll('\\', '/'))?.[1];
+  if (util) return util === 'index' ? undefined : `utils/${util}`;
   const m = RULE_FILE.exec(file.replaceAll('\\', '/'));
   const rule = m?.[1] ?? m?.[2];
   return rule === 'index' ? undefined : rule;

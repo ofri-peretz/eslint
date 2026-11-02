@@ -167,6 +167,7 @@ describe('no-cryptojs-weak-random', () => {
         },
         // The whole chain inline off the require call.
         {
+          name: 'CryptoJS.lib.WordArray.random is reported as weak randomness',
           code: 'const salt = require("crypto-js").lib.WordArray.random(16);',
           errors: [{ messageId: 'weakRandom' }],
         },

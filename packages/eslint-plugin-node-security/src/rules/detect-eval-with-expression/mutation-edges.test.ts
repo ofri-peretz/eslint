@@ -113,3 +113,46 @@ function go(req) {
     },
   ],
 });
+
+ruleTester.run('mutation-guided edges, batch 6', detectEvalWithExpression, {
+  valid: [
+    {
+      name: 'a cycle of const aliases names no eval, and terminates',
+      code: 'const a = b;\nconst b = a;\na(source);',
+    },
+    {
+      name: 'a destructure of require("vm") under a runtime key binds no export',
+      code: "const { [apiName]: run } = require('vm');\nrun(source, {});",
+    },
+    {
+      name: 'a run method on a property chain is not a tracked vm2 sandbox',
+      code: 'class Runner {\n  go(code) {\n    return this.sandbox.run(code);\n  }\n}',
+    },
+  ],
+  invalid: [
+    {
+      name: 'BUG: a five-deep const alias of eval is still eval',
+      code: `const a1 = eval;
+const a2 = a1;
+const a3 = a2;
+const a4 = a3;
+const a5 = a4;
+a5(source);`,
+      errors: [{ messageId: 'strategyRefactor' }],
+    },
+    {
+      name: 'BUG: a string-keyed destructure of require("vm") binds the export',
+      code: "const { 'runInNewContext': run } = require('vm');\nrun(source, {});",
+      errors: [
+        { messageId: 'vmCodeExecution', data: { api: 'runInNewContext' } },
+      ],
+    },
+    {
+      name: 'BUG: a string-named import of a vm sink binds the export',
+      code: "import { 'runInNewContext' as run } from 'node:vm';\nrun(source, {});",
+      errors: [
+        { messageId: 'vmCodeExecution', data: { api: 'runInNewContext' } },
+      ],
+    },
+  ],
+});

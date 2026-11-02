@@ -98,8 +98,7 @@ describe('require-dependency-integrity coverage gaps', () => {
       },
       // The same suppression through a plain string literal.
       {
-        code:
-          'const s = \'<script src="https://cdn.a/x.js" integrity="sha384-a"></script><script src="https://cdn.a/y.js"></script>\';',
+        code: 'const s = \'<script src="https://cdn.a/x.js" integrity="sha384-a"></script><script src="https://cdn.a/y.js"></script>\';',
         errors: [{ messageId: 'violationDetected' }],
       },
     ],
@@ -132,29 +131,57 @@ describe('require-dependency-integrity — corpus regressions', () => {
   ruleTester.run('require-dependency-integrity', requireDependencyIntegrity, {
     valid: [
       // Resource hints and non-SRI destinations: no bytes, or no coverage.
-      { code: 'const t = `<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>`;' },
-      { code: 'const t = `<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">`;' },
-      { code: 'const t = `<link rel="icon" href="https://cdn.example.com/favicon.ico">`;' },
-      { code: 'const t = `<link rel="manifest" href="https://cdn.example.com/app.webmanifest">`;' },
-      { code: 'const t = `<link rel="preload" as="image" href="https://cdn.example.com/hero.avif">`;' },
+      {
+        code: 'const t = `<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>`;',
+      },
+      {
+        code: 'const t = `<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">`;',
+      },
+      {
+        code: 'const t = `<link rel="icon" href="https://cdn.example.com/favicon.ico">`;',
+      },
+      {
+        code: 'const t = `<link rel="manifest" href="https://cdn.example.com/app.webmanifest">`;',
+      },
+      {
+        code: 'const t = `<link rel="preload" as="image" href="https://cdn.example.com/hero.avif">`;',
+      },
       // `preload` with no `as` is invalid markup the browser never fetches.
-      { code: 'const t = `<link rel="preload" href="https://cdn.jsdelivr.net/x.js">`;' },
+      {
+        code: 'const t = `<link rel="preload" href="https://cdn.jsdelivr.net/x.js">`;',
+      },
       // Same-origin paths whose text merely contains a CDN fragment.
       { code: 'const t = `<script src="/assets/cdn.fallback.js"></script>`;' },
-      { code: 'const t = `<link rel="stylesheet" href="/css/cdn.overrides.css">`;' },
-      { code: "const s = '<script src=\"./vendor/unpkg.bundle.js\"></script>';" },
+      {
+        code: 'const t = `<link rel="stylesheet" href="/css/cdn.overrides.css">`;',
+      },
+      {
+        code: 'const s = \'<script src="./vendor/unpkg.bundle.js"></script>\';',
+      },
       // A tag with no URL fetches nothing.
-      { code: 'const t = `<script>window.__CDN__ = "https://cdn.jsdelivr.net";</script>`;' },
+      {
+        code: 'const t = `<script>window.__CDN__ = "https://cdn.jsdelivr.net";</script>`;',
+      },
       { code: 'const t = `<link rel="stylesheet">`;' },
       // Protected, with the hash in an unquoted and a single-quoted attribute.
-      { code: "const t = `<script src=https://cdn.jsdelivr.net/x.js integrity=sha384-a></script>`;" },
-      { code: "const s = '<link rel=\"modulepreload\" href=\"https://cdn.jsdelivr.net/x.js\" integrity=\"sha384-a\">';" },
-      { code: "const t = `<link rel='preload' as='style' href='https://cdn.jsdelivr.net/x.css' integrity='sha384-a'>`;" },
+      {
+        code: 'const t = `<script src=https://cdn.jsdelivr.net/x.js integrity=sha384-a></script>`;',
+      },
+      {
+        code: 'const s = \'<link rel="modulepreload" href="https://cdn.jsdelivr.net/x.js" integrity="sha384-a">\';',
+      },
+      {
+        code: "const t = `<link rel='preload' as='style' href='https://cdn.jsdelivr.net/x.css' integrity='sha384-a'>`;",
+      },
       // A first-party host that is not a CDN.
-      { code: 'const t = `<script src="https://app.example.com/js/vendor.js"></script>`;' },
+      {
+        code: 'const t = `<script src="https://app.example.com/js/vendor.js"></script>`;',
+      },
       // A resolvable const that is NOT a CDN, and an unresolvable expression:
       // neither may manufacture a host.
-      { code: 'const BASE = "https://app.example.com"; const t = `<script src="${BASE}/app.js"></script>`;' },
+      {
+        code: 'const BASE = "https://app.example.com"; const t = `<script src="${BASE}/app.js"></script>`;',
+      },
       { code: 'const t = `<script src="${runtimeBase}/app.js"></script>`;' },
     ],
     invalid: [

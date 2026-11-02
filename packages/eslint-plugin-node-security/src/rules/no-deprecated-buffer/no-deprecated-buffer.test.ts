@@ -161,6 +161,7 @@ describe('no-deprecated-buffer', () => {
         errors: [{ messageId: 'deprecatedBufferConstructor' }],
       },
       {
+        name: 'new Buffer() with no arguments is reported without an autofix',
         code: 'new Buffer();',
         output: null,
         errors: [{ messageId: 'deprecatedBufferConstructor' }],

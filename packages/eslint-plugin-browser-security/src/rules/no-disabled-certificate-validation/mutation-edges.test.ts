@@ -50,6 +50,14 @@ ruleTester.run(
     ],
     invalid: [
       {
+        name: 'a closed nested block-bodied check hands the stack back to its no-op parent',
+        code: 'tls.connect({ checkServerIdentity(h, c) { const inner = { checkServerIdentity: function () { return undefined; } }; return undefined; } })',
+        errors: [
+          { messageId: 'noopHostnameVerification', column: 15 },
+          { messageId: 'noopHostnameVerification', column: 59 },
+        ],
+      },
+      {
         name: 'a nested no-op check and its no-op parent are both reported',
         code: 'tls.connect({ checkServerIdentity: function (h, c) { const inner = { checkServerIdentity: () => undefined }; return undefined; } })',
         errors: [

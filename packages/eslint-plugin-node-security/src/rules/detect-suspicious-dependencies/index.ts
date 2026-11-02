@@ -65,7 +65,7 @@ export const detectSuspiciousDependencies = createRule<RuleOptions, MessageIds>(
 
       // oxlint-disable-next-line consistent-function-scoping
       function levenshtein(a: string, b: string): number {
-        const matrix = [];
+        const matrix: number[][] = [];
         for (let i = 0; i <= b.length; i++) {
           matrix[i] = [i];
         }
@@ -85,9 +85,9 @@ export const detectSuspiciousDependencies = createRule<RuleOptions, MessageIds>(
               // Damerau: a transposition is a single slip of the fingers, not
               // two edits. Without this, `raect` scores 2 against `react` and a
               // threshold of 1 would miss the most common squat shape there is.
+              // No `i > 1 && j > 1` guard: in the first row or column one side
+              // reads `charAt(-1)`, which is '' and equals no character.
               if (
-                i > 1 &&
-                j > 1 &&
                 b.charAt(i - 1) === a.charAt(j - 2) &&
                 b.charAt(i - 2) === a.charAt(j - 1)
               ) {
@@ -126,11 +126,7 @@ export const detectSuspiciousDependencies = createRule<RuleOptions, MessageIds>(
           // edits from `react`. A real typosquat is a single slip:
           // transposition, doubling, or one wrong key.
           if (distance === 1 && !KNOWN_LEGITIMATE.has(name)) {
-            context.report({
-              node,
-              messageId: 'violationDetected',
-              data: { name, similar: popular },
-            });
+            context.report({ node, messageId: 'violationDetected' });
           }
         }
       };

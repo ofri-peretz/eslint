@@ -14,7 +14,6 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
-  createPayloadResolver,
   isStaticExpression,
   isTestFilePath,
   propertyName,
@@ -25,6 +24,7 @@ import {
   MessageIcons,
   createRule,
 } from '@interlace/eslint-devkit';
+import { createPayloadResolver } from '../../utils/payload-source';
 import { resolveInitializer } from '../../utils/resolve-binding';
 
 /**
@@ -73,6 +73,22 @@ const DEFAULT_SANITIZERS = [
   'escapeHTML',
   'escape',
 ];
+
+/**
+ * Can this value hold a tag at all?
+ *
+ * Every operator but binary `+` yields a number, a boolean, a `typeof` word or
+ * `undefined`: `+count`, `items.length * price`, `counter++`, `!open`. None of
+ * them can carry markup, so assigning one to a sink is not XSS — and the rule
+ * reported every such counter as a finding.
+ */
+function cannotCarryMarkup(node: TSESTree.Node): boolean {
+  return (
+    node.type === 'UnaryExpression' ||
+    node.type === 'UpdateExpression' ||
+    (node.type === 'BinaryExpression' && node.operator !== '+')
+  );
+}
 
 /**
  * Check if the right side is sanitized
@@ -132,13 +148,24 @@ function isSanitized(
   // by the corpus: the corpus has no fixture for that option, because the
   // corpus tests the vulnerability and this is a configuration promise.
   const partIsSafe = (part: TSESTree.Node): boolean =>
-    isLiteralString(part) || isSanitized(part, sourceCode, sanitizers);
+    isLiteralString(part) ||
+    cannotCarryMarkup(part) ||
+    isSanitized(part, sourceCode, sanitizers);
 
-  if (node.type === 'BinaryExpression' && node.operator === '+') {
+  // A `+`: every other binary operator was answered by cannotCarryMarkup
+  // before this point, and the one that slips past it through an `await` or
+  // `?.` unwrap is read conservatively as a composite.
+  if (node.type === 'BinaryExpression') {
     return partIsSafe(node.left as TSESTree.Node) && partIsSafe(node.right);
   }
+  // A template with nothing interpolated has no part to sanitise: it is a
+  // literal, and `every` over zero parts would call it sanitised — which
+  // silenced the backtick spelling under `allowLiteralStrings: false`.
   if (node.type === 'TemplateLiteral') {
-    return node.expressions.every((e) => partIsSafe(e));
+    return (
+      node.expressions.length > 0 &&
+      node.expressions.every((e) => partIsSafe(e))
+    );
   }
 
   // `DOMPurify?.sanitize(x)` is a ChainExpression wrapping the call. Without
@@ -428,7 +455,8 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
       if (!member.computed && member.property.type === 'Identifier') {
         return member.property.name;
       }
-      if (!member.computed) return null;
+      // A dotted key that is not an Identifier is a `#private` name, which
+      // staticString and the resolver below both answer null for.
       const staticText2 = staticString(member.property);
       if (staticText2 !== null) {
         return staticText2;
@@ -493,7 +521,7 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
        * invites and the reason to re-probe the whole family after touching any
        * member of it.
        */
-      siblingCanSee = true,
+      siblingCanSee: boolean,
     ) {
       // Owned by a source-specific rule? Then this is not ours. The two tests
       // are complements — a source rule reports only what it can attribute, we
@@ -528,6 +556,8 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
       ) {
         return;
       }
+      // A number or a boolean is not markup, whatever the configuration.
+      if (cannotCarryMarkup(taintedNode)) return;
       // Allow if sanitized via a trusted sanitiser call.
       if (isSanitized(taintedNode, sourceCode, trustedSanitizers)) return;
       // Determine source type for the diagnostic message.
@@ -549,11 +579,9 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        ({
-          allowInTests = false,
-          trustedSanitizers = DEFAULT_SANITIZERS,
-          allowLiteralStrings = true,
-        } = options as Options);
+        // The merged `defaultOptions` supply every field.
+        ({ allowInTests, trustedSanitizers, allowLiteralStrings } =
+          options as Required<Options>);
 
         const filename = context.filename;
         const isTestFile = allowInTests && isTestFilePath(filename);

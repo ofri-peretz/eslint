@@ -83,10 +83,9 @@ interface Case {
   /**
    * Options every assertion in this file applies to the case.
    *
-   * `no-missing-validation-pipe` needs them: by default it reports only shapes
-   * no pipe could validate, and a global pipe cannot validate those either, so
-   * its default-mode findings are unsuppressable by design. The suppression
-   * this file is testing lives in `requireExplicitPipe` mode, on a typed DTO.
+   * None needs them now. `no-missing-validation-pipe` reports a typed DTO
+   * only while no global pipe exists, which is exactly the suppression this
+   * file tests; under `requireExplicitPipe` a global pipe suppresses nothing.
    */
   baseOptions?: Record<string, unknown>;
   /** The context flag the app-wide registration sets. */
@@ -112,7 +111,6 @@ const CASES: Case[] = [
     rule: 'no-missing-validation-pipe',
     flag: 'hasGlobalValidationPipe',
     option: 'detectGlobalPipes',
-    baseOptions: { requireExplicitPipe: true },
     code: `
       @Controller('users')
       class UsersController {
@@ -227,6 +225,38 @@ describe('require-guards consults the rest of the project scan', () => {
           class UserController {
             @Get('user')
             findMe(@User() user) {}
+          }
+        `,
+      ),
+    ).toBe(0);
+  });
+
+  it('a leading slash on the controller path still matches the middleware prefix', () => {
+    context.authMiddlewareTargets = new Set(['cats']);
+    expect(
+      run(
+        'require-guards',
+        `
+          @Controller('/cats')
+          class CatsController {
+            @Get('all')
+            findAll() {}
+          }
+        `,
+      ),
+    ).toBe(0);
+  });
+
+  it('an anonymous controller class is matched by its path', () => {
+    context.authMiddlewareTargets = new Set(['cats']);
+    expect(
+      run(
+        'require-guards',
+        `
+          @Controller('cats')
+          export default class {
+            @Get('all')
+            findAll() {}
           }
         `,
       ),

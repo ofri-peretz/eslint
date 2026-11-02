@@ -127,10 +127,15 @@ export const noDeprecatedBuffer: TSESLint.RuleModule<MessageIds, []> =
        * and only for the exact spelling; anything declared locally is that local
        * declaration unless it was imported or required from `buffer`.
        */
-      function resolvesToNodeBuffer(id: TSESTree.Identifier): boolean {
+      function resolvesToNodeBuffer(
+        id: TSESTree.Identifier,
+        seen = new Set<TSESLint.Scope.Variable>(),
+      ): boolean {
         const variable = findVariable(sourceCode, id);
         if (variable === null || variable.defs.length === 0)
           return id.name === 'Buffer';
+        if (seen.has(variable)) return false;
+        seen.add(variable);
         const def = variable.defs[0];
 
         if (def.type === 'ImportBinding') {
@@ -149,6 +154,19 @@ export const noDeprecatedBuffer: TSESLint.RuleModule<MessageIds, []> =
         if (def.type !== 'Variable') return false;
         const init = def.node.init;
         if (init === null) return false;
+
+        // `const B = Buffer; new B(64)` — an alias in scope at the call site is
+        // the constructor it names. Only a binding nothing reassigns: a later
+        // write could hold anything by the time `new B()` runs. `seen` ends a
+        // `var a = b, b = a` cycle; it used to be a depth cap of 4, which also
+        // dropped an honest chain of five aliases.
+        if (init.type === AST_NODE_TYPES.Identifier) {
+          return (
+            def.node.id.type === AST_NODE_TYPES.Identifier &&
+            variable.references.every((ref) => !ref.isWrite() || ref.init) &&
+            resolvesToNodeBuffer(init, seen)
+          );
+        }
 
         // `const BufferCtor = require('buffer').Buffer`
         if (
@@ -187,9 +205,11 @@ export const noDeprecatedBuffer: TSESLint.RuleModule<MessageIds, []> =
         }
         const def = variable.defs[0];
         if (def.type === 'ImportBinding') {
+          // `import * as buffer` and `import buffer` (a builtin's default
+          // export is its module object) both bind the module.
           return (
             fromBufferModule(def) &&
-            def.node.type === AST_NODE_TYPES.ImportNamespaceSpecifier
+            def.node.type !== AST_NODE_TYPES.ImportSpecifier
           );
         }
         return (
@@ -237,7 +257,7 @@ export const noDeprecatedBuffer: TSESLint.RuleModule<MessageIds, []> =
         // encoding of the first.
         if (args.length !== 1) return args.length === 0 ? null : '.from';
         const argument = args[0];
-        if (argument.type === AST_NODE_TYPES.SpreadElement) return null;
+        // A spread (`new Buffer(...args)`) resolves to no constant below.
         if (
           argument.type === AST_NODE_TYPES.ArrayExpression ||
           argument.type === AST_NODE_TYPES.TemplateLiteral

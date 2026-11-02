@@ -68,6 +68,18 @@ const DEFAULT_LIMIT_OPTION_NAMES = [
   'limit',
 ] as const;
 
+/**
+ * Constructors that reserve exactly the number of bytes they are handed.
+ *
+ * @protocol-constant ECMAScript's `ArrayBuffer` and `SharedArrayBuffer`. Like
+ * `Buffer.alloc`, the size argument IS the allocation; there is no content
+ * overload to tell apart.
+ */
+const BYTE_BUFFER_CONSTRUCTORS: ReadonlySet<string> = new Set([
+  'ArrayBuffer',
+  'SharedArrayBuffer',
+]);
+
 export interface Options extends SecurityRuleOptions {
   /**
    * Property names that carry a magnitude, used to recognise a bounded read.
@@ -273,7 +285,6 @@ export const noUnlimitedResourceAllocation = createRule<
     let trustedAnnotations: string[];
     let strictMode: boolean;
     let sourceCode: Readonly<TSESLint.SourceCode>;
-    let filename: string;
     let safetyChecker: {
       isSafe(
         node: TSESTree.Node,
@@ -301,12 +312,12 @@ export const noUnlimitedResourceAllocation = createRule<
     let archiveBindings: Set<string>;
     let ALLOCATORS: ReadonlySet<string>;
 
-    const readsRequestSurface = (node: TSESTree.Node | undefined): boolean =>
+    const readsRequestSurface = (node: TSESTree.Node): boolean =>
       // `req['query'].size` reads the same surface `req.query.size` does, so
       // the `!node.computed` guard that used to sit here was the blind spot,
       // not a safeguard. A dynamic `req[k]` still resolves to nothing and is
       // still not a request surface.
-      node?.type === AST_NODE_TYPES.MemberExpression &&
+      node.type === AST_NODE_TYPES.MemberExpression &&
       namesOneOf(propertyName(node), REQUEST_SURFACE);
 
     /**
@@ -351,9 +362,7 @@ export const noUnlimitedResourceAllocation = createRule<
         case AST_NODE_TYPES.Identifier: {
           if (
             requestRoots.has(node.name.toLowerCase()) &&
-            readsRequestSurface(
-              (node as TSESTree.Node & { parent?: TSESTree.Node }).parent,
-            )
+            readsRequestSurface(node.parent)
           ) {
             return true;
           }
@@ -387,10 +396,9 @@ export const noUnlimitedResourceAllocation = createRule<
         case AST_NODE_TYPES.NewExpression:
           return (
             isInvokerControlled(node.callee, depth + 1) ||
-            node.arguments.some(
-              (argument) =>
-                argument.type !== AST_NODE_TYPES.SpreadElement &&
-                isInvokerControlled(argument, depth + 1),
+            // A SpreadElement falls to `default` below: not followed.
+            node.arguments.some((argument) =>
+              isInvokerControlled(argument, depth + 1),
             )
           );
         case AST_NODE_TYPES.BinaryExpression:
@@ -536,6 +544,92 @@ export const noUnlimitedResourceAllocation = createRule<
         safeResourceFunctions.some((func) => sizeText.includes(func))
       );
     };
+
+    /**
+     * Does `test` bound `name` from above — `name > MAX`, `name >= MAX`,
+     * `MAX < name`, `MAX <= name` — anywhere in an `||` / `&&` chain?
+     */
+    const testsUpperBound = (test: TSESTree.Node, name: string): boolean => {
+      if (test.type === AST_NODE_TYPES.LogicalExpression) {
+        return (
+          testsUpperBound(test.left, name) || testsUpperBound(test.right, name)
+        );
+      }
+      if (test.type !== AST_NODE_TYPES.BinaryExpression) return false;
+      const isName = (side: TSESTree.Node): boolean =>
+        side.type === AST_NODE_TYPES.Identifier && side.name === name;
+      return (
+        ((test.operator === '>' || test.operator === '>=') &&
+          isName(test.left)) ||
+        ((test.operator === '<' || test.operator === '<=') &&
+          isName(test.right))
+      );
+    };
+
+    /** A statement that never falls through: `throw`, `return`, or a block ending in one. */
+    const alwaysExits = (statement: TSESTree.Statement): boolean => {
+      const last =
+        statement.type === AST_NODE_TYPES.BlockStatement
+          ? statement.body.at(-1)
+          : statement;
+      return (
+        last?.type === AST_NODE_TYPES.ThrowStatement ||
+        last?.type === AST_NODE_TYPES.ReturnStatement
+      );
+    };
+
+    /**
+     * Is the size checked against a maximum, and rejected, before this
+     * allocation runs? The doc's own correct example:
+     *
+     *   const size = parseInt(req.query.size);
+     *   if (size > MAX_SIZE || size <= 0) throw new Error('Invalid size');
+     *   const buffer = Buffer.alloc(size);
+     *
+     * `requireResourceValidation` asks for exactly this check, and the rule
+     * reported it anyway: only a `Math.min` clamp or a named validator counted.
+     * An earlier `if` in an enclosing block whose test bounds the binding from
+     * above and whose body always exits is the guard.
+     */
+    const hasUpperBoundGuard = (
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ): boolean => {
+      const [sizeArg] = node.arguments;
+      if (sizeArg.type !== AST_NODE_TYPES.Identifier) return false;
+      // Every ancestor up to the Program; ESLint ends the chain with `null`.
+      for (
+        let child: TSESTree.Node = node,
+          parent: TSESTree.Node | undefined = node.parent;
+        parent;
+        child = parent, parent = parent.parent
+      ) {
+        if (
+          parent.type !== AST_NODE_TYPES.BlockStatement &&
+          parent.type !== AST_NODE_TYPES.Program
+        ) {
+          continue;
+        }
+        const statements: readonly TSESTree.Node[] = parent.body;
+        if (
+          statements
+            .slice(0, statements.indexOf(child))
+            .some(
+              (statement) =>
+                statement.type === AST_NODE_TYPES.IfStatement &&
+                testsUpperBound(statement.test, sizeArg.name) &&
+                alwaysExits(statement.consequent),
+            )
+        ) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    /** Clamped, run through a validator, or rejected above a maximum. */
+    const isBounded = (
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ): boolean => hasSizeValidation(node) || hasUpperBoundGuard(node);
 
     /**
      * Estimate resource size from static analysis
@@ -690,6 +784,35 @@ export const noUnlimitedResourceAllocation = createRule<
       return bound !== undefined && isInvokerControlled(bound);
     };
 
+    /**
+     * `Array(n)` / `new Array(n)`: an unbounded invoker-supplied length, or a
+     * literal length above `maxResourceSize`. Every element costs at least a
+     * byte, so a length past the byte budget is past it in bytes as well.
+     */
+    const checkArrayLength = (
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ): void => {
+      const args = node.arguments;
+      if (args.length !== 1) return;
+      const sizeArg = args[0];
+      if (sizeArg.type === 'SpreadElement') return;
+      const unbounded = isUserInput(sizeArg) && !isBounded(node);
+      const estimatedSize = estimateResourceSize(sizeArg);
+      if (
+        !unbounded &&
+        (estimatedSize === null || estimatedSize <= maxResourceSize)
+      ) {
+        return;
+      }
+      if (safetyChecker.isSafe(node, context)) {
+        return;
+      }
+      context.report({
+        node: sizeArg,
+        messageId: 'unlimitedMemoryAllocation',
+      });
+    };
+
     return {
       before() {
         const options = context.options[0] || {};
@@ -723,7 +846,6 @@ export const noUnlimitedResourceAllocation = createRule<
         } = options);
 
         sourceCode = context.sourceCode;
-        filename = context.filename;
 
         // Create safety checker for false positive detection
         safetyChecker = createSafetyChecker({
@@ -887,7 +1009,7 @@ export const noUnlimitedResourceAllocation = createRule<
         // string was the last decision in this handler taken on source text
         // rather than structure, and it went with the cache path below.
 
-        // Check for Buffer.alloc(), Buffer.allocUnsafe() or new Buffer()
+        // Check for Buffer.alloc() and Buffer.allocUnsafe()
         const isBufferAlloc =
           callee.type === 'MemberExpression' &&
           callee.object.type === 'Identifier' &&
@@ -895,12 +1017,8 @@ export const noUnlimitedResourceAllocation = createRule<
           (propertyName(callee) === 'alloc' ||
             propertyName(callee) === 'allocUnsafe');
 
-        const isNewBuffer =
-          callee.type === 'NewExpression' &&
-          callee.callee.type === 'Identifier' &&
-          callee.callee.name === 'Buffer';
-
-        if (isBufferAlloc || isNewBuffer) {
+        // `new Buffer(n)` is a NewExpression, handled on that path below.
+        if (isBufferAlloc) {
           const args = node.arguments;
           if (args.length > 0) {
             const sizeArg = args[0];
@@ -913,7 +1031,7 @@ export const noUnlimitedResourceAllocation = createRule<
               requireResourceValidation &&
               sizeArg.type !== 'SpreadElement' &&
               isUserInput(sizeArg) &&
-              !hasSizeValidation(node)
+              !isBounded(node)
             ) {
               if (safetyChecker.isSafe(node, context)) {
                 return;
@@ -922,10 +1040,6 @@ export const noUnlimitedResourceAllocation = createRule<
               context.report({
                 node: sizeArg,
                 messageId: 'userControlledResourceSize',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc.start.line),
-                },
               });
               return;
             }
@@ -943,10 +1057,6 @@ export const noUnlimitedResourceAllocation = createRule<
               context.report({
                 node: sizeArg,
                 messageId: 'unlimitedBufferAllocation',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc.start.line),
-                },
               });
               return;
             }
@@ -1007,10 +1117,6 @@ export const noUnlimitedResourceAllocation = createRule<
               context.report({
                 node,
                 messageId: 'unlimitedFileOperations',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc.start.line),
-                },
               });
             }
           }
@@ -1056,10 +1162,6 @@ export const noUnlimitedResourceAllocation = createRule<
               context.report({
                 node: pathArg,
                 messageId: 'unlimitedFileOperations',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc.start.line),
-                },
               });
             }
           }
@@ -1067,24 +1169,7 @@ export const noUnlimitedResourceAllocation = createRule<
 
         // Check for Array constructor with user input
         if (callee.type === 'Identifier' && callee.name === 'Array') {
-          const args = node.arguments;
-          if (args.length === 1) {
-            const sizeArg = args[0];
-            if (sizeArg.type !== 'SpreadElement' && isUserInput(sizeArg)) {
-              if (safetyChecker.isSafe(node, context)) {
-                return;
-              }
-
-              context.report({
-                node: sizeArg,
-                messageId: 'unlimitedMemoryAllocation',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc.start.line),
-                },
-              });
-            }
-          }
+          checkArrayLength(node);
         }
 
         // ZIP bomb detection — unlimited decompression.
@@ -1180,7 +1265,6 @@ export const noUnlimitedResourceAllocation = createRule<
               return;
             }
             const candidate = current as TSESTree.Node;
-            if (typeof candidate.type !== 'string') return;
             if (
               candidate.type === AST_NODE_TYPES.AssignmentExpression &&
               candidate.operator === '+=' &&
@@ -1217,10 +1301,6 @@ export const noUnlimitedResourceAllocation = createRule<
           context.report({
             node,
             messageId: 'unlimitedFileOperations',
-            data: {
-              filePath: filename,
-              line: String(node.loc.start.line),
-            },
           });
         }
 
@@ -1273,10 +1353,6 @@ export const noUnlimitedResourceAllocation = createRule<
           context.report({
             node,
             messageId: 'resourceAllocationInLoop',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-            },
           });
         }
       },
@@ -1285,8 +1361,16 @@ export const noUnlimitedResourceAllocation = createRule<
       NewExpression(node: TSESTree.NewExpression) {
         const callee = node.callee;
 
-        // Check for new Buffer() with user input
-        if (callee.type === 'Identifier' && callee.name === 'Buffer') {
+        // Check for new Buffer() / new ArrayBuffer() with user input
+        if (
+          callee.type === 'Identifier' &&
+          (callee.name === 'Buffer' ||
+            BYTE_BUFFER_CONSTRUCTORS.has(callee.name))
+        ) {
+          // `new ArrayBuffer(n)` reserves `n` bytes, exactly as `Buffer.alloc(n)`
+          // does, and has no content overload to rule out — its second argument
+          // is an options bag, not an encoding.
+          const reservesBytes = BYTE_BUFFER_CONSTRUCTORS.has(callee.name);
           const args = node.arguments;
           if (args.length > 0) {
             const sizeArg = args[0];
@@ -1304,10 +1388,10 @@ export const noUnlimitedResourceAllocation = createRule<
             if (
               requireResourceValidation &&
               sizeArg.type !== 'SpreadElement' &&
-              !hasEncodingArgument &&
-              couldBeASize(sizeArg) &&
+              (reservesBytes ||
+                (!hasEncodingArgument && couldBeASize(sizeArg))) &&
               isUserInput(sizeArg) &&
-              !hasSizeValidation(node)
+              !isBounded(node)
             ) {
               if (safetyChecker.isSafe(node, context)) {
                 return;
@@ -1316,10 +1400,6 @@ export const noUnlimitedResourceAllocation = createRule<
               context.report({
                 node: sizeArg,
                 messageId: 'userControlledResourceSize',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc.start.line),
-                },
               });
               return;
             }
@@ -1337,10 +1417,6 @@ export const noUnlimitedResourceAllocation = createRule<
               context.report({
                 node: sizeArg,
                 messageId: 'unlimitedBufferAllocation',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc.start.line),
-                },
               });
               return;
             }
@@ -1354,24 +1430,7 @@ export const noUnlimitedResourceAllocation = createRule<
 
         // Check for new Array() with user input
         if (callee.type === 'Identifier' && callee.name === 'Array') {
-          const args = node.arguments;
-          if (args.length === 1) {
-            const sizeArg = args[0];
-            if (sizeArg.type !== 'SpreadElement' && isUserInput(sizeArg)) {
-              if (safetyChecker.isSafe(node, context)) {
-                return;
-              }
-
-              context.report({
-                node: sizeArg,
-                messageId: 'unlimitedMemoryAllocation',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc.start.line),
-                },
-              });
-            }
-          }
+          checkArrayLength(node);
         }
 
         // Same allocation-in-loop check as the CallExpression path — `new
@@ -1383,10 +1442,6 @@ export const noUnlimitedResourceAllocation = createRule<
           context.report({
             node,
             messageId: 'resourceAllocationInLoop',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-            },
           });
         }
       },

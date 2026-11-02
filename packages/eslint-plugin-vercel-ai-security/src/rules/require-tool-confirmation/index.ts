@@ -209,4 +209,6 @@ const CONFIRMATION_PROPS = new Set([
   'requiresApproval',
   'requireApproval',
   'approval',
+  // The documented ✅ example "Execute with confirmation" spells it `confirm`.
+  'confirm',
 ]);

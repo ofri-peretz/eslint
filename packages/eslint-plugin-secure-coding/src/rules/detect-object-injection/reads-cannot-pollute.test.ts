@@ -39,45 +39,75 @@ import { detectObjectInjection } from './index';
 
 const ruleTester = new RuleTester();
 
-ruleTester.run('detect-object-injection — reads cannot pollute', detectObjectInjection, {
-  valid: [
-    {
-      name: 'reading with a request-controlled key',
-      code: `export function h(req, table) { return table[req.body.key]; }`,
-    },
-    {
-      name: 'reading with a key that is literally __proto__',
-      code: `export function h(o) { const k = '__proto__'; return o[k]; }`,
-    },
-    {
-      name: 'array index in a loop — mongoose cast.js:62',
-      code: `export function h(paths) { let path; for (let i = 0; i < paths.length; i++) { path = paths[i]; } return path; }`,
-    },
-    {
-      name: 'config lookup by a computed key — mongoose cast.js:45',
-      code: `export function h(obj, schema) { return obj[schema.options.discriminatorKey]; }`,
-    },
-    {
-      name: 'a read used as a call argument',
-      code: `export function h(req, table) { return JSON.stringify(table[req.query.k]); }`,
-    },
-    {
-      name: 'a read on the right-hand side of an assignment',
-      code: `export function h(req, src, dst) { dst.value = src[req.body.k]; return dst; }`,
-    },
-  ],
-  invalid: [
-    // CONTROLS. Writes still report — otherwise "reads are quiet" would pass on
-    // a rule that had simply stopped working.
-    {
-      name: 'CONTROL: a write through a prototype reference still reports',
-      code: `export function h(o, k, v) { o['__proto__'][k] = v; }`,
-      errors: 1,
-    },
-    {
-      name: 'CONTROL: a for-in copy loop still reports',
-      code: `export function h(target, source) { for (const k in source) { target[k] = source[k]; } return target; }`,
-      errors: 1,
-    },
-  ],
-});
+ruleTester.run(
+  'detect-object-injection — reads cannot pollute',
+  detectObjectInjection,
+  {
+    valid: [
+      {
+        name: 'reading with a request-controlled key',
+        code: `export function h(req, table) { return table[req.body.key]; }`,
+      },
+      {
+        name: 'reading with a key that is literally __proto__',
+        code: `export function h(o) { const k = '__proto__'; return o[k]; }`,
+      },
+      {
+        name: 'array index in a loop — mongoose cast.js:62',
+        code: `export function h(paths) { let path; for (let i = 0; i < paths.length; i++) { path = paths[i]; } return path; }`,
+      },
+      {
+        name: 'config lookup by a computed key — mongoose cast.js:45',
+        code: `export function h(obj, schema) { return obj[schema.options.discriminatorKey]; }`,
+      },
+      {
+        name: 'a read used as a call argument',
+        code: `export function h(req, table) { return JSON.stringify(table[req.query.k]); }`,
+      },
+      {
+        name: 'a read on the right-hand side of an assignment',
+        code: `export function h(req, src, dst) { dst.value = src[req.body.k]; return dst; }`,
+      },
+    ],
+    invalid: [
+      // CONTROLS. Writes still report — otherwise "reads are quiet" would pass on
+      // a rule that had simply stopped working.
+      {
+        name: 'CONTROL: a write through a prototype reference still reports',
+        code: `export function h(o, k, v) { o['__proto__'][k] = v; }`,
+        errors: 1,
+      },
+      {
+        name: 'CONTROL: a for-in copy loop still reports',
+        code: `export function h(target, source) { for (const k in source) { target[k] = source[k]; } return target; }`,
+        errors: 1,
+      },
+    ],
+  },
+);
+
+/**
+ * An INVOKED read is method injection (CWE-915's other arm), and it reaches the
+ * method through the prototype. So the const-literal exemption — a write-side
+ * "closed shape" argument — does not cover it: `{}`[k] still reaches
+ * `constructor`. A prototype-less object has nothing to reach.
+ */
+ruleTester.run(
+  'invoked reads go through the prototype',
+  detectObjectInjection,
+  {
+    valid: [
+      {
+        name: 'an invoked read on Object.create(null) reaches no inherited method',
+        code: 'export function f(userKey, value) { const obj = Object.create(null); return obj[userKey](value); }',
+      },
+    ],
+    invalid: [
+      {
+        name: 'an invoked read on a const object literal still reaches constructor',
+        code: 'export function f(userKey, value) { const obj = {}; return obj[userKey](value); }',
+        errors: [{ messageId: 'objectInjection' }],
+      },
+    ],
+  },
+);

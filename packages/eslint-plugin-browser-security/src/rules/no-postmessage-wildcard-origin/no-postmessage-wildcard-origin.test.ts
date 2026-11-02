@@ -111,6 +111,7 @@ ruleTester.run('no-postmessage-wildcard-origin', noPostmessageWildcardOrigin, {
     },
     // Wildcard with opener
     {
+      name: 'window.opener.postMessage with a * target origin is reported with a specific-origin suggestion',
       code: `window.opener.postMessage(result, '*');`,
       errors: [
         {

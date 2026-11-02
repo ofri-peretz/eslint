@@ -16,6 +16,14 @@ const NEXT_ROUTER = 'import { useRouter } from "next/navigation";\n';
 
 ruleTester.run('require-url-validation', requireUrlValidation, {
   valid: [
+    {
+      name: 'a router prefetch is not a navigation',
+      code: `${NEXT_ROUTER}const router = useRouter(); router.prefetch(location.hash.slice(1));`,
+    },
+    {
+      name: 'a window method other than open does not navigate',
+      code: 'window.postMessage(location.hash, targetOrigin);',
+    },
     // Safe static URLs written inline.
     { name: 'a literal URL', code: "window.open('https://example.com')" },
     {
@@ -98,6 +106,7 @@ ruleTester.run('require-url-validation', requireUrlValidation, {
     },
     // Any global that owns an `open`.
     {
+      name: 'self.open(location.search) is reported',
       code: 'self.open(location.search)',
       errors: [{ messageId: 'violationDetected' }],
     },

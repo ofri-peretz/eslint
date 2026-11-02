@@ -16,12 +16,10 @@ import {
   formatLLMMessage,
   MessageIcons,
   createRule,
-  AST_NODE_TYPES,
   isTestFilePath,
-  namesOneOf,
-  propertyName,
 } from '@interlace/eslint-devkit';
 import { resolveConstantString } from '../../utils/const-value';
+import { calleeNameOn } from '../../utils/module-binding';
 
 type MessageIds = 'weakCipherAlgorithm' | 'useAes256Gcm' | 'useChaCha20';
 
@@ -35,15 +33,13 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
- * Weak cipher patterns and their safe alternatives
+ * Weak cipher patterns, the name reported for each, and its replacement
  */
 interface WeakCipherPattern {
   /** Regex pattern to match (case-insensitive) */
   pattern: RegExp;
   /** Algorithm name for display */
   name: string;
-  /** Safe alternatives */
-  alternatives: string[];
   /** Replacement algorithm */
   replacement: string;
 }
@@ -52,7 +48,6 @@ const WEAK_CIPHER_PATTERNS: WeakCipherPattern[] = [
   {
     pattern: /\bdes\b(?!-ede)/i,
     name: 'DES',
-    alternatives: ['AES-256-GCM', 'ChaCha20-Poly1305'],
     replacement: 'aes-256-gcm',
   },
   {
@@ -63,31 +58,26 @@ const WEAK_CIPHER_PATTERNS: WeakCipherPattern[] = [
     // were the only ones going unreported.
     pattern: /\bdes(?:-ede3?|3)\b|\b3des\b|\btripledes\b/i,
     name: '3DES',
-    alternatives: ['AES-256-GCM', 'ChaCha20-Poly1305'],
     replacement: 'aes-256-gcm',
   },
   {
     pattern: /\brc4\b|\barc4\b/i,
     name: 'RC4',
-    alternatives: ['AES-256-GCM', 'ChaCha20-Poly1305'],
     replacement: 'aes-256-gcm',
   },
   {
     pattern: /\bblowfish\b|\bbf\b/i,
     name: 'Blowfish',
-    alternatives: ['AES-256-GCM', 'ChaCha20-Poly1305'],
     replacement: 'aes-256-gcm',
   },
   {
     pattern: /\brc2\b/i,
     name: 'RC2',
-    alternatives: ['AES-256-GCM', 'ChaCha20-Poly1305'],
     replacement: 'aes-256-gcm',
   },
   {
     pattern: /\bidea\b/i,
     name: 'IDEA',
-    alternatives: ['AES-256-GCM', 'ChaCha20-Poly1305'],
     replacement: 'aes-256-gcm',
   },
 ];
@@ -113,7 +103,6 @@ function findWeakCipher(
       return {
         pattern: regex,
         name: additionalPattern.toUpperCase(),
-        alternatives: ['AES-256-GCM', 'ChaCha20-Poly1305'],
         replacement: 'aes-256-gcm',
       };
     }
@@ -212,19 +201,15 @@ export const noWeakCipherAlgorithm = createRule<RuleOptions, MessageIds>({
         'createDecipheriv',
       ]);
 
-      // Check for crypto.createCipher*() pattern
-      if (
-        node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        namesOneOf(propertyName(node.callee), cipherMethods)
-      ) {
-        checkCipherArgument(node);
-      }
-
-      // Check for standalone createCipher*() pattern
-      if (
-        node.callee.type === AST_NODE_TYPES.Identifier &&
-        cipherMethods.has(node.callee.name)
-      ) {
+      // `crypto.createCipher*()`, a bare `createCipher*()`, and the same
+      // functions under any binding — `import { createCipheriv as makeCipher }`
+      // is still createCipheriv.
+      const calleeName = calleeNameOn(
+        node.callee,
+        context.sourceCode.getScope(node),
+        'crypto',
+      );
+      if (calleeName !== null && cipherMethods.has(calleeName)) {
         checkCipherArgument(node);
       }
     }

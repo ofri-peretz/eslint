@@ -28,7 +28,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 | **CWE Reference** | [CWE-312](https://cwe.mitre.org/data/definitions/312.html) (Cleartext Storage) |
 | **Severity**      | 🟠 HIGH                                                                        |
 | **Auto-Fix**      | ❌ Not available                                                               |
-| **Category**   | Security |
+| **Category**      | Security                                                                       |
 | **Best For**      | Node.js File I/O                                                               |
 
 ## Rule Details
@@ -43,7 +43,7 @@ Two things have to be true before there is a finding, and **both** are checked:
    `attempted`, or `temporary-holder`. That substring test is what filed
    `https://cdn.shopify.com/static/cli/extensions/templates.json` as sensitive
    data in temp storage (Shopify/cli `app-management-client.ts:155`).
-2. **Something writes through it.** CWE-312 is about data *at rest* in a
+2. **Something writes through it.** CWE-312 is about data _at rest_ in a
    world-readable place. A string that merely mentions a temp directory stores
    nothing, so the path has to reach `fs.writeFile` / `fs.writeFileSync` —
    either directly, or through the name it is bound to.
@@ -103,7 +103,8 @@ fs.writeFileSync(path.join(dir, 'export.json'), JSON.stringify(records));
 const file = path.join(os.tmpdir(), crypto.randomUUID() + '.tmp');
 
 // ✅ Not a temp path at all — `/temp` is matched on segment boundaries
-const TEMPLATE_JSON_URL = 'https://cdn.shopify.com/static/cli/extensions/templates.json';
+const TEMPLATE_JSON_URL =
+  'https://cdn.shopify.com/static/cli/extensions/templates.json';
 
 // ✅ Names a temp path but writes nothing through it
 const cacheDir = '/tmp/build-cache';
@@ -149,16 +150,21 @@ console.log(`cache lives in ${cacheDir}`);
 - `path.join()` reached through a renamed import (`const { join } = require('path')`).
 - Stream-based writes using `createWriteStream`.
 - Paths stored in environment variables.
+- A temp path bound to an undeclared (implicit global) name
+  (`tmpPath = path.join(os.tmpdir(), 'x')`) — there is no binding to follow to the write.
 - A temp path written through a destructured or member binding
   (`obj.p = '/tmp/x'; fs.writeFileSync(obj.p, data)`) — the write-sink check
   follows a plain `const`/`let` name only.
-- A temp path written through an fs facade or a renamed import — the sink is
-  `fs.writeFile` / `fs.writeFileSync` spelled on the `fs` receiver.
+- A temp path written through an fs facade (a wrapper module of your own) — the
+  sink has to resolve to the `fs` module; a local object named `fs` is not it.
 
 > **Not a false negative:** `path.join(os.tmpdir(), 'constant-name')` reports as
-> `predictableTempPath` (CWE-377). A segment that is not a string literal —
+> `predictableTempPath` (CWE-377) once something writes through it — handed
+> straight to the write, or through the `const`/`let` it is bound to. A bound
+> path that nothing writes through stores nothing and stays silent, by the same
+> second condition as every other temp path. A segment that is not a string literal —
 > `crypto.randomUUID()`, `Date.now()`, an interpolated template — makes the path
-> unpredictable, which *is* the mitigation, so those stay silent by design.
+> unpredictable, which _is_ the mitigation, so those stay silent by design.
 > `fs.mkdtempSync(path.join(os.tmpdir(), 'prefix-'))` likewise: the join names a
 > prefix, not the file that gets written.
 
@@ -174,7 +180,7 @@ console.log(`cache lives in ${cacheDir}`);
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `tempPaths` | `string[]` | `["/tmp","/var/tmp","temp/","/temp"]` | Temporary path prefixes to flag. Replaces the built-in list rather than extending it. |
-| `ignoreFiles` | `string[]` | `[]` | List of files or patterns to ignore |
+| Option        | Type       | Default                               | Description                                                                           |
+| ------------- | ---------- | ------------------------------------- | ------------------------------------------------------------------------------------- |
+| `tempPaths`   | `string[]` | `["/tmp","/var/tmp","temp/","/temp"]` | Temporary path prefixes to flag. Replaces the built-in list rather than extending it. |
+| `ignoreFiles` | `string[]` | `[]`                                  | List of files or patterns to ignore                                                   |

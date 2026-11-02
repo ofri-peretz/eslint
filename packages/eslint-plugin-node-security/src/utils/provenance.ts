@@ -23,7 +23,11 @@
  * `no-buffer-overread` report on identifiers it had never seen declared.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, unwrapTypeSyntax, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  unwrapTypeSyntax,
+  propertyName,
+} from '@interlace/eslint-devkit';
 
 type SourceCode = TSESLint.SourceCode;
 
@@ -147,6 +151,11 @@ const REQUEST_PROPERTY_NAMES: ReadonlySet<string> = new Set([
  * `detect-child-process` wants `process` too, because `process.argv` really is
  * the input that steers a command.
  *
+ * `operatorProcessProperties` names further `process` members that read as
+ * configuration rather than taint for this rule — `detect-child-process`
+ * passes `env`, because a command set through the environment is set by
+ * whoever runs the process, not by a request.
+ *
  * The traversal is deliberately shallow — six hops — and follows only
  * single-definition bindings. It answers "is there visible evidence of flow",
  * never "is this provably clean".
@@ -154,6 +163,7 @@ const REQUEST_PROPERTY_NAMES: ReadonlySet<string> = new Set([
 export function makeReadsTaintSource(
   sourceCode: SourceCode,
   roots: ReadonlySet<string>,
+  operatorProcessProperties: ReadonlySet<string> = new Set(),
 ): (node: TSESTree.Node) => boolean {
   const reads = (node: TSESTree.Node, depth: number): boolean => {
     if (depth > 6) return false;
@@ -221,7 +231,8 @@ export function makeReadsTaintSource(
           node.object.type === AST_NODE_TYPES.Identifier &&
           node.object.name === 'process' &&
           surface !== null &&
-          RUNTIME_FIXED_PROCESS_PROPERTIES.has(surface)
+          (RUNTIME_FIXED_PROCESS_PROPERTIES.has(surface) ||
+            operatorProcessProperties.has(surface))
         ) {
           return false;
         }

@@ -530,17 +530,6 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
       return false;
     };
 
-    /**
-     * Check if string literal contains format specifiers
-     */
-    const hasFormatSpecifiers = (node: TSESTree.Literal): boolean => {
-      if (typeof node.value !== 'string') {
-        return false;
-      }
-
-      return containsFormatSpecifiers(node.value);
-    };
-
     // Helper functions for expression analysis
     function containsFormatSpecifiersInExpression(
       expr: TSESTree.BinaryExpression,
@@ -677,10 +666,8 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
             }
 
             // For CallExpression nodes, check if first argument is safe
-            if (
-              safeNode.type === 'CallExpression' &&
-              safeNode.arguments.length > 0
-            ) {
+            // Every CallExpression that reaches here has a first argument.
+            if (safeNode.type === 'CallExpression') {
               const firstArg = safeNode.arguments[0];
               if (
                 firstArg.type === 'Identifier' &&
@@ -732,8 +719,6 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         // But skip console methods since they don't use the first arg as a format template
         const isFormatFromUserInput =
           isUserInputNode(formatArg) ||
-          (formatArg.type === 'Identifier' &&
-            dangerousVariables.has(formatArg.name)) ||
           (formatArg.type === 'BinaryExpression' &&
             hasUserInputInExpression(formatArg));
 
@@ -814,9 +799,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         // Check for format specifiers in subsequent arguments (could indicate user input in format position)
         // Only check if the format string itself is not validated/safe
         const fmtArg = args[0];
-        const isFormatSafe =
-          isInputValidated(fmtArg) ||
-          (fmtArg.type === 'Identifier' && validatedVariables.has(fmtArg.name));
+        const isFormatSafe = isInputValidated(fmtArg);
 
         if (!isFormatSafe) {
           let hasUserInputInArgs = false;
@@ -831,14 +814,11 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
             }
           }
 
-          // Check if any argument (potential format string) contains specifiers
+          // Could the first argument carry specifiers? A literal one can, but
+          // a literal is a constant format string, which the report below
+          // excludes anyway; only a binding the file cannot read is a question.
           const firstArg = args[0];
-          const staticText = staticString(firstArg);
-          if (staticText !== null) {
-            if (containsFormatSpecifiers(staticText)) {
-              hasSpecifiersInFormat = true;
-            }
-          } else if (firstArg.type === 'Identifier') {
+          if (firstArg.type === 'Identifier') {
             // Check if the identifier name suggests it contains format specifiers
             const varName = firstArg.name.toLowerCase();
             if (
@@ -850,15 +830,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
             }
           }
 
-          // Special case: For console.log/console.error with single argument, don't flag
-          // console.log(userMessage) is equivalent to console.log("%s", userMessage) but is generally safe
           if (
-            !hasSpecifiersInFormat &&
-            args.length === 2 &&
-            isConsoleMethod(node)
-          ) {
-            // Don't report
-          } else if (
             hasSpecifiersInFormat &&
             hasUserInputInArgs &&
             // THE FIX, and it removes a false positive this suite used to
@@ -900,108 +872,15 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
                 {
                   messageId: 'escapeFormatString',
                   fix: (fixer: TSESLint.RuleFixer) => {
-                    const arg = node.arguments
-                      .slice(1)
-                      .find((a) => isUserInputNode(a))!;
+                    // Never the format argument: a user-input one returned
+                    // through `userControlledFormatString` above.
+                    const arg = node.arguments.find((a) => isUserInputNode(a))!;
                     return fixer.insertTextAfter(arg, '.replace(/%/g, "%%")');
                   },
                 },
               ],
             });
           }
-        }
-      },
-
-      // Check string literals for format specifiers with user input context
-      Literal: function (node: TSESTree.Literal) {
-        if (!hasFormatSpecifiers(node)) {
-          return;
-        }
-
-        // Only check literals that are dynamically constructed or come from user input
-        // Hardcoded string literals with format specifiers are safe when used properly
-        const text = node.value as string;
-
-        // Check if this literal is constructed from user input (e.g., concatenation)
-        let current: TSESTree.Node | undefined = node;
-        let isFromUserInput = false;
-
-        // Walk up to find if this literal is part of a concatenation or template with user input.
-        // Every path that sets `isFromUserInput = true` is immediately followed by `break`,
-        // so the negation in the loop condition is dead (CodeQL: `js/useless-conditional`).
-        while (current) {
-          if (
-            current.type === 'BinaryExpression' &&
-            current.operator === '+' &&
-            (current.left === node || current.right === node)
-          ) {
-            // Check if the other side contains user input
-            const otherSide =
-              current.left === node ? current.right : current.left;
-            if (
-              otherSide.type === 'Identifier' &&
-              isUserInput(otherSide.name)
-            ) {
-              isFromUserInput = true;
-              break;
-            }
-          }
-          if (
-            current.type === 'VariableDeclarator' &&
-            current.init === node.parent &&
-            current.id.type === 'Identifier'
-          ) {
-            // console.log('DEBUG: Checking variable declarator', current.id.name);
-
-            // Check if variable name suggests user input
-            if (isUserInput(current.id.name)) {
-              isFromUserInput = true;
-              break;
-            }
-          }
-          current = current.parent as TSESTree.Node;
-        }
-
-        // Only flag if the literal is constructed from user input
-        if (!isFromUserInput) {
-          return;
-        }
-
-        // Check if this string is used in a context where it could be dangerous
-        current = node;
-        let isInDangerousContext = false;
-
-        // Walk up to find if this is passed to a format function. Every path that sets
-        // `isInDangerousContext = true` is followed by `break`, so the negation in the
-        // condition is dead (CodeQL: `js/useless-conditional`).
-        while (current) {
-          if (
-            current.type === 'CallExpression' &&
-            isFormatFunctionCall(current)
-          ) {
-            // Check if this is the first argument (format string position)
-            const args = current.arguments;
-            if (args.length > 0 && args[0] === node) {
-              isInDangerousContext = true;
-              break;
-            }
-          }
-          current = current.parent as TSESTree.Node;
-        }
-
-        if (isInDangerousContext && containsFormatSpecifiers(text)) {
-          if (safetyChecker.isSafe(node, context)) {
-            return;
-          }
-
-          context.report({
-            node,
-            messageId: 'missingFormatValidation',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-            },
-          });
         }
       },
 
@@ -1173,11 +1052,13 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           );
 
           if (hasSpecifiers && hasUserInput) {
+            // Marked handled either way, so an annotated declaration is not
+            // reported again by the TemplateLiteral visitor below it.
+            reportedTemplates.add(node.init);
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
 
-            reportedTemplates.add(node.init);
             context.report({
               node: node.init,
               messageId: 'formatStringInjection',

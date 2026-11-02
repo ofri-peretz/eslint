@@ -97,6 +97,23 @@ A check validates only the branch where it **passed**. A join written in the bra
 where it failed — `if (!p.startsWith(dest)) { write(path.join(dest, entry.name)) }`
 — is still reported.
 
+The checked binding need not be the bare join: `const part = path.join(dest,
+entry.name) + '.part'` followed by a guard on `part` is checked the same way.
+
+A traversal literal inside an extraction call is a `..` **segment** — `'../out'`,
+`'..'`, `'out\\..\\up'`, `'./out/..'`. Dots inside a name (`'./out/..cache/'`,
+`'./notes../'`) climb nowhere and are not reported.
+
+### Extraction calls and archive context
+
+`reportWithoutArchiveContext` and `archiveModules` govern the entry-name and
+traversal shapes. An extraction call is judged on its own: `extractAllTo` and
+`extractArchive` name an archive API and report on sight, while the ordinary
+English verbs (`extract`, `extractAll`, `unzip`, `untar`) need a receiver that
+names an archive. Either way, a receiver the file binds to an object literal
+(`const zip = { extractAllTo: (d) => d }`) is a plain object it wrote itself, not
+an archive, and is not a finding.
+
 ### `@safe`
 
 An `@safe` comment — block (`/** @safe */`) or line (`// @safe`) — covers the

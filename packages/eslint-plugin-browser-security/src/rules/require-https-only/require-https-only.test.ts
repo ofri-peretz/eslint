@@ -135,6 +135,7 @@ ruleTester.run('require-https-only', requireHttpsOnly, {
     // request is cleartext whatever the host resolves to. Before the partition
     // this shape was reported by NOBODY.
     {
+      name: 'fetch of an http URL built around an interpolated host is reported',
       code: 'fetch(`http://${host}/api`)',
       errors: [{ messageId: 'violationDetected' }],
     },

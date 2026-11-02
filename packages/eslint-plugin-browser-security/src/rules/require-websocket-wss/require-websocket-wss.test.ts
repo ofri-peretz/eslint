@@ -113,6 +113,22 @@ ruleTester.run('require-websocket-wss', requireWebsocketWss, {
       ],
       output: `const ws = new WebSocket('wss://relay.acmecorp.io/?next=://localhost');`,
     },
+    {
+      name: 'new window.WebSocket(ws://) is the same constructor as the bare spelling',
+      code: `export const ws = new window.WebSocket('ws://api.acmecorp.io/socket');`,
+      errors: [
+        {
+          messageId: 'insecureWebsocket',
+          suggestions: [
+            {
+              messageId: 'useWss',
+              output: `export const ws = new window.WebSocket('wss://api.acmecorp.io/socket');`,
+            },
+          ],
+        },
+      ],
+      output: `export const ws = new window.WebSocket('wss://api.acmecorp.io/socket');`,
+    },
     // Basic insecure WebSocket
     {
       code: `const ws = new WebSocket('ws://acmecorp.io');`,
@@ -163,6 +179,7 @@ ruleTester.run('require-websocket-wss', requireWebsocketWss, {
     },
     // Template literal with ws:// (no auto-fix, only suggestion)
     {
+      name: 'a ws:// URL in a WebSocket template literal is reported with a wss:// suggestion',
       code: 'const ws = new WebSocket(`ws://acmecorp.io/socket`);',
       errors: [
         {

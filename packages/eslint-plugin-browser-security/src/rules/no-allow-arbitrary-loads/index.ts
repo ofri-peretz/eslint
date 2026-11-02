@@ -123,7 +123,7 @@ export const noAllowArbitraryLoads = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        const { insecureLoadKeys = ATS_OPT_OUT_KEYS } = options as Options;
+        const { insecureLoadKeys } = options as Required<Options>;
         optOutKeys = new Set(insecureLoadKeys);
       },
       Property(node: TSESTree.Property) {

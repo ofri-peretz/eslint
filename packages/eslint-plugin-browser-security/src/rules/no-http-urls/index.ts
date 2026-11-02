@@ -195,8 +195,19 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
     function declarationName(node: TSESTree.Node): string | undefined {
       // Every node the visitors hand us is reached from Program, so it always
       // has a parent — only Program itself does not, and Program is never a
-      // Literal or TemplateElement. Asserting beats an unreachable branch.
-      const parent = node.parent as TSESTree.Node;
+      // Literal, TemplateElement or TemplateLiteral. Asserting beats an
+      // unreachable branch.
+      let value = node;
+      let parent = value.parent as TSESTree.Node;
+      // A template chunk is declared under whatever its template is:
+      // `{ xmlns: `http://…/${v}` }` is as much a namespace as the string form.
+      // A loop up the parent chain, not recursion: the chain is a finite path
+      // to Program, so it needs neither a visited-set nor a depth cap, and a
+      // template nested in another's `${…}` climbs to the outermost one.
+      while (parent.type === AST_NODE_TYPES.TemplateLiteral) {
+        value = parent;
+        parent = value.parent as TSESTree.Node;
+      }
       if (parent.type === 'JSXAttribute') {
         // JSXAttribute.name is exactly JSXIdentifier | JSXNamespacedName, so
         // the ternary is exhaustive and needs no unreachable fallback.
@@ -205,7 +216,12 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
           ? name.name
           : `${name.namespace.name}:${name.name.name}`;
       }
-      if (parent.type === AST_NODE_TYPES.Property && parent.value === node) {
+      // A class field (`xmlns = '…'`) declares a name exactly as a property.
+      if (
+        (parent.type === AST_NODE_TYPES.Property ||
+          parent.type === AST_NODE_TYPES.PropertyDefinition) &&
+        parent.value === value
+      ) {
         // `objectKeyName` rather than reading `key.name` behind `!computed`:
         // `{ ['href']: v }` declares the same property as `{ href: v }`, and
         // the hand-rolled form was blind to it. The spellings ratchet caught

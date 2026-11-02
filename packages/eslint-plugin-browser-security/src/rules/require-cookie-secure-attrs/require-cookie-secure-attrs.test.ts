@@ -63,6 +63,7 @@ ruleTester.run('require-cookie-secure-attrs', requireCookieSecureAttrs, {
       errors: [{ messageId: 'missingSecure' }],
     },
     {
+      name: 'a cookie with Secure but no SameSite is reported as missing SameSite',
       code: `document.cookie = 'sid=abc; Secure';`,
       errors: [{ messageId: 'missingSameSite' }],
     },

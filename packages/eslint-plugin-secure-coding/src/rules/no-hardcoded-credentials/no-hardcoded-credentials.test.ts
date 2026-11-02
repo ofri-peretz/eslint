@@ -189,6 +189,7 @@ describe('no-hardcoded-credentials', () => {
       valid: [],
       invalid: [
         {
+          name: 'a Stripe live key under apiKey suggests an environment variable',
           code: 'const apiKey = "sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_1234567890";',
           errors: [
             {
@@ -796,6 +797,68 @@ describe('no-hardcoded-credentials', () => {
         },
       ],
     });
+  });
+
+  describe('Tier 1 is reported on shape alone, even in a label-named slot', () => {
+    // `const label = …` is a UI-text exemption keyed on the SLOT's name. The
+    // documented contract is that Tier 1 is decided on the VALUE's shape, so a
+    // name — any name — must not be able to silence a structural secret.
+    const inLabel = (value: string, credentialType: string) => ({
+      code: `export const label = "${value}";`,
+      errors: [
+        {
+          messageId: 'useEnvironmentVariable' as const,
+          suggestions: [
+            {
+              messageId: 'useEnvironmentVariable' as const,
+              data: { envVarName: 'LABEL', credentialType },
+              output: `export const label = process.env.LABEL || '${value}';`,
+            },
+            {
+              messageId: 'useSecretManager' as const,
+              data: { credentialType },
+              output: `export const label = await getSecret('label');`,
+            },
+          ],
+        },
+      ],
+    });
+    ruleTester.run(
+      'structural secret under a label name',
+      noHardcodedCredentials,
+      {
+        valid: [
+          {
+            name: 'a label-named slot still exempts a non-structural word',
+            code: `const label = 'password';`,
+          },
+        ],
+        invalid: [
+          {
+            name: 'a Stripe live key under a label name is a structural secret',
+            ...inLabel(
+              'sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_1234567890',
+              'API key',
+            ),
+          },
+          {
+            name: 'an AWS access key under a label name is a structural secret',
+            ...inLabel('AKIAIOSFODNN7EXAMPLE', 'AWS access key'),
+          },
+          {
+            name: 'a database connection string under a label name is a structural secret',
+            ...inLabel(
+              'postgres://appuser:Tr0ub4dor@db.internal:5432/prod',
+              'Database connection string',
+            ),
+          },
+          {
+            name: 'a 32-character random blob under a label name is a structural secret',
+            ...inLabel('Xk9mQ2vLp7RtB4nW8sZc3HjF6dYg1KqT', 'Secret key'),
+          },
+        ],
+      },
+    );
   });
 
   describe('Coverage — custom patterns, ambiguous API key, label context, credential-name context', () => {
@@ -1578,96 +1641,14 @@ describe('no-hardcoded-credentials — CVSS docs/message consistency (lock)', ()
   });
 });
 
-// Layer 2: raw unit tests against rule.create() with a mock context, for the
-// "no grandparent" defensive fallback branches in isLabelContext's
-// ObjectExpression/ArrayExpression arms and isCredentialContext's
-// ArrayExpression arm. Every real TSESTree node's parent chain terminates at
-// Program, so a real ObjectExpression/ArrayExpression parsed from source
-// code always has a `.parent` — these branches only exist to guard against a
-// detached/synthetic AST fragment, which is exactly what a mock-context node
-// is.
+// Layer 2: raw unit tests against rule.create() with a mock context, for a
+// literal whose parent chain stops short — a detached/synthetic AST fragment,
+// which is exactly what a mock-context node is. The label check's old
+// ObjectExpression / ArrayExpression / JSXAttribute arms, and the detached-
+// Property fallbacks that were tested here, were deleted with the arms: no
+// parser produces those shapes, and the credential-slot gate already decided
+// every real input they could see.
 describe('Layer 2 - mock context', () => {
-  it('isLabelContext returns false when the enclosing ObjectExpression has no parent (detached node)', () => {
-    const { listeners, reports } = createWithMockContext(
-      noHardcodedCredentials,
-    );
-    const literal = listeners.Literal as (node: unknown) => void;
-
-    literal({
-      type: 'Literal',
-      value: 'just a plain string',
-      parent: { type: 'ObjectExpression' },
-    });
-
-    expect(reports).toHaveLength(0);
-  });
-
-  it('isLabelContext returns false when the enclosing ArrayExpression has no parent (detached node)', () => {
-    const { listeners, reports } = createWithMockContext(
-      noHardcodedCredentials,
-    );
-    const literal = listeners.Literal as (node: unknown) => void;
-
-    literal({
-      type: 'Literal',
-      value: 'just a plain string',
-      parent: { type: 'ArrayExpression' },
-    });
-
-    expect(reports).toHaveLength(0);
-  });
-
-  it('isCredentialContext returns false when the enclosing ArrayExpression has no parent (detached node)', () => {
-    const { listeners, reports } = createWithMockContext(
-      noHardcodedCredentials,
-    );
-    const literal = listeners.Literal as (node: unknown) => void;
-
-    literal({
-      type: 'Literal',
-      value: 'just a plain string of decent length',
-      parent: { type: 'ArrayExpression' },
-    });
-
-    expect(reports).toHaveLength(0);
-  });
-
-  it('isLabelContext recurses to the grandparent when the enclosing ObjectExpression has one', () => {
-    const { listeners, reports } = createWithMockContext(
-      noHardcodedCredentials,
-    );
-    const literal = listeners.Literal as (node: unknown) => void;
-
-    literal({
-      type: 'Literal',
-      value: 'AKIA1234567890ABCDEF',
-      parent: {
-        type: 'ObjectExpression',
-        parent: {
-          type: 'VariableDeclarator',
-          id: { type: 'Identifier', name: 'labels' },
-        },
-      },
-    });
-
-    expect(reports).toHaveLength(0);
-  });
-
-  it('isLabelContext returns true for a JSXAttribute parent', () => {
-    const { listeners, reports } = createWithMockContext(
-      noHardcodedCredentials,
-    );
-    const literal = listeners.Literal as (node: unknown) => void;
-
-    literal({
-      type: 'Literal',
-      value: 'AKIA1234567890ABCDEF',
-      parent: { type: 'JSXAttribute' },
-    });
-
-    expect(reports).toHaveLength(0);
-  });
-
   it('isLabelContext returns false when parent is undefined (top-level literal) and a structural match still reports', () => {
     const { listeners, reports } = createWithMockContext(
       noHardcodedCredentials,
@@ -1717,50 +1698,6 @@ describe('Layer 2 - mock context', () => {
     });
 
     expect(reports).toHaveLength(0);
-  });
-
-  it('isLabelContext Property fallback does not recurse when the Property has no ObjectExpression parent (detached node)', () => {
-    const { listeners, reports } = createWithMockContext(
-      noHardcodedCredentials,
-    );
-    const literal = listeners.Literal as (node: unknown) => void;
-
-    const node: Record<string, unknown> = {
-      type: 'Literal',
-      value: 'AKIA1234567890ABCDEF',
-    };
-    node.parent = {
-      type: 'Property',
-      key: { type: 'Identifier', name: 'foo' },
-      value: node,
-      parent: undefined,
-    };
-
-    literal(node);
-
-    expect(reports).toHaveLength(1);
-  });
-
-  it('isLabelContext Property fallback does not recurse when the enclosing ObjectExpression has no parent (detached node)', () => {
-    const { listeners, reports } = createWithMockContext(
-      noHardcodedCredentials,
-    );
-    const literal = listeners.Literal as (node: unknown) => void;
-
-    const node: Record<string, unknown> = {
-      type: 'Literal',
-      value: 'AKIA1234567890ABCDEF',
-    };
-    node.parent = {
-      type: 'Property',
-      key: { type: 'Identifier', name: 'foo' },
-      value: node,
-      parent: { type: 'ObjectExpression' },
-    };
-
-    literal(node);
-
-    expect(reports).toHaveLength(1);
   });
 });
 

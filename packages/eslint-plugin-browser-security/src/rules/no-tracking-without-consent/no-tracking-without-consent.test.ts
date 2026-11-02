@@ -147,12 +147,6 @@ ruleTester.run('no-tracking-without-consent', noTrackingWithoutConsent, {
       code: "if (true) { analytics.track('page_view'); }",
       errors: [{ messageId: 'violationDetected' }],
     },
-    // A test nested deeper than the walk goes. The recursion is bounded on
-    // purpose, and an expression this deep is not a consent check.
-    {
-      code: "if (hasConsent && a2 && a3 && a4 && a5 && a6 && a7 && a8 && a9 && a10) { analytics.track('page_view'); }",
-      errors: [{ messageId: 'violationDetected' }],
-    },
   ],
 });
 

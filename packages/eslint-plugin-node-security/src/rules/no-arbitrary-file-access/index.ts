@@ -20,8 +20,8 @@ import {
   createRule,
   formatLLMMessage,
   isModuleBinding,
-  memberPath,
   MessageIcons,
+  objectKeyName,
   propertyName,
   resolveModuleBinding,
   unwrapTypeSyntax,
@@ -29,6 +29,7 @@ import {
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { findVariable } from '../../utils/provenance';
 import { isSeparatorAnchored } from '../../utils/separator-anchored';
+import { undeclaredFsBinding } from '../../utils/module-binding';
 
 /**
  * @vocabulary `path`, `join`, `basename` and `fs` are Node's — the module
@@ -75,25 +76,24 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
     let userInputSources: Set<string>;
     let bindings: Map<TSESLint.Scope.Variable, TSESTree.Node>;
     let allCalls: TSESTree.CallExpression[];
-    let sanitizedVariables: Set<TSESLint.Scope.Variable | null>;
 
     /**
      * The export path a callee names on the `fs` module, `fs/promises` folded
      * in as `['promises', …]`, or null.
      *
-     * A receiver spelled `fs` still counts whatever it is bound to — the rule
-     * has always read that name, and a file that calls `fs.readFileSync`
-     * without importing it is still reading files. Beyond that the callee is
-     * RESOLVED: `import fsp from 'fs/promises'`, `require('fs').promises`,
-     * `import fileSystem from 'node:fs'` and a named `readFile` from
-     * `fs/promises` all reach the file system, and all were silent.
+     * The callee is RESOLVED: `import fsp from 'fs/promises'`,
+     * `require('fs').promises`, `import fileSystem from 'node:fs'` and a named
+     * `readFile` from `fs/promises` all reach the file system. A receiver
+     * spelled `fs` counts on its name alone only when the file declares no
+     * `fs` at all — a file that calls `fs.readFileSync` without importing it
+     * is still reading files, but `const fs = { readFileSync }` is not the
+     * module.
      */
     function fsExportPath(callee: TSESTree.Node): string[] | null {
-      const spelled = memberPath(callee);
-      if (spelled?.[0] === 'fs') {
-        return spelled.slice(1);
-      }
-      const binding = resolveModuleBinding(callee, sourceCode.getScope(callee));
+      const scope = sourceCode.getScope(callee);
+      const binding =
+        resolveModuleBinding(callee, scope) ??
+        undeclaredFsBinding(callee, scope);
       if (binding?.module === 'fs') return binding.path;
       if (binding?.module === 'fs/promises') {
         return ['promises', ...binding.path];
@@ -118,11 +118,6 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
       // Detect fs.* with user input
       if (isFsSink(node.callee)) {
         const pathArg = node.arguments[0];
-
-        // Skip if path is a literal (safe)
-        if (pathArg && pathArg.type === 'Literal') {
-          return;
-        }
 
         // Check if path is a variable
         if (pathArg && pathArg.type === 'Identifier') {
@@ -211,7 +206,10 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
      * for having been concatenated — concatenation is how it is normally
      * written.
      *
-     * `depth` stops `const a = b; const b = a;` recursing forever.
+     * `visited` holds the variables already walked, so `let a = b;
+     * let b = a;` terminates. It used to be a depth budget of 6, which also
+     * cut off an honest alias chain: `const a8 = a7`, …, `const a1 =
+     * req.query.file` went silent at the seventh hop.
      */
     /**
      * Is this `process` the Node.js global, or a binding that shadows it?
@@ -235,8 +233,10 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
       return true;
     }
 
-    function readsUserInput(rawNode: TSESTree.Node, depth = 0): boolean {
-      if (depth > 6) return false;
+    function readsUserInput(
+      rawNode: TSESTree.Node,
+      visited = new Set<TSESLint.Scope.Variable>(),
+    ): boolean {
       // `as string`, `!`, `satisfies`, `<T>x` — syntax, not a value change.
       // This switch fell through to `default: return false` for every TS
       // wrapper, so `fs.readFileSync('/data/' + (req.query.f as string))` — and
@@ -249,11 +249,12 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         case 'Identifier': {
           if (userInputSources.has(node.name.toLowerCase())) return true;
           const variable = resolve(node);
-          return (
-            variable !== null &&
-            writtenValues(variable).some((value) =>
-              readsUserInput(value, depth + 1),
-            )
+          if (variable === null || visited.has(variable)) return false;
+          // Reachability: a variable already walked has already been judged,
+          // and what it reaches does not depend on how it was reached.
+          visited.add(variable);
+          return writtenValues(variable).some((value) =>
+            readsUserInput(value, visited),
           );
         }
         // Walk to the root of `req.query.file` and judge the base object.
@@ -286,24 +287,25 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
           ) {
             return true;
           }
-          return readsUserInput(node.object, depth + 1);
+          return readsUserInput(node.object, visited);
         }
         case 'TemplateLiteral':
-          return node.expressions.some((e) => readsUserInput(e, depth + 1));
+          return node.expressions.some((e) => readsUserInput(e, visited));
         case 'BinaryExpression':
           return (
-            readsUserInput(node.left as TSESTree.Node, depth + 1) ||
-            readsUserInput(node.right, depth + 1)
+            readsUserInput(node.left as TSESTree.Node, visited) ||
+            readsUserInput(node.right, visited)
           );
+        // `path.join(root, ...req.body.segments)`: every element of a request
+        // array is a request value.
+        case 'SpreadElement':
+          return readsUserInput(node.argument, visited);
         // `path.join(base, req.query.f)` carries the request through.
         // `path.basename(req.query.f)` does not: it strips every directory
         // component, and it is the mitigation this rule's docs prescribe.
         case 'CallExpression':
           if (isBasenameCall(node)) return false;
-          return node.arguments.some(
-            (arg) =>
-              arg.type !== 'SpreadElement' && readsUserInput(arg, depth + 1),
-          );
+          return node.arguments.some((arg) => readsUserInput(arg, visited));
         default:
           return false;
       }
@@ -321,8 +323,8 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         | TSESTree.FunctionExpression
         | TSESTree.ArrowFunctionExpression,
     ): string | undefined {
-      if (fn.type !== 'ArrowFunctionExpression' && fn.id !== null)
-        return fn.id.name;
+      // An arrow function's `id` is always null.
+      if (fn.id !== null) return fn.id.name;
       const parent = fn.parent;
       if (
         parent.type === 'VariableDeclarator' &&
@@ -330,18 +332,23 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
       ) {
         return parent.id.name;
       }
-      if (
-        parent.type === 'Property' &&
-        !parent.computed &&
-        parent.key.type === 'Identifier'
-      ) {
-        return parent.key.name;
+      // `{ load(file) {} }`, `{ 'load': (file) => … }` and `class { load(file)
+      // {} }` are all called as `x.load(…)`, which is how callers name them.
+      if (parent.type === 'Property' || parent.type === 'MethodDefinition') {
+        return objectKeyName(parent) ?? undefined;
       }
       if (
         parent.type === 'AssignmentExpression' &&
         parent.left.type === 'Identifier'
       ) {
         return parent.left.name;
+      }
+      // `exports.load = function (file) {…}` is called as `exports.load(…)`.
+      if (
+        parent.type === 'AssignmentExpression' &&
+        parent.left.type === 'MemberExpression'
+      ) {
+        return propertyName(parent.left) ?? undefined;
       }
       return undefined;
     }
@@ -370,7 +377,6 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         const arg = call.arguments[index];
         return (
           arg !== undefined &&
-          arg.type !== 'SpreadElement' &&
           // `directOnly`: a call is where laundering happens, so
           // `helper(sanitizePath(req.query.f))` is not a DIRECT pass.
           !(directOnly && arg.type === 'CallExpression') &&
@@ -414,17 +420,16 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
       from: TSESTree.Node,
     ): boolean {
       const varName = id.name;
+      const variable = resolve(id);
+      const written = variable === null ? [] : writtenValues(variable);
       // The path argument IS the request object: `fs.readFileSync(req)`.
       // `readsUserInput` recognises this for `req.query.f` but never saw the
-      // bare form, because a bare Identifier is routed here instead.
-      if (userInputSources.has(varName.toLowerCase())) return true;
-      const variable = resolve(id);
-      if (
-        variable !== null &&
-        assignedValues(variable).some((value) => readsUserInput(value))
-      ) {
+      // bare form, because a bare Identifier is routed here instead. Only
+      // where the file writes it no value: `const query = path.basename(…)`
+      // is a basename, whatever it is called.
+      if (written.length === 0 && userInputSources.has(varName.toLowerCase()))
         return true;
-      }
+      if (written.some((value) => readsUserInput(value))) return true;
 
       // `Program.parent` is null, not undefined — `!= null` catches both, and
       // an `!== undefined` loop walked straight off the top of the tree.
@@ -475,29 +480,30 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
     }
 
     /**
-     * Record the binding, and whether it is a path.basename() result
+     * Record the value each name a declarator binds is written with.
+     *
+     * A `path.basename()` initialiser used to mark the variable sanitized
+     * outright, which let `let name = path.basename(x); name = req.query.raw`
+     * through. `readsUserInput` already treats a basename call as laundering,
+     * so the initialiser is judged like any other written value.
      */
     function checkVariableDeclaration(node: TSESTree.VariableDeclarator) {
+      // `for (const file of req.body.files)` / `for (const key in req.query)`:
+      // the loop variable holds each element (or key) of the right-hand side.
+      // A declaration directly under a for-of/for-in is always its `left` —
+      // the body is a statement, and a bare declaration there is a syntax error.
+      const loop = node.parent.parent;
+      const value =
+        node.init ??
+        (loop.type === AST_NODE_TYPES.ForOfStatement ||
+        loop.type === AST_NODE_TYPES.ForInStatement
+          ? loop.right
+          : null);
+      if (value === null) return;
       // `const { file } = req.query`: each destructured name holds a part of
       // the initialiser, so it carries whatever the initialiser carries.
-      if (node.init && node.id.type !== 'Identifier') {
-        for (const v of sourceCode.getDeclaredVariables(node)) {
-          bindings.set(v, node.init);
-        }
-      }
-      if (node.id.type !== 'Identifier' || !node.init) {
-        return;
-      }
-
-      // A declarator id always resolves to the variable it declares.
-      const variable = resolve(node.id)!;
-      const init = node.init;
-
-      bindings.set(variable, init);
-
-      // Check for path.basename() assignment
-      if (init.type === 'CallExpression' && isBasenameCall(init)) {
-        sanitizedVariables.add(variable);
+      for (const v of sourceCode.getDeclaredVariables(node)) {
+        bindings.set(v, value);
       }
 
       // A `path.join(SAFE_DIR, basename)` branch used to sit here and marked the
@@ -596,10 +602,6 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
     ): boolean {
       const varName = id.name;
       const variable = resolve(id);
-      // Already tracked as sanitized
-      if (sanitizedVariables.has(variable)) {
-        return true;
-      }
 
       // Has startsWith guard validation
       if (variable !== null && hasStartsWithGuard(node, variable)) {
@@ -715,10 +717,6 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
 
         /** Every call in the file, so a parameter can be judged by what callers pass. */
         allCalls = [];
-
-        // Track variables that have been sanitized with path.basename()
-        // `| null` so an unresolvable name can be looked up and simply miss.
-        sanitizedVariables = new Set<TSESLint.Scope.Variable | null>();
       },
       // Track variable declarations for sanitization patterns
       VariableDeclarator(node: TSESTree.VariableDeclarator) {

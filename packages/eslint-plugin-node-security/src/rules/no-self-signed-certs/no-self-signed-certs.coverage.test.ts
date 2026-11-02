@@ -50,6 +50,7 @@ describe('no-self-signed-certs coverage gaps', () => {
       },
       // Numeric 0 → second operand of the value check
       {
+        name: 'NODE_TLS_REJECT_UNAUTHORIZED set to numeric 0 is reported',
         code: 'process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;',
         errors: [{ messageId: 'insecureTls' }],
       },

@@ -128,10 +128,7 @@ export const noSensitiveCookieJs = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        ({
-          allowInTests = true,
-          sensitivePatterns = [...NON_BEARER_SECRET_TERMS],
-        } = options as Options);
+        ({ allowInTests, sensitivePatterns } = options as Required<Options>);
         const isTestFile = isTestFilePath(context.filename);
 
         if (allowInTests && isTestFile) {

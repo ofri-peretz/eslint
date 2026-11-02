@@ -20,7 +20,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 | --------------- | ---------------------------------------- |
 | **Severity**    | High (Phishing Risk)                     |
 | **Auto-Fix**    | ❌ No (requires allowlist logic)         |
-| **Category**   | Security |
+| **Category**    | Security                                 |
 | **ESLint MCP**  | ✅ Optimized for ESLint MCP integration  |
 | **Best For**    | Frontend apps handling dynamic redirects |
 | **Suggestions** | ✅ Advice on using hostname allowlists   |
@@ -52,7 +52,14 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ## Rule Details
 
-This rule flags direct assignments to `window.location` or `location.href`, and calls to `window.open()` where the URL is a variable, suggesting it might contain unvalidated user input.
+This rule owns the navigations that do **not** write the current document's `Location`, and reports them when the URL is **attacker-steerable** and unvalidated:
+
+- `window.open(x)` (also `self.open`, `globalThis.open`) — opens `x` in a new browsing context;
+- `router.push(x)` / `router.replace(x)` on a router obtained from a routing package's `useRouter()` (`next/navigation`, `next/router`, `vue-router`, `react-router`, `@tanstack/react-router`). A `push` on anything else (`queue.push(…)`) is an array, not a navigation.
+
+Attacker-steerable means read from the inbound URL — `location.search` / `location.hash`, `new URLSearchParams(location.search).get('next')`, a router's `useSearchParams()` — or from request input. A plain function parameter is not proven taint and is not reported. The guards that validate the destination are the ones [`no-insecure-redirects`](./no-insecure-redirects) accepts: an anchored host regexp, a relative-path check that rejects `//`, an origin equality, or an allowlist / validator call over the URL.
+
+**Partition:** every write to the current `Location` (`window.location.href = x`, `location.href = x`, `window.location = x`, `location.assign/replace(x)`) moved to [`no-insecure-redirects`](./no-insecure-redirects) — the same defect used to be reported under two rule IDs depending on how the receiver was spelled. `Linking.openURL` and `navigation.navigate` belong to [`no-unvalidated-deeplinks`](./no-unvalidated-deeplinks).
 
 ```mermaid
 %%{init: {
@@ -95,16 +102,18 @@ This rule has no configuration options in the current version.
 ### ❌ Incorrect
 
 ```javascript
-// Direct assignment from a URL parameter
+// window.open with a URL taken from the query string
 const params = new URLSearchParams(window.location.search);
-const redirectUrl = params.get('next');
+window.open(params.get('next'), '_blank'); // ❌ HIGH RISK
 
-window.location.href = redirectUrl; // ❌ HIGH RISK
+// A framework router navigating to a query parameter
+import { useRouter, useSearchParams } from 'next/navigation';
+const router = useRouter();
+const search = useSearchParams();
+router.push(search.get('returnTo')); // ❌ HIGH RISK
 
-// Using window.open with an unvalidated variable
-function navigate(target) {
-  window.open(target, '_blank'); // ❌ HIGH RISK
-}
+// Reported by no-insecure-redirects, not this rule:
+window.location.href = params.get('next');
 ```
 
 ### ✅ Correct
@@ -120,11 +129,15 @@ function safeNavigate(url) {
   }
 }
 
-// Redirecting to relative paths only
-function safeRelativeRedirect(path) {
-  if (path.startsWith('/')) {
-    window.location.pathname = path;
-  }
+// Relative paths only, rejecting protocol-relative `//host`
+const next = new URLSearchParams(location.search).get('next') ?? '/';
+if (next.startsWith('/') && !next.startsWith('//')) {
+  router.push(next);
+}
+
+// A plain parameter is not proven attacker-controlled (validate it anyway)
+function openDocs(target) {
+  window.open(target, '_blank');
 }
 ```
 

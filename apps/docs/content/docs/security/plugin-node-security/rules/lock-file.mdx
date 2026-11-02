@@ -107,6 +107,15 @@ a stray `~/pnpm-lock.yaml`, say — is not committed with the project and pins
 none of its installs, so it does not count. With no `.git` anywhere above the
 file, the search continues to the filesystem root.
 
+### How often it reports
+
+A missing lock file is one fact about a project, so it is reported **once per
+lint run** of that project — on whichever file is linted first — not once per
+file. A new run reports it again: linting a file the current run has already
+seen starts a new run, so an editor language server or `eslint_d` keeps showing
+it. Each required lock file is its own fact: `packageManager: 'yarn'` and
+`'pnpm'` are checked independently on the same root.
+
 ## Examples
 
 ### ❌ Incorrect

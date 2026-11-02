@@ -22,7 +22,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -49,7 +49,6 @@ const xai = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -59,9 +58,9 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-abort-signal', requireAbortSignal, {
   valid: xai([
-        'const x = 42;',
-        'const flag = true;',
-        'function noop() {}',
+    'const x = 42;',
+    'const flag = true;',
+    'function noop() {}',
     // Has abortSignal
     {
       name: 'an AbortController signal is passed',
@@ -168,4 +167,29 @@ ruleTester.run('require-abort-signal (fp-fn audit)', requireAbortSignal, {
     },
   ]),
   invalid: xai([]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quint fidelity model (benchmarks/suites/fidelity/models/vercel-ai-security)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-abort-signal (fidelity)', requireAbortSignal, {
+  valid: [],
+  invalid: xai([
+    {
+      name: 'a renamed import of streamText is still the SDK call',
+      code: `
+        import { streamText as callModel } from 'ai';
+        export async function POST() { return callModel({ model: m, prompt: 'Hello' }); }
+      `,
+      errors: [{ messageId: 'missingAbortSignal' }],
+    },
+    {
+      name: 'a renamed streamText imported through require is still the SDK call',
+      code: `
+        const { streamText: callModel } = require('ai');
+        export async function POST() { return callModel({ model: m, prompt: 'Hello' }); }
+      `,
+      errors: [{ messageId: 'missingAbortSignal' }],
+    },
+  ]),
 });

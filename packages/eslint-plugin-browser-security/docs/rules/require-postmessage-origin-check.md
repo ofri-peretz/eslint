@@ -11,10 +11,11 @@ autofix: false
 > **Keywords:** postMessage, cross-origin, CWE-346, security, iframe, message validation
 
 <!-- @rule-summary -->
+
 Detects postMessage event handlers without origin validation
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-494](https://cwe.mitre.org/data/definitions/494.html)  
+**CWE:** [CWE-346](https://cwe.mitre.org/data/definitions/346.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects postMessage event handlers without origin validation. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
@@ -28,7 +29,7 @@ Detects postMessage event handlers without origin validation. This rule is part 
 | **CWE Reference** | CWE-346 (Origin Validation Error)              |
 | **Severity**      | 🔴 High                                        |
 | **Auto-Fix**      | ✅ Yes (suggests origin check)                 |
-| **Category**   | Security |
+| **Category**      | Security                                       |
 | **Best For**      | Apps using iframes, cross-window communication |
 
 ## Vulnerability and Risk
@@ -84,18 +85,56 @@ window.addEventListener('message', (event) => {
     processAction(event.data);
   }
 });
+
+// The onmessage property registers the same cross-window listener
+window.onmessage = (event) => {
+  processAction(event.data);
+};
+
+// includes() on a STRING is a substring test: 'https://trusted.co' passes
+window.addEventListener('message', (event) => {
+  if (!'https://trusted.com'.includes(event.origin)) return;
+  processAction(event.data);
+});
 ```
 
 ### ✅ Correct
 
 ```javascript
-message
+// Exact comparison
+window.addEventListener('message', (event) => {
+  if (event.origin !== 'https://trusted.com') return;
+  processAction(event.data);
+});
+
+// Exact-match allowlist: Array includes() / Set has() compare whole strings
+const ALLOWED = ['https://trusted.com', 'https://app.trusted.com'];
+window.onmessage = (event) => {
+  if (!ALLOWED.includes(event.origin)) return;
+  processAction(event.data);
+};
+
+// A fully anchored, dot-escaped origin pattern
+window.addEventListener('message', (event) => {
+  if (!/^https:\/\/trusted\.com$/.test(event.origin)) return;
+  processAction(event.data);
+});
+
+// A WebSocket / Worker / BroadcastChannel message has no origin to check
+const ws = new WebSocket('wss://api.example.com');
+ws.onmessage = (event) => render(event.data);
 ```
+
+Message listeners are recognised as `addEventListener('message', fn)` on any
+receiver not proven to be a WebSocket, EventSource, Worker, SharedWorker,
+BroadcastChannel or MessagePort, and as `window.onmessage` / `self.onmessage` /
+`globalThis.onmessage` / a bare global `onmessage = fn`. A handler passed by
+reference is not analysed.
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
+| Option         | Type      | Default | Description                                     |
+| -------------- | --------- | ------- | ----------------------------------------------- |
 | `allowInTests` | `boolean` | `false` | Skip this rule in `*.test.*` / `*.spec.*` files |
 
 ```json
@@ -182,7 +221,7 @@ window.addEventListener(eventType, handler);
 
 ### Weak Origin Checks
 
-**Why**: Check quality not assessed.
+**Why**: Check quality is assessed only for `includes()` on a string literal (a substring test) and for regexp anchoring. A substring test ON the origin string is still read as a check.
 
 ```typescript
 // ❌ NOT DETECTED - Weak check

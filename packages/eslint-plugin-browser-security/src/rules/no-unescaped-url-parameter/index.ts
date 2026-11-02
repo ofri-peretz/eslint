@@ -154,7 +154,7 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
           trustedLibraries: {
             type: 'array',
             items: { type: 'string' },
-            default: ['url', 'querystring'],
+            default: [...DEFAULT_TRUSTED_LIBRARIES],
             description:
               'Modules whose exports produce already-encoded URL text',
           },
@@ -172,7 +172,7 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       allowInTests: false,
-      trustedLibraries: ['url', 'querystring'],
+      trustedLibraries: [...DEFAULT_TRUSTED_LIBRARIES],
       ignorePatterns: [],
     },
   ],
@@ -314,9 +314,7 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
 
     function check(node: TSESTree.Node): void {
       const shape = urlShape(node, sourceCode);
-      const kind = urlKind(shape.text);
-      if (kind === null) return;
-      if (kind === 'relative' && !reachesUrlSink(node)) return;
+      if (urlKind(shape.text) === 'relative' && !reachesUrlSink(node)) return;
 
       for (const hole of shape.holes) {
         if (!isEncodingPosition(shape, hole)) continue;
@@ -339,11 +337,9 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        const {
-          allowInTests = false,
-          trustedLibraries = DEFAULT_TRUSTED_LIBRARIES,
-          ignorePatterns = [],
-        } = options;
+        // The merged `defaultOptions` supply every field.
+        const { allowInTests, trustedLibraries, ignorePatterns } =
+          options as Required<Options>;
 
         const isTestFile = allowInTests && isTestFilePath(context.filename);
         if (isTestFile) return false;

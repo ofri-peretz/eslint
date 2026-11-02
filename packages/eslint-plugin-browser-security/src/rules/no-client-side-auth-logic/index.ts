@@ -169,7 +169,8 @@ export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
         return false;
       }
       const keyArg = node.arguments[0];
-      if (keyArg === undefined || keyArg.type === 'SpreadElement') return false;
+      // A spread key resolves to null below.
+      if (keyArg === undefined) return false;
       const key = resolveStringKey(keyArg, sourceCode);
       if (key === null) return false;
       // NOT lowercased first. `nameHasAnyWord` segments on camelCase, and
@@ -259,10 +260,9 @@ export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
 
         // A vocabulary the consumer cannot reach is a vocabulary they must accept
         // whole — and every word list is wrong for somebody's domain.
-        ({
-          authKeywords = [...DEFAULT_AUTH_KEYWORDS],
-          credentialProperties = [...DEFAULT_CREDENTIAL_PROPERTIES],
-        } = options);
+        ({ authKeywords, credentialProperties } = options as Required<
+          typeof options
+        >);
 
         ({ sourceCode } = context);
 

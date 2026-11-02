@@ -14,13 +14,20 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
+  AST_NODE_TYPES,
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
   propertyName,
   objectKeyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import {
+  holdsRequestOrigin,
+  isCorsPackageCall,
+} from '../../utils/cors-middleware';
+import { resolveInitializer } from '../../utils/resolve-binding';
 
 type MessageIds = 'missingCorsCheck';
 
@@ -37,9 +44,6 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
-/**
- * Check if a string matches any ignore pattern
- */
 /**
  * What is wrong with this literal `origin` value — or `null` if nothing is?
  *
@@ -63,6 +67,53 @@ function describePermissiveOrigin(value: unknown): string | null {
   return null;
 }
 
+/**
+ * Is `node` inside a branch that decided something first — an `if`, a
+ * ternary or a short-circuit — before its enclosing function ends?
+ *
+ * `if (allowed.includes(origin)) res.setHeader('…-Origin', origin)` is the
+ * allowlist this rule asks for; the reflection is only unchecked when nothing
+ * guards it.
+ */
+function isGuarded(node: TSESTree.Node): boolean {
+  // `Program.parent` is NULL, not undefined — a strict check for one of the
+  // two crashed the lint run on a module-scope header write.
+  for (
+    let current: TSESTree.Node | null | undefined = node.parent;
+    current != null;
+    current = current.parent
+  ) {
+    // Node kinds, not words: the grammar's three branching forms and its three
+    // function forms. A switch over the AST's own discriminant, so the
+    // compiler checks every name against the node union.
+    switch (current.type) {
+      case AST_NODE_TYPES.IfStatement:
+      case AST_NODE_TYPES.ConditionalExpression:
+      case AST_NODE_TYPES.LogicalExpression:
+        return true;
+      // A check outside the handler runs once, when it is installed, not per
+      // request: it guards nothing the handler does.
+      case AST_NODE_TYPES.FunctionDeclaration:
+      case AST_NODE_TYPES.FunctionExpression:
+      case AST_NODE_TYPES.ArrowFunctionExpression:
+        return false;
+    }
+  }
+  return false;
+}
+
+/** The options keys that carry the allowed origin. Compared lower-cased. */
+const ORIGIN_KEYS: ReadonlySet<string> = new Set(['origin', 'allowedorigins']);
+
+const ALLOW_ORIGIN = 'access-control-allow-origin';
+
+const VALIDATE_ORIGIN =
+  'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));';
+
+const VALIDATE_HEADER =
+  'Validate origin before setting header: res.setHeader("Access-Control-Allow-Origin", allowedOrigins.includes(origin) ? origin : "null");';
+
+/** Does any of the user's ignore patterns match this source text? */
 function matchesIgnorePattern(text: string, ignorePatterns: string[]): boolean {
   return ignorePatterns.some((pattern) => {
     try {
@@ -129,7 +180,7 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       allowInTests: false,
-      trustedLibraries: [], // Empty by default - users can add custom CORS libraries they trust
+      trustedLibraries: [],
       ignorePatterns: [],
     },
   ],
@@ -137,391 +188,148 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     currentOptions,
   ) {
-    let allowInTests: boolean;
-    let corsTrustedLibraries: string[];
-    let ignorePatterns: string[];
     let trustedLibraries: string[];
-    let isTestFile: boolean;
+    let ignorePatterns: string[];
     let sourceCode: Readonly<TSESLint.SourceCode>;
-    /*
-     * These match SOURCE TEXT, so a dotted-only pattern puts the blind spot in
-     * the PATTERN rather than in a guard: `app['use'](…)` never matched
-     * `\buse\s*\(`, and the wildcard origin inside it went unreported.
-     * Each accepts `.name(` or `['name'](` and nothing else, so a key chosen at
-     * runtime still does not match. Written literally — a rule that assembles
-     * its own patterns at runtime is a shape this repo's rule-audit flags.
+
+    function ignored(node: TSESTree.Node): boolean {
+      return matchesIgnorePattern(sourceCode.getText(node), ignorePatterns);
+    }
+
+    /** Is the factory's callee one of the libraries the user trusts? */
+    function isTrusted(call: TSESTree.CallExpression): boolean {
+      const callee = sourceCode.getText(call.callee).toLowerCase();
+      return trustedLibraries.some((lib) => callee.includes(lib.toLowerCase()));
+    }
+
+    /**
+     * `cors({ origin: '*' })`, `cors({ origin: true })` and the same options
+     * bound to a `const` first, on the `cors` package recognised by its import
+     * (a global `cors` in a snippet counts; a `cors` from another module does
+     * not). Only the origin keys: `methods: '*'` beside a validated origin is
+     * not an origin finding.
      */
-    const CALLS_USE = /(?:\.\s*use|\[\s*['"]use['"]\s*\])\s*\(/i;
-    const CALLS_USE_OR_CORS = /(?:\.\s*use|\[\s*['"]use['"]\s*\]|\bcors)\s*\(/i;
-    const CALLS_HEADER_SETTER =
-      /(?:\.\s*(?:setHeader|header)|\[\s*['"](?:setHeader|header)['"]\s*\])\s*\(/i;
-
-    function checkLiteral(node: TSESTree.Literal) {
-      if (isTestFile) {
-        return;
-      }
-
-      // Check for wildcard CORS origin
-      if (node.value === '*' && typeof node.value === 'string') {
-        const text = sourceCode.getText(node);
-
-        // Check if it matches any ignore pattern
-        if (matchesIgnorePattern(text, ignorePatterns)) {
-          return;
+    function checkWildcardOrigin(call: TSESTree.CallExpression) {
+      if (!isCorsPackageCall(call, sourceCode) || isTrusted(call)) return;
+      if (ignored(call)) return;
+      const report = (value: unknown, node: TSESTree.Node): void => {
+        const issue = describePermissiveOrigin(value);
+        if (issue === null) return;
+        context.report({
+          node,
+          messageId: 'missingCorsCheck',
+          data: { issue, safeAlternative: VALIDATE_ORIGIN },
+        });
+      };
+      for (const arg of call.arguments) {
+        // `cors('*')` hands the wildcard over as the whole argument.
+        if (arg.type === 'Literal') {
+          report(arg.value, arg);
+          continue;
         }
-
-        // Check if it's in contexts handled by other checkers
-        // 1. setHeader/header calls - checkMemberExpression handles these
-        // 2. app.use(cors({ origin: "*" })) - checkCallExpression handles these with suggestions
-        let shouldSkip = false;
-        let current: TSESTree.Node | null = node;
-        while (current && current.parent) {
-          current = current.parent as TSESTree.Node;
-          if (current.type === 'CallExpression') {
-            const callText = sourceCode.getText(current);
-            // Check if it's a setHeader/header call with Access-Control-Allow-Origin
-            // Skip these - checkMemberExpression handles them
-            // These match SOURCE TEXT, so the dotted-only form put the blind
-            // spot in the PATTERN: `res['setHeader'](…)` and `app['use'](…)`
-            // never matched `\buse\s*\(`. Each alternation now accepts the
-            // bracketed spelling too, and still not a runtime key.
-            if (
-              CALLS_HEADER_SETTER.test(callText) &&
-              /\bAccess-Control-Allow-Origin\b/i.test(callText)
-            ) {
-              shouldSkip = true;
-              break;
-            }
-            // Check if it's app.use(cors({ origin: "*" })) - checkCallExpression handles these with suggestions
-            if (CALLS_USE.test(callText) && /\bcors\s*\(/i.test(callText)) {
-              // Check if the literal is in an object property named "origin"
-              if (node.parent && node.parent.type === 'Property') {
-                const prop = node.parent as TSESTree.Property;
-                // `{ ['origin']: '*' }` names the same option.
-                if (objectKeyName(prop) === 'origin') {
-                  shouldSkip = true;
-                  break;
-                }
-              }
-            }
-          }
-        }
-
-        // Skip if it's in a context handled by another checker
-        if (shouldSkip) {
-          return;
-        }
-
-        // Check if it's in a CORS-related context
-        // Only report if it's actually in a CORS configuration (app.use(cors(...)), etc.)
-        // Not just any object with origin: "*"
-        let isActualCorsContext = false;
-
-        // Check if it's in app.use(cors(...)) or similar
-        current = node;
-        while (current && current.parent) {
-          current = current.parent as TSESTree.Node;
-          if (current.type === 'CallExpression') {
-            const callText = sourceCode.getText(current);
-            // Check if it's a CORS middleware call
-            if (
-              CALLS_USE_OR_CORS.test(callText) &&
-              /\bcors\s*\(/i.test(callText)
-            ) {
-              isActualCorsContext = true;
-              break;
-            }
-          }
-        }
-
-        // Also check if it's in an object property with name "origin" or "allowedOrigins"
-        // but only if it's in a CORS-related call expression
-        if (node.parent && node.parent.type === 'Property') {
-          const prop = node.parent as TSESTree.Property;
-          // `{ ['origin']: '*' }` names the same option.
-          const key = objectKeyName(prop);
-          if (key !== null) {
-            const keyName = key.toLowerCase();
-            if (keyName === 'origin' || keyName === 'allowedorigins') {
-              // Check if this property is in a CORS call context
-              let inCorsCall = false;
-              let checkNode: TSESTree.Node | null = prop;
-              while (checkNode && checkNode.parent) {
-                checkNode = checkNode.parent as TSESTree.Node;
-                if (checkNode.type === 'CallExpression') {
-                  const callText = sourceCode.getText(checkNode);
-                  if (
-                    /\bcors\s*\(/i.test(callText) ||
-                    (CALLS_USE.test(callText) && /\bcors/i.test(callText))
-                  ) {
-                    inCorsCall = true;
-                    break;
-                  }
-                }
-              }
-
-              if (inCorsCall) {
-                // Always report wildcard CORS origin - it's never safe
-                context.report({
-                  node,
-                  messageId: 'missingCorsCheck',
-                  data: {
-                    issue: 'Wildcard CORS origin (*) allows all origins',
-                    safeAlternative:
-                      'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
-                  },
-                });
-                return;
-              }
-            }
-          }
-        }
-
-        // Only report if it's in an actual CORS context
-        if (isActualCorsContext) {
-          // Always report wildcard CORS origin - it's never safe
-          context.report({
-            node,
-            messageId: 'missingCorsCheck',
-            data: {
-              issue: 'Wildcard CORS origin (*) allows all origins',
-              safeAlternative:
-                'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
-            },
-          });
+        const options =
+          arg.type === 'Identifier' ? resolveInitializer(arg, sourceCode) : arg;
+        if (options?.type !== 'ObjectExpression') continue;
+        for (const prop of options.properties) {
+          if (prop.type !== 'Property') continue;
+          // `{ ['origin']: '*' }` names the same option, and a key chosen at
+          // runtime (`{ [k]: '*' }`) may be it.
+          const key = objectKeyName(prop)?.toLowerCase();
+          if (key !== undefined && !ORIGIN_KEYS.has(key)) continue;
+          if (prop.value.type !== 'Literal') continue;
+          // An inline option is reported where it is written; a bound one
+          // where the binding is handed to the factory.
+          report(prop.value.value, options === arg ? prop.value : arg);
         }
       }
     }
 
-    function checkCallExpression(node: TSESTree.CallExpression) {
-      if (isTestFile) {
-        return;
-      }
-
-      // Check for app.use(cors({ origin: "*" })) or similar
-      if (node.callee.type === 'MemberExpression') {
-        // `app['use'](cors({ origin: '*' }))` installs the same middleware.
-        if (propertyName(node.callee) === 'use') {
-          // Check if CORS is being used
-          const text = sourceCode.getText(node);
-
-          // Check if it matches any ignore pattern
-          if (matchesIgnorePattern(text, ignorePatterns)) {
-            return;
-          }
-
-          // Check if it's a CORS middleware call
-          // Check for cors() or trusted library calls
-          const firstArg = node.arguments.length > 0 ? node.arguments[0] : null;
-          let isCorsCall = /\bcors\s*\(/i.test(text);
-          if (
-            !isCorsCall &&
-            firstArg &&
-            firstArg.type === 'CallExpression' &&
-            firstArg.callee.type === 'Identifier'
-          ) {
-            const callee = firstArg.callee;
-            const calleeName = callee.name.toLowerCase();
-            // Check if it's the standard 'cors' library or a trusted library
-            isCorsCall =
-              calleeName === 'cors' ||
-              trustedLibraries.some((lib) => {
-                return calleeName.includes(lib.toLowerCase());
-              });
-          }
-
-          // Check if it's a trusted library - skip if explicitly trusted
-          let isTrustedLibrary = false;
-          if (
-            firstArg &&
-            firstArg.type === 'CallExpression' &&
-            firstArg.callee.type === 'Identifier'
-          ) {
-            const calleeName = firstArg.callee.name.toLowerCase();
-            isTrustedLibrary = trustedLibraries.some((lib) =>
-              calleeName.includes(lib.toLowerCase()),
-            );
-          }
-
-          if (isTrustedLibrary) {
-            return; // Trusted library, skip
-          }
-
-          // Check if it's a CORS call
-          if (/\bcors\s*\(/i.test(text) || isCorsCall) {
-            // Check arguments for wildcard origin
-            // For app.use(cors({ origin: "*" })), we need to check the arguments to cors(), not app.use()
-            const corsCallArg =
-              firstArg && firstArg.type === 'CallExpression' ? firstArg : null;
-            const argsToCheck = corsCallArg
-              ? corsCallArg.arguments
-              : node.arguments;
-
-            for (const arg of argsToCheck) {
-              if (arg.type === 'ObjectExpression') {
-                // Check for origin property with wildcard value
-                for (const prop of arg.properties) {
-                  if (
-                    prop.type === 'Property' &&
-                    // `{ ['origin']: '*' }` names the same option.
-                    objectKeyName(prop) === 'origin' &&
-                    prop.value.type === 'Literal'
-                  ) {
-                    const issue = describePermissiveOrigin(prop.value.value);
-                    if (issue !== null) {
-                      context.report({
-                        node: prop.value,
-                        messageId: 'missingCorsCheck',
-                        data: {
-                          issue,
-                          safeAlternative:
-                            'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
-                        },
-                      });
-                    }
-                  }
-                }
-              } else if (arg.type === 'Identifier') {
-                // Check if this identifier was assigned an object literal with origin: "*"
-                // For cases like: const config = { origin: "*" }; app.use(cors(config));
-                const varName = arg.name;
-                // Traverse the AST to find the variable declaration
-                let current: TSESTree.Node | null = node;
-                while (current) {
-                  if (
-                    current.type === 'Program' ||
-                    current.type === 'FunctionDeclaration' ||
-                    current.type === 'FunctionExpression' ||
-                    current.type === 'ArrowFunctionExpression'
-                  ) {
-                    // Search for variable declarations in this scope. The
-                    // enclosing `if` already narrowed `current` to Program or
-                    // one of the three function node types, so a non-Program
-                    // node here is always a function.
-                    const scopeBody =
-                      current.type === 'Program'
-                        ? current.body
-                        : current.body.type === 'BlockStatement'
-                          ? current.body.body
-                          : [];
-
-                    for (const stmt of scopeBody) {
-                      if (stmt.type === 'VariableDeclaration') {
-                        for (const declarator of stmt.declarations) {
-                          if (
-                            declarator.id.type === 'Identifier' &&
-                            declarator.id.name === varName &&
-                            declarator.init
-                          ) {
-                            // Check if init is an object literal with origin: "*"
-                            if (declarator.init.type === 'ObjectExpression') {
-                              for (const prop of declarator.init.properties) {
-                                if (
-                                  prop.type === 'Property' &&
-                                  // `{ ['origin']: '*' }` names the same option.
-                                  objectKeyName(prop) === 'origin' &&
-                                  prop.value.type === 'Literal'
-                                ) {
-                                  const issue = describePermissiveOrigin(
-                                    prop.value.value,
-                                  );
-                                  if (issue !== null) {
-                                    context.report({
-                                      node: arg,
-                                      messageId: 'missingCorsCheck',
-                                      data: {
-                                        issue,
-                                        safeAlternative:
-                                          'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
-                                      },
-                                    });
-                                    return; // Found and reported, exit
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                    break; // Only check the immediate scope
-                  }
-                  if (current.parent) {
-                    current = current.parent as TSESTree.Node;
-                  } else {
-                    break;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+    /**
+     * `cors()` and `cors({ credentials: true })` — CORS middleware with NO
+     * origin option, which the `cors` package defaults to `*`. The documented
+     * "missing origin validation" case; only the explicit wildcard was caught.
+     *
+     * Not silenced by `trustedLibraries`, which the docs scope to wildcard
+     * origins. An options object held in a variable is not judged here.
+     */
+    function checkMissingOrigin(node: TSESTree.CallExpression) {
+      if (!isCorsPackageCall(node, sourceCode)) return;
+      const options = node.arguments[0];
+      // Missing only when EVERY key is readable and none is an origin key.
+      // A spread or a runtime key may supply `origin`, and `allowedOrigins` is
+      // the other origin key this rule reads.
+      const missing =
+        options === undefined ||
+        (options.type === 'ObjectExpression' &&
+          options.properties.every((prop) => {
+            if (prop.type !== 'Property') return false;
+            const key = objectKeyName(prop)?.toLowerCase();
+            return key !== undefined && !ORIGIN_KEYS.has(key);
+          }));
+      if (!missing || ignored(node)) return;
+      context.report({
+        node,
+        messageId: 'missingCorsCheck',
+        data: {
+          issue:
+            'CORS middleware without an origin option allows every origin (the cors default is *)',
+          safeAlternative: VALIDATE_ORIGIN,
+        },
+      });
     }
 
-    function checkMemberExpression(node: TSESTree.MemberExpression) {
-      if (isTestFile) {
-        return;
+    /**
+     * `res.setHeader('Access-Control-Allow-Origin', '*')` /
+     * `res.header(…)` / `res['setHeader'](…)`, and the same header set to the
+     * request's own Origin with no check in front of it.
+     */
+    function checkHeader(call: TSESTree.CallExpression) {
+      if (call.callee.type !== 'MemberExpression') return;
+      const method = propertyName(call.callee);
+      if (method !== 'setHeader' && method !== 'header') return;
+      const [name, value] = call.arguments;
+      if (value === undefined) return;
+      if (staticString(name)?.toLowerCase() !== ALLOW_ORIGIN) return;
+      if (ignored(call)) return;
+      // Reflecting the request's Origin header with no check in front of it
+      // is a wildcard that also carries credentials.
+      if (holdsRequestOrigin(value, sourceCode) && !isGuarded(call)) {
+        context.report({
+          node: value,
+          messageId: 'missingCorsCheck',
+          data: {
+            issue:
+              'Reflecting the request Origin header unchecked allows every origin',
+            safeAlternative: VALIDATE_HEADER,
+          },
+        });
       }
-
-      // Check for Access-Control-Allow-Origin header without validation
-      // `res['setHeader'](…)` sets the same CORS header.
-      const headerMethod = propertyName(node);
-      if (headerMethod !== null) {
-        if (headerMethod === 'setHeader' || headerMethod === 'header') {
-          // Check if it matches any ignore pattern
-          const text = sourceCode.getText(node);
-          if (matchesIgnorePattern(text, ignorePatterns)) {
-            return;
-          }
-
-          // Check if it's setting CORS headers
-          // Need to check the full call expression, not just the member expression
-          const parent = node.parent;
-          if (parent && parent.type === 'CallExpression') {
-            const callText = sourceCode.getText(parent);
-            if (/\bAccess-Control-Allow-Origin\b/i.test(callText)) {
-              // Check if the value is a wildcard
-              const args = parent.arguments;
-              if (
-                args.length >= 2 &&
-                args[1].type === 'Literal' &&
-                args[1].value === '*'
-              ) {
-                context.report({
-                  node: args[1],
-                  messageId: 'missingCorsCheck',
-                  data: {
-                    issue: 'Wildcard CORS header allows all origins',
-                    safeAlternative:
-                      'Validate origin before setting header: res.setHeader("Access-Control-Allow-Origin", allowedOrigins.includes(origin) ? origin : "null");',
-                  },
-                });
-              }
-            }
-          }
-        }
+      if (staticString(value) === '*') {
+        context.report({
+          node: value,
+          messageId: 'missingCorsCheck',
+          data: {
+            issue: 'Wildcard CORS header allows all origins',
+            safeAlternative: VALIDATE_HEADER,
+          },
+        });
       }
     }
 
     return {
       before() {
         const [options = {}] = currentOptions();
-        ({
-          allowInTests = false,
-          trustedLibraries: corsTrustedLibraries = [],
-          ignorePatterns = [],
-        } = options as Options);
-
-        trustedLibraries = corsTrustedLibraries;
-
-        const filename = context.filename;
-        isTestFile = allowInTests && isTestFilePath(filename);
+        // The merged `defaultOptions` supply every field.
+        const { allowInTests } = options as Required<Options>;
+        ({ trustedLibraries, ignorePatterns } = options as Required<Options>);
         sourceCode = context.sourceCode;
+        return !(allowInTests && isTestFilePath(context.filename));
       },
-      Literal: checkLiteral,
-      CallExpression: checkCallExpression,
-      MemberExpression: checkMemberExpression,
+      CallExpression(node: TSESTree.CallExpression) {
+        checkMissingOrigin(node);
+        checkWildcardOrigin(node);
+        checkHeader(node);
+      },
     };
   },
 });

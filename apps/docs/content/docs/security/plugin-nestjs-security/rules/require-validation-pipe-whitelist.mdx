@@ -82,6 +82,13 @@ import validationOptions from './utils/validation-options';
 app.useGlobalPipes(new ValidationPipe(validationOptions));
 ```
 
+## Which `ValidationPipe`
+
+The pipe is `ValidationPipe` from `@nestjs/common` however it is imported:
+`import { ValidationPipe as VP }`, `import * as common` (`new
+common.ValidationPipe()`) or `require`. A `ValidationPipe` imported from any
+other module is that module's class and is not checked.
+
 ## What this rule deliberately does not report
 
 - `new ValidationPipe(options)` where `options` is imported from another module.
@@ -89,16 +96,20 @@ app.useGlobalPipes(new ValidationPipe(validationOptions));
   well-factored is how a rule gets switched off. Only same-file declarations are
   resolved.
 - An options object containing a spread (`{ ...base }`), since `whitelist` may
-  come from the spread.
+  come from the spread — unless an explicit `whitelist: false` follows the
+  spread: the last write wins, so `{ ...base, whitelist: false }` is reported.
+- A computed value (`whitelist: cfg.strip`), which may be `true` at runtime.
+  Under `requireForbidNonWhitelisted` the options must still set
+  `forbidNonWhitelisted`.
 - A variable that is **reassigned** after its declaration — only a binding
   written exactly once is read, since otherwise the declaration's value is not
   what reaches the call.
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| Option                        | Type      | Default | Description                                                                |
+| ----------------------------- | --------- | ------- | -------------------------------------------------------------------------- |
+| `allowInTests`                | `boolean` | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files                            |
 | `requireForbidNonWhitelisted` | `boolean` | `false` | Also require `forbidNonWhitelisted: true`, rejecting rather than stripping |
 
 ```ts

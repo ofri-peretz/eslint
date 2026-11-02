@@ -103,8 +103,44 @@ describe('no-env-injection', () => {
                }`,
         options: [{ requestRootNames: [] }],
       },
+      {
+        name: 'a request key re-assigned through an allowlist is no longer the request',
+        code: `const ALLOWED = { locale: 'APP_LOCALE' };
+               function setConfig(req) {
+                 let name = req.query.name;
+                 name = ALLOWED[name];
+                 if (name) process.env[name] = '1';
+               }`,
+      },
+      {
+        name: 'a dotted key is a fixed name even when a request binding shares its spelling',
+        code: `function login(req) {
+                 const token = req.headers.authorization;
+                 process.env.token = token;
+               }`,
+      },
     ],
     invalid: [
+      {
+        name: 'a request key bound in an enclosing scope is traced from a nested callback',
+        code: `function setConfig(req) {
+                 const name = req.body.name;
+                 req.body.values.forEach((value) => {
+                   process.env[name] = value;
+                 });
+               }`,
+        errors: [{ messageId: 'envKeyInjection' }],
+      },
+      {
+        name: 'a key traced through three bindings is still the request (three hops is within the bound)',
+        code: `function setConfig(req) {
+                 const raw = req.body.name;
+                 const trimmed = raw;
+                 const name = trimmed;
+                 process.env[name] = '1';
+               }`,
+        errors: [{ messageId: 'envKeyInjection' }],
+      },
       // Was pinned as valid with no reason given. `Object['assign']` copies
       // every request key into the environment exactly as `Object.assign`
       // does — PATH, NODE_OPTIONS and LD_PRELOAD included.
@@ -169,6 +205,7 @@ describe('no-env-injection', () => {
       },
       // The request object itself used as the key.
       {
+        name: 'process.env written under a request-derived key is reported',
         code: `function h(req) { process.env[req] = '1'; }`,
         errors: [{ messageId: 'envKeyInjection' }],
       },

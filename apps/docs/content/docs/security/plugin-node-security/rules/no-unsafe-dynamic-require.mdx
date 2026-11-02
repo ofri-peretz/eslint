@@ -46,6 +46,8 @@ Dynamic `require()` calls with user-controlled input can lead to:
 - **Path traversal attacks**: Reading files outside intended directories
 - **Data exfiltration**: Accessing sensitive configuration files
 
+The loader reads its first argument, so a spread is judged by the array it spreads: `require(...req.body.plugins)` loads an attacker-named module and is reported, while `require(...specifiers)` over a rest parameter is a caller-side fact like any other parameter.
+
 ## Examples
 
 ### ❌ Incorrect
@@ -70,11 +72,25 @@ const requireCjs = nodeModule.createRequire(import.meta.url);
 const transform = requireCjs(req.body.transform);
 ```
 
+The `createRequire` callee has to resolve to `node:module` (named, renamed, the
+`module.createRequire` default import, or a `require('node:module')`). A local
+function that merely shares the name loads nothing and is not a sink; a
+`createRequire` declared nowhere in the file is still taken to be Node's.
+
 ### ✅ Correct
 
 ```typescript
 const fs = require('fs');
+
+// A lookup into a closed table of string literals: whatever the key, the
+// specifier is one the author wrote. Silent even with reportUnresolvedSpecifiers.
+const ALLOWED = { csv: './plugins/csv', json: './plugins/json' } as const;
+require(ALLOWED[req.query.plugin]);
 ```
+
+A table counts as closed only when it is a `const` object or array literal of
+string literals that is never written through (`ALLOWED.extra = x`) or passed to
+a call.
 
 ## Configuration
 

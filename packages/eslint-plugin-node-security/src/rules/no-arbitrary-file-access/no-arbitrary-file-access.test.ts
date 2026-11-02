@@ -546,6 +546,7 @@ export function read(req, other){ const file = req.query.f; if (!other.startsWit
     // this through a member chain (`req.query.f`); the bare identifier is
     // routed through the variable path and went unreported.
     {
+      name: 'fs.readFileSync on the raw req object is reported',
       code: 'fs.readFileSync(req);',
       errors: [{ messageId: 'violationDetected' }],
     },

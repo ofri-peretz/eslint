@@ -88,6 +88,17 @@ const DANGEROUS_ATTRS = new Set(['srcdoc', 'formaction', 'xlink:href']);
 const TAG_OPTIONS = new Set(['ADD_TAGS', 'ALLOWED_TAGS']);
 const ATTR_OPTIONS = new Set(['ADD_ATTR', 'ALLOWED_ATTR']);
 
+/**
+ * Element properties whose assignment parses the right-hand side as markup.
+ * `outerHTML` replaces the element itself with the parsed string — the same
+ * script-bearing sink as `innerHTML`, one node wider.
+ */
+const MARKUP_PROPERTIES = new Set<string | null>(['innerHTML', 'outerHTML']);
+
+function isMarkupSink(member: TSESTree.MemberExpression): boolean {
+  return MARKUP_PROPERTIES.has(propertyName(member));
+}
+
 /** The string values of an array literal; `null` when it is not a literal array. */
 function staticStringArray(node: TSESTree.Node): string[] | null {
   if (node.type !== 'ArrayExpression') return null;
@@ -616,16 +627,13 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
         }
       },
 
-      // Check for innerHTML assignments
+      // Check for innerHTML / outerHTML assignments
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         const left = node.left;
         const right = node.right;
 
         // Check for element.innerHTML = userInput
-        if (
-          left.type === 'MemberExpression' &&
-          propertyName(left) === 'innerHTML'
-        ) {
+        if (left.type === 'MemberExpression' && isMarkupSink(left)) {
           // A sanitizer call IS the documented fix for this defect, so reporting
           // `node.innerHTML = DOMPurify.sanitize(html, { ALLOWED_TAGS: [...] })` tells the
           // reader to do what they already did. Only skip when the config is not one of the
@@ -818,10 +826,7 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
           } else if (current.type === 'AssignmentExpression') {
             // Check for innerHTML assignment
             const left = current.left;
-            if (
-              left.type === 'MemberExpression' &&
-              propertyName(left) === 'innerHTML'
-            ) {
+            if (left.type === 'MemberExpression' && isMarkupSink(left)) {
               if (current.right && isUserInputExpression(current.right)) return;
               isInDangerousContext = true;
               break;

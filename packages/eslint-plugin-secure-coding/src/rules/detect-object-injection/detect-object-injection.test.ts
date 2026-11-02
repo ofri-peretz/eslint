@@ -357,6 +357,7 @@ describe('detect-object-injection', () => {
           errors: 1,
         },
         {
+          name: 'a boolean === comparison used as a computed key is still reported',
           code: 'obj[a === b] = value;',
           errors: 1,
         },

@@ -22,7 +22,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -48,7 +48,6 @@ const xai = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -249,6 +248,58 @@ ruleTester.run('require-audit-logging (fp-fn audit)', requireAuditLogging, {
           generateText({ prompt: p });
         }
       `,
+      errors: [{ messageId: 'missingAuditLogging' }],
+    },
+  ]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-audit-logging (mutation audit)', requireAuditLogging, {
+  valid: xai([
+    {
+      name: 'a log-level method on a logger reached through another object is logging',
+      code: `
+        async function handler(req) {
+          req.log.info('calling model');
+          await generateText({ prompt: req.body.q });
+        }
+      `,
+    },
+    {
+      name: 'logging before a returned SDK call precedes it',
+      code: `
+        async function handler(prompt) {
+          logger.info('calling model');
+          return generateText({ prompt });
+        }
+      `,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'a bare call named like a log level is not a logger',
+      code: `
+        async function handler(prompt) {
+          info('calling model');
+          await generateText({ prompt });
+        }
+      `,
+      errors: [{ messageId: 'missingAuditLogging' }],
+    },
+    {
+      name: 'logging the result in the same statement does not precede the call',
+      code: `
+        async function handler(prompt) {
+          console.log(await generateText({ prompt }));
+        }
+      `,
+      errors: [{ messageId: 'missingAuditLogging' }],
+    },
+    {
+      name: 'a telemetry object without isEnabled does not turn tracing on',
+      code: `await generateText({ prompt, experimental_telemetry: { functionId: 'chat' } });`,
       errors: [{ messageId: 'missingAuditLogging' }],
     },
   ]),

@@ -55,7 +55,7 @@ export const requireMaxTokens = createRule<RuleOptions, MessageIds>({
           '{{function}} call without a token limit can lead to excessive resource consumption',
         severity: 'MEDIUM',
         compliance: ['SOC2'],
-        fix: 'Add a token limit: {{function}}({ maxOutputTokens: 4096, ... }) (v5+) or maxTokens (v4)',
+        fix: 'Add a token limit: {{function}}({ maxOutputTokens: {{limit}}, ... }) (v5+) or maxTokens (v4)',
         documentationLink:
           'https://sdk.vercel.ai/docs/ai-sdk-core/generating-text',
       }),
@@ -66,7 +66,8 @@ export const requireMaxTokens = createRule<RuleOptions, MessageIds>({
         properties: {
           suggestedLimit: {
             type: 'number',
-            description: 'Default max tokens limit to suggest',
+            description:
+              'Token limit the fix text suggests (`maxOutputTokens: n`)',
             default: 4096,
           },
           targetFunctions: {
@@ -92,6 +93,7 @@ export const requireMaxTokens = createRule<RuleOptions, MessageIds>({
   ],
   createOnce(context, currentOptions) {
     let targetFunctions: string[];
+    let suggestedLimit: number;
 
     return {
       before() {
@@ -103,11 +105,15 @@ export const requireMaxTokens = createRule<RuleOptions, MessageIds>({
         if (!fileUsesVercelAi(context.sourceCode.ast)) return false;
 
         // Merged with `defaultOptions` before `create` runs.
-        ({ targetFunctions } = options as Required<Options>);
+        ({ targetFunctions, suggestedLimit } = options as Required<Options>);
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        const matchedFunction = sdkCallName(node, targetFunctions);
+        const matchedFunction = sdkCallName(
+          node,
+          context.sourceCode,
+          targetFunctions,
+        );
         if (!matchedFunction) return;
 
         // Options built elsewhere are not inspected — absence is not provable.
@@ -120,7 +126,7 @@ export const requireMaxTokens = createRule<RuleOptions, MessageIds>({
           context.report({
             node,
             messageId: 'missingMaxTokens',
-            data: { function: matchedFunction },
+            data: { function: matchedFunction, limit: String(suggestedLimit) },
           });
         }
       },

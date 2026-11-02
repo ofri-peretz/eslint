@@ -30,7 +30,7 @@ import { createRule } from '@interlace/eslint-devkit';
 type MessageIds = 'unencryptedTransmission' | 'useHttps';
 
 export interface Options {
-  /** Allow unencrypted transmission in test files. Default: false */
+  /** In test files, exempt loopback hosts on any scheme. Default: false */
   allowInTests?: boolean;
 
   /** Insecure protocol patterns. Default: ['http://', 'ws://', 'ftp://', 'tcp://', 'mongodb://', 'redis://', 'mysql://'] */
@@ -293,7 +293,8 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
           allowInTests: {
             type: 'boolean',
             default: false,
-            description: 'Allow unencrypted transmission in test files',
+            description:
+              'In test files, exempt URLs whose written-down host is loopback (any scheme); a real host still reports',
           },
           insecureProtocols: {
             type: 'array',
@@ -412,10 +413,6 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
           suggest: [
             {
               messageId: 'useHttps',
-              data: {
-                protocol,
-                secureProtocol,
-              },
               fix(fixer: TSESLint.RuleFixer) {
                 if (secureProtocol && secureProtocol !== 'secure protocol') {
                   // Replace the insecure protocol with secure one
@@ -437,8 +434,22 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
     }
 
     function checkTemplateLiteral(node: TSESTree.TemplateLiteral) {
+      // The same promise `checkLiteral` keeps — "localhost in tests" — read off
+      // the host the template WRITES DOWN. Skipping every template in a test
+      // file let `mongodb://db.internal/${name}` through while the string form
+      // of the identical URL reported. A host left to an interpolation, or a
+      // template that does not open with a URL, is not judged in a test file.
       if (isTestFile) {
-        return;
+        const written = /^[a-z][a-z0-9+.-]*:\/\/([^/?#:]*)/i.exec(
+          node.quasis[0].value.raw,
+        );
+        if (
+          written === null ||
+          written[1] === '' ||
+          isLoopbackHost(written[0])
+        ) {
+          return;
+        }
       }
 
       const text = sourceCode.getText(node);
@@ -479,11 +490,11 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
       before() {
         const [options = {}] = currentOptions();
         ({
-          allowInTests = false,
+          allowInTests,
           insecureProtocols,
           secureAlternatives,
-          ignorePatterns = [],
-        } = options as Options);
+          ignorePatterns,
+        } = options as Required<Options>);
 
         protocolsToCheck =
           insecureProtocols && insecureProtocols.length > 0
@@ -491,10 +502,10 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
             : DEFAULT_INSECURE_PROTOCOLS;
 
         // Merge user-provided secure alternatives with defaults
-        secureAlternativesToUse =
-          secureAlternatives && Object.keys(secureAlternatives).length > 0
-            ? { ...SECURE_ALTERNATIVES, ...secureAlternatives }
-            : SECURE_ALTERNATIVES;
+        secureAlternativesToUse = {
+          ...SECURE_ALTERNATIVES,
+          ...secureAlternatives,
+        };
 
         const filename = context.filename;
         isTestFile = allowInTests && isTestFilePath(filename);

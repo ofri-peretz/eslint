@@ -10,8 +10,8 @@ autofix: false
 
 > Detects hardcoded API keys and secrets in AI SDK configuration.
 
-
 <!-- @rule-summary -->
+
 This rule identifies hardcoded API keys, tokens, and secrets in your codebase that are used with AI SDK providers
 <!-- @/rule-summary -->
 
@@ -24,7 +24,7 @@ This rule identifies hardcoded API keys, tokens, and secrets in your codebase th
 | **OWASP Agentic**  | [ASI03: Identity & Privilege Abuse](https://owasp.org)                                    |
 | **CWE**            | [CWE-798: Use of Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html) |
 | **CVSS**           | 9.8                                                                                       |
-| **Config Default** | `error` (recommended, strict)                                                                     |
+| **Config Default** | `error` (recommended, strict)                                                             |
 
 ## 🔍 What This Rule Detects
 
@@ -78,8 +78,8 @@ const openai = createOpenAI();
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
+| Option           | Type       | Default                                                               | Description                          |
+| ---------------- | ---------- | --------------------------------------------------------------------- | ------------------------------------ |
 | `apiKeyPatterns` | `string[]` | `["apiKey","api_key","token","secret","credentials","authorization"]` | Property names that contain API keys |
 
 ## 🛡️ Why This Matters
@@ -109,6 +109,13 @@ Hardcoded API keys can be:
 - One literal is reported once (it used to be reported twice when passed as a
   provider's second argument).
 - **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
+
+## 🔄 Changes in the 2026-11-02 mutation audit
+
+- A generic secret under a key-ish **class field** (`apiKey = '…'`) or **JSX
+  attribute** (`<AIProvider apiKey="…" />`) is reported like an object property.
+- A resource path with a leading slash (`/projects/x/secrets/y`) is a path, not
+  a secret.
 
 ## Known False Negatives
 
@@ -168,10 +175,10 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Hardcoded Credentials detected` |
-| **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                       |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Hardcoded Credentials detected`                                                                                                                                                                                                                              |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]`                                                                                                                                                                                                        |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                          |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/)                                                                                                                                                                                                   |

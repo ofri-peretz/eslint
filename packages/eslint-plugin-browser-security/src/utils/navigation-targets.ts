@@ -106,18 +106,46 @@ export function isLocationTarget(node: TSESTree.Node): boolean {
  * window['location'].href = next;
  * ```
  *
- * The bare `location = next` is deliberately NOT here: an unqualified
- * identifier assignment is far more often a local variable being set than the
- * global being navigated, and there is no evidence in the AST to tell them
- * apart.
+ * The bare `location = next` counts only when `scope` proves the name is the
+ * GLOBAL: an unqualified identifier assignment is often a local variable being
+ * set, and the scope manager is the evidence that tells the two apart — a
+ * `let location` anywhere up the chain makes it a local.
  */
-export function isLocationNavigationWrite(node: TSESTree.Node): boolean {
+export function isLocationNavigationWrite(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): boolean {
+  if (node.type === 'Identifier') {
+    return node.name === 'location' && isUnboundName(node.name, scope);
+  }
   if (node.type !== 'MemberExpression') return false;
   // `<holder>.location = x`
   if (isLocationTarget(node) && node.object.type === 'Identifier') return true;
   // `<Location>.href = x`
   return staticKey(node) === 'href' && isLocationTarget(node.object);
 }
+
+/** Does `name` resolve to no declaration in this file — i.e. the global? */
+function isUnboundName(name: string, scope: TSESLint.Scope.Scope): boolean {
+  for (
+    let current: TSESLint.Scope.Scope | null = scope;
+    current !== null;
+    current = current.upper
+  ) {
+    const variable = current.variables.find((v) => v.name === name);
+    // A configured global (`globals.browser`) is a variable with no
+    // definitions; a declaration in this file has at least one.
+    if (variable !== undefined) return variable.defs.length === 0;
+  }
+  return true;
+}
+
+/**
+ * Text before an interpolation that leaves it inside the URL's AUTHORITY:
+ * `https://${host}`, `//${host}`, `https://${sub}.${host}`. Whatever lands
+ * there picks the origin the browser goes to.
+ */
+const AUTHORITY_PREFIX = /^(?:[a-z][a-z0-9+.-]*:)?\/\/[^/?#\\]*$/i;
 
 /**
  * Is this a `Location` method call that navigates?
@@ -133,7 +161,8 @@ export function isLocationNavigationCall(
   if (callee.type !== 'MemberExpression') return false;
   const method = staticKey(callee);
   return (
-    (method === 'assign' || method === 'replace') && isLocationTarget(callee.object)
+    (method === 'assign' || method === 'replace') &&
+    isLocationTarget(callee.object)
   );
 }
 
@@ -235,7 +264,14 @@ function urlContainerKind(
     }
 
     case 'CallExpression': {
-      if (isHookCallFrom(node, sourceCode, 'useSearchParams', SEARCH_PARAM_MODULES)) {
+      if (
+        isHookCallFrom(
+          node,
+          sourceCode,
+          'useSearchParams',
+          SEARCH_PARAM_MODULES,
+        )
+      ) {
         return 'params';
       }
       return null;
@@ -250,7 +286,9 @@ function urlContainerKind(
       if (seen.has(node.name)) return null;
       seen.add(node.name);
       const init = resolveInitializer(node, sourceCode);
-      return init === undefined ? null : urlContainerKind(init, sourceCode, seen);
+      return init === undefined
+        ? null
+        : urlContainerKind(init, sourceCode, seen);
     }
 
     default:
@@ -324,8 +362,7 @@ export function identityArgumentIndex(
 
   const returned =
     fn.body.type === 'BlockStatement'
-      ? fn.body.body.length === 1 &&
-        fn.body.body[0].type === 'ReturnStatement'
+      ? fn.body.body.length === 1 && fn.body.body[0].type === 'ReturnStatement'
         ? fn.body.body[0].argument
         : null
       : fn.body;
@@ -408,15 +445,31 @@ export function isSteerableUrlValue(
         isSteerableUrlValue(node.left as TSESTree.Node, sourceCode, seen)
       );
 
-    case 'TemplateLiteral':
-      return (
-        // `raw`, not `cooked`: `cooked` is nullable as of @typescript-eslint
-        // 8.68.0, and `raw` is '' exactly when `cooked` is — an invalid escape,
-        // the only thing that nulls `cooked`, always has non-empty raw text.
-        node.quasis[0].value.raw === '' &&
-        node.expressions.length > 0 &&
-        isSteerableUrlValue(node.expressions[0], sourceCode, seen)
-      );
+    case 'TemplateLiteral': {
+      // An interpolation decides the destination when it is the whole leading
+      // URL (`${next}/x`) or sits inside the authority (`https://${host}/x`) —
+      // the attacker then picks the origin, which is the open redirect itself.
+      // `raw`, not `cooked`: `cooked` is nullable as of @typescript-eslint
+      // 8.68.0, and `raw` is '' exactly when `cooked` is — an invalid escape,
+      // the only thing that nulls `cooked`, always has non-empty raw text.
+      // Earlier interpolations are folded to a placeholder host character so
+      // `https://${sub}.${host}` keeps both inside the authority.
+      let prefix = '';
+      return node.expressions.some((expression, index) => {
+        prefix += node.quasis[index].value.raw;
+        const decidesOrigin = prefix === '' || AUTHORITY_PREFIX.test(prefix);
+        prefix += 'x';
+        return (
+          decidesOrigin && isSteerableUrlValue(expression, sourceCode, seen)
+        );
+      });
+    }
+
+    // `get('next')!` and `get('next') as string` are the same value to the
+    // browser; a TypeScript assertion narrows a type, it validates nothing.
+    case 'TSNonNullExpression':
+    case 'TSAsExpression':
+      return isSteerableUrlValue(node.expression, sourceCode, seen);
 
     case 'LogicalExpression':
       return (
@@ -773,6 +826,7 @@ export function isRouterObject(
   if (node.type !== 'Identifier') return false;
   const init = resolveInitializer(node, sourceCode);
   return (
-    init !== undefined && isHookCallFrom(init, sourceCode, 'useRouter', ROUTER_MODULES)
+    init !== undefined &&
+    isHookCallFrom(init, sourceCode, 'useRouter', ROUTER_MODULES)
   );
 }

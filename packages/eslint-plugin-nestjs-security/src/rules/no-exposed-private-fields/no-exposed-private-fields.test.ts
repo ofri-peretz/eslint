@@ -32,7 +32,7 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const nest = <T,>(cases: T[]): T[] =>
+const nest = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asNest(c) as T;
     const t = c as Case;
@@ -58,7 +58,6 @@ const nest = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -604,3 +603,142 @@ ruleTester.run('no-exposed-private-fields (matching)', noExposedPrivateFields, {
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quint fidelity model (benchmarks/suites/fidelity/models/nestjs-security)
+// These fixtures are NOT wrapped in `nest()`: the file-level gate is the claim.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-exposed-private-fields (fidelity)', noExposedPrivateFields, {
+  valid: [
+    {
+      name: 'a file importing no NestJS, serializer or ORM package is not checked',
+      code: `export class UserResponse { password: string; }`,
+    },
+    {
+      name: '@Exclude({ toPlainOnly: true }) hides the field from responses',
+      code: `
+        import { Exclude } from 'class-transformer';
+        export class UserResponse { @Exclude({ toPlainOnly: true }) password: string; }
+      `,
+    },
+  ],
+  invalid: [
+    {
+      name: "the doc's ❌ example — a TypeORM entity file with no NestJS import — is reported",
+      code: `
+        import { Entity } from 'typeorm';
+        import { Exclude } from 'class-transformer';
+        @Entity()
+        export class User { id: string; password: string; }
+      `,
+      errors: [{ messageId: 'exposedField' }],
+    },
+    {
+      name: '@Exclude({ toClassOnly: true }) still serializes the field into responses',
+      code: `
+        import { Entity } from 'typeorm';
+        import { Exclude } from 'class-transformer';
+        @Entity()
+        export class User { id: string; @Exclude({ toClassOnly: true }) password: string; }
+      `,
+      errors: [{ messageId: 'exposedField' }],
+    },
+    {
+      name: 'a class-level @Exclude({ toClassOnly: true }) still serializes its fields',
+      code: `
+        import { Exclude } from 'class-transformer';
+        @Exclude({ toClassOnly: true })
+        export class UserResponse { password: string; }
+      `,
+      errors: [{ messageId: 'exposedField' }],
+    },
+  ],
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run(
+  'no-exposed-private-fields (mutation audit)',
+  noExposedPrivateFields,
+  {
+    valid: nest([
+      {
+        name: 'an auth response with a qualifier between stem and suffix still delivers the credential',
+        code: `class AuthUserResponse { accessToken: string; }`,
+      },
+      {
+        name: 'a test file is skipped by default (allowInTests)',
+        code: `@Entity() class User { password: string; }`,
+        filename: 'user.entity.spec.ts',
+      },
+      {
+        name: 'an inbound create payload carries a password by design',
+        code: `class CreateUserPayload { password: string; }`,
+      },
+      {
+        name: 'a class whose name only contains a model word is not a serialized shape',
+        code: `class UserModelFactory { password: string; }`,
+      },
+      {
+        name: 'singular predicate prefixes (allow/enable/require/use/support) mark flags',
+        code: `
+        class SettingsResponse {
+          allowPassword = true;
+          enableToken = false;
+          requireSecret = true;
+          useApiKey = true;
+          supportPassword = true;
+        }
+      `,
+      },
+      {
+        name: 'a boolean-typed credential-named field is a flag, not the credential',
+        code: `class SessionView { revokedToken: boolean; }`,
+      },
+      {
+        name: 'an @Exclude whose options come from a spread is trusted to exclude',
+        code: `class UserResponse { @Exclude({ ...excludeOptions }) password: string; }`,
+      },
+    ]),
+    invalid: nest([
+      {
+        name: 'a class whose name only contains a credential-delivery stem is not a credential delivery',
+        code: `class SessionPayloadSchema { password: string; }`,
+        errors: [{ messageId: 'exposedField' }],
+      },
+      {
+        name: 'an inbound verb in the middle of a name does not make the class inbound',
+        code: `class UserUpdateResponse { password: string; }`,
+        errors: [{ messageId: 'exposedField' }],
+      },
+      {
+        name: 'a past-tense name is not an inbound verb',
+        code: `class CreatedUserResponse { password: string; }`,
+        errors: [{ messageId: 'exposedField' }],
+      },
+      {
+        name: 'a predicate word inside a credential name does not make it a flag',
+        code: `class CiSettingsResponse { travisToken: string; }`,
+        errors: [{ messageId: 'exposedField' }],
+      },
+      {
+        name: 'a bare (uncalled) decorator on the field carries no projection options',
+        code: `@Entity() class User { @Expose password: string; }`,
+        errors: [{ messageId: 'exposedField' }],
+      },
+      {
+        name: 'select: true keeps the column in results',
+        code: `@Entity() class User { @Column({ select: true }) password: string; }`,
+        errors: [{ messageId: 'exposedField' }],
+      },
+      {
+        name: 'a test file is skipped only by default — allowInTests: false checks it',
+        code: `@Entity() class User { password: string; }`,
+        filename: 'user.entity.spec.ts',
+        options: [{ allowInTests: false }],
+        errors: [{ messageId: 'exposedField' }],
+      },
+    ]),
+  },
+);

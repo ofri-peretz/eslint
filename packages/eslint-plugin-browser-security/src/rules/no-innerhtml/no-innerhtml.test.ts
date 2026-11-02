@@ -169,6 +169,7 @@ ruleTester.run('no-innerhtml', noInnerhtml, {
     },
     // A local named `doc` is the conventional binding for a document.
     {
+      name: 'doc.write(userInput) is reported as a dangerous HTML sink',
       code: 'doc.write(userInput)',
       errors: [{ messageId: 'dangerousInnerHTML' }],
     },
@@ -224,6 +225,12 @@ ruleTester.run('no-innerhtml', noInnerhtml, {
           messageId: 'dangerousInnerHTML',
         },
       ],
+    },
+    {
+      name: 'allowLiteralStrings false reports a no-substitution template literal, the backtick spelling of a literal',
+      code: 'element.innerHTML = `<p>Static content</p>`;',
+      options: [{ allowLiteralStrings: false }],
+      errors: [{ messageId: 'dangerousInnerHTML' }],
     },
     // Unknown sanitizer
     {
@@ -480,6 +487,14 @@ ruleTester.run('no-innerhtml-partition-holes', noInnerhtml, {
     'window.addEventListener("message", (e) => { el.innerHTML = e.data; });',
     // insertAdjacentHTML is modelled by the siblings too.
     'window.addEventListener("message", (e) => { el.insertAdjacentHTML("beforeend", e.data); });',
+    {
+      name: 'reader.result off a resolved FileReader is owned by no-filereader-innerhtml',
+      code: 'const reader = new FileReader(); reader.onload = () => { el.innerHTML = reader.result; };',
+    },
+    {
+      name: 'a SharedWorker port message payload is owned by no-worker-message-innerhtml',
+      code: 'const w = new SharedWorker("s.js"); w.port.onmessage = (e) => { el.innerHTML = e.data; };',
+    },
   ],
   invalid: [
     {

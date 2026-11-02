@@ -102,7 +102,7 @@ export const noUnsafeEvalCsp = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        const { allowInTests = true } = options as Options;
+        const { allowInTests } = options as Required<Options>;
         const filename = context.filename;
         const isTestFile = isTestFilePath(filename);
 

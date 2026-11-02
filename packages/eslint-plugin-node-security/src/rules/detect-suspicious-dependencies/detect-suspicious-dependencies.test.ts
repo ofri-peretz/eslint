@@ -51,6 +51,7 @@ ruleTester.run('detect-suspicious-dependencies', detectSuspiciousDependencies, {
     },
     // Transposition — the most common squat shape. One slip, not two edits.
     {
+      name: 'an import of the typosquat raect is reported',
       code: "import r from 'raect'",
       errors: [{ messageId: 'violationDetected' }],
     },

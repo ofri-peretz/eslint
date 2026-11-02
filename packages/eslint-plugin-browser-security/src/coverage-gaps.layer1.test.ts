@@ -83,13 +83,28 @@ const jsxRuleTester = new RuleTester({
 // ---------------------------------------------------------------------------
 jsxRuleTester.run('no-clickjacking (coverage)', noClickjacking, {
   valid: [
+    // Reading the top frame's location into a string navigates nothing. This
+    // was pinned as frameManipulation; only an assignment to it navigates.
+    { code: `const z = top.location + '';`, filename: 'lib.ts' },
     // entry-point file without UI elements -> no missing-frame-busting report
     { code: 'const a = 1;', filename: 'index.tsx' },
     // The four shapes that used to report purely because of the FILENAME.
-    { code: `export const App = () => <button onClick={go}>hi</button>;`, filename: 'app.tsx' },
-    { code: `export const Page = () => <form onSubmit={s}></form>;`, filename: 'main.jsx' },
-    { code: `export const Page = () => <input />;`, filename: 'pages/settings.tsx' },
-    { code: `export const Page = () => <div onClick={h}></div>;`, filename: 'layout.tsx' },
+    {
+      code: `export const App = () => <button onClick={go}>hi</button>;`,
+      filename: 'app.tsx',
+    },
+    {
+      code: `export const Page = () => <form onSubmit={s}></form>;`,
+      filename: 'main.jsx',
+    },
+    {
+      code: `export const Page = () => <input />;`,
+      filename: 'pages/settings.tsx',
+    },
+    {
+      code: `export const Page = () => <div onClick={h}></div>;`,
+      filename: 'layout.tsx',
+    },
     // frame-busting comparison: BinaryExpression with equality operator breaks
     // out of the manipulation walk (operator whitelist branch)
     {
@@ -170,11 +185,17 @@ jsxRuleTester.run('no-clickjacking (coverage)', noClickjacking, {
     // A positive z-index is not a hidden layer.
     { code: `const css = 'css z-index: 10';`, filename: 'lib.ts' },
     // `position: absolute` alone does not make an overlay.
-    { code: `const css = 'css position: absolute; top: 40px; left: 0';`, filename: 'lib.ts' },
+    {
+      code: `const css = 'css position: absolute; top: 40px; left: 0';`,
+      filename: 'lib.ts',
+    },
     // Nor does it at the corner. This exact string was asserted INVALID until
     // the overlay signal was narrowed to actual invisibility — see the note in
     // the `invalid` block below.
-    { code: `const css = 'css position: absolute; top: 0; left: 0';`, filename: 'lib.ts' },
+    {
+      code: `const css = 'css position: absolute; top: 0; left: 0';`,
+      filename: 'lib.ts',
+    },
     // A fade-in is invisible for 300ms on its way to being VISIBLE, which is
     // the commonest loading affordance on the web.
     {
@@ -209,12 +230,6 @@ jsxRuleTester.run('no-clickjacking (coverage)', noClickjacking, {
     // frame manipulation via assignment
     {
       code: `top.location = 'about:blank';`,
-      filename: 'lib.ts',
-      errors: [{ messageId: 'frameManipulation' }],
-    },
-    // frame manipulation via non-comparison binary expression
-    {
-      code: `const z = top.location + '';`,
       filename: 'lib.ts',
       errors: [{ messageId: 'frameManipulation' }],
     },
@@ -533,40 +548,44 @@ ruleTester.run('no-innerhtml (coverage)', noInnerhtml, {
 // answer first for every shape the two agree on, which left those restatements
 // covered by nothing. These three drive them through a value url-taint cannot
 // resolve on its own.
-ruleTester.run('navigation-targets restatements (coverage)', noInsecureRedirects, {
-  valid: [
-    // a BinaryExpression that is not concatenation at all
-    `location.assign(offset - 1);`,
-    // concatenation whose LEADING operand is not steerable
-    `location.assign(base + '/x');`,
-  ],
-  invalid: [
-    {
-      code: `location.assign(fallback || window['location'].hash);`,
-      errors: [{ messageId: 'insecureRedirect' }],
-    },
-    {
-      code: `location.assign(flag ? '/safe' : window['location'].hash);`,
-      errors: [{ messageId: 'insecureRedirect' }],
-    },
-    {
-      code: `location.assign(new URL(window['location'].href).searchParams.get('n'));`,
-      errors: [{ messageId: 'insecureRedirect' }],
-    },
-    {
-      code: `location.assign(new URLSearchParams(window['location'].search).get('n'));`,
-      errors: [{ messageId: 'insecureRedirect' }],
-    },
-    {
-      code: `location.assign(window['location'].hash + '/x');`,
-      errors: [{ messageId: 'insecureRedirect' }],
-    },
-    {
-      code: 'location.assign(`${window[\'location\'].hash}/x`);',
-      errors: [{ messageId: 'insecureRedirect' }],
-    },
-  ],
-});
+ruleTester.run(
+  'navigation-targets restatements (coverage)',
+  noInsecureRedirects,
+  {
+    valid: [
+      // a BinaryExpression that is not concatenation at all
+      `location.assign(offset - 1);`,
+      // concatenation whose LEADING operand is not steerable
+      `location.assign(base + '/x');`,
+    ],
+    invalid: [
+      {
+        code: `location.assign(fallback || window['location'].hash);`,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      {
+        code: `location.assign(flag ? '/safe' : window['location'].hash);`,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      {
+        code: `location.assign(new URL(window['location'].href).searchParams.get('n'));`,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      {
+        code: `location.assign(new URLSearchParams(window['location'].search).get('n'));`,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      {
+        code: `location.assign(window['location'].hash + '/x');`,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      {
+        code: "location.assign(`${window['location'].hash}/x`);",
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+    ],
+  },
+);
 
 ruleTester.run('no-insecure-redirects (coverage)', noInsecureRedirects, {
   valid: [
@@ -690,6 +709,12 @@ ruleTester.run('no-jwt-in-storage (coverage)', noJwtInStorage, {
 // ---------------------------------------------------------------------------
 ruleTester.run('no-missing-cors-check (coverage)', noMissingCorsCheck, {
   valid: [
+    // A trusted library's wildcard origin is silenced, as the docs promise.
+    // This was pinned as a finding through the old text-regex literal check.
+    {
+      code: `app.use(corsLib({ origin: '*' }));`,
+      options: [{ trustedLibraries: ['corsLib'] }],
+    },
     // wrapped cors factory treated as cors call with no object args
     `app.use(makeCors());`,
     // identifier config that is not an object literal
@@ -728,13 +753,6 @@ ruleTester.run('no-missing-cors-check (coverage)', noMissingCorsCheck, {
     {
       name: 'a wildcard CORS header written through a subscript',
       code: `res['setHeader']('Access-Control-Allow-Origin', '*');`,
-      errors: [{ messageId: 'missingCorsCheck' }],
-    },
-    // trusted library: checkCallExpression returns early (isTrustedLibrary),
-    // but checkLiteral still reports the wildcard origin literal
-    {
-      code: `app.use(corsLib({ origin: '*' }));`,
-      options: [{ trustedLibraries: ['corsLib'] }],
       errors: [{ messageId: 'missingCorsCheck' }],
     },
     // wildcard literal directly inside a cors() call (not a property)
@@ -777,101 +795,109 @@ ruleTester.run('no-missing-cors-check (coverage)', noMissingCorsCheck, {
 // ---------------------------------------------------------------------------
 // no-missing-csrf-protection
 // ---------------------------------------------------------------------------
-ruleTester.run('no-missing-csrf-protection (coverage)', noMissingCsrfProtection, {
-  valid: [
-    // fewer than two arguments
-    `import express from 'express';\nconst app = express();\napp.post('/incomplete');`,
-    // invalid regex ignore pattern falls back to includes() and matches
-    {
-      code: `import express from 'express';\nconst app = express();\napp.post('(weird', handler);`,
-      options: [{ ignorePatterns: ['('] }],
-    },
-  ],
-  invalid: [
-    // invalid regex ignore pattern that does not match falls through
-    {
-      code: `import express from 'express';\nconst app = express();\napp.post('/a', handler);`,
-      options: [{ ignorePatterns: ['['] }],
-      errors: [
-        {
-          messageId: 'missingCsrfProtection',
-          suggestions: [
-            {
-              messageId: 'addCsrfValidation',
-              output: `import express from 'express';\nconst app = express();\napp.post('/a', csrf(), handler);`,
-            },
-          ],
-        },
-      ],
-    },
-  ],
-});
+ruleTester.run(
+  'no-missing-csrf-protection (coverage)',
+  noMissingCsrfProtection,
+  {
+    valid: [
+      // fewer than two arguments
+      `import express from 'express';\nconst app = express();\napp.post('/incomplete');`,
+      // invalid regex ignore pattern falls back to includes() and matches
+      {
+        code: `import express from 'express';\nconst app = express();\napp.post('(weird', handler);`,
+        options: [{ ignorePatterns: ['('] }],
+      },
+    ],
+    invalid: [
+      // invalid regex ignore pattern that does not match falls through
+      {
+        code: `import express from 'express';\nconst app = express();\napp.post('/a', handler);`,
+        options: [{ ignorePatterns: ['['] }],
+        errors: [
+          {
+            messageId: 'missingCsrfProtection',
+            suggestions: [
+              {
+                messageId: 'addCsrfValidation',
+                output: `import express from 'express';\nconst app = express();\napp.post('/a', csrf(), handler);`,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+);
 
 // ---------------------------------------------------------------------------
 // no-missing-security-headers
 // ---------------------------------------------------------------------------
-ruleTester.run('no-missing-security-headers (coverage)', noMissingSecurityHeaders, {
-  valid: [
-    // custom required header satisfied
-    {
-      code: `res.setHeader('X-Custom', '1');`,
-      options: [{ requiredHeaders: ['X-Custom'] }],
-    },
-    // A header name the rule cannot read makes the whole scope unreadable, so
-    // it cannot say anything is absent.
-    //
-    // NOTE — this fixture used to live in `invalid`, pinning the defect: with
-    // a dynamic name nothing landed in the "set" list, so the rule returned
-    // all three as missing and reported. That is reporting by IGNORANCE, and
-    // it fired on the commonest way a codebase applies headers at all:
-    // `for (const [n, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(n, v)`
-    // — a loop that sets every one of them.
-    `res.setHeader(headerName, value);`,
-    // all default headers set within one function
-    `function handler(req, res) {
+ruleTester.run(
+  'no-missing-security-headers (coverage)',
+  noMissingSecurityHeaders,
+  {
+    valid: [
+      // custom required header satisfied
+      {
+        code: `res.setHeader('X-Custom', '1');`,
+        options: [{ requiredHeaders: ['X-Custom'] }],
+      },
+      // A header name the rule cannot read makes the whole scope unreadable, so
+      // it cannot say anything is absent.
+      //
+      // NOTE — this fixture used to live in `invalid`, pinning the defect: with
+      // a dynamic name nothing landed in the "set" list, so the rule returned
+      // all three as missing and reported. That is reporting by IGNORANCE, and
+      // it fired on the commonest way a codebase applies headers at all:
+      // `for (const [n, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(n, v)`
+      // — a loop that sets every one of them.
+      `res.setHeader(headerName, value);`,
+      // all default headers set within one function
+      `function handler(req, res) {
        res.setHeader('Content-Security-Policy', "default-src 'self'");
        res.setHeader('X-Frame-Options', 'DENY');
        res.setHeader('X-Content-Type-Options', 'nosniff');
      }`,
-    // non-member call expression
-    `setHeader('X-Frame-Options');`,
-    // A method chosen at RUNTIME names nothing to match against the header API.
-    `res[method]('X-Frame-Options', 'DENY');`,
-    // non-header method
-    `res.json({});`,
-  ],
-  invalid: [
-    // Was pinned above as valid under the comment "computed member property".
-    // That described the guard, not the code: this sets ONE of the required
-    // headers and leaves the rest missing, exactly as the dotted spelling
-    // three entries down does.
-    {
-      name: 'one required header set through a subscript, the rest still missing',
-      code: `function handler(req, res) { res['setHeader']('X-Frame-Options', 'DENY'); }`,
-      errors: [{ messageId: 'missingSecurityHeader' }],
-    },
-    // setHeader without arguments: header name cannot be extracted
-    {
-      code: `res.setHeader();`,
-      errors: [{ messageId: 'missingSecurityHeader' }],
-    },
-    // function declaration scope with only one of the required headers
-    {
-      code: `function handler(req, res) { res.setHeader('X-Frame-Options', 'DENY'); }`,
-      errors: [{ messageId: 'missingSecurityHeader' }],
-    },
-    // function expression scope
-    {
-      code: `const h = function (req, res) { res.header('X-Frame-Options', 'DENY'); };`,
-      errors: [{ messageId: 'missingSecurityHeader' }],
-    },
-    // arrow function scope
-    {
-      code: `const h = (req, res) => { res.set('X-Frame-Options', 'DENY'); };`,
-      errors: [{ messageId: 'missingSecurityHeader' }],
-    },
-  ],
-});
+      // non-member call expression
+      `setHeader('X-Frame-Options');`,
+      // A method chosen at RUNTIME names nothing to match against the header API.
+      `res[method]('X-Frame-Options', 'DENY');`,
+      // non-header method
+      `res.json({});`,
+    ],
+    invalid: [
+      // Was pinned above as valid under the comment "computed member property".
+      // That described the guard, not the code: this sets ONE of the required
+      // headers and leaves the rest missing, exactly as the dotted spelling
+      // three entries down does.
+      {
+        name: 'one required header set through a subscript, the rest still missing',
+        code: `function handler(req, res) { res['setHeader']('X-Frame-Options', 'DENY'); }`,
+        errors: [{ messageId: 'missingSecurityHeader' }],
+      },
+      // setHeader without arguments: header name cannot be extracted
+      {
+        code: `res.setHeader();`,
+        errors: [{ messageId: 'missingSecurityHeader' }],
+      },
+      // function declaration scope with only one of the required headers
+      {
+        code: `function handler(req, res) { res.setHeader('X-Frame-Options', 'DENY'); }`,
+        errors: [{ messageId: 'missingSecurityHeader' }],
+      },
+      // function expression scope
+      {
+        code: `const h = function (req, res) { res.header('X-Frame-Options', 'DENY'); };`,
+        errors: [{ messageId: 'missingSecurityHeader' }],
+      },
+      // arrow function scope
+      {
+        code: `const h = (req, res) => { res.set('X-Frame-Options', 'DENY'); };`,
+        errors: [{ messageId: 'missingSecurityHeader' }],
+      },
+    ],
+  },
+);
 
 // ---------------------------------------------------------------------------
 // no-postmessage-innerhtml
@@ -967,24 +993,28 @@ ruleTester.run(
 // ---------------------------------------------------------------------------
 // no-sensitive-data-in-cache
 // ---------------------------------------------------------------------------
-ruleTester.run('no-sensitive-data-in-cache (coverage)', noSensitiveDataInCache, {
-  valid: [
-    `cache['set']('password', x);`,
-    `cache.remove('password');`,
-    `cache.set();`,
-    `cache.set(key);`,
-    `cache.set(null);`,
-    `cache.set(123);`,
-    // None of the above is a Cache. A Cache comes from caches.open().
-    `cache.put('/api/me/ssn', res);`,
-  ],
-  invalid: [
-    {
-      code: `const c = await caches.open('v1'); c.put('/api/me/ssn', res);`,
-      errors: [{ messageId: 'sensitiveInCache' }],
-    },
-  ],
-});
+ruleTester.run(
+  'no-sensitive-data-in-cache (coverage)',
+  noSensitiveDataInCache,
+  {
+    valid: [
+      `cache['set']('password', x);`,
+      `cache.remove('password');`,
+      `cache.set();`,
+      `cache.set(key);`,
+      `cache.set(null);`,
+      `cache.set(123);`,
+      // None of the above is a Cache. A Cache comes from caches.open().
+      `cache.put('/api/me/ssn', res);`,
+    ],
+    invalid: [
+      {
+        code: `const c = await caches.open('v1'); c.put('/api/me/ssn', res);`,
+        errors: [{ messageId: 'sensitiveInCache' }],
+      },
+    ],
+  },
+);
 
 // ---------------------------------------------------------------------------
 // no-sensitive-indexeddb
@@ -1002,27 +1032,31 @@ ruleTester.run('no-sensitive-indexeddb (coverage)', noSensitiveIndexeddb, {
 // ---------------------------------------------------------------------------
 // no-sensitive-localstorage
 // ---------------------------------------------------------------------------
-ruleTester.run('no-sensitive-localstorage (coverage)', noSensitiveLocalstorage, {
-  valid: [
-    `localStorage.setItem();`,
-    `localStorage.setItem(someKey, v);`,
-    `x = y;`,
-    `foo['token'] = v;`,
-    `localStorage[idx] = v;`,
-    `localStorage[0] = v;`,
-    // sessionStorage excluded when checkSessionStorage is false
-    {
-      code: `sessionStorage['token'] = v;`,
-      options: [{ checkSessionStorage: false }],
-    },
-  ],
-  invalid: [
-    {
-      code: `localStorage[secretKey] = v;`,
-      errors: [{ messageId: 'sensitiveLocalStorage' }],
-    },
-  ],
-});
+ruleTester.run(
+  'no-sensitive-localstorage (coverage)',
+  noSensitiveLocalstorage,
+  {
+    valid: [
+      `localStorage.setItem();`,
+      `localStorage.setItem(someKey, v);`,
+      `x = y;`,
+      `foo['token'] = v;`,
+      `localStorage[idx] = v;`,
+      `localStorage[0] = v;`,
+      // sessionStorage excluded when checkSessionStorage is false
+      {
+        code: `sessionStorage['token'] = v;`,
+        options: [{ checkSessionStorage: false }],
+      },
+    ],
+    invalid: [
+      {
+        code: `localStorage[secretKey] = v;`,
+        errors: [{ messageId: 'sensitiveLocalStorage' }],
+      },
+    ],
+  },
+);
 
 // ---------------------------------------------------------------------------
 // no-sensitive-sessionstorage
@@ -1154,250 +1188,254 @@ ruleTester.run(
 // ---------------------------------------------------------------------------
 // no-unescaped-url-parameter
 // ---------------------------------------------------------------------------
-ruleTester.run('no-unescaped-url-parameter (coverage)', noUnescapedUrlParameter, {
-  valid: [
-    // allowInTests short-circuits create() entirely
-    {
-      code: `const a = \`https://x.example.com/v1?q=\${req.query.id}\`;`,
-      options: [{ allowInTests: true }],
-      filename: 'url.test.ts',
-    },
-    // a `+` chain that builds no URL at all
-    `const s = a + b;`,
-    // user ignorePatterns, both visitors
-    {
-      code: `const u = 'https://x.example.com/v1?q=' + req.query.id;`,
-      options: [{ ignorePatterns: ['req\\.query'] }],
-    },
-    {
-      code: `const u = \`https://x.example.com/v1?q=\${req.query.id}\`;`,
-      options: [{ ignorePatterns: ['req\\.query'] }],
-    },
-    // an unparseable user pattern is discarded rather than thrown
-    {
-      code: `const u = \`https://x.example.com/v1?q=\${encodeURIComponent(req.query.id)}\`;`,
-      options: [{ ignorePatterns: ['('] }],
-    },
-    // trustedLibraries, resolved through the import graph
-    {
-      code: `import url from 'url'; const u = \`https://x.example.com/v1?q=\${url.format(req.query.id)}\`;`,
-    },
-    // a member read that is neither a URL source nor a DOM read
-    `const u = \`https://x.example.com/v1?a=\${obj.prop}\`;`,
-    // every Location write belongs to no-insecure-redirects now
-    `window.location = req.query.next;`,
-    `location = req.query.next;`,
-    `document.location.href = req.query.next;`,
-    // a tagged template is the tag's business
-    'const u = tag`https://x.example.com/v1?q=${req.query.id}`;',
-    // the hole chooses the host — the open-redirect family's finding
-    `const u = \`https://\${req.query.host}/v1\`;`,
-    // relative text that reaches no URL sink
-    `export function key(id) { return \`/items/\${id}\`; }`,
-    // a relative URL whose binding is re-assigned before the sink
-    `export function key(id) { let u = \`/items?id=\${id}\`; u = '/items'; return fetch(u); }`,
-    // arithmetic, not concatenation
-    `export function page(n) { return \`https://x.example.com/v1?p=\${n + 1}\`; }`,
-    // a closed parameter type
-    `export function s(d: 'asc' | 'desc') { return \`https://x.example.com/v1?d=\${d}\`; }`,
-    // a module-private helper's parameter is knowable
-    `function k(id) { return \`https://x.example.com/v1?id=\${id}\`; } export const A = k('a');`,
-    // a cyclic binding terminates
-    `export function c() { const a = a; return \`https://x.example.com/v1?q=\${a}\`; }`,
-    // a spread argument in a passthrough position
-    `export function s(parts) { return \`https://x.example.com/v1?q=\${String(...parts)}\`; }`,
-    // a passthrough global called with no argument at all
-    `export function s() { return \`https://x.example.com/v1?q=\${String()}\`; }`,
-    // a computed location key that is not a static string
-    `export function f(k) { return \`https://x.example.com/v1?q=\${location[k]}\`; }`,
-    // a computed key that is a NUMERIC literal, not a property name
-    `const u = \`https://x.example.com/v1?q=\${location[0]}\`;`,
-    // a private field: a non-computed property that is not an Identifier
-    `class C { #v = 'x'; url() { return \`https://x.example.com/v1?q=\${this.#v}\`; } }`,
-    // `.current` on a member expression is not a React ref
-    `const u = \`https://x.example.com/v1?q=\${a.b.current.value}\`;`,
-    // a cyclic ref binding terminates
-    `const r = r; const u = \`https://x.example.com/v1?q=\${r.current.value}\`;`,
-    // a bare call is not a document query
-    `const u = \`https://x.example.com/v1?q=\${pick().value}\`;`,
-    // a document method that does not return an element
-    `const u = \`https://x.example.com/v1?q=\${document.createElement('input').value}\`;`,
-    // `.value` reached through an ordinary property
-    `const u = \`https://x.example.com/v1?q=\${obj.prop.value}\`;`,
-    // `.target` on a member expression rather than a parameter
-    `const u = \`https://x.example.com/v1?q=\${a.b.target.value}\`;`,
-    // a cyclic element binding terminates
-    `const el = el; const u = \`https://x.example.com/v1?q=\${el.value}\`;`,
-    // a cyclic FormData binding terminates
-    `const d = d; const u = \`https://x.example.com/v1?q=\${d.get('e')}\`;`,
-    // `.searchParams` on something that is not a parsed URL
-    `const u = \`https://x.example.com/v1?q=\${cfg.searchParams.get('a')}\`;`,
-    // a reader on a URL container that is not a stringifier
-    `const p = new URL(location.href); const u = \`https://x.example.com/v1?q=\${p.at(0)}\`;`,
-    // a computed reader whose key is not a static string
-    `export function f(m) { const p = new URLSearchParams(location.search); return \`https://x.example.com/v1?q=\${p[m]('n')}\`; }`,
-    // the constructor resolved as a DECLARED global rather than an unknown name
-    {
-      code: `class URLSearchParams { get(k) { return k; } } const d = new URLSearchParams(); const u = \`https://x.example.com/v1?q=\${d.get('a')}\`;`,
-    },
-    // a shadowed sink global: this `fetch` is the module's own
-    `const fetch = (x) => x; export function f(q) { return fetch(\`/v1?q=\${q}\`); }`,
-    // a JSX expression container that is a CHILD, not an attribute
-    {
-      code: `export function A({ q }) { return <div>{\`/v1?q=\${q}\`}</div>; }`,
-      filename: 'child.tsx',
-    },
-    // an arrow in a JSX child position is not an installed handler
-    {
-      code: `export function A() { return <div>{(e) => fetch(\`https://x.example.com/v1?q=\${e.target.value}\`)}</div>; }`,
-      filename: 'child.tsx',
-    },
-    // `.value` on something that is not a DOM element at all
-    `const u = \`https://x.example.com/v1?q=\${'s'.value}\`;`,
-    // no path/query/fragment delimiter after the authority
-    `export function t(p) { return \`https://x.example.com\${p}\`; }`,
-    // a template with no static text is not a URL
-    `export function t(p) { return \`\${p}\`; }`,
-    // an unresolvable `.current` is not a React ref
-    `export function C(r) { return fetch(\`https://x.example.com/v1?q=\${r.current.value}\`); }`,
-    // `.current` on a call into a module that is not React
-    `import { box } from 'other'; export function C() { const r = box(); return fetch(\`https://x.example.com/v1?q=\${r.current.value}\`); }`,
-    // an axios-shaped call whose second argument is the template
-    `import axios from 'axios'; export function f(q) { return axios.post('/v1', \`/v1?q=\${q}\`); }`,
-    // `.open` on argument zero is not the XHR URL position
-    `export function f(q) { return db.open(\`/v1?q=\${q}\`); }`,
-    // a computed member with a non-static key inside a DOM chain, un-resolvable
-    `export function f(i) { const n = pool[i]; return \`https://x.example.com/v1?q=\${n.value}\`; }`,
-  ],
-  invalid: [
-    // template and concatenation, both with a proven source
-    {
-      code: `const u = \`https://x.example.com/v1?q=\${req.query.id}\`;`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    {
-      code: `const u = 'https://x.example.com/v1?q=' + req.query.id;`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    // a static prefix reached through a const binding
-    {
-      code: `const BASE = 'https://x.example.com'; const u = BASE + '/v1?q=' + req.query.id;`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    // ternary and logical arms
-    {
-      code: `const u = \`https://x.example.com/v1?q=\${flag ? req.query.a : 'x'}\`;`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    {
-      code: `const u = \`https://x.example.com/v1?q=\${req.query.a || 'x'}\`;`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    // TS syntax wrappers around the same source
-    {
-      code: `const u = \`https://x.example.com/v1?q=\${req.query.a as string}\`;`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    {
-      code: `const u = \`https://x.example.com/v1?q=\${req.query.a!}\`;`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    // await, and an optional-chained passthrough
-    {
-      code: `async function f() { return \`https://x.example.com/v1?q=\${await req.query.a}\`; }`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    {
-      code: `const u = \`https://x.example.com/v1?q=\${location.hash?.slice(1)}\`;`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    // a computed member with a non-literal key inside a proven DOM chain
-    {
-      code: `const f = document.querySelectorAll('input'); const i = 0; const u = \`https://x.example.com/v1?q=\${f[i].value}\`;`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    // a template literal as an operand of a `+` chain: analysed once, from the
-    // chain, and not a second time from the template
-    {
-      code: `const u = 'https://x.example.com/v1?q=' + \`\${req.query.a}\`;`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    // the RIGHT operand of a `+` inside a hole
-    {
-      code: `const u = \`https://x.example.com/v1?q=\${'a' + req.query.b}\`;`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    // the RIGHT arm of a logical, and the ALTERNATE of a ternary
-    {
-      code: `const u = \`https://x.example.com/v1?q=\${'x' || req.query.a}\`;`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    {
-      code: `const u = \`https://x.example.com/v1?q=\${flag ? 'x' : req.query.a}\`;`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    // a passthrough global over a source only THIS question can see
-    {
-      code: `export function s(q) { return \`https://x.example.com/v1?q=\${String(q)}\`; }`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    // the passthrough-global branch with a real argument
-    {
-      code: `const u = \`https://x.example.com/v1?q=\${String(location.search)}\`;`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    // the environment's own `URLSearchParams`, declared as a global
-    {
-      code: `const p = new URLSearchParams(location.search); const u = \`https://x.example.com/v1?q=\${p.get('n')}\`;`,
-      languageOptions: { globals: { URLSearchParams: 'readonly' } },
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    // a `URL` container stringified back to the absolute URL it holds
-    {
-      code: `const p = new URL(location.href); const u = \`https://x.example.com/v1?q=\${p.toString()}\`;`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    // a params reader spelled with a bracket
-    {
-      code: `const p = new URLSearchParams(location.search); const u = \`https://x.example.com/v1?q=\${p['get']('n')}\`;`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    // a nested template inside the hole
-    {
-      code: 'const u = `https://x.example.com/v1?q=${`${req.query.a}`}`;',
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    // el.oninput = handler — the member-write handler position
-    {
-      code: `const el = document.querySelector('#q'); el.oninput = (e) => fetch(\`https://x.example.com/v1?q=\${e.target.value}\`);`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    // a class PropertyDefinition arrow on an exported class
-    {
-      code: `export class C { build = (q) => \`https://x.example.com/v1?q=\${q}\`; }`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    // a template-literal TYPE is not a closed set
-    {
-      code: 'export function s(id: `x-${string}`) { return `https://x.example.com/v1?q=${id}`; }',
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    // Request, axios and the JSX attribute sinks, over relative text
-    {
-      code: `export function f(q) { return new Request(\`/v1?q=\${q}\`); }`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    {
-      code: `import axios from 'axios'; export function f(q) { return axios.get(\`/v1?q=\${q}\`); }`,
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-    {
-      code: `export function A({ q }) { return <a href={\`/v1?q=\${q}\`}>x</a>; }`,
-      filename: 'link.tsx',
-      errors: [{ messageId: 'unescapedUrlParameter' }],
-    },
-  ],
-});
+ruleTester.run(
+  'no-unescaped-url-parameter (coverage)',
+  noUnescapedUrlParameter,
+  {
+    valid: [
+      // allowInTests short-circuits create() entirely
+      {
+        code: `const a = \`https://x.example.com/v1?q=\${req.query.id}\`;`,
+        options: [{ allowInTests: true }],
+        filename: 'url.test.ts',
+      },
+      // a `+` chain that builds no URL at all
+      `const s = a + b;`,
+      // user ignorePatterns, both visitors
+      {
+        code: `const u = 'https://x.example.com/v1?q=' + req.query.id;`,
+        options: [{ ignorePatterns: ['req\\.query'] }],
+      },
+      {
+        code: `const u = \`https://x.example.com/v1?q=\${req.query.id}\`;`,
+        options: [{ ignorePatterns: ['req\\.query'] }],
+      },
+      // an unparseable user pattern is discarded rather than thrown
+      {
+        code: `const u = \`https://x.example.com/v1?q=\${encodeURIComponent(req.query.id)}\`;`,
+        options: [{ ignorePatterns: ['('] }],
+      },
+      // trustedLibraries, resolved through the import graph
+      {
+        code: `import url from 'url'; const u = \`https://x.example.com/v1?q=\${url.format(req.query.id)}\`;`,
+      },
+      // a member read that is neither a URL source nor a DOM read
+      `const u = \`https://x.example.com/v1?a=\${obj.prop}\`;`,
+      // every Location write belongs to no-insecure-redirects now
+      `window.location = req.query.next;`,
+      `location = req.query.next;`,
+      `document.location.href = req.query.next;`,
+      // a tagged template is the tag's business
+      'const u = tag`https://x.example.com/v1?q=${req.query.id}`;',
+      // the hole chooses the host — the open-redirect family's finding
+      `const u = \`https://\${req.query.host}/v1\`;`,
+      // relative text that reaches no URL sink
+      `export function key(id) { return \`/items/\${id}\`; }`,
+      // a relative URL whose binding is re-assigned before the sink
+      `export function key(id) { let u = \`/items?id=\${id}\`; u = '/items'; return fetch(u); }`,
+      // arithmetic, not concatenation
+      `export function page(n) { return \`https://x.example.com/v1?p=\${n + 1}\`; }`,
+      // a closed parameter type
+      `export function s(d: 'asc' | 'desc') { return \`https://x.example.com/v1?d=\${d}\`; }`,
+      // a module-private helper's parameter is knowable
+      `function k(id) { return \`https://x.example.com/v1?id=\${id}\`; } export const A = k('a');`,
+      // a cyclic binding terminates
+      `export function c() { const a = a; return \`https://x.example.com/v1?q=\${a}\`; }`,
+      // a spread argument in a passthrough position
+      `export function s(parts) { return \`https://x.example.com/v1?q=\${String(...parts)}\`; }`,
+      // a passthrough global called with no argument at all
+      `export function s() { return \`https://x.example.com/v1?q=\${String()}\`; }`,
+      // a computed location key that is not a static string
+      `export function f(k) { return \`https://x.example.com/v1?q=\${location[k]}\`; }`,
+      // a computed key that is a NUMERIC literal, not a property name
+      `const u = \`https://x.example.com/v1?q=\${location[0]}\`;`,
+      // a private field: a non-computed property that is not an Identifier
+      `class C { #v = 'x'; url() { return \`https://x.example.com/v1?q=\${this.#v}\`; } }`,
+      // `.current` on a member expression is not a React ref
+      `const u = \`https://x.example.com/v1?q=\${a.b.current.value}\`;`,
+      // a cyclic ref binding terminates
+      `const r = r; const u = \`https://x.example.com/v1?q=\${r.current.value}\`;`,
+      // a bare call is not a document query
+      `const u = \`https://x.example.com/v1?q=\${pick().value}\`;`,
+      // a document method that does not return an element
+      `const u = \`https://x.example.com/v1?q=\${document.createElement('input').value}\`;`,
+      // `.value` reached through an ordinary property
+      `const u = \`https://x.example.com/v1?q=\${obj.prop.value}\`;`,
+      // `.target` on a member expression rather than a parameter
+      `const u = \`https://x.example.com/v1?q=\${a.b.target.value}\`;`,
+      // a cyclic element binding terminates
+      `const el = el; const u = \`https://x.example.com/v1?q=\${el.value}\`;`,
+      // a cyclic FormData binding terminates
+      `const d = d; const u = \`https://x.example.com/v1?q=\${d.get('e')}\`;`,
+      // `.searchParams` on something that is not a parsed URL
+      `const u = \`https://x.example.com/v1?q=\${cfg.searchParams.get('a')}\`;`,
+      // a reader on a URL container that is not a stringifier
+      `const p = new URL(location.href); const u = \`https://x.example.com/v1?q=\${p.at(0)}\`;`,
+      // a computed reader whose key is not a static string
+      `export function f(m) { const p = new URLSearchParams(location.search); return \`https://x.example.com/v1?q=\${p[m]('n')}\`; }`,
+      // the constructor resolved as a DECLARED global rather than an unknown name
+      {
+        code: `class URLSearchParams { get(k) { return k; } } const d = new URLSearchParams(); const u = \`https://x.example.com/v1?q=\${d.get('a')}\`;`,
+      },
+      // a shadowed sink global: this `fetch` is the module's own
+      `const fetch = (x) => x; export function f(q) { return fetch(\`/v1?q=\${q}\`); }`,
+      // a JSX expression container that is a CHILD, not an attribute
+      {
+        code: `export function A({ q }) { return <div>{\`/v1?q=\${q}\`}</div>; }`,
+        filename: 'child.tsx',
+      },
+      // an arrow in a JSX child position is not an installed handler
+      {
+        code: `export function A() { return <div>{(e) => fetch(\`https://x.example.com/v1?q=\${e.target.value}\`)}</div>; }`,
+        filename: 'child.tsx',
+      },
+      // `.value` on something that is not a DOM element at all
+      `const u = \`https://x.example.com/v1?q=\${'s'.value}\`;`,
+      // no path/query/fragment delimiter after the authority
+      `export function t(p) { return \`https://x.example.com\${p}\`; }`,
+      // a template with no static text is not a URL
+      `export function t(p) { return \`\${p}\`; }`,
+      // an unresolvable `.current` is not a React ref
+      `export function C(r) { return fetch(\`https://x.example.com/v1?q=\${r.current.value}\`); }`,
+      // `.current` on a call into a module that is not React
+      `import { box } from 'other'; export function C() { const r = box(); return fetch(\`https://x.example.com/v1?q=\${r.current.value}\`); }`,
+      // an axios-shaped call whose second argument is the template
+      `import axios from 'axios'; export function f(q) { return axios.post('/v1', \`/v1?q=\${q}\`); }`,
+      // `.open` on argument zero is not the XHR URL position
+      `export function f(q) { return db.open(\`/v1?q=\${q}\`); }`,
+      // a computed member with a non-static key inside a DOM chain, un-resolvable
+      `export function f(i) { const n = pool[i]; return \`https://x.example.com/v1?q=\${n.value}\`; }`,
+    ],
+    invalid: [
+      // template and concatenation, both with a proven source
+      {
+        code: `const u = \`https://x.example.com/v1?q=\${req.query.id}\`;`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      {
+        code: `const u = 'https://x.example.com/v1?q=' + req.query.id;`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      // a static prefix reached through a const binding
+      {
+        code: `const BASE = 'https://x.example.com'; const u = BASE + '/v1?q=' + req.query.id;`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      // ternary and logical arms
+      {
+        code: `const u = \`https://x.example.com/v1?q=\${flag ? req.query.a : 'x'}\`;`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      {
+        code: `const u = \`https://x.example.com/v1?q=\${req.query.a || 'x'}\`;`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      // TS syntax wrappers around the same source
+      {
+        code: `const u = \`https://x.example.com/v1?q=\${req.query.a as string}\`;`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      {
+        code: `const u = \`https://x.example.com/v1?q=\${req.query.a!}\`;`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      // await, and an optional-chained passthrough
+      {
+        code: `async function f() { return \`https://x.example.com/v1?q=\${await req.query.a}\`; }`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      {
+        code: `const u = \`https://x.example.com/v1?q=\${location.hash?.slice(1)}\`;`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      // a computed member with a non-literal key inside a proven DOM chain
+      {
+        code: `const f = document.querySelectorAll('input'); const i = 0; const u = \`https://x.example.com/v1?q=\${f[i].value}\`;`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      // a template literal as an operand of a `+` chain: analysed once, from the
+      // chain, and not a second time from the template
+      {
+        code: `const u = 'https://x.example.com/v1?q=' + \`\${req.query.a}\`;`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      // the RIGHT operand of a `+` inside a hole
+      {
+        code: `const u = \`https://x.example.com/v1?q=\${'a' + req.query.b}\`;`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      // the RIGHT arm of a logical, and the ALTERNATE of a ternary
+      {
+        code: `const u = \`https://x.example.com/v1?q=\${'x' || req.query.a}\`;`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      {
+        code: `const u = \`https://x.example.com/v1?q=\${flag ? 'x' : req.query.a}\`;`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      // a passthrough global over a source only THIS question can see
+      {
+        code: `export function s(q) { return \`https://x.example.com/v1?q=\${String(q)}\`; }`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      // the passthrough-global branch with a real argument
+      {
+        code: `const u = \`https://x.example.com/v1?q=\${String(location.search)}\`;`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      // the environment's own `URLSearchParams`, declared as a global
+      {
+        code: `const p = new URLSearchParams(location.search); const u = \`https://x.example.com/v1?q=\${p.get('n')}\`;`,
+        languageOptions: { globals: { URLSearchParams: 'readonly' } },
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      // a `URL` container stringified back to the absolute URL it holds
+      {
+        code: `const p = new URL(location.href); const u = \`https://x.example.com/v1?q=\${p.toString()}\`;`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      // a params reader spelled with a bracket
+      {
+        code: `const p = new URLSearchParams(location.search); const u = \`https://x.example.com/v1?q=\${p['get']('n')}\`;`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      // a nested template inside the hole
+      {
+        code: 'const u = `https://x.example.com/v1?q=${`${req.query.a}`}`;',
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      // el.oninput = handler — the member-write handler position
+      {
+        code: `const el = document.querySelector('#q'); el.oninput = (e) => fetch(\`https://x.example.com/v1?q=\${e.target.value}\`);`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      // a class PropertyDefinition arrow on an exported class
+      {
+        code: `export class C { build = (q) => \`https://x.example.com/v1?q=\${q}\`; }`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      // a template-literal TYPE is not a closed set
+      {
+        code: 'export function s(id: `x-${string}`) { return `https://x.example.com/v1?q=${id}`; }',
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      // Request, axios and the JSX attribute sinks, over relative text
+      {
+        code: `export function f(q) { return new Request(\`/v1?q=\${q}\`); }`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      {
+        code: `import axios from 'axios'; export function f(q) { return axios.get(\`/v1?q=\${q}\`); }`,
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+      {
+        code: `export function A({ q }) { return <a href={\`/v1?q=\${q}\`}>x</a>; }`,
+        filename: 'link.tsx',
+        errors: [{ messageId: 'unescapedUrlParameter' }],
+      },
+    ],
+  },
+);
 
 // ---------------------------------------------------------------------------
 // no-unsafe-eval-csp / no-unsafe-inline-csp
@@ -1534,56 +1572,63 @@ ruleTester.run(
 // ---------------------------------------------------------------------------
 // require-blob-url-revocation
 // ---------------------------------------------------------------------------
-ruleTester.run('require-blob-url-revocation (coverage)', requireBlobUrlRevocation, {
-  valid: [
-    // Not the platform's URL — a lookalike with the same method name.
-    `const fake = { createObjectURL: (b) => 'blob:' + b.size };\nconst u = fake.createObjectURL(blob);`,
-    // A helper that returns the handle delegates release to its caller.
-    `function make(b) { return URL.createObjectURL(b); }`,
-  ],
-  invalid: [
-    // "bare createObjectURL call is not tracked" was asserted VALID. A handle
-    // stored nowhere at all can never be revoked — it is the worst case, not
-    // the exempt one.
-    {
-      code: `URL.createObjectURL(blob);`,
-      errors: [{ messageId: 'missingRevoke' }],
-    },
-    // Same: a destructured target holds no handle anything can revoke.
-    {
-      code: `const { href } = URL.createObjectURL(blob);`,
-      errors: [{ messageId: 'missingRevoke' }],
-    },
-    // revokeObjectURL without arguments does not revoke anything
-    {
-      code: `const u = URL.createObjectURL(blob); URL.revokeObjectURL();`,
-      errors: [{ messageId: 'missingRevoke' }],
-    },
-    // revokeObjectURL on a DIFFERENT path than the one created
-    {
-      code: `const u = URL.createObjectURL(blob); URL.revokeObjectURL(x.y);`,
-      errors: [{ messageId: 'missingRevoke' }],
-    },
-  ],
-});
+ruleTester.run(
+  'require-blob-url-revocation (coverage)',
+  requireBlobUrlRevocation,
+  {
+    valid: [
+      // Not the platform's URL — a lookalike with the same method name.
+      `const fake = { createObjectURL: (b) => 'blob:' + b.size };\nconst u = fake.createObjectURL(blob);`,
+      // A helper that returns the handle delegates release to its caller.
+      `function make(b) { return URL.createObjectURL(b); }`,
+    ],
+    invalid: [
+      // "bare createObjectURL call is not tracked" was asserted VALID. A handle
+      // stored nowhere at all can never be revoked — it is the worst case, not
+      // the exempt one.
+      {
+        code: `URL.createObjectURL(blob);`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      // Same: a destructured target holds no handle anything can revoke.
+      {
+        code: `const { href } = URL.createObjectURL(blob);`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      // revokeObjectURL without arguments does not revoke anything
+      {
+        code: `const u = URL.createObjectURL(blob); URL.revokeObjectURL();`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      // revokeObjectURL on a DIFFERENT path than the one created
+      {
+        code: `const u = URL.createObjectURL(blob); URL.revokeObjectURL(x.y);`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+    ],
+  },
+);
 
 // ---------------------------------------------------------------------------
 // require-cookie-secure-attrs
 // ---------------------------------------------------------------------------
-ruleTester.run('require-cookie-secure-attrs (coverage)', requireCookieSecureAttrs, {
-  valid: [
-    `x = 'a=b';`,
-    `foo.cookie = 'a=b';`,
-    `document.foo = 'a=b';`,
-  ],
-  invalid: [
-    // `document['cookie']` is the SAME sink. This used to be asserted VALID.
-    {
-      code: `document['cookie'] = 'a=b';`,
-      errors: [{ messageId: 'missingSecure' }, { messageId: 'missingSameSite' }],
-    },
-  ],
-});
+ruleTester.run(
+  'require-cookie-secure-attrs (coverage)',
+  requireCookieSecureAttrs,
+  {
+    valid: [`x = 'a=b';`, `foo.cookie = 'a=b';`, `document.foo = 'a=b';`],
+    invalid: [
+      // `document['cookie']` is the SAME sink. This used to be asserted VALID.
+      {
+        code: `document['cookie'] = 'a=b';`,
+        errors: [
+          { messageId: 'missingSecure' },
+          { messageId: 'missingSameSite' },
+        ],
+      },
+    ],
+  },
+);
 
 // ---------------------------------------------------------------------------
 // require-csp-headers
@@ -1635,39 +1680,43 @@ ruleTester.run('require-https-only (coverage)', requireHttpsOnly, {
 // ---------------------------------------------------------------------------
 // require-mime-type-validation
 // ---------------------------------------------------------------------------
-ruleTester.run('require-mime-type-validation (coverage)', requireMimeTypeValidation, {
-  valid: [
-    `foo.bar('file');`,
-    // `upload` is not resolvable to multer here, so there is no evidence.
-    `upload.single('file');`,
-    `import multer from 'multer';\nmulter({ fileFilter: f }).single('file');`,
-    // The `upload(...)` detector matched a CALLEE'S SPELLING and reported it at
-    // CWE-434 / CVSS 8.8. Both of these were asserted as true positives.
-    `upload();`,
-    `upload(file);`,
-    `upload('literal.png');`,
-  ],
-  invalid: [
-    {
-      code: `import multer from 'multer';\nmulter({ storage: s }).single('file');`,
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    {
-      code: `import multer from 'multer';\nmulter().single('file');`,
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    {
-      // `limits` caps file SIZE. It was accepted as MIME validation.
-      code: `import multer from 'multer';\nmulter({ limits: l }).array('files');`,
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    {
-      // A config the rule cannot inspect is not a config that validates.
-      code: `import multer from 'multer';\nmulter(config).single('file');`,
-      errors: [{ messageId: 'violationDetected' }],
-    },
-  ],
-});
+ruleTester.run(
+  'require-mime-type-validation (coverage)',
+  requireMimeTypeValidation,
+  {
+    valid: [
+      `foo.bar('file');`,
+      // `upload` is not resolvable to multer here, so there is no evidence.
+      `upload.single('file');`,
+      `import multer from 'multer';\nmulter({ fileFilter: f }).single('file');`,
+      // The `upload(...)` detector matched a CALLEE'S SPELLING and reported it at
+      // CWE-434 / CVSS 8.8. Both of these were asserted as true positives.
+      `upload();`,
+      `upload(file);`,
+      `upload('literal.png');`,
+    ],
+    invalid: [
+      {
+        code: `import multer from 'multer';\nmulter({ storage: s }).single('file');`,
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        code: `import multer from 'multer';\nmulter().single('file');`,
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        // `limits` caps file SIZE. It was accepted as MIME validation.
+        code: `import multer from 'multer';\nmulter({ limits: l }).array('files');`,
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        // A config the rule cannot inspect is not a config that validates.
+        code: `import multer from 'multer';\nmulter(config).single('file');`,
+        errors: [{ messageId: 'violationDetected' }],
+      },
+    ],
+  },
+);
 
 // ---------------------------------------------------------------------------
 // require-postmessage-origin-check
@@ -1691,11 +1740,7 @@ ruleTester.run(
 // require-url-validation
 // ---------------------------------------------------------------------------
 ruleTester.run('require-url-validation (coverage)', requireUrlValidation, {
-  valid: [
-    `foo.open(url);`,
-    `window.close(url);`,
-    `open(url);`,
-  ],
+  valid: [`foo.open(url);`, `window.close(url);`, `open(url);`],
   invalid: [],
 });
 

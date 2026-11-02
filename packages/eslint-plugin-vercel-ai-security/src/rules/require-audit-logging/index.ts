@@ -159,7 +159,7 @@ export const requireAuditLogging = createRule<RuleOptions, MessageIds>({
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        const matchedFunction = sdkCallName(node);
+        const matchedFunction = sdkCallName(node, context.sourceCode);
         if (!matchedFunction) return;
 
         if (!hasTelemetry(node) && !hasNearbyLogging(node)) {

@@ -15,7 +15,6 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
-  createPayloadResolver,
   createRule,
   formatLLMMessage,
   MessageIcons,
@@ -23,6 +22,7 @@ import {
   namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
+import { createPayloadResolver } from '../../utils/payload-source';
 
 type MessageIds = 'unsafeInnerhtml';
 
@@ -116,7 +116,7 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        const { allowInTests = true } = options as Options;
+        const { allowInTests } = options as Required<Options>;
         const filename = context.filename;
         const isTestFile = isTestFilePath(filename);
 

@@ -214,6 +214,17 @@ describe('scoreReport', () => {
     expect(failing(grade(scores, { a: s(60) }))).toHaveLength(1);
   });
 
+  it('grades a shared helper as its own unit, `utils/<file>`', () => {
+    // Rules lean on src/utils helpers; a mutant there is as live as one in a
+    // rule, and was never mutated before.
+    expect(ruleOf('packages/eslint-plugin-x/src/utils/sdk.ts')).toBe(
+      'utils/sdk',
+    );
+    expect(ruleOf('src/utils/index.ts')).toBeUndefined();
+    expect(ruleOf('src/utils/sdk.test.ts')).toBeUndefined();
+    expect(ruleOf('src/utils/nested/deep.ts')).toBeUndefined();
+  });
+
   it('maps only rule sources to rules', () => {
     expect(ruleOf('packages/eslint-plugin-x/src/rules/no-foo/index.ts')).toBe(
       'no-foo',

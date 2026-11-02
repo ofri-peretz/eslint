@@ -3,6 +3,8 @@
  */
 
 import { RuleTester } from '@typescript-eslint/rule-tester';
+import { Linter } from 'eslint';
+import { describe, expect, it } from 'vitest';
 import { requireMaxSteps } from './index';
 
 /**
@@ -22,7 +24,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -48,7 +50,6 @@ const xai = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -215,7 +216,6 @@ ruleTester.run('require-max-steps', requireMaxSteps, {
   invalid: xai([]),
 });
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Coverage-gap fixtures: key shapes for tools/maxSteps detection
 // ─────────────────────────────────────────────────────────────────────────────
@@ -243,11 +243,14 @@ ruleTester.run('require-max-steps (coverage gaps)', requireMaxSteps, {
 // exists in ai@6). Both must satisfy the rule, or every v5+ codebase gets a
 // false positive.
 // ─────────────────────────────────────────────────────────────────────────────
-ruleTester.run('require-max-steps (AI SDK v4 + v5 option names)', requireMaxSteps, {
-  valid: xai([
-    // v5+: the canonical replacement
-    {
-      code: `
+ruleTester.run(
+  'require-max-steps (AI SDK v4 + v5 option names)',
+  requireMaxSteps,
+  {
+    valid: xai([
+      // v5+: the canonical replacement
+      {
+        code: `
         await generateText({
           model: openai('gpt-4'),
           prompt: 'Hello',
@@ -255,10 +258,10 @@ ruleTester.run('require-max-steps (AI SDK v4 + v5 option names)', requireMaxStep
           stopWhen: stepCountIs(5),
         });
       `,
-    },
-    // v5+: streamText with stopWhen
-    {
-      code: `
+      },
+      // v5+: streamText with stopWhen
+      {
+        code: `
         await streamText({
           model: anthropic('claude-3'),
           prompt: 'Hello',
@@ -266,26 +269,26 @@ ruleTester.run('require-max-steps (AI SDK v4 + v5 option names)', requireMaxStep
           stopWhen: stepCountIs(10),
         });
       `,
-    },
-    // v5+: stopWhen accepts an array of conditions
-    {
-      code: `
+      },
+      // v5+: stopWhen accepts an array of conditions
+      {
+        code: `
         await generateText({
           tools: { weather: weatherTool },
           stopWhen: [stepCountIs(5), hasToolCall('final')],
         });
       `,
-    },
-    // (Changed 2026-10-10) `stopWhen: hasToolCall('answer')` alone moved to
-    // invalid: it stops only if the model ever calls that tool, so it bounds
-    // nothing. It is covered in the fp-fn audit suite below.
-    // v5+: string-literal key
-    { code: `generateText({ tools: myTools, 'stopWhen': stepCountIs(3) });` },
-    // v4 spelling still accepted
-    { code: `generateText({ tools: myTools, maxSteps: 3 });` },
-    // (Changed 2026-10-10) no step option means the one-step default — valid.
-    {
-      code: `
+      },
+      // (Changed 2026-10-10) `stopWhen: hasToolCall('answer')` alone moved to
+      // invalid: it stops only if the model ever calls that tool, so it bounds
+      // nothing. It is covered in the fp-fn audit suite below.
+      // v5+: string-literal key
+      { code: `generateText({ tools: myTools, 'stopWhen': stepCountIs(3) });` },
+      // v4 spelling still accepted
+      { code: `generateText({ tools: myTools, maxSteps: 3 });` },
+      // (Changed 2026-10-10) no step option means the one-step default — valid.
+      {
+        code: `
         await generateText({
           model: openai('gpt-4'),
           prompt: 'Hello',
@@ -293,12 +296,14 @@ ruleTester.run('require-max-steps (AI SDK v4 + v5 option names)', requireMaxStep
           maxOutputTokens: 4096,
         });
       `,
-    },
-    { code: `generateText({ tools: myTools, stopWhenever: stepCountIs(3) });` },
-  ]),
-  invalid: xai([]),
-});
-
+      },
+      {
+        code: `generateText({ tools: myTools, stopWhenever: stepCountIs(3) });`,
+      },
+    ]),
+    invalid: xai([]),
+  },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FP/FN audit 2026-10-10: report UNBOUNDED step configurations, not absent ones.
@@ -393,4 +398,57 @@ ruleTester.run('require-max-steps (multi-hop)', requireMaxSteps, {
       errors: [{ messageId: 'unboundedSteps' }],
     },
   ]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-max-steps (mutation audit)', requireMaxSteps, {
+  valid: xai([
+    {
+      name: 'a request-chosen step limit without tools runs no tool loop',
+      code: `
+        export async function POST(req) {
+          const body = await req.json();
+          return generateText({ model, maxSteps: body.maxSteps, prompt: 'x' });
+        }
+      `,
+    },
+  ]),
+  invalid: [],
+});
+
+/**
+ * `suggestedMaxSteps` was declared, documented and defaulted, and read by
+ * nothing: the fix text hard-coded 20. It now names the configured limit.
+ */
+describe('require-max-steps suggestedMaxSteps', () => {
+  const unbounded = `import 'ai';\nawait generateText({ model, tools, stopWhen: hasToolCall('done'), prompt: 'x' });`;
+  const lint = (options: unknown[]): string[] => {
+    const linter = new Linter({ configType: 'flat' });
+    return linter
+      .verify(
+        unbounded,
+        {
+          files: ['**/*.js'],
+          plugins: {
+            v: { rules: { r: requireMaxSteps } } as unknown as Linter.Plugin,
+          },
+          rules: { 'v/r': ['error', ...options] as Linter.RuleEntry },
+        },
+        'route.js',
+      )
+      .map((m) => m.message);
+  };
+
+  it('the fix suggests the default limit of 5', () => {
+    const [message] = lint([]);
+    expect(message).toContain('stepCountIs(5)');
+  });
+
+  it('the fix suggests the configured limit', () => {
+    const [message] = lint([{ suggestedMaxSteps: 3 }]);
+    expect(message).toContain('stepCountIs(3)');
+    expect(message).toContain('maxSteps: 3');
+  });
 });

@@ -47,19 +47,27 @@ const UNVALIDATED = [{ reportUnvalidatedIndices: true }];
 describe('no-buffer-overread coverage gaps', () => {
   ruleTester.run('no-buffer-overread', noBufferOverread, {
     valid: [
-    // Without the flag the read throws on an out-of-range offset, which is the
-    // behaviour this rule wants.
-    { name: 'readUInt8 at a constant offset without noAssert throws on overread and is not reported', code: 'export const f = (b) => b.readUInt8(0);' },
-    'export const f = (b) => b.readUIntBE(0, 4);',
-    // `false` is the default spelled out, not a disabled check.
-    'export const f = (b) => b.readUInt8(0, false);',
+      // Without the flag the read throws on an out-of-range offset, which is the
+      // behaviour this rule wants.
+      {
+        name: 'readUInt8 at a constant offset without noAssert throws on overread and is not reported',
+        code: 'export const f = (b) => b.readUInt8(0);',
+      },
+      'export const f = (b) => b.readUIntBE(0, 4);',
+      // `false` is the default spelled out, not a disabled check.
+      'export const f = (b) => b.readUInt8(0, false);',
 
       // isIndexValidated: an index assigned from a declared bounds-check
       // function, and one assigned from Math.min — both validated, so the
       // branch is exercised in its suppressing direction.
       {
         code: 'const idx = validateIndex(buf[idx]);',
-        options: [{ reportUnvalidatedIndices: true, boundsCheckFunctions: ['validateIndex'] }],
+        options: [
+          {
+            reportUnvalidatedIndices: true,
+            boundsCheckFunctions: ['validateIndex'],
+          },
+        ],
       },
       { code: 'const idx = Math.min(buf[idx], 3);', options: UNVALIDATED },
       // safetyChecker: an @safe block comment suppresses both report sites.
@@ -72,12 +80,18 @@ describe('no-buffer-overread coverage gaps', () => {
       // initializer mentions both `buf.length` and Math.min.
       { code: 'const v = buf[Math.min(buf.length, n)];', options: UNVALIDATED },
       // isLoopBounded: an inclusive `<=` bound counts too.
-      { code: 'for (let i = 0; i <= last; i++) { use(bytes[i]); }', options: [{}] },
+      {
+        code: 'for (let i = 0; i <= last; i++) { use(bytes[i]); }',
+        options: [{}],
+      },
       // isLoopBounded: a `for(;;)` has no test at all.
       { code: 'for (;;) { use(bytes[i]); }', options: [{}] },
       // isLoopBounded: a for-loop whose test is not a comparison at all, and
       // one whose comparison is on a different identifier.
-      { code: 'for (let i = 0; flag; i++) { use(chunkBytes[i]); }', options: [{}] },
+      {
+        code: 'for (let i = 0; flag; i++) { use(chunkBytes[i]); }',
+        options: [{}],
+      },
       { code: 'for (let i = 0; j < 4; i++) { use(bytes[i]); }', options: [{}] },
       // new Uint8Array tracked into bufferVars; literal index is validated
       { code: 'const data = new Uint8Array(4); const x = data[0];' },
@@ -112,7 +126,9 @@ describe('no-buffer-overread coverage gaps', () => {
       // A ROOT whose only claim to being input is its spelling. Both of these
       // were `invalid` fixtures; neither file contains a request.
       { code: 'const b = buf[userData.pos];' },
-      { code: 'function h2() { const pos = settings.userLimit; return buf[pos]; }' },
+      {
+        code: 'function h2() { const pos = settings.userLimit; return buf[pos]; }',
+      },
       // `couldBeNegative` used to walk the index's ANCESTORS and attribute the
       // enclosing declarator's initializer to it: here `-5` initializes `a`,
       // and has nothing whatever to do with `k`.
@@ -122,7 +138,8 @@ describe('no-buffer-overread coverage gaps', () => {
       // does not follow, so it is not reported — here the index is a request
       // root, which is as tainted as an identifier gets.
       { code: 'function f(req) { return buf[req]; }' },
-      { code: 'function f(buf, i) { return buf[i]; }', options: UNVALIDATED },
+      // (Under `reportUnvalidatedIndices` a parameter IS reported: it cannot be
+      // proven validated. Locked in fidelity.test.ts.)
 
       // hasBoundsCheck: the length may sit on EITHER side of the comparison…
       {
@@ -146,44 +163,58 @@ describe('no-buffer-overread coverage gaps', () => {
       { code: 'const w = unknownThing; const v = buf[w];' },
       // A unary over something unresolvable resolves to nothing.
       { code: 'const p2 = -unknownThing; const v = buf[p2];' },
-      // …and a `const` chain deeper than the cap terminates instead of looping.
-      {
-        code: 'const a1 = -a2, a2 = -a3, a3 = -a4, a4 = -a5, a5 = -1; const v = buf[a1];',
-      },
       // hasBoundsCheck: the index sits on the RIGHT of the guard's arithmetic.
       {
         code: 'function f(req) { const at = Number(req.query.at); if (buf.length >= 4 + at) { return buf[at]; } }',
       },
     ],
     invalid: [
-    // The deprecated noAssert argument, CWE-125 — distinct from this rule's
-    // CWE-126 work. The offset may be perfectly ordinary; the caller has
-    // switched off the check that would catch it being wrong.
-    {
-      code: 'export const f = (b) => b.readUInt8(0, true);',
-      errors: [{ messageId: 'boundsCheckDisabled' }],
-    },
-    // The three-argument form: readUIntBE(offset, byteLength, noAssert).
-    {
-      code: 'export const f = (b) => b.readUIntBE(0, 4, true);',
-      errors: [{ messageId: 'boundsCheckDisabled' }],
-    },
-    // Writes take it too.
-    {
-      code: 'export const f = (b, v) => b.writeUInt8(v, 0, true);',
-      errors: [{ messageId: 'boundsCheckDisabled' }],
-    },
+      // A `const` chain of alternating negations used to be cut off by a depth
+      // cap of six and come back unresolved — valid. It is -1, and is now
+      // followed to the end (the cycle guard is a visited set; see
+      // mutation-edges.test.ts for the cycle itself).
+      {
+        name: 'a five-deep chain of negated const aliases resolves to -1',
+        code: 'const a5 = -1, a4 = -a5, a3 = -a4, a2 = -a3, a1 = -a2; const v = buf[a1];',
+        errors: [{ messageId: 'negativeBufferIndex' }],
+      },
+      // The deprecated noAssert argument, CWE-125 — distinct from this rule's
+      // CWE-126 work. The offset may be perfectly ordinary; the caller has
+      // switched off the check that would catch it being wrong.
+      {
+        code: 'export const f = (b) => b.readUInt8(0, true);',
+        errors: [{ messageId: 'boundsCheckDisabled' }],
+      },
+      // The three-argument form: readUIntBE(offset, byteLength, noAssert).
+      {
+        code: 'export const f = (b) => b.readUIntBE(0, 4, true);',
+        errors: [{ messageId: 'boundsCheckDisabled' }],
+      },
+      // Writes take it too.
+      {
+        code: 'export const f = (b, v) => b.writeUInt8(v, 0, true);',
+        errors: [{ messageId: 'boundsCheckDisabled' }],
+      },
 
       // ── isIndexValidated / hasBoundsCheck arms ─────────────────────────
       // These live behind `reportUnvalidatedIndices` now, so each is driven
       // through the restoring option.
       //
       // A non-negative numeric literal index is validated by inspection.
-      { code: 'buf[5]; buf[req.query.i];', options: UNVALIDATED, errors: [{ messageId: 'userControlledBufferIndex' }] },
+      {
+        code: 'buf[5]; buf[req.query.i];',
+        options: UNVALIDATED,
+        errors: [{ messageId: 'userControlledBufferIndex' }],
+      },
       // The index expression IS a direct call to a bounds-check function.
       {
         code: 'buf[validateIndex(n)]; buf[other];',
-        options: [{ reportUnvalidatedIndices: true, boundsCheckFunctions: ['validateIndex'] }],
+        options: [
+          {
+            reportUnvalidatedIndices: true,
+            boundsCheckFunctions: ['validateIndex'],
+          },
+        ],
         errors: [{ messageId: 'unsafeBufferAccess' }],
       },
       // safetyChecker short-circuits on an @safe annotation, so the guarded

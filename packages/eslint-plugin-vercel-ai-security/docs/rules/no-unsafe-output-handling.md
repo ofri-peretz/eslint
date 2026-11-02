@@ -10,8 +10,8 @@ autofix: false
 
 > Prevents using AI-generated content in dangerous operations like eval, SQL, or innerHTML.
 
-
 <!-- @rule-summary -->
+
 This rule identifies code patterns where AI-generated output is passed directly to dangerous functions that can execu...
 <!-- @/rule-summary -->
 
@@ -54,13 +54,13 @@ exec(result.text);
 ## ✅ Correct Code
 
 ```typescript
-Hello
+Hello;
 ```
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
+| Option             | Type       | Default                                                                                                                            | Description                              |
+| ------------------ | ---------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
 | `aiOutputPatterns` | `string[]` | `["result.text","response.text","completion","generated","aiOutput","aiResponse","llmOutput","llmResponse","modelOutput",".text"]` | Variable patterns that suggest AI output |
 
 ## 🛡️ Why This Matters
@@ -99,6 +99,10 @@ Passing AI output to dangerous functions enables:
   `innerHTML` is not reported; a string method on output (`text.trim()`) still is.
 - `textContent` was removed from the default `aiOutputPatterns`.
 - **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
+
+## 🔄 Changes in the 2026-11-02 mutation audit
+
+- `el['innerHTML'] = result.text` is the same sink as `el.innerHTML = …`.
 
 ## 🔄 Changes in the 2026-10-11 zero-deferral pass
 
@@ -159,10 +163,10 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-94](https://cwe.mitre.org/data/definitions/94.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Code Injection detected` |
-| **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,ISO27001]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                     |
+| :------------------------ | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-94](https://cwe.mitre.org/data/definitions/94.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Code Injection detected`                                                                                                                                                                                                                                   |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,ISO27001]`                                                                                                                                                                                                                          |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                        |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/)                                                                                                                                                                                                 |

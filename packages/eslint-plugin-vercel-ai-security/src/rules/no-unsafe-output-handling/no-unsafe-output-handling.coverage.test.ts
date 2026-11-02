@@ -23,7 +23,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -50,7 +50,6 @@ const xai = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -58,85 +57,99 @@ const ruleTester = new RuleTester({
   },
 });
 
-ruleTester.run('no-unsafe-output-handling (branch coverage)', noUnsafeOutputHandling, {
-  valid: xai([
-    // Awaiting something that is not a call — isAISDKCall bails on non-CallExpression.
-    {
-      code: `async function f() { const r = await pending; }`,
-    },
-    // Init that is neither await nor an AI SDK call.
-    {
-      code: `async function f() { const r = await makeThing(); }`,
-    },
-    // Member callee whose property is not an AI SDK function.
-    {
-      code: `async function f() { const r = await db.fetchAll(); }`,
-    },
-    // Member callee with a computed (non-Identifier) property.
-    {
-      code: `async function f() { const r = await sdk['generateText'](input); }`,
-    },
-    // Rest element in the destructuring pattern — skipped when tracking names.
-    {
-      code: `async function f() { const { ...rest } = await generateText({ prompt: p }); }`,
-    },
-    // Array pattern id — neither Identifier nor ObjectPattern tracking path.
-    {
-      code: `async function f() { const [first] = await generateText({ prompt: p }); }`,
-    },
-    // Destructured property whose value is not an Identifier.
-    {
-      code: `async function f() { const { text: { nested } } = await generateText({ prompt: p }); }`,
-    },
-    // SQL template that contains no AI output.
-    {
-      code: `db.query(\`SELECT * FROM t WHERE id = \${id}\`);`,
-    },
-    // Assignment whose left side is not a MemberExpression.
-    {
-      code: `count = 5;`,
-    },
-    // innerHTML assignment from a non-AI source.
-    {
-      code: `el.innerHTML = safeHtml;`,
-    },
-    // A declarator with no initialiser binds nothing.
-    {
-      name: 'a declarator with no initialiser binds nothing',
-      code: `let pending;`,
-    },
-    // A tool-shaped object whose execute is a reference, not a function literal.
-    {
-      name: 'a tool whose execute is a reference, not a function literal, seeds nothing',
-      code: `const t = tool({ inputSchema, execute: runIt });`,
-    },
-    // A JSX attribute other than dangerouslySetInnerHTML.
-    {
-      name: 'a JSX attribute other than dangerouslySetInnerHTML is not a sink',
-      code: `export const A = () => <div className="x" />;`,
-      languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
-    },
-  ]),
-  invalid: xai([
-    // Destructured `text` from generateText tracked into eval — ObjectPattern path.
-    {
-      code: `
+ruleTester.run(
+  'no-unsafe-output-handling (branch coverage)',
+  noUnsafeOutputHandling,
+  {
+    valid: xai([
+      // Awaiting something that is not a call — isAISDKCall bails on non-CallExpression.
+      {
+        code: `async function f() { const r = await pending; }`,
+      },
+      // Init that is neither await nor an AI SDK call.
+      {
+        code: `async function f() { const r = await makeThing(); }`,
+      },
+      // Member callee whose property is not an AI SDK function.
+      {
+        code: `async function f() { const r = await db.fetchAll(); }`,
+      },
+      // Member callee with a computed (non-Identifier) property.
+      {
+        code: `async function f() { const r = await sdk['generateText'](input); }`,
+      },
+      // Rest element in the destructuring pattern — skipped when tracking names.
+      {
+        code: `async function f() { const { ...rest } = await generateText({ prompt: p }); }`,
+      },
+      // Array pattern id — neither Identifier nor ObjectPattern tracking path.
+      {
+        code: `async function f() { const [first] = await generateText({ prompt: p }); }`,
+      },
+      // Destructured property whose value is not an Identifier.
+      {
+        code: `async function f() { const { text: { nested } } = await generateText({ prompt: p }); }`,
+      },
+      // SQL template that contains no AI output.
+      {
+        code: `db.query(\`SELECT * FROM t WHERE id = \${id}\`);`,
+      },
+      // Assignment whose left side is not a MemberExpression.
+      {
+        code: `count = 5;`,
+      },
+      // innerHTML assignment from a non-AI source.
+      {
+        code: `el.innerHTML = safeHtml;`,
+      },
+      // A declarator with no initialiser binds nothing.
+      {
+        name: 'a declarator with no initialiser binds nothing',
+        code: `let pending;`,
+      },
+      // A tool-shaped object whose execute is a reference, not a function literal.
+      {
+        name: 'a tool whose execute is a reference, not a function literal, seeds nothing',
+        code: `const t = tool({ inputSchema, execute: runIt });`,
+      },
+      // A JSX attribute other than dangerouslySetInnerHTML.
+      {
+        name: 'a JSX attribute other than dangerouslySetInnerHTML is not a sink',
+        code: `export const A = () => <div className="x" />;`,
+        languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
+      },
+    ]),
+    invalid: xai([
+      // Destructured `text` from generateText tracked into eval — ObjectPattern path.
+      {
+        code: `
         async function f() {
           const { text } = await generateText({ prompt: p });
           eval(text);
         }
       `,
-      errors: [{ messageId: 'unsafeOutputExecution', data: { variable: 'text', function: 'eval' } }],
-    },
-    // Member-callee AI SDK call (helpers.generateText) tracked, then leaked to eval.
-    {
-      code: `
+        errors: [
+          {
+            messageId: 'unsafeOutputExecution',
+            data: { variable: 'text', function: 'eval' },
+          },
+        ],
+      },
+      // Member-callee AI SDK call (helpers.generateText) tracked, then leaked to eval.
+      {
+        code: `
         async function f() {
           const r = await helpers.generateText({ prompt: p });
           eval(r.text);
         }
       `,
-      errors: [{ messageId: 'unsafeOutputExecution', data: { variable: 'r.text', function: 'eval' } }],
-    },
-  ]),
-});
+        errors: [
+          {
+            messageId: 'unsafeOutputExecution',
+            data: { variable: 'r.text', function: 'eval' },
+          },
+        ],
+      },
+    ]),
+  },
+);

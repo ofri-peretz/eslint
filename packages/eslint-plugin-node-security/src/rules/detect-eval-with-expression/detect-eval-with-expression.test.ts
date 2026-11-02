@@ -139,6 +139,7 @@ describe('detect-eval-with-expression', () => {
       valid: [],
       invalid: [
         {
+          name: 'a new expression that is not new Function is not reported',
           code: 'eval(a || b);',
           errors: [{ messageId: 'strategyRefactor' }],
         },
@@ -507,7 +508,9 @@ describe('vm module code execution (CWE-94)', () => {
       // Destructuring shapes that bind nothing resolvable.
       `const [vm] = require('vm'); vm.runInNewContext(userCode);`,
       `const { ...rest } = require('vm'); rest.runInNewContext(userCode);`,
-      `const { ['runInNewContext']: run } = require('vm'); run(userCode);`,
+      // (`const { ['runInNewContext']: run } = require('vm')` used to be
+      //  asserted VALID here. A constant computed key names the export — see
+      //  the invalid block.)
       `const { runInNewContext: { nested } } = require('vm'); nested(userCode);`,
       // No code argument — nothing to judge.
       `const vm = require('vm'); vm.runInThisContext();`,
@@ -534,8 +537,9 @@ describe('vm module code execution (CWE-94)', () => {
        function outer() { function inner() { vm.runInThisContext(SCRIPT); } inner(); }`,
       // Namespace import of a module we do not track.
       `import * as util from 'util'; util.runInThisContext(code);`,
-      // String module-export name — the binding is not an identifier we track.
-      `import { 'runInNewContext' as run } from 'vm'; run(userCode);`,
+      // (`import { 'runInNewContext' as run } from 'vm'` used to be asserted
+      //  VALID here. An ES2022 string export name is the same export — see the
+      //  invalid block.)
       // The whole module bound under a sink's name is still the module, not
       // the sink.
       `const runInNewContext = require('vm'); runInNewContext(userCode);`,
@@ -556,6 +560,16 @@ describe('vm module code execution (CWE-94)', () => {
       `import vm from 'node:vm'; vm.runInThisContext('1');`,
     ],
     invalid: [
+      // Moved from `valid` (BUG, FN): a constant computed key and an ES2022
+      // string export name both name the sink export.
+      {
+        code: `const { ['runInNewContext']: run } = require('vm'); run(userCode);`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      {
+        code: `import { 'runInNewContext' as run } from 'vm'; run(userCode);`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
       // corpus/CWE-094/vulnerable/vm-run-user-string.js
       {
         code: `const vm = require('vm');
@@ -738,12 +752,17 @@ describe('vm module code execution (CWE-94)', () => {
         `const compile = 'eval'; log(compile);`,
         // An unrelated sequence expression.
         `const value = (setup(), compute()); value(x);`,
-        // Alias resolution is deliberately shallow — the same depth guard
-        // `provenance.ts` uses. Four hops is past it, and past anything a
-        // human writes.
-        `const a = eval; const b = a; const c = b; const d = c; d(code);`,
+        // (`const a = eval; …; const d = c; d(code)` used to be asserted VALID
+        //  here, past a depth guard of 3. The guard dropped a real eval; alias
+        //  resolution now follows any depth and stops on a cycle — see the
+        //  invalid block.)
       ],
       invalid: [
+        // Moved from `valid` (BUG, FN): four const hops are still eval.
+        {
+          code: `const a = eval; const b = a; const c = b; const d = c; d(code);`,
+          errors: [{ messageId: 'strategyRefactor' }],
+        },
         // INDIRECT eval — the canonical global-scope spelling.
         {
           // The messageId here is `useObjectAccess` — "use direct property

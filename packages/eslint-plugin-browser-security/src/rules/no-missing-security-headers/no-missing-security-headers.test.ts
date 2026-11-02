@@ -469,18 +469,35 @@ ruleTester.run('edge shapes', noMissingSecurityHeaders, {
   ],
 });
 
-/** The folds are BOUNDED. */
+/**
+ * The folds follow every alias hop and stop only on a cycle. They used to be
+ * bounded at four hops; the two chains that pinned the bound here as valid
+ * (an unjudgeable scope) now resolve, and the missing headers are named.
+ */
 ruleTester.run('bounded folding', noMissingSecurityHeaders, {
   valid: [
-    // Past the bound the name is unreadable, so the scope is unjudgeable.
     {
-      code: `const a = 'X-Frame-Options'; const b = a; const c = b; const d = c; const e = d; res.setHeader(e, 'DENY');`,
+      name: 'a cyclic alias folds to nothing and terminates',
+      code: `const a = b; const b = a; res.setHeader(a, 'DENY');`,
     },
     {
-      code: `const a = [['X-Frame-Options']]; const b = a; const c = b; const d = c; res.setHeader(c[0][0], 'DENY');`,
+      name: 'a header table that indexes itself folds to nothing and terminates',
+      code: `const T = [U[0]]; const U = [T[0]]; res.setHeader(T[0], 'DENY');`,
     },
   ],
   invalid: [
+    {
+      // @found mutation testing
+      name: 'FN: a five-hop alias chain still names the header',
+      code: `const a = 'X-Frame-Options'; const b = a; const c = b; const d = c; const e = d; res.setHeader(e, 'DENY');`,
+      errors: 1,
+    },
+    {
+      // @found mutation testing
+      name: 'FN: a nested table reached through four aliases still names the header',
+      code: `const a = [['X-Frame-Options']]; const b = a; const c = b; const d = c; res.setHeader(c[0][0], 'DENY');`,
+      errors: 1,
+    },
     // Inside the bound the name resolves and the missing ones are named.
     {
       code: `const a = 'X-Frame-Options'; const b = a; res.setHeader(b, 'DENY');`,
@@ -559,6 +576,13 @@ ruleTester.run('final shapes', noMissingSecurityHeaders, {
 /** The media type declared inside a Next.js `{ key, value }` header array. */
 ruleTester.run('declarative array media type', noMissingSecurityHeaders, {
   valid: [
+    // Was pinned invalid as "not a readable media type". A quoted `'value'`
+    // key is the same field, and this block declares a JSON response.
+    {
+      // @found mutation testing
+      name: 'FP: a quoted value key in a Next.js entry is the same media type',
+      code: `const c = { headers: [{ key: 'Content-Type', 'value': 'application/json' }] };`,
+    },
     // A non-document media type ends the question here exactly as it does for
     // a call or a ResponseInit.
     {
@@ -582,10 +606,6 @@ ruleTester.run('declarative array media type', noMissingSecurityHeaders, {
     },
     {
       code: `const c = { headers: [{ key: 'Content-Type', [k]: 'text/html' }] };`,
-      errors: 1,
-    },
-    {
-      code: `const c = { headers: [{ key: 'Content-Type', 'value': 'application/json' }] };`,
       errors: 1,
     },
   ],

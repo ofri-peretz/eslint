@@ -191,6 +191,7 @@ describe('no-missing-cors-check', () => {
         // credentials to a literal `*` but will send them to a reflected
         // origin. It is strictly more dangerous than the case that reported.
         {
+          name: 'cors({ origin: true }) reflecting any origin is reported',
           code: 'app.use(cors({ origin: true }));',
           errors: [{ messageId: 'missingCorsCheck' }],
         },
@@ -479,4 +480,86 @@ describe('no-missing-cors-check', () => {
       },
     );
   });
+});
+
+describe('CORS middleware without origin validation (documented contract)', () => {
+  ruleTester.run('missing origin validation', noMissingCorsCheck, {
+    valid: [
+      {
+        name: 'cors() from a different module is not the cors package',
+        code: "import cors from './my-cors'; app.use(cors());",
+      },
+      {
+        name: 'cors(config) with options held elsewhere is not judged',
+        code: "import cors from 'cors'; app.use(cors(corsOptions));",
+      },
+      {
+        name: 'a reflected origin set inside an allowlist check is validated',
+        code: "app.use((req, res, next) => { const origin = req.headers.origin; if (allowed.includes(origin)) { res.setHeader('Access-Control-Allow-Origin', origin); } next(); });",
+      },
+      {
+        name: 'a fixed origin header is not a reflection',
+        code: "app.use((req, res, next) => { res.setHeader('Access-Control-Allow-Origin', 'https://app.example.com'); next(); });",
+      },
+    ],
+    invalid: [
+      {
+        name: 'cors() with no options allows every origin',
+        code: "import cors from 'cors'; app.use(cors());",
+        errors: [{ messageId: 'missingCorsCheck' }],
+      },
+      {
+        name: 'cors options without an origin default to every origin',
+        code: "import cors from 'cors'; app.use(cors({ credentials: true }));",
+        errors: [{ messageId: 'missingCorsCheck' }],
+      },
+      {
+        name: 'a missing origin is reported even when the library is trusted for wildcards',
+        code: "const cors = require('cors'); app.use(cors({ credentials: true }));",
+        options: [{ trustedLibraries: ['cors'] }],
+        errors: [{ messageId: 'missingCorsCheck' }],
+      },
+      {
+        name: 'reflecting req.headers.origin unchecked allows every origin',
+        code: "app.use((req, res, next) => { res.setHeader('Access-Control-Allow-Origin', req.headers.origin); next(); });",
+        errors: [{ messageId: 'missingCorsCheck' }],
+      },
+      {
+        name: 'reflecting a bound copy of the Origin header unchecked allows every origin',
+        code: "app.use((req, res, next) => { const o = req.headers['origin']; res.header('Access-Control-Allow-Origin', o); next(); });",
+        errors: [{ messageId: 'missingCorsCheck' }],
+      },
+    ],
+  });
+});
+
+describe('missing origin: options the rule cannot read in full', () => {
+  ruleTester.run(
+    'missing origin is not claimed over an unreadable key',
+    noMissingCorsCheck,
+    {
+      valid: [
+        {
+          name: 'an ignorePatterns match silences the missing-origin finding',
+          code: "import cors from 'cors'; app.use(cors({ credentials: true }));",
+          options: [{ ignorePatterns: ['credentials'] }],
+        },
+        {
+          name: 'a spread may supply the origin option',
+          code: "import cors from 'cors'; app.use(cors({ ...base, credentials: true }));",
+        },
+        {
+          name: 'a runtime-keyed option may be the origin option',
+          code: "import cors from 'cors'; app.use(cors({ [key]: allowed }));",
+        },
+      ],
+      invalid: [
+        {
+          name: 'a reflected origin set at module scope has no guard in front of it',
+          code: "res.setHeader('Access-Control-Allow-Origin', req.headers.origin);",
+          errors: [{ messageId: 'missingCorsCheck' }],
+        },
+      ],
+    },
+  );
 });

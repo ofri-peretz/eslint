@@ -13,7 +13,7 @@
  * @see https://docs.nestjs.com/techniques/serialization
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { fileUsesNestjs } from '../../utils/nestjs-evidence';
+import { fileDefinesSerializedModel } from '../../utils/nestjs-evidence';
 import {
   AST_NODE_TYPES,
   createRule,
@@ -24,6 +24,7 @@ import {
 import {
   decoratorCall,
   enclosingClass,
+  findDecorator,
   hasDecorator,
   isTrueLiteral,
   memberName,
@@ -208,6 +209,24 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
       return annotation === AST_NODE_TYPES.TSBooleanKeyword;
     }
 
+    /**
+     * Whether an `@Exclude()` keeps the member out of serialized responses.
+     *
+     * `@Exclude({ toClassOnly: true })` strips the member only on the way IN
+     * (`plainToInstance`); `ClassSerializerInterceptor` serializes with
+     * `instanceToPlain`, which still writes it out. Only `@Exclude()` and
+     * `@Exclude({ toPlainOnly: true })` hide it from a response.
+     */
+    function excludesFromResponses(
+      decorators: TSESTree.Decorator[] | undefined,
+    ): boolean {
+      const exclude = findDecorator(decorators, 'Exclude');
+      if (!exclude) return false;
+      const arg = decoratorCall(exclude)?.arguments[0];
+      if (arg?.type !== AST_NODE_TYPES.ObjectExpression) return true;
+      return !isTrueLiteral(objectProperties(arg)?.get('toClassOnly'));
+    }
+
     /** Whether a persistence decorator keeps this column out of results. */
     function isProjectionExcluded(node: TSESTree.PropertyDefinition): boolean {
       for (const decorator of node.decorators) {
@@ -226,13 +245,14 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
 
     return {
       before() {
-        const [options = {}] = currentOptions();
+        const [options] = currentOptions();
         // Registering no visitors is both the gate and the cheap path: a file
-        // that does not use this SDK does no work at all.
-        if (!fileUsesNestjs(context.sourceCode.ast)) return false;
+        // that defines no class NestJS serializes does no work at all.
+        if (!fileDefinesSerializedModel(context.sourceCode.ast)) return false;
 
-        const { allowInTests = true, sensitivePatterns = [] } =
-          options as Options;
+        // Merged with `defaultOptions` before `create` runs.
+        const { allowInTests, sensitivePatterns } =
+          options as Required<Options>;
 
         if (allowInTests && isTestFilePath(context.filename)) {
           return false;
@@ -284,8 +304,8 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
         if (!isSensitiveName(propName, terms)) return;
 
         // Already excluded, on the field or class-wide (excludeAll strategy).
-        if (hasDecorator(node.decorators, 'Exclude')) return;
-        if (hasDecorator(cls.decorators, 'Exclude')) return;
+        if (excludesFromResponses(node.decorators)) return;
+        if (excludesFromResponses(cls.decorators)) return;
         // `@HideField()` is @nestjs/graphql's `@Exclude()`: it drops the
         // property from the generated schema, so it is never resolvable.
         // prisma-starter/src/user/models/user.model.ts:36 marks `password`

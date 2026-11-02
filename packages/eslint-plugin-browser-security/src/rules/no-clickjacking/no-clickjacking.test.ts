@@ -689,18 +689,19 @@ ruleTester.run('frame-busting is read from the AST', noClickjacking, {
       code: 'if (window.top.location!==window.self.location) { x(); } const f = <html><body /></html>;',
     },
     { code: 'if (!self.location) { x(); } const f = <html><body /></html>;' },
+    // @found 2026-11-02 (Stryker triage): an 8-step recursion budget gave up
+    // on this test and reported the file as missing frame busting, though a
+    // two-operand `top.location && x` counts. An invalid case pinned it.
+    {
+      name: 'FP: a long && test that reads the frame location still busts the frame',
+      code: 'if (top.location && a2 && a3 && a4 && a5 && a6 && a7 && a8 && a9 && a10) { x(); } const f = <html><body /></html>;',
+    },
   ],
   invalid: [
     // `.location` off something that is not a frame reference is not a frame
     // check.
     {
       code: 'if (iframeEl.location != preview.location) { x(); } const f = <html><body /></html>;',
-      errors: [{ messageId: 'missingFrameBusting' }],
-    },
-    // A test nested deeper than the walk goes is not a frame check either —
-    // the recursion is bounded on purpose.
-    {
-      code: 'if (top.location && a2 && a3 && a4 && a5 && a6 && a7 && a8 && a9 && a10) { x(); } const f = <html><body /></html>;',
       errors: [{ messageId: 'missingFrameBusting' }],
     },
   ],
@@ -886,21 +887,34 @@ ruleTester.run('edge shapes: css parsing', noClickjacking, {
 });
 
 /**
- * The folds are BOUNDED. A chain longer than the bound resolves to nothing
- * rather than looping, and the same chain inside the bound still resolves.
+ * The folds follow every alias hop and stop only on a cycle. They used to be
+ * bounded at four hops, and the six-hop chains that pinned the bound here as
+ * valid were foreign embeds the rule could not see: they are findings now.
  */
 ruleTester.run('bounded folding', noClickjacking, {
   valid: [
-    // Six hops — past the bound, so the origin is unreadable.
     {
-      code: `const a = 'https://evil.example/w'; const b = a; const c = b; const d = c; const e = d; const f = e; const el = <iframe src={f} />;`,
+      name: 'a cyclic alias of the src folds to nothing and terminates',
+      code: `const a = b; const b = a; const el = <iframe src={a} />;`,
     },
-    // A deep array chain, likewise past the bound.
     {
-      code: `const a = ['https://evil.example/w']; const b = a; const c = b; const d = c; const e = d; const el = <iframe src={e[0]} />;`,
+      name: 'an embed table that indexes itself folds to nothing and terminates',
+      code: `const T = [T[0]]; const el = <iframe src={T[0]} />;`,
     },
   ],
   invalid: [
+    // @found 2026-11-02 (Stryker triage): a fold budget of four hops.
+    {
+      name: 'FN: a six-hop alias chain still carries the foreign origin',
+      code: `const a = 'https://evil.example/w'; const b = a; const c = b; const d = c; const e = d; const f = e; const el = <iframe src={f} />;`,
+      errors: [{ messageId: 'unsafeIframeUsage' }],
+    },
+    {
+      // @found mutation testing
+      name: 'FN: a five-hop array alias chain still carries the foreign origin',
+      code: `const a = ['https://evil.example/w']; const b = a; const c = b; const d = c; const e = d; const el = <iframe src={e[0]} />;`,
+      errors: [{ messageId: 'unsafeIframeUsage' }],
+    },
     // Three hops — inside the bound.
     {
       code: `const a = 'https://evil.example/w'; const b = a; const c = b; const el = <iframe src={c} />;`,
@@ -973,3 +987,61 @@ ruleTester.run('overlay option covers templates', noClickjacking, {
     },
   ],
 });
+
+/**
+ * The documented ❌ examples outside a document shell.
+ *
+ * The rule weighed header values only as evidence for the file-level
+ * `missingFrameBusting` check, which fires only in a file that builds
+ * `<html>`. So the doc's own standalone Incorrect snippets —
+ * `res.setHeader('X-Frame-Options', 'ALLOWALL')` and a policy with no
+ * `frame-ancestors` — were silent anywhere else. A declaration that does not
+ * forbid framing is now reported where it is written, unless the file
+ * declares real protection elsewhere or the shell check already reported it.
+ */
+ruleTester.run(
+  'a declaration that permits framing is reported',
+  noClickjacking,
+  {
+    valid: [
+      {
+        name: 'X-Frame-Options DENY set with setHeader outside a shell is not reported',
+        code: `export function h(req: any, res: any) { res.setHeader('X-Frame-Options', 'DENY'); }`,
+      },
+      {
+        name: 'a policy with frame-ancestors none is not reported',
+        code: `export const csp = "default-src 'self'; frame-ancestors 'none'";`,
+      },
+      {
+        name: 'a policy without frame-ancestors beside X-Frame-Options DENY is protected',
+        code: `export const csp = "default-src 'self'";\nexport function h(req: any, res: any) { res.setHeader('X-Frame-Options', 'DENY'); }`,
+      },
+      {
+        name: 'a string that only names a non-fetch directive is not a policy',
+        code: `export const attr = 'sandbox';`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'setHeader X-Frame-Options ALLOWALL outside a shell is reported',
+        code: `export function h(req: any, res: any) { res.setHeader('X-Frame-Options', 'ALLOWALL'); }`,
+        errors: [{ messageId: 'weakFrameProtection' }],
+      },
+      {
+        name: 'a header map X-Frame-Options ALLOW-FROM outside a shell is reported',
+        code: `export const headers = { 'X-Frame-Options': 'ALLOW-FROM https://partner.example' };`,
+        errors: [{ messageId: 'weakFrameProtection' }],
+      },
+      {
+        name: 'a policy constant with no frame-ancestors directive is reported',
+        code: `export const csp = "default-src 'self'";`,
+        errors: [{ messageId: 'weakFrameProtection' }],
+      },
+      {
+        name: 'a template policy whose frame-ancestors allows every framer is reported',
+        code: "export const csp = `default-src 'self'; frame-ancestors *`;",
+        errors: [{ messageId: 'weakFrameProtection' }],
+      },
+    ],
+  },
+);

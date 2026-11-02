@@ -80,9 +80,9 @@ async function bootstrap() {
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| Option         | Type      | Default | Description                                     |
+| -------------- | --------- | ------- | ----------------------------------------------- |
+| `allowInTests` | `boolean` | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files |
 
 ```typescript
 {
@@ -109,7 +109,10 @@ inherits nothing.
 Not reported:
 
 ```typescript
-// A spread could carry the flag; its absence is not provable.
+// A spread could carry the flag; its absence is not provable. The same holds
+// for a spread AFTER an explicit `inheritAppConfig: false`, which it may
+// override. (`{ ...hybridOptions, inheritAppConfig: false }` IS reported: the
+// last write wins, and it states the absence outright.)
 app.connectMicroservice(options, { ...hybridOptions });
 
 // Hybrid options built elsewhere are not knowable from this file.

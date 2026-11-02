@@ -51,6 +51,7 @@ ruleTester.run('no-dynamic-service-worker-url', noDynamicServiceWorkerUrl, {
     },
     // Expression URL
     {
+      name: 'a service worker registered from a function-call URL is reported',
       code: `navigator.serviceWorker.register(getSwUrl());`,
       errors: [{ messageId: 'dynamicSwUrl' }],
     },

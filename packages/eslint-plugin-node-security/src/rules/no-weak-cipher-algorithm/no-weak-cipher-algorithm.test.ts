@@ -324,6 +324,7 @@ ruleTester.run('no-weak-cipher-algorithm', noWeakCipherAlgorithm, {
     },
     // Standalone calls
     {
+      name: 'createCipheriv with des is reported with AES-GCM and ChaCha20 suggestions',
       code: `const cipher = createCipheriv('des', key, iv);`,
       errors: [
         {
@@ -343,12 +344,13 @@ ruleTester.run('no-weak-cipher-algorithm', noWeakCipherAlgorithm, {
     },
     // Additional weak ciphers option
     {
-      name: 'cast5 is outside the declared family list and is not reported',
+      name: 'a cipher named in additionalWeakCiphers is reported under its upper-cased name',
       code: `const cipher = crypto.createCipheriv('cast5', key, iv);`,
       options: [{ additionalWeakCiphers: ['cast5'] }],
       errors: [
         {
           messageId: 'weakCipherAlgorithm',
+          data: { algorithm: 'CAST5', replacement: 'aes-256-gcm' },
           suggestions: [
             {
               messageId: 'useAes256Gcm',
@@ -357,6 +359,49 @@ ruleTester.run('no-weak-cipher-algorithm', noWeakCipherAlgorithm, {
             {
               messageId: 'useChaCha20',
               output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);`,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      // Two-key Triple DES; `\bdes\b(?!-ede)` deliberately leaves it to the
+      // 3DES pattern, so that pattern must accept `-ede` without the `3`.
+      name: 'two-key Triple DES (des-ede-cbc) is reported as 3DES',
+      code: `crypto.createCipheriv('des-ede-cbc', key, iv);`,
+      errors: [
+        {
+          messageId: 'weakCipherAlgorithm',
+          data: { algorithm: '3DES', replacement: 'aes-256-gcm' },
+          suggestions: [
+            {
+              messageId: 'useAes256Gcm',
+              output: `crypto.createCipheriv("aes-256-gcm", key, iv);`,
+            },
+            {
+              messageId: 'useChaCha20',
+              output: `crypto.createCipheriv("chacha20-poly1305", key, iv);`,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'allowInTests does not exempt a file that is not a test',
+      code: `crypto.createCipheriv('des-cbc', key, iv);`,
+      options: [{ allowInTests: true }],
+      filename: 'src/cipher.ts',
+      errors: [
+        {
+          messageId: 'weakCipherAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useAes256Gcm',
+              output: `crypto.createCipheriv("aes-256-gcm", key, iv);`,
+            },
+            {
+              messageId: 'useChaCha20',
+              output: `crypto.createCipheriv("chacha20-poly1305", key, iv);`,
             },
           ],
         },

@@ -104,12 +104,12 @@ export const requireUrlValidation = createRule<RuleOptions, MessageIds>({
      */
     function calleeParts(
       node: TSESTree.CallExpression,
-    ): { object: TSESTree.Node; method: string } | null {
+    ): { object: TSESTree.Node; method: string | null } | null {
       const callee = node.callee;
       if (callee.type !== 'MemberExpression') return null;
-      // `window['open'](u)` navigates exactly where `window.open(u)` does.
-      const method = propertyName(callee);
-      return method === null ? null : { object: callee.object, method };
+      // `window['open'](u)` navigates exactly where `window.open(u)` does. A
+      // computed key leaves `method` null, which matches no navigation.
+      return { object: callee.object, method: propertyName(callee) };
     }
 
     // There is no `AssignmentExpression` visitor on purpose: every write that

@@ -68,7 +68,9 @@ function verdicts(
   );
   // A crash surfaces as a message with no ruleId. Letting that through would
   // turn a thrown predicate into an empty result set that reads as "no hits".
-  expect(messages.filter((m) => m.ruleId === null).map((m) => m.message)).toEqual([]);
+  expect(
+    messages.filter((m) => m.ruleId === null).map((m) => m.message),
+  ).toEqual([]);
   return collected;
 }
 
@@ -112,18 +114,32 @@ describe('isLocationTarget / navigation writes and calls', () => {
 
   it('a computed key that is not a string literal is not a Location', () => {
     expect(
-      first('window[key].href = x;', 'AssignmentExpression', (node) =>
-        isLocationNavigationWrite((node as TSESTree.AssignmentExpression).left),
+      first('window[key].href = x;', 'AssignmentExpression', (node, sc) =>
+        isLocationNavigationWrite(
+          (node as TSESTree.AssignmentExpression).left,
+          sc.getScope(node),
+        ),
       ),
     ).toBe(false);
   });
 
-  it('a non-member assignment target is never a navigation', () => {
-    expect(
-      first('location = x;', 'AssignmentExpression', (node) =>
-        isLocationNavigationWrite((node as TSESTree.AssignmentExpression).left),
+  it.each([
+    ['the unbound global location is a navigation', 'location = x;', true],
+    [
+      'a local variable called location is not',
+      'let location = ""; location = x;',
+      false,
+    ],
+    ['another bare identifier is not', 'target = x;', false],
+    ['a destructuring target is not', '[target] = x;', false],
+  ])('bare assignment: %s', (_name, code, expected) => {
+    const writes = verdicts(code, 'AssignmentExpression', (node, sc) =>
+      isLocationNavigationWrite(
+        (node as TSESTree.AssignmentExpression).left,
+        sc.getScope(node),
       ),
-    ).toBe(false);
+    );
+    expect(writes.some(Boolean)).toBe(expected);
   });
 
   it.each([
@@ -181,11 +197,11 @@ describe('isSteerableUrlValue — the query-string surface', () => {
     ["new Foo(location.search).get('n')", false],
     ["new URLSearchParams().get('n')", false],
     ["new URLSearchParams(...args).get('n')", false],
-    ["new (ns.URL)(location.href).hash", false],
-    ["new URL(location.href).protocol", false],
-    ["new URL(location.href).other", false],
+    ['new (ns.URL)(location.href).hash', false],
+    ['new URL(location.href).protocol', false],
+    ['new URL(location.href).other', false],
     ["params.get('n')", false],
-    ["fetchIt(location.search)", false],
+    ['fetchIt(location.search)', false],
   ])('%s → %s', (code, expected) => {
     expect(steerable(code)).toBe(expected);
   });
@@ -208,13 +224,17 @@ describe('isSteerableUrlValue — the query-string surface', () => {
   });
 
   it('a template that does not open with the interpolation is not steerable', () => {
-    expect(steerable('`https://acme.io/${new URLSearchParams(location.search).get("n")}`')).toBe(
-      false,
-    );
+    expect(
+      steerable(
+        '`https://acme.io/${new URLSearchParams(location.search).get("n")}`',
+      ),
+    ).toBe(false);
   });
 
   it('a template that DOES open with it is', () => {
-    expect(steerable('`${new URLSearchParams(location.search).get("n")}/x`')).toBe(true);
+    expect(
+      steerable('`${new URLSearchParams(location.search).get("n")}/x`'),
+    ).toBe(true);
   });
 
   it.each([
@@ -237,7 +257,10 @@ describe('isSteerableUrlValue — the query-string surface', () => {
         (node, sourceCode) => {
           const call = node as TSESTree.CallExpression;
           return call.arguments.length === 1
-            ? isSteerableUrlValue(call.arguments[0] as TSESTree.Node, sourceCode)
+            ? isSteerableUrlValue(
+                call.arguments[0] as TSESTree.Node,
+                sourceCode,
+              )
             : null;
         },
       ),
@@ -257,7 +280,10 @@ describe('useSearchParams / useRouter resolve to their imports', () => {
         (node, sourceCode) => {
           const call = node as TSESTree.CallExpression;
           return sourceCode.getText(call).startsWith('window.open')
-            ? isSteerableUrlValue(call.arguments[0] as TSESTree.Node, sourceCode)
+            ? isSteerableUrlValue(
+                call.arguments[0] as TSESTree.Node,
+                sourceCode,
+              )
             : null;
         },
       ),
@@ -266,24 +292,36 @@ describe('useSearchParams / useRouter resolve to their imports', () => {
 
   it.each([
     // not a destructuring at all
-    [`${RR}const params = useSearchParams; window.open(params.get('n'));`, false],
+    [
+      `${RR}const params = useSearchParams; window.open(params.get('n'));`,
+      false,
+    ],
     // an ArrayPattern initialised by something else
     [`const [params] = somethingElse(); window.open(params.get('n'));`, false],
     // a hook name that resolves to no import
-    [`function useSearchParams() {} const [p] = useSearchParams(); window.open(p.get('n'));`, false],
+    [
+      `function useSearchParams() {} const [p] = useSearchParams(); window.open(p.get('n'));`,
+      false,
+    ],
     // an unresolvable identifier
     [`window.open(params.get('n'));`, false],
   ])('refusal %#', (code, expected) => {
     const hits = verdicts(code, 'CallExpression', (node, sourceCode) => {
       const call = node as TSESTree.CallExpression;
       if (!sourceCode.getText(call).startsWith('window.open')) return null;
-      return isSteerableUrlValue(call.arguments[0] as TSESTree.Node, sourceCode);
+      return isSteerableUrlValue(
+        call.arguments[0] as TSESTree.Node,
+        sourceCode,
+      );
     });
     expect(hits.filter((h) => h !== null)).toEqual([expected]);
   });
 
   it.each([
-    ['import { useRouter } from "next/navigation";\nconst r = useRouter();', true],
+    [
+      'import { useRouter } from "next/navigation";\nconst r = useRouter();',
+      true,
+    ],
     ['import { useRouter } from "some-lib";\nconst r = useRouter();', false],
     ['function useRouter() {} const r = useRouter();', false],
     ['const r = makeRouter();', false],
@@ -305,7 +343,10 @@ describe('useSearchParams / useRouter resolve to their imports', () => {
     expect(
       first('ctx.router.push(x);', 'CallExpression', (node, sourceCode) =>
         isRouterObject(
-          ((node as TSESTree.CallExpression).callee as TSESTree.MemberExpression).object,
+          (
+            (node as TSESTree.CallExpression)
+              .callee as TSESTree.MemberExpression
+          ).object,
           sourceCode,
         ),
       ),
@@ -356,7 +397,10 @@ describe('identityArgumentIndex — only a function we can READ counts', () => {
         (node, sourceCode) => {
           const call = node as TSESTree.CallExpression;
           return sourceCode.getText(call).startsWith('window.open')
-            ? isSteerableUrlValue(call.arguments[0] as TSESTree.Node, sourceCode)
+            ? isSteerableUrlValue(
+                call.arguments[0] as TSESTree.Node,
+                sourceCode,
+              )
             : null;
         },
       ),
@@ -370,7 +414,10 @@ describe('identityArgumentIndex — only a function we can READ counts', () => {
       (node, sourceCode) => {
         const call = node as TSESTree.CallExpression;
         if (!sourceCode.getText(call).startsWith('window.open')) return null;
-        return isSteerableUrlValue(call.arguments[0] as TSESTree.Node, sourceCode);
+        return isSteerableUrlValue(
+          call.arguments[0] as TSESTree.Node,
+          sourceCode,
+        );
       },
     );
     expect(hits.filter((h) => h !== null)).toEqual([false]);
@@ -412,11 +459,14 @@ describe('isRelativePathGuard', () => {
 // ---------------------------------------------------------------------------
 describe('isOriginEqualityGuard', () => {
   const guard = (prelude: string, test: string): unknown =>
-    first(`${prelude} if (${test}) { go(); }`, 'IfStatement', (node, sourceCode) =>
-      isOriginEqualityGuard((node as TSESTree.IfStatement).test, sourceCode),
+    first(
+      `${prelude} if (${test}) { go(); }`,
+      'IfStatement',
+      (node, sourceCode) =>
+        isOriginEqualityGuard((node as TSESTree.IfStatement).test, sourceCode),
     );
 
-  const PARSED = "const p = new URL(location.href);";
+  const PARSED = 'const p = new URL(location.href);';
 
   it.each([
     [`p.origin === 'https://acme.io'`, true],
@@ -436,7 +486,10 @@ describe('isOriginEqualityGuard', () => {
 
   it('a URL parsed from a fixed string is not a guard over anything steerable', () => {
     expect(
-      guard("const p = new URL('https://acme.io');", "p.origin === 'https://acme.io'"),
+      guard(
+        "const p = new URL('https://acme.io');",
+        "p.origin === 'https://acme.io'",
+      ),
     ).toBe(false);
   });
 
@@ -444,9 +497,9 @@ describe('isOriginEqualityGuard', () => {
     // Right-nested, because `a && b && c` groups to the LEFT and would put the
     // interesting operand at depth 1.
     const deep = Array.from({ length: 10 }, (_, i) => `f${i} && (`).join('');
-    expect(guard(PARSED, `${deep}p.origin === 'https://acme.io'${')'.repeat(10)}`)).toBe(
-      false,
-    );
+    expect(
+      guard(PARSED, `${deep}p.origin === 'https://acme.io'${')'.repeat(10)}`),
+    ).toBe(false);
   });
 });
 
@@ -471,14 +524,20 @@ describe('isOpaquePredicateOverTarget', () => {
     ["const n = 1; if (n.startsWith('/')) { go(); }", false],
     // A predicate we CAN read has to prove something itself.
     ['const n = 1; const isValid = (x) => x; if (isValid(n)) { go(); }', false],
-    ['const n = 1; function isValid(x) { return x; } if (isValid(n)) { go(); }', false],
+    [
+      'const n = 1; function isValid(x) { return x; } if (isValid(n)) { go(); }',
+      false,
+    ],
     // Not a call at all.
     ['const n = 1; if (flag) { go(); }', false],
     // A call that never receives the target.
     ['const n = 1; if (isValid(other)) { go(); }', false],
     // A name with two declarations has no single knowable function, so it is
     // treated as unreadable and the guard defers.
-    ['const n = 1; function isValid(x) { return x; } var isValid; if (isValid(n)) { go(); }', true],
+    [
+      'const n = 1; function isValid(x) { return x; } var isValid; if (isValid(n)) { go(); }',
+      true,
+    ],
     ['const n = 1; if (isValid(...args)) { go(); }', false],
   ])('%#', (code, expected) => {
     expect(over(code)).toBe(expected);
@@ -486,9 +545,9 @@ describe('isOpaquePredicateOverTarget', () => {
 
   it('a deeply nested logical chain is refused rather than walked forever', () => {
     const deep = Array.from({ length: 10 }, (_, i) => `f${i} || (`).join('');
-    expect(over(`const n = 1; if (${deep}isValid(n)${')'.repeat(10)}) { go(); }`)).toBe(
-      false,
-    );
+    expect(
+      over(`const n = 1; if (${deep}isValid(n)${')'.repeat(10)}) { go(); }`),
+    ).toBe(false);
   });
 });
 
@@ -563,7 +622,10 @@ describe('urlContainerKind — the refusals', () => {
     firstHit(code, 'CallExpression', (node, sourceCode) => {
       const call = node as TSESTree.CallExpression;
       if (!sourceCode.getText(call).startsWith('window.open')) return null;
-      return isSteerableUrlValue(call.arguments[0] as TSESTree.Node, sourceCode);
+      return isSteerableUrlValue(
+        call.arguments[0] as TSESTree.Node,
+        sourceCode,
+      );
     });
 
   it.each([
@@ -579,7 +641,10 @@ describe('urlContainerKind — the refusals', () => {
     // A call that is not a routing hook.
     ['window.open(makeParams().get("n"));', false],
     // A binding written twice has no single knowable value.
-    ['let p = new URLSearchParams(location.search); p = other; window.open(p.get("n"));', false],
+    [
+      'let p = new URLSearchParams(location.search); p = other; window.open(p.get("n"));',
+      false,
+    ],
     // A destructuring whose initialiser is not a routing hook.
     ['const { p } = makeThings(); window.open(p.get("n"));', false],
     // An ArrayPattern declared without an initialiser (a for-of head).

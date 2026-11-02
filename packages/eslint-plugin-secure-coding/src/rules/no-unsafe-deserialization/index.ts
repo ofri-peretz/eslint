@@ -29,6 +29,7 @@ import { dirname, join as pathJoin } from 'node:path';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   createRule,
+  isStaticExpression,
   resolveModuleBinding,
   unwrapTypeSyntax,
   namesOneOf,
@@ -880,11 +881,17 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
     const isAlwaysUnsafeSink = (
       node: TSESTree.CallExpression | TSESTree.NewExpression,
     ): boolean => {
-      const binding = resolveModuleBinding(
-        node.callee,
-        sourceCode.getScope(node.callee),
+      const scope = sourceCode.getScope(node.callee);
+      const binding = resolveModuleBinding(node.callee, scope);
+      // A payload the file fixes itself — `unserialize('{"a":1}')`, or a
+      // const bound to one — is authored code, not untrusted data: there is no
+      // attacker to hand it a function. Any argument the file cannot pin keeps
+      // the sink unconditionally unsafe.
+      return (
+        binding !== undefined &&
+        ALWAYS_UNSAFE_MODULES.has(binding.module) &&
+        node.arguments.some((arg) => !isStaticExpression({ node: arg, scope }))
       );
-      return binding !== undefined && ALWAYS_UNSAFE_MODULES.has(binding.module);
     };
 
     /**

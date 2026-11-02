@@ -540,16 +540,39 @@ export function isEnvironmentWrite(
   );
 }
 
-/** `fs.writeFile(...)` / `writeFileSync` / `appendFile` — a credential landing on disk. */
-export function isFileWrite(node: TSESTree.CallExpression): boolean {
+const FILE_WRITE_METHODS: ReadonlySet<string> = new Set([
+  'writeFile',
+  'writeFileSync',
+  'appendFile',
+  'appendFileSync',
+]);
+
+/**
+ * `fs.writeFile(...)` / `writeFileSync` / `appendFile` — a credential landing on disk.
+ *
+ * A member call is judged by its method, as it always was. A bare call has no
+ * receiver to read, so it must RESOLVE to the fs module: `import { writeFile }
+ * from 'node:fs/promises'` is the same disk write as `fs.promises.writeFile`,
+ * and was silent, while a local function that happens to be called
+ * `writeFile` writes nothing.
+ */
+export function isFileWrite(
+  node: TSESTree.CallExpression,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
   const callee = node.callee;
+  if (callee.type === AST_NODE_TYPES.Identifier) {
+    const binding = resolveModuleBinding(callee, sourceCode.getScope(node), {
+      equivalents: { 'fs/promises': 'fs', 'fs-extra': 'fs' },
+    });
+    const method = binding?.path.at(-1);
+    return (
+      binding?.module === 'fs' &&
+      method !== undefined &&
+      FILE_WRITE_METHODS.has(method)
+    );
+  }
   if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
   const method = propertyName(callee);
-  if (method === null) return false;
-  return [
-    'writeFile',
-    'writeFileSync',
-    'appendFile',
-    'appendFileSync',
-  ].includes(method);
+  return method !== null && FILE_WRITE_METHODS.has(method);
 }

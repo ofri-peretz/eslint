@@ -38,6 +38,37 @@ describe('no-sha1-hash coverage gaps', () => {
         filename: 'hash.ts',
       },
     ],
-    invalid: [],
+    invalid: [
+      {
+        name: 'allowInTests does not exempt a file that is not a test',
+        code: "import { sha1 } from 'crypto-hash';\nsha1('data');",
+        options: [{ allowInTests: true }],
+        filename: 'hash.ts',
+        errors: [
+          {
+            messageId: 'sha1Deprecated',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output: "import { sha256 } from 'crypto-hash';\nsha1('data');",
+              },
+              {
+                messageId: 'useSha512',
+                output: "import { sha512 } from 'crypto-hash';\nsha1('data');",
+              },
+            ],
+          },
+          {
+            messageId: 'sha1Deprecated',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output: "import { sha1 } from 'crypto-hash';\nsha256('data');",
+              },
+            ],
+          },
+        ],
+      },
+    ],
   });
 });

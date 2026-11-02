@@ -57,10 +57,10 @@ respond({ message: sanitize(result.text) });
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `displayPatterns` | `string[]` | `["render","display","show","print","send","respond","setContent","setText","setMessage","Response.json"]` | Patterns suggesting display operations |
-| `validatorFunctions` | `string[]` | `["validate","verify","check","sanitize","filter","validateOutput","factCheck","verifyFacts"]` | Functions that validate output |
+| Option               | Type       | Default                                                                                                    | Description                            |
+| -------------------- | ---------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `displayPatterns`    | `string[]` | `["render","display","show","print","send","respond","setContent","setText","setMessage","Response.json"]` | Patterns suggesting display operations |
+| `validatorFunctions` | `string[]` | `["validate","verify","check","sanitize","filter","validateOutput","factCheck","verifyFacts"]`             | Functions that validate output         |
 
 ## 🛡️ Why This Matters
 
@@ -111,14 +111,17 @@ customRenderer.showContent(result.text); // Not in displayPatterns
 
 ### Implicit Validation
 
-**Why**: Validation logic that doesn't match pattern is not recognized.
+**Why**: Only model output passed _directly_ (`result.text`, or a variable bound
+to it) is reported. Any call wrapped around it is read as a transformation and
+is not reported, whatever it is called — so `validatorFunctions` does not
+currently change any result.
 
 ```typescript
-// ❌ NOT DETECTED - Custom validation
-display(checkContent(result.text)); // checkContent not in validatorFunctions
+// ❌ NOT DETECTED - any wrapper call, validator or not
+display(formatMarkdown(result.text));
 ```
 
-**Mitigation**: Configure `validatorFunctions` with custom names.
+**Mitigation**: Keep the display call's argument the validated value itself.
 
 ### Streaming Output
 

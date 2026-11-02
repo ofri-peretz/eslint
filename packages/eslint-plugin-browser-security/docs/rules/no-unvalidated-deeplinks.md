@@ -10,8 +10,8 @@ autofix: false
 
 > Requires validation of deep link URLs before navigation
 
-
 <!-- @rule-summary -->
+
 This rule detects when deep link URLs are opened without validation in React Native or mobile web apps
 <!-- @/rule-summary -->
 
@@ -21,7 +21,21 @@ This rule detects when deep link URLs are opened without validation in React Nat
 
 ## Rule Details
 
-This rule detects when deep link URLs are opened without validation in React Native or mobile web apps. Unvalidated deep links enable phishing attacks, unauthorized actions, and open redirect vulnerabilities. The rule flags `Linking.openURL()` and `navigation.navigate()` calls with variable/expression arguments instead of literal strings.
+This rule detects when deep link URLs are opened without validation in React Native or mobile web apps. Unvalidated deep links enable phishing attacks, unauthorized actions, and open redirect vulnerabilities. The rule flags `Linking.openURL(x)` and `navigation.navigate(x)` when `x` is a URL somebody **outside the app** chose — proven from the code, not guessed from the argument being a variable:
+
+| Source of `x`                                                                                                                                                                | `Linking.openURL` | `navigation.navigate`      |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | -------------------------- |
+| the inbound deep link: `event.url` on a `Linking.addEventListener('url', …)` handler, or `url` destructured off that event (`({ url }) => …`, `const { url: link } = event`) | ✅ reported       | ✅ reported                |
+| `Linking.getInitialURL()` — awaited, or the `.then((url) => …)` parameter                                                                                                    | ✅ reported       | ✅ reported                |
+| React Navigation route params (`route.params.x`, `state.routes[i].params.x`)                                                                                                 | ✅ reported       | — (names an in-app screen) |
+| the web URL (`location.search`, `new URLSearchParams(location.search).get('next')`, …)                                                                                       | ✅ reported       | ✅ reported                |
+| a plain function parameter, a prop, a literal, a constant                                                                                                                    | —                 | —                          |
+
+`Linking` is resolved through its import, so `import { Linking as RNLinking } from 'react-native'` and `import * as Linking from 'expo-linking'` are both recognised; the bare global `Linking` is accepted when nothing in the file binds the name. A local helper the rule can read to be the identity function passes the deep link through; any other call is treated as a validator.
+
+A call is **not reported** when a guard in front of it validates the destination — an enclosing `if` or an early `if (!…) return` whose test is an exact allowlist (`ALLOWED.has(url)`, `ALLOWED.includes(url)`), a validator call over the URL whose body is not in this file, an anchored host regexp, a relative-path check, or an origin equality. A truthiness check (`if (url)`) validates nothing.
+
+A plain parameter (`function handleDeepLink(url) { Linking.openURL(url) }`) is not reported: nothing in the file proves an attacker supplies it, and `Linking.openURL(SUPPORT_URL)` with a constant was the false positive that motivated the narrowing.
 
 ### Why This Matters
 
@@ -35,38 +49,50 @@ Deep links allow external apps/websites to trigger actions in your app:
 ## ❌ Incorrect
 
 ```typescript
-// React Native - opening URL from variable without validation
 import { Linking } from 'react-native';
-
-function handleDeepLink(url: string) {
-  Linking.openURL(url); // ❌ Unvalidated URL from external source
-}
-
-// Navigation with user-controlled URL
-function navigate(destination: string) {
-  navigation.navigate(destination); // ❌ No whitelist check
-}
 
 // Deep link handler without validation
 Linking.addEventListener('url', (event) => {
   const { url } = event;
-  Linking.openURL(url); // ❌ Directly opening deep link
+  Linking.openURL(url); // ❌ Directly opening the inbound deep link
 });
 
-// Opening URL from props
-function ExternalLink({ href }: { href: string }) {
-  return (
-    <TouchableOpacity onPress={() => Linking.openURL(href)}>
-      {/* ❌ No validation of href prop */}
-    </TouchableOpacity>
-  );
+// The cold-start link
+Linking.getInitialURL().then((url) => {
+  if (url) navigation.navigate(url); // ❌ A truthiness check is not validation
+});
+
+// A route param chosen by the link that opened the screen
+function Screen({ route }) {
+  Linking.openURL(route.params.next); // ❌
 }
 ```
 
 ## ✅ Correct
 
 ```typescript
-const x = 42;
+import { Linking } from 'react-native';
+
+const ALLOWED = new Set(['myapp://home', 'myapp://settings']);
+Linking.addEventListener('url', ({ url }) => {
+  if (ALLOWED.has(url)) Linking.openURL(url); // exact allowlist
+});
+
+Linking.addEventListener('url', (event) => {
+  if (!isAllowedDeepLink(event.url)) return; // validator imported from elsewhere
+  navigation.navigate(event.url);
+});
+
+// A constant destination
+Linking.openURL('https://help.example.com');
+
+// A screen name is not a URL
+navigation.navigate('Settings');
+
+// Not proven to come from outside the app (no finding; validate it anyway)
+function openHelp(url: string) {
+  Linking.openURL(url);
+}
 ```
 
 ## ⚙️ Configuration
@@ -75,9 +101,22 @@ This rule has no configuration options.
 
 ## Known False Negatives
 
+### Arguments with no proven external source
+
+**Why**: Only deep-link and web-URL sources are tracked. A URL passed in as a plain parameter or prop is not proven attacker-chosen, so it is not reported.
+
+```typescript
+// ❌ NOT DETECTED - plain parameter
+function handleDeepLink(url: string) {
+  Linking.openURL(url);
+}
+```
+
+**Mitigation**: Validate at the entry point that receives the link.
+
 ### Literal URL Strings
 
-**Why**: We only flag variable/expression arguments. Literal strings are assumed safe (but still review manually).
+**Why**: Literal strings are assumed safe (but still review manually).
 
 ```typescript
 // ❌ NOT DETECTED - Literal string
@@ -86,25 +125,21 @@ Linking.openURL('https://evil.com'); // Literal, but still dangerous if hardcode
 
 **Mitigation**: Code review all `openURL()` calls. Prefer whitelisted literals only.
 
-### Indirect Deep Link Handling
+### Validators defined in the same file
 
-**Why**: Validation in separate functions is not traced.
+**Why**: A validator whose body is in this file is read rather than trusted; unless it is the identity, it is not taken as proof of validation by name alone, so a guard built on it is not recognised.
 
 ```typescript
-// ❌ NOT DETECTED - Validation in separate function
+// Reported even though a local validate() runs first
 function validate(url: string): boolean {
   return url.startsWith('myapp:');
 }
-
-function handleLink(url: string) {
-  if (validate(url)) {
-    // Validation exists, but not detected statically
-    Linking.openURL(url);
-  }
-}
+Linking.addEventListener('url', ({ url }) => {
+  if (validate(url)) Linking.openURL(url);
+});
 ```
 
-**Mitigation**: Keep validation inline with `openURL()` call for static analysis.
+**Mitigation**: Use an exact allowlist inline, or import the validator.
 
 ### Custom Link Opening Libraries
 

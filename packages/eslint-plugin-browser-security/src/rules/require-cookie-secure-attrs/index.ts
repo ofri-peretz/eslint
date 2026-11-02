@@ -114,7 +114,7 @@ export const requireCookieSecureAttrs = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        const { allowInTests = true } = options as Options;
+        const { allowInTests } = options as Required<Options>;
         const isTestFile = isTestFilePath(context.filename);
 
         if (allowInTests && isTestFile) {

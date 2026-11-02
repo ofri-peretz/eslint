@@ -1,6 +1,6 @@
 ---
 title: detect-object-injection
-description: "Detects variable[key] as a left- or right-hand assignment operand (prototype pollution)"
+description: "Detects variable[key] written as an assignment target, or read and then invoked (prototype pollution, method injection)"
 tags: ['security', 'core']
 category: security
 severity: critical
@@ -14,7 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={true} typeAwareStatus="optional" />
 
-Detects `variable[key]` as a left- or right-hand assignment operand (prototype pollution). This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages with fix suggestions.
+Detects `variable[key]` written as an assignment target, or read and then invoked (prototype pollution, method injection). This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages with fix suggestions.
 
 **🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **🔧 Opt-in — not in `recommended`**
 
@@ -141,11 +141,14 @@ if (ALLOWED_KEYS.includes(userKey)) {
   obj[userKey] = value;
 }
 
-// hasOwnProperty check
-if (obj.hasOwnProperty(userKey)) {
-  const value = obj[userKey]; // Safe access
-}
+// A plain read cannot pollute a prototype, so it is not reported.
+// (Reading an attacker-chosen field is information exposure, CWE-200 —
+// a different weakness this rule does not claim.)
+const value = obj[userKey];
 ```
+
+A read IS reported when its result is invoked — `handlers[req.body.action](payload)`
+resolves `"constructor"` to the `Object` constructor and calls it (method injection).
 
 ## Prototype Pollution Prevention
 

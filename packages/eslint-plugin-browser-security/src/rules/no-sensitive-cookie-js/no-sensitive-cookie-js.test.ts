@@ -112,6 +112,7 @@ ruleTester.run('lock: sink spellings', noSensitiveCookieJs, {
       ],
     },
     {
+      name: 'a password cookie set through document.cookie is reported',
       code: `document['cookie'] = 'cvv=' + c;`,
       errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'cvv' } }],
     },

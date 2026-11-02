@@ -20,6 +20,10 @@ import {
   propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import {
+  isCorsPackageCall,
+  readsRequestOrigin,
+} from '../../utils/cors-middleware';
 import { resolveInitializer } from '../../utils/resolve-binding';
 
 /** The header that grants an origin read access. Exact, case-insensitive. */
@@ -50,6 +54,19 @@ const HEADER_METHODS: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Record an alias hop; false when it was already taken.
+ *
+ * The folds follow `const` aliases as far as they go — a hop budget gave up on
+ * a longer chain and let the wildcard through — so a cycle
+ * (`const a = b; const b = a;`) is what has to stop them.
+ */
+function visit(seen: Set<TSESTree.Node>, node: TSESTree.Node): boolean {
+  if (seen.has(node)) return false;
+  seen.add(node);
+  return true;
+}
+
+/**
  * The string an expression is KNOWN to be, folded through scope.
  *
  * A "temporary" `const ALLOWED_ORIGIN = '*'` is how the wildcard survives into
@@ -59,9 +76,8 @@ const HEADER_METHODS: ReadonlySet<string> = new Set([
 function foldToString(
   node: TSESTree.Node,
   sourceCode: TSESLint.SourceCode,
-  depth = 0,
+  seen = new Set<TSESTree.Node>(),
 ): string | null {
-  if (depth > 4) return null;
   if (node.type === AST_NODE_TYPES.Literal) {
     return typeof node.value === 'string' ? node.value : null;
   }
@@ -75,9 +91,9 @@ function foldToString(
   }
   if (node.type === AST_NODE_TYPES.Identifier) {
     const init = resolveInitializer(node, sourceCode);
-    return init === undefined
+    return init === undefined || !visit(seen, init)
       ? null
-      : foldToString(init, sourceCode, depth + 1);
+      : foldToString(init, sourceCode, seen);
   }
   return null;
 }
@@ -86,51 +102,16 @@ function foldToString(
 function foldToObject(
   node: TSESTree.Node,
   sourceCode: TSESLint.SourceCode,
-  depth = 0,
+  seen = new Set<TSESTree.Node>(),
 ): TSESTree.ObjectExpression | null {
-  if (depth > 4) return null;
   if (node.type === AST_NODE_TYPES.ObjectExpression) return node;
   if (node.type === AST_NODE_TYPES.Identifier) {
     const init = resolveInitializer(node, sourceCode);
-    return init === undefined
+    return init === undefined || !visit(seen, init)
       ? null
-      : foldToObject(init, sourceCode, depth + 1);
+      : foldToObject(init, sourceCode, seen);
   }
   return null;
-}
-
-/**
- * Does this expression read the REQUEST's Origin header directly?
- *
- * Reflecting the request origin is strictly worse than `'*'`, not milder: a
- * browser refuses to send credentials to a literal wildcard and sends them
- * happily to an origin the server echoed back. So `res.setHeader('Access-
- * Control-Allow-Origin', req.headers.origin)` disables the same-origin policy
- * for every attacker page at once.
- *
- * Only a DIRECT read counts. A conditional — `ALLOWED.has(o) ? o : 'null'` —
- * is an allowlist, and a rule that cannot tell the two apart reports the fix.
- */
-function readsRequestOrigin(node: TSESTree.Node): boolean {
-  if (node.type !== AST_NODE_TYPES.MemberExpression) return false;
-
-  // A non-computed member's property is always an Identifier.
-  const property = node.property;
-  const name = node.computed
-    ? property.type === AST_NODE_TYPES.Literal &&
-      typeof property.value === 'string'
-      ? property.value
-      : null
-    : (property as TSESTree.Identifier).name;
-  if (name?.toLowerCase() !== 'origin') return false;
-
-  // `<something>.headers.origin` — the receiver must be a `headers` bag.
-  const receiver = node.object;
-  return (
-    receiver.type === AST_NODE_TYPES.MemberExpression &&
-    // `req['headers'].origin` is the same bag as `req.headers.origin`.
-    propertyName(receiver) === 'headers'
-  );
 }
 
 type MessageIds = 'violationDetected';
@@ -249,10 +230,11 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
         // multi-environment setup keeps the options in a constant, and reading
         // only the inline object saw the honest spelling and missed the one
         // that shipped.
+        //
+        // The callee is the `cors` package by its import, so a renamed
+        // `import corsMiddleware from 'cors'` is the same middleware.
         const corsOptions =
-          node.callee.type === AST_NODE_TYPES.Identifier &&
-          node.callee.name === 'cors' &&
-          node.arguments[0] !== undefined
+          node.arguments[0] !== undefined && isCorsPackageCall(node, sourceCode)
             ? foldToObject(node.arguments[0], sourceCode)
             : null;
         if (corsOptions !== null) {

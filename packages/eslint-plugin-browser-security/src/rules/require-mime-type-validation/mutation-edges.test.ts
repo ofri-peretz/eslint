@@ -49,6 +49,16 @@ ruleTester.run(
       },
     ],
     invalid: [
+      {
+        name: 'a media-type template with an interpolated subtype is still a prefix test',
+        code: 'if (file.type.startsWith(`image/${kind}`)) upload(file);',
+        errors: [{ messageId: 'prefixMimeCheck' }],
+      },
+      {
+        name: 'an array pattern that skips an element is still walked',
+        code: "function f(input) { const [, file] = input.files; return fetch('/upload', { method: 'POST', body: file }); }",
+        errors: [{ messageId: 'missingMimeValidation' }],
+      },
       // @found Stryker mutation-survivor triage, 2026-10-19
       {
         name: 'FN: a quoted body key is the same fetch body',

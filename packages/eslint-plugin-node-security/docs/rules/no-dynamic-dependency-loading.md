@@ -10,8 +10,8 @@ autofix: false
 
 > Prevents runtime dependency injection with dynamic paths
 
-
 <!-- @rule-summary -->
+
 This rule detects dynamically constructed paths in require() and import() statements
 <!-- @/rule-summary -->
 
@@ -46,10 +46,17 @@ const module = await import(`./${feature}/index.js`); // ❌ Path traversal risk
 // Dynamic require() from config
 const config = JSON.parse(fs.readFileSync('config.json'));
 const handler = require(config.handlerPath); // ❌ Config-based injection
+```
 
-// Conditional dynamic import
+A specifier that can only ever be one of the strings the author wrote is static,
+however it is assembled — a no-expression template, a `const`, a concatenation
+of constants, or a choice between literals:
+
+```typescript
+// ✅ Not a finding: the environment picks one of two names written here, and
+// both are visible to the lock file and to every bundler
 const libName = process.env.USE_ALT_LIB ? 'alt-lib' : 'main-lib';
-const lib = require(libName); // ❌ Environment-controlled dependency
+const lib = require(libName);
 ```
 
 ## ✅ Correct
@@ -137,7 +144,7 @@ Module._load(dynamicPath); // Low-level dynamic loading
 
 ## ⚙️ Configuration
 
-This rule has no configuration options. It flags all non-literal arguments to `require()` and all non-literal `import()` sources.
+This rule has no configuration options. It flags every `require()` argument and `import()` source that is not provably one of the strings written in the file — a request value, a config field, a template or concatenation with a non-constant part.
 
 ## 🔗 Related Rules
 

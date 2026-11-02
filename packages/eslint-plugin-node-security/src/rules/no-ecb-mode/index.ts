@@ -16,12 +16,10 @@ import {
   formatLLMMessage,
   MessageIcons,
   createRule,
-  AST_NODE_TYPES,
   isTestFilePath,
-  namesOneOf,
-  propertyName,
 } from '@interlace/eslint-devkit';
 import { resolveConstantString } from '../../utils/const-value';
+import { calleeNameOn } from '../../utils/module-binding';
 
 type MessageIds = 'ecbMode' | 'useGcm' | 'useCbc';
 
@@ -112,12 +110,14 @@ export const noEcbMode = createRule<RuleOptions, MessageIds>({
         'createDecipheriv',
       ]);
 
-      // Check for crypto.createCipher*() pattern
-      const isCipherCall =
-        (node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          namesOneOf(propertyName(node.callee), cipherMethods)) ||
-        (node.callee.type === AST_NODE_TYPES.Identifier &&
-          cipherMethods.has(node.callee.name));
+      // Check for crypto.createCipher*() pattern — under any binding:
+      // `import { createCipheriv as makeCipher }` is still createCipheriv.
+      const calleeName = calleeNameOn(
+        node.callee,
+        context.sourceCode.getScope(node),
+        'crypto',
+      );
+      const isCipherCall = calleeName !== null && cipherMethods.has(calleeName);
 
       if (isCipherCall && node.arguments.length >= 1) {
         const algorithmArg = node.arguments[0];
@@ -130,7 +130,9 @@ export const noEcbMode = createRule<RuleOptions, MessageIds>({
         );
         if (resolved === null) return;
         const algorithm = resolved.value.toLowerCase();
-        if (algorithm.includes('-ecb') || algorithm.endsWith('ecb')) {
+        // Every ECB name in `crypto.getCiphers()` carries the `-ecb` segment
+        // (`aes-256-ecb`, `des-ede3-ecb`, `sm4-ecb`), so no bare-suffix check.
+        if (algorithm.includes('-ecb')) {
           const gcmReplacement = algorithm.replace(/-?ecb$/, '-gcm');
           // Report at the call site; rewrite whichever node holds the string.
           const target = resolved.source;

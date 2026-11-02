@@ -92,7 +92,11 @@ export const requireAbortSignal = createRule<RuleOptions, MessageIds>({
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        const matchedFunction = sdkCallName(node, targetFunctions);
+        const matchedFunction = sdkCallName(
+          node,
+          context.sourceCode,
+          targetFunctions,
+        );
         if (!matchedFunction) return;
 
         const optionsArg = node.arguments[0];

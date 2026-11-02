@@ -38,7 +38,7 @@
  * false negative for a false positive on code the rule cannot see.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, unwrapTypeSyntax } from '@interlace/eslint-devkit';
 
 import { constLiteralOf, findVariable } from './provenance';
 
@@ -70,7 +70,10 @@ function literalValue(node: TSESTree.Node): string | number | null {
   }
   // A template literal with no expressions is a string spelled with backticks;
   // `const ALGO = \`md5\`` is the same constant as `const ALGO = 'md5'`.
-  if (node.type === AST_NODE_TYPES.TemplateLiteral && node.expressions.length === 0) {
+  if (
+    node.type === AST_NODE_TYPES.TemplateLiteral &&
+    node.expressions.length === 0
+  ) {
     // The `!` is an argument about REACHABILITY, not a shrug. `cooked` is null
     // only for an invalid escape, which only a TAGGED template may hold — and
     // this is handed an expression node, so a tagged template arrives as
@@ -137,4 +140,73 @@ export function resolveConstantString(
   return resolved !== null && typeof resolved.value === 'string'
     ? (resolved as ResolvedConstant & { value: string })
     : null;
+}
+
+/**
+ * Is this a lookup into a closed table of string constants?
+ *
+ * `ALLOWED[req.query.plugin]` where `const ALLOWED = { csv: './plugins/csv' }`
+ * can only ever evaluate to one of the strings the author wrote (or
+ * `undefined`), whatever the key — the documented allowlist fix for every sink
+ * that takes a name: a module specifier, an algorithm. One hop through a
+ * `const` is followed too (`const algorithm = ALGORITHMS[tier]`).
+ *
+ * The table must be a `const` bound to an object or array literal whose every
+ * value is a string literal, and it must never be written through
+ * (`TABLE.legacy = x`) or handed to a call that could (`Object.assign(TABLE,
+ * …)`): either reopens the set of values the lookup can return.
+ */
+export function isClosedStringTableLookup(
+  sourceCode: SourceCode,
+  node: TSESTree.Node,
+  depth = 0,
+): boolean {
+  const bare = unwrapTypeSyntax(node);
+  if (bare.type === AST_NODE_TYPES.Identifier) {
+    const init = depth === 0 ? constInitializerOf(sourceCode, bare) : null;
+    return init !== null && isClosedStringTableLookup(sourceCode, init, 1);
+  }
+  if (
+    bare.type !== AST_NODE_TYPES.MemberExpression ||
+    bare.object.type !== AST_NODE_TYPES.Identifier
+  ) {
+    return false;
+  }
+  const table = bare.object;
+  const variable = findVariable(sourceCode, table);
+  const init = constInitializerOf(sourceCode, table);
+  if (!variable || init === null) return false;
+  const literal = unwrapTypeSyntax(init);
+  const values =
+    literal.type === AST_NODE_TYPES.ObjectExpression
+      ? literal.properties.map((property) =>
+          property.type === AST_NODE_TYPES.Property ? property.value : null,
+        )
+      : literal.type === AST_NODE_TYPES.ArrayExpression
+        ? literal.elements
+        : null;
+  if (
+    values === null ||
+    !values.every(
+      (value) =>
+        value !== null &&
+        value.type === AST_NODE_TYPES.Literal &&
+        typeof value.value === 'string',
+    )
+  ) {
+    return false;
+  }
+  return variable.references.every((reference) => {
+    const use = reference.identifier.parent;
+    if (use.type === AST_NODE_TYPES.CallExpression) return false;
+    if (use.type !== AST_NODE_TYPES.MemberExpression) return true;
+    const outer = use.parent;
+    return !(
+      (outer.type === AST_NODE_TYPES.AssignmentExpression &&
+        outer.left === use) ||
+      outer.type === AST_NODE_TYPES.UpdateExpression ||
+      (outer.type === AST_NODE_TYPES.UnaryExpression &&
+        outer.operator === 'delete')
+    );
+  });
 }

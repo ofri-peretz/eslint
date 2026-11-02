@@ -317,7 +317,11 @@ describe('no-unencrypted-transmission', () => {
             code: 'const sql = "mysql://u:p@db.acmecorp.io:3306/app";',
             errors: 1,
           },
-          { code: 'const raw = "tcp://metrics.acmecorp.io:2003";', errors: 1 },
+          {
+            name: 'a plaintext tcp:// URL string is reported',
+            code: 'const raw = "tcp://metrics.acmecorp.io:2003";',
+            errors: 1,
+          },
         ],
       },
     );
@@ -389,7 +393,14 @@ describe('no-unencrypted-transmission', () => {
       'options - allowInTests still blocks non-localhost',
       noUnencryptedTransmission,
       {
-        valid: [],
+        valid: [
+          {
+            name: 'a test-file template that does not open with a URL is not judged',
+            code: 'const msg = `connect to mongodb://db.internal/${name}`;',
+            filename: 'example.spec.ts',
+            options: [{ allowInTests: true }],
+          },
+        ],
         invalid: [
           {
             code: 'const url = "http://staging.example.com";',
@@ -496,6 +507,24 @@ describe('no-unencrypted-transmission', () => {
           filename: 'tests/production-safety.test.js',
           options: [{ allowInTests: true }],
         },
+        {
+          name: 'a test-file template that opens with prose is not judged, whatever a later chunk starts with',
+          code: 'log(`moved from redis://old.internal to ${sep}redis://new.internal`);',
+          filename: 'test/unit/client.spec.js',
+          options: [{ allowInTests: true }],
+        },
+        {
+          name: 'a test-file template that does not open with a URL is not judged under allowInTests',
+          code: 'log(`connecting to redis://cache.internal:6379 for ${name}`);',
+          filename: 'test/unit/cachers/redis.spec.js',
+          options: [{ allowInTests: true }],
+        },
+        {
+          name: 'a template that writes down a loopback host in a test file is exempt like the string form',
+          code: 'let opts = `redis://localhost:${port}`;',
+          filename: 'test/unit/cachers/redis.spec.js',
+          options: [{ allowInTests: true }],
+        },
       ],
       invalid: [
         // A REAL host in a test file still reports — the line the option was
@@ -518,6 +547,13 @@ describe('no-unencrypted-transmission', () => {
         {
           code: 'let opts = "redis://localhost:6379";',
           filename: 'test/unit/cachers/redis.spec.js',
+          errors: 1,
+        },
+        {
+          name: 'a template that writes down a real host in a test file reports like the string form',
+          code: 'let opts = `mongodb://db.internal:27017/${name}`;',
+          filename: 'test/unit/db.spec.ts',
+          options: [{ allowInTests: true }],
           errors: 1,
         },
       ],

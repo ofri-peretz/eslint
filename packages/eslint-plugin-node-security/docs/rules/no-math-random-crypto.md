@@ -32,6 +32,8 @@ The rule flags `Math.random()` only when the value flows into a cryptographic co
 - assigned to a variable or property whose name matches `token`, `key`, `secret`, `password`, `salt`, `iv`, `nonce`, `seed`, `session`, `csrf`, `otp`, `pin`, `auth`, `verify`, etc.; or
 - returned from a function whose name suggests credential/token generation.
 
+The value is followed through every local it is relayed into (`const raw = Math.random()…; const padded = raw.padEnd(…); const apiKey = padded;`), however many there are. `Math.random` is recognised in every static spelling — `Math['random']`, ``Math[`random`]``, `globalThis.Math.random`, `const { random } = Math` and `const { ['random']: r } = Math`.
+
 ### ❌ Incorrect
 
 ```js
@@ -59,12 +61,11 @@ const j = Math.floor(Math.random() * deck.length);
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Allow Math.random() in test files. Default: true |
-| `secretWords` | `string[]` | `["token","tokens","key","keys","secret","secrets","password","passwd","salt","iv","nonce","seed","hash","cipher","auth","session","csrf","otp","pin","code","codes","verify","signature","credential","jwt","encryption","apikey","passphrase","mnemonic"]` | Words that name a security value in this codebase. Replaces the default list. |
-| `correlationIdWords` | `string[]` | `["request","req","correlation","trace","span","transaction","txn","message","msg","event","job","run","task","batch","element","node","row","record","instance","component","widget","dom","operation","call","invocation","frame","render"]` | Words that mark a trailing `id` as a correlation id rather than a credential. Replaces the default list. |
-
+| Option               | Type       | Default                                                                                                                                                                                                                                                      | Description                                                                                              |
+| -------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `allowInTests`       | `boolean`  | `true`                                                                                                                                                                                                                                                       | Allow Math.random() in test files. Default: true                                                         |
+| `secretWords`        | `string[]` | `["token","tokens","key","keys","secret","secrets","password","passwd","salt","iv","nonce","seed","hash","cipher","auth","session","csrf","otp","pin","code","codes","verify","signature","credential","jwt","encryption","apikey","passphrase","mnemonic"]` | Words that name a security value in this codebase. Replaces the default list.                            |
+| `correlationIdWords` | `string[]` | `["request","req","correlation","trace","span","transaction","txn","message","msg","event","job","run","task","batch","element","node","row","record","instance","component","widget","dom","operation","call","invocation","frame","render"]`               | Words that mark a trailing `id` as a correlation id rather than a credential. Replaces the default list. |
 
 ```js
 {
@@ -72,7 +73,7 @@ const j = Math.floor(Math.random() * deck.length);
 }
 ```
 
-- `allowInTests` (default `false`) — when `true`, allows `Math.random()` in `*.test.*` / `*.spec.*` files.
+- `allowInTests` (default `true`) — allows `Math.random()` in `*.test.*` / `*.spec.*` files; set `false` to check test files too.
 
 ## When Not To Use
 

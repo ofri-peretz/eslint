@@ -23,7 +23,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -50,7 +50,6 @@ const xai = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -58,74 +57,80 @@ const ruleTester = new RuleTester({
   },
 });
 
-ruleTester.run('require-rag-content-validation (branch coverage)', requireRagContentValidation, {
-  valid: xai([
-    // Awaited identifier init — isRagCall bails on non-CallExpression.
-    {
-      code: `
+ruleTester.run(
+  'require-rag-content-validation (branch coverage)',
+  requireRagContentValidation,
+  {
+    valid: xai([
+      // Awaited identifier init — isRagCall bails on non-CallExpression.
+      {
+        code: `
         async function f() {
           const docs = await cachedDocs;
           generateText({ prompt: docs });
         }
       `,
-    },
-    // Array-pattern declarator — id is not an Identifier, tracking skipped.
-    {
-      code: `const [first] = items;`,
-    },
-    // Declarator with no initializer.
-    {
-      code: `let docs;`,
-    },
-    // AI call with no arguments.
-    {
-      code: `generateText();`,
-    },
-    // AI call whose options argument is not an object literal.
-    {
-      code: `generateText(makeOptions());`,
-    },
-    // Spread-only options object — non-Property entries skipped.
-    {
-      code: `
+      },
+      // Array-pattern declarator — id is not an Identifier, tracking skipped.
+      {
+        code: `const [first] = items;`,
+      },
+      // Declarator with no initializer.
+      {
+        code: `let docs;`,
+      },
+      // AI call with no arguments.
+      {
+        code: `generateText();`,
+      },
+      // AI call whose options argument is not an object literal.
+      {
+        code: `generateText(makeOptions());`,
+      },
+      // Spread-only options object — non-Property entries skipped.
+      {
+        code: `
         async function f() {
           const docs = await vectorStore.search(q);
           generateText({ ...baseOptions });
         }
       `,
-    },
-    // Computed key — the name genuinely isn't statically known.
-    {
-      code: `
+      },
+      // Computed key — the name genuinely isn't statically known.
+      {
+        code: `
         async function f() {
           const docs = await vectorStore.search(q);
           generateText({ [k]: docs });
         }
       `,
-    },
-  ]),
-  invalid: xai([
-    // Was a "documented FN: only Identifier keys are matched" entry in `valid`.
-    // Quoting a key doesn't change what the property means, so recording the
-    // miss as expected behaviour just made the gap permanent.
-    {
-      code: `
+      },
+    ]),
+    invalid: xai([
+      // Was a "documented FN: only Identifier keys are matched" entry in `valid`.
+      // Quoting a key doesn't change what the property means, so recording the
+      // miss as expected behaviour just made the gap permanent.
+      {
+        code: `
         async function f() {
           const docs = await vectorStore.search(q);
           generateText({ 'prompt': docs });
         }
       `,
-      errors: [{ messageId: 'unsanitizedRagContent' }],
-    },
-    // RAG content reaching the system property (not just prompt).
-    {
-      code: `
+        errors: [{ messageId: 'unsanitizedRagContent' }],
+      },
+      // RAG content reaching the system property (not just prompt).
+      {
+        code: `
         async function f() {
           const docs = await vectorStore.search(q);
           generateText({ model: m, system: docs });
         }
       `,
-      errors: [{ messageId: 'unsanitizedRagContent', data: { source: 'docs' } }],
-    },
-  ]),
-});
+        errors: [
+          { messageId: 'unsanitizedRagContent', data: { source: 'docs' } },
+        ],
+      },
+    ]),
+  },
+);

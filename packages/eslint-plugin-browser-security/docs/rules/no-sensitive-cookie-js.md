@@ -1,17 +1,18 @@
 ---
 title: no-sensitive-cookie-js
-description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+description: 'The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:'
 tags: ['security', 'browser']
 category: security
 severity: medium
 cwe: CWE-359
-owasp: "A02:2021"
+owasp: 'A02:2021'
 autofix: false
 ---
 
 > 🔒 Disallow storing sensitive data (tokens, passwords) in cookies via JavaScript
 
 <!-- @rule-summary -->
+
 The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
 <!-- @/rule-summary -->
 
@@ -29,13 +30,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-1004](https://cwe.mitre.org/data/definitions/1004.html) [OWASP:A02](https://owasp.org/Top10/A02_2021-Injection/) [CVSS:5.3](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Sensitive Cookie Without HttpOnly detected` |
-| **Severity & Compliance** | Impact assessment | `MEDIUM` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A02_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                         |
+| :------------------------ | :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-1004](https://cwe.mitre.org/data/definitions/1004.html) [OWASP:A02](https://owasp.org/Top10/A02_2021-Injection/) [CVSS:5.3](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Sensitive Cookie Without HttpOnly detected`                                                                                                                                                                                                                    |
+| **Severity & Compliance** | Impact assessment      | `MEDIUM`                                                                                                                                                                                                                                                        |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                            |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A02_2021-Injection/)                                                                                                                                                                                                     |
 
 ## Rule Details
 
@@ -66,23 +67,16 @@ When you set cookies via JavaScript:
 ### ❌ Incorrect
 
 ```javascript
-// Setting auth token in cookie via JavaScript
-document.cookie = 'token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+// A secret in a cookie set from JavaScript
+document.cookie = 'password=' + password;
+document.cookie = `api_key=${key}; Secure; SameSite=Strict`;
 
-// Session ID
-document.cookie = 'sessionId=abc123';
+// Even with security attributes, still readable by any script
+document.cookie = 'client_secret=xyz; Secure; SameSite=Strict';
 
-// JWT
-document.cookie = 'jwt=eyJ...';
-
-// Access token
+// Bearer credentials — token, jwt, sessionId, access_token, refreshToken —
+// are reported by no-cookie-auth-tokens, not this rule:
 document.cookie = 'access_token=' + accessToken;
-
-// With template literal
-document.cookie = `refreshToken=${token}; Secure; SameSite=Strict`;
-
-// Even with security attributes, still vulnerable!
-document.cookie = 'authToken=xyz; Secure; SameSite=Strict';
 ```
 
 ### ✅ Correct
@@ -111,11 +105,10 @@ await fetch('/api/auth/login', {
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
-| `sensitivePatterns` | `string[]` | `["password","passwd","pwd","passphrase","secret","api key","apikey","private key","secret key","encryption key","signing key","client secret","credit card","card number","cvv","cvc","ssn","social security","seed phrase","mnemonic","recovery code"]` | Patterns to detect as sensitive |
-
+| Option              | Type       | Default                                                                                                                                                                                                                                                   | Description                                     |
+| ------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `allowInTests`      | `boolean`  | `true`                                                                                                                                                                                                                                                    | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `sensitivePatterns` | `string[]` | `["password","passwd","pwd","passphrase","secret","api key","apikey","private key","secret key","encryption key","signing key","client secret","credit card","card number","cvv","cvc","ssn","social security","seed phrase","mnemonic","recovery code"]` | Patterns to detect as sensitive                 |
 
 ```json
 {
@@ -145,29 +138,35 @@ await fetch('/api/auth/login', {
 
 ### Default Sensitive Patterns
 
+Whole-word terms, matched after splitting the cookie name on `_`, `-`, `.` and case
+boundaries. Bearer credentials (`token`, `jwt`, `session`, `auth`, …) are **not** in
+this list: they are owned by [`no-cookie-auth-tokens`](./no-cookie-auth-tokens.md),
+which reports them under the same vocabulary partition. Setting `sensitivePatterns`
+replaces the list.
+
 ```javascript
 [
-  'token',
-  'jwt',
-  'access_token',
-  'accessToken',
-  'refresh_token',
-  'refreshToken',
-  'id_token',
-  'idToken',
-  'auth',
-  'session',
-  'sessionId',
-  'session_id',
   'password',
   'passwd',
+  'pwd',
+  'passphrase',
   'secret',
-  'api_key',
-  'apiKey',
-  'private_key',
-  'privateKey',
-  'credential',
-  'bearer',
+  'api key',
+  'apikey',
+  'private key',
+  'secret key',
+  'encryption key',
+  'signing key',
+  'client secret',
+  'credit card',
+  'card number',
+  'cvv',
+  'cvc',
+  'ssn',
+  'social security',
+  'seed phrase',
+  'mnemonic',
+  'recovery code',
 ];
 ```
 

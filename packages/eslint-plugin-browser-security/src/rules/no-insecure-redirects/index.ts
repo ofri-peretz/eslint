@@ -293,8 +293,11 @@ export const noInsecureRedirects = createRule<RuleOptions, MessageIds>({
       // already matched `<location>.assign` / `.replace`, so the callee is the
       // member expression whose object is the Location.
       if (
-        node.callee.type === 'MemberExpression' &&
-        isSelfReload(node.arguments[0], node.callee.object, sourceCode)
+        isSelfReload(
+          node.arguments[0],
+          (node.callee as TSESTree.MemberExpression).object,
+          sourceCode,
+        )
       ) {
         return;
       }
@@ -316,7 +319,9 @@ export const noInsecureRedirects = createRule<RuleOptions, MessageIds>({
       // old shape hardcoded `window` + a non-computed `location` + a
       // three-name property list, so `top.location.href = req.query.next` and
       // `window['location'].href = location.hash` were silent.
-      if (!isLocationNavigationWrite(node.left)) {
+      if (
+        !isLocationNavigationWrite(node.left, sourceCode.getScope(node.left))
+      ) {
         return;
       }
       // Taint is read from the VALUE. A `window.location` on the LEFT of the
@@ -342,7 +347,7 @@ export const noInsecureRedirects = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        const { ignoreInTests = true }: Options = options || {};
+        const { ignoreInTests } = (options || {}) as Required<Options>;
 
         const filename = context.filename;
         const isTestFile = ignoreInTests && isTestFilePath(filename);

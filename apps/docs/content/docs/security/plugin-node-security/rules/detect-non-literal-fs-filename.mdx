@@ -28,7 +28,7 @@ Detects variable in filename argument of fs calls, which might allow an attacker
 | **CWE Reference** | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) (Path Traversal) |
 | **Severity**      | High (security vulnerability)                                             |
 | **Auto-Fix**      | ⚠️ Suggests fixes (manual application)                                    |
-| **Category**   | Security |
+| **Category**      | Security                                                                  |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                   |
 | **Best For**      | Node.js applications, file processing systems, file upload handlers       |
 
@@ -36,13 +36,13 @@ Detects variable in filename argument of fs calls, which might allow an attacker
 
 > Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
 
-| Dimension | Value |
-| :--- | :--- |
-| **CWE** | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) — Improper Limitation of a Pathname to a Restricted Directory (Path Traversal) |
-| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
-| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
-| **Niche relevance** | **Critical:** infra/devtools, B2B SaaS handling user uploads, fintech (document storage) · **High:** healthtech (medical-record file access), marketplaces · **Medium:** B2C |
-| **Investor-frame impact** | Path traversal → unauthorized file access (configs, source code, secrets) or unauthorized writes (overwriting system files). Single bug class that often escalates to full system compromise; catch at lint-time is the cheapest possible defense. |
+| Dimension                    | Value                                                                                                                                                                                                                                              |
+| :--------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CWE**                      | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) — Improper Limitation of a Pathname to a Restricted Directory (Path Traversal)                                                                                                            |
+| **Feedback-loop tier**       | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment)                          |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence))                |
+| **Niche relevance**          | **Critical:** infra/devtools, B2B SaaS handling user uploads, fintech (document storage) · **High:** healthtech (medical-record file access), marketplaces · **Medium:** B2C                                                                       |
+| **Investor-frame impact**    | Path traversal → unauthorized file access (configs, source code, secrets) or unauthorized writes (overwriting system files). Single bug class that often escalates to full system compromise; catch at lint-time is the cheapest possible defense. |
 
 **Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
 
@@ -56,7 +56,7 @@ Detects variable in filename argument of fs calls, which might allow an attacker
 
 This rule detects dangerous use of Node.js fs methods with dynamic paths that can lead to path traversal attacks (also known as directory traversal).
 
-### Traversal needs a path to traverse *out of*
+### Traversal needs a path to traverse _out of_
 
 CWE-22 is about escaping a directory the code chose, by extending or
 redirecting a path that has other, fixed parts. `path.join('/uploads',
@@ -79,10 +79,27 @@ into** a path: a template with literal text around it, a `+` concatenation, or
 a `path.join` / `path.resolve` with more than one argument.
 
 ```ts
-fs.readFileSync(process.env.CA);                       // silent — whole value
-fs.readFileSync(path.resolve(process.env.CA));         // silent — normalised, still whole
-fs.readFileSync('/etc/app/' + process.env.NAME);       // reported — a prefix to escape
-fs.cpSync(path.join(__dirname, 'packages', argv[2]));  // reported — a base plus a segment
+fs.readFileSync(process.env.CA); // silent — whole value
+fs.readFileSync(path.resolve(process.env.CA)); // silent — normalised, still whole
+fs.readFileSync('/etc/app/' + process.env.NAME); // reported — a prefix to escape
+fs.cpSync(path.join(__dirname, 'packages', argv[2])); // reported — a base plus a segment
+```
+
+A value read back through a `const` counts as the value itself, destructured or
+not: `const [, , name] = process.argv` followed by
+`path.join(__dirname, name)` is reported exactly like
+`path.join(__dirname, process.argv[2])`, and `const { CA } = process.env`
+followed by `fs.readFileSync(CA)` is as silent as `process.env.CA`. However long
+the concatenation or the chain of `const` aliases, the taint is found.
+
+A guard clause clears the path after it wherever the two share a statement
+list — a function body, a nested block, or the top level of a CLI script — and
+a guard placed before a callback is created covers that callback:
+
+```ts
+const name = process.argv[2];
+if (!ALLOWED.includes(name)) throw new Error('unknown file');
+fs.readFileSync('/srv/data/' + name); // silent — allowlisted above
 ```
 
 ```mermaid
@@ -127,20 +144,20 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Path Traversal detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                     |
+| :------------------------ | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Path Traversal detected`                                                                                                                                                                                                                                   |
+| **Severity & Compliance** | Impact assessment      | `HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]`                                                                                                                                                                                                                        |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                        |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/)                                                                                                                                                                                                 |
 
 ## Configuration
 
-| Option              | Type       | Default | Description                    |
-| ------------------- | ---------- | ------- | ------------------------------ |
-| `allowLiterals`     | `boolean`  | `false` | Allow literal string paths     |
-| `additionalMethods` | `string[]` | `[]`    | Additional fs methods to check |
+| Option              | Type       | Default | Description                                           |
+| ------------------- | ---------- | ------- | ----------------------------------------------------- |
+| `allowLiterals`     | `boolean`  | `false` | Silence hardcoded paths, including `../../etc/passwd` |
+| `additionalMethods` | `string[]` | `[]`    | Additional fs methods to check                        |
 
 ## How the fs module is recognised
 
@@ -148,11 +165,11 @@ The rule resolves the binding rather than matching one spelling of it, so all
 of these are checked — `fs`, `node:fs`, `fs/promises` and `node:fs/promises`:
 
 ```typescript
-import fs from 'fs';                         // default import, any local name
-import * as fileSystem from 'node:fs';       // namespace import
-import { readFile } from 'fs/promises';      // named import, renamed or not
-const { readdir } = require('node:fs');      // destructured require
-fs.promises.readFile(p);                     // the promises sub-object
+import fs from 'fs'; // default import, any local name
+import * as fileSystem from 'node:fs'; // namespace import
+import { readFile } from 'fs/promises'; // named import, renamed or not
+const { readdir } = require('node:fs'); // destructured require
+fs.promises.readFile(p); // the promises sub-object
 ```
 
 A bare `fs.readFile(...)` in a file that imports nothing is still reported, on
@@ -174,14 +191,14 @@ readFile(userPath, callback); // Attacker can access ../../../etc/passwd
 // Directory traversal - HIGH risk
 fs.readdir(userDir, callback); // Can list any directory
 
-// File creation - MEDIUM risk
+// File creation - HIGH risk
 fs.writeFile(userFile, data, callback); // Can write anywhere
 ```
 
 ### ✅ Correct
 
 ```typescript
-fs.readFile("/path/to/file.txt", callback);
+fs.readFile('/path/to/file.txt', callback);
 ```
 
 ## Path Traversal Prevention
@@ -196,7 +213,8 @@ fs.readFile(userInput, callback);
 
 // ✅ Protected
 const safePath = path.resolve(SAFE_DIR, userInput);
-if (!safePath.startsWith(SAFE_DIR)) {
+// The separator matters: a bare startsWith(SAFE_DIR) lets /safe-dir-evil through.
+if (!safePath.startsWith(SAFE_DIR + path.sep)) {
   return callback(new Error('Invalid path'));
 }
 fs.readFile(safePath, callback);
@@ -363,9 +381,9 @@ The following patterns are **not detected** due to static analysis limitations:
 
 ### A whole tainted value used as the entire path
 
-`fs.readFileSync(process.env.X)` is silent by design — see *Traversal needs a
-path to traverse out of* above. If your threat model treats the environment or
-`process.argv` as attacker-controlled *and* you want every fs call driven by
+`fs.readFileSync(process.env.X)` is silent by design — see _Traversal needs a
+path to traverse out of_ above. If your threat model treats the environment or
+`process.argv` as attacker-controlled _and_ you want every fs call driven by
 them flagged regardless of shape, that is `no-arbitrary-file-access`'s
 question, not this rule's.
 
@@ -413,10 +431,10 @@ fileManager.read(userPath);
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `taintSources` | `string[]` | `["process"]` | Identifier roots treated as attacker-reachable. Default: ['process'] (process.argv and process.env). Request roots (req/request/ctx/event) are deliberately NOT included — no-arbitrary-file-access owns those, and listing them here would double-report one line at two severities. Add them only if you run this rule without that one. |
-| `reportUnresolvedPaths` | `boolean` | `false` | Report paths whose provenance cannot be resolved. Restores the pre-inversion behaviour; measured at 7% precision on real code. |
-| `reportWholeProcessValues` | `boolean` | `false` | Report process.argv / process.env used as the whole path (fs.readFileSync(process.argv[2])). Off by default: whoever sets argv or the environment already chooses which files the process opens. True matches eslint-plugin-security. |
-| `allowLiterals` | `boolean` | `false` | Allow literal string paths. Default true: a rule named "non-literal" reporting a literal contradicts its contract. Set false to also flag hardcoded paths containing "../" — measured as this rule's largest FP class on real code. |
-| `additionalMethods` | `string[]` | `[]` | Additional fs methods to check |
+| Option                     | Type       | Default       | Description                                                                                                                                                                                                                                                                                                                                |
+| -------------------------- | ---------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `taintSources`             | `string[]` | `["process"]` | Identifier roots treated as attacker-reachable. Default: ['process'] (process.argv and process.env). Request roots (req/request/ctx/event) are deliberately NOT included — no-arbitrary-file-access owns those, and listing them here would double-report one line at two severities. Add them only if you run this rule without that one. |
+| `reportUnresolvedPaths`    | `boolean`  | `false`       | Report paths whose provenance cannot be resolved. Restores the pre-inversion behaviour; measured at 7% precision on real code.                                                                                                                                                                                                             |
+| `reportWholeProcessValues` | `boolean`  | `false`       | Report process.argv / process.env used as the whole path (fs.readFileSync(process.argv[2])). Off by default: whoever sets argv or the environment already chooses which files the process opens. True matches eslint-plugin-security.                                                                                                      |
+| `allowLiterals`            | `boolean`  | `false`       | Silence hardcoded paths altogether. With the default (false) a literal reports only when it traverses (a `..` segment) into a sensitive location such as `../../etc/passwd`; a relative literal like `../config.json` never reports — measured as this rule's largest FP class on real code.                                               |
+| `additionalMethods`        | `string[]` | `[]`          | Additional fs methods to check                                                                                                                                                                                                                                                                                                             |

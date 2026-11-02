@@ -19,6 +19,39 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-unvalidated-deeplinks', noUnvalidatedDeeplinks, {
   valid: [
+    // ── Stryker triage 2026-11-02 ───────────────────────────────────────────
+    {
+      name: 'an event url redeclared with a constant is no longer the deep link',
+      code: "Linking.addEventListener('url', (event) => { var { url } = event; var url = 'myapp://home'; Linking.openURL(url); });",
+    },
+    {
+      name: 'a url nested deeper in the listener parameter is not the event url',
+      code: "Linking.addEventListener('url', ({ data: { url } }) => Linking.openURL(url));",
+    },
+    {
+      name: 'a url destructured from an ordinary callback parameter is not a deep link',
+      code: 'links.forEach(({ url }) => Linking.openURL(url));',
+    },
+    {
+      name: 'a url nested deeper in the event object is not the event url',
+      code: "Linking.addEventListener('url', (event) => { const { data: { url } } = event; Linking.openURL(url); });",
+    },
+    {
+      name: 'a url destructured in a for-of head is not an event url',
+      code: 'for (const { url } of links) Linking.openURL(url);',
+    },
+    {
+      name: 'a non-url field of the url listener event is not the deep link',
+      code: "Linking.addEventListener('url', (event) => navigation.navigate(event.type));",
+    },
+    {
+      name: "an ordinary object's url field is not a navigate deep link",
+      code: 'function open(item) { navigation.navigate(item.url); }',
+    },
+    {
+      name: 'a deep link behind a readable anchored-host predicate is validated',
+      code: "const TRUSTED = /^https:\\/\\/acme\\.io(\\/[^\\s]*)?$/; function isTrusted(u) { return TRUSTED.test(u); } Linking.addEventListener('url', ({ url }) => { if (isTrusted(url)) Linking.openURL(url); });",
+    },
     // ── isRouteParam ────────────────────────────────────────────────────────
     {
       name: 'route.params itself is the params object, not a value read from it',
@@ -92,6 +125,12 @@ ruleTester.run('no-unvalidated-deeplinks', noUnvalidatedDeeplinks, {
     },
   ],
   invalid: [
+    // @found Stryker mutation-survivor triage, 2026-11-02
+    {
+      name: 'FN: Linking reached through a react-native namespace import is the same sink',
+      code: "import * as RN from 'react-native'; RN.Linking.addEventListener('url', (event) => RN.Linking.openURL(event.url));",
+      errors: [{ messageId: 'violationDetected' }],
+    },
     {
       name: 'route.params is still followed through four aliases',
       code: 'function Screen({ route }) { const p = route.params; const q = p; const r = q; const s = r; Linking.openURL(s.next); }',

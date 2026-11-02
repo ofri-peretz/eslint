@@ -1,6 +1,6 @@
 ---
 title: require-mime-type-validation
-description: "CWE: [CWE-434](https://cwe.mitre.org/data/definitions/434.html)"
+description: 'CWE: [CWE-434](https://cwe.mitre.org/data/definitions/434.html)'
 tags: ['security', 'browser']
 category: security
 severity: medium
@@ -12,8 +12,8 @@ autofix: false
 > **CWE:** [CWE-434: Unrestricted Upload of File with Dangerous Type](https://cwe.mitre.org/data/definitions/434.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M4: Insufficient Input/Output Validation](https://owasp.org/www-project-mobile-top-10/)
 
-
 <!-- @rule-summary -->
+
 CWE: [CWE-434](https://cwe.mitre.org/data/definitions/434.html)
 <!-- @/rule-summary -->
 
@@ -25,7 +25,7 @@ ESLint Rule: require-mime-type-validation. This rule is part of [`eslint-plugin-
 | --------------- | --------------------------------------- |
 | **Severity**    | High (RCE Risk)                         |
 | **Auto-Fix**    | ❌ No (requires configuration logic)    |
-| **Category**   | Security |
+| **Category**    | Security                                |
 | **ESLint MCP**  | ✅ Optimized for ESLint MCP integration |
 | **Best For**    | Node.js servers handling file uploads   |
 | **Suggestions** | ✅ Advice on using fileFilter in Multer |
@@ -57,7 +57,7 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ## Rule Details
 
-This rule specifically targets common Node.js file upload middleware like `multer`, ensuring that a `fileFilter` or strict size `limits` are configured.
+This rule specifically targets common Node.js file upload middleware like `multer` (resolved through its `import` / `require`, under any local name), ensuring that a `fileFilter` is configured. Size `limits` bound how **much** is uploaded, not **what**: CWE-434 is about the dangerous file type, so `limits` alone do not satisfy the rule — combine them with a `fileFilter`.
 
 ```mermaid
 %%{init: {
@@ -76,9 +76,7 @@ This rule specifically targets common Node.js file upload middleware like `multe
 flowchart TD
     A[Multer Configuration] --> B{Has fileFilter?}
     B -->|Yes| C[✅ Secure Configuration]
-    B -->|No| D{Has limits?}
-    D -->|Yes| E[🟡 Partial Validation (Size only)]
-    D -->|No| F[🚨 Unrestricted Upload Vulnerability]
+    B -->|No| F[🚨 Unrestricted Upload Vulnerability]
 ```
 
 ### Why This Matters
@@ -98,7 +96,7 @@ This rule has no configuration options in the current version.
 ### ❌ Incorrect
 
 ```javascript
-multer().array('photos')
+multer().array('photos');
 ```
 
 ### ✅ Correct

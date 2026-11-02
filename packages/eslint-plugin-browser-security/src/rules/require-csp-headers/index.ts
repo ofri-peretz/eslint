@@ -36,6 +36,14 @@
  * The deferral is structural (`scopeSetsResponseHeaders`), not a name test,
  * and is pinned by the partition matrix in `require-csp-headers.test.ts`.
  *
+ * **That partition is withdrawn.** `no-missing-security-headers` is DEPRECATED
+ * (replacedBy express-security/require-helmet) and out of every preset, so a
+ * live rule deferring to it left `res.setHeader('X-Frame-Options', 'DENY');
+ * res.render(view)` reported by nobody for every user who followed the
+ * deprecation. This rule now owns every document emitted without a CSP; a
+ * consumer who still enables the deprecated rule explicitly gets its
+ * broader "missing security headers" finding beside this one.
+ *
  * Note also what this rule does NOT own: whether a policy that IS present is
  * a good one. `'unsafe-eval'` inside a present CSP belongs to
  * `no-unsafe-eval-csp`, and missing frame protection to `no-clickjacking`.
@@ -47,7 +55,9 @@ import {
   formatLLMMessage,
   MessageIcons,
   namesOneOf,
+  objectKeyName,
   propertyName,
+  resolveModuleBinding,
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
@@ -95,13 +105,10 @@ const DOCUMENT_EXTENSIONS: ReadonlySet<string> = new Set(['.html', '.htm']);
  * `setHeader`/`writeHead`, Express's `set`/`header`.
  *
  * @protocol-constant The complete call signature for setting a response header
- * in Node and Express. This list does two load-bearing jobs and a consumer
- * could break both: it recognises a call that ESTABLISHES a CSP, so deleting an
- * entry makes the rule report a response that is already protected; and it
- * drives the partition deferral to `no-missing-security-headers`, so deleting
- * an entry makes one handler draw the same missing-CSP finding twice under two
- * CWEs. Neither is a vocabulary judgement — no domain adds a fifth way to set
- * a header.
+ * in Node and Express. It recognises a call that ESTABLISHES a CSP, so a
+ * consumer deleting an entry would make the rule report a response that is
+ * already protected. Not a vocabulary judgement — no domain adds a fifth way
+ * to set a header.
  */
 const HEADER_METHODS: ReadonlySet<string> = new Set([
   'setHeader',
@@ -134,10 +141,8 @@ function isNode(value: unknown): value is TSESTree.Node {
 function staticString(
   node: TSESTree.Node,
   sourceCode: TSESLint.SourceCode,
-  depth: number,
+  seen: Set<TSESTree.Node> = new Set(),
 ): string | null {
-  if (depth > 5) return null;
-
   if (node.type === 'Literal') {
     return typeof node.value === 'string' ? node.value : null;
   }
@@ -149,26 +154,20 @@ function staticString(
   }
   if (node.type === 'Identifier') {
     const init = resolveInitializer(node, sourceCode);
-    return init === undefined
+    return init === undefined || !visit(seen, init)
       ? null
-      : staticString(init, sourceCode, depth + 1);
+      : staticString(init, sourceCode, seen);
   }
-  if (node.type === 'MemberExpression' && node.computed) {
-    const index = node.property;
-    if (index.type !== 'Literal' || typeof index.value !== 'number')
-      return null;
-    const array = foldToArray(node.object, sourceCode, depth + 1);
-    const element = array?.elements[index.value];
-    return element == null
-      ? null
-      : staticString(element, sourceCode, depth + 1);
+  if (node.type === 'MemberExpression') {
+    const element = tableElement(node, sourceCode, seen);
+    return element === null ? null : staticString(element, sourceCode, seen);
   }
   // A local builder: `res.send(page(body))`. What the builder RETURNS is what
   // the browser receives.
   if (node.type === 'CallExpression' && node.callee.type === 'Identifier') {
     const fn = resolveLocalFunction(node.callee, sourceCode);
-    if (fn === null) return null;
-    return returnedString(fn, sourceCode, depth + 1);
+    if (fn === null || !visit(seen, fn)) return null;
+    return returnedString(fn, sourceCode, seen);
   }
   return null;
 }
@@ -176,24 +175,57 @@ function staticString(
 function foldToArray(
   node: TSESTree.Node,
   sourceCode: TSESLint.SourceCode,
-  depth: number,
+  seen: Set<TSESTree.Node>,
 ): TSESTree.ArrayExpression | null {
-  if (depth > 5) return null;
   if (node.type === 'ArrayExpression') return node;
   if (node.type === 'Identifier') {
     const init = resolveInitializer(node, sourceCode);
-    return init === undefined ? null : foldToArray(init, sourceCode, depth + 1);
+    return init === undefined || !visit(seen, init)
+      ? null
+      : foldToArray(init, sourceCode, seen);
   }
   // A nested table — `PAGES[0][1]`, one row per locale.
-  if (node.type === 'MemberExpression' && node.computed) {
-    const index = node.property;
-    if (index.type !== 'Literal' || typeof index.value !== 'number')
-      return null;
-    const outer = foldToArray(node.object, sourceCode, depth + 1);
-    const element = outer?.elements[index.value];
-    return element == null ? null : foldToArray(element, sourceCode, depth + 1);
+  if (node.type === 'MemberExpression') {
+    const element = tableElement(node, sourceCode, seen);
+    return element === null ? null : foldToArray(element, sourceCode, seen);
   }
   return null;
+}
+
+/**
+ * The element `table[<literal>]` reads, when the table folds to an array.
+ *
+ * Indexed exactly as the runtime indexes: by the literal's property key, so
+ * `PAGES['0']` is element 0 too, while `PAGES['01']`, `PAGES[null]` and a
+ * hole name no element. A dotted key is an Identifier, never a Literal.
+ */
+function tableElement(
+  node: TSESTree.MemberExpression,
+  sourceCode: TSESLint.SourceCode,
+  seen: Set<TSESTree.Node>,
+): TSESTree.Node | null {
+  const index = node.property;
+  if (index.type !== 'Literal') return null;
+  const array = foldToArray(node.object, sourceCode, seen);
+  if (array === null) return null;
+  const element: unknown = (
+    array.elements as unknown as Record<string, unknown>
+  )[String(index.value)];
+  return isNode(element) ? element : null;
+}
+
+/**
+ * Record an alias or builder hop; false when it was already taken.
+ *
+ * The folds follow `const` aliases and local builders as far as they go — a
+ * hop budget gave up on a longer chain and hid the document — so a cycle
+ * (`const a = b; const b = a;`, a builder that returns its own call) is what
+ * has to stop them.
+ */
+function visit(seen: Set<TSESTree.Node>, node: TSESTree.Node): boolean {
+  if (seen.has(node)) return false;
+  seen.add(node);
+  return true;
 }
 
 /** The function a callee name resolves to, when it is declared in this file. */
@@ -227,20 +259,19 @@ function resolveLocalFunction(
 function returnedString(
   fn: TSESTree.Node,
   sourceCode: TSESLint.SourceCode,
-  depth: number,
+  seen: Set<TSESTree.Node>,
 ): string | null {
+  // Only an arrow can have an expression body.
   if (
-    (fn.type === 'ArrowFunctionExpression' ||
-      fn.type === 'FunctionExpression' ||
-      fn.type === 'FunctionDeclaration') &&
+    fn.type === 'ArrowFunctionExpression' &&
     fn.body.type !== 'BlockStatement'
   ) {
-    return staticString(fn.body, sourceCode, depth);
+    return staticString(fn.body, sourceCode, seen);
   }
   const parts: string[] = [];
   walk(fn, (child) => {
     if (child.type !== 'ReturnStatement' || child.argument === null) return;
-    const value = staticString(child.argument, sourceCode, depth);
+    const value = staticString(child.argument, sourceCode, seen);
     if (value !== null) parts.push(value);
   });
   return parts.length > 0 ? parts.join(' ') : null;
@@ -293,7 +324,7 @@ function mayHoldDocument(
   node: TSESTree.Node,
   sourceCode: TSESLint.SourceCode,
 ): boolean {
-  const folded = staticString(node, sourceCode, 0);
+  const folded = staticString(node, sourceCode);
   if (folded !== null && isHtmlDocument(folded)) return true;
   if (node.type !== 'Identifier') return false;
 
@@ -304,18 +335,14 @@ function mayHoldDocument(
   // check for only one of the two crashed the lint run on `res.send(payload)`.
   if (variable == null) return false;
 
-  for (const def of variable.defs) {
-    if (def.type !== 'Variable' || def.node.init == null) continue;
-    const value = staticString(def.node.init, sourceCode, 0);
-    if (value !== null && isHtmlDocument(value)) return true;
-  }
+  // A declarator's initialiser is a write reference too, so this one loop
+  // reads every value the binding is ever given.
   for (const reference of variable.references) {
-    if (!reference.isWrite()) continue;
-    // `writeExpr` is typed nullable, and is absent for a write that has no
-    // expression of its own — the binding of a `for…of`, for instance.
+    // `writeExpr` is absent on a read, and on a write that has no expression
+    // of its own — the binding of a `for…of`, or `page++`.
     const written = reference.writeExpr;
     if (written == null) continue;
-    const value = staticString(written, sourceCode, 0);
+    const value = staticString(written, sourceCode);
     if (value !== null && isHtmlDocument(value)) return true;
   }
   return false;
@@ -333,23 +360,22 @@ function namesDocumentFile(
   sourceCode: TSESLint.SourceCode,
 ): boolean {
   const candidates: string[] = [];
-  const direct = staticString(node, sourceCode, 0);
+  const direct = staticString(node, sourceCode);
   if (direct !== null) candidates.push(direct);
 
   // `path.join(__dirname, 'public', 'index.html')` — the last static segment
   // is the filename.
   if (node.type === 'CallExpression') {
     for (const arg of node.arguments) {
-      const value = staticString(arg, sourceCode, 0);
+      const value = staticString(arg, sourceCode);
       if (value !== null) candidates.push(value);
     }
   }
 
   return candidates.some((candidate) => {
+    // No dot slices off the last character, which is no extension.
     const dot = candidate.lastIndexOf('.');
-    return (
-      dot !== -1 && DOCUMENT_EXTENSIONS.has(candidate.slice(dot).toLowerCase())
-    );
+    return DOCUMENT_EXTENSIONS.has(candidate.slice(dot).toLowerCase());
   });
 }
 
@@ -462,7 +488,7 @@ export const requireCspHeaders = createRule<RuleOptions, MessageIds>({
       if (cspEstablished !== undefined) return cspEstablished;
       let found = false;
       walk(context.sourceCode.ast, (node) => {
-        if (found || !establishesCsp(node)) return;
+        if (found || !establishesCsp(node, context.sourceCode)) return;
         found = true;
       });
       cspEstablished = found;
@@ -509,9 +535,6 @@ export const requireCspHeaders = createRule<RuleOptions, MessageIds>({
         }
 
         if (fileEstablishesCsp()) return;
-        // PARTITION — see the note at the top of this file. A scope that sets
-        // response headers is no-missing-security-headers' finding.
-        if (scopeSetsResponseHeaders(node)) return;
         report(node);
       },
     };
@@ -573,44 +596,8 @@ export const requireCspHeaders = createRule<RuleOptions, MessageIds>({
       const property = node.callee.property;
       // A non-computed member's property is always an Identifier.
       return node.callee.computed
-        ? staticString(property, context.sourceCode, 0)
+        ? staticString(property, context.sourceCode)
         : (property as TSESTree.Identifier).name;
-    }
-
-    /**
-     * Does the scope containing this emission set any response header?
-     *
-     * Read as an AST shape — a member call whose method is one of the four
-     * header APIs — never from the receiver's spelling.
-     */
-    function scopeSetsResponseHeaders(node: TSESTree.Node): boolean {
-      let scope: TSESTree.Node = context.sourceCode.ast;
-      for (
-        let current: TSESTree.Node | null | undefined = node.parent;
-        current != null;
-        current = current.parent
-      ) {
-        if (
-          current.type === 'FunctionDeclaration' ||
-          current.type === 'FunctionExpression' ||
-          current.type === 'ArrowFunctionExpression'
-        ) {
-          scope = current;
-          break;
-        }
-      }
-
-      let found = false;
-      walk(scope, (child) => {
-        if (
-          child.type === 'CallExpression' &&
-          child.callee.type === 'MemberExpression' &&
-          namesOneOf(propertyName(child.callee), HEADER_METHODS)
-        ) {
-          found = true;
-        }
-      });
-      return found;
     }
   },
 });
@@ -618,29 +605,34 @@ export const requireCspHeaders = createRule<RuleOptions, MessageIds>({
 /**
  * Does this single node establish a Content-Security-Policy?
  *
- * The four mechanisms that actually establish one, each proven from the AST:
- * a helmet binding (helmet sets CSP by default, so it IS this rule's own
- * prescribed fix), the header name in a header-NAME position, and a
+ * The mechanisms that actually establish one, each proven from the AST: a
+ * helmet CALL that sets CSP (helmet sets it by default, so it IS this rule's
+ * own prescribed fix), the header name in a header-NAME position, and a
  * `<meta http-equiv>`. A mention in prose is none of them — an audit table
  * listing `{ header: 'Content-Security-Policy', owner: 'platform' }`
  * establishes nothing.
+ *
+ * Importing helmet used to count on its own. An import applies nothing:
+ * `import helmet from 'helmet'` with no `app.use(helmet())` ships every
+ * response without a policy, and so does `helmet({ contentSecurityPolicy:
+ * false })`, which is helmet's documented switch for turning CSP OFF.
  */
-function establishesCsp(node: TSESTree.Node): boolean {
-  if (node.type === 'ImportDeclaration') {
-    return (
-      typeof node.source.value === 'string' &&
-      HELMET_MODULE.test(node.source.value)
-    );
-  }
+function establishesCsp(
+  node: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
   if (node.type === 'CallExpression') {
-    const arg = node.arguments[0];
-    return (
-      node.callee.type === 'Identifier' &&
-      node.callee.name === 'require' &&
-      arg?.type === 'Literal' &&
-      typeof arg.value === 'string' &&
-      HELMET_MODULE.test(arg.value)
+    const binding = resolveModuleBinding(
+      node.callee,
+      sourceCode.getScope(node),
     );
+    if (binding === undefined || !HELMET_MODULE.test(binding.module)) {
+      return false;
+    }
+    // `helmet.contentSecurityPolicy(…)` / `import { contentSecurityPolicy }`.
+    if (binding.path.at(-1) === 'contentSecurityPolicy') return true;
+    // `helmet(options)` — the root middleware, CSP on unless switched off.
+    return binding.path.length === 0 && !disablesCsp(node.arguments[0]);
   }
   if (node.type === 'Literal') {
     return (
@@ -659,6 +651,20 @@ function establishesCsp(node: TSESTree.Node): boolean {
     );
   }
   return false;
+}
+
+/** `{ contentSecurityPolicy: false }` — helmet's switch for turning CSP off. */
+function disablesCsp(options: TSESTree.Node | undefined): boolean {
+  return (
+    options?.type === 'ObjectExpression' &&
+    options.properties.some(
+      (property) =>
+        property.type === 'Property' &&
+        objectKeyName(property) === 'contentSecurityPolicy' &&
+        property.value.type === 'Literal' &&
+        property.value.value === false,
+    )
+  );
 }
 
 /**
@@ -681,17 +687,12 @@ function isHeaderNamePosition(node: TSESTree.Literal): boolean {
     return true;
   }
 
-  if (parent.type === 'Property' && !parent.computed) {
-    // `{ 'Content-Security-Policy': "default-src 'self'" }`
-    if (parent.key === node) return true;
-    // `{ key: 'Content-Security-Policy', value: … }` — the Next.js shape.
-    if (
-      parent.value === node &&
-      parent.key.type === 'Identifier' &&
-      parent.key.name === 'key'
-    ) {
-      return true;
-    }
+  if (parent.type === 'Property') {
+    // `{ 'Content-Security-Policy': "default-src 'self'" }` — bracketed or
+    // not, a literal key is the header name. Otherwise the literal is the
+    // value, which names a header only in the Next.js
+    // `{ key: 'Content-Security-Policy', value: … }` shape.
+    return parent.key === node || objectKeyName(parent) === 'key';
   }
 
   return false;

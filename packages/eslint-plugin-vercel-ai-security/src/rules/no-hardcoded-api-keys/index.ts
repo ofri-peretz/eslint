@@ -86,11 +86,26 @@ export const noHardcodedApiKeys = createRule<RuleOptions, MessageIds>({
   createOnce(context, currentOptions) {
     let apiKeyPatterns: string[];
 
-    /** The name a string is stored under: a property key or a declared variable. */
+    /**
+     * The name a string is stored under: an object property, a class field
+     * (`apiKey = '…'` is the same assignment), a JSX attribute or a declared
+     * variable.
+     */
     function holderName(node: TSESTree.Node): string | null {
       const parent = node.parent;
-      if (parent?.type === AST_NODE_TYPES.Property && parent.value === node) {
+      if (
+        (parent?.type === AST_NODE_TYPES.Property ||
+          parent?.type === AST_NODE_TYPES.PropertyDefinition) &&
+        parent.value === node
+      ) {
         return objectKeyName(parent);
+      }
+      // `<AIProvider apiKey="…" />` passes it as a prop of the same name.
+      if (
+        parent?.type === AST_NODE_TYPES.JSXAttribute &&
+        parent.name.type === AST_NODE_TYPES.JSXIdentifier
+      ) {
+        return parent.name.name;
       }
       if (
         parent?.type === AST_NODE_TYPES.VariableDeclarator &&
@@ -157,7 +172,7 @@ const PROVIDER_KEY_SHAPES: readonly RegExp[] = [
 
 /**
  * A long opaque token — not a URL, not a multi-segment resource path
- * (`projects/x/secrets/y`), not the NAME of an environment variable
+ * (`projects/x/secrets/y`, with or without a leading `/`), not the NAME of an environment variable
  * (`OPENAI_API_KEY_PRODUCTION`), and not a placeholder.
  */
 function isGenericSecret(value: string): boolean {
@@ -167,6 +182,6 @@ function isGenericSecret(value: string): boolean {
     !/\s/.test(value) &&
     !value.includes('://') &&
     !(value.includes('_') && /^[A-Z][A-Z0-9_]*$/.test(value)) &&
-    !/^[\w.-]+(?:\/[\w.-]+){2,}$/.test(value)
+    !/^\/?[\w.-]+(?:\/[\w.-]+){2,}$/.test(value)
   );
 }

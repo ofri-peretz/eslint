@@ -49,7 +49,7 @@ const CSPRNG_CALLS = new Set([
 ]);
 
 export interface Options {
-  /** Allow Math.random() in test files. Default: false */
+  /** Allow Math.random() in test files. Default: true */
   allowInTests?: boolean;
 
   /**
@@ -315,6 +315,28 @@ function nameSuggestsCrypto(name: string, vocab: Vocabulary): boolean {
   });
 }
 
+/** The global objects `Math` hangs off, in every runtime this lints. */
+const GLOBAL_OBJECTS: ReadonlySet<string> = new Set([
+  'globalThis',
+  'global',
+  'window',
+  'self',
+]);
+
+/**
+ * `Math`, or `globalThis.Math` / `window['Math']` — the same object reached
+ * through the global it lives on.
+ */
+function isMathObject(node: TSESTree.Node): boolean {
+  if (node.type === AST_NODE_TYPES.Identifier) return node.name === 'Math';
+  return (
+    node.type === AST_NODE_TYPES.MemberExpression &&
+    node.object.type === AST_NODE_TYPES.Identifier &&
+    GLOBAL_OBJECTS.has(node.object.name) &&
+    propertyName(node) === 'Math'
+  );
+}
+
 /**
  * Is this expression a read of `Math.random` itself?
  *
@@ -324,17 +346,12 @@ function nameSuggestsCrypto(name: string, vocab: Vocabulary): boolean {
  * type changes, from Identifier to Literal.
  */
 function isMathRandomProperty(node: TSESTree.Node): boolean {
-  if (node.type !== AST_NODE_TYPES.MemberExpression) return false;
-  if (node.object.type !== AST_NODE_TYPES.Identifier) return false;
-  if (node.object.name !== 'Math') return false;
-  const property = node.property;
-  if (!node.computed) {
-    return (
-      property.type === AST_NODE_TYPES.Identifier && property.name === 'random'
-    );
-  }
+  // `propertyName` reads every static spelling — `Math.random`,
+  // `Math['random']` and `Math[\`random\`]` are one property.
   return (
-    property.type === AST_NODE_TYPES.Literal && property.value === 'random'
+    node.type === AST_NODE_TYPES.MemberExpression &&
+    isMathObject(node.object) &&
+    propertyName(node) === 'random'
   );
 }
 
@@ -547,14 +564,6 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
     let sourceCode: Readonly<TSESLint.SourceCode>;
     let isTestFile: boolean;
     /**
-     * How many `const` hops the crypto meaning is allowed to be away from the
-     * `Math.random()` call. Two covers `raw` → `apiKey` and the one-alias
-     * relay; beyond that the flow stops being visible in one glance and the
-     * answer stops being trustworthy.
-     */
-    const MAX_BINDING_HOPS = 2;
-
-    /**
      * The declarator this identifier is bound to, when the binding has exactly
      * one definition and is never written again after it.
      *
@@ -614,20 +623,18 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
      * is the far more common shape in real code.
      */
     function isCsprngFallback(node: TSESTree.CallExpression): boolean {
-      let scope: TSESTree.Node | undefined = node.parent;
+      // The walk always terminates: every node sits under a Program.
+      let scope: TSESTree.Node = node.parent;
       while (
-        scope !== undefined &&
         scope.type !== AST_NODE_TYPES.FunctionDeclaration &&
         scope.type !== AST_NODE_TYPES.FunctionExpression &&
         scope.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
         scope.type !== AST_NODE_TYPES.Program
       ) {
-        scope = scope.parent;
+        scope = scope.parent as TSESTree.Node;
       }
-      // The walk always terminates: every node sits under a Program, and an
-      // unreachable guard here reads as a check that runs.
       let found = false;
-      const stack: TSESTree.Node[] = [scope as TSESTree.Node];
+      const stack: TSESTree.Node[] = [scope];
       while (stack.length > 0 && !found) {
         const current = stack.pop() as TSESTree.Node;
         if (
@@ -696,18 +703,16 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         return isMathRandomProperty(init);
       }
       if (declarator.id.type !== AST_NODE_TYPES.ObjectPattern) return false;
-      if (init.type !== AST_NODE_TYPES.Identifier || init.name !== 'Math')
-        return false;
-      return declarator.id.properties.some((property) => {
-        if (property.type !== AST_NODE_TYPES.Property || property.computed)
-          return false;
-        if (property.value.type !== AST_NODE_TYPES.Identifier) return false;
-        if (property.value.name !== callee.name) return false;
-        const key = property.key;
-        if (key.type === AST_NODE_TYPES.Identifier)
-          return key.name === 'random';
-        return key.type === AST_NODE_TYPES.Literal && key.value === 'random';
-      });
+      if (!isMathObject(init)) return false;
+      // `{ random: r }`, `{ 'random': r }` and `{ ['random']: r }` all bind
+      // the same slot of Math; `objectKeyName` reads each spelling.
+      return declarator.id.properties.some(
+        (property) =>
+          property.type === AST_NODE_TYPES.Property &&
+          property.value.type === AST_NODE_TYPES.Identifier &&
+          property.value.name === callee.name &&
+          objectKeyName(property) === 'random',
+      );
     }
 
     /**
@@ -739,17 +744,23 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
      */
     function usedInCryptoContext(
       id: TSESTree.Identifier,
-      depth: number,
+      followed: Set<TSESLint.Scope.Variable>,
     ): boolean {
       const variable = findVariable(sourceCode, id);
-      if (!variable) return false;
+      // `followed` is what ends the walk. A hop budget used to, and it dropped
+      // the fourth binding of `raw` → `padded` → `upper` → `apiKey`; the only
+      // way the walk can loop is back through a binding already followed
+      // (`var a = Math.random() + b; var b = a;`), and that binding's answer
+      // does not change on a second visit.
+      if (!variable || followed.has(variable)) return false;
+      followed.add(variable);
       // `reference.init` skips the declarator's own write — the only reference
       // that is the identifier we started from. Every other reference is a
       // later USE, which is the question being asked.
       return variable.references.some(
         (reference) =>
           !reference.init &&
-          isCryptoContext(reference.identifier as TSESTree.Node, depth),
+          isCryptoContext(reference.identifier as TSESTree.Node, followed),
       );
     }
 
@@ -779,7 +790,10 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
       return passedReturn;
     }
 
-    function isCryptoContext(node: TSESTree.Node, depth = 0): boolean {
+    function isCryptoContext(
+      node: TSESTree.Node,
+      followed: Set<TSESLint.Scope.Variable> = new Set(),
+    ): boolean {
       // Check variable declaration context
       let child: TSESTree.Node = node;
       let current: TSESTree.Node | undefined = node.parent;
@@ -828,10 +842,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
             if (nameSuggestsCrypto(varName, vocab)) {
               return true;
             }
-            if (
-              depth < MAX_BINDING_HOPS &&
-              usedInCryptoContext(current.id, depth + 1)
-            ) {
+            if (usedInCryptoContext(current.id, followed)) {
               return true;
             }
           }
@@ -867,11 +878,9 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
           namesThisValue &&
           current.type === AST_NODE_TYPES.AssignmentExpression
         ) {
+          // Non-null only for a MemberExpression target.
           const propName = memberPropertyName(current.left);
-          if (
-            current.left.type === AST_NODE_TYPES.MemberExpression &&
-            propName !== null
-          ) {
+          if (propName !== null) {
             if (nameSuggestsCrypto(propName, vocab)) {
               return true;
             }
@@ -895,21 +904,14 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
 
         // Check return in crypto-named function
         if (current.type === AST_NODE_TYPES.ReturnStatement) {
-          const func = findContainingFunction(current);
-          if (func) {
-            if (
-              (func.type === AST_NODE_TYPES.FunctionDeclaration ||
-                func.type === AST_NODE_TYPES.FunctionExpression) &&
-              func.id?.name
-            ) {
-              const funcName = func.id.name;
-              if (
-                functionNameSuggestsCrypto(funcName, vocab) ||
-                nameSuggestsCrypto(funcName, vocab)
-              ) {
-                return true;
-              }
-            }
+          // An arrow's `id` is always null, so only a named function answers.
+          const funcName = findContainingFunction(current)?.id?.name;
+          if (
+            funcName !== undefined &&
+            (functionNameSuggestsCrypto(funcName, vocab) ||
+              nameSuggestsCrypto(funcName, vocab))
+          ) {
+            return true;
           }
         }
 
@@ -920,7 +922,13 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
-    function findContainingFunction(node: TSESTree.Node): TSESTree.Node | null {
+    function findContainingFunction(
+      node: TSESTree.Node,
+    ):
+      | TSESTree.FunctionDeclaration
+      | TSESTree.FunctionExpression
+      | TSESTree.ArrowFunctionExpression
+      | null {
       let current: TSESTree.Node | undefined = node.parent;
       while (current) {
         if (

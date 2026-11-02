@@ -777,21 +777,21 @@ describe('no-format-string-injection', () => {
     // independently visited (and reported) by the `TemplateLiteral` visitor's
     // own "assigned to variable" branch, which checks `isSafe` against the
     // TemplateLiteral node itself (no comment directly precedes that node
-    // here). So arming only the `VariableDeclarator` guard suppresses that
-    // one report but leaves the sibling visitor's report intact — exactly 1
-    // (not 0, not 2) error is the correct, fully-explained outcome, and it
-    // still exercises the `VariableDeclarator` isSafe() early-return branch.
+    // here). It used to report once for that reason; the declarator now marks
+    // its template handled before honouring the annotation, so the sibling
+    // visitor stays quiet and the annotation means what it says.
     ruleTester.run(
       'valid - @safe-format suppresses formatStringInjection (VariableDeclarator TemplateLiteral, second declarator)',
       noFormatStringInjection,
       {
-        valid: [],
-        invalid: [
+        valid: [
           {
+            // @found mutation testing
+            name: 'FP: the annotation the declarator honours covers its template too',
             code: 'let unused, /** @safe-format */ formatTemplate = `prefix %s ${userInput}`;',
-            errors: [{ messageId: 'formatStringInjection' }],
           },
         ],
+        invalid: [],
       },
     );
 
@@ -983,19 +983,21 @@ describe('no-format-string-injection', () => {
       },
     );
 
-    // ids 86 arm[0], 90 arm[0], 92 arm[0], 94 arm[1], 95 arm[0]:
-    // Literal inside format-function call, outer var name is user-input-like → report
+    // A constant format string with a constant argument is not CWE-134,
+    // whatever the variable that receives the result is called. The former
+    // Literal handler reported this from the NAME `req` alone.
     ruleTester.run(
-      'coverage - Literal inside format-call assigned to req-named var',
+      'a constant format call assigned to a req-named var',
       noFormatStringInjection,
       {
-        valid: [],
-        invalid: [
+        valid: [
           {
+            // @found mutation testing
+            name: 'FP: a constant format string is not an injection because its result is named req',
             code: 'const req = sprintf("%s value", "static")',
-            errors: [{ messageId: 'missingFormatValidation' }],
           },
         ],
+        invalid: [],
       },
     );
 
@@ -1138,28 +1140,6 @@ describe('no-format-string-injection', () => {
         callee: { type: 'Identifier', name: 'sprintf' },
         arguments: [],
       });
-
-      expect(reports).toHaveLength(0);
-    });
-
-    it('Literal is not reported when it has no format specifiers', () => {
-      const { listeners, reports } = createWithMockContext(
-        noFormatStringInjection,
-      );
-      const literal = listeners.Literal as (node: unknown) => void;
-
-      literal({ type: 'Literal', value: 'plain text', parent: undefined });
-
-      expect(reports).toHaveLength(0);
-    });
-
-    it('Literal is not reported for a non-string literal value (e.g. number)', () => {
-      const { listeners, reports } = createWithMockContext(
-        noFormatStringInjection,
-      );
-      const literal = listeners.Literal as (node: unknown) => void;
-
-      literal({ type: 'Literal', value: 42, parent: undefined });
 
       expect(reports).toHaveLength(0);
     });
@@ -1374,35 +1354,6 @@ describe('no-format-string-injection', () => {
           { type: 'Identifier', name: 'userInput' },
         ],
       });
-      expect(reports).toHaveLength(1);
-      expect(reports[0].data?.line).toBe('0');
-    });
-
-    it('id 95: loc-fallback for missingFormatValidation in Literal handler (no loc on Literal)', () => {
-      const { listeners, reports } = createWithMockContext(
-        noFormatStringInjection,
-      );
-
-      const callExpr: Record<string, unknown> = {
-        type: 'CallExpression',
-        callee: { type: 'Identifier', name: 'sprintf' },
-        arguments: [],
-      };
-      const varDecl: Record<string, unknown> = {
-        type: 'VariableDeclarator',
-        id: { type: 'Identifier', name: 'req' },
-        init: callExpr,
-        parent: undefined,
-      };
-      callExpr.parent = varDecl;
-      const literal: Record<string, unknown> = {
-        type: 'Literal',
-        value: '%s value',
-        parent: callExpr,
-      };
-      (callExpr.arguments as unknown[]).push(literal);
-
-      (listeners.Literal as (n: unknown) => void)(literal);
       expect(reports).toHaveLength(1);
       expect(reports[0].data?.line).toBe('0');
     });

@@ -24,13 +24,18 @@ import { describe } from 'vitest';
 import { detectChildProcess } from './index';
 
 const ruleTester = new RuleTester();
-const LENIENT = [{ allowLiteralStrings: true, allowLiteralSpawn: true }] as const;
+const LENIENT = [
+  { allowLiteralStrings: true, allowLiteralSpawn: true },
+] as const;
 
 describe('detect-child-process static-analysis lock', () => {
   ruleTester.run('provably-constant commands stay quiet', detectChildProcess, {
     valid: [
       // Plain literal — quiet before and after.
-      { code: `const cp = require('child_process'); cp.exec('ls');`, options: LENIENT },
+      {
+        code: `const cp = require('child_process'); cp.exec('ls');`,
+        options: LENIENT,
+      },
       // Callbacks and options are not injection vectors and must not mark the call dynamic.
       {
         code: `const cp = require('child_process'); cp.exec('ls -l', function (e, o) {});`,
@@ -46,12 +51,24 @@ describe('detect-child-process static-analysis lock', () => {
         options: LENIENT,
       },
       // The false positive: a const binding is not attacker-reachable.
-      { code: `const cp = require('child_process'); const CMD = 'ls'; cp.exec(CMD);`, options: LENIENT },
+      {
+        code: `const cp = require('child_process'); const CMD = 'ls'; cp.exec(CMD);`,
+        options: LENIENT,
+      },
       // A constant used TWICE is still a constant. The devkit cycle guard used to be a
       // visited-set, so the second reference resolved as dynamic and the call reported.
-      { code: `const cp = require('child_process'); const A = 'ls'; cp.exec(A + A);`, options: LENIENT },
-      { code: `const cp = require('child_process'); const A = 'l', B = A + 's'; cp.exec(B);`, options: LENIENT },
-      { code: `const cp = require('child_process'); const C = 'git'; cp.spawn(C, ['status']);`, options: LENIENT },
+      {
+        code: `const cp = require('child_process'); const A = 'ls'; cp.exec(A + A);`,
+        options: LENIENT,
+      },
+      {
+        code: `const cp = require('child_process'); const A = 'l', B = A + 's'; cp.exec(B);`,
+        options: LENIENT,
+      },
+      {
+        code: `const cp = require('child_process'); const C = 'git'; cp.spawn(C, ['status']);`,
+        options: LENIENT,
+      },
     ],
     invalid: [
       // THE REGRESSION GUARD — these were silently skipped by the type-list version.
@@ -89,15 +106,36 @@ describe('module-binding shapes', () => {
     ],
     invalid: [
       // Chained straight off the require — the module never gets a name.
-      { code: `require('child_process').exec(str);`, options: LENIENT, errors: 1 },
-      { code: `require('node:child_process').exec(str);`, options: LENIENT, errors: 1 },
+      {
+        code: `require('child_process').exec(str);`,
+        options: LENIENT,
+        errors: 1,
+      },
+      {
+        code: `require('node:child_process').exec(str);`,
+        options: LENIENT,
+        errors: 1,
+      },
       // A bare import is itself the risk signal, with no call to attach to.
-      { code: `require('child_process');`, options: LENIENT, errors: 1 },
+      {
+        name: 'execFile under an if whose includes() checks a literal rather than the argument is still reported',
+        code: `require('child_process');`,
+        options: LENIENT,
+        errors: 1,
+      },
       { code: `require('node:child_process');`, options: LENIENT, errors: 1 },
       // Passed as an argument — still never bound to a name.
-      { code: `sinon.stub(require('child_process'));`, options: LENIENT, errors: 1 },
+      {
+        code: `sinon.stub(require('child_process'));`,
+        options: LENIENT,
+        errors: 1,
+      },
       // Bound to a variable: reported at the call site, NOT twice.
-      { code: `const cp = require('child_process'); cp.exec(req.query.c);`, options: LENIENT, errors: 1 },
+      {
+        code: `const cp = require('child_process'); cp.exec(req.query.c);`,
+        options: LENIENT,
+        errors: 1,
+      },
     ],
   });
 });

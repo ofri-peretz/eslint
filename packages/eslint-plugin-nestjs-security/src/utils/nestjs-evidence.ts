@@ -31,3 +31,34 @@ export const fileUsesNestjs: (ast: TSESTree.Program) => boolean =
     // Lambda and Express this gate needs no extra evidence arm.
     scopes: ['@nestjs'],
   });
+
+/**
+ * Whether this file defines a class NestJS serializes back to a client.
+ *
+ * An entity file is the place `no-exposed-private-fields` exists for, and it
+ * usually imports only its ORM and `class-transformer` — never `@nestjs/*`.
+ * Gating on `@nestjs` alone switched the rule off on exactly those files, its
+ * own ❌ example among them. The serializer (`class-transformer`) and the
+ * persistence layers whose classes are returned are evidence as direct as the
+ * framework import.
+ */
+export const fileDefinesSerializedModel: (ast: TSESTree.Program) => boolean =
+  createModuleEvidence({
+    scopes: ['@nestjs', '@mikro-orm', '@typegoose'],
+    packages: [
+      'class-transformer',
+      'typeorm',
+      'mongoose',
+      'sequelize-typescript',
+    ],
+  });
+
+/**
+ * Whether this file uses NestJS or configures `multer` directly.
+ *
+ * Multer storage often lives in its own module that imports only `multer` —
+ * the `diskStorage` in `no-unsafe-multer-filename`'s own ❌ example does. The
+ * `multer` import is the evidence there that `diskStorage` is multer's.
+ */
+export const fileUsesNestjsOrMulter: (ast: TSESTree.Program) => boolean =
+  createModuleEvidence({ scopes: ['@nestjs'], packages: ['multer'] });

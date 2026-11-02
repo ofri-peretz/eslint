@@ -24,7 +24,10 @@ describe('no-dynamic-dependency-loading coverage gaps', () => {
   ruleTester.run('no-dynamic-dependency-loading', noDynamicDependencyLoading, {
     valid: [
       // import() with a literal source → Literal check suppresses report
-      { name: 'dynamic import of a literal builtin specifier is not reported', code: 'import("node:fs");' },
+      {
+        name: 'dynamic import of a literal builtin specifier is not reported',
+        code: 'import("node:fs");',
+      },
     ],
     invalid: [],
   });
@@ -63,7 +66,9 @@ describe('no-dynamic-dependency-loading — corpus regressions', () => {
       // A computed member names nothing statically.
       { code: 'const m = module[verb](name);' },
       // A private method is not an export of anything.
-      { code: 'class A { #require(n) { return n; } m(n) { return this.#require(n); } }' },
+      {
+        code: 'class A { #require(n) { return n; } m(n) { return this.#require(n); } }',
+      },
       { code: 'class A { #cjs; m(n) { return this.#cjs.require(n); } }' },
       // `module.exports` is not a loader.
       { code: 'const m = module.exports(name);' },
@@ -74,7 +79,13 @@ describe('no-dynamic-dependency-loading — corpus regressions', () => {
       { code: 'const m = getLoader()(name);' },
       // The loader forms below, with a specifier nothing can steer.
       { code: "const m = module.require('node:fs');" },
-      { code: "import { createRequire } from 'node:module'; const req = createRequire(import.meta.url); const m = req('node:fs');" },
+      {
+        name: 'a require call still being typed, with no specifier yet, loads nothing and does not crash the rule',
+        code: 'const m = require();',
+      },
+      {
+        code: "import { createRequire } from 'node:module'; const req = createRequire(import.meta.url); const m = req('node:fs');",
+      },
     ],
     invalid: [
       {

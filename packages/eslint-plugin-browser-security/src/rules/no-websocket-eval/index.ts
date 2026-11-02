@@ -15,12 +15,12 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
-  createPayloadResolver,
   createRule,
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
 } from '@interlace/eslint-devkit';
+import { createPayloadResolver } from '../../utils/payload-source';
 
 import { dynamicCodeSink } from '../../utils/dynamic-code-sinks';
 
@@ -113,12 +113,10 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
     ): void {
       const sink = dynamicCodeSink(node, context.sourceCode);
       if (sink === undefined) return;
-      // Timers (`sink.name === null`) are never this rule's. Their body must be
-      // a PROVABLY STRING expression — a literal, a template, a concatenation —
-      // and none of those is a bare payload read, so a timer body can never
-      // resolve to the socket. `no-eval` owns them, and returning here keeps the
-      // complement exact instead of leaving a shape both rules could claim.
-      if (sink.name === null) return;
+      // Timers (`sink.name === null`) need no case of their own: their body
+      // must be a PROVABLY STRING expression — a literal, a template, a
+      // concatenation — and none of those is a bare payload read, so the test
+      // below never matches one. `no-eval` owns them.
       if (!sink.codeArguments.some((arg) => payloadSource(arg) === 'websocket'))
         return;
       context.report({
@@ -139,7 +137,7 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        const { allowInTests = true } = options as Options;
+        const { allowInTests } = options as Required<Options>;
         const filename = context.filename;
         const isTestFile = isTestFilePath(filename);
 

@@ -10,8 +10,8 @@ autofix: false
 
 > Ensures AI SDK calls are wrapped in try-catch to prevent cascading failures.
 
-
 <!-- @rule-summary -->
+
 This rule identifies AI SDK calls that aren't wrapped in try-catch blocks
 <!-- @/rule-summary -->
 
@@ -81,9 +81,9 @@ async function process() {
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Allow unhandled AI calls in test files |
+| Option         | Type      | Default | Description                            |
+| -------------- | --------- | ------- | -------------------------------------- |
+| `allowInTests` | `boolean` | `true`  | Allow unhandled AI calls in test files |
 
 ## 🛡️ Why This Matters
 
@@ -103,6 +103,19 @@ Unhandled AI errors can cause:
 
 - `streamText` / `streamObject` do not throw; an `onError` option is their error
   handling and satisfies the rule.
+
+## 🔄 Changes from the fidelity model
+
+- A renamed import (`import { generateText as callModel } from 'ai'`, or the
+  same through `require`) is resolved through the import: `callModel()` is the
+  SDK function and is checked like it.
+- Only the `try` block of a try **with a `catch`** handles the call. A
+  try/finally catches nothing, and a call inside the `catch` clause is not
+  protected by it.
+- A call in a callback whose promise is dropped (`items.forEach(async (i) => …)`)
+  rejects after the try has exited, so a try around it does not count. A
+  callback whose promise is awaited (`await Promise.all(items.map(async …))`)
+  is inside the try.
 
 ## Known False Negatives
 
@@ -175,10 +188,10 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-755](https://cwe.mitre.org/data/definitions/755.html) [OWASP:A10](https://owasp.org/Top10/A10_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Improper Handling of Exceptional Conditions detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A10_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                       |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-755](https://cwe.mitre.org/data/definitions/755.html) [OWASP:A10](https://owasp.org/Top10/A10_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Improper Handling of Exceptional Conditions detected`                                                                                                                                                                                                        |
+| **Severity & Compliance** | Impact assessment      | `HIGH`                                                                                                                                                                                                                                                        |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                          |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A10_2021-Injection/)                                                                                                                                                                                                   |

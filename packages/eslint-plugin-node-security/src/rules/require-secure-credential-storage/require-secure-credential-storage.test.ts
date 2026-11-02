@@ -318,6 +318,10 @@ ruleTester.run(
       'Object.keys(process.env);',
       'lodash.assign(process.env, { API_TOKEN: token });',
       'assign(process.env, { API_TOKEN: token });',
+      {
+        name: 'Object.create over process.env builds a new object and writes nothing into the environment',
+        code: 'const childEnv = Object.create(process.env, { API_TOKEN: { value: token } });',
+      },
     ],
     invalid: [
       // Evidence in the TARGET name.
@@ -340,6 +344,7 @@ ruleTester.run(
       },
       // Evidence in the VALUE only — the variable name is the credential.
       {
+        name: 'setItem with a computed key and an encryptValue()-wrapped token is not reported',
         code: 'process.env.X = apiKey;',
         errors: [{ messageId: 'credentialInEnvironment' }],
       },
@@ -378,6 +383,16 @@ ruleTester.run(
           { messageId: 'credentialInEnvironment' },
           { messageId: 'credentialInEnvironment' },
         ],
+      },
+      {
+        name: 'a batch env write is a finding on the key name alone, whatever the value is called',
+        code: 'Object.assign(process.env, { DATABASE_PASSWORD: row.value });',
+        errors: [{ messageId: 'credentialInEnvironment' }],
+      },
+      {
+        name: 'an alias of an alias of process.env is still process.env (two hops is within the bound)',
+        code: 'const env = process.env; const target = env; target.API_TOKEN = t;',
+        errors: [{ messageId: 'credentialInEnvironment' }],
       },
       // Both new arms at once.
       {

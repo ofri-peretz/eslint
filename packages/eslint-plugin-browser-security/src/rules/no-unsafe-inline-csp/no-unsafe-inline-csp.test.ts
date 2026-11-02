@@ -27,6 +27,10 @@ const jsxTester = new RuleTester({
 
 ruleTester.run('no-unsafe-inline-csp', noUnsafeInlineCsp, {
   valid: [
+    {
+      name: 'prose naming the token in a CSP header value is not a policy that grants it',
+      code: `res.setHeader('Content-Security-Policy', "Never add 'unsafe-inline' to your policy");`,
+    },
     // Safe CSP with nonce
     {
       name: 'a nonce instead',
@@ -63,6 +67,7 @@ ruleTester.run('no-unsafe-inline-csp', noUnsafeInlineCsp, {
     },
     // Template literal
     {
+      name: 'unsafe-inline in a template-literal style-src CSP is reported',
       code: `const csp = \`style-src 'unsafe-inline'\`;`,
       errors: [{ messageId: 'unsafeInline' }],
     },

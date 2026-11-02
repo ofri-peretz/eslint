@@ -127,35 +127,55 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
         const keyText = objectKeyName(parent);
         return keyText !== null && isCspName(keyText);
       }
-      // `content="…"` on a meta tag that declares the policy.
+      // `content="…"` on a meta tag that declares the policy: the string is
+      // the attribute's value, or the expression in its `{…}` container.
+      const attribute =
+        parent.type === AST_NODE_TYPES.JSXAttribute ? parent : parent.parent;
       if (
-        parent.type === AST_NODE_TYPES.JSXExpressionContainer ||
-        parent.type === AST_NODE_TYPES.JSXAttribute
+        attribute?.type !== AST_NODE_TYPES.JSXAttribute ||
+        attribute.name.type !== AST_NODE_TYPES.JSXIdentifier ||
+        attribute.name.name !== 'content'
       ) {
-        const attribute =
-          parent.type === AST_NODE_TYPES.JSXAttribute ? parent : parent.parent;
-        if (
-          attribute?.type !== AST_NODE_TYPES.JSXAttribute ||
-          attribute.name.type !== AST_NODE_TYPES.JSXIdentifier ||
-          attribute.name.name !== 'content'
-        ) {
-          return false;
-        }
-        // A JSXAttribute's parent is a JSXOpeningElement by grammar, so this
-        // is an assertion rather than a branch nothing can take.
-        const element = attribute.parent as TSESTree.JSXOpeningElement;
-        return element.attributes.some(
-          (other) =>
-            other.type === AST_NODE_TYPES.JSXAttribute &&
-            other.name.type === AST_NODE_TYPES.JSXIdentifier &&
-            /^http-?equiv$/i.test(other.name.name) &&
-            other.value?.type === AST_NODE_TYPES.Literal &&
-            typeof other.value.value === 'string' &&
-            isCspName(other.value.value),
-        );
+        return false;
       }
-      return false;
+      // A JSXAttribute's parent is a JSXOpeningElement by grammar, so this
+      // is an assertion rather than a branch nothing can take.
+      const element = attribute.parent as TSESTree.JSXOpeningElement;
+      return element.attributes.some(
+        (other) =>
+          other.type === AST_NODE_TYPES.JSXAttribute &&
+          other.name.type === AST_NODE_TYPES.JSXIdentifier &&
+          /^http-?equiv$/i.test(other.name.name) &&
+          other.value?.type === AST_NODE_TYPES.Literal &&
+          typeof other.value.value === 'string' &&
+          isCspName(other.value.value),
+      );
     }
+
+    /**
+     * One source expression of a serialised source list, by the CSP3 §2.3.1
+     * grammar rather than by a list of known keywords:
+     *
+     * - a QUOTED source — keyword, nonce or hash (`'self'`, `'nonce-r4nd'`,
+     *   `'sha256-…'`); in a served header these are the only quoted tokens;
+     * - a scheme-source (`https:`, `data:`, `blob:`);
+     * - a host-source written with its scheme, or a wildcard host
+     *   (`https://cdn.example.com`, `*.example.com`, `*`).
+     *
+     * Prose fails on its first bare word, so `"Never add 'unsafe-inline' to
+     * your policy"` is not a list, while `"'nonce-r4nd' 'unsafe-inline'"` is —
+     * the nonce is a source no keyword table names.
+     */
+    const SOURCE_EXPRESSION =
+      /^(?:'[^'\s]+'|[a-z][a-z0-9+.-]*:|[a-z][a-z0-9+.-]*:\/\/\S+|\*(?:\.\S+)?)$/i;
+
+    /** Is this directive-less value a bare source list? */
+    // oxlint-disable-next-line consistent-function-scoping
+    const grants = (value: string): boolean =>
+      value
+        .trim()
+        .split(/\s+/)
+        .every((token) => SOURCE_EXPRESSION.test(token));
 
     /**
      * Check a string value for unsafe-inline
@@ -163,8 +183,14 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
     function checkForUnsafeInline(node: TSESTree.Node, value: string): void {
       if (!UNSAFE_INLINE_PATTERN.test(value)) return;
       // A policy names at least one directive, or is delivered somewhere this
-      // rule can see. Otherwise the token is just a string.
-      if (!CSP_DIRECTIVES.test(value) && !atCspSink(node)) return;
+      // rule can see. Otherwise the token is just a string. Delivery alone is
+      // not enough, though: prose in a header value
+      // (`"Never add 'unsafe-inline' to your policy"`) enables nothing. At a
+      // sink without a directive the value must be a bare source list made only
+      // of keywords (`"'self' 'unsafe-inline'"`), not a sentence.
+      if (!CSP_DIRECTIVES.test(value) && !(atCspSink(node) && grants(value))) {
+        return;
+      }
       context.report({
         node,
         messageId: 'unsafeInline',
@@ -174,7 +200,7 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        const { allowInTests = true } = options as Options;
+        const { allowInTests } = options as Options;
         const filename = context.filename;
         const isTestFile = isTestFilePath(filename);
 

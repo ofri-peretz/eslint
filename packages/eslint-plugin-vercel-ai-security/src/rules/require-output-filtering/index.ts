@@ -141,25 +141,17 @@ export const requireOutputFiltering = createRule<RuleOptions, MessageIds>({
     }
 
     // oxlint-disable-next-line consistent-function-scoping
+    /** The key a tool sits under in a `tools: { … }` map, quoted or not. */
     function getToolName(node: TSESTree.Node): string {
-      let current = node.parent;
-      while (current) {
+      for (let current = node.parent; current; current = current.parent) {
+        const holder = current.parent?.parent;
         if (
           current.type === 'Property' &&
-          current.parent?.type === 'ObjectExpression'
+          holder?.type === 'Property' &&
+          objectKeyName(holder) === 'tools'
         ) {
-          const grandparent = current.parent.parent;
-          if (
-            grandparent?.type === 'Property' &&
-            grandparent.key.type === 'Identifier' &&
-            grandparent.key.name === 'tools'
-          ) {
-            if (current.key.type === 'Identifier') {
-              return current.key.name;
-            }
-          }
+          return objectKeyName(current) ?? 'unknown';
         }
-        current = current.parent;
       }
       return 'unknown';
     }
@@ -200,11 +192,8 @@ export const requireOutputFiltering = createRule<RuleOptions, MessageIds>({
       },
       // `execute: async (args) => db.query(...)`
       ArrowFunctionExpression(node: TSESTree.ArrowFunctionExpression) {
-        if (
-          !isExecute(node) ||
-          node.body.type === AST_NODE_TYPES.BlockStatement
-        )
-          return;
+        // A block body is read by the ReturnStatement visitor below.
+        if (!isExecute(node)) return;
         const source = isDataSourceCall(node.body);
         if (source) report(node.body, node, source);
       },

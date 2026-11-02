@@ -5,7 +5,7 @@ tags: ['security', 'cryptography', 'cwe-338', 'nodejs', 'cve']
 category: security
 severity: critical
 cwe: CWE-338
-owasp: "A02:2021"
+owasp: 'A02:2021'
 autofix: false
 ---
 
@@ -14,8 +14,8 @@ autofix: false
 > **CVE:** [CVE-2020-36732](https://nvd.nist.gov/vuln/detail/CVE-2020-36732)  
 > **OWASP:** [A02:2021-Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 
-
 <!-- @rule-summary -->
+
 Disallow crypto-js WordArray.random() (CVE-2020-36732)
 <!-- @/rule-summary -->
 
@@ -46,8 +46,16 @@ Detects usage of `crypto-js` `WordArray.random()` which used insecure `Math.rand
 This rule detects:
 
 - `CryptoJS.lib.WordArray.random()`
-- `WordArray.random()`
-- `CryptoJS.random()`
+- `WordArray.random()`, with `WordArray` bound to `CryptoJS.lib.WordArray`
+- the same function under any binding: a default, namespace or `require`d
+  crypto-js, a string subscript (`WordArray['random']`), or an alias of the
+  function itself (`const rand = CryptoJS.lib.WordArray.random; rand(16)`)
+- `WordArray.random()` on the `crypto-js/lib-typedarrays` entry point, which
+  exports `CryptoJS.lib.WordArray` itself (`require('crypto-js/lib-typedarrays').random(16)`)
+
+crypto-js exposes randomness only through `WordArray.random`; it has no
+top-level `CryptoJS.random`, so there is nothing else to detect. A
+`WordArray` imported from another module is not crypto-js's.
 
 ## Why This Matters
 
@@ -172,17 +180,18 @@ npm uninstall crypto-js
 
 ## Known False Negatives
 
-### Aliased Imports
+### Randomness reached through another module
 
-**Why**: Aliased references not tracked.
+**Why**: Bindings are resolved within the file. A helper module that re-exports
+`WordArray.random` under its own name is not followed.
 
 ```typescript
-// ❌ NOT DETECTED
-const rand = CryptoJS.lib.WordArray.random;
-rand(16);
+// ❌ NOT DETECTED — the binding is not traced across files
+import { randomWords } from './crypto-helpers';
+randomWords(16);
 ```
 
-**Mitigation**: Search for all WordArray references.
+**Mitigation**: Apply the rule to the helper module too.
 
 ## Further Reading
 
@@ -192,6 +201,6 @@ rand(16);
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
+| Option         | Type      | Default | Description         |
+| -------------- | --------- | ------- | ------------------- |
 | `allowInTests` | `boolean` | `false` | Allow in test files |

@@ -34,9 +34,50 @@ ruleTester.run('require-dependency-integrity', requireDependencyIntegrity, {
       name: 'every quasi an invalid escape — raw holds no CDN tag',
       code: 'tag`\\unicode${x}\\unicode`',
     },
+    {
+      name: 'a same-origin proxy path that names a CDN URL in its query is same-origin',
+      code: 'const html = \'<script src="/proxy?url=https://cdn.jsdelivr.net/npm/a.js"></script>\'',
+    },
+    {
+      // Prefetch is a hint for a later navigation; SRI applies to preload,
+      // stylesheet and modulepreload only, whatever `as` says.
+      name: 'a prefetch link takes no integrity even as a script',
+      code: 'const html = \'<link rel="prefetch" as="script" href="https://cdn.jsdelivr.net/npm/a.js">\'',
+    },
+    {
+      name: 'an icon link takes no integrity',
+      code: 'const html = \'<link rel="icon" href="https://cdn.jsdelivr.net/favicon.ico">\'',
+    },
   ],
 
   invalid: [
+    {
+      name: 'single-quoted attributes are attributes',
+      code: "const html = \"<script data-note='a > b' src='https://cdn.jsdelivr.net/npm/a.js'></script>\"",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      // `rel` is a space-separated token list; "alternate stylesheet" is the
+      // standard way to offer an alternative style sheet.
+      name: 'an alternate stylesheet is a stylesheet',
+      code: "const html = \"<link rel='alternate stylesheet' href='https://cdn.jsdelivr.net/npm/dark.css'>\"",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a rel of only whitespace names no relation, so the link is still judged',
+      code: 'const html = \'<link rel=" " href="https://cdn.jsdelivr.net/npm/a.css">\'',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'an escaped tag opener in a template is still a script tag',
+      code: 'const html = `\\x3Cscript src="https://cdn.jsdelivr.net/npm/a.js">\\x3C/script>`',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'an escaped tag opener after an interpolation is still a script tag',
+      code: 'const html = `<!-- ${title} -->\\x3Cscript src="https://cdn.jsdelivr.net/npm/a.js">\\x3C/script>`',
+      errors: [{ messageId: 'violationDetected' }],
+    },
     // CDN resources without integrity
     {
       name: 'a CDN script tag with no integrity attribute',
@@ -52,6 +93,7 @@ ruleTester.run('require-dependency-integrity', requireDependencyIntegrity, {
       errors: [{ messageId: 'violationDetected' }],
     },
     {
+      name: 'a CDN script tag in a template literal with no integrity attribute is reported',
       code: '`<script src="https://jsdelivr.net/lib.js"></script>`',
       errors: [{ messageId: 'violationDetected' }],
     },

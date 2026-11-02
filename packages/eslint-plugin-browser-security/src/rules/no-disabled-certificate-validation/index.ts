@@ -38,6 +38,20 @@ const NON_ERROR_UNARY = 'void';
  * Anything else — an identifier, a call, `new Error(…)`, a conditional — might
  * be an Error, and a rule that cannot prove otherwise must stay quiet.
  */
+/** The expression under `x as T`, `x!`, `<T>x` and `x satisfies T`. */
+function withoutTypeWrapper(node: TSESTree.Node): TSESTree.Node {
+  let current = node;
+  while (
+    current.type === 'TSAsExpression' ||
+    current.type === 'TSNonNullExpression' ||
+    current.type === 'TSTypeAssertion' ||
+    current.type === 'TSSatisfiesExpression'
+  ) {
+    current = current.expression;
+  }
+  return current;
+}
+
 function isDefinitelyNotError(node: TSESTree.Node): boolean {
   if (node.type === 'Literal') return true;
   if (node.type === 'Identifier') return node.name === 'undefined';
@@ -146,10 +160,7 @@ export const noDisabledCertificateValidation = createRule<
 
         // `(host, cert) => tls.checkServerIdentity(host, cert)` is decided by
         // its single expression; there is no `return` to wait for.
-        if (
-          implementation.type === 'ArrowFunctionExpression' &&
-          implementation.body.type !== 'BlockStatement'
-        ) {
+        if (implementation.body.type !== 'BlockStatement') {
           if (isDefinitelyNotError(implementation.body)) {
             context.report({ node, messageId: 'noopHostnameVerification' });
           }
@@ -184,13 +195,18 @@ export const noDisabledCertificateValidation = createRule<
       },
 
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        // Check for NODE_TLS_REJECT_UNAUTHORIZED = '0'
+        // Check for NODE_TLS_REJECT_UNAUTHORIZED = '0'.
+        //
+        // `(process.env as any).X = 0` is how TypeScript assigns a non-string
+        // to an env var, and `process.env!` a strict-null spelling; both are
+        // the same object at runtime, so the type wrapper is looked through.
+        if (node.left.type !== 'MemberExpression') return;
+        const env = withoutTypeWrapper(node.left.object);
         if (
-          node.left.type === 'MemberExpression' &&
-          node.left.object.type === 'MemberExpression' &&
-          node.left.object.object.type === 'Identifier' &&
-          node.left.object.object.name === 'process' &&
-          propertyName(node.left.object) === 'env' &&
+          env.type === 'MemberExpression' &&
+          env.object.type === 'Identifier' &&
+          env.object.name === 'process' &&
+          propertyName(env) === 'env' &&
           propertyName(node.left) === 'NODE_TLS_REJECT_UNAUTHORIZED'
         ) {
           // `process.env` stores every assignment as a string, so `= 0`

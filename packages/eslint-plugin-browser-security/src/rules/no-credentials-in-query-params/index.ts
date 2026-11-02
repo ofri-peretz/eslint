@@ -13,12 +13,78 @@
 import {
   AST_NODE_TYPES,
   createRule,
+  objectKeyName,
   formatLLMMessage,
+  identifierWords,
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
+
+/**
+ * Parameter names that ARE a credential only when they are the whole name.
+ *
+ * `?token=` and `?auth=` are credentials; `?pageToken=`, `?stateToken=` and
+ * `?auth_type=` are pagination, OAuth state and a mode switch.
+ */
+const WHOLE_NAME_CREDENTIALS = new Set(['token', 'auth']);
+
+/**
+ * Credential words a parameter name ENDS in, as whole words.
+ *
+ * Matching only `?token=` / `&secret=` missed every prefixed spelling of the
+ * same credential: `access_token` is the RFC 6750 §2.3 URI-query bearer token
+ * itself, and `client_secret` / `api_key` are the standard spellings of secret
+ * and apikey. A suffix, not any position: `secret_name` names a secret, it does
+ * not carry one.
+ */
+const DEFAULT_CREDENTIAL_SUFFIXES: readonly string[] = [
+  'password',
+  'passwd',
+  'pwd',
+  'passphrase',
+  'secret',
+  'apikey',
+  'api key',
+  'access token',
+  'refresh token',
+  'id token',
+  'auth token',
+  'session token',
+  'bearer token',
+  'private token',
+];
+
+/**
+ * Does this query-parameter name carry a credential?
+ *
+ * `suffixes` is the configured credential vocabulary, already split into words.
+ */
+function isCredentialParam(
+  name: string,
+  suffixes: readonly (readonly string[])[],
+): boolean {
+  const words = identifierWords(name);
+  if (WHOLE_NAME_CREDENTIALS.has(words.join(' '))) return true;
+  return suffixes.some(
+    (suffix) =>
+      suffix.length <= words.length &&
+      suffix.every(
+        (word, i) => words[words.length - suffix.length + i] === word,
+      ),
+  );
+}
+
+/**
+ * The name of every `?name=` / `&name=` parameter in a string.
+ *
+ * U+0001 marks an interpolation, so a name that straddles one (`?${k}token=`)
+ * is not a name this rule can read and is never matched.
+ */
+// The U+0001 interpolation sentinel is matched on purpose (see above).
+// oxlint-disable-next-line no-control-regex
+const QUERY_PARAMETER = /[?&]([^=&?#\s\u0001]+)=/g;
 
 /**
  * Property names whose value is a REQUEST BODY, not a URL.
@@ -44,6 +110,15 @@ export interface Options {
    * query string, and credentials belong there.
    */
   bodyProperties?: string[];
+  /**
+   * Credential words a parameter name ENDS in, matched as whole words.
+   * **Replaces** the default (`password`, `passwd`, `pwd`, `passphrase`,
+   * `secret`, `apikey`, `api key`, `access token`, `refresh token`, `id token`,
+   * `auth token`, `session token`, `bearer token`, `private token`). Any
+   * spelling works — `apiKey`, `api_key` and `api key` are the same words.
+   * A bare `?token=` or `?auth=` is reported regardless.
+   */
+  credentialSuffixes?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -56,19 +131,19 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-credentials-in-query-params.md',
       description: 'Disallow credentials in URL query parameters',
-      cwe: 'CWE-798',
+      cwe: 'CWE-598',
       cvss: 9.8,
     },
     messages: {
       violationDetected: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Credentials in Query Parameters',
-        cwe: 'CWE-798',
+        cwe: 'CWE-598',
         description:
           'Credentials detected in URL query parameters - this is a security risk',
         severity: 'CRITICAL',
         fix: 'Use secure methods: POST body, headers (Authorization), or secure cookies',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/798.html',
+        documentationLink: 'https://cwe.mitre.org/data/definitions/598.html',
       }),
     },
     schema: [
@@ -82,15 +157,27 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
             description:
               'Property names whose value is a request body rather than a URL',
           },
+          credentialSuffixes: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...DEFAULT_CREDENTIAL_SUFFIXES],
+            description:
+              'Credential words a query-parameter name ends in (replaces the default)',
+          },
         },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [{ bodyProperties: DEFAULT_BODY_PROPERTIES }],
+  defaultOptions: [
+    {
+      bodyProperties: DEFAULT_BODY_PROPERTIES,
+      credentialSuffixes: [...DEFAULT_CREDENTIAL_SUFFIXES],
+    },
+  ],
   createOnce(context) {
     let bodyPropertyNames: ReadonlySet<string>;
-    let sensitiveParams: string[];
+    let credentialSuffixWords: readonly (readonly string[])[];
     /**
      * Path segments of the out-of-band verification flows.
      *
@@ -116,11 +203,10 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
      * the exempt `token=` would have hidden it.
      */
     function hasReportableCredential(url: string): boolean {
-      const present = sensitiveParams.filter(
-        (param) => url.includes('?' + param) || url.includes('&' + param),
-      );
-      return present.some(
-        (param) => !(param === 'token=' && OUT_OF_BAND_FLOWS.test(url)),
+      return [...url.matchAll(QUERY_PARAMETER)].some(
+        ([, name]) =>
+          isCredentialParam(name, credentialSuffixWords) &&
+          !(name.toLowerCase() === 'token' && OUT_OF_BAND_FLOWS.test(url)),
       );
     }
 
@@ -144,20 +230,9 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
         parent.value === node &&
         !parent.computed
       ) {
-        const key = parent.key;
-        if (
-          key.type === AST_NODE_TYPES.Identifier &&
-          bodyPropertyNames.has(key.name)
-        ) {
-          return true;
-        }
-        if (
-          key.type === AST_NODE_TYPES.Literal &&
-          typeof key.value === 'string' &&
-          bodyPropertyNames.has(key.value)
-        ) {
-          return true;
-        }
+        // `body:` and `'body':` name the same property.
+        const key = objectKeyName(parent);
+        if (key !== null && bodyPropertyNames.has(key)) return true;
       }
 
       // `new URLSearchParams(`a=1&token=x`)` builds a body, not a location.
@@ -181,22 +256,18 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
 
     return {
       before() {
-        const { bodyProperties = DEFAULT_BODY_PROPERTIES } =
-          context.options[0] ?? {};
+        const {
+          bodyProperties = DEFAULT_BODY_PROPERTIES,
+          credentialSuffixes = DEFAULT_CREDENTIAL_SUFFIXES,
+        } = context.options[0] ?? {};
         bodyPropertyNames = new Set(bodyProperties);
-        sensitiveParams = [
-          'password=',
-          'token=',
-          'apikey=',
-          'secret=',
-          'auth=',
-        ];
+        credentialSuffixWords = credentialSuffixes.map(identifierWords);
       },
       Literal(node: TSESTree.Literal) {
         if (typeof node.value === 'string') {
-          const url = node.value.toLowerCase();
-
-          if (hasReportableCredential(url) && !isRequestBody(node)) {
+          // Original case: `identifierWords` splits `apiKey` on the case
+          // boundary, which lowercasing first would erase.
+          if (hasReportableCredential(node.value) && !isRequestBody(node)) {
             report(node);
           }
         }
@@ -223,8 +294,7 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
           // `raw` is always populated; `cooked` is null only for an invalid
           // escape in a TAGGED template, which a URL string never is.
           .map((q) => q.value.raw)
-          .join(INTERPOLATION)
-          .toLowerCase();
+          .join(INTERPOLATION);
 
         // Same test the Literal branch uses. The asymmetry was the bug: a
         // literal needed `?token=` or `&token=`, a template matched a bare

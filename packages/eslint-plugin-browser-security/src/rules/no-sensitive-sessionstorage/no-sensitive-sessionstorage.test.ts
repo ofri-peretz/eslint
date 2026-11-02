@@ -146,6 +146,7 @@ ruleTester.run('lock: sink spellings', noSensitiveSessionstorage, {
       errors: [{ messageId: 'sensitiveInSessionStorage' }],
     },
     {
+      name: 'an apiKey written to sessionStorage by bracket key is reported',
       code: 'self.sessionStorage.setItem("apiKey", k);',
       errors: [{ messageId: 'sensitiveInSessionStorage' }],
     },

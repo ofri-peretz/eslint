@@ -56,6 +56,7 @@ describe('no-sha1-hash', () => {
         ],
       },
       {
+        name: 'an aliased sha1 import from crypto-hash is still SHA-1',
         code: 'import { sha1 as hash } from "crypto-hash";',
         errors: [
           {

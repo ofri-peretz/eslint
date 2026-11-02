@@ -22,7 +22,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -49,7 +49,6 @@ const xai = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -59,8 +58,8 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-request-timeout', requireRequestTimeout, {
   valid: xai([
-        'const x = 42;',
-        'const flag = true;',
+    'const x = 42;',
+    'const flag = true;',
     // With abortSignal
     {
       name: 'an abort signal bounds the call',
@@ -145,25 +144,29 @@ ruleTester.run('require-request-timeout', requireRequestTimeout, {
 // ─────────────────────────────────────────────────────────────────────────────
 // Coverage-gap fixtures: test-file skip, spread props, non-Identifier keys
 // ─────────────────────────────────────────────────────────────────────────────
-ruleTester.run('require-request-timeout (coverage gaps)', requireRequestTimeout, {
-  valid: xai([
-    // allowInTests defaults to true — test files are skipped entirely
-    {
-      code: `generateText({ prompt: 'x' });`,
-      filename: 'call.test.ts',
-    },
-    // spread properties are skipped while a real timeout prop still counts
-    { code: `generateText({ ...opts, timeout: 5000, prompt: 'x' });` },
-    // (Changed 2026-10-10) a quoted 'timeout' key is the same option; it used
-    // to be reported as missing.
-    { code: `generateText({ 'timeout': 5000, prompt: 'x' });` },
-    {
-      name: 'a timeoutMs option counts as a request timeout',
-      code: `generateText({ timeoutMs: 5000, prompt: 'x' });`,
-    },
-  ]),
-  invalid: xai([]),
-});
+ruleTester.run(
+  'require-request-timeout (coverage gaps)',
+  requireRequestTimeout,
+  {
+    valid: xai([
+      // allowInTests defaults to true — test files are skipped entirely
+      {
+        code: `generateText({ prompt: 'x' });`,
+        filename: 'call.test.ts',
+      },
+      // spread properties are skipped while a real timeout prop still counts
+      { code: `generateText({ ...opts, timeout: 5000, prompt: 'x' });` },
+      // (Changed 2026-10-10) a quoted 'timeout' key is the same option; it used
+      // to be reported as missing.
+      { code: `generateText({ 'timeout': 5000, prompt: 'x' });` },
+      {
+        name: 'a timeoutMs option counts as a request timeout',
+        code: `generateText({ timeoutMs: 5000, prompt: 'x' });`,
+      },
+    ]),
+    invalid: xai([]),
+  },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md)
@@ -187,4 +190,29 @@ ruleTester.run('require-request-timeout (fp-fn audit)', requireRequestTimeout, {
     },
   ]),
   invalid: xai([]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quint fidelity model (benchmarks/suites/fidelity/models/vercel-ai-security)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-request-timeout (fidelity)', requireRequestTimeout, {
+  valid: [],
+  invalid: xai([
+    {
+      name: 'a renamed import of generateText is still the SDK call',
+      code: `
+        import { generateText as callModel } from 'ai';
+        export async function POST() { return callModel({ model: m, prompt: 'Hello' }); }
+      `,
+      errors: [{ messageId: 'missingTimeout' }],
+    },
+    {
+      name: 'a renamed generateText imported through require is still the SDK call',
+      code: `
+        const { generateText: callModel } = require('ai');
+        export async function POST() { return callModel({ model: m, prompt: 'Hello' }); }
+      `,
+      errors: [{ messageId: 'missingTimeout' }],
+    },
+  ]),
 });

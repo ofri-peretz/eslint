@@ -67,8 +67,9 @@ app.enableCors({ origin: (o, cb) => cb(null, allowed.includes(o)) });
 A security rule that guesses earns a reputation for noise, so anything not
 statically decidable is left alone:
 
-- an `origin` that is a variable, member expression, template literal, array,
-  regex, or callback
+- an `origin` that is a variable, member expression, template literal with
+  something interpolated, array, regex, or callback (`` `*` `` with nothing
+  interpolated is the string `'*'` and is reported)
 - an options object imported from another module — `enableCors(corsOptions)`
   only reports when `corsOptions` is declared in the same file
 - an options object with a spread (`{ ...base }`) and no visible `origin`, since
@@ -77,13 +78,49 @@ statically decidable is left alone:
   site may not be the value at the declaration, so only a binding written exactly
   once — its initialiser — is read.
 
+## Environment checks
+
+A permissive call that can only run outside production is not reported. A
+branch counts when **both** hold:
+
+1. its condition mentions one of `environmentHintNames` as a whole identifier
+   or word (`NODE_ENV`, `isDev`, `'development'`, …); and
+2. read in the branch's direction, the condition selects a development
+   environment. A condition naming `production` / `prod` / `isProd` selects
+   production, or development when negated (`!==`, `!=`, a leading `!`); one
+   naming `development` / `dev` / `test` / `local` / `staging` / `isDev` /
+   `devMode` selects development, or production when negated.
+
+The `if` / `?:` consequent and the right of `&&` run when the condition is
+true; the `else` / `:` alternate and the right of `||` run when it is false.
+
+```ts
+if (process.env.NODE_ENV !== 'production') app.enableCors({ origin: '*' }); // not reported
+isDev && app.enableCors({ origin: true }); // not reported
+if (process.env.NODE_ENV === 'production') {
+} else {
+  app.enableCors({ origin: '*' }); // not reported: runs outside production
+}
+if (process.env.NODE_ENV === 'development') {
+} else {
+  app.enableCors({ origin: '*' }); // reported: this branch is production
+}
+if (req.path.startsWith('/public')) app.enableCors({ origin: '*' }); // reported: not about the environment
+```
+
+`environmentHintNames` **replaces** the default list. A project whose flag is
+`stage` sets `['stage']`, after which `if (stage === 'local')` counts — and
+`NODE_ENV` no longer does unless it is listed too.
+
+The call is `enableCors` on any receiver however the member is spelled:
+`app.enableCors(…)` and `app['enableCors'](…)` are the same call.
+
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| Option                 | Type       | Default                                                                                                                                        | Description                                                                |
+| ---------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `allowInTests`         | `boolean`  | `true`                                                                                                                                         | Skip this rule in `*.test.*` / `*.spec.*` files                            |
 | `environmentHintNames` | `string[]` | `["NODE_ENV","APP_ENV","ENVIRONMENT","isDev","isDevelopment","isLocal","isTest","isProd","isProduction","devMode","development","production"]` | Words that mark a condition as an environment check. Replaces the default. |
-
 
 ```ts
 'nestjs-security/no-permissive-cors': ['error', { allowInTests: true }]

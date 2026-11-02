@@ -95,6 +95,7 @@ ruleTester.run(
       // and a 40-char blob trips the repo's secret scanner. A fixture that
       // cannot be committed is a fixture nobody runs.
       {
+        name: 'a 25-character random value under a non-credential key is reported by its shape',
         code: `const dbPassword = 'aaAA@123';`,
         errors: 1,
       },

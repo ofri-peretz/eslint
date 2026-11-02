@@ -60,14 +60,13 @@ export class AppModule {}
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
-| `detectGlobalThrottler` | `boolean` | `true` | Look for a globally registered ThrottlerGuard before reporting |
-| `skipRoutes` | `string[]` | `[]` | Route paths exempt from the throttling requirement |
-| `assumeGlobalThrottler` | `boolean` | `false` | Assume a global ThrottlerGuard exists even if none is found |
-| `onlySensitiveRoutes` | `boolean` | `true` | Only require throttling on authentication and mutation routes |
-
+| Option                  | Type       | Default | Description                                                                                   |
+| ----------------------- | ---------- | ------- | --------------------------------------------------------------------------------------------- |
+| `allowInTests`          | `boolean`  | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files                                               |
+| `detectGlobalThrottler` | `boolean`  | `true`  | Look for a globally registered ThrottlerGuard before reporting                                |
+| `skipRoutes`            | `string[]` | `[]`    | Route paths (as declared on the HTTP-method decorator) exempt from the throttling requirement |
+| `assumeGlobalThrottler` | `boolean`  | `false` | Assume a global ThrottlerGuard exists even if none is found                                   |
+| `onlySensitiveRoutes`   | `boolean`  | `true`  | Only require throttling on authentication and mutation routes                                 |
 
 ```typescript
 {
@@ -87,7 +86,9 @@ export class AppModule {}
   // which is a capacity concern rather than a security one (default: true)
   onlySensitiveRoutes?: boolean;
 
-  // Route path segments to leave alone (default: [])
+  // Route paths to leave alone, as declared on the handler's HTTP-method
+  // decorator: `@Post('login')` is `'login'`, and `@Post(['login', 'sign-in'])`
+  // declares both. Not the method name (default: [])
   skipRoutes?: string[];
 }
 ```

@@ -17,7 +17,7 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const nest = <T,>(cases: T[]): T[] =>
+const nest = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asNest(c) as T;
     const t = c as Case;
@@ -43,7 +43,6 @@ const nest = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester();
 
@@ -160,6 +159,85 @@ ruleTester.run('no-unguarded-swagger', noUnguardedSwagger, {
       `,
       filename: 'main.e2e-spec.ts',
       options: [{ allowInTests: false }],
+      errors: [{ messageId: 'unguardedSwagger' }],
+    },
+  ]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quint fidelity model (benchmarks/suites/fidelity/models/nestjs-security)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-unguarded-swagger (fidelity)', noUnguardedSwagger, {
+  valid: nest([
+    {
+      name: 'a SwaggerModule imported from another package is not the NestJS one',
+      code: `
+        import { SwaggerModule } from './docs';
+        export async function bootstrap() {
+          const app = await NestFactory.create(AppModule);
+          SwaggerModule.setup('docs', app, document);
+        }
+      `,
+    },
+  ]),
+  invalid: nest([
+    {
+      name: 'a renamed SwaggerModule import is still the NestJS SwaggerModule',
+      code: `
+        import { SwaggerModule as SM, DocumentBuilder } from '@nestjs/swagger';
+        export async function bootstrap() {
+          const app = await NestFactory.create(AppModule);
+          const document = SM.createDocument(app, new DocumentBuilder().build());
+          SM.setup('docs', app, document);
+          await app.listen(3000);
+        }
+      `,
+      errors: [{ messageId: 'unguardedSwagger' }],
+    },
+    {
+      name: 'a namespace-imported SwaggerModule is still the NestJS SwaggerModule',
+      code: `
+        import * as swagger from '@nestjs/swagger';
+        export async function bootstrap() {
+          const app = await NestFactory.create(AppModule);
+          swagger.SwaggerModule.setup('docs', app, document);
+        }
+      `,
+      errors: [{ messageId: 'unguardedSwagger' }],
+    },
+  ]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-unguarded-swagger (mutation audit)', noUnguardedSwagger, {
+  valid: nest([]),
+  invalid: nest([
+    {
+      name: 'a plain function call before NestFactory.create does not hide the bootstrap',
+      code: `
+        import { SwaggerModule } from '@nestjs/swagger';
+        async function bootstrap() {
+          initTracing();
+          const app = await NestFactory.create(AppModule);
+          SwaggerModule.setup('/docs', app, SwaggerModule.createDocument(app, options));
+          await app.listen(3000);
+        }
+      `,
+      errors: [{ messageId: 'unguardedSwagger' }],
+    },
+    {
+      name: 'an array pattern with a hole before NestFactory.create does not hide the bootstrap',
+      code: `
+        import { SwaggerModule } from '@nestjs/swagger';
+        async function bootstrap() {
+          const [, , port] = process.argv;
+          const app = await NestFactory.create(AppModule);
+          SwaggerModule.setup('/docs', app, SwaggerModule.createDocument(app, options));
+          await app.listen(port);
+        }
+      `,
       errors: [{ messageId: 'unguardedSwagger' }],
     },
   ]),

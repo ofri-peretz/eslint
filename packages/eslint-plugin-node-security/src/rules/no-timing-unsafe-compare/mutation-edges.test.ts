@@ -81,7 +81,11 @@ ruleTester.run(
         name: 'a non-equality binary operator on a secret is not a comparison',
         code: 'const combined = apiToken + nonce;',
       },
-    ],
+      // (These used to run under the DEFAULT options — the `.map` below only
+      // covered `invalid` — where the untrusted-operand gate alone keeps every
+      // one of them quiet. They are now held to the name-only contract their
+      // header names.)
+    ].map((testCase) => ({ ...testCase, options: NAME_ONLY })),
     invalid: [
       {
         name: 'a template literal with an expression is not a constant',
@@ -179,6 +183,131 @@ if (tokensMatch(req.query.t, apiToken)) ok();`,
       {
         name: 'a private field named like a secret compared with request input is reported',
         code: 'class Gate { #apiToken; check(req) { return this.#apiToken === req.query.t; } }',
+        errors: [error],
+      },
+    ],
+  },
+);
+
+ruleTester.run(
+  'mutation-guided edges, batch 5: name-only contract',
+  noTimingUnsafeCompare,
+  {
+    valid: [
+      {
+        name: 'a secret compared with itself (the NaN idiom) is one value',
+        code: 'if (apiToken !== apiToken) reset();',
+      },
+    ].map((testCase) => ({ ...testCase, options: NAME_ONLY })),
+    invalid: [
+      {
+        name: 'a namespace-looking object with a lower-case tail after an underscore is not a namespace',
+        code: 'if (Vault_prod.API_KEY === provided) ok();',
+        errors: [error],
+      },
+    ].map((testCase) => ({ ...testCase, options: NAME_ONLY })),
+  },
+);
+
+ruleTester.run(
+  'mutation-guided edges, batch 5: default contract',
+  noTimingUnsafeCompare,
+  {
+    valid: [
+      {
+        name: 'a request secret compared against a string literal is a tag check',
+        code: "if (req.body.token === 'access') ok();",
+      },
+      {
+        name: 'a request secret compared against an enum member is a tag check',
+        code: 'if (req.body.tokenType === TokenType.REFRESH_TOKEN) ok();',
+      },
+      {
+        name: 'a call returned by a call is not a crypto derivation',
+        code: 'if (lookup(table)(row) === req.params.id) ok();',
+      },
+      {
+        name: "a wrapper comparing one parameter's length against another is a length check",
+        code: `function hasLength(value, n) { return value.length === n; }
+if (hasLength(req.query.token, size)) ok();`,
+      },
+      {
+        name: 'a cyclic alias chain through a request read terminates',
+        code: `function f(req) {
+  const a = b.x;
+  const b = a.y.concat(req.body);
+  if (req.body.token === a.token) ok();
+}`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'a curried call beside a secret does not hide the secret',
+        code: 'if (apiToken === lookup(table)(req.query.t)) ok();',
+        errors: [error],
+      },
+      {
+        name: 'BUG: a private method named like a crypto derivation derives a secret',
+        code: `class Webhook {
+  #hmac(body) { return compute(body); }
+  verify(req) { return this.#hmac(req.rawBody) === req.headers['x-sig']; }
+}`,
+        errors: [error],
+      },
+      {
+        name: 'BUG: server session state five hops up an alias chain is server-derived',
+        code: `export function check(req) {
+  const store = req.session;
+  const csrf = store.csrf;
+  if (req.body.token !== csrf.current.secret) deny();
+}`,
+        errors: [error],
+      },
+      {
+        name: 'BUG: isEqualWith takes its customizer third and still compares the first two',
+        code: 'if (_.isEqualWith(req.body.token, apiToken, compareLoosely)) ok();',
+        errors: [error],
+      },
+      {
+        name: 'BUG: deepEqual with an options bag still compares the first two',
+        code: 'if (deepEqual(req.body.token, apiToken, { strict: true })) ok();',
+        errors: [error],
+      },
+      {
+        name: 'a wrapper is judged by its parameter-to-parameter compare, not by its first match only',
+        code: `function verify(provided, expected, fallback) {
+  if (provided === expected) return true;
+  return expected === fallback;
+}
+if (verify(req.query.token, apiToken, DEFAULT_TOKEN)) ok();`,
+        errors: [error],
+      },
+      {
+        name: 'a hole in a destructuring pattern inside a wrapper is skipped',
+        code: `function tokensMatch(header, expected) {
+  const [, rest] = header.split(' ');
+  if (rest === undefined) return false;
+  return header === expected;
+}
+if (tokensMatch(req.headers.authorization, apiToken)) ok();`,
+        errors: [error],
+      },
+      {
+        name: 'a Yoda presence check inside a wrapper is not its comparison',
+        code: `function tokensMatch(provided, expected) {
+  if (null == provided) return false;
+  return provided === expected;
+}
+if (tokensMatch(req.query.token, apiToken)) ok();`,
+        errors: [error],
+      },
+      {
+        name: 'a format check of one parameter against itself inside a wrapper is not its comparison',
+        code: `function tokensMatch(provided, expected) {
+  if (provided.trim() !== provided) return false;
+  return provided === expected;
+}
+if (tokensMatch(req.query.token, apiToken)) ok();`,
         errors: [error],
       },
     ],

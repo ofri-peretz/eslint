@@ -19,6 +19,10 @@ ruleTester.run('no-insecure-websocket (mutation edges)', noInsecureWebsocket, {
       name: 'prose that mentions ws:// mid-string is not a URL',
       code: "const help = 'Connect via ws://chat.acme-corp.io';",
     },
+    {
+      name: 'a ws:// template to a loopback host with a written-down port never leaves the machine',
+      code: 'const socketUrl = `ws://localhost:8080/${path}`;',
+    },
   ],
   invalid: [],
 });

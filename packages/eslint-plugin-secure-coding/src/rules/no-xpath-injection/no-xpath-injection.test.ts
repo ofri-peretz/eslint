@@ -1052,7 +1052,11 @@ ruleTester.run(
         code: 'lib.xpath.select("//user[@id=\'" + id + "\']", doc);',
         errors: 1,
       },
-      { code: 'xml.selectNodes(userQuery);', errors: 1 },
+      {
+        name: 'selectNodes with a variable query is reported',
+        code: 'xml.selectNodes(userQuery);',
+        errors: 1,
+      },
     ],
   },
 );
@@ -1090,6 +1094,16 @@ describe('no-xpath-injection: constants and destinations', () => {
       // Declared and never used: destination unknown, which is not safety.
       {
         code: `const q = "/users/user[name='" + userInput + "']";`,
+        errors: [{ messageId: 'xpathInjection' }],
+      },
+      {
+        name: 'a concatenated XPath returned from a function reaches an unknown caller',
+        code: `export function find(req, username) { const expr = "/users/user[@name='" + username + "']"; return expr; }`,
+        errors: [{ messageId: 'xpathInjection' }],
+      },
+      {
+        name: 'a request-built XPath returned from a function reaches an unknown caller',
+        code: `export function find(req) { const expr = "/users/user[@name='" + req.query.name + "']"; return expr; }`,
         errors: [{ messageId: 'xpathInjection' }],
       },
       // Every use classified, and one of them is a sink.

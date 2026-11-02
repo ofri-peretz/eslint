@@ -112,6 +112,7 @@ ruleTester.run('no-sensitive-localstorage', noSensitiveLocalstorage, {
     },
     // Non-computed member access IS the key name.
     {
+      name: 'assigning a secret through the localStorage.secret property is reported',
       code: `localStorage.secret = secretValue;`,
       errors: [{ messageId: 'sensitiveLocalStorage' }],
     },

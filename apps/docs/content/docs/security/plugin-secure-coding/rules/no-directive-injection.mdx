@@ -59,6 +59,7 @@ Directive injection occurs when user input is used to inject malicious directive
 
 ```tsx
 element.innerHTML = userInput;
+element.outerHTML = userInput; // parsed as markup, same sink
 ```
 
 ### ✅ Correct

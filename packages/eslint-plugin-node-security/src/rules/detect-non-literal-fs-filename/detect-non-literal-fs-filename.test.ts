@@ -960,7 +960,11 @@ describe('module-binding fallback', () => {
     ],
     invalid: [
       // Method plucked onto a variable.
-      { code: `var one = require('fs').readFile; one(filename);`, errors: 1 },
+      {
+        name: 'fs.readFile() with no path argument is reported when reportUnresolvedPaths is on',
+        code: `var one = require('fs').readFile; one(filename);`,
+        errors: 1,
+      },
       {
         code: `var one = require('node:fs').readFile; one(filename);`,
         errors: 1,
@@ -1081,23 +1085,24 @@ ruleTester.run(
 );
 
 /**
- * Regression lock — the recursion depth guard.
+ * Regression lock — composition depth is NOT a bound.
  *
- * containsFreeVariable stops at depth 4, mirroring isBuildTimeConstant. A path nested more
- * deeply than that is not walked, so an unresolvable name buried six calls down does not
- * report — a deliberate bound on how far provenance is chased, not an oversight.
+ * containsFreeVariable used to stop at depth 4, so an unresolvable name buried six calls
+ * down did not report, and this lock pinned that as "a deliberate bound". It was a false
+ * negative: the walk only ever moves to sub-nodes, so it needs no bound to terminate, and
+ * the one walk that can cycle (a `const` hop) now cuts the cycle itself. The deep case is
+ * reported like the shallow one.
  */
 ruleTester.run(
-  'lock: composition depth is bounded',
+  'lock: composition depth is not bounded',
   detectNonLiteralFsFilename,
   {
-    valid: [
+    valid: [],
+    invalid: [
       {
         code: "const fs = require('fs'); fs.readFile(a(b(c(d(e(f(deepName)))))));",
+        errors: 1,
       },
-    ],
-    invalid: [
-      // Within the bound, the free name is still found.
       {
         code: "const fs = require('fs'); fs.readFile(a(b(shallowName)));",
         errors: 1,

@@ -5,7 +5,7 @@ tags: ['security', 'dos', 'cwe-409', 'nodejs', 'zlib', 'zip-bomb']
 category: security
 severity: high
 cwe: CWE-409
-owasp: "A05:2021"
+owasp: 'A05:2021'
 autofix: false
 type_aware: false
 type_aware_status: unaware
@@ -21,13 +21,13 @@ Detects zlib's buffer-at-once decompressors (`gunzip`, `inflate`, `unzip`, `brot
 
 ## Quick Summary
 
-| Aspect            | Details                                                                     |
-| ----------------- | --------------------------------------------------------------------------- |
+| Aspect            | Details                                                                      |
+| ----------------- | ---------------------------------------------------------------------------- |
 | **CWE Reference** | [CWE-409](https://cwe.mitre.org/data/definitions/409.html) (Compressed Data) |
-| **Severity**      | High (denial of service)                                                    |
-| **Auto-Fix**      | ❌ Manual — only you know the right ceiling                                 |
-| **Category**      | Security                                                                    |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                     |
+| **Severity**      | High (denial of service)                                                     |
+| **Auto-Fix**      | ❌ Manual — only you know the right ceiling                                  |
+| **Category**      | Security                                                                     |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                      |
 | **Best For**      | Services that accept `Content-Encoding: gzip` bodies or uploaded archives    |
 
 ## Vulnerability and Risk
@@ -38,7 +38,7 @@ Detects zlib's buffer-at-once decompressors (`gunzip`, `inflate`, `unzip`, `brot
 
 ## Rule Details
 
-The rule resolves the receiver to what it was **imported from**, not to what it is called — `const z = require('node:zlib')`, `require('node:zlib').gunzipSync`, `import zlib = require('zlib')`, `await import('node:zlib')` and a decompressor destructured from any of them are the same API, while a local helper — or a parameter shadowing an imported name — called `gunzip` is not. It reports a call when there is no options object at all, or when the options literal carries no `maxOutputLength`.
+The rule resolves the receiver to what it was **imported from**, not to what it is called — `const z = require('node:zlib')`, `require('node:zlib').gunzipSync`, `import zlib = require('zlib')`, `await import('node:zlib')` and a decompressor destructured from any of them are the same API, while a local helper — or a parameter shadowing an imported name — called `gunzip` is not. It reports a call when there is no options object at all, or when the options literal carries no `maxOutputLength`. The options are read where zlib reads them — the second argument, unless it is the async form's trailing callback — so an argument past them (`zlib.gunzipSync(input, {}, onDone)`) does not hide an uncapped literal. A template-literal specifier (``await import(`node:zlib`)``) is the same module.
 
 It stays quiet where it would be guessing:
 
@@ -84,9 +84,9 @@ const plain = zlib.gunzipSync(uploadedBuffer, { maxOutputLength: MAX_OUTPUT });
 
 ## Configuration
 
-| Option         | Type      | Default | Description                                  |
-| -------------- | --------- | ------- | -------------------------------------------- |
-| `allowInTests` | `boolean` | `false` | Allow unbounded decompression in test files  |
+| Option         | Type      | Default | Description                                 |
+| -------------- | --------- | ------- | ------------------------------------------- |
+| `allowInTests` | `boolean` | `false` | Allow unbounded decompression in test files |
 
 ```javascript
 {
@@ -100,10 +100,10 @@ const plain = zlib.gunzipSync(uploadedBuffer, { maxOutputLength: MAX_OUTPUT });
 
 ## Security Impact
 
-| Vulnerability             | CWE | OWASP    | CVSS     | Impact                       |
-| ------------------------- | --- | -------- | -------- | ---------------------------- |
+| Vulnerability             | CWE | OWASP    | CVSS     | Impact                        |
+| ------------------------- | --- | -------- | -------- | ----------------------------- |
 | Decompression Bomb        | 409 | A05:2021 | 7.5 High | Heap exhaustion, process kill |
-| Uncontrolled Resource Use | 400 | A05:2021 | 7.5 High | Denial of service            |
+| Uncontrolled Resource Use | 400 | A05:2021 | 7.5 High | Denial of service             |
 
 ## Related Rules
 
@@ -139,6 +139,6 @@ zlib.gunzip(reqBody, opts, cb);
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
+| Option         | Type      | Default | Description                                 |
+| -------------- | --------- | ------- | ------------------------------------------- |
 | `allowInTests` | `boolean` | `false` | Allow unbounded decompression in test files |

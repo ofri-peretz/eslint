@@ -245,10 +245,12 @@ function literalNumber(node: TSESTree.Node): number | null {
   if (
     node.type === 'UnaryExpression' &&
     node.operator === '-' &&
-    node.argument.type === 'Literal' &&
-    typeof node.argument.value === 'number'
+    node.argument.type === 'Literal'
   ) {
-    return -node.argument.value;
+    // Unary minus coerces its operand exactly as the runtime will: `-'1'` is
+    // -1 and `-null` is -0, while `-1n` stays a bigint that equals no number
+    // and `-/x/` is NaN. The cast names the result the comparison sees.
+    return -(node.argument.value as number);
   }
   return null;
 }
@@ -274,7 +276,6 @@ function isContainmentComparison(call: TSESTree.CallExpression): boolean {
 
   const callIsLeft = parent.left === call;
   const bound = literalNumber(callIsLeft ? parent.right : parent.left);
-  if (bound === null) return false;
 
   const operator = callIsLeft
     ? parent.operator
@@ -521,7 +522,8 @@ export const noIncompleteUrlSanitization = createRule<RuleOptions, MessageIds>({
         }
 
         // `/^javascript:/i.test(href)`
-        if (method === 'test' && callee.object.type === 'Literal') {
+        // collectSchemeTest reads only a literal needle.
+        if (method === 'test') {
           collectSchemeTest(node, callee.object);
         }
       },

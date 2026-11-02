@@ -9,6 +9,7 @@
  */
 
 import {
+  AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
   MessageIcons,
@@ -39,7 +40,7 @@ const RESOURCE_TAG = /<(script|link)\b(?:"[^"]*"|'[^']*'|[^>"'])*>/gi;
 
 /** `name="value"`, `name='value'` or `name=value` inside one tag. */
 const TAG_ATTRIBUTE =
-  /(?:^|[\s/])([a-z][a-z0-9-]*)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi;
+  /[\s/]([a-z][a-z0-9-]*)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi;
 
 /** Host fragments that mark a URL as third-party-delivered. */
 const CDN_HOSTS = ['cdn.', 'cdnjs.', 'unpkg.', 'jsdelivr.'] as const;
@@ -92,11 +93,11 @@ function hostOf(url: string): string | undefined {
  * evidence at all, and treating absence as exclusion would let one omitted
  * attribute suppress the finding — so an unlabelled link is still judged.
  */
-function linkTakesIntegrity(attributes: Map<string, string>): boolean {
-  const rel = (attributes.get('rel') ?? '').toLowerCase().trim();
-  if (rel === '') return true;
-
-  const relations = rel.split(/\s+/);
+function linkTakesIntegrity(attributes: ReadonlyMap<string, string>): boolean {
+  // `rel` is a space-separated token list; no token at all (absent, empty or
+  // only whitespace) is the unlabelled case.
+  const relations = (attributes.get('rel') ?? '').toLowerCase().match(/\S+/g);
+  if (relations === null) return true;
   if (relations.some((value) => SRI_LINK_RELS.has(value))) return true;
   if (!relations.includes('preload')) return false;
   return SRI_PRELOAD_DESTINATIONS.has(
@@ -125,22 +126,33 @@ function linkTakesIntegrity(attributes: Map<string, string>): boolean {
 function hasUnprotectedCdnTag(text: string): boolean {
   for (const match of text.matchAll(RESOURCE_TAG)) {
     const isScript = match[1].toLowerCase() === 'script';
-    const attributes = attributesOf(match[0]);
-
-    const url = attributes.get(isScript ? 'src' : 'href');
-    // No URL: an inline `<script>` or `<style>` fetches nothing, so there are
-    // no bytes for a hash to describe.
-    if (url === undefined) continue;
-
-    const host = hostOf(url);
-    if (host === undefined) continue;
-    if (!CDN_HOSTS.some((fragment) => host.includes(fragment))) continue;
-
-    if (!isScript && !linkTakesIntegrity(attributes)) continue;
-    if (attributes.has('integrity')) continue;
-    return true;
+    if (isUnprotectedCdnResource(isScript, attributesOf(match[0]))) return true;
   }
   return false;
+}
+
+/**
+ * One `<script>` / `<link>` tag, by its attributes: does it load a CDN
+ * resource that takes an integrity hash, without one?
+ *
+ * Shared by the string scan and the JSX visitor, so `<script src=…>` written
+ * in a template and written as JSX are judged by one definition.
+ */
+function isUnprotectedCdnResource(
+  isScript: boolean,
+  attributes: ReadonlyMap<string, string>,
+): boolean {
+  const url = attributes.get(isScript ? 'src' : 'href');
+  // No URL: an inline `<script>` or `<style>` fetches nothing, so there are
+  // no bytes for a hash to describe.
+  if (url === undefined) return false;
+
+  const host = hostOf(url);
+  if (host === undefined) return false;
+  if (!CDN_HOSTS.some((fragment) => host.includes(fragment))) return false;
+
+  if (!isScript && !linkTakesIntegrity(attributes)) return false;
+  return !attributes.has('integrity');
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface -- Rule has no configurable options
@@ -208,6 +220,26 @@ export const requireDependencyIntegrity = createRule<RuleOptions, MessageIds>({
       return text;
     };
 
+    /** A JSX attribute's static string value; `''` for a bare flag. */
+    const jsxAttributeValue = (
+      value: TSESTree.JSXAttribute['value'],
+    ): string | null => {
+      if (value === null) return '';
+      // A quoted JSX attribute is always a string literal.
+      if (value.type === AST_NODE_TYPES.Literal) return String(value.value);
+      // `src={}` holds a JSXEmptyExpression, which resolves to no constant
+      // below and so comes back null like any other unknown.
+      if (value.type !== AST_NODE_TYPES.JSXExpressionContainer) return null;
+      const expression = value.expression;
+      if (expression.type === AST_NODE_TYPES.TemplateLiteral) {
+        const rendered = renderTemplate(expression);
+        return rendered.includes('\u0000') ? null : rendered;
+      }
+      return (
+        resolveConstantString(context.sourceCode, expression)?.value ?? null
+      );
+    };
+
     return {
       Literal(node: TSESTree.Literal) {
         // The unescaped value, not the printed source: `'\x3Cscript …'` is a
@@ -218,6 +250,43 @@ export const requireDependencyIntegrity = createRule<RuleOptions, MessageIds>({
 
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
         if (hasUnprotectedCdnTag(renderTemplate(node))) report(node);
+      },
+
+      /**
+       * `<script src="https://cdnjs…/jquery.min.js" />` written as JSX — the
+       * same tag a server-rendered React head emits, which the string scan
+       * never sees because JSX is not a string.
+       *
+       * A spread (`{...props}`) may carry `integrity`, and an unresolvable
+       * `rel` may exclude it, so either makes the element unknowable and the
+       * rule abstains rather than guess.
+       */
+      JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
+        if (node.name.type !== AST_NODE_TYPES.JSXIdentifier) return;
+        const tag = node.name.name;
+        if (tag !== 'script' && tag !== 'link') return;
+        const attributes = new Map<string, string>();
+        for (const attribute of node.attributes) {
+          if (
+            attribute.type !== AST_NODE_TYPES.JSXAttribute ||
+            attribute.name.type !== AST_NODE_TYPES.JSXIdentifier
+          ) {
+            return;
+          }
+          const name = attribute.name.name.toLowerCase();
+          const value = jsxAttributeValue(attribute.value);
+          // An unknown value is kept as `''`, the reading that never reports:
+          // an empty URL has no CDN host, an empty `as` is no SRI destination,
+          // and `integrity={sri}` is present whatever it holds. `nonce={n}`
+          // says nothing about integrity at all. Only `rel` reads the other
+          // way — empty means unlabelled, which IS judged — so an unknown
+          // `rel` (it may be `icon`) makes the element unknowable.
+          if (value === null && name === 'rel') return;
+          attributes.set(name, value ?? '');
+        }
+        if (isUnprotectedCdnResource(tag === 'script', attributes)) {
+          report(node);
+        }
       },
     };
   },

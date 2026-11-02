@@ -14,16 +14,20 @@
  * package's duplicate detector is CWE-keyed and could not see it: the CWEs
  * differ, so the pair never registered as a duplicate at all.
  *
- * The partition, documented in both rules' file headers:
+ * The partition used to hand every scope that SETS response headers to
+ * `no-missing-security-headers`. That rule is DEPRECATED and out of every
+ * preset, so the deferral left `res.setHeader('X-Frame-Options', 'DENY');
+ * res.render(view)` reported by nobody for a user who followed the
+ * deprecation. A live rule must not defer to a deprecated one, so the
+ * partition is withdrawn:
  *
- * - `no-missing-security-headers` owns any scope that explicitly SETS response
- *   headers and omits a required one.
- * - `require-csp-headers` owns a document emitted where NO response header is
- *   set at all — the case the other rule structurally cannot see.
+ * - `require-csp-headers` reports every document emission without a CSP,
+ *   whether or not other headers are set.
+ * - `no-missing-security-headers`, when a consumer still enables it
+ *   explicitly, keeps its broader "missing security headers" finding.
  *
- * Every row below asserts EXACTLY ONE report across both rules. A row that
- * scores 2 is a duplicate; a row that scores 0 is a shape that fell through
- * the partition, which is the failure mode a partition most easily introduces.
+ * Every row asserts the exact set of rules that report. A row where
+ * `require-csp-headers` is absent is a shape the live rule cannot see.
  */
 import { Linter } from 'eslint';
 import { describe, expect, it } from 'vitest';
@@ -65,11 +69,11 @@ function reportingRules(code: string): string[] {
 const SHAPES: ReadonlyArray<{
   readonly name: string;
   readonly code: string;
-  readonly owner: string;
+  readonly owners: readonly string[];
 }> = [
   {
     name: 'sets a header, omits CSP, sends a document',
-    owner: 'p/no-missing-security-headers',
+    owners: ['p/no-missing-security-headers', 'p/require-csp-headers'],
     code: `app.get('/', (req, res) => {
       res.setHeader('X-Frame-Options', 'DENY');
       res.send('<html><body>hi</body></html>');
@@ -77,15 +81,17 @@ const SHAPES: ReadonlyArray<{
   },
   {
     name: 'sets a header, omits CSP, renders a template',
-    owner: 'p/no-missing-security-headers',
+    owners: ['p/no-missing-security-headers', 'p/require-csp-headers'],
     code: `app.get('/', (req, res) => {
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.render('index');
     });`,
   },
   {
+    // `new Response(…)` is not an emission this rule models — a known gap,
+    // pinned so that closing it is a visible change.
     name: 'declares a header block, omits CSP',
-    owner: 'p/no-missing-security-headers',
+    owners: ['p/no-missing-security-headers'],
     code: `export function GET() {
       return new Response('<!DOCTYPE html><html></html>', {
         headers: { 'Content-Type': 'text/html', 'X-Frame-Options': 'DENY' },
@@ -94,17 +100,17 @@ const SHAPES: ReadonlyArray<{
   },
   {
     name: 'sends a document, sets no header at all',
-    owner: 'p/require-csp-headers',
+    owners: ['p/require-csp-headers'],
     code: `app.get('/', (req, res) => { res.send('<html><body>hi</body></html>'); });`,
   },
   {
     name: 'renders a template, sets no header at all',
-    owner: 'p/require-csp-headers',
+    owners: ['p/require-csp-headers'],
     code: `app.get('/', (req, res) => { res.render('index'); });`,
   },
   {
     name: 'streams a document, sets no header at all',
-    owner: 'p/require-csp-headers',
+    owners: ['p/require-csp-headers'],
     code: `app.get('/', (req, res) => {
       res.write('<!DOCTYPE html><html><body>');
       res.end('</body></html>');
@@ -112,18 +118,30 @@ const SHAPES: ReadonlyArray<{
   },
 ];
 
-describe('partition: who owns "this response has no CSP"', () => {
-  it.each(SHAPES)('$name -> exactly one report', ({ code, owner }) => {
-    expect(reportingRules(code)).toEqual([owner]);
+describe('who reports "this response has no CSP"', () => {
+  it.each(SHAPES)('$name -> the expected rules', ({ code, owners }) => {
+    expect(reportingRules(code)).toEqual(owners);
   });
 
-  it('the pre-partition shape reported twice, and now reports once', () => {
-    // The exact handler that exposed the duplicate.
+  it('the live rule alone still reports a handler that sets other headers', () => {
     const code = `app.get('/', (req, res) => {
       res.setHeader('X-Frame-Options', 'DENY');
       res.send('<html><body>hi</body></html>');
     });`;
-    expect(reportingRules(code)).toHaveLength(1);
+    expect(
+      linter
+        .verify(
+          code,
+          {
+            files: ['**/*.js'],
+            languageOptions: { ecmaVersion: 2022, sourceType: 'module' },
+            plugins: { p: { rules: RULES } },
+            rules: { 'p/require-csp-headers': 'error' },
+          },
+          'handler.js',
+        )
+        .map((m) => m.ruleId),
+    ).toEqual(['p/require-csp-headers']);
   });
 
   it('a fully protected handler is silent under both rules', () => {

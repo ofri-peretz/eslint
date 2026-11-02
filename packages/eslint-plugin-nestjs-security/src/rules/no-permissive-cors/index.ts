@@ -39,6 +39,9 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  objectKeyName,
+  propertyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 import {
   collectImportOrigins,
@@ -104,18 +107,22 @@ const DEV_ENVIRONMENT =
 const PROD_ENVIRONMENT = /\b(isProd|isProduction|production|prod)\b/i;
 const NEGATION = /!==|!=|\bnot\b|^\s*!/;
 
-function isDevelopmentScoped(text: string): boolean {
+/**
+ * Which environment a condition selects when it is TRUE: `'dev'`, `'prod'`, or
+ * `null` when it names neither.
+ */
+function environmentSelected(text: string): 'dev' | 'prod' | null {
   const negated = NEGATION.test(text);
   if (PROD_ENVIRONMENT.test(text)) {
     // `NODE_ENV !== 'production'` gates development; `=== 'production'` does
     // the opposite and must keep reporting.
-    return negated;
+    return negated ? 'dev' : 'prod';
   }
   if (DEV_ENVIRONMENT.test(text)) {
     // `NODE_ENV !== 'development'` is a production gate wearing a dev word.
-    return !negated;
+    return negated ? 'prod' : 'dev';
   }
-  return false;
+  return null;
 }
 
 type MessageIds = 'wildcardOrigin' | 'reflectedOrigin' | 'defaultOrigin';
@@ -170,16 +177,8 @@ function findOriginProperty(
     if (prop.type !== AST_NODE_TYPES.Property) continue;
     // A computed key is a variable reference, not a name: in `{ [origin]: '*' }`
     // the key node is an Identifier called `origin` but says nothing about which
-    // property is being set.
-    if (prop.computed) continue;
-    const key =
-      prop.key.type === AST_NODE_TYPES.Identifier
-        ? prop.key.name
-        : prop.key.type === AST_NODE_TYPES.Literal &&
-            typeof prop.key.value === 'string'
-          ? prop.key.value
-          : null;
-    if (key === 'origin') return prop;
+    // property is being set. `{ ['origin']: '*' }` names it, and is the same key.
+    if (objectKeyName(prop) === 'origin') return prop;
   }
   return undefined;
 }
@@ -341,7 +340,12 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
       },
     ],
   },
-  defaultOptions: [{ allowInTests: true }],
+  defaultOptions: [
+    {
+      allowInTests: true,
+      environmentHintNames: [...DEFAULT_ENVIRONMENT_HINT_NAMES],
+    },
+  ],
   createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     currentOptions,
@@ -353,29 +357,50 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     let reported: Set<TSESTree.ObjectExpression>;
 
     /**
-     * Whether the call sits inside a branch that tests the environment.
+     * Whether the call sits in a branch that runs only outside production.
      *
-     * Only the *condition* text is inspected, and only for an environment
-     * marker — the rule does not try to evaluate which way the branch goes.
+     * A branch counts when its condition mentions one of
+     * `environmentHintNames` and, read in the branch's direction, selects a
+     * development environment:
+     *
+     *   - the `if` / `?:` consequent and the right of `&&` run when the
+     *     condition is true — `if (NODE_ENV === 'development') { … }`;
+     *   - the `else` / `:` alternate and the right of `||` run when it is
+     *     false — `if (NODE_ENV === 'production') {} else { … }`.
+     *
+     * So the `else` of a development check runs in production and is still
+     * reported. Only the condition text is read; its value is not evaluated.
      */
     function insideEnvironmentBranch(node: TSESTree.Node): boolean {
-      let current: TSESTree.Node | undefined = node.parent;
-      while (current) {
-        let test: TSESTree.Node | null = null;
-        if (current.type === AST_NODE_TYPES.IfStatement) test = current.test;
-        else if (current.type === AST_NODE_TYPES.ConditionalExpression)
+      let child: TSESTree.Node = node;
+      for (
+        let current = node.parent;
+        current;
+        child = current, current = current.parent
+      ) {
+        let test: TSESTree.Node;
+        let whenTrue: boolean;
+        if (
+          current.type === AST_NODE_TYPES.IfStatement ||
+          current.type === AST_NODE_TYPES.ConditionalExpression
+        ) {
+          // The call inside the condition itself runs in every environment.
+          if (child === current.test) continue;
           test = current.test;
-        else if (current.type === AST_NODE_TYPES.LogicalExpression)
+          whenTrue = child === current.consequent;
+        } else if (
+          current.type === AST_NODE_TYPES.LogicalExpression &&
+          child === current.right
+        ) {
           test = current.left;
-        if (test) {
-          const text = context.sourceCode.getText(test);
-          if (
-            mentionsEnvironment(text, environmentHintNames) &&
-            isDevelopmentScoped(text)
-          )
-            return true;
+          whenTrue = current.operator === '&&';
+        } else {
+          continue;
         }
-        current = current.parent;
+        const text = context.sourceCode.getText(test);
+        if (!mentionsEnvironment(text, environmentHintNames)) continue;
+        const selected = environmentSelected(text);
+        if (selected === (whenTrue ? 'dev' : 'prod')) return true;
       }
       return false;
     }
@@ -396,15 +421,18 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
         return;
       }
       const value = originProp.value;
-      if (value.type === AST_NODE_TYPES.Literal) {
-        if (value.value === '*') {
-          context.report({ node: originProp, messageId: 'wildcardOrigin' });
-        } else if (value.value === true) {
-          context.report({ node: originProp, messageId: 'reflectedOrigin' });
-        }
+      // `'*'` and `` `*` `` are the same string.
+      if (staticString(value) === '*') {
+        context.report({ node: originProp, messageId: 'wildcardOrigin' });
+      } else if (
+        value.type === AST_NODE_TYPES.Literal &&
+        value.value === true
+      ) {
+        context.report({ node: originProp, messageId: 'reflectedOrigin' });
       }
-      // Anything else (identifier, member expression, array, function, template)
-      // is either a real allowlist or not statically knowable — stay quiet.
+      // Anything else (identifier, member expression, array, function, a
+      // template with something interpolated) is either a real allowlist or not
+      // statically knowable — stay quiet.
       //
       // `['*']` in particular is NOT a wildcard, however it reads. cors compares
       // each array element with `origin === allowedOrigin` (lib/index.js,
@@ -438,11 +466,8 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
      * in a binding (`app.enableCors()`); a `this` receiver means the class
      * *is* the application, which no consumer's bootstrap ever is.
      */
-    function isSelfCall(callee: TSESTree.Node): boolean {
-      return (
-        callee.type === AST_NODE_TYPES.MemberExpression &&
-        callee.object.type === AST_NODE_TYPES.ThisExpression
-      );
+    function isSelfCall(callee: TSESTree.MemberExpression): boolean {
+      return callee.object.type === AST_NODE_TYPES.ThisExpression;
     }
 
     function checkNestFactoryOptions(node: TSESTree.CallExpression): void {
@@ -450,8 +475,9 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
       if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
       if (expressionName(callee.object) !== 'NestFactory') return;
       const method = expressionName(callee);
-      // createMicroservice has no HTTP surface and no cors option.
-      if (method !== 'create' && method !== 'createApplicationContext') return;
+      // createMicroservice and createApplicationContext serve no HTTP and have
+      // no cors option; only `create` builds an HTTP application.
+      if (method !== 'create') return;
 
       // The options object is always last, but not always second:
       // `NestFactory.create(AppModule, new FastifyAdapter(), { cors: true })`
@@ -480,15 +506,13 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
 
     return {
       before() {
-        const [options = {}] = currentOptions();
+        const [options] = currentOptions();
         // Registering no visitors is both the gate and the cheap path: a file
         // that does not use this SDK does no work at all.
         if (!fileUsesNestjs(context.sourceCode.ast)) return false;
 
-        ({
-          allowInTests = true,
-          environmentHintNames = DEFAULT_ENVIRONMENT_HINT_NAMES,
-        } = options);
+        // Merged with `defaultOptions` before `create` runs.
+        ({ allowInTests, environmentHintNames } = options as Required<Options>);
         if (allowInTests && isTestFilePath(context.filename)) return false;
 
         origins = new Map();
@@ -537,12 +561,8 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
         if (insideEnvironmentBranch(node)) return;
         checkNestFactoryOptions(node);
         if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return;
-        const property = node.callee.property;
-        if (
-          property.type !== AST_NODE_TYPES.Identifier ||
-          property.name !== 'enableCors'
-        )
-          return;
+        // `app.enableCors` and `app['enableCors']` are the same call.
+        if (propertyName(node.callee) !== 'enableCors') return;
         if (isSelfCall(node.callee)) return;
 
         const [arg] = node.arguments;

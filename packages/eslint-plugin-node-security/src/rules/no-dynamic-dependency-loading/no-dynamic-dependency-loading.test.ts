@@ -34,7 +34,11 @@ ruleTester.run('no-dynamic-dependency-loading', noDynamicDependencyLoading, {
       code: 'require(moduleName)',
       errors: [{ messageId: 'violationDetected' }],
     },
-    { code: 'import(userInput)', errors: [{ messageId: 'violationDetected' }] },
+    {
+      name: 'a dynamic import() of a variable specifier is reported',
+      code: 'import(userInput)',
+      errors: [{ messageId: 'violationDetected' }],
+    },
   ],
 });
 

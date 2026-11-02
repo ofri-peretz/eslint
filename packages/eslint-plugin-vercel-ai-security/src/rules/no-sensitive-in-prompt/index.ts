@@ -231,7 +231,7 @@ export const noSensitiveInPrompt = createRule<RuleOptions, MessageIds>({
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        if (!sdkCallName(node)) return;
+        if (!sdkCallName(node, context.sourceCode)) return;
 
         const optionsArg = node.arguments[0];
         if (!optionsArg || optionsArg.type !== 'ObjectExpression') return;

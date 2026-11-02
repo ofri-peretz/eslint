@@ -137,7 +137,6 @@ function moduleSpecifierListener(
       }
     },
     CallExpression: (node: TSESTree.CallExpression) => {
-      if (node.arguments.length === 0) return;
       if (!isRequireCallee(sourceCode, node.callee)) return;
       fromExpression(node, node.arguments[0]);
     },

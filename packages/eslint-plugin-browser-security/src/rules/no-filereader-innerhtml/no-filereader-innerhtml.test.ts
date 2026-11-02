@@ -90,6 +90,22 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
   ],
   invalid: [
     {
+      name: 'reader.result is the same file content as e.target.result, so writing it to innerHTML is reported',
+      code: `
+        const reader = new FileReader();
+        reader.onload = (e) => { el.innerHTML = reader.result; };
+      `,
+      errors: 1,
+    },
+    {
+      name: 'reader.result read in a load listener and passed to document.write is reported',
+      code: `
+        const reader = new FileReader();
+        reader.addEventListener('load', () => { document.write(reader.result); });
+      `,
+      errors: 1,
+    },
+    {
       name: 'file contents written to innerHTML',
       // `result` read straight off the event object, no `.target` hop.
       code: `
@@ -172,6 +188,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     },
     // fr variable name (common abbreviation)
     {
+      name: 'a FileReader result assigned to innerHTML in onload is reported',
       code: `
         const fr = new FileReader();
         fr.onload = (e) => {

@@ -245,6 +245,7 @@ describe('no-ssrf', () => {
         },
         // Still caught: ctx / event roots
         {
+          name: 'fetch(String(userUrl)) is reported when reportUnresolvedUrls is on',
           code: 'fetch(ctx.request.body.feed);',
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
@@ -328,4 +329,233 @@ ruleTester.run('no-ssrf-ts-cast-taint', noSsrf, {
       errors: [{ messageId: 'ssrfVulnerability' }],
     },
   ],
+});
+
+/**
+ * Every guard below sits in front of a URL read straight off the request, so
+ * each `valid` case would report if the guard were not recognised. The older
+ * guard cases guard a bare parameter that the default options never report,
+ * so they held whatever the validation walker did.
+ */
+describe('validation guards in front of a request-sourced URL', () => {
+  ruleTester.run('guards', noSsrf, {
+    valid: [
+      {
+        name: 'a URL parsed with new URL in the first statement of the handler is validated',
+        code: `app.get('/preview', (req, res) => {
+                 const parsed = new URL(req.query.url);
+                 return fetch(parsed);
+               });`,
+      },
+      {
+        name: 'a guard at module scope is scanned like one in a function body',
+        code: `const parsed = new URL(req.query.url);
+               await fetch(parsed);`,
+      },
+      {
+        name: 'a validateUrl call before the request is a guard',
+        code: `function forward(req) {
+                 validateUrl(req.query.url);
+                 return fetch(req.query.url);
+               }`,
+      },
+      {
+        name: 'an isValidUrl if-test guards the request inside it',
+        code: `function forward(req) {
+                 if (isValidUrl(req.query.url)) { return fetch(req.query.url); }
+               }`,
+      },
+      {
+        name: 'an allowlist includes() if-test guards the request',
+        code: `function forward(req) {
+                 if (ALLOWED_URLS.includes(req.query.url)) return fetch(req.query.url);
+               }`,
+      },
+      {
+        name: 'an allowlist Set has() check before the request is a guard',
+        code: `function forward(req) {
+                 const target = req.query.url;
+                 const allowed = ALLOWED_TARGETS.has(target);
+                 if (allowed) return fetch(target);
+               }`,
+      },
+      {
+        name: 'a startsWith() prefix check guards the request',
+        code: `function forward(req) {
+                 if (req.query.url.startsWith('https://api.partner.example/')) return fetch(req.query.url);
+               }`,
+      },
+      {
+        name: 'a regex test() guards the request',
+        code: `function forward(req) {
+                 if (/^https:\\/\\/api\\.partner\\.example\\//.test(req.query.url)) return fetch(req.query.url);
+               }`,
+      },
+      {
+        name: 'an allowlist some() guards the request whatever its callback does',
+        code: `function forward(req) {
+                 if (TRUSTED_ORIGINS.some((origin) => req.query.url.indexOf(origin) === 0)) return fetch(req.query.url);
+               }`,
+      },
+      {
+        name: 'a hostname === literal guards the request',
+        code: `function forward(req, parsed) {
+                 if (parsed.hostname === 'api.partner.example') return fetch(req.query.url);
+               }`,
+      },
+      {
+        name: 'a host == literal guards the request',
+        code: `function forward(req, parsed) {
+                 if (parsed.host == 'api.partner.example') return fetch(req.query.url);
+               }`,
+      },
+      {
+        name: 'a literal === hostname guards the request',
+        code: `function forward(req, parsed) {
+                 if ('api.partner.example' === parsed.hostname) return fetch(req.query.url);
+               }`,
+      },
+      {
+        name: 'a literal === host guards the request',
+        code: `function forward(req, parsed) {
+                 if ('api.partner.example' === parsed.host) return fetch(req.query.url);
+               }`,
+      },
+      {
+        name: 'a guard clause that throws before the request is a guard',
+        code: `function forward(req) {
+                 const target = req.query.url;
+                 if (!isPermitted(target)) throw new Forbidden('target not allowed');
+                 return fetch(target);
+               }`,
+      },
+      {
+        name: 'a request in a test file is skipped by default',
+        code: 'fetch(req.query.url);',
+        filename: 'proxy.test.ts',
+      },
+    ],
+    invalid: [
+      {
+        name: 'a hostname inequality is a denylist, not a guard',
+        code: `function forward(req, parsed) {
+                 if (parsed.hostname !== 'localhost') return fetch(req.query.url);
+               }`,
+        errors: [{ messageId: 'ssrfVulnerability' }],
+      },
+      {
+        name: 'allowInTests: false reports a request in a test file',
+        code: 'fetch(req.query.url);',
+        filename: 'proxy.test.ts',
+        options: [{ allowInTests: false }],
+        errors: [{ messageId: 'ssrfVulnerability' }],
+      },
+      {
+        name: 'a URL aliased through six locals still traces to the request',
+        code: `function forward(req) {
+                 const a = req.query.url; const b = a; const c = b;
+                 const d = c; const e = d; const f = e;
+                 return fetch(f);
+               }`,
+        errors: [{ messageId: 'ssrfVulnerability' }],
+      },
+    ],
+  });
+});
+
+/**
+ * A `var` may read itself in its own initializer — it is hoisted, so
+ * `var target = target + '/v1'` is legal and reads `undefined`. Each shape
+ * below sends the provenance walk back to the same binding through a
+ * different node type; the depth cap is what ends it.
+ */
+describe('self-referencing var initializers terminate', () => {
+  ruleTester.run('cycles', noSsrf, {
+    valid: [
+      {
+        name: 'a var concatenated onto itself',
+        code: "var target = target + '/v1'; fetch(target);",
+      },
+      {
+        name: 'a var appended to a base',
+        code: "var path = '/api' + path; fetch(path);",
+      },
+      {
+        name: 'a var interpolated into its own template',
+        code: 'var base = `${base}/v1`; fetch(base);',
+      },
+      {
+        name: 'a var passed through a call in its own initializer',
+        code: 'var link = String(link); fetch(link);',
+      },
+      {
+        name: 'a var read through its own member',
+        code: 'var cfg = cfg.upstream; fetch(cfg);',
+      },
+      {
+        name: 'a var whose options object reads itself',
+        code: 'var opts = { headers: opts.headers }; got(opts);',
+      },
+      {
+        name: 'a var cast inside its own initializer',
+        code: "var target = 'https://' + (target as string); fetch(target);",
+      },
+    ],
+    invalid: [],
+  });
+});
+
+describe('guard shapes and client spellings found by mutation testing', () => {
+  ruleTester.run('mutation-found gaps', noSsrf, {
+    valid: [
+      {
+        // @found mutation testing
+        name: 'FP: an allowlist check in a ternary test guards the request in its branch',
+        code: `function forward(req) {
+                 const target = req.query.url;
+                 return ALLOWED_TARGETS.has(target) ? fetch(target) : null;
+               }`,
+      },
+      {
+        name: 'a bracket-spelled allowlist method is still a guard',
+        code: `function forward(req) {
+                 if (ALLOWED_URLS['includes'](req.query.url)) return fetch(req.query.url);
+               }`,
+      },
+      {
+        name: 'a guard ten statements above the call is inside the guard window',
+        code: `function forward(req, res) {
+                 if (!ALLOWED_URLS.includes(req.query.url)) throw new Forbidden();
+                 res.setHeader('x-a', '1'); res.setHeader('x-b', '1'); res.setHeader('x-c', '1');
+                 res.setHeader('x-d', '1'); res.setHeader('x-e', '1'); res.setHeader('x-f', '1');
+                 res.setHeader('x-g', '1'); res.setHeader('x-h', '1'); res.setHeader('x-i', '1');
+                 return fetch(req.query.url);
+               }`,
+      },
+      {
+        name: 'a var whose object initializer holds itself',
+        code: 'var config = { fallback: config }; got(config);',
+      },
+    ],
+    invalid: [
+      {
+        // @found mutation testing
+        name: 'FN: an inline require of an HTTP module is an HTTP client',
+        code: `app.get('/p', (req, res) => { require('https').get(req.query.url, (r) => r.pipe(res)); });`,
+        errors: [{ messageId: 'ssrfVulnerability' }],
+      },
+      {
+        name: 'a check eleven statements above the call is outside the guard window',
+        code: `function forward(req, res) {
+                 if (!ALLOWED_URLS.includes(req.query.url)) throw new Forbidden();
+                 res.setHeader('x-a', '1'); res.setHeader('x-b', '1'); res.setHeader('x-c', '1');
+                 res.setHeader('x-d', '1'); res.setHeader('x-e', '1'); res.setHeader('x-f', '1');
+                 res.setHeader('x-g', '1'); res.setHeader('x-h', '1'); res.setHeader('x-i', '1');
+                 res.setHeader('x-j', '1');
+                 return fetch(req.query.url);
+               }`,
+        errors: [{ messageId: 'ssrfVulnerability' }],
+      },
+    ],
+  });
 });

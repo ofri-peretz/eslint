@@ -1,12 +1,11 @@
 {
-  "generated": "2026-11-01",
+  "generated": "2026-11-02",
   "rules": {
     "secure-coding/detect-non-literal-regexp": [
       "duplicate-coverage",
       "dynamic-regexp"
     ],
     "secure-coding/detect-object-injection": [
-      "dynamic-regexp",
       "nominal-inference-suppress"
     ],
     "secure-coding/detect-weak-password-validation": [],
@@ -34,8 +33,7 @@
     ],
     "secure-coding/no-hardcoded-credentials": [
       "duplicate-coverage",
-      "nominal-inference-suppress",
-      "unguarded-recursion"
+      "nominal-inference-suppress"
     ],
     "secure-coding/no-hardcoded-session-tokens": [
       "duplicate-coverage",
@@ -111,7 +109,6 @@
     ],
     "node-security/no-buffer-overread": [
       "nominal-inference-report",
-      "textual-matching",
       "unconfigurable-vocabulary"
     ],
     "node-security/no-cryptojs": [],
@@ -119,8 +116,7 @@
       "unconfigurable-vocabulary"
     ],
     "node-security/no-data-in-temp-storage": [
-      "duplicate-coverage",
-      "unconfigurable-vocabulary"
+      "duplicate-coverage"
     ],
     "node-security/no-deprecated-buffer": [],
     "node-security/no-deprecated-cipher-method": [],
@@ -138,8 +134,7 @@
     "node-security/no-insecure-http-parser": [],
     "node-security/no-insecure-key-derivation": [],
     "node-security/no-insecure-rsa-padding": [
-      "textual-matching",
-      "unconfigurable-vocabulary"
+      "textual-matching"
     ],
     "node-security/no-math-random-crypto": [
       "nominal-inference-report",
@@ -184,8 +179,7 @@
     ],
     "node-security/no-zip-slip": [
       "duplicate-coverage",
-      "nominal-inference-report",
-      "textual-matching"
+      "nominal-inference-report"
     ],
     "node-security/prefer-native-crypto": [
       "unconfigurable-vocabulary"
@@ -267,9 +261,7 @@
       "duplicate-coverage",
       "unconfigurable-vocabulary"
     ],
-    "browser-security/no-postmessage-wildcard-origin": [
-      "duplicate-coverage"
-    ],
+    "browser-security/no-postmessage-wildcard-origin": [],
     "browser-security/no-sensitive-cookie-js": [
       "unconfigurable-vocabulary"
     ],
@@ -328,7 +320,6 @@
     ],
     "browser-security/require-mime-type-validation": [],
     "browser-security/require-postmessage-origin-check": [
-      "duplicate-coverage",
       "unconfigurable-vocabulary"
     ],
     "browser-security/require-url-validation": [

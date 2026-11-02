@@ -169,6 +169,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     },
     // A compression stream constructed inline is the same fact.
     {
+      name: 'piping into a gzip stream without an error handler is reported',
       code: 'input.pipe(zlib.createGzip());',
       errors: [{ messageId: 'unhandledStreamError' }],
     },
@@ -196,8 +197,25 @@ ruleTester.run('mutation-guided edges', requireStreamErrorHandler, {
       name: 'a declarator with no initializer binds no stream',
       code: "let s; s = fs.createReadStream(p); s.on('error', h); s.pipe(res);",
     },
+    {
+      name: 'a local class named like a stream class constructs no stream',
+      code: 'class Transform {} const t = new Transform(); t.pipe(res);',
+    },
+    {
+      name: 'a Transform imported from a non-stream module is not a node stream',
+      code: "import { Transform } from './geometry'; const t = new Transform(); t.pipe(res);",
+    },
+    {
+      name: 'a stream handed to a member-call helper may get its listener there',
+      code: 'const out = fs.createWriteStream(p); errors.attach(out); req.pipe(out);',
+    },
   ],
   invalid: [
+    {
+      name: 'a pipe destination is not escaped by being the argument of .pipe() itself',
+      code: 'const out = fs.createWriteStream(p); req.pipe(out);',
+      errors: [{ messageId: 'unhandledStreamError' }],
+    },
     {
       name: 'a destructured stream factory constructs the same unhandled stream',
       code: "import { createReadStream } from 'node:fs'; createReadStream(p).pipe(res);",

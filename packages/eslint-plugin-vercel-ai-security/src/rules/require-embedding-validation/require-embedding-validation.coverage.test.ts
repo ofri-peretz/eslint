@@ -23,7 +23,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -50,7 +50,6 @@ const xai = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -58,32 +57,36 @@ const ruleTester = new RuleTester({
   },
 });
 
-ruleTester.run('require-embedding-validation (branch coverage)', requireEmbeddingValidation, {
-  valid: xai([
-    // Vector store op with a non-object argument — nothing to inspect.
-    {
-      code: `vectorStore.upsert(records);`,
-    },
-    // Spread element inside the argument object — skipped.
-    {
-      code: `vectorStore.upsert({ ...defaults });`,
-    },
-    // embedding value that is a plain identifier, not a call.
-    {
-      code: `vectorStore.upsert({ embedding: precomputedVector });`,
-    },
-  ]),
-  invalid: xai([
-    // Baseline: unvalidated embedding call still reported alongside skipped props.
-    {
-      code: `vectorStore.upsert({ ...defaults, embedding: await embed(text) });`,
-      errors: [{ messageId: 'unvalidatedEmbedding' }],
-    },
-    // (Moved 2026-10-10 from valid) a quoted 'embedding' key is the same
-    // property — this was a documented FN.
-    {
-      code: `vectorStore.upsert({ 'embedding': await embed(text) });`,
-      errors: [{ messageId: 'unvalidatedEmbedding' }],
-    },
-  ]),
-});
+ruleTester.run(
+  'require-embedding-validation (branch coverage)',
+  requireEmbeddingValidation,
+  {
+    valid: xai([
+      // Vector store op with a non-object argument — nothing to inspect.
+      {
+        code: `vectorStore.upsert(records);`,
+      },
+      // Spread element inside the argument object — skipped.
+      {
+        code: `vectorStore.upsert({ ...defaults });`,
+      },
+      // embedding value that is a plain identifier, not a call.
+      {
+        code: `vectorStore.upsert({ embedding: precomputedVector });`,
+      },
+    ]),
+    invalid: xai([
+      // Baseline: unvalidated embedding call still reported alongside skipped props.
+      {
+        code: `vectorStore.upsert({ ...defaults, embedding: await embed(text) });`,
+        errors: [{ messageId: 'unvalidatedEmbedding' }],
+      },
+      // (Moved 2026-10-10 from valid) a quoted 'embedding' key is the same
+      // property — this was a documented FN.
+      {
+        code: `vectorStore.upsert({ 'embedding': await embed(text) });`,
+        errors: [{ messageId: 'unvalidatedEmbedding' }],
+      },
+    ]),
+  },
+);

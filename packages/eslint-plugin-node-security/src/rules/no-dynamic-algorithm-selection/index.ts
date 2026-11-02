@@ -53,13 +53,14 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
-  propertyName,
 } from '@interlace/eslint-devkit';
 
 import {
   makeIsLiteralConstant,
   parameterIsAlwaysDefault,
 } from '../../utils/constant-folding';
+import { isClosedStringTableLookup } from '../../utils/const-value';
+import { moduleExportName } from '../../utils/module-binding';
 
 type MessageIds = 'dynamicAlgorithm';
 
@@ -119,6 +120,9 @@ export const noDynamicAlgorithmSelection = createRule<[], MessageIds>({
      */
     const resolvesToLiteral = (node: TSESTree.Node): boolean => {
       if (isLiteralConstant(node)) return true;
+      // The documented allowlist: a lookup into a const table of string
+      // literals can only yield an algorithm the author wrote down.
+      if (isClosedStringTableLookup(sourceCode, node)) return true;
       return (
         node.type === AST_NODE_TYPES.Identifier &&
         parameterIsAlwaysDefault(sourceCode, node, isLiteralConstant)
@@ -133,16 +137,16 @@ export const noDynamicAlgorithmSelection = createRule<[], MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         const { callee, arguments: args } = node;
 
-        // Match crypto.method(algo) — MemberExpression where object is 'crypto'
-        if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
-        if (callee.object.type !== AST_NODE_TYPES.Identifier) return;
-        // `crypto['createHash'](algo)` selects the algorithm the same way.
-        const methodName = propertyName(callee);
+        // The callee has to RESOLVE to a node:crypto export: `crypto.createHash`,
+        // `crypto['createHash']`, a named or renamed import, a destructured
+        // require, a namespace import. A local object that merely has a
+        // `createHash` method is not crypto, whatever it is called.
+        const methodName = moduleExportName(
+          callee,
+          sourceCode.getScope(node),
+          'crypto',
+        );
         if (methodName === null) return;
-
-        const objectName = callee.object.name;
-
-        if (objectName !== 'crypto') return;
         if (!CRYPTO_ALGORITHM_FUNCTIONS.has(methodName)) return;
 
         const firstArg = args[0];

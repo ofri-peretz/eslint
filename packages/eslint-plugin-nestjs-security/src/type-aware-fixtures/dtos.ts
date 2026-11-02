@@ -65,3 +65,16 @@ export enum Channel {
 export class BareImplementsDto implements PlainShape {
   name!: string;
 }
+
+/** Extends a base AND implements an interface: the `extends` still means abstain. */
+export class DerivedImplementsDto extends ValidatedDto implements PlainShape {
+  extra!: string;
+}
+
+/** One validated member is enough for a pipe to have something to enforce. */
+export class PartlyValidatedDto {
+  @IsString()
+  name!: string;
+
+  note!: string;
+}

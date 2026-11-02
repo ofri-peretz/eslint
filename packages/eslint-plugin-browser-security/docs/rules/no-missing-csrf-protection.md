@@ -11,15 +11,19 @@ autofix: false
 > **Keywords:** CSRF, CWE-352, security, ESLint rule, CSRF protection, token validation, middleware, Express, Fastify, LLM-optimized, code security
 
 <!-- @rule-summary -->
+
 Detects missing CSRF token validation in POST/PUT/DELETE requests
 <!-- @/rule-summary -->
+
+> **⚠️ Deprecated.** This rule is deprecated and no longer in any preset. Use
+> [`express-security/require-csrf-protection`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/require-csrf-protection.md),
+> which owns CSRF middleware for Express. The rule is still exported and still works when enabled explicitly,
+> until the next major removes it.
 
 **CWE:** [CWE-352](https://cwe.mitre.org/data/definitions/352.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects missing CSRF token validation in POST/PUT/DELETE requests. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) and provides LLM-optimized error messages that AI assistants can automatically fix.
-
-💼 This rule is set to **error** by default in the `recommended` config.
 
 ## Quick Summary
 
@@ -28,7 +32,7 @@ Detects missing CSRF token validation in POST/PUT/DELETE requests. This rule is 
 | **CWE Reference** | CWE-352 (Cross-Site Request Forgery)                                  |
 | **Severity**      | HIGH (security vulnerability)                                         |
 | **Auto-Fix**      | ❌ No (requires manual CSRF middleware setup)                         |
-| **Category**   | Security |
+| **Category**      | Security                                                              |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                               |
 | **Best For**      | All web applications with state-changing operations, Express, Fastify |
 
@@ -107,7 +111,7 @@ app.delete('/api/users/:id', handler); // ❌ No CSRF middleware
 ### ✅ Correct
 
 ```typescript
-app.post("/api/users", csrf(), handler);
+app.post('/api/users', csrf(), handler);
 ```
 
 ## Error Message Format
@@ -121,13 +125,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-352](https://cwe.mitre.org/data/definitions/352.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:8.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Cross-Site Request Forgery (CSRF) detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                       |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-352](https://cwe.mitre.org/data/definitions/352.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:8.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Cross-Site Request Forgery (CSRF) detected`                                                                                                                                                                                                                  |
+| **Severity & Compliance** | Impact assessment      | `HIGH`                                                                                                                                                                                                                                                        |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                          |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/)                                                                                                                                                                                                   |
 
 ## Configuration
 
@@ -141,12 +145,12 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `false` | Allow missing CSRF protection in test files |
-| `csrfMiddlewarePatterns` | `string[]` | `[]` | CSRF middleware patterns to recognize |
-| `protectedMethods` | `string[]` | `[]` | HTTP methods that require CSRF protection |
-| `ignorePatterns` | `string[]` | `[]` | Additional safe patterns to ignore |
+| Option                   | Type       | Default | Description                                 |
+| ------------------------ | ---------- | ------- | ------------------------------------------- |
+| `allowInTests`           | `boolean`  | `false` | Allow missing CSRF protection in test files |
+| `csrfMiddlewarePatterns` | `string[]` | `[]`    | CSRF middleware patterns to recognize       |
+| `protectedMethods`       | `string[]` | `[]`    | HTTP methods that require CSRF protection   |
+| `ignorePatterns`         | `string[]` | `[]`    | Additional safe patterns to ignore          |
 
 ### Example Configuration
 

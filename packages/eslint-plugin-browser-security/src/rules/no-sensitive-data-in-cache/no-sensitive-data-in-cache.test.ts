@@ -58,6 +58,10 @@ ruleTester.run('no-sensitive-data-in-cache', noSensitiveDataInCache, {
       code: `const cache = await caches.open('v1'); await cache.put(new Request(), res);`,
     },
     { code: `cache.put('/api/me/ssn', res);` },
+    {
+      name: 'a resource built by an unknown constructor is unknowable and abstains',
+      code: `const cache = await caches.open('v1'); await cache.add(new ApiRoute('/api/me/password'));`,
+    },
     // addAll with a non-array argument, or elements we cannot read.
     {
       code: `const cache = await caches.open('v1'); await cache.addAll(manifest);`,
@@ -113,6 +117,27 @@ ruleTester.run('no-sensitive-data-in-cache', noSensitiveDataInCache, {
         },
       ],
     },
+    // @found 2026-11-02: Cache keys a URL object by the request it names,
+    // so `new URL(path, origin)` caches the same response as the string.
+    {
+      // @found mutation testing
+      name: 'FN: a URL object names the same request as its string (add)',
+      code: `const cache = await caches.open('v1'); await cache.add(new URL('/api/token', location.origin));`,
+      errors: [
+        { messageId: 'sensitiveInCache', data: { resource: '/api/token' } },
+      ],
+    },
+    {
+      // @found mutation testing
+      name: 'FN: a URL object names the same request as its string (put)',
+      code: `const cache = await caches.open('v1'); await cache.put(new URL('/account/password', base), res);`,
+      errors: [
+        {
+          messageId: 'sensitiveInCache',
+          data: { resource: '/account/password' },
+        },
+      ],
+    },
     // A Request object with a literal URL.
     {
       code: `const cache = await caches.open('v1'); await cache.put(new Request('/api/me/password'), res);`,
@@ -132,6 +157,7 @@ ruleTester.run('no-sensitive-data-in-cache', noSensitiveDataInCache, {
     },
     // A computed method name is the same call.
     {
+      name: 'cache[put] by computed key with an SSN URL is reported',
       code: `const cache = await caches.open('v1'); await cache['put']('/api/me/ssn', res);`,
       errors: [{ messageId: 'sensitiveInCache' }],
     },

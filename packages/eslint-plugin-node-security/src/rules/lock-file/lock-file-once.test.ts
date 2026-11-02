@@ -128,4 +128,13 @@ describe('lock-file: the count is order-independent, the location is not', () =>
     expect(forward).toEqual(['a.js']);
     expect(backward).toEqual(['b.js']);
   });
+
+  it('a run that starts again at a file seen mid-run reports again', async () => {
+    // Run 1 lints a, b; run 2 starts with b. b was not the file that claimed
+    // the finding, but it was seen in run 1, so seeing it again opens run 2.
+    expect(await reportedFiles(['a.js', 'b.js', 'b.js', 'c.js'])).toEqual([
+      'a.js',
+      'b.js',
+    ]);
+  });
 });

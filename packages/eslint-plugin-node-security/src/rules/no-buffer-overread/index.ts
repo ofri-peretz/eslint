@@ -235,6 +235,12 @@ type RuleOptions = [Options?];
  */
 const VIEW_METHODS: ReadonlySet<string> = new Set(['slice', 'subarray']);
 
+/** The properties that hold a tracked buffer's size in indexable units. */
+const LENGTH_PROPERTIES: ReadonlySet<string> = new Set([
+  'length',
+  'byteLength',
+]);
+
 export const noBufferOverread = createRule<RuleOptions, MessageIds>({
   name: 'no-buffer-overread',
   meta: {
@@ -334,7 +340,8 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
               'safeIndex',
               'validateBufferIndex',
             ],
-            description: 'Function names that count as a bounds check',
+            description:
+              'Function names that count as a bounds check: as a call returning the index, or as an `if` condition on it (`if (!checkBounds(buf, i)) return;`)',
           },
           bufferTypes: {
             type: 'array',
@@ -379,7 +386,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
             type: 'boolean',
             default: false,
             description:
-              'Report every index that cannot be proven validated. Restores the pre-inversion behaviour.',
+              'Report every index that cannot be proven validated — a parameter included — for `buf[i]`, read/write offsets and `slice`/`subarray` bounds alike. Restores the pre-inversion behaviour.',
           },
         },
         additionalProperties: false,
@@ -454,7 +461,6 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
      * clamp(raw); buf[safeOff]` is recognised as well as `buf[clamp(raw)]`.
      */
     const passedTrustedSanitizer = (indexNode: TSESTree.Node): boolean => {
-      if (trustedSanitizers.length === 0) return false;
       // An Identifier only. `isUserControlledIndex` answers `true` for exactly
       // two shapes — an Identifier, or a MemberExpression with a tainted root —
       // so nothing else ever reaches this function. A direct call as the index,
@@ -572,6 +578,16 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       readsTaintSource(indexNode);
 
     /**
+     * An offset argument this rule has a reason to judge: one an attacker can
+     * steer, or — under `reportUnvalidatedIndices` — any offset that is not a
+     * provable number, matching what the option does for `buf[index]`. The
+     * provable numbers are cleared by `isIndexValidated`, which every caller
+     * asks next.
+     */
+    const isReportableOffset = (offset: TSESTree.Node): boolean =>
+      isUserControlledIndex(offset) || reportUnvalidatedIndices;
+
+    /**
      * Has this index been through something that bounds it?
      *
      * The previous implementation walked the index's ANCESTORS looking for
@@ -583,8 +599,14 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
      * which is what the walk was reaching for.
      */
     const isIndexValidated = (indexNode: TSESTree.Node): boolean => {
-      if (indexNode.type === AST_NODE_TYPES.Literal) {
-        return typeof indexNode.value === 'number' && indexNode.value >= 0;
+      // A value the author wrote down is not input. `buf[4]`, `const OFF = 4;
+      // buf[OFF]` and `buf['length']` are all decided in this file — and a
+      // negative one never gets here, `couldBeNegative` reports it first.
+      if (
+        indexNode.type === AST_NODE_TYPES.Literal ||
+        constantNumber(indexNode) !== null
+      ) {
+        return true;
       }
       if (isBoundsCheckCall(indexNode)) return true;
       if (indexNode.type !== AST_NODE_TYPES.Identifier) return false;
@@ -592,9 +614,12 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       // A parameter's value is decided by a caller this rule does not follow.
       // Reporting every one of them made the finding a property of the rule's
       // analysis depth rather than of the code.
+      //
+      // Not under `reportUnvalidatedIndices`: that option reports every index
+      // that cannot be PROVEN validated, and a parameter cannot be.
       const variable = findVariable(sourceCode, indexNode);
       if (variable !== null && variable.defs[0]?.type === 'Parameter')
-        return true;
+        return !reportUnvalidatedIndices;
 
       const init = bindingInit(sourceCode, indexNode);
       return init !== undefined && isBoundsCheckCall(init);
@@ -612,17 +637,14 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       if (callee.type === AST_NODE_TYPES.Identifier) {
         return boundsCheckFunctions.includes(callee.name);
       }
-      if (
-        callee.type !== AST_NODE_TYPES.MemberExpression ||
-        propertyName(callee) === null
-      ) {
-        return false;
-      }
+      // `clampTo(max)(raw)`: a call returning a function names no helper.
+      if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+      const method = propertyName(callee);
       return (
         (callee.object.type === AST_NODE_TYPES.Identifier &&
           callee.object.name === 'Math' &&
-          (propertyName(callee) === 'min' || propertyName(callee) === 'max')) ||
-        namesOneOf(propertyName(callee), boundsCheckFunctions)
+          (method === 'min' || method === 'max')) ||
+        namesOneOf(method, boundsCheckFunctions)
       );
     };
 
@@ -645,15 +667,79 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
      */
     const hasBoundsCheck = (
       buffer: TSESTree.Identifier,
+      offsetNode: TSESTree.Node,
+    ): boolean => {
+      // `buf.slice(index, index + 4)`: the end offset is the guarded index
+      // plus a constant, so the guard on `index` is the guard on it too.
+      let indexNode = offsetNode;
+      while (
+        indexNode.type === AST_NODE_TYPES.BinaryExpression &&
+        (indexNode.operator === '+' || indexNode.operator === '-') &&
+        constantNumber(indexNode.right) !== null
+      ) {
+        indexNode = indexNode.left as TSESTree.Node;
+      }
+      const guards: TSESTree.BinaryExpression[] = [];
+      const body = enclosingBody(indexNode);
+      collectComparisons(body, guards);
+      if (
+        guards.some(
+          (test) =>
+            (mentions(test.left, indexNode) &&
+              readsLengthOf(test.right, buffer)) ||
+            (mentions(test.right, indexNode) &&
+              readsLengthOf(test.left, buffer)),
+        )
+      ) {
+        return true;
+      }
+      // `if (!checkBounds(packet, index)) return;` — a configured bounds
+      // helper deciding a branch on this very index counts as the check,
+      // whichever way the branch is written.
+      const tests: TSESTree.Node[] = [];
+      collectIfTests(body, tests);
+      return tests.some((test) => guardsWithHelper(test, indexNode));
+    };
+
+    /** Every `if` condition inside this subtree. */
+    const collectIfTests = (
+      node: TSESTree.Node,
+      out: TSESTree.Node[],
+    ): void => {
+      if (node.type === AST_NODE_TYPES.IfStatement) out.push(node.test);
+      for (const key of Object.keys(node)) {
+        if (key === 'parent') continue;
+        const value = (node as unknown as Record<string, unknown>)[key];
+        for (const child of Array.isArray(value) ? value : [value]) {
+          if (
+            child !== null &&
+            typeof child === 'object' &&
+            typeof (child as TSESTree.Node).type === 'string'
+          ) {
+            collectIfTests(child as TSESTree.Node, out);
+          }
+        }
+      }
+    };
+
+    /** Does this condition call a bounds helper on the index? */
+    const guardsWithHelper = (
+      test: TSESTree.Node,
       indexNode: TSESTree.Node,
     ): boolean => {
-      const guards: TSESTree.BinaryExpression[] = [];
-      collectComparisons(enclosingBody(indexNode), guards);
-      return guards.some(
-        (test) =>
-          (mentions(test.left, indexNode) &&
-            readsLengthOf(test.right, buffer)) ||
-          (mentions(test.right, indexNode) && readsLengthOf(test.left, buffer)),
+      if (test.type === AST_NODE_TYPES.UnaryExpression) {
+        return guardsWithHelper(test.argument, indexNode);
+      }
+      if (test.type === AST_NODE_TYPES.LogicalExpression) {
+        return (
+          guardsWithHelper(test.left, indexNode) ||
+          guardsWithHelper(test.right, indexNode)
+        );
+      }
+      return (
+        test.type === AST_NODE_TYPES.CallExpression &&
+        isBoundsCheckCall(test) &&
+        test.arguments.some((argument) => mentions(argument, indexNode))
       );
     };
 
@@ -731,24 +817,29 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         if (current.type === AST_NODE_TYPES.BinaryExpression) {
           return walk(current.left as TSESTree.Node) || walk(current.right);
         }
+        // A spread argument is none of the shapes above, so it mentions
+        // nothing.
         if (current.type === AST_NODE_TYPES.CallExpression) {
-          return current.arguments.some(
-            (argument) =>
-              argument.type !== AST_NODE_TYPES.SpreadElement && walk(argument),
-          );
+          return current.arguments.some(walk);
         }
         return false;
       };
       return walk(node);
     };
 
-    /** Is this `<buffer>.length` on the very variable being indexed? */
+    /**
+     * Is this `<buffer>.length` on the very variable being indexed?
+     *
+     * `byteLength` too: every type this rule tracks — Buffer, Uint8Array,
+     * ArrayBuffer, DataView — is indexed in bytes, so its byte length IS its
+     * length, and `if (at >= view.byteLength) return;` is the same guard.
+     */
     const readsLengthOf = (
       node: TSESTree.Node,
       buffer: TSESTree.Identifier,
     ): boolean =>
       node.type === AST_NODE_TYPES.MemberExpression &&
-      propertyName(node) === 'length' &&
+      namesOneOf(propertyName(node), LENGTH_PROPERTIES) &&
       node.object.type === AST_NODE_TYPES.Identifier &&
       sameBinding(node.object, buffer);
 
@@ -765,7 +856,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
      * by the user-controlled arm, which is where it belongs.
      */
     const couldBeNegative = (indexNode: TSESTree.Node): boolean => {
-      const value = constantNumber(indexNode, 0);
+      const value = constantNumber(indexNode);
       return value !== null && value < 0;
     };
 
@@ -776,15 +867,20 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
      * `const` aliases are followed through `constInitializerOf` rather than
      * `resolveConstant`, because `const back = -5` binds a UnaryExpression and
      * not a Literal — the one spelling a "negative index" check most needs to
-     * read. The depth cap terminates `const a = a`.
+     * read.
+     *
+     * `resolving` holds the initializers on the CURRENT alias path, which is
+     * what terminates `const A = B; const B = A`. It used to be a depth cap of
+     * six, which also silently dropped an honest seven-alias chain to a
+     * negative constant. Entries come off on the way back up, so `W + W`
+     * reads the same alias twice.
      */
     const constantNumber = (
       node: TSESTree.Node,
-      depth: number,
+      resolving: Set<TSESTree.Node> = new Set(),
     ): number | null => {
-      if (depth > 6) return null;
       if (node.type === AST_NODE_TYPES.UnaryExpression) {
-        const inner = constantNumber(node.argument, depth + 1);
+        const inner = constantNumber(node.argument, resolving);
         if (inner === null) return null;
         return node.operator === '-'
           ? -inner
@@ -794,14 +890,18 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       }
       if (node.type === AST_NODE_TYPES.BinaryExpression) {
         if (node.operator !== '-' && node.operator !== '+') return null;
-        const left = constantNumber(node.left as TSESTree.Node, depth + 1);
-        const right = constantNumber(node.right, depth + 1);
+        const left = constantNumber(node.left as TSESTree.Node, resolving);
+        const right = constantNumber(node.right, resolving);
         if (left === null || right === null) return null;
         return node.operator === '-' ? left - right : left + right;
       }
       if (node.type === AST_NODE_TYPES.Identifier) {
         const init = constInitializerOf(sourceCode, node);
-        return init === null ? null : constantNumber(init, depth + 1);
+        if (init === null || resolving.has(init)) return null;
+        resolving.add(init);
+        const value = constantNumber(init, resolving);
+        resolving.delete(init);
+        return value;
       }
       const resolved = resolveConstant(sourceCode, node);
       return resolved !== null && typeof resolved.value === 'number'
@@ -1077,15 +1177,6 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
             }
           }
         }
-
-        // Check for buffer method calls that need bounds checking
-        if (
-          namesOneOf(propertyName(node), bufferMethods) &&
-          node.object.type === 'Identifier' &&
-          isBufferType(node.object)
-        ) {
-          // This is a parent of a CallExpression, we'll check it there
-        }
       },
 
       // Check buffer method calls
@@ -1109,7 +1200,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
 
           // Check slice arguments
           for (const arg of args) {
-            if (isUserControlledIndex(arg) && !isIndexValidated(arg)) {
+            if (isReportableOffset(arg) && !isIndexValidated(arg)) {
               if (
                 safetyChecker.isSafe(node, context) ||
                 passedTrustedSanitizer(arg)
@@ -1150,9 +1241,15 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         ) {
           const args = node.arguments;
 
-          // Check offset/length arguments
-          for (const arg of args) {
-            if (isUserControlledIndex(arg) && !isIndexValidated(arg)) {
+          // Check offset/length arguments. A write's first argument (and
+          // `copy`'s target) is the value or buffer, not an offset.
+          const method = propertyName(callee);
+          const offsets =
+            method !== null && (method.startsWith('write') || method === 'copy')
+              ? args.slice(1)
+              : args;
+          for (const arg of offsets) {
+            if (isReportableOffset(arg) && !isIndexValidated(arg)) {
               if (
                 safetyChecker.isSafe(node, context) ||
                 passedTrustedSanitizer(arg)
@@ -1173,17 +1270,6 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
               });
             }
           }
-        }
-      },
-
-      // Check binary expressions that might involve buffer operations
-      BinaryExpression(node: TSESTree.BinaryExpression) {
-        // Look for patterns like buffer.length - something that might indicate bounds checking
-        const leftText = sourceCode.getText(node.left);
-        const rightText = sourceCode.getText(node.right);
-
-        if (leftText.includes('.length') || rightText.includes('.length')) {
-          // This might be a bounds check - we could analyze this further
         }
       },
     };

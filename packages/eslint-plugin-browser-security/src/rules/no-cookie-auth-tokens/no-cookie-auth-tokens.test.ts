@@ -141,6 +141,7 @@ ruleTester.run('lock: sink spellings', noCookieAuthTokens, {
       errors: [{ messageId: 'authTokenInCookie', data: { key: 'session_id' } }],
     },
     {
+      name: 'an auth cookie written through a template literal is reported with its key',
       code: `document['cookie'] = 'jwt=' + t;`,
       errors: [{ messageId: 'authTokenInCookie', data: { key: 'jwt' } }],
     },

@@ -22,7 +22,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -48,7 +48,6 @@ const xai = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -348,7 +347,148 @@ ruleTester.run('no-hardcoded-api-keys (fp-fn audit)', noHardcodedApiKeys, {
     {
       name: 'Groq / Hugging Face / AWS key shapes',
       code: `const k = ['gsk_AbCdEf0123456789AbCdEf0123', 'hf_AbCdEf0123456789AbCdEf0123', 'AKIAIOSFODNN7EXAMPLE'];`,
-      errors: [{ messageId: 'hardcodedApiKey' }, { messageId: 'hardcodedApiKey' }, { messageId: 'hardcodedApiKey' }],
+      errors: [
+        { messageId: 'hardcodedApiKey' },
+        { messageId: 'hardcodedApiKey' },
+        { messageId: 'hardcodedApiKey' },
+      ],
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-hardcoded-api-keys (mutation audit)', noHardcodedApiKeys, {
+  valid: xai([
+    {
+      name: 'a quoted property key is a name, not a stored value',
+      code: `const ttl = { 'access_token_expires_in_seconds': 3600 };`,
+    },
+    {
+      name: 'a slug ending in "task-…" is not an sk- key',
+      code: `const slug = 'task-2024-01-15-quarterly-review';`,
+    },
+    {
+      name: 'a Slovak locale file name is not an sk- key',
+      code: `const file = 'sk-SK-translations-2024-v2.json';`,
+    },
+    {
+      name: 'a Hugging Face cache file name is not an hf_ token',
+      code: `const file = 'hf_transformers_cache_2024.json';`,
+    },
+    {
+      name: 'an xai- document file name is not an xAI key',
+      code: `const file = 'xai-documentation_v2_2024.pdf';`,
+    },
+    {
+      name: 'an AIza prefix with a body longer than a Google key is not one',
+      code: `const blob = 'AIzaSyD-a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5pXYZ';`,
+    },
+    {
+      name: 'a 20-character value is too short for a generic secret',
+      code: `const c = { apiKey: 'abcdefghij0123456789' };`,
+    },
+    {
+      name: 'a $-placeholder is not a secret',
+      code: `const c = { apiKey: '$OPENAI_API_KEY_PRODUCTION' };`,
+    },
+    {
+      // @found mutation testing
+      name: 'FP: a resource path with a leading slash is a path, not a secret',
+      code: `const c = { secretName: '/projects/acme-prod/secrets/openai-api-key' };`,
+    },
+  ]),
+  invalid: xai([
+    {
+      // @found mutation testing
+      name: 'FN: a class field holding a key-named secret is the same as a property',
+      code: `class Client { apiKey = 'a8f9d7c6b5e4d3c2b1a0f9e8d7c6b5a4'; }`,
+      errors: [{ messageId: 'hardcodedApiKey' }],
+    },
+    {
+      name: 'a bearer scheme separated by more than one space still carries the key',
+      code: `const h = { Authorization: 'Bearer  sk-proj-AbCdEf0123456789AbCdEf0123' };`,
+      errors: [{ messageId: 'hardcodedApiKey' }],
+    },
+    {
+      name: 'the message shows only the first ten characters of the key',
+      code: `const k = 'sk-proj-AbCdEf0123456789AbCdEf0123';`,
+      errors: [
+        { messageId: 'hardcodedApiKey', data: { key: 'sk-proj-Ab...' } },
+      ],
+    },
+    {
+      name: 'a Google API key is reported under any name',
+      code: `const mapsConfig = 'AIzaSyD-a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p';`,
+      errors: [{ messageId: 'hardcodedApiKey' }],
+    },
+    {
+      name: 'an xAI key is reported under any name',
+      code: `const k = 'xai-AbCdEf0123456789AbCdEf0123';`,
+      errors: [{ messageId: 'hardcodedApiKey' }],
+    },
+    {
+      name: 'a Perplexity key whose body is all digits still contains a digit',
+      code: `const k = 'pplx-01234567890123456789012';`,
+      errors: [{ messageId: 'hardcodedApiKey' }],
+    },
+    {
+      name: 'a Replicate token whose body is all digits still contains a digit',
+      code: `const k = 'r8_01234567890123456789012';`,
+      errors: [{ messageId: 'hardcodedApiKey' }],
+    },
+    {
+      name: 'a Stripe-style secret ending in an uppercase run is not an environment variable name',
+      code: `const c = { apiKey: 'sk_live_51HxABCDEF0123456789XYZ' };`,
+      errors: [{ messageId: 'hardcodedApiKey' }],
+    },
+    {
+      name: 'a mixed-case secret that starts with a capital is not an environment variable name',
+      code: `const c = { token: 'T0k3n_a8f9d7c6b5e4d3c2b1a0' };`,
+      errors: [{ messageId: 'hardcodedApiKey' }],
+    },
+    {
+      name: 'a base64 secret with + in it is not a resource path',
+      code: `const c = { secret: 'a8F+9d7c6b5e4/d3c2b1a0Zx/Yw9v8u7' };`,
+      errors: [{ messageId: 'hardcodedApiKey' }],
+    },
+    {
+      name: 'a base64 secret with = padding is not a resource path',
+      code: `const c = { secret: 'a8F9d7c6b5e4/d3c2b1a0Zx/Yw9v8u7+abc=' };`,
+      errors: [{ messageId: 'hardcodedApiKey' }],
+    },
+  ]),
+});
+
+const jsxTester = new RuleTester({
+  languageOptions: {
+    ecmaVersion: 2022,
+    sourceType: 'module',
+    parserOptions: { ecmaFeatures: { jsx: true } },
+  },
+});
+jsxTester.run(
+  'no-hardcoded-api-keys (mutation audit, jsx)',
+  noHardcodedApiKeys,
+  {
+    valid: xai([
+      {
+        name: 'a JSX attribute whose name is not key-ish holds no secret',
+        code: `const el = <Chat placeholder="a8f9d7c6b5e4d3c2b1a0f9e8d7c6b5a4" />;`,
+      },
+      {
+        name: 'a namespaced SVG attribute names no key',
+        code: `const el = <use xlink:href="#icon-arrow-left-circle-outline" />;`,
+      },
+    ]),
+    invalid: xai([
+      {
+        // @found mutation testing
+        name: 'FN: a JSX attribute named apiKey holds the key like a property does',
+        code: `const el = <AIProvider apiKey="a8f9d7c6b5e4d3c2b1a0f9e8d7c6b5a4" />;`,
+        errors: [{ messageId: 'hardcodedApiKey' }],
+      },
+    ]),
+  },
+);

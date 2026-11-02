@@ -23,6 +23,16 @@ const ruleTester = new RuleTester({
 describe('require-aead-tag-verification', () => {
   ruleTester.run('require-aead-tag-verification', requireAeadTagVerification, {
     valid: [
+      {
+        name: 'a decipher destructured on creation is not followed',
+        code: `const { update } = crypto.createDecipheriv('aes-256-gcm', key, iv);`,
+      },
+      {
+        // An empty pattern declares no variable at all, so there is no
+        // binding whose method calls could be collected.
+        name: 'a decipher destructured into an empty pattern declares nothing to follow',
+        code: `const {} = crypto.createDecipheriv('aes-256-gcm', key, iv);`,
+      },
       // benchmarks/corpus/CWE-327/safe/gcm-decrypt-verified.js — setAuthTag
       // AND final(): final() is what compares the tag and throws on mismatch.
       {
@@ -129,6 +139,15 @@ describe('require-aead-tag-verification', () => {
       },
     ],
     invalid: [
+      // aes-*-gcm-siv is an AEAD mode node exposes (crypto.getCiphers()), and
+      // its final() throws without the tag exactly like GCM's. The suffix
+      // pattern was anchored at `-gcm$`, so `-gcm-siv` read as non-AEAD.
+      {
+        // @found mutation testing
+        name: 'FN: an AES-GCM-SIV decipher with no setAuthTag is unauthenticated',
+        code: `const d = crypto.createDecipheriv('aes-256-gcm-siv', key, iv); d.update(ct); d.final();`,
+        errors: [{ messageId: 'missingAuthTag' }],
+      },
       // Was pinned as valid alongside `crypto.createHash` — things that are
       // "not a decipher factory at all". `crypto['createDecipheriv']` IS the
       // decipher factory, and this one never calls setAuthTag either.
@@ -160,6 +179,7 @@ describe('require-aead-tag-verification', () => {
       },
       // ChaCha20-Poly1305 is AEAD too, and spells its tag mode differently.
       {
+        name: 'a chacha20-poly1305 decipher with no setAuthTag is reported',
         code: `
           const decipher = crypto.createDecipheriv('chacha20-poly1305', key, iv);
           const out = decipher.update(ct);

@@ -91,8 +91,36 @@ ruleTester.run(
       {
         code: "const helmet = require('helmet'); app.use(helmet()); res.render('index');",
       },
+      {
+        name: 'helmet.contentSecurityPolicy() on the default import applies a CSP',
+        code: "import helmet from 'helmet'; app.use(helmet.contentSecurityPolicy({ directives: {} })); res.render('index');",
+      },
+      {
+        name: 'helmet with CSP options configured still applies a CSP',
+        code: "import h from 'helmet'; app.use(h({ contentSecurityPolicy: { directives: {} } })); res.render('index');",
+      },
     ],
     invalid: [
+      {
+        name: 'importing helmet without applying it establishes no CSP',
+        code: "import helmet from 'helmet'; app.get('/', (req, res) => { res.render('index', { title: 'Home' }); });",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'helmet applied with contentSecurityPolicy false establishes no CSP',
+        code: "import helmet from 'helmet'; app.use(helmet({ contentSecurityPolicy: false })); app.get('/', (req, res) => { res.render('index'); });",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'a different helmet middleware does not set a CSP',
+        code: "import helmet from 'helmet'; app.use(helmet.frameguard()); res.render('index');",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'a handler that sets X-Frame-Options but no CSP still sends a document without one',
+        code: "app.get('/', (req, res) => { res.setHeader('X-Frame-Options', 'DENY'); res.render('index', { title: 'Home' }); });",
+        errors: [{ messageId: 'violationDetected' }],
+      },
       // An unrelated import must not count as helmet.
       {
         code: "import express from 'express'; res.render('index');",
@@ -350,22 +378,54 @@ jsxRuleTester.run('meta http-equiv establishes a CSP', requireCspHeaders, {
       filename: 'doc.tsx',
       errors: 1,
     },
+    {
+      name: 'an unrelated JSX attribute establishes no CSP',
+      code: `const m = <div className="x" />; res.render('x');`,
+      filename: 'doc.tsx',
+      errors: 1,
+    },
+    {
+      name: 'the CSP header name in an ordinary attribute establishes nothing',
+      code: `const m = <td title="Content-Security-Policy" />; res.render('x');`,
+      filename: 'doc.tsx',
+      errors: 1,
+    },
   ],
 });
 
-/** The folds are BOUNDED, and the bound is the same in both directions. */
+/**
+ * The folds follow every alias hop and stop only on a cycle. They used to be
+ * bounded at five hops, and the seven-hop chains that pinned the bound here as
+ * valid were documents the rule could not see: they are findings now.
+ */
 ruleTester.run('bounded folding', requireCspHeaders, {
   valid: [
-    // Seven hops — past the bound, so the body is unreadable.
     {
-      code: `const a = '<!DOCTYPE html><html></html>'; const b = a; const c = b; const d = c; const e = d; const f = e; const g = f; res.send(g);`,
+      name: 'a cyclic alias folds to nothing and terminates',
+      code: `const a = b; const b = a; res.send(a);`,
     },
-    // A deep array chain.
     {
-      code: `const a = ['<!DOCTYPE html><html></html>']; const b = a; const c = b; const d = c; const e = d; const f = e; res.send(f[0]);`,
+      name: 'a builder that returns its own call folds to nothing and terminates',
+      code: `function page() { return page(); } res.send(page());`,
+    },
+    {
+      name: 'a page table that indexes itself folds to nothing and terminates',
+      code: `const T = [T[0]]; res.send(T[0]);`,
     },
   ],
   invalid: [
+    // @found 2026-11-02 (Stryker triage): a fold budget of five hops.
+    {
+      name: 'FN: a seven-hop alias chain still carries the document',
+      code: `const a = '<!DOCTYPE html><html></html>'; const b = a; const c = b; const d = c; const e = d; const f = e; const g = f; res.send(g);`,
+      errors: 1,
+    },
+    {
+      // @found mutation testing
+      name: 'FN: a six-hop array alias chain still carries the document',
+      code: `const a = ['<!DOCTYPE html><html></html>']; const b = a; const c = b; const d = c; const e = d; const f = e; res.send(f[0]);`,
+      errors: 1,
+    },
     // Two hops — inside the bound.
     {
       code: `const a = '<!DOCTYPE html><html></html>'; const b = a; res.send(b);`,
@@ -404,12 +464,92 @@ ruleTester.run('folding shapes', requireCspHeaders, {
       code: `const T = [['<!DOCTYPE html><html></html>']]; res.send(T[0][0]);`,
       errors: 1,
     },
+    // @found 2026-11-02 (Stryker triage): only a number literal indexed a page
+    // table, though `P['0']` reads element 0 at runtime too.
+    {
+      name: 'FN: a string index reads the same table element as the number',
+      code: `const P = ['<!DOCTYPE html><html></html>']; res.send(P['0']);`,
+      errors: 1,
+    },
+    {
+      name: 'a function-expression builder returns its document',
+      code: `const build = function () { return '<!DOCTYPE html><html></html>'; }; res.send(build());`,
+      errors: 1,
+    },
+    {
+      name: 'a document emitted in a file with an array hole is still scanned',
+      code: `const [, second] = list; res.send('<html></html>');`,
+      errors: 1,
+    },
+    {
+      name: 'a body method needs no response-named receiver: the markup is the proof',
+      code: `httpRes.send('<!DOCTYPE html><html></html>');`,
+      errors: 1,
+    },
+    {
+      name: 'the CSP header named as a VALUE of another header establishes nothing',
+      code: `res.setHeader('Access-Control-Expose-Headers', 'Content-Security-Policy'); res.send('<html></html>');`,
+      errors: 1,
+    },
+    {
+      name: 'helmet with CSP switched off among other options establishes no CSP',
+      code: `import helmet from 'helmet'; app.use(helmet({ contentSecurityPolicy: false, frameguard: false })); res.render('index');`,
+      errors: 1,
+    },
   ],
+});
+
+ruleTester.run('header-name positions and helmet options', requireCspHeaders, {
+  valid: [
+    // @found 2026-11-02 (Stryker triage): a bracketed literal key is the same
+    // header name, and the rule reported the response it protects.
+    {
+      name: 'FP: a bracketed literal key is still the header name',
+      code: `const h = { ['Content-Security-Policy']: "default-src 'self'" }; res.render('index');`,
+    },
+    {
+      name: 'a quoted key property in the Next.js entry shape names the header',
+      code: `const c = { headers: [{ 'key': 'Content-Security-Policy', value: "default-src 'self'" }] }; res.render('index');`,
+    },
+    {
+      name: 'helmet switching off another header still sets the CSP',
+      code: `import helmet from 'helmet'; app.use(helmet({ frameguard: false })); res.render('index');`,
+    },
+    {
+      name: 'helmet with contentSecurityPolicy true sets the CSP',
+      code: `import helmet from 'helmet'; app.use(helmet({ contentSecurityPolicy: true })); res.render('index');`,
+    },
+  ],
+  invalid: [],
 });
 
 /** The nested-table fold, in both directions. */
 ruleTester.run('nested table folding', requireCspHeaders, {
   valid: [
+    {
+      name: 'a nested read of an unknown table names no document',
+      code: `res.send(unknownPages[0][0]);`,
+    },
+    {
+      name: 'a non-canonical string index names no element',
+      code: `const P = ['<!DOCTYPE html><html></html>']; res.send(P['01']);`,
+    },
+    {
+      name: 'a dotted member names no table element',
+      code: `const P = ['<!DOCTYPE html><html></html>']; res.send(P.length);`,
+    },
+    {
+      name: "an unresolved builder is not the file's other function",
+      code: `function page() { return '<!DOCTYPE html><html></html>'; } res.send(other());`,
+    },
+    {
+      name: 'a builder declared without an initialiser returns nothing knowable',
+      code: `let build; res.send(build());`,
+    },
+    {
+      name: 'pushing doctype markup onto an array emits nothing',
+      code: `parts.push('<!DOCTYPE html><html>');`,
+    },
     {
       code: `const T = [['<!DOCTYPE html><html></html>']]; res.send(T[0][k]);`,
     },

@@ -44,8 +44,10 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 
+import { isModuleExport } from '../../utils/nest-ast';
 import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 
 type MessageIds = 'missingWhitelist';
@@ -60,41 +62,40 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
- * Static name of a property, or null when it isn't statically known.
+ * What a boolean flag ends up as in an options object, read in order the way
+ * JavaScript builds it: the last write wins.
  *
- * `computed` must be checked: in `{ [whitelist]: true }` the key node is an
- * Identifier named `whitelist`, but it is a *variable reference*, not the
- * property name. Reading `.name` there made the rule believe whitelist was set
- * and pass silently — a false negative.
+ *   - `'off'`     — absent, or a literal other than `true`, after any spread;
+ *   - `'on'`      — the literal `true`, after any spread;
+ *   - `'unknown'` — a spread after the last explicit write may carry it, or
+ *                   the value is computed (`whitelist: cfg.strip`) and may be
+ *                   `true` at runtime.
+ *
+ * `{ ...base, whitelist: false }` is therefore `'off'`: whatever the spread
+ * carried, the explicit `false` after it overrides it.
  */
-function propName(prop: TSESTree.Property): string | null {
-  if (prop.computed) return null;
-  if (prop.key.type === AST_NODE_TYPES.Identifier) return prop.key.name;
-  if (
-    prop.key.type === AST_NODE_TYPES.Literal &&
-    typeof prop.key.value === 'string'
-  ) {
-    return prop.key.value;
+function flagState(
+  object: TSESTree.ObjectExpression,
+  name: string,
+): 'on' | 'off' | 'unknown' {
+  let state: 'on' | 'off' | 'unknown' = 'off';
+  for (const prop of object.properties) {
+    if (prop.type === AST_NODE_TYPES.SpreadElement) {
+      state = 'unknown';
+    } else if (objectKeyName(prop) === name) {
+      // `objectKeyName`, not `key.name`: in `{ [whitelist]: true }` the key is a
+      // variable reference, not the property name, and reading `.name` there
+      // made the rule believe whitelist was set — a false negative.
+      // `{ ['whitelist']: true }` does name it.
+      state =
+        prop.value.type !== AST_NODE_TYPES.Literal
+          ? 'unknown'
+          : prop.value.value === true
+            ? 'on'
+            : 'off';
+    }
   }
-  return null;
-}
-
-/** True when `object` sets `name: true` literally. */
-function setsTrue(object: TSESTree.ObjectExpression, name: string): boolean {
-  return object.properties.some(
-    (prop) =>
-      prop.type === AST_NODE_TYPES.Property &&
-      propName(prop) === name &&
-      prop.value.type === AST_NODE_TYPES.Literal &&
-      prop.value.value === true,
-  );
-}
-
-/** True when the object spreads anything — the missing key may come from there. */
-function hasSpread(object: TSESTree.ObjectExpression): boolean {
-  return object.properties.some(
-    (prop) => prop.type === AST_NODE_TYPES.SpreadElement,
-  );
+  return state;
 }
 
 /** Resolve a `const x = { … }` declared in this same file, or null. */
@@ -173,19 +174,28 @@ export const requireValidationPipeWhitelist = createRule<
 
     return {
       before() {
-        const [options = {}] = currentOptions();
+        const [options] = currentOptions();
         // Registering no visitors is both the gate and the cheap path: a file
         // that does not use this SDK does no work at all.
         if (!fileUsesNestjs(context.sourceCode.ast)) return false;
 
-        ({ allowInTests = true, requireForbidNonWhitelisted = false } =
-          options);
+        // Merged with `defaultOptions` before `create` runs.
+        ({ allowInTests, requireForbidNonWhitelisted } =
+          options as Required<Options>);
         if (allowInTests && isTestFilePath(context.filename)) return false;
         return true;
       },
       NewExpression(node: TSESTree.NewExpression) {
-        if (node.callee.type !== AST_NODE_TYPES.Identifier) return;
-        if (node.callee.name !== 'ValidationPipe') return;
+        const scope = context.sourceCode.getScope(node);
+        if (
+          !isModuleExport(
+            node.callee,
+            scope,
+            '@nestjs/common',
+            'ValidationPipe',
+          )
+        )
+          return;
 
         const [arg] = node.arguments;
 
@@ -200,21 +210,17 @@ export const requireValidationPipeWhitelist = createRule<
           optionsObject = arg;
         } else if (arg.type === AST_NODE_TYPES.Identifier) {
           // Only when declared in this file; an imported config isn't knowable.
-          optionsObject = resolveLocalObject(
-            context.sourceCode.getScope(node),
-            arg.name,
-          );
+          optionsObject = resolveLocalObject(scope, arg.name);
         }
         if (!optionsObject) return;
 
-        // A spread could supply whitelist from elsewhere — don't guess.
-        if (hasSpread(optionsObject)) return;
-
-        const ok =
-          setsTrue(optionsObject, 'whitelist') &&
-          (!requireForbidNonWhitelisted ||
-            setsTrue(optionsObject, 'forbidNonWhitelisted'));
-        if (!ok) {
+        // Only a flag provably off is reported. A spread may supply it, and a
+        // computed value may be `true` at runtime — neither is a guess to make.
+        const off =
+          flagState(optionsObject, 'whitelist') === 'off' ||
+          (requireForbidNonWhitelisted &&
+            flagState(optionsObject, 'forbidNonWhitelisted') === 'off');
+        if (off) {
           context.report({
             node: optionsObject,
             messageId: 'missingWhitelist',

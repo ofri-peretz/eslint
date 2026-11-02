@@ -6,8 +6,14 @@
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * 🔒 LOCKED 2026-08-17 — read this whole block before changing anything here.
+ * 🔒 LOCKED 2026-11-02 — read this whole block before changing anything here.
  * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * 2026-11-02: depth budgets replaced by a const-hop cycle cut (they dropped
+ * findings on long concatenations); destructured `const`s read back; guard
+ * clauses honoured in any statement list; literals judged on their VALUE (a
+ * Windows-escaped `..\\..\\etc\\passwd` was missed); a spread argument
+ * reports under `reportUnresolvedPaths`. Each pinned in `survivor-kills.test.ts`.
  *
  * Behaviour derived from the semantics of CWE-22, every claim executed in Node
  * 24 rather than reasoned about, and scored head-to-head against
@@ -118,7 +124,6 @@ import {
   formatLLMMessage,
   isModuleBinding,
   namesOneOf,
-  objectKeyName,
   propertyName,
   resolveModuleBinding,
   staticString,
@@ -126,6 +131,7 @@ import {
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { isSeparatorAnchored } from '../../utils/separator-anchored';
+import { undeclaredFsBinding } from '../../utils/module-binding';
 
 type MessageIds = 'fsPathTraversal';
 
@@ -187,56 +193,29 @@ type RuleOptions = [Options?];
 interface FSOperation {
   method: string;
   dangerous: boolean;
-  vulnerability: 'path-traversal' | 'directory-traversal' | 'file-access';
   safePattern: string;
-  example: { bad: string; good: string };
-  effort: string;
 }
 
 const FS_OPERATIONS: FSOperation[] = [
   {
     method: 'readFile',
     dangerous: true,
-    vulnerability: 'file-access',
     safePattern: 'path.resolve(SAFE_DIR, path.basename(userInput))',
-    example: {
-      bad: 'fs.readFile(userPath, callback)',
-      good: 'const safePath = path.join(SAFE_UPLOADS_DIR, path.basename(userPath)); fs.readFile(safePath, callback)',
-    },
-    effort: '10-15 minutes',
   },
   {
     method: 'writeFile',
     dangerous: true,
-    vulnerability: 'file-access',
     safePattern: 'path.resolve(SAFE_DIR, path.basename(userInput))',
-    example: {
-      bad: 'fs.writeFile(userPath, data, callback)',
-      good: 'const safePath = path.join(SAFE_WRITES_DIR, path.basename(userPath)); fs.writeFile(safePath, data, callback)',
-    },
-    effort: '10-15 minutes',
   },
   {
     method: 'stat',
     dangerous: true,
-    vulnerability: 'path-traversal',
     safePattern: 'path.resolve(baseDir, userInput) with validation',
-    example: {
-      bad: 'fs.stat(userPath, callback)',
-      good: 'const resolvedPath = path.resolve(SAFE_DIR, userPath);\nif (!resolvedPath.startsWith(SAFE_DIR + path.sep)) return;\nfs.stat(resolvedPath, callback)',
-    },
-    effort: '15-20 minutes',
   },
   {
     method: 'readdir',
     dangerous: true,
-    vulnerability: 'directory-traversal',
     safePattern: 'Validate directory is within allowed paths',
-    example: {
-      bad: 'fs.readdir(userDir, callback)',
-      good: 'const resolvedDir = path.resolve(ALLOWED_DIRS, userDir);\nif (!resolvedDir.startsWith(ALLOWED_DIRS + path.sep)) return;\nfs.readdir(resolvedDir, callback)',
-    },
-    effort: '15-20 minutes',
   },
 ];
 
@@ -245,7 +224,8 @@ const FS_OPERATIONS: FSOperation[] = [
  * Module-scope so it is directly unit-testable (Layer-2).
  */
 const hasTraversalPatterns = (pathStr: string): boolean => {
-  return /\.\.[/\\]/.test(pathStr) || /^\.\.[/\\]/.test(pathStr);
+  // Unanchored, so a leading `../` is already one of its matches.
+  return /\.\.[/\\]/.test(pathStr);
 };
 
 /**
@@ -306,12 +286,13 @@ const SENSITIVE_SEGMENTS = [
  * sensitive. Segments are compared after collapsing `..`, so `../../etc/passwd`
  * and `/etc/passwd` are the same finding and `../config.json` is not one.
  */
-const targetsSensitiveLocation = (pathStr: string): boolean => {
-  // `pathStr` is `sourceCode.getText(node)`, so a string literal arrives WITH its
-  // quotes — `'../../etc/passwd'`, not `../../etc/passwd`. The old check searched
-  // for `../` anywhere and never noticed; anything anchored at the start does.
-  const unquoted = pathStr.replace(/^['"`]|['"`]$/g, '');
-  const normalised = unquoted.replace(/\\/g, '/').toLowerCase();
+const targetsSensitiveLocation = (value: string): boolean => {
+  // `value` is the string the literal DENOTES, not its source text. Reading the
+  // source text meant stripping quotes by regex and — worse — seeing a Windows
+  // path's escapes: `'..\\..\\etc\\passwd'` arrived as `..\\..\\etc\\passwd`
+  // (doubled backslashes), normalised to `..//..//etc//passwd`, and matched no
+  // segment, so `windows/system32/config/sam` below could never match at all.
+  const normalised = value.replace(/\\/g, '/').toLowerCase();
 
   // A hardcoded path with no `..` segment does not traverse, and this rule
   // reports under `issueName: 'Path traversal'`, CWE-22, advising
@@ -406,105 +387,14 @@ export const generateRefactoringSteps = (operation: FSOperation): string => {
  * Drop-in replacements that expose the same filesystem surface as `fs`.
  * `node:` prefixes are stripped by the resolver before this map is consulted.
  */
+/** The `path` functions that build a path from parts. @vocabulary Node path API */
+const PATH_BUILDERS = new Set(['join', 'resolve']);
+
 const FS_MODULE_EQUIVALENTS = {
   'fs-extra': 'fs',
   'graceful-fs': 'fs',
   'fs/promises': 'fs',
 } as const;
-
-// The equivalents map above is consulted by `resolveModuleBinding`, which only
-// runs on a call's receiver. `isFsModule` guards two paths the resolver never
-// sees — a bare `require('fs-extra')` argument and an `ImportDeclaration`
-// source — so the drop-ins have to be listed here as well or a file reaching
-// fs through `fs-extra` stays invisible while using identical code.
-// okta-signin-widget does exactly that in at least five non-test files.
-const FS_MODULES = new Set([
-  'fs',
-  'node:fs',
-  'fs/promises',
-  'node:fs/promises',
-  'fs-extra',
-  'graceful-fs',
-]);
-
-export const isFsModule = (source: unknown): boolean =>
-  typeof source === 'string' && FS_MODULES.has(source);
-
-/**
- * The fs method this callee invokes, if any.
- *
- * The rule used to require the receiver be literally the identifier `fs`, so
- * every other way of binding the module was silently unchecked — a named
- * import, a renamed default, `fs.promises`, a namespace import. A path
- * traversal is not less exploitable because the author wrote
- * `import { readFile } from 'node:fs/promises'`, so the gate now resolves the
- * binding instead of pattern-matching one spelling of it.
- *
- * Module-scope so each shape is directly unit-testable (Layer-2).
- */
-export function fsMethodName(
-  callee: TSESTree.Node,
-  namespaces: ReadonlySet<string>,
-  named: ReadonlyMap<string, string>,
-): string | undefined {
-  // `readFile(userPath)` — named import or destructured require.
-  if (callee.type === AST_NODE_TYPES.Identifier) return named.get(callee.name);
-
-  // `callee.computed` used to bail here, and that was the real blind spot:
-  // `fs['readFileSync'](userPath)` reaches exactly the same function as
-  // `fs.readFileSync(userPath)` and went unreported. `propertyName` resolves
-  // the dotted form, the string-subscript form and the template form alike, so
-  // asking it for a name is both narrower and wider than the old pair of
-  // conditions — narrower because a truly dynamic `fs[method]()` still yields
-  // null, wider because a static subscript now resolves.
-  if (callee.type !== AST_NODE_TYPES.MemberExpression) {
-    return undefined;
-  }
-  // Resolved ONCE. Asking again at each return produced a `?? undefined` the
-  // null check above had already made unreachable — a dead branch wearing the
-  // look of a safeguard.
-  const method = propertyName(callee);
-  if (method === null) {
-    return undefined;
-  }
-
-  const object = callee.object;
-
-  // `fs.readFile(userPath)` — under whatever name the module was bound to.
-  if (
-    object.type === AST_NODE_TYPES.Identifier &&
-    namespaces.has(object.name)
-  ) {
-    return method;
-  }
-
-  // `fs.promises.readFile(userPath)`.
-  if (
-    object.type === AST_NODE_TYPES.MemberExpression &&
-    object.object.type === AST_NODE_TYPES.Identifier &&
-    namespaces.has(object.object.name) &&
-    propertyName(object) === 'promises'
-  ) {
-    return method;
-  }
-
-  return undefined;
-}
-
-/**
- * Is this expression `require('fs')` (or any of the four fs specifiers)?
- * Module-scope so it is directly unit-testable (Layer-2).
- */
-export function isFsRequire(node: TSESTree.Node): boolean {
-  return (
-    node.type === AST_NODE_TYPES.CallExpression &&
-    node.callee.type === AST_NODE_TYPES.Identifier &&
-    node.callee.name === 'require' &&
-    node.arguments.length > 0 &&
-    node.arguments[0].type === AST_NODE_TYPES.Literal &&
-    isFsModule(node.arguments[0].value)
-  );
-}
 
 /**
  * Determine risk level based on the operation and path.
@@ -622,7 +512,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
             type: 'boolean',
             default: false,
             description:
-              'Allow literal string paths. Default true: a rule named "non-literal" reporting a literal contradicts its contract. Set false to also flag hardcoded paths containing "../" — measured as this rule\'s largest FP class on real code.',
+              "Silence hardcoded paths altogether. With the default (false) a literal reports only when it traverses (a `..` segment) into a sensitive location such as `../../etc/passwd`; a relative literal like `../config.json` never reports — measured as this rule's largest FP class on real code.",
           },
           additionalMethods: {
             type: 'array',
@@ -652,69 +542,45 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
     let reportUnresolvedPaths: boolean;
     let PATH_ARGUMENT_INDICES: ReadonlyMap<string, readonly number[]>;
     let dangerousMethods: Set<string>;
-    let fsNamespaces: Set<string>;
-    let fsNamedMethods: Map<string, string>;
     let pendingCalls: TSESTree.CallExpression[];
+
+    /**
+     * The variable this identifier resolves to, or `null` for a name the file
+     * declares nowhere.
+     *
+     * The `!` is not hope: every identifier the walkers below receive is an
+     * expression READ — a path argument, the root of a member chain, an operand
+     * of a `const` initialiser — and the scope analyser records every read as a
+     * reference of the very scope `getScope` returns for it. The `?.` that used
+     * to sit here had no input that reached its undefined arm.
+     */
+    const resolvedVariable = (
+      id: TSESTree.Identifier,
+    ): TSESLint.Scope.Variable | null =>
+      context.sourceCode
+        .getScope(id)
+        .references.find((ref) => ref.identifier === id)!.resolved;
+
+    // `has(null)` is false, which is the answer a runtime-keyed member should
+    // get — so the cast, not a `?? ''` sentinel whose empty-string arm no
+    // input can distinguish from the null one.
+    const readsRequestSurface = (node: TSESTree.Node): boolean =>
+      node.type === AST_NODE_TYPES.MemberExpression &&
+      namesOneOf(propertyName(node), REQUEST_SURFACE);
 
     /**
      * Does this `ctx`/`context` binding PROVE it is a request?
      *
      * The proof is a member access naming a request surface, anywhere the
      * binding is read: Koa's `ctx.query.file` proves it, `ctx.runtimeDir` does
-     * not. Scope references are used rather than the one node in hand, so the
-     * evidence can appear at any use of the binding, not only at the sink.
+     * not. Every reference of the binding is read — the access in hand is one
+     * of them — so a handler that reads `ctx.request.body` on one line and
+     * builds a path from `ctx.x` on the next is still holding a request.
      */
-    /** Does this name bind to something the file actually declares? */
-    const resolvesInFile = (id: TSESTree.Identifier): boolean =>
-      context.sourceCode
-        .getScope(id)
-        .references.find((ref) => ref.identifier === id)?.resolved != null;
-
-    // `has(null)` is false, which is the answer a runtime-keyed member should
-    // get — so the cast, not a `?? ''` sentinel whose empty-string arm no
-    // input can distinguish from the null one.
-    const readsRequestSurface = (node: TSESTree.Node | undefined): boolean =>
-      node?.type === AST_NODE_TYPES.MemberExpression &&
-      namesOneOf(propertyName(node), REQUEST_SURFACE);
-
-    const hasRequestEvidence = (id: TSESTree.Identifier): boolean => {
-      // The access in hand: `ctx.query.file` reaches here as the `ctx` of
-      // `ctx.query`, so the parent alone settles the common case.
-      if (
-        readsRequestSurface(
-          (id as TSESTree.Node & { parent?: TSESTree.Node }).parent,
-        )
-      )
-        return true;
-      // Otherwise any OTHER use of the same binding will do — a handler that
-      // reads `ctx.request.body` on one line and builds a path from `ctx.x` on
-      // the next is still holding a request.
-      //
-      // `context.sourceCode`, not the `sourceCode` local: this helper sits above
-      // that declaration, and referencing it here threw `ReferenceError` inside
-      // the rule — which RuleTester surfaced as ordinary assertion failures in
-      // BOTH directions, not as a crash.
-      // No `?? []` fallback: the caller has already established with
-      // `resolvesInFile` that this binding resolves, so the branch would be
-      // unreachable — and an unreachable branch is a permanent hole in a package
-      // held at a 100% coverage threshold.
-      const variable = context.sourceCode
-        .getScope(id)
-        .references.find((ref) => ref.identifier === id)!.resolved!;
-      return variable.references.some((ref) =>
-        readsRequestSurface(
-          (ref.identifier as TSESTree.Node & { parent?: TSESTree.Node }).parent,
-        ),
+    const hasRequestEvidence = (variable: TSESLint.Scope.Variable): boolean =>
+      variable.references.some((ref) =>
+        readsRequestSurface(ref.identifier.parent),
       );
-    };
-
-    /**
-     * Check if a node is a literal string (safe)
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    const isLiteralString = (node: TSESTree.Node): boolean => {
-      return staticString(node) !== null;
-    };
 
     /**
      * Determine if the path argument is potentially dangerous
@@ -735,11 +601,9 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
      * declaration is how a suppression becomes an escape hatch.
      */
     const isLocallyConstructed = (id: TSESTree.Identifier): boolean => {
-      const variable = context.sourceCode
-        .getScope(id)
-        .references.find(
-          (ref: TSESLint.Scope.Reference) => ref.identifier === id,
-        )?.resolved;
+      const variable = resolvedVariable(id);
+      // `defs` is EMPTY for a `/* global req */` declaration: the name resolves,
+      // but to nothing this file builds.
       if (!variable || variable.defs.length !== 1) return false;
       const def = variable.defs[0];
       if (def.type !== 'Variable') return false;
@@ -784,18 +648,19 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
      * read it, so proving its initialiser safe proves nothing about the value
      * at the call.
      *
-     * One hop, one initialiser: a destructured `const { dir } = config` binds a
-     * pattern, not an expression, so there is nothing to read back. Both
-     * restrictions are unchanged — widening either is a separate decision.
+     * A DESTRUCTURED `const` reads back to its initialiser too. Every bound name
+     * is a part of that value, and each question asked of the result carries
+     * over to a part: a part of a tainted value is tainted (`const [, , name] =
+     * process.argv`), a part of a whole `process` value is whole
+     * (`const { HOME } = process.env`), a part of a build-time constant is
+     * constant. Refusing patterns made `path.join(__dirname, name)` silent
+     * beside the identical `path.join(__dirname, process.argv[2])`, which reports.
      */
     const constBindingInit = (
       id: TSESTree.Identifier,
     ): TSESTree.Node | undefined => {
-      const variable = context.sourceCode
-        .getScope(id)
-        .references.find(
-          (ref: TSESLint.Scope.Reference) => ref.identifier === id,
-        )?.resolved;
+      const variable = resolvedVariable(id);
+      // No defs: a `/* global NAME */` declaration, which has no initialiser.
       if (!variable || variable.defs.length !== 1) return undefined;
       const def = variable.defs[0];
       if (def.type !== 'Variable') return undefined;
@@ -805,12 +670,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       // walking `.parent` and re-checking that it is a `VariableDeclaration`.
       // That walk has an arm no input can reach, and an unreachable branch is a
       // permanent hole in a package held at a 100% coverage threshold.
-      if (
-        def.parent.kind !== 'const' ||
-        declarator.id.type !== AST_NODE_TYPES.Identifier
-      ) {
-        return undefined;
-      }
+      if (def.parent.kind !== 'const') return undefined;
       // `init` IS nullable here, and the reachable case is not exotic:
       // `for (const entry of xs)` and `for (const k in o)` are `const`
       // declarators with `init: null`. A bare `const x;` is a syntax error,
@@ -824,9 +684,39 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       return declarator.init ?? undefined;
     };
 
+    /**
+     * Follow one `const` hop for a walker, refusing an initialiser that is
+     * already on the current path.
+     *
+     * `const a = b; const b = a;` parses, and a binding hop is the ONLY step
+     * that can revisit a node — every other step moves to a strict sub-node of
+     * the expression in hand. So the cycle is cut where it can occur, and
+     * nowhere else. The walks used to carry depth budgets of 4 and 6 instead,
+     * which also cut off ordinary ACYCLIC input and answered "nothing found":
+     * `process.env.HOME + '/.config/' + app + '/' + profile + '/' + name` puts
+     * its env read seven levels down a left-deep `+` chain, and was silent.
+     *
+     * The init is removed again on the way back out: the set holds the PATH,
+     * not every node ever seen, so `A + A` judges the second `A` too.
+     */
+    const viaConst = (
+      id: TSESTree.Identifier,
+      onPath: Set<TSESTree.Node>,
+      walk: (init: TSESTree.Node, onPath: Set<TSESTree.Node>) => boolean,
+    ): boolean => {
+      const init = constBindingInit(id);
+      if (init === undefined || onPath.has(init)) return false;
+      onPath.add(init);
+      const verdict = walk(init, onPath);
+      onPath.delete(init);
+      return verdict;
+    };
+
     /** Does this expression read from something outside the program? */
-    const readsTaintSource = (rawNode: TSESTree.Node, depth = 0): boolean => {
-      if (depth > 6) return false;
+    const readsTaintSource = (
+      rawNode: TSESTree.Node,
+      onPath = new Set<TSESTree.Node>(),
+    ): boolean => {
       // `as string`, `!`, `satisfies`, `<T>x` — syntax, not a value change.
       // This switch dispatched on `node.type` and fell through to
       // `default: return false` for every TS wrapper, so the dialect TypeScript
@@ -859,17 +749,14 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
             // turned an undeclared `ctx.runtimeDir` from a finding into silence
             // — a false negative introduced by a false-positive fix, caught by
             // the case below it.
-            if (
-              AMBIGUOUS_ROOTS.has(node.name) &&
-              resolvesInFile(node) &&
-              !hasRequestEvidence(node)
-            ) {
-              return false;
+            if (AMBIGUOUS_ROOTS.has(node.name)) {
+              const variable = resolvedVariable(node);
+              if (variable !== null && !hasRequestEvidence(variable))
+                return false;
             }
             return !isLocallyConstructed(node);
           }
-          const bound = constBindingInit(node);
-          return bound !== undefined && readsTaintSource(bound, depth + 1);
+          return viaConst(node, onPath, readsTaintSource);
         }
         case AST_NODE_TYPES.MemberExpression: {
           // Most of `process` is MACHINE STATE, not input.
@@ -898,14 +785,14 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           }
           // `process.argv[2]`, `req.query.file`, `process.env.X` — walk to the
           // root of the chain and judge that.
-          return readsTaintSource(node.object, depth + 1);
+          return readsTaintSource(node.object, onPath);
         }
         case AST_NODE_TYPES.TemplateLiteral:
-          return node.expressions.some((e) => readsTaintSource(e, depth + 1));
+          return node.expressions.some((e) => readsTaintSource(e, onPath));
         case AST_NODE_TYPES.BinaryExpression:
           return (
-            readsTaintSource(node.left as TSESTree.Node, depth + 1) ||
-            readsTaintSource(node.right, depth + 1)
+            readsTaintSource(node.left as TSESTree.Node, onPath) ||
+            readsTaintSource(node.right, onPath)
           );
         case AST_NODE_TYPES.CallExpression: {
           // `path.basename(untrusted)` SANITISES. Measured:
@@ -936,11 +823,9 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
             return false;
           }
           // `path.join(base, req.query.f)` is tainted through its arguments.
-          return node.arguments.some(
-            (arg) =>
-              arg.type !== AST_NODE_TYPES.SpreadElement &&
-              readsTaintSource(arg, depth + 1),
-          );
+          // A SpreadElement argument falls to `default` below: it is not
+          // itself a value the walk can read.
+          return node.arguments.some((arg) => readsTaintSource(arg, onPath));
         }
         default:
           return false;
@@ -971,13 +856,12 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
      * 'packages', packageName)` where `packageName` comes off `process.argv` —
      * a fixed prefix an argument extends, which is exactly the shape above.
      *
-     * No depth counter, unlike `readsTaintSource`, and that is deliberate
-     * rather than an omission. This walk is only ever entered on an expression
-     * `readsTaintSource` has ALREADY resolved to a root inside its own six
-     * hops, and it follows a strict subset of that walk — binding, receiver,
-     * single `path.*` argument, all of which move toward the same root. A
-     * binding cycle (`const a = b; const b = a;`) has no root to reach, so
-     * `readsTaintSource` returns false on it and this function is never called.
+     * Its `const` hops go through `viaConst` like every other walk here. It
+     * used to be argued cycle-free because `readsTaintSource` runs first — but
+     * that only proves SOME part of the path reaches a root, and this walk
+     * also reads the FIRST argument of a multi-argument `path.join`, which may
+     * be a different part: `path.join(a, process.argv[2])` with
+     * `const a = b; const b = a;` recursed until the stack overflowed.
      */
     /**
      * Does any part of this expression reach a taint root that is NOT trusted
@@ -987,38 +871,36 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
      * taint", this answers "is any of it the dangerous kind". The base-is-taint
      * exemption above turns on the difference.
      */
-    const containsUntrustedRoot = (node: TSESTree.Node, depth = 0): boolean => {
-      if (depth > 6) return false;
+    const containsUntrustedRoot = (
+      node: TSESTree.Node,
+      onPath = new Set<TSESTree.Node>(),
+    ): boolean => {
       switch (node.type) {
         case AST_NODE_TYPES.Identifier: {
           if (taintRoots.has(node.name))
             return !WHOLE_VALUE_TRUSTED_ROOTS.has(node.name);
-          const bound = constBindingInit(node);
-          return bound !== undefined && containsUntrustedRoot(bound, depth + 1);
+          return viaConst(node, onPath, containsUntrustedRoot);
         }
         case AST_NODE_TYPES.MemberExpression:
-          return containsUntrustedRoot(node.object, depth + 1);
+          return containsUntrustedRoot(node.object, onPath);
         case AST_NODE_TYPES.TemplateLiteral:
-          return node.expressions.some((e) =>
-            containsUntrustedRoot(e, depth + 1),
-          );
+          return node.expressions.some((e) => containsUntrustedRoot(e, onPath));
         case AST_NODE_TYPES.BinaryExpression:
           return (
-            containsUntrustedRoot(node.left as TSESTree.Node, depth + 1) ||
-            containsUntrustedRoot(node.right, depth + 1)
+            containsUntrustedRoot(node.left as TSESTree.Node, onPath) ||
+            containsUntrustedRoot(node.right, onPath)
           );
         case AST_NODE_TYPES.CallExpression:
-          return node.arguments.some(
-            (a) =>
-              a.type !== AST_NODE_TYPES.SpreadElement &&
-              containsUntrustedRoot(a, depth + 1),
-          );
+          return node.arguments.some((a) => containsUntrustedRoot(a, onPath));
         default:
           return false;
       }
     };
 
-    const isWholeTaintValue = (node: TSESTree.Node): boolean => {
+    const isWholeTaintValue = (
+      node: TSESTree.Node,
+      onPath = new Set<TSESTree.Node>(),
+    ): boolean => {
       switch (node.type) {
         case AST_NODE_TYPES.Identifier: {
           // Only a root whose whole-value read is genuinely not traversal — see
@@ -1026,12 +908,11 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           // arbitrary file read, so it must NOT be suppressed here.
           if (taintRoots.has(node.name))
             return WHOLE_VALUE_TRUSTED_ROOTS.has(node.name);
-          const bound = constBindingInit(node);
-          return bound !== undefined && isWholeTaintValue(bound);
+          return viaConst(node, onPath, isWholeTaintValue);
         }
         // `process.env.X`, `process.argv[2]` — a whole value read off a root.
         case AST_NODE_TYPES.MemberExpression:
-          return isWholeTaintValue(node.object);
+          return isWholeTaintValue(node.object, onPath);
         case AST_NODE_TYPES.CallExpression: {
           // `path.resolve(process.env.X)` normalises one value; it does not
           // give the attacker a second part to escape from. Two or more parts
@@ -1053,8 +934,9 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
               {},
             )?.module === 'path';
           if (!isPathCall) return false;
-          if (node.arguments.length === 1)
-            return isWholeTaintValue(node.arguments[0]);
+          // One argument needs no case of its own: a whole first argument
+          // reaches only trusted roots, so the untrusted-part check below
+          // cannot fail for it.
           // Taint as the BASE, with every following segment a fixed literal:
           // `path.join(process.env.HOME, '.terraform.d', 'credentials.tfrc.json')`.
           // Nothing here is steerable — the caller chose the base and the program
@@ -1076,7 +958,8 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           // anywhere in the expression and the exemption is off, so
           // `join(baseDir, req.query.f)` still reports.
           return (
-            isWholeTaintValue(node.arguments[0]) && !containsUntrustedRoot(node)
+            isWholeTaintValue(node.arguments[0], onPath) &&
+            !containsUntrustedRoot(node)
           );
         }
         default:
@@ -1109,21 +992,19 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
      * no longer reported here; set `reportUnresolvedPaths` to restore the old
      * behaviour wholesale.
      */
-    const isDangerousPath = (
-      pathNode: TSESTree.Node | null,
-      pathStr: string,
-    ): boolean => {
+    const isDangerousPath = (pathNode: TSESTree.Node | null): boolean => {
       if (!pathNode) return reportUnresolvedPaths;
 
       // A hardcoded `../etc/passwd` is a finding regardless of taint: nobody
       // needs to steer a path that already points where it should not.
       // `allowLiterals` opts out of even that — it is the option's whole
       // purpose, and after the inversion a literal has no other way to report.
-      if (isLiteralString(pathNode)) {
+      const literal = staticString(pathNode);
+      if (literal !== null) {
         // `hasTraversalPatterns` alone matched every `../` in the codebase. The
         // finding is the DESTINATION, not the dots — see
         // `targetsSensitiveLocation` and `literal-paths.test.ts`.
-        return !allowLiterals && targetsSensitiveLocation(pathStr);
+        return !allowLiterals && targetsSensitiveLocation(literal);
       }
 
       // Explicitly validated by a startsWith guard — an existing, separate
@@ -1151,8 +1032,10 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       // `fs.readFile(filename)` with `filename` bound nowhere cannot be shown
       // safe by any reasoning available in this file. That is why
       // eslint-plugin-security reports it, and on this shape they are right.
-      if (isFreeVariable(pathNode)) return true;
-
+      //
+      // `containsFreeVariable` asks exactly that of a bare name before it
+      // looks at any part, so the bare case needs no check of its own.
+      //
       // The same reasoning, applied to a path that is COMPOSED from a free
       // variable rather than being one. `readFile(`template with ${filename}`)`
       // and `readFileSync(path.resolve(__dirname, foo))` are exactly as
@@ -1177,7 +1060,8 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
      * cannot drift from what ESLint believes about the binding.
      */
     function isFreeVariable(node: TSESTree.Node): boolean {
-      if (node.type !== AST_NODE_TYPES.Identifier) return false;
+      // Only an Identifier can be a reference's `identifier`, so any other node
+      // type finds no match below without a type test of its own.
       const through = context.sourceCode.getScope(node).through;
       return through.some(
         (ref) => ref.identifier === node && ref.resolved === null,
@@ -1193,37 +1077,31 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
      * silent. Recurses only through the node types that actually compose a
      * path string; anything else is left to the checks above.
      *
-     * `depth` mirrors isBuildTimeConstant and guards against pathological AST.
+     * No bound: every step moves to a strict sub-node, and the one walk that
+     * can cycle (a `const` hop, inside `isBuildTimeConstant`) cuts its own.
      */
-    const containsFreeVariable = (node: TSESTree.Node, depth = 0): boolean => {
-      if (depth > 4) return false;
-
+    const containsFreeVariable = (node: TSESTree.Node): boolean => {
       // Anything already provable at build time is not "unknowable", however deep it sits.
       // `__dirname` is the case that matters: ESLint resolves no Node globals by default,
       // so a bare `__dirname` looks like a free variable, and without this check
       // `path.join(__dirname, '../templates')` — a fully constant path — was reported.
-      if (isBuildTimeConstant(node, depth)) return false;
+      if (isBuildTimeConstant(node)) return false;
 
       if (isFreeVariable(node)) return true;
 
       switch (node.type) {
         case AST_NODE_TYPES.TemplateLiteral:
-          return node.expressions.some((e) =>
-            containsFreeVariable(e, depth + 1),
-          );
+          return node.expressions.some((e) => containsFreeVariable(e));
         case AST_NODE_TYPES.CallExpression:
           // `path.resolve(__dirname, foo)` — the callee is irrelevant, the
           // arguments are what end up in the path.
-          return node.arguments.some(
-            (a) =>
-              a.type !== AST_NODE_TYPES.SpreadElement &&
-              containsFreeVariable(a, depth + 1),
-          );
+          // A SpreadElement argument falls to `default`.
+          return node.arguments.some((a) => containsFreeVariable(a));
+        // Any operator: a value computed from an unknowable operand is
+        // unknowable.
         case AST_NODE_TYPES.BinaryExpression:
           return (
-            node.operator === '+' &&
-            (containsFreeVariable(node.left, depth + 1) ||
-              containsFreeVariable(node.right, depth + 1))
+            containsFreeVariable(node.left) || containsFreeVariable(node.right)
           );
         // A COMPUTED key, and deliberately not the object.
         //
@@ -1242,9 +1120,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         // Last open case on eslint-plugin-security's own corpus:
         // `fs.readFileSync(path.resolve(import.meta[prop], './index.html'))`.
         case AST_NODE_TYPES.MemberExpression:
-          return (
-            node.computed && containsFreeVariable(node.property, depth + 1)
-          );
+          return node.computed && containsFreeVariable(node.property);
         default:
           return false;
       }
@@ -1258,24 +1134,26 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
      * whose every interpolation is itself constant. `__dirname` and
      * `process.cwd()` are module-location constants, not input.
      *
-     * `depth` stops `const a = b; const b = a;` from recursing forever.
+     * `viaConst` stops `const a = b; const b = a;` from recursing forever.
      */
-    const isBuildTimeConstant = (node: TSESTree.Node, depth = 0): boolean => {
-      if (depth > 4) return false;
-      if (isLiteralString(node)) {
+    const isBuildTimeConstant = (
+      node: TSESTree.Node,
+      onPath = new Set<TSESTree.Node>(),
+    ): boolean => {
+      const literal = staticString(node);
+      if (literal !== null) {
         // A path can be fixed at build time and still be an attack:
         // `path.join(__dirname, '../etc/passwd')` is constant AND traversal.
         // Constant means "not attacker-steerable", not "harmless".
-        // isLiteralString already proved `value` is a string, so no fallback.
-        return !hasTraversalPatterns(
-          (node as TSESTree.Literal).value as string,
-        );
+        // The DENOTED string, so a no-substitution template literal is read
+        // too: it used to be cast to a `Literal` and its absent `.value`
+        // tested, which read `` `../etc/passwd` `` as no traversal at all.
+        return !hasTraversalPatterns(literal);
       }
       if (node.type === AST_NODE_TYPES.Identifier) {
         if (node.name === '__dirname' || node.name === '__filename')
           return true;
-        const bound = constBindingInit(node);
-        return bound !== undefined && isBuildTimeConstant(bound, depth + 1);
+        return viaConst(node, onPath, isBuildTimeConstant);
       }
       if (node.type === AST_NODE_TYPES.TemplateLiteral) {
         // `raw` is always populated; `cooked` is null only for an invalid
@@ -1283,7 +1161,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         // Traversal detection reads the same `..` either way.
         const literalText = node.quasis.map((q) => q.value.raw).join('');
         if (hasTraversalPatterns(literalText)) return false;
-        return node.expressions.every((e) => isBuildTimeConstant(e, depth + 1));
+        return node.expressions.every((e) => isBuildTimeConstant(e, onPath));
       }
       if (node.type === AST_NODE_TYPES.CallExpression) {
         const callee = node.callee;
@@ -1301,24 +1179,20 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           callee.type === AST_NODE_TYPES.MemberExpression &&
           callee.object.type === AST_NODE_TYPES.Identifier &&
           callee.object.name === 'path' &&
-          callee.property.type === AST_NODE_TYPES.Identifier &&
-          // @vocabulary Node path API
-          ['join', 'resolve'].includes(callee.property.name)
+          namesOneOf(propertyName(callee), PATH_BUILDERS)
         ) {
           return (
             node.arguments.length > 0 &&
-            node.arguments.every((arg) => isBuildTimeConstant(arg, depth + 1))
+            node.arguments.every((arg) => isBuildTimeConstant(arg, onPath))
           );
         }
         return false;
       }
-      if (
-        node.type === AST_NODE_TYPES.BinaryExpression &&
-        node.operator === '+'
-      ) {
+      // Any operator: a value computed from constants is a constant.
+      if (node.type === AST_NODE_TYPES.BinaryExpression) {
         return (
-          isBuildTimeConstant(node.left, depth + 1) &&
-          isBuildTimeConstant(node.right, depth + 1)
+          isBuildTimeConstant(node.left, onPath) &&
+          isBuildTimeConstant(node.right, onPath)
         );
       }
       return false;
@@ -1344,10 +1218,8 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       if (pathNode.type !== AST_NODE_TYPES.Identifier) {
         const parts: TSESTree.Node[] = [];
         const collect = (n: TSESTree.Node): void => {
-          if (
-            n.type === AST_NODE_TYPES.BinaryExpression &&
-            n.operator === '+'
-          ) {
+          // Any operator: each operand is a part the guard must cover.
+          if (n.type === AST_NODE_TYPES.BinaryExpression) {
             collect(n.left as TSESTree.Node);
             collect(n.right);
             return;
@@ -1357,9 +1229,8 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
             return;
           }
           if (n.type === AST_NODE_TYPES.CallExpression) {
-            n.arguments.forEach((a) => {
-              if (a.type !== AST_NODE_TYPES.SpreadElement) collect(a);
-            });
+            // A SpreadElement reads no taint, so `collect` keeps nothing of it.
+            n.arguments.forEach((a) => collect(a));
             return;
           }
           if (readsTaintSource(n)) parts.push(n);
@@ -1465,40 +1336,41 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         );
       };
 
-      // Walk up to find enclosing IfStatement or BlockStatement
+      // Walk outward from the path. An enclosing `if` may test it (check 1);
+      // in any enclosing statement LIST, an earlier sibling may be a guard
+      // clause that exits (check 2).
+      //
+      // Check 2 used to run only in a FUNCTION body, and stop the walk there.
+      // That left three ordinary guard placements reported: a CLI script's
+      // top level (`const name = process.argv[2]; if (!OK.includes(name))
+      // throw …; readFileSync('/srv/' + name)`), a block nested in the function
+      // (`if (opts.load) { if (!OK.includes(name)) throw …; read }`), and a
+      // block-bodied callback created after the guard — while the SAME callback
+      // with an expression body walked straight out to the guard and was
+      // cleared. A guarded part is always a `const` or a taint root (only those
+      // read as tainted), so its value cannot change between a guard and any
+      // code that runs after it, nested function or not.
+      let child: TSESTree.Node = pathNode;
       let current: TSESTree.Node | undefined = pathNode.parent;
-      let foundFunctionBody = false;
 
-      while (current && !foundFunctionBody) {
+      while (current) {
         // Check 1: Inside an if-block with validation
-        if (current.type === AST_NODE_TYPES.IfStatement) {
-          if (isValidationCall(current.test)) {
-            return true;
-          }
+        if (
+          current.type === AST_NODE_TYPES.IfStatement &&
+          isValidationCall(current.test)
+        ) {
+          return true;
         }
 
-        // Check 2: In a function body, look for preceding sibling if-statements with guard clause
+        // Check 2: a preceding sibling guard clause with an early exit
         if (
-          current.type === AST_NODE_TYPES.BlockStatement &&
-          current.parent &&
-          (current.parent.type === AST_NODE_TYPES.FunctionDeclaration ||
-            current.parent.type === AST_NODE_TYPES.FunctionExpression ||
-            current.parent.type === AST_NODE_TYPES.ArrowFunctionExpression)
+          current.type === AST_NODE_TYPES.BlockStatement ||
+          current.type === AST_NODE_TYPES.Program
         ) {
-          foundFunctionBody = true;
-          const blockBody = current.body;
-          const nodeIndex = blockBody.findIndex((stmt: TSESTree.Statement) => {
-            let check: TSESTree.Node | undefined = pathNode;
-            while (check) {
-              if (check === stmt) return true;
-              check = check.parent;
-            }
-            return false;
-          });
-
-          // Look at preceding statements for validation patterns with early exit
-          for (let i = 0; i < nodeIndex; i++) {
-            const stmt = blockBody[i];
+          const body: readonly TSESTree.Node[] = current.body;
+          const index = body.indexOf(child);
+          for (let i = 0; i < index; i++) {
+            const stmt = body[i];
             if (
               stmt.type === AST_NODE_TYPES.IfStatement &&
               isValidationCall(stmt.test) &&
@@ -1509,6 +1381,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           }
         }
 
+        child = current;
         current = current.parent;
       }
 
@@ -1516,47 +1389,29 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Record what a destructured / named binding refers to.
-     *
-     * `promises` is the one member of the fs module that is itself a module
-     * object, so `const { promises } = require('fs')` binds a *namespace*, not
-     * a method — filing it under methods left `promises.readFile(userPath)`
-     * unresolvable and therefore silently unchecked.
-     */
-    function bindFsName(local: string, imported: string): void {
-      if (imported === 'promises') fsNamespaces.add(local);
-      else fsNamedMethods.set(local, imported);
-    }
-
-    /**
      * Check fs method calls for path traversal vulnerabilities
      */
     const checkFsCall = (node: TSESTree.CallExpression) => {
-      let methodName = fsMethodName(node.callee, fsNamespaces, fsNamedMethods);
-
-      if (methodName === undefined) {
-        // Fallback: resolve the callee back to its source module. The namespace tracking
-        // above follows `fs.readFile` and `const { readFile } = require('fs')`, but not a
-        // method plucked onto a variable (`var one = require('fs').readFile; one(p)`), a
-        // `promises` namespace bound through a variable, or a drop-in module such as
-        // `fs-extra` — 8 of the competitor-corpus cases were exactly those shapes.
-        const binding = resolveModuleBinding(
-          node.callee,
-          context.sourceCode.getScope(node),
-          {
-            equivalents: FS_MODULE_EQUIVALENTS,
-          },
-        );
-        if (binding?.module !== 'fs') return;
-        const [first, second] = binding.path;
-        methodName =
-          binding.path.length === 1
-            ? first
-            : binding.path.length === 2 && first === 'promises'
-              ? second
-              : undefined;
-        if (methodName === undefined) return;
-      }
+      // Resolve the callee back to its source module: `fs.readFile`, a named or
+      // renamed import, `const { readFile } = require('fs')`, a method plucked
+      // onto a variable (`var one = require('fs').readFile; one(p)`), the
+      // `promises` namespace however it is bound, or a drop-in such as
+      // `fs-extra`. A local that merely shares a name (`const fs = {...}`) does
+      // not resolve, and is not the module.
+      const scope = context.sourceCode.getScope(node);
+      const binding =
+        resolveModuleBinding(node.callee, scope, {
+          equivalents: FS_MODULE_EQUIVALENTS,
+        }) ?? undeclaredFsBinding(node.callee, scope);
+      if (binding?.module !== 'fs') return;
+      const [first, second] = binding.path;
+      const methodName =
+        binding.path.length === 1
+          ? first
+          : binding.path.length === 2 && first === 'promises'
+            ? second
+            : undefined;
+      if (methodName === undefined) return;
 
       // Skip if not a dangerous method
       if (!dangerousMethods.has(methodName)) {
@@ -1568,66 +1423,49 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       // Most methods take one path at argument 0; copy/rename/link/symlink
       // take a source AND a destination, and only the source was ever checked.
       const indices = PATH_ARGUMENT_INDICES.get(method) ?? [0];
-      const sourceCode = context.sourceCode;
-      let pathNode: TSESTree.Node | null = null;
-      let path = '';
-      for (const index of indices) {
-        const candidate = node.arguments[index];
-        if (
-          candidate === undefined ||
-          candidate.type === AST_NODE_TYPES.SpreadElement
-        )
-          continue;
-        if (isDangerousPath(candidate, sourceCode.getText(candidate))) {
-          pathNode = candidate;
-          path = sourceCode.getText(candidate);
-          break;
-        }
-      }
+      // A SpreadElement is judged like any other argument: `fs.readFile(...args)`
+      // is a path whose provenance cannot be resolved, which is exactly what
+      // `reportUnresolvedPaths` asks to hear about. It used to be skipped, so
+      // that option — "restores the pre-inversion behaviour", which reported
+      // every non-literal — stayed silent on it.
+      const pathNode =
+        indices
+          .map((index) => node.arguments[index])
+          .find(
+            (candidate): candidate is TSESTree.CallExpressionArgument =>
+              candidate !== undefined && isDangerousPath(candidate),
+          ) ?? null;
       if (pathNode === null) {
         // No path argument at all (`fs.readFile()`). There is nothing to judge,
         // so this follows the same unresolved-provenance switch as a path whose
-        // origin cannot be traced.
-        const present = indices.some(
-          (index) => node.arguments[index] !== undefined,
-        );
-        if (!present && isDangerousPath(null, '')) {
+        // origin cannot be traced. Every index list starts at 0, so "no path
+        // argument" is "no argument".
+        if (node.arguments.length === 0 && isDangerousPath(null)) {
           context.report({
             node,
             messageId: 'fsPathTraversal',
             data: {
-              method,
-              path: '',
               riskLevel: 'MEDIUM',
-              vulnerability: 'path traversal',
               safePattern: 'Use path.resolve() with validation',
-              steps: 'Review file system access patterns',
             },
           });
         }
         return;
       }
-      const operation =
-        FS_OPERATIONS.find((op) => op.method === method) ?? null;
-
-      const riskLevel = determineRiskLevel(operation || FS_OPERATIONS[0], path);
-      const steps = operation
-        ? generateRefactoringSteps(operation)
-        : 'Review file system access patterns';
-      const safePattern =
-        operation?.safePattern || 'Use path.resolve() with validation';
-
+      // Only `riskLevel` and `safePattern` are placeholders in the message;
+      // the method, path text, vulnerability class, steps and effort that used
+      // to ride along in `data` were never printed.
+      const operation = FS_OPERATIONS.find((op) => op.method === method);
       context.report({
         node,
         messageId: 'fsPathTraversal',
         data: {
-          method,
-          path,
-          riskLevel,
-          vulnerability: operation?.vulnerability || 'path traversal',
-          safePattern,
-          steps,
-          effort: operation?.effort || '15-20 minutes',
+          riskLevel: determineRiskLevel(
+            operation ?? FS_OPERATIONS[0],
+            context.sourceCode.getText(pathNode),
+          ),
+          safePattern:
+            operation?.safePattern ?? 'Use path.resolve() with validation',
         },
       });
     };
@@ -1810,70 +1648,9 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           ...additionalMethods,
         ]);
 
-        /**
-         * Names bound to the fs module itself.
-         *
-         * Seeded with `fs`, so a file that never imports it — the shape the rule
-         * has always reported — keeps being reported. Anything else has to be
-         * traced to an import or a require.
-         */
-        fsNamespaces = new Set<string>(['fs']);
-        /** Local name → fs method, for named imports and destructured requires. */
-        fsNamedMethods = new Map<string, string>();
         /** Calls to judge at Program:exit, once every binding in the file is known. */
         pendingCalls = [];
       },
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        if (!isFsModule(node.source.value)) return;
-        for (const spec of node.specifiers) {
-          if (spec.type === AST_NODE_TYPES.ImportSpecifier) {
-            // `import { readFile as read }` — the *imported* name is the fs
-            // method, the local name is what the call site writes. The string
-            // form (`import { 'readFile' as read }`) names the same method, so
-            // skipping it would be a false negative, not a narrower gate.
-            const imported =
-              spec.imported.type === AST_NODE_TYPES.Identifier
-                ? spec.imported.name
-                : spec.imported.value;
-            bindFsName(spec.local.name, imported);
-            continue;
-          }
-          // Default and namespace specifiers both bind the module object.
-          fsNamespaces.add(spec.local.name);
-        }
-      },
-
-      VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        // No `const` path bindings are collected here any more: a name is not a
-        // binding, and `constBindingInit` asks the scope manager at the point of
-        // use instead. See its doc comment.
-        if (node.init === null || !isFsRequire(node.init)) return;
-        if (node.id.type === AST_NODE_TYPES.Identifier) {
-          fsNamespaces.add(node.id.name);
-          return;
-        }
-        if (node.id.type !== AST_NODE_TYPES.ObjectPattern) return;
-        for (const prop of node.id.properties) {
-          if (prop.type !== AST_NODE_TYPES.Property) continue;
-          if (prop.value.type !== AST_NODE_TYPES.Identifier) continue;
-          /*
-           * `const { 'readFile': read } = require('fs')` names the same method
-           * as the bare form, and so does `const { ['readFile']: read }`. The
-           * import path already reads the string spelling
-           * (`import { 'readFile' as read }`), so gating either out here would
-           * be an asymmetry, not a narrower gate.
-           *
-           * The `prop.computed` bail used to sit on the line above and made the
-           * third spelling unreachable. `objectKeyName` resolves all three and
-           * returns null only for a key chosen at RUNTIME — which is the one
-           * case that genuinely names nothing.
-           */
-          const key = objectKeyName(prop);
-          if (key === null) continue;
-          bindFsName(prop.value.name, key);
-        }
-      },
-
       // Collected, not judged: a `const fs = require('fs')` below the call
       // site still binds it, and a rule that missed those would be reporting
       // on statement order rather than on risk.

@@ -11,15 +11,19 @@ autofix: false
 > **Keywords:** clickjacking, CWE-1021, iframe, X-Frame-Options, CSP, UI redressing
 
 <!-- @rule-summary -->
+
 Detects clickjacking vulnerabilities and missing frame protections
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
-**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
+> **⚠️ Deprecated.** This rule is deprecated and no longer in any preset. Use
+> [`express-security/require-helmet`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/require-helmet.md),
+> which sets `X-Frame-Options` and a `frame-ancestors` policy for every response through helmet. The rule is still exported and still works when enabled explicitly,
+> until the next major removes it.
+
+**CWE:** [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html)  
+**OWASP:** [Clickjacking Defense Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html)
 
 Detects clickjacking vulnerabilities and missing frame protections. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
-
-💼 This rule is set to **error** in the `recommended` config.
 
 ## Quick Summary
 
@@ -27,8 +31,8 @@ Detects clickjacking vulnerabilities and missing frame protections. This rule is
 | ----------------- | --------------------------------------------------------------------------------------------------------- |
 | **CWE Reference** | [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html) (Improper Restriction of Rendered UI Layers) |
 | **Severity**      | Medium (CVSS 6.1)                                                                                         |
-| **Auto-Fix**      | 💡 Suggestions available                                                                                  |
-| **Category**   | Security |
+| **Auto-Fix**      | ❌ No                                                                                                     |
+| **Category**      | Security                                                                                                  |
 
 ## Vulnerability and Risk
 
@@ -45,6 +49,16 @@ Clickjacking tricks users into clicking on invisible or disguised elements by ov
 - Perform unauthorized transactions
 - Bypass CSRF protections
 
+### What the rule reports
+
+| Finding                   | When                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `missingFrameBusting`     | A file that builds a document shell (`<html>` / `<head>` / `<body>` in JSX) and neither declares frame protection nor frame-busts. Only with `requireFrameBusting` (default `true`).                                                                                                                                                                               |
+| `weakFrameProtection`     | A declaration that does not forbid framing, written anywhere: an `X-Frame-Options` value other than `DENY` / `SAMEORIGIN` (`ALLOWALL`, `ALLOW-FROM …`) in a header slot, or a Content-Security-Policy with no `frame-ancestors` (or `frame-ancestors *`). Not reported when the same file declares real protection, or when the shell finding above already fired. |
+| `unsafeIframeUsage`       | An `<iframe>` whose `src` origin is not in `trustedSources` — an allowlist of iframe **source origins**, compared by origin, never by substring. `'self'` / `'same-origin'` accept relative URLs.                                                                                                                                                                  |
+| `transparentFrameOverlay` | An invisible overlay in CSS — `opacity: 0`, `visibility: hidden`, a negative `z-index` — when `detectTransparentOverlays` is on. `display: none` is not an overlay.                                                                                                                                                                                                |
+| `frameManipulation`       | Navigating `top.location` / `window.top` outside a frame-busting guard. `if (top != self) top.location = self.location` is the remediation and is not reported. Only an assignment counts: reading `top.location` (`'framed at ' + top.location`) navigates nothing.                                                                                                                                                                                                    |
+
 ### Why This Matters
 
 | Issue                     | Impact               | Solution                      |
@@ -58,21 +72,22 @@ Clickjacking tricks users into clicking on invisible or disguised elements by ov
 ### ❌ Incorrect
 
 ```typescript
-// Missing X-Frame-Options header
-app.get('/sensitive', (req, res) => {
-  res.send('<html>Sensitive content</html>');
-});
+// A document shell with no frame protection (missingFrameBusting)
+export default function RootLayout({ children }) {
+  return <html><body>{children}</body></html>;
+}
 
-// Allowing framing from any origin
+// Allowing framing from any origin (weakFrameProtection)
 res.setHeader('X-Frame-Options', 'ALLOWALL'); // Insecure!
 
-// Transparent iframe overlay
+// A frame from an origin not in trustedSources (unsafeIframeUsage),
+// made invisible on top of the page (transparentFrameOverlay)
 <iframe
   src="https://target.com/transfer"
   style="opacity: 0; position: absolute; top: 0; left: 0;"
 />
 
-// Missing CSP frame-ancestors
+// Missing CSP frame-ancestors (weakFrameProtection)
 const csp = "default-src 'self'"; // No frame protection!
 ```
 
@@ -80,6 +95,13 @@ const csp = "default-src 'self'"; // No frame protection!
 
 ```typescript
 <iframe src="/local-content.html"></iframe>
+
+res.setHeader('X-Frame-Options', 'DENY');
+const csp = "default-src 'self'; frame-ancestors 'none'";
+
+if (top !== self) {
+  top.location = self.location; // frame-busting: the remediation
+}
 ```
 
 ## Configuration
@@ -98,13 +120,13 @@ const csp = "default-src 'self'"; // No frame protection!
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `trustedSources` | `string[]` | `["self","same-origin"]` | Frame-ancestor sources treated as safe |
-| `requireFrameBusting` | `boolean` | `true` | Require frame-busting code in addition to headers |
-| `detectTransparentOverlays` | `boolean` | `true` | Report transparent overlays positioned over clickable elements |
-| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
-| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
+| Option                      | Type       | Default                  | Description                                                                        |
+| --------------------------- | ---------- | ------------------------ | ---------------------------------------------------------------------------------- |
+| `trustedSources`            | `string[]` | `["self","same-origin"]` | Iframe `src` origins treated as safe (`self` / `same-origin` accept relative URLs) |
+| `requireFrameBusting`       | `boolean`  | `true`                   | Require frame-busting code in addition to headers                                  |
+| `detectTransparentOverlays` | `boolean`  | `true`                   | Report transparent overlays positioned over clickable elements                     |
+| `trustedAnnotations`        | `string[]` | `[]`                     | Additional JSDoc annotations to consider as safe markers                           |
+| `strictMode`                | `boolean`  | `false`                  | Disable all false positive detection (strict mode)                                 |
 
 ## Error Message Format
 

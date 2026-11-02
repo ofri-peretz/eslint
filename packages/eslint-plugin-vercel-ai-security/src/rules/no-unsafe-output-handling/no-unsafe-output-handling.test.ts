@@ -22,7 +22,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -48,7 +48,6 @@ const xai = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -142,85 +141,91 @@ ruleTester.run('no-unsafe-output-handling', noUnsafeOutputHandling, {
 // await generateText(...)` — was not, even though eval and innerHTML already
 // tracked it. Both shapes must fire.
 // ─────────────────────────────────────────────────────────────────────────────
-ruleTester.run('no-unsafe-output-handling (SQL interpolation)', noUnsafeOutputHandling, {
-  valid: xai([
-    // Non-AI interpolation stays quiet
-    {
-      code: `
+ruleTester.run(
+  'no-unsafe-output-handling (SQL interpolation)',
+  noUnsafeOutputHandling,
+  {
+    valid: xai([
+      // Non-AI interpolation stays quiet
+      {
+        code: `
         const { text } = await generateText({ prompt: 'Hello' });
         db.query(\`SELECT * FROM users WHERE id = \${userId}\`);
       `,
-    },
-    // Non-AI concatenation stays quiet
-    {
-      code: `
+      },
+      // Non-AI concatenation stays quiet
+      {
+        code: `
         const { text } = await generateText({ prompt: 'Hello' });
         db.query('SELECT * FROM users WHERE id = ' + userId);
       `,
-    },
-    // A table name that merely *reads* like a pattern is not a value leak
-    { code: `db.query(\`SELECT * FROM generated_reports WHERE id = \${id}\`);` },
-    // A *shadowed* `text` is a different variable. Tracking names rather than
-    // resolved bindings reports this, and `text` is common enough that the
-    // false positive would land on ordinary code.
-    {
-      code: `
+      },
+      // A table name that merely *reads* like a pattern is not a value leak
+      {
+        code: `db.query(\`SELECT * FROM generated_reports WHERE id = \${id}\`);`,
+      },
+      // A *shadowed* `text` is a different variable. Tracking names rather than
+      // resolved bindings reports this, and `text` is common enough that the
+      // false positive would land on ordinary code.
+      {
+        code: `
         const { text } = await generateText({ prompt: 'Hello' });
         console.log(text);
         function render(text) {
           db.query(\`SELECT * FROM users WHERE name = '\${text}'\`);
         }
       `,
-    },
-    // Only `+` builds a string. Other operators compare or compute — there is
-    // no interpolation to report, even on a tracked binding.
-    {
-      code: `
+      },
+      // Only `+` builds a string. Other operators compare or compute — there is
+      // no interpolation to report, even on a tracked binding.
+      {
+        code: `
         const { text } = await generateText({ prompt: 'Hello' });
         db.query(rowCount > text);
       `,
-    },
-  ]),
-  invalid: xai([
-    // Destructured `text` interpolated into a template — the reported FN
-    {
-      code: `
+      },
+    ]),
+    invalid: xai([
+      // Destructured `text` interpolated into a template — the reported FN
+      {
+        code: `
         const { text } = await generateText({ prompt: 'Generate query' });
         db.query(\`SELECT * FROM users WHERE name = '\${text}'\`);
       `,
-      errors: [{ messageId: 'unsafeOutputInSQL' }],
-    },
-    // Same binding, string concatenation instead of a template
-    {
-      code: `
+        errors: [{ messageId: 'unsafeOutputInSQL' }],
+      },
+      // Same binding, string concatenation instead of a template
+      {
+        code: `
         const { text } = await generateText({ prompt: 'Generate query' });
         db.query('SELECT * FROM users WHERE name = ' + text);
       `,
-      errors: [{ messageId: 'unsafeOutputInSQL' }],
-    },
-    // Nested concatenation chain — `'a' + 'b' + text` parses as `('a' + 'b') + text`
-    {
-      code: `
+        errors: [{ messageId: 'unsafeOutputInSQL' }],
+      },
+      // Nested concatenation chain — `'a' + 'b' + text` parses as `('a' + 'b') + text`
+      {
+        code: `
         const { text } = await generateText({ prompt: 'Generate query' });
         db.query('SELECT * ' + 'FROM users WHERE name = ' + text);
       `,
-      errors: [{ messageId: 'unsafeOutputInSQL' }],
-    },
-    // Whole-result binding interpolated as `result.text`
-    {
-      code: `
+        errors: [{ messageId: 'unsafeOutputInSQL' }],
+      },
+      // Whole-result binding interpolated as `result.text`
+      {
+        code: `
         const result = await generateText({ prompt: 'Generate query' });
         db.query(\`SELECT * FROM users WHERE name = '\${result.text}'\`);
       `,
-      errors: [{ messageId: 'unsafeOutputInSQL' }],
-    },
-    // Untracked binding still caught by the source-pattern fallback
-    {
-      code: `db.query(\`SELECT * FROM users WHERE name = '\${payload.aiOutput}'\`);`,
-      errors: [{ messageId: 'unsafeOutputInSQL' }],
-    },
-  ]),
-});
+        errors: [{ messageId: 'unsafeOutputInSQL' }],
+      },
+      // Untracked binding still caught by the source-pattern fallback
+      {
+        code: `db.query(\`SELECT * FROM users WHERE name = '\${payload.aiOutput}'\`);`,
+        errors: [{ messageId: 'unsafeOutputInSQL' }],
+      },
+    ]),
+  },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md)
@@ -228,93 +233,96 @@ ruleTester.run('no-unsafe-output-handling (SQL interpolation)', noUnsafeOutputHa
 // are model-chosen by the SDK's contract, so they count as model output.
 // ─────────────────────────────────────────────────────────────────────────────
 const jsx = { parserOptions: { ecmaFeatures: { jsx: true } } };
-ruleTester.run('no-unsafe-output-handling (fp-fn audit)', noUnsafeOutputHandling, {
-  valid: xai([
-    {
-      name: 'RegExp#exec parses model output; it executes nothing',
-      code: `
+ruleTester.run(
+  'no-unsafe-output-handling (fp-fn audit)',
+  noUnsafeOutputHandling,
+  {
+    valid: xai([
+      {
+        name: 'RegExp#exec parses model output; it executes nothing',
+        code: `
         const result = await generateText({ prompt: 'x' });
         const fence = /\`\`\`json([\\s\\S]*?)\`\`\`/.exec(result.text);
         const pattern = /Answer: (.*)/;
         const m = pattern.exec(result.text);
       `,
-    },
-    {
-      name: 'sanitized HTML assigned to innerHTML',
-      code: `
+      },
+      {
+        name: 'sanitized HTML assigned to innerHTML',
+        code: `
         const result = await generateText({ prompt: 'x' });
         el.innerHTML = DOMPurify.sanitize(result.text);
       `,
-    },
-    {
-      name: 'a function whose name merely contains "eval" is not eval',
-      code: `
+      },
+      {
+        name: 'a function whose name merely contains "eval" is not eval',
+        code: `
         const result = await generateText({ prompt: 'x' });
         const score = await evaluateAnswer(result.text, 'rubric');
       `,
-    },
-    {
-      name: 'a function whose name merely contains "run" is not a SQL sink',
-      code: `
+      },
+      {
+        name: 'a function whose name merely contains "run" is not a SQL sink',
+        code: `
         const result = await generateText({ prompt: 'x' });
         const preview = truncate(\`\${result.text}\`, 120);
       `,
-    },
-    {
-      name: 'a tool that fetches a fixed host with the model input as a query value is not SSRF',
-      code: `
+      },
+      {
+        name: 'a tool that fetches a fixed host with the model input as a query value is not SSRF',
+        code: `
         const weather = tool({
           inputSchema,
           execute: async ({ city }) => fetch(\`https://api.weather.example/v1?q=\${city}\`),
         });
       `,
-    },
-    {
-      name: 'a tool parameter bound as a query parameter is not SQL injection',
-      code: `
+      },
+      {
+        name: 'a tool parameter bound as a query parameter is not SQL injection',
+        code: `
         const lookup = tool({
           inputSchema,
           execute: async ({ id }) => db.query('SELECT * FROM t WHERE id = $1', [id]),
         });
       `,
-    },
-    {
-      name: 'an execute() that is not a tool definition does not seed model output',
-      code: `
+      },
+      {
+        name: 'an execute() that is not a tool definition does not seed model output',
+        code: `
         const job = { execute: async ({ command }) => execSync(command) };
       `,
-    },
-    {
-      name: 'exec imported from a module other than child_process is not a shell sink',
-      code: `
+      },
+      {
+        name: 'exec imported from a module other than child_process is not a shell sink',
+        code: `
         import { exec } from './my-runner';
         const { text } = await generateText({ prompt: 'x' });
         exec(text);
       `,
-    },
-    {
-      name: 'a local function named Function is not the Function constructor',
-      code: `
+      },
+      {
+        name: 'a local function named Function is not the Function constructor',
+        code: `
         function Function(x) { return x; }
         const { text } = await generateText({ prompt: 'x' });
         new Function(text);
       `,
-    },
-    {
-      name: 'dangerouslySetInnerHTML with non-model content',
-      code: `export const A = () => <div dangerouslySetInnerHTML={{ __html: staticHtml }} />;`,
-      languageOptions: jsx,
-    },
-    {
-      name: 'a dangerouslySetInnerHTML value that is not an object literal is not inspected',
-      code: `export const A = () => <div dangerouslySetInnerHTML={html} />;`,
-      languageOptions: jsx,
-    },
-  ]),
-  invalid: xai([
-    {
-      name: 'tool execute runs a model-chosen shell command',
-      code: `
+      },
+      {
+        name: 'dangerouslySetInnerHTML with non-model content',
+        code: `export const A = () => <div dangerouslySetInnerHTML={{ __html: staticHtml }} />;`,
+        languageOptions: jsx,
+      },
+      {
+        name: 'a dangerouslySetInnerHTML value that is not an object literal is not inspected',
+        code: `export const A = () => <div dangerouslySetInnerHTML={html} />;`,
+        languageOptions: jsx,
+      },
+    ]),
+    invalid: xai([
+      {
+        name: 'tool execute runs a model-chosen shell command',
+        code: `
         import { execSync } from 'node:child_process';
         const runCommand = tool({
           description: 'Run a shell command',
@@ -322,214 +330,221 @@ ruleTester.run('no-unsafe-output-handling (fp-fn audit)', noUnsafeOutputHandling
           execute: async ({ command }) => execSync(command).toString(),
         });
       `,
-      errors: [{ messageId: 'unsafeOutputExecution' }],
-    },
-    {
-      name: 'method-form execute interpolates model input into a shell command',
-      code: `
+        errors: [{ messageId: 'unsafeOutputExecution' }],
+      },
+      {
+        name: 'method-form execute interpolates model input into a shell command',
+        code: `
         import * as cp from 'child_process';
         const tools = {
           list: tool({ inputSchema, async execute({ dir }) { return cp.exec(\`ls \${dir}\`); } }),
         };
       `,
-      errors: [{ messageId: 'unsafeOutputExecution' }],
-    },
-    {
-      name: 'object-literal tool (has inputSchema) passes model SQL to sql.unsafe',
-      code: `
+        errors: [{ messageId: 'unsafeOutputExecution' }],
+      },
+      {
+        name: 'object-literal tool (has inputSchema) passes model SQL to sql.unsafe',
+        code: `
         const tools = {
           queryDb: { inputSchema, execute: async ({ q }) => sql.unsafe(q) },
         };
       `,
-      errors: [{ messageId: 'unsafeOutputInSQL' }],
-    },
-    {
-      name: 'tool fetches a model-chosen URL (SSRF)',
-      code: `
+        errors: [{ messageId: 'unsafeOutputInSQL' }],
+      },
+      {
+        name: 'tool fetches a model-chosen URL (SSRF)',
+        code: `
         const fetchUrl = tool({ inputSchema, execute: async ({ url }) => (await fetch(url)).text() });
       `,
-      errors: [{ messageId: 'unsafeOutputInRequest' }],
-    },
-    {
-      name: 'tool fetches a URL whose host the model chooses',
-      code: `
+        errors: [{ messageId: 'unsafeOutputInRequest' }],
+      },
+      {
+        name: 'tool fetches a URL whose host the model chooses',
+        code: `
         const fetchUrl = dynamicTool({ inputSchema, execute: async ({ host }) => fetch(\`\${host}/admin\`) });
       `,
-      errors: [{ messageId: 'unsafeOutputInRequest' }],
-    },
-    {
-      name: 'new Function on model output',
-      code: `
+        errors: [{ messageId: 'unsafeOutputInRequest' }],
+      },
+      {
+        name: 'new Function on model output',
+        code: `
         const { text } = await generateText({ prompt: 'x' });
         const fn = new Function(text);
       `,
-      errors: [{ messageId: 'unsafeOutputExecution' }],
-    },
-    {
-      name: 'node:vm on model output',
-      code: `
+        errors: [{ messageId: 'unsafeOutputExecution' }],
+      },
+      {
+        name: 'node:vm on model output',
+        code: `
         import vm from 'node:vm';
         const { text } = await generateText({ prompt: 'x' });
         vm.runInNewContext(text);
         new vm.Script(text);
       `,
-      errors: [{ messageId: 'unsafeOutputExecution' }, { messageId: 'unsafeOutputExecution' }],
-    },
-    {
-      name: 'v5 streamText result awaited into a variable, then eval-ed',
-      code: `
+        errors: [
+          { messageId: 'unsafeOutputExecution' },
+          { messageId: 'unsafeOutputExecution' },
+        ],
+      },
+      {
+        name: 'v5 streamText result awaited into a variable, then eval-ed',
+        code: `
         const r = streamText({ prompt: 'write js' });
         const code = await r.text;
         eval(code);
       `,
-      errors: [{ messageId: 'unsafeOutputExecution' }],
-    },
-    {
-      name: 'a property read straight off the awaited call',
-      code: `
+        errors: [{ messageId: 'unsafeOutputExecution' }],
+      },
+      {
+        name: 'a property read straight off the awaited call',
+        code: `
         const out = (await generateText({ prompt: 'x' })).text;
         eval(out);
       `,
-      errors: [{ messageId: 'unsafeOutputExecution' }],
-    },
-    {
-      name: 'a string method on model output is still model output',
-      code: `
+        errors: [{ messageId: 'unsafeOutputExecution' }],
+      },
+      {
+        name: 'a string method on model output is still model output',
+        code: `
         const { text } = await generateText({ prompt: 'x' });
         eval(text.trim());
       `,
-      errors: [{ messageId: 'unsafeOutputExecution' }],
-    },
-    {
-      name: 'model output rendered through dangerouslySetInnerHTML',
-      code: `
+        errors: [{ messageId: 'unsafeOutputExecution' }],
+      },
+      {
+        name: 'model output rendered through dangerouslySetInnerHTML',
+        code: `
         const result = await generateText({ prompt: 'x' });
         export const A = () => <div dangerouslySetInnerHTML={{ __html: result.text }} />;
       `,
-      languageOptions: jsx,
-      errors: [{ messageId: 'unsafeOutputInHTML' }],
-    },
-    {
-      name: 'model SQL passed as the whole query string',
-      code: `
+        languageOptions: jsx,
+        errors: [{ messageId: 'unsafeOutputInHTML' }],
+      },
+      {
+        name: 'model SQL passed as the whole query string',
+        code: `
         const { text } = await generateText({ prompt: 'write sql' });
         await db.query(text);
       `,
-      errors: [{ messageId: 'unsafeOutputInSQL' }],
-    },
-  ]),
-});
+        errors: [{ messageId: 'unsafeOutputInSQL' }],
+      },
+    ]),
+  },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Zero-deferral pass 2026-10-11: model output reaching dangerouslySetInnerHTML
 // through a component prop typed with an AI SDK message type, a useChat /
 // useCompletion result, or `.map(m => <C m={m} />)` into a same-file component.
 // ─────────────────────────────────────────────────────────────────────────────
-ruleTester.run('no-unsafe-output-handling (UI message flow)', noUnsafeOutputHandling, {
-  valid: xai([
-    {
-      // guard reasoned from X-FN-2b: a prop typed with the app's own type is not model output
-      name: 'guard: a prop typed with a non-SDK type rendered as HTML',
-      code: `
+ruleTester.run(
+  'no-unsafe-output-handling (UI message flow)',
+  noUnsafeOutputHandling,
+  {
+    valid: xai([
+      {
+        // guard reasoned from X-FN-2b: a prop typed with the app's own type is not model output
+        name: 'guard: a prop typed with a non-SDK type rendered as HTML',
+        code: `
         type Article = { html: string };
         export function Body({ a }: { a: Article }) {
           return <div dangerouslySetInnerHTML={{ __html: a.html }} />;
         }
       `,
-      languageOptions: jsx,
-    },
-    {
-      // guard reasoned from X-FN-2b: a same-file component fed only static content
-      name: 'guard: a same-file component whose only caller passes static HTML',
-      code: `
+        languageOptions: jsx,
+      },
+      {
+        // guard reasoned from X-FN-2b: a same-file component fed only static content
+        name: 'guard: a same-file component whose only caller passes static HTML',
+        code: `
         const LEGAL = { body: '<p>Terms</p>' };
         function Bubble({ m }) { return <div dangerouslySetInnerHTML={{ __html: m.body }} />; }
         export const Page = () => <Bubble m={LEGAL} />;
       `,
-      languageOptions: jsx,
-    },
-    {
-      name: 'a function in a non-execute property of a tool-shaped object is not a tool input',
-      code: `
+        languageOptions: jsx,
+      },
+      {
+        name: 'a function in a non-execute property of a tool-shaped object is not a tool input',
+        code: `
         import { execSync } from 'node:child_process';
         const t = tool({ inputSchema, onInput: async ({ cmd }) => execSync(cmd), execute: async () => ({}) });
       `,
-    },
-    {
-      name: 'a prop typed through an interface with no SDK type',
-      code: `
+      },
+      {
+        name: 'a prop typed through an interface with no SDK type',
+        code: `
         interface Props { m: { html: string } }
         export function Body({ m }: Props) { return <div dangerouslySetInnerHTML={{ __html: m.html }} />; }
       `,
-      languageOptions: jsx,
-    },
-    {
-      name: 'a prop typed with an unresolvable type name, or with mutually recursive aliases',
-      code: `
+        languageOptions: jsx,
+      },
+      {
+        name: 'a prop typed with an unresolvable type name, or with mutually recursive aliases',
+        code: `
         type A = { next: B }; type B = { prev: A };
         export function One({ m }: Unknown) { return <div dangerouslySetInnerHTML={{ __html: m.html }} />; }
         export function Two({ m }: { m: A }) { return <div dangerouslySetInnerHTML={{ __html: m.html }} />; }
         export function Three({ m }: { m: string }) { return <div dangerouslySetInnerHTML={{ __html: m }} />; }
         export function Four({ m }: Unknown.Thing) { return <div dangerouslySetInnerHTML={{ __html: m.html }} />; }
       `,
-      languageOptions: jsx,
-    },
-    {
-      // guard reasoned from X-FN-2b: a hook with the same name from another package
-      name: 'guard: useChat imported from a non-SDK package',
-      code: `
+        languageOptions: jsx,
+      },
+      {
+        // guard reasoned from X-FN-2b: a hook with the same name from another package
+        name: 'guard: useChat imported from a non-SDK package',
+        code: `
         import { useChat } from '@kapaai/react-sdk';
         export function Chat() {
           const { messages } = useChat();
           return messages.map((m) => <div dangerouslySetInnerHTML={{ __html: m.answer }} />);
         }
       `,
-      languageOptions: jsx,
-    },
-  ]),
-  invalid: xai([
-    {
-      // @found X-FN-2b, harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md)
-      name: 'FN: a component prop typed as the SDK UIMessage rendered as HTML',
-      code: `
+        languageOptions: jsx,
+      },
+    ]),
+    invalid: xai([
+      {
+        // @found X-FN-2b, harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md)
+        name: 'FN: a component prop typed as the SDK UIMessage rendered as HTML',
+        code: `
         import type { UIMessage } from 'ai';
         export function Msg({ m }: { m: UIMessage }) {
           return <div dangerouslySetInnerHTML={{ __html: m.parts.map((p) => p.text).join('') }} />;
         }
       `,
-      languageOptions: jsx,
-      errors: [{ messageId: 'unsafeOutputInHTML' }],
-    },
-    {
-      // @found reasoned from X-FN-2b: the same type through a same-file props alias
-      name: 'FN: a props alias whose field is an SDK message type',
-      code: `
+        languageOptions: jsx,
+        errors: [{ messageId: 'unsafeOutputInHTML' }],
+      },
+      {
+        // @found reasoned from X-FN-2b: the same type through a same-file props alias
+        name: 'FN: a props alias whose field is an SDK message type',
+        code: `
         import type { Message } from '@ai-sdk/react';
         type Props = { message: Message };
         export function Msg(props: Props) {
           return <div dangerouslySetInnerHTML={{ __html: props.message.content }} />;
         }
       `,
-      languageOptions: jsx,
-      errors: [{ messageId: 'unsafeOutputInHTML' }],
-    },
-    {
-      // @found reasoned from X-FN-2b: the SDK type behind a same-file interface and a qualified name
-      name: 'FN: a destructured prop whose interface field is an SDK message type',
-      code: `
+        languageOptions: jsx,
+        errors: [{ messageId: 'unsafeOutputInHTML' }],
+      },
+      {
+        // @found reasoned from X-FN-2b: the SDK type behind a same-file interface and a qualified name
+        name: 'FN: a destructured prop whose interface field is an SDK message type',
+        code: `
         import * as ai from 'ai';
         interface Props { m: ai.UIMessage }
         export function Msg({ m }: Props) {
           return <div dangerouslySetInnerHTML={{ __html: JSON.stringify(m.parts) }} />;
         }
       `,
-      languageOptions: jsx,
-      errors: [{ messageId: 'unsafeOutputInHTML' }],
-    },
-    {
-      // @found residual "Model Output Passed Through Another Variable or Helper" in docs/rules/no-unsafe-output-handling.md (2026-10-10)
-      name: 'FN: model output wrapped by a same-file helper and a second variable before eval',
-      code: `
+        languageOptions: jsx,
+        errors: [{ messageId: 'unsafeOutputInHTML' }],
+      },
+      {
+        // @found residual "Model Output Passed Through Another Variable or Helper" in docs/rules/no-unsafe-output-handling.md (2026-10-10)
+        name: 'FN: model output wrapped by a same-file helper and a second variable before eval',
+        code: `
         function wrap(t) { return \`(\${t.trim()})\`; }
         const { text } = await generateText({ prompt: 'write js' });
         const foo = wrap(text);
@@ -537,25 +552,25 @@ ruleTester.run('no-unsafe-output-handling (UI message flow)', noUnsafeOutputHand
         bar = foo;
         eval(bar);
       `,
-      errors: [{ messageId: 'unsafeOutputExecution' }],
-    },
-    {
-      // @found reasoned from X-FN-2b: useChat messages rendered in the same file
-      name: 'FN: useChat messages rendered as HTML',
-      code: `
+        errors: [{ messageId: 'unsafeOutputExecution' }],
+      },
+      {
+        // @found reasoned from X-FN-2b: useChat messages rendered in the same file
+        name: 'FN: useChat messages rendered as HTML',
+        code: `
         import { useChat } from '@ai-sdk/react';
         export function Chat() {
           const { messages } = useChat();
           return messages.map((m) => <div dangerouslySetInnerHTML={{ __html: m.content }} />);
         }
       `,
-      languageOptions: jsx,
-      errors: [{ messageId: 'unsafeOutputInHTML' }],
-    },
-    {
-      // @found reasoned from X-FN-2b: useChat messages passed into a same-file component
-      name: 'FN: useChat messages mapped into a same-file component that renders HTML',
-      code: `
+        languageOptions: jsx,
+        errors: [{ messageId: 'unsafeOutputInHTML' }],
+      },
+      {
+        // @found reasoned from X-FN-2b: useChat messages passed into a same-file component
+        name: 'FN: useChat messages mapped into a same-file component that renders HTML',
+        code: `
         import { useChat } from '@ai-sdk/react';
         function Bubble({ m }) { return <div dangerouslySetInnerHTML={{ __html: m.content }} />; }
         export function Chat() {
@@ -563,13 +578,13 @@ ruleTester.run('no-unsafe-output-handling (UI message flow)', noUnsafeOutputHand
           return <div>{messages.map((m) => <Bubble key={m.id} m={m} />)}</div>;
         }
       `,
-      languageOptions: jsx,
-      errors: [{ messageId: 'unsafeOutputInHTML' }],
-    },
-    {
-      // @found reasoned from X-FN-2b: useCompletion's completion string
-      name: 'FN: a useCompletion completion rendered as HTML',
-      code: `
+        languageOptions: jsx,
+        errors: [{ messageId: 'unsafeOutputInHTML' }],
+      },
+      {
+        // @found reasoned from X-FN-2b: useCompletion's completion string
+        name: 'FN: a useCompletion completion rendered as HTML',
+        code: `
         import { useCompletion } from 'ai/react';
         export function Box() {
           // renamed on purpose: the name pattern \`completion\` must not be what fires
@@ -577,8 +592,117 @@ ruleTester.run('no-unsafe-output-handling (UI message flow)', noUnsafeOutputHand
           return <div dangerouslySetInnerHTML={{ __html: foo }} />;
         }
       `,
-      languageOptions: jsx,
-      errors: [{ messageId: 'unsafeOutputInHTML' }],
-    },
-  ]),
-});
+        languageOptions: jsx,
+        errors: [{ messageId: 'unsafeOutputInHTML' }],
+      },
+    ]),
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run(
+  'no-unsafe-output-handling (mutation audit)',
+  noUnsafeOutputHandling,
+  {
+    valid: xai([
+      {
+        name: 'a vm function that compiles nothing is not a sink',
+        code: `
+        import vm from 'vm';
+        const result = await generateText({ prompt: 'x' });
+        vm.isContext(result.text);
+      `,
+      },
+      {
+        name: "lodash's runInContext shares a vm function's name but runs no code",
+        code: `
+        import _ from 'lodash';
+        const result = await generateText({ prompt: 'x' });
+        _.runInContext(result.text);
+      `,
+      },
+      {
+        name: 'a vm constructor that compiles nothing is not a sink',
+        code: `
+        import vm from 'vm';
+        const result = await generateText({ prompt: 'x' });
+        new vm.SyntheticModule([result.text], () => {});
+      `,
+      },
+      {
+        name: 'an object with a spread and no visible schema key is not a tool definition',
+        code: `const tools = { run: { ...shared, execute: async ({ code }) => eval(code) } };`,
+      },
+      {
+        name: 'a { __html } object on an attribute other than dangerouslySetInnerHTML is not a sink',
+        code: `
+        const result = await generateText({ prompt: 'x' });
+        export const A = () => <Preview data={{ __html: result.text }} />;
+      `,
+        languageOptions: jsx,
+      },
+      {
+        name: 'a string-valued dangerouslySetInnerHTML is not inspected',
+        code: `export const A = () => <div dangerouslySetInnerHTML="static" />;`,
+        languageOptions: jsx,
+      },
+      {
+        name: 'a valueless dangerouslySetInnerHTML is not inspected',
+        code: `export const A = () => <div dangerouslySetInnerHTML />;`,
+        languageOptions: jsx,
+      },
+      {
+        name: 'a spread inside the __html object is not the __html key',
+        code: `export const A = () => <div dangerouslySetInnerHTML={{ ...sanitized }} />;`,
+        languageOptions: jsx,
+      },
+      {
+        name: 'only the __html key of the object is rendered as HTML',
+        code: `
+        const result = await generateText({ prompt: 'x' });
+        export const A = () => <div dangerouslySetInnerHTML={{ __html: safeHtml, title: result.text }} />;
+      `,
+        languageOptions: jsx,
+      },
+    ]),
+    invalid: xai([
+      {
+        name: 'a namespace-qualified ai.generateText result is model output',
+        code: `
+        const { text: code } = await ai.generateText({ prompt: 'x' });
+        eval(code);
+      `,
+        errors: [{ messageId: 'unsafeOutputExecution' }],
+      },
+      {
+        name: 'a plain reference named like model output is reported',
+        code: `function run(aiResponse) { eval(aiResponse); }`,
+        errors: [{ messageId: 'unsafeOutputExecution' }],
+      },
+      {
+        name: 'one model-output expression in a template is enough',
+        code: `
+        const result = await generateText({ prompt: 'x' });
+        eval(\`\${prefix}\${result.text}\`);
+      `,
+        errors: [{ messageId: 'unsafeOutputExecution' }],
+      },
+      {
+        name: 'the parameters of a tool() execute are filled by the model',
+        code: `const t = tool({ description: 'run', execute: async ({ code }) => eval(code) });`,
+        errors: [{ messageId: 'unsafeOutputExecution' }],
+      },
+      {
+        // @found mutation testing
+        name: 'FN: a bracketed innerHTML assignment is the same sink',
+        code: `
+        const result = await generateText({ prompt: 'x' });
+        element['innerHTML'] = result.text;
+      `,
+        errors: [{ messageId: 'unsafeOutputInHTML' }],
+      },
+    ]),
+  },
+);

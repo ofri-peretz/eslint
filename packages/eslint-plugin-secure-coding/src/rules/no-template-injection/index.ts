@@ -18,7 +18,7 @@
  *   Handlebars.compile(content)           — silent (nothing says where it came from)
  *
  * Covered engines: Handlebars, EJS, Pug/Jade, Mustache, Nunjucks, Swig,
- *   Dust, doT, and their common aliases.
+ *   Dust, doT, Lodash/Underscore `template`, and their common aliases.
  */
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -30,6 +30,7 @@ import {
   unwrapTypeSyntax,
   namesOneOf,
   propertyName,
+  resolveModuleBinding,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'templateInjection';
@@ -156,6 +157,55 @@ const DEFAULT_TEMPLATE_ENGINES = [
   'doT',
   'consolidate',
 ];
+
+/**
+ * Engine packages, by npm specifier, whose module root exposes the compile and
+ * render methods above.
+ *
+ * @protocol-constant Each entry is the published package of an engine the docs
+ * list. A receiver that RESOLVES to one of them is the engine whatever the
+ * local binding is called — `import hbs from 'handlebars'` and
+ * `const { compile } = require('handlebars')` compile the same template as
+ * `Handlebars.compile`, and name-matching alone missed both.
+ */
+const ENGINE_MODULES: ReadonlySet<string> = new Set([
+  'handlebars',
+  'ejs',
+  'pug',
+  'jade',
+  'mustache',
+  'nunjucks',
+  'swig',
+  'dustjs-linkedin',
+  'dot',
+  'consolidate',
+]);
+
+/**
+ * Utility belts whose ONLY template entry point is `template`.
+ *
+ * @protocol-constant `_.template` compiles its string argument into a function
+ * body, exactly as `Handlebars.compile` does. The rest of the belt is not a
+ * template API — `_.create(proto)` builds an object — so these modules are
+ * matched on `template` alone, and only through the import: `_` is far too
+ * common a name to be evidence by itself.
+ */
+const TEMPLATE_UTILITY_MODULES: ReadonlySet<string> = new Set([
+  'lodash',
+  'lodash-es',
+  'underscore',
+]);
+
+/**
+ * Does the module-resolved `path` (export path from a module root) name a
+ * template entry point of `module`? Only a direct method of the root counts.
+ */
+function isEngineMethod(module: string, path: readonly string[]): boolean {
+  if (path.length !== 1) return false;
+  const [method] = path as [string];
+  if (TEMPLATE_UTILITY_MODULES.has(module)) return method === 'template';
+  return ENGINE_MODULES.has(module) && ALL_TEMPLATE_METHODS.has(method);
+}
 
 /**
  * Identifier roots that denote an inbound request.
@@ -488,6 +538,44 @@ export const noTemplateInjection = createRule<RuleOptions, MessageIds>({
     let engines: Set<string>;
     let vocabulary: Vocabulary;
 
+    /**
+     * The engine and method a call reaches, or null when it is not a template
+     * entry point. A receiver whose NAME is a configured engine is one; so is a
+     * receiver or callee that resolves to an engine package's export.
+     */
+    function engineCall(
+      callee: TSESTree.Expression,
+    ): { engineName: string; methodName: string } | null {
+      const binding = resolveModuleBinding(
+        callee,
+        context.sourceCode.getScope(callee),
+      );
+      if (
+        binding !== undefined &&
+        isEngineMethod(binding.module, binding.path)
+      ) {
+        // `const { compile } = require('handlebars'); compile(tpl)` and
+        // `const _ = require('lodash'); _.template(tpl)`.
+        return {
+          engineName:
+            callee.type === AST_NODE_TYPES.MemberExpression &&
+            callee.object.type === AST_NODE_TYPES.Identifier
+              ? callee.object.name
+              : binding.module,
+          methodName: binding.path.join('.'),
+        };
+      }
+      if (callee.type !== AST_NODE_TYPES.MemberExpression) return null;
+      const { object } = callee;
+      if (object.type !== AST_NODE_TYPES.Identifier) return null;
+      // `Handlebars['compile'](tpl)` compiles the same template.
+      const methodName = propertyName(callee);
+      if (methodName === null) return null;
+      if (!engines.has(object.name)) return null;
+      if (!ALL_TEMPLATE_METHODS.has(methodName)) return null;
+      return { engineName: object.name, methodName };
+    }
+
     return {
       before() {
         // Read the raw user options rather than the defaults-merged parameter: the
@@ -516,18 +604,9 @@ export const noTemplateInjection = createRule<RuleOptions, MessageIds>({
       },
       CallExpression(node: TSESTree.CallExpression) {
         const { callee, arguments: args } = node;
-        if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
-
-        const { object } = callee;
-        if (object.type !== AST_NODE_TYPES.Identifier) return;
-        // `Handlebars['compile'](tpl)` compiles the same template.
-        const methodName = propertyName(callee);
-        if (methodName === null) return;
-
-        const engineName = object.name;
-
-        if (!engines.has(engineName)) return;
-        if (!ALL_TEMPLATE_METHODS.has(methodName)) return;
+        const target = engineCall(callee);
+        if (target === null) return;
+        const { engineName, methodName } = target;
 
         const firstArg = args[0];
         if (!firstArg) return;

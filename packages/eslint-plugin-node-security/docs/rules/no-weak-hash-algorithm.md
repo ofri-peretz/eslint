@@ -246,8 +246,11 @@ caches, and cache busting.
 A hash **assigned to** a name in `nonCryptographicNames` is not reported. The
 test is where the value lands, not which API produced it: the rule walks out
 through the `.update(...).digest(...)` receiver chain and reads the assignment
-target. A hash that is returned, passed as an argument, compared, or stored
-under a computed key is not exempted **by this rule** — so renaming a variable
+target — a variable, an object key (`{ 'cache-key': … }` and
+`{ ['cache-key']: … }` alike) or a class field (`class Asset { etag = … }`,
+`#etag` too); the same target names a security use (`class Session { token = … }`).
+A hash that is returned, passed as an argument, compared, or stored
+under a key held in a variable is not exempted **by this rule** — so renaming a variable
 to `sha` cannot silence a hash the classifier had already decided to report.
 
 That is a statement about the `nonCryptographicNames` exemption only, and it is

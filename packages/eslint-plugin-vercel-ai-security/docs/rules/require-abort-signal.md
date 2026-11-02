@@ -10,8 +10,8 @@ autofix: false
 
 > Ensures streaming calls have AbortSignal for graceful cancellation.
 
-
 <!-- @rule-summary -->
+
 This rule identifies streaming AI SDK calls (streamText, streamObject) that don't include an AbortSignal for cancella...
 <!-- @/rule-summary -->
 
@@ -24,7 +24,7 @@ This rule identifies streaming AI SDK calls (streamText, streamObject) that don'
 | **OWASP LLM**      | [LLM10: Unbounded Consumption](https://owasp.org/www-project-top-10-for-large-language-model-applications/) |
 | **CWE**            | [CWE-404: Improper Resource Shutdown](https://cwe.mitre.org/data/definitions/404.html)                      |
 | **CVSS**           | 4.0                                                                                                         |
-| **Config Default** | `off` (recommended), `error` (strict)                                                                        |
+| **Config Default** | `off` (recommended), `error` (strict)                                                                       |
 
 ## 🔍 What This Rule Detects
 
@@ -69,8 +69,8 @@ await streamObject({
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
+| Option            | Type       | Default                         | Description                             |
+| ----------------- | ---------- | ------------------------------- | --------------------------------------- |
 | `targetFunctions` | `string[]` | `["streamText","streamObject"]` | Functions that should have abort signal |
 
 ## 🛡️ Why This Matters
@@ -93,6 +93,12 @@ Without abort signals:
   by exact name.
 - Now `off` in `recommended`: CVSS 4, and it fired on the SDK quickstart route.
 - **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
+
+## 🔄 Changes from the fidelity model
+
+- A renamed import (`import { generateText as callModel } from 'ai'`, or the
+  same through `require`) is resolved through the import: `callModel()` is the
+  SDK function and is checked like it.
 
 ## Known False Negatives
 

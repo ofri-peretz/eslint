@@ -376,16 +376,16 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
       },
 
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        if (node.left.type === 'MemberExpression') {
-          const prop = node.left.property;
-          if (prop.type === 'Identifier' && prop.name === 'innerHTML') {
-            if (isLikelyAIOutput(node.right)) {
-              context.report({
-                node: node.right,
-                messageId: 'unsafeOutputInHTML',
-              });
-            }
-          }
+        // `el.innerHTML = …` and `el['innerHTML'] = …` are the same sink.
+        if (
+          node.left.type === 'MemberExpression' &&
+          propertyName(node.left) === 'innerHTML' &&
+          isLikelyAIOutput(node.right)
+        ) {
+          context.report({
+            node: node.right,
+            messageId: 'unsafeOutputInHTML',
+          });
         }
       },
 

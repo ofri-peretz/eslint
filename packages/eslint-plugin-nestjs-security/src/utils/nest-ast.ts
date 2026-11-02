@@ -21,8 +21,8 @@
  * Members reach their class in two `.parent` hops, so the state was never
  * needed. Keep new rules on these helpers.
  */
-import type { TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, resolveModuleBinding } from '@interlace/eslint-devkit';
 
 /** Classes a member can live in. */
 export type ClassNode = TSESTree.ClassDeclaration | TSESTree.ClassExpression;
@@ -163,6 +163,35 @@ export function expressionName(node: TSESTree.Node): string {
   }
 
   return '';
+}
+
+/**
+ * Whether `node` is `exportName` from `module`, however the file spelled the
+ * import: `import { ValidationPipe as VP }` makes `VP` the pipe,
+ * `import * as common` makes `common.ValidationPipe` the pipe, and so does a
+ * `require`. Matching the identifier's own name missed every one of those.
+ *
+ * A binding traced to another module is not the export, whatever it is called.
+ * A bare name that traces to no import at all — a global, or a class declared
+ * in this file — falls back to its spelling, which is all the file says about
+ * it. A member of an unresolved object (`nest.ValidationPipe` with no `nest`
+ * import) proves nothing and is not the export.
+ */
+export function isModuleExport(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+  module: string,
+  exportName: string,
+): boolean {
+  const binding = resolveModuleBinding(node, scope);
+  if (binding) {
+    return (
+      binding.module === module &&
+      binding.path.length === 1 &&
+      binding.path[0] === exportName
+    );
+  }
+  return node.type === AST_NODE_TYPES.Identifier && node.name === exportName;
 }
 
 /** The `CallExpression` behind a decorator, if it was invoked. */

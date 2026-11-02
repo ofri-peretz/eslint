@@ -233,6 +233,21 @@ describe('no-directive-injection', () => {
               },
             ],
           },
+          {
+            name: 'outerHTML parses its value as markup exactly like innerHTML',
+            code: 'element.outerHTML = userInput;',
+            errors: [{ messageId: 'dangerousInnerHTML' }],
+          },
+          {
+            name: 'outerHTML assigned request HTML is the same markup sink',
+            code: 'element.outerHTML = req.body.html;',
+            errors: [{ messageId: 'dangerousInnerHTML' }],
+          },
+          {
+            name: 'a template interpolating user input into outerHTML is one finding',
+            code: 'element.outerHTML = `<div>${userInput}</div>`;',
+            errors: [{ messageId: 'dangerousInnerHTML' }],
+          },
         ],
       },
     );
@@ -1365,6 +1380,7 @@ ruleTester.run(
     ],
     invalid: [
       {
+        name: 'innerHTML assigned from req.body is reported',
         code: 'function r(node, req) { node.innerHTML = req.body.html; }',
         errors: 1,
       },

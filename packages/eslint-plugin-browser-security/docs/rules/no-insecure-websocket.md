@@ -1,6 +1,6 @@
 ---
 title: no-insecure-websocket
-description: "CWE: [CWE-319](https://cwe.mitre.org/data/definitions/319.html)"
+description: 'CWE: [CWE-319](https://cwe.mitre.org/data/definitions/319.html)'
 tags: ['security', 'browser']
 category: security
 severity: medium
@@ -12,8 +12,8 @@ autofix: false
 > **CWE:** [CWE-319: Cleartext Transmission of Sensitive Information](https://cwe.mitre.org/data/definitions/319.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M5: Insufficient Communication Layer Security](https://owasp.org/www-project-mobile-top-10/)
 
-
 <!-- @rule-summary -->
+
 CWE: [CWE-319](https://cwe.mitre.org/data/definitions/319.html)
 <!-- @/rule-summary -->
 
@@ -25,7 +25,7 @@ ESLint Rule: no-insecure-websocket. This rule is part of [`eslint-plugin-browser
 | --------------- | ----------------------------------------- |
 | **Severity**    | High (Exposure)                           |
 | **Auto-Fix**    | ❌ No (requires protocol update)          |
-| **Category**   | Security |
+| **Category**    | Security                                  |
 | **ESLint MCP**  | ✅ Optimized for ESLint MCP integration   |
 | **Best For**    | Applications using real-time WebSockets   |
 | **Suggestions** | ✅ Advice on using secure wss:// protocol |
@@ -57,7 +57,9 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ## Rule Details
 
-WebSockets are often used for real-time communication. Using the insecure `ws://` protocol means all data is transmitted in plain text. This rule flags any string literal or `new WebSocket()` constructor call that uses the `ws://` protocol.
+WebSockets are often used for real-time communication. Using the insecure `ws://` protocol means all data is transmitted in plain text. This rule flags a `ws://` URL (any case of the scheme) written as a string literal or as a template literal whose static text fixes the `ws://` scheme — `` `ws://${host}/updates` `` is cleartext whatever host it resolves to — in a config constant, an endpoint map, a JSX prop, or any other position.
+
+**Partition:** the URL argument of `new WebSocket(…)` (or `new window.WebSocket(…)`) is owned by [`require-websocket-wss`](./require-websocket-wss.md), which reports it **with an autofix** to `wss://`; this rule stays silent there so one line draws one finding. A written-down loopback host (`ws://localhost:3000`) or an RFC 2606 reserved domain never leaves the machine and is not reported. A string being _tested_ for the scheme (`url.startsWith('ws://')`) is a guard, not a destination.
 
 ```mermaid
 %%{init: {
@@ -98,11 +100,14 @@ This rule has no configuration options in the current version.
 ### ❌ Incorrect
 
 ```javascript
-// Insecure WebSocket connection
-const socket = new WebSocket('ws://api.example.com/updates');
-
 // Insecure URL as a string literal
 const socketUrl = 'ws://chat.internal.net';
+
+// A template with a fixed ws:// scheme
+const feeds = { live: `ws://${host}/updates` };
+
+// Reported by require-websocket-wss (with an autofix), not this rule:
+const socket = new WebSocket('ws://api.example.com/updates');
 ```
 
 ### ✅ Correct

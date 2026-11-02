@@ -49,6 +49,7 @@ import {
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import { isAnalyticsTransmission } from '../../utils/analytics-sinks';
+import { resolveInitializer } from '../../utils/resolve-binding';
 
 type MessageIds = 'violationDetected';
 
@@ -158,32 +159,64 @@ export const noTrackingWithoutConsent = createRule<RuleOptions, MessageIds>({
      * the vocabulary wrong costs recall, which is why it is configurable
      * rather than hardcoded.
      */
-    function mentionsConsent(node: TSESTree.Node, depth = 0): boolean {
-      // A test expression deep enough to exhaust this is not a consent check.
-      if (depth > 8) return false;
-      switch (node.type) {
-        case 'Identifier':
-          return words.some((w) => normalize(node.name).includes(w));
-        case 'MemberExpression':
-          return (
-            mentionsConsent(node.object, depth + 1) ||
-            (!node.computed && mentionsConsent(node.property, depth + 1))
-          );
-        case 'CallExpression':
-          return mentionsConsent(node.callee, depth + 1);
-        case 'UnaryExpression':
-          return mentionsConsent(node.argument, depth + 1);
-        case 'LogicalExpression':
-        case 'BinaryExpression':
-          return (
-            mentionsConsent(node.left as TSESTree.Node, depth + 1) ||
-            mentionsConsent(node.right, depth + 1)
-          );
-        case 'AwaitExpression':
-          return mentionsConsent(node.argument, depth + 1);
-        default:
-          return false;
-      }
+    function mentionsConsent(
+      node: TSESTree.Node,
+      seen: Map<TSESTree.Node, boolean | null> = new Map(),
+    ): boolean {
+      // No depth cap: a cap of 8 gave up on a long `hasConsent && a && b && …`
+      // chain and reported a guarded call. Termination is guaranteed by the
+      // visited-map instead. The walk follows `const` bindings to their
+      // initialisers, so a self-referencing binding (`const ok = ok && x`)
+      // would otherwise resolve to the same initialiser forever.
+      //
+      // `null` marks a node still being read: meeting it again is a cycle, and
+      // a cycle proves nothing. A node already read answers from the map, so
+      // `if (c || c)` reads the same consent twice rather than calling the
+      // second read a cycle, and the walk stays linear in the nodes it meets.
+      const known = seen.get(node);
+      if (known !== undefined) return known === true;
+      seen.set(node, null);
+      const read = (): boolean => {
+        switch (node.type) {
+          case 'Identifier': {
+            if (words.some((w) => normalize(node.name).includes(w)))
+              return true;
+            // `const allowed = hasConsent && region !== 'EU'; if (allowed) …`
+            // guards the call exactly as the inline test does. Resolved
+            // through scope, and only for a binding written once.
+            const init = resolveInitializer(node, context.sourceCode);
+            return init !== undefined && mentionsConsent(init, seen);
+          }
+          case 'MemberExpression':
+            return (
+              mentionsConsent(node.object, seen) ||
+              (!node.computed && mentionsConsent(node.property, seen))
+            );
+          case 'CallExpression':
+            return mentionsConsent(node.callee, seen);
+          case 'UnaryExpression':
+            return mentionsConsent(node.argument, seen);
+          case 'LogicalExpression': {
+            const left = mentionsConsent(node.left, seen);
+            const right = mentionsConsent(node.right, seen);
+            // `hasConsent || isAdmin` is true for every admin who refused, so
+            // an OR proves consent only when BOTH of its operands read it.
+            return node.operator === '||' ? left && right : left || right;
+          }
+          case 'BinaryExpression':
+            return (
+              mentionsConsent(node.left as TSESTree.Node, seen) ||
+              mentionsConsent(node.right, seen)
+            );
+          case 'AwaitExpression':
+            return mentionsConsent(node.argument, seen);
+          default:
+            return false;
+        }
+      };
+      const result = read();
+      seen.set(node, result);
+      return result;
     }
 
     /**
@@ -234,14 +267,6 @@ export const noTrackingWithoutConsent = createRule<RuleOptions, MessageIds>({
       return { consent: mentionsConsent(current), negated };
     }
 
-    /** Is `node` within `range`? */
-    function within(node: TSESTree.Node, container: TSESTree.Node): boolean {
-      return (
-        node.range[0] >= container.range[0] &&
-        node.range[1] <= container.range[1]
-      );
-    }
-
     /**
      * Is this call reached only when consent was GRANTED?
      *
@@ -258,7 +283,8 @@ export const noTrackingWithoutConsent = createRule<RuleOptions, MessageIds>({
         if (current.type === 'IfStatement') {
           const { consent, negated } = analyzeTest(current.test);
           if (consent) {
-            const inConsequent = within(child, current.consequent);
+            // `child` is a direct child: the test, the consequent or the alternate.
+            const inConsequent = child === current.consequent;
             // Consequent runs when the test is true; with `!`, that means
             // consent was REFUSED.
             if (inConsequent ? !negated : negated) return true;
@@ -266,7 +292,8 @@ export const noTrackingWithoutConsent = createRule<RuleOptions, MessageIds>({
         } else if (current.type === 'ConditionalExpression') {
           const { consent, negated } = analyzeTest(current.test);
           if (consent) {
-            const inConsequent = within(child, current.consequent);
+            // `child` is a direct child: the test, the consequent or the alternate.
+            const inConsequent = child === current.consequent;
             if (inConsequent ? !negated : negated) return true;
           }
         } else if (

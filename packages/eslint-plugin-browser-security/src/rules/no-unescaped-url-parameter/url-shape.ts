@@ -28,6 +28,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, staticString } from '@interlace/eslint-devkit';
 import { resolveInitializer } from '../../utils/resolve-binding';
+import { isArithmetic } from './untrusted-text';
 
 /** One interpolation, and where its result lands in the assembled URL text. */
 export interface UrlHole {
@@ -48,9 +49,6 @@ interface Accumulator {
 
 /** `https://`, `ftp://`, or the protocol-relative `//`. */
 const AUTHORITY_PREFIX = /^(?:[a-z][a-z0-9+.-]*:)?\/\//i;
-
-/** A path, a query or a fragment — anything a relative URL may start with. */
-const RELATIVE_PREFIX = /^[./?#]/;
 
 function collect(
   node: TSESTree.Node,
@@ -74,9 +72,13 @@ function collect(
 
   // `#field in obj` is the only shape whose left is a PrivateIdentifier, and
   // its operator is `in` — so the `+` test already excludes it.
+  // A numeric `+` — `(term + 1)` inside the chain — adds numbers, not text,
+  // so it is ONE hole, exactly as `${term + 1}` is in the template form.
+  // Flattening it made `term` a raw hole of its own.
   if (
     node.type === AST_NODE_TYPES.BinaryExpression &&
-    node.operator === '+'
+    node.operator === '+' &&
+    !isArithmetic(node)
   ) {
     collect(node.left as TSESTree.Node, sourceCode, out);
     collect(node.right, sourceCode, out);
@@ -120,17 +122,17 @@ export function urlShape(
 }
 
 /**
- * Does the static text look like a URL, and if so is it absolute?
+ * Is the static text an absolute URL, or one only in context?
  *
  * `'absolute'` carries its own scheme/authority and is a URL wherever it
- * appears. `'relative'` — `/api/x`, `./x`, `?q=` — only becomes one when it
- * reaches a URL sink, which the rule checks separately; on its own it is
- * indistinguishable from an ordinary path string.
+ * appears. Everything else is `'relative'` — `/api/x`, `./x`, `?q=`, and
+ * `api/x` too — and only becomes a URL when it reaches a URL sink, which the
+ * rule checks separately; on its own it is indistinguishable from an ordinary
+ * string. Requiring a leading `/`, `.`, `?` or `#` here missed
+ * `` fetch(`api/search?q=${q}`) ``, which the sink already proves is a URL.
  */
-export function urlKind(text: string): 'absolute' | 'relative' | null {
-  if (AUTHORITY_PREFIX.test(text)) return 'absolute';
-  if (RELATIVE_PREFIX.test(text)) return 'relative';
-  return null;
+export function urlKind(text: string): 'absolute' | 'relative' {
+  return AUTHORITY_PREFIX.test(text) ? 'absolute' : 'relative';
 }
 
 /**

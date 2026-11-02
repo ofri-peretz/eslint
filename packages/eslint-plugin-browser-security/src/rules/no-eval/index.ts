@@ -13,16 +13,13 @@
  * @see https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/11-Testing_for_Code_Injection
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import {
-  createPayloadResolver,
-  isTestFilePath,
-  staticString,
-} from '@interlace/eslint-devkit';
+import { isTestFilePath, staticString } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
   createRule,
 } from '@interlace/eslint-devkit';
+import { createPayloadResolver } from '../../utils/payload-source';
 
 import type { DynamicCodeSink } from '../../utils/dynamic-code-sinks';
 import { dynamicCodeSink } from '../../utils/dynamic-code-sinks';
@@ -264,10 +261,11 @@ export const noEval = createRule<RuleOptions, MessageIds>({
       before() {
         const [options = {}] = currentOptions();
         ({
-          allowInTests = false,
-          allowFunctionConstructor = false,
+          allowInTests,
+          allowFunctionConstructor,
           deferDynamicPayloads = false,
-        } = options as Options);
+        } = options as Options &
+          Required<Pick<Options, 'allowInTests' | 'allowFunctionConstructor'>>);
 
         const filename = context.filename;
         const isTestFile = allowInTests && isTestFilePath(filename);

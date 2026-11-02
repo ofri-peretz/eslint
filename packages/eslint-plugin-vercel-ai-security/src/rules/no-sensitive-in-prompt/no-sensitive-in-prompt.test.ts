@@ -22,7 +22,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -48,7 +48,6 @@ const xai = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -287,20 +286,24 @@ ruleTester.run('no-sensitive-in-prompt (coverage gaps)', noSensitiveInPrompt, {
 // in the SDK's own types). Regression lock: the props set used to carry `system`
 // only, so secrets interpolated into `instructions` went unreported.
 // ─────────────────────────────────────────────────────────────────────────────
-ruleTester.run('no-sensitive-in-prompt (instructions prop)', noSensitiveInPrompt, {
-  valid: xai([]),
-  invalid: xai([
-    {
-      code: `
+ruleTester.run(
+  'no-sensitive-in-prompt (instructions prop)',
+  noSensitiveInPrompt,
+  {
+    valid: xai([]),
+    invalid: xai([
+      {
+        code: `
         await generateText({
           model: openai('gpt-4'),
           instructions: \`Use this key: \${apiKey}\`,
         });
       `,
-      errors: [{ messageId: 'sensitiveInPrompt' }],
-    },
-  ]),
-});
+        errors: [{ messageId: 'sensitiveInPrompt' }],
+      },
+    ]),
+  },
+);
 
 // Quoted keys are the same property as bare ones — `{ "instructions": x }` must
 // be read like `{ instructions: x }`, or a secret slips through on formatting alone.
@@ -322,17 +325,21 @@ ruleTester.run('no-sensitive-in-prompt (quoted key)', noSensitiveInPrompt, {
 // Computed key whose variable is named exactly like the property. The existing
 // computed-key fixture uses `[k]`, which never collided and so never caught the
 // bug: `{ [instructions]: … }` was read as the literal `instructions`.
-ruleTester.run('no-sensitive-in-prompt (computed key collision)', noSensitiveInPrompt, {
-  valid: xai([
-    {
-      code: `
+ruleTester.run(
+  'no-sensitive-in-prompt (computed key collision)',
+  noSensitiveInPrompt,
+  {
+    valid: xai([
+      {
+        code: `
         const instructions = 'temperature';
         generateText({ model, [instructions]: apiKey });
       `,
-    },
-  ]),
-  invalid: xai([]),
-});
+      },
+    ]),
+    invalid: xai([]),
+  },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FP/FN audit 2026-10-10: whole-word name matching (`businessName` has no
@@ -499,4 +506,31 @@ ruleTester.run('no-sensitive-in-prompt (whole records)', noSensitiveInPrompt, {
       errors: [{ messageId: 'sensitiveInPrompt' }],
     },
   ]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-sensitive-in-prompt (mutation audit)', noSensitiveInPrompt, {
+  valid: xai([
+    {
+      name: 'a digest of a password is not the password',
+      code: 'await generateText({ prompt: `Fingerprint: ${sha256(user.password)}` });',
+    },
+    {
+      name: 'a non-sensitive field read off a record that holds a password is a field, not the record',
+      code: `
+        const account = { name, password };
+        await generateText({ prompt: \`Hello \${account.name}\` });
+      `,
+    },
+    {
+      name: 'a spread in an embedded object literal carries no visible sensitive key',
+      code: `
+        const ctx = { ...base, name };
+        await generateText({ prompt: \`Context: \${ctx}\` });
+      `,
+    },
+  ]),
+  invalid: [],
 });

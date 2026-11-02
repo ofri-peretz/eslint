@@ -48,6 +48,14 @@ ruleTester.run('no-incomplete-url-sanitization', noIncompleteUrlSanitization, {
 
     // ── isContainmentComparison ─────────────────────────────────────────────
     {
+      name: 'indexOf compared to a negated variable is not a fixed containment bound',
+      code: "function ok(url, offset) { if (url.indexOf('trusted.com') >= -offset) go(); }",
+    },
+    {
+      name: 'a bigint bound never equals the number indexOf returns',
+      code: "function ok(url) { if (url.indexOf('trusted.com') !== -1n) go(); }",
+    },
+    {
       name: 'indexOf returned from an arrow (not compared) is a position, not a containment test',
       code: "const where = (url) => url.indexOf('trusted.com');",
     },
@@ -76,6 +84,16 @@ ruleTester.run('no-incomplete-url-sanitization', noIncompleteUrlSanitization, {
     },
   ],
   invalid: [
+    {
+      name: "a unary minus coerces a string bound: !== -'1' is a containment test",
+      code: "function ok(url) { if (url.indexOf('trusted.com') !== -'1') go(); }",
+      errors: [{ messageId: 'substringHostCheck' }],
+    },
+    {
+      name: 'a negated null bound is -0: >= -null is a containment test',
+      code: "function ok(url) { if (url.indexOf('trusted.com') >= -null) go(); }",
+      errors: [{ messageId: 'substringHostCheck' }],
+    },
     {
       name: 'an http:// origin is stripped to its host like an https:// one',
       code: "function ok(url) { return url.includes('http://trusted.com'); }",

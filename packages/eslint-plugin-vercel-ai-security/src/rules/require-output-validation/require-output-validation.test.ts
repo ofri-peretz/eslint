@@ -22,7 +22,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -48,7 +48,6 @@ const xai = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -131,26 +130,47 @@ ruleTester.run('require-output-validation', requireOutputValidation, {
 // property by exact name — `err.message` is an exception, not model output —
 // and display calls are matched by whole word (`showcase` is not `show`).
 // ─────────────────────────────────────────────────────────────────────────────
-ruleTester.run('require-output-validation (fp-fn audit)', requireOutputValidation, {
-  valid: xai([
-    {
-      name: 'an exception message is not AI output',
-      code: `export function onFail(err) { res.status(500).send(err.message); }`,
-    },
-    {
-      name: 'a property that merely starts with "text" is not the output',
-      code: `display(el.textContent); render(cfg.contentType);`,
-    },
-    {
-      name: 'a call whose name merely contains "show"',
-      code: `showcaseItems(result.text);`,
-    },
-  ]),
-  invalid: xai([
-    {
-      name: 'model text sent through a chained response',
-      code: `res.status(200).send(result.text);`,
-      errors: [{ messageId: 'unvalidatedOutput' }],
-    },
-  ]),
-});
+ruleTester.run(
+  'require-output-validation (fp-fn audit)',
+  requireOutputValidation,
+  {
+    valid: xai([
+      {
+        name: 'an exception message is not AI output',
+        code: `export function onFail(err) { res.status(500).send(err.message); }`,
+      },
+      {
+        name: 'a property that merely starts with "text" is not the output',
+        code: `display(el.textContent); render(cfg.contentType);`,
+      },
+      {
+        name: 'a call whose name merely contains "show"',
+        code: `showcaseItems(result.text);`,
+      },
+    ]),
+    invalid: xai([
+      {
+        name: 'model text sent through a chained response',
+        code: `res.status(200).send(result.text);`,
+        errors: [{ messageId: 'unvalidatedOutput' }],
+      },
+    ]),
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run(
+  'require-output-validation (mutation audit)',
+  requireOutputValidation,
+  {
+    valid: xai([
+      {
+        name: 'a variable bound to a string literal is not model output',
+        code: `const greeting = 'hi'; display(greeting);`,
+      },
+    ]),
+    invalid: [],
+  },
+);

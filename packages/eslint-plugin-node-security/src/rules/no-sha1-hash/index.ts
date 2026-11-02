@@ -18,6 +18,7 @@ import {
   MessageIcons,
   createRule,
   AST_NODE_TYPES,
+  isModuleBinding,
   isTestFilePath,
 } from '@interlace/eslint-devkit';
 
@@ -95,7 +96,6 @@ export const noSha1Hash = createRule<RuleOptions, MessageIds>({
     currentOptions,
   ) {
     let isTestFile: boolean;
-    let sha1ImportedFromCryptoHash: boolean;
 
     return {
       before() {
@@ -104,9 +104,6 @@ export const noSha1Hash = createRule<RuleOptions, MessageIds>({
 
         const filename = context.filename;
         isTestFile = allowInTests && isTestFilePath(filename);
-
-        // Track if sha1 was imported from crypto-hash
-        sha1ImportedFromCryptoHash = false;
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         if (isTestFile) return;
@@ -119,7 +116,6 @@ export const noSha1Hash = createRule<RuleOptions, MessageIds>({
               specifier.imported.type === AST_NODE_TYPES.Identifier &&
               specifier.imported.name === 'sha1'
             ) {
-              sha1ImportedFromCryptoHash = true;
               context.report({
                 node: specifier,
                 messageId: 'sha1Deprecated',
@@ -146,25 +142,44 @@ export const noSha1Hash = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         if (isTestFile) return;
 
-        // Check for sha1() call if imported from crypto-hash
+        // A call that RESOLVES to crypto-hash's `sha1`, however it was bound:
+        // a named import, `const { sha1 } = require('crypto-hash')`,
+        // `hashes.sha1(data)` on a namespace import or a required module.
+        // Matching the spelling `sha1` missed every one but the first.
         if (
-          sha1ImportedFromCryptoHash &&
-          node.callee.type === AST_NODE_TYPES.Identifier &&
-          node.callee.name === 'sha1'
+          !isModuleBinding(
+            node.callee,
+            context.sourceCode.getScope(node),
+            'crypto-hash',
+            ['sha1'],
+          )
         ) {
-          context.report({
-            node,
-            messageId: 'sha1Deprecated',
-            suggest: [
-              {
-                messageId: 'useSha256',
-                fix: (fixer: TSESLint.RuleFixer) => {
-                  return fixer.replaceText(node.callee, 'sha256');
-                },
-              },
-            ],
-          });
+          return;
         }
+        // Renaming in place is only sound where the call site spells the
+        // export: `sha1(d)` → `sha256(d)`, `hashes.sha1(d)` → `hashes.sha256(d)`.
+        const callee = node.callee;
+        const target =
+          callee.type === AST_NODE_TYPES.Identifier && callee.name === 'sha1'
+            ? callee
+            : callee.type === AST_NODE_TYPES.MemberExpression &&
+                !callee.computed
+              ? callee.property
+              : null;
+        context.report({
+          node,
+          messageId: 'sha1Deprecated',
+          suggest:
+            target === null
+              ? []
+              : [
+                  {
+                    messageId: 'useSha256',
+                    fix: (fixer: TSESLint.RuleFixer) =>
+                      fixer.replaceText(target, 'sha256'),
+                  },
+                ],
+        });
       },
     };
   },

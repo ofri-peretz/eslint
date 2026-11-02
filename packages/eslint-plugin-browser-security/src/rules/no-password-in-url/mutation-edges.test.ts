@@ -20,6 +20,18 @@ ruleTester.run('no-password-in-url (mutation edges)', noPasswordInUrl, {
       name: 'a username with an empty password carries no secret',
       code: "const u = 'https://deploy:@api.acme-corp.io/x';",
     },
+    {
+      name: 'a password in the query string belongs to no-credentials-in-query-params',
+      code: "const login = 'https://api.acme-corp.io/login?user=bob&password=hunter2';",
+    },
+    {
+      name: 'a fragment parameter that does not end in a password word is not a password',
+      code: "location.href = 'https://app.acme-corp.io/#tab=settings';",
+    },
+    {
+      name: 'a fragment parameter that only starts with a password word is not a password',
+      code: "location.href = 'https://app.acme-corp.io/#passwordHint=pet';",
+    },
   ],
   invalid: [
     {
@@ -40,6 +52,27 @@ ruleTester.run('no-password-in-url (mutation edges)', noPasswordInUrl, {
     {
       name: 'a folded substitution supplies the password',
       code: `const u = \`https://admin\${':hunter2'}@api.acme-corp.io\`;`,
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a ws:// URL carries userinfo credentials like http',
+      code: "const u = 'ws://bot:hunter2@chat.acme-corp.io/feed';",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a fragment parameter whose name ends in a password word is a password',
+      code: "location.href = 'https://app.acme-corp.io/#user=bob&adminPwd=hunter2';",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a unary plus does not make a URL literal part of a concatenation',
+      code: "const n = +'https://admin:hunter2@api.acme-corp.io';",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // @found Stryker mutation-survivor triage, 2026-11-02
+    {
+      name: 'FN: a long concatenation keeps its leading scheme and userinfo',
+      code: "const u = 'https://' + user + ':' + pass + '@' + host + '/' + a + '/' + b + '/' + c + '/' + d;",
       errors: [{ messageId: 'violationDetected' }],
     },
     // @found Stryker mutation-survivor triage, 2026-10-19

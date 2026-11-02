@@ -20,14 +20,14 @@ This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/packa
 
 ## Quick Summary
 
-| Aspect         | Details                                                              |
-| -------------- | -------------------------------------------------------------------- |
-| **Severity**   | High (Security — memory disclosure)                                  |
-| **Auto-Fix**   | 💡 Suggestion (`Buffer.alloc`)                                       |
-| **Category**   | Node Security                                                        |
-| **CWE**        | [CWE-908](https://cwe.mitre.org/data/definitions/908.html)           |
-| **Recommended**| `warn` — reports unless coverage is structurally visible (see below) |
-| **Best For**   | Codebases that send, hash, or persist buffers built by hand          |
+| Aspect          | Details                                                              |
+| --------------- | -------------------------------------------------------------------- |
+| **Severity**    | High (Security — memory disclosure)                                  |
+| **Auto-Fix**    | 💡 Suggestion (`Buffer.alloc`)                                       |
+| **Category**    | Node Security                                                        |
+| **CWE**         | [CWE-908](https://cwe.mitre.org/data/definitions/908.html)           |
+| **Recommended** | `warn` — reports unless coverage is structurally visible (see below) |
+| **Best For**    | Codebases that send, hash, or persist buffers built by hand          |
 
 ## What the rule reports, and what it lets through
 
@@ -43,7 +43,7 @@ Buffer.allocUnsafe(64).fill(0); // not reported — equivalent to Buffer.alloc(6
 ```
 
 **2. Covered before it is read.** The allocation is bound to a local, and the
-first thing that touches that local is a *covering* write.
+first thing that touches that local is a _covering_ write.
 
 ```js
 // Not reported — the loop writes every byte before `result` escapes.
@@ -64,19 +64,28 @@ return result;
 undecidable and the rule refuses to pretend otherwise. Two shapes cover by
 construction:
 
-| Shape | Covering? | Why |
-| :--- | :--- | :--- |
-| `buf.fill(v)` | ✅ | fills to the end of the buffer by definition |
-| `src.copy(buf)`, `buf.set(src)`, `buf.write(s)` | ✅ | one argument: starts at 0, runs for the source's whole length |
-| `buf.write(s, offset)` / `src.copy(buf, offset)` **inside a loop** | ✅ | a moving offset is a buffer being walked |
-| `buf.writeUInt32BE(v, 0)` | ❌ | a fixed offset stamps one field and leaves the rest |
-| `src.copy(buf, 0, 0, 4)` | ❌ | a fixed slice |
-| `buf[i] = v` | ❌ | one byte |
+| Shape                                                              | Covering? | Why                                                                  |
+| :----------------------------------------------------------------- | :-------- | :------------------------------------------------------------------- |
+| `buf.fill(v)`                                                      | ✅        | fills to the end of the buffer by definition                         |
+| `src.copy(buf)`, `buf.set(src)`, `buf.write(s)`                    | ✅        | one argument: starts at 0, runs for the source's whole length        |
+| `buf.write(s, 'utf8')`, `buf.fill(v, 'hex')`                       | ✅        | a string in the offset position is the encoding; still starts at 0   |
+| `crypto.randomFillSync(buf)`, `crypto.getRandomValues(buf)`        | ✅        | fills its first argument (also as a named import from `node:crypto`) |
+| `buf.write(s, offset)` / `src.copy(buf, offset)` **inside a loop** | ✅        | a moving offset is a buffer being walked                             |
+| `buf.fill(0, 4)`                                                   | ❌        | starts at 4: bytes 0..3 stay uninitialized                           |
+| `buf.writeUInt32BE(v, 0)`                                          | ❌        | a fixed offset stamps one field and leaves the rest                  |
+| `src.copy(buf, 0, 0, 4)`                                           | ❌        | a fixed slice                                                        |
+| `buf[i] = v`                                                       | ❌        | one byte                                                             |
 
-A partial write does not *end* the search — it is not a read either — so a
-fixed-offset write followed by a covering one is still accepted. A read reached
+A partial write does not _end_ the search — it is not a read either — so a
+fixed-offset write followed by a covering one is still accepted. Fixed-width
+writes (`writeUInt8` … `writeBigUInt64BE`) at decidable offsets — a numeric
+literal or a `const` alias of one — are counted byte by byte on an allocation of
+constant size, so a header stamped field by field until every byte is written
+is covered. A read reached
 before any covering write is reported.
 
+The binding may receive the allocation in a declarator (`const buf = …`) or an
+assignment, including the lazy forms (`scratch ??= Buffer.allocUnsafe(8)`).
 Anything the rule cannot resolve to a local binding still reports:
 `return Buffer.allocUnsafe(n)`, `this.buf = Buffer.allocUnsafe(n)`,
 `f(Buffer.allocUnsafe(n))`. References are compared in **source order**, which
@@ -106,11 +115,20 @@ The cost is a **narrow band** below V8's packed-elements limit (~33.5M
 elements), not a monotonic function of `n`. That inverts the usual advice: a
 bounds check that rejects only implausibly large lengths rejects exactly the
 values that cost nothing, and admits the ones that cost a quarter of a
-gigabyte. Clamp against the maximum the *protocol* permits, not against a
+gigabyte. Clamp against the maximum the _protocol_ permits, not against a
 number that merely looks big.
 
 `Buffer.alloc(n)` and the typed arrays have no such threshold — they commit `n`
 bytes at every `n`.
+
+`Array(n)` without `new` is the same allocation and is reported the same way. A
+size counts as off the wire when it is read off a request, off a binding named
+like wire data whose origin is invisible (a parameter, an import, a `for…of`
+element), or passed into a parameter — of a function, or of a class
+constructor through `new` — that some call in the file feeds wire data. Local
+bindings are followed through their last write however many hops long the
+chain is. `Math.min(size, MAX)` with a bound the peer cannot move, or an `if`
+comparing the size, counts as a clamp; `Math.max` does not.
 
 ## Why `allocUnsafe` is dangerous
 
@@ -127,13 +145,13 @@ where Node's own `randomFillSync` fallback returned unzeroed memory.
 `Buffer.allocUnsafeSlow(size)` has the identical hazard — it only differs in
 allocating outside the shared pool.
 
-| Allocator                       | Zero-filled | Reported by this rule |
-| :------------------------------ | :---------- | :-------------------- |
-| `Buffer.alloc(size)`            | ✅ yes      | no                    |
-| `Buffer.allocUnsafe(size)`      | ❌ no       | yes                   |
-| `Buffer.allocUnsafeSlow(size)`  | ❌ no       | yes                   |
-| `Buffer.allocUnsafe(size).fill(0)` | ✅ yes   | no (structural exemption) |
-| `const b = Buffer.allocUnsafe(n); src.copy(b);` | ✅ effectively | no (covered before read) |
+| Allocator                                       | Zero-filled    | Reported by this rule     |
+| :---------------------------------------------- | :------------- | :------------------------ |
+| `Buffer.alloc(size)`                            | ✅ yes         | no                        |
+| `Buffer.allocUnsafe(size)`                      | ❌ no          | yes                       |
+| `Buffer.allocUnsafeSlow(size)`                  | ❌ no          | yes                       |
+| `Buffer.allocUnsafe(size).fill(0)`              | ✅ yes         | no (structural exemption) |
+| `const b = Buffer.allocUnsafe(n); src.copy(b);` | ✅ effectively | no (covered before read)  |
 
 ## Examples
 
@@ -141,11 +159,11 @@ allocating outside the shared pool.
 
 ```js
 const buf = Buffer.allocUnsafe(1024);
-res.end(buf);                          // leaks prior heap contents
+res.end(buf); // leaks prior heap contents
 
 const header = Buffer.allocUnsafe(16);
-header.writeUInt32BE(len, 0);          // 12 bytes still uninitialized
-socket.write(header);                  // …and they go out on the wire
+header.writeUInt32BE(len, 0); // 12 bytes still uninitialized
+socket.write(header); // …and they go out on the wire
 
 const slow = Buffer.allocUnsafeSlow(64);
 ```
@@ -153,24 +171,24 @@ const slow = Buffer.allocUnsafeSlow(64);
 ### ✅ Correct
 
 ```js
-const buf = Buffer.alloc(1024);              // zero-filled
+const buf = Buffer.alloc(1024); // zero-filled
 const header = Buffer.alloc(16);
-header.writeUInt32BE(len, 0);                // remaining bytes are zeros
+header.writeUInt32BE(len, 0); // remaining bytes are zeros
 
 const scratch = Buffer.allocUnsafe(64).fill(0); // zeroed at the call site
 
-const copy = Buffer.allocUnsafe(src.length);    // covered before any read
+const copy = Buffer.allocUnsafe(src.length); // covered before any read
 src.copy(copy);
 send(copy);
 ```
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `wireNames` | `string[]` | `["chunk","chunks","buffer","buf","payload","frame","packet","raw","message","msg"]` | Binding names that carry bytes off the wire. Replaces the default; pass [] to turn the name arm off. |
-| `requestRootNames` | `string[]` | `["req","request","ctx","event"]` | Root identifiers treated as a request. Replaces the default. |
-| `countNames` | `string[]` | `["length","len","size","count","n","num","total","capacity","bytelength"]` | Identifiers that hold an allocation size rather than a payload. Replaces the default. |
+| Option             | Type       | Default                                                                              | Description                                                                                          |
+| ------------------ | ---------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `wireNames`        | `string[]` | `["chunk","chunks","buffer","buf","payload","frame","packet","raw","message","msg"]` | Binding names that carry bytes off the wire. Replaces the default; pass [] to turn the name arm off. |
+| `requestRootNames` | `string[]` | `["req","request","ctx","event"]`                                                    | Root identifiers treated as a request. Replaces the default.                                         |
+| `countNames`       | `string[]` | `["length","len","size","count","n","num","total","capacity","bytelength"]`          | Identifiers that hold an allocation size rather than a payload. Replaces the default.                |
 
 ## Error Message Format
 
@@ -201,9 +219,12 @@ codec that hands the buffer to native code to fill.
 
 ## Known False Negatives
 
-- Computed access (`Buffer['allocUnsafe'](n)`) and dynamic dispatch
-  (`global['Buffer'].allocUnsafe(n)`) are not resolved.
-- Aliases (`const alloc = Buffer.allocUnsafe; alloc(n);`) are not tracked.
+- Dynamic dispatch (`global['Buffer'].allocUnsafe(n)`) is not resolved;
+  a computed key that resolves to a constant (`Buffer['allocUnsafe'](n)`) is.
+- Member aliases (`const alloc = Buffer.allocUnsafe; alloc(n);`) are not
+  tracked; a destructured one (`const { allocUnsafe } = Buffer`) is.
+- Any `if` that compares the size counts as a guard, whatever the direction:
+  `if (size > 0) Buffer.alloc(size)` is treated as bounded.
 - Buffer shims and polyfills that ship their own `allocUnsafe` are out of scope.
 - A loop write at a moving offset is treated as covering. A loop that writes
   only part of the buffer — an early `break`, a bound smaller than the
@@ -211,8 +232,8 @@ codec that hands the buffer to native code to fill.
 
 ## Landscape
 
-| Package | Rule | Behavior |
-| :--- | :--- | :--- |
-| `eslint-plugin-security-node` | `detect-buffer-unsafe-allocation` | Unconditional; ships `recommended: false` |
-| `@microsoft/eslint-plugin-sdl` | `no-unsafe-alloc` | Unconditional |
-| **`eslint-plugin-node-security`** | **`no-unsafe-buffer-alloc`** | `allocUnsafeSlow` too, the `.fill()` exemption, a covered-before-read check that clears the whole-buffer-copy idiom, a `Buffer.alloc` suggestion, and the CWE-789 wire-sized-allocation check |
+| Package                           | Rule                              | Behavior                                                                                                                                                                                      |
+| :-------------------------------- | :-------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `eslint-plugin-security-node`     | `detect-buffer-unsafe-allocation` | Unconditional; ships `recommended: false`                                                                                                                                                     |
+| `@microsoft/eslint-plugin-sdl`    | `no-unsafe-alloc`                 | Unconditional                                                                                                                                                                                 |
+| **`eslint-plugin-node-security`** | **`no-unsafe-buffer-alloc`**      | `allocUnsafeSlow` too, the `.fill()` exemption, a covered-before-read check that clears the whole-buffer-copy idiom, a `Buffer.alloc` suggestion, and the CWE-789 wire-sized-allocation check |

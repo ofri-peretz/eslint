@@ -49,6 +49,7 @@ import {
   isLoopbackUrl,
   isReservedExampleUrl,
 } from '../../utils/loopback-hosts';
+import { isWebSocketConstructor } from '../../utils/transport-ownership';
 
 /**
  * URL schemes are ASCII case-insensitive, so `WS://legacy…` opens exactly the
@@ -226,14 +227,12 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
           // The authority the template actually writes down. When the next
           // `${…}` supplies it there is no host to exempt, and the connection
           // is cleartext whatever it resolves to, so it reports.
-          const authority = /^ws:\/\/([^/?#]*)/i.exec(
+          // The scheme test above guarantees the match. An empty authority
+          // (`ws://${host}`) is no exempt host, so it reports.
+          const [, authority] = /^ws:\/\/([^/?#]*)/i.exec(
             firstQuasi.value.raw,
-          )?.[1];
-          if (
-            authority !== undefined &&
-            authority !== '' &&
-            isNonTransmitting(`ws://${authority}`)
-          ) {
+          ) as RegExpExecArray;
+          if (isNonTransmitting(`ws://${authority}`)) {
             return;
           }
 
@@ -260,7 +259,7 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        ({ allowInTests = true, allowLocalhost = true } = options as Options);
+        ({ allowInTests, allowLocalhost } = options as Required<Options>);
         const filename = context.filename;
         const isTestFile = isTestFilePath(filename);
 
@@ -270,11 +269,8 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
         return true;
       },
       NewExpression(node: TSESTree.NewExpression) {
-        // Check for new WebSocket()
-        if (
-          node.callee.type === AST_NODE_TYPES.Identifier &&
-          node.callee.name === 'WebSocket'
-        ) {
+        // `new WebSocket()`, bare or qualified by a global alias
+        if (isWebSocketConstructor(node.callee)) {
           const urlArg = node.arguments[0];
           if (urlArg) {
             checkWebSocketUrl(node, urlArg);

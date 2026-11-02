@@ -157,11 +157,6 @@ function isUserInputParamName(name: string): boolean {
 // server frameworks: Express `req`/`request`, Koa `ctx`, Lambda `event`.
 const REQUEST_ROOT_NAMES = new Set(['req', 'request', 'ctx', 'event']);
 
-// Keys of a Node `http.request(options)` object that actually name a URL.
-// `host`/`hostname`/`path`/`port` are deliberately absent: a helper that
-// parameterises them is ordinary internal plumbing, not evidence of user flow.
-const URL_OPTION_KEYS = new Set(['url', 'href', 'uri']);
-
 /**
  * True when the expression reads off a request object — `req.query.url`,
  * `ctx.request.body.target`, `event.queryStringParameters.u`. Everything
@@ -184,8 +179,8 @@ function isRequestSourced(
   while (current.type === AST_NODE_TYPES.MemberExpression) {
     current = current.object;
   }
+  // Only called on a MemberExpression, so the loop always climbed to a root.
   return (
-    current !== node &&
     current.type === AST_NODE_TYPES.Identifier &&
     REQUEST_ROOT_NAMES.has(current.name.toLowerCase())
   );
@@ -237,8 +232,10 @@ function makeCarriesUntrustedUrl(
     // `req.query.url` as `string | string[] | ParsedQs | undefined`, the cast is
     // MANDATORY for a TypeScript handler to compile. The rule was therefore
     // silent on TypeScript Express code — the shape most of its audience writes.
+    // The cast is no hop: it names no binding and the unwrap strictly shrinks
+    // the node, so it spends none of the depth budget.
     const bare = unwrapTypeSyntax(node);
-    if (bare !== node) return carries(bare, depth + 1);
+    if (bare !== node) return carries(bare, depth);
 
     switch (node.type) {
       case AST_NODE_TYPES.Identifier: {
@@ -271,23 +268,17 @@ function makeCarriesUntrustedUrl(
           carries(node.right, depth + 1)
         );
 
-      // `http.request({ url: x, host: y })` — only URL-naming keys count by
-      // name; every other key still counts if its value is request-sourced.
+      // `http.request({ url: x, host: y })` — every field is judged by the
+      // same evidence as a URL argument: a request read, a template over one,
+      // or a local bound to one. A field holding a bare helper parameter
+      // (`{ host, path }`) is still not evidence, because `carries` asks for
+      // flow, not for a name — except under `reportUnresolvedUrls`.
       case AST_NODE_TYPES.ObjectExpression:
-        return node.properties.some((property) => {
-          if (property.type !== AST_NODE_TYPES.Property) return false;
-          const value = property.value as TSESTree.Node;
-          if (isRequestSourced(value, sourceCode)) return true;
-          const key =
-            property.key.type === AST_NODE_TYPES.Identifier
-              ? property.key.name
-              : property.key.type === AST_NODE_TYPES.Literal
-                ? String(property.key.value)
-                : '';
-          return (
-            URL_OPTION_KEYS.has(key.toLowerCase()) && carries(value, depth + 1)
-          );
-        });
+        return node.properties.some(
+          (property) =>
+            property.type === AST_NODE_TYPES.Property &&
+            carries(property.value as TSESTree.Node, depth + 1),
+        );
 
       default:
         return false;
@@ -322,10 +313,10 @@ function nodeContainsValidation(node: TSESTree.Node): boolean {
   // arr.includes(x), set.has(x), x.startsWith('...'), regex.test(x)
   if (
     node.type === AST_NODE_TYPES.CallExpression &&
-    node.callee.type === AST_NODE_TYPES.MemberExpression &&
-    node.callee.property.type === AST_NODE_TYPES.Identifier
+    node.callee.type === AST_NODE_TYPES.MemberExpression
   ) {
-    const method = node.callee.property.name;
+    // `allowed['includes'](x)` is the same check; a `#private` method is not.
+    const method = propertyName(node.callee);
     if (
       method === 'includes' ||
       method === 'has' ||
@@ -394,10 +385,9 @@ function nodeContainsValidation(node: TSESTree.Node): boolean {
  * Check if there is URL validation before the HTTP call using AST walking
  */
 function hasValidationBefore(node: TSESTree.CallExpression): boolean {
-  // Walk up to find the containing block
-  let current: TSESTree.Node | undefined = (
-    node as TSESTree.Node & { parent?: TSESTree.Node }
-  ).parent;
+  // Walk up to find the containing block. The walk starts AT the call, so a
+  // call that is itself a ternary branch sees the ternary as its parent.
+  let current: TSESTree.Node | undefined = node;
   while (current) {
     const parent: TSESTree.Node | undefined = (
       current as TSESTree.Node & { parent?: TSESTree.Node }
@@ -419,8 +409,12 @@ function hasValidationBefore(node: TSESTree.CallExpression): boolean {
       }
     }
 
-    // Check if inside an if-block where the condition contains validation
-    if (parent.type === AST_NODE_TYPES.IfStatement && parent.test) {
+    // Inside an if-block or a ternary whose condition contains validation —
+    // `ALLOWED.has(u) ? fetch(u) : null` guards exactly like the if form.
+    if (
+      parent.type === AST_NODE_TYPES.IfStatement ||
+      parent.type === AST_NODE_TYPES.ConditionalExpression
+    ) {
       if (nodeContainsValidation(parent.test)) {
         return true;
       }
@@ -509,10 +503,10 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
           isHttpCall = true;
         }
 
-        // 2. Method call: axios.get(url), http.request(url)
+        // 2. Method call: axios.get(url), http.request(url), and the inline
+        // `require('https').get(url)` — the receiver is resolved, not named.
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.object.type === AST_NODE_TYPES.Identifier &&
           namesOneOf(propertyName(node.callee), HTTP_CLIENT_METHODS) &&
           HTTP_CLIENT_MODULES.some((mod) =>
             isModuleBinding(

@@ -1542,6 +1542,7 @@ describe('Regression - a flag is not evidence of an infinite loop', () => {
         errors: [{ messageId: 'infiniteLoop' }],
       },
       {
+        name: 'for (;;) with no exit is reported as an infinite loop',
         code: 'for (;;) { doWork(); }',
         errors: [{ messageId: 'infiniteLoop' }],
       },
@@ -1769,5 +1770,82 @@ describe('Regression - recursion is decided by structure, not by two names', () 
         ],
       },
     );
+  });
+});
+
+/**
+ * "The rule reports only what it can prove: `while (true)`/`for (;;)` without
+ * an exit." `while (1)` and `do … while (true)` are the same loop and were not
+ * checked; `while (true)` took any nested `break` as its own exit and did not
+ * count `return` / `throw` as one; and `maxStaticIterations` was honoured for
+ * a `for` bound but not the same bound in a `while`.
+ */
+describe('infinite-loop spellings share one exit contract', () => {
+  ruleTester.run('infinite loop contract', noUncheckedLoopCondition, {
+    valid: [
+      {
+        name: 'while (true) left by a return is not infinite',
+        code: 'function f() { while (true) { if (next()) return 1; } }',
+      },
+      {
+        name: 'while (true) left by a throw is not infinite',
+        code: "while (true) { if (next()) throw new Error('done'); }",
+      },
+      {
+        name: 'while (1) left by its own break is not infinite',
+        code: 'while (1) { if (next()) break; }',
+      },
+      {
+        name: 'do … while (true) left by its own break is not infinite',
+        code: 'do { if (next()) break; } while (true);',
+      },
+      {
+        name: 'a while loop with a small literal bound is fine',
+        code: 'let i = 0; while (i < 100) { i++; }',
+      },
+      {
+        name: 'a do … while with a non-literal condition is not an infinite form',
+        code: 'do { step(); } while (more());',
+      },
+    ],
+    invalid: [
+      {
+        name: 'do … while (true) with no exit is infinite',
+        code: 'do { next(); } while (true);',
+        errors: [{ messageId: 'infiniteLoop' }],
+      },
+      {
+        name: 'while (1) with no exit is infinite',
+        code: 'while (1) { next(); }',
+        errors: [{ messageId: 'infiniteLoop' }],
+      },
+      {
+        name: 'a break that only leaves a nested for does not exit while (true)',
+        code: 'while (true) { next(); for (const x of queue) { if (x) break; } }',
+        errors: [{ messageId: 'infiniteLoop' }],
+      },
+      {
+        name: 'a break that only leaves a nested for does not exit do … while (true)',
+        code: 'do { next(); for (const x of queue) { if (x) break; } } while (true);',
+        errors: [{ messageId: 'infiniteLoop' }],
+      },
+      {
+        name: 'while (1) with a break is reported when allowWhileTrueWithBreak is off',
+        code: 'while (1) { if (next()) break; }',
+        options: [{ allowWhileTrueWithBreak: false }],
+        errors: [{ messageId: 'infiniteLoop' }],
+      },
+      {
+        name: 'do … while (true) with a break is reported when allowWhileTrueWithBreak is off',
+        code: 'do { if (next()) break; } while (true);',
+        options: [{ allowWhileTrueWithBreak: false }],
+        errors: [{ messageId: 'infiniteLoop' }],
+      },
+      {
+        name: 'a while bound above maxStaticIterations is a large loop bound',
+        code: 'let i = 0; while (i < 1000000) { doWork(i); i++; }',
+        errors: [{ messageId: 'largeLoopBound' }],
+      },
+    ],
   });
 });

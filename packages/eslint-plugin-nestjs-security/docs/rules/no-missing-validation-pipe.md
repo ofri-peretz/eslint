@@ -82,13 +82,12 @@ app.useGlobalPipes(
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
-| `detectGlobalPipes` | `boolean` | `true` | Look for a globally registered ValidationPipe before reporting |
-| `assumeGlobalPipes` | `boolean` | `false` | Assume a global ValidationPipe exists even if none is found |
+| Option                | Type      | Default | Description                                                     |
+| --------------------- | --------- | ------- | --------------------------------------------------------------- |
+| `allowInTests`        | `boolean` | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files                 |
+| `detectGlobalPipes`   | `boolean` | `true`  | Look for a globally registered ValidationPipe before reporting  |
+| `assumeGlobalPipes`   | `boolean` | `false` | Assume a global ValidationPipe exists even if none is found     |
 | `requireExplicitPipe` | `boolean` | `false` | Require a per-handler pipe even when a global one is registered |
-
 
 ```typescript
 {
@@ -100,16 +99,36 @@ app.useGlobalPipes(
   // (default: true)
   detectGlobalPipes?: boolean;
 
-  // Assume a global pipe without scanning (default: false)
+  // Assume a global pipe without scanning (default: false). It counts exactly
+  // as a detected one: typed DTOs are covered, unvalidatable shapes are not.
   assumeGlobalPipes?: boolean;
 
   // Require an explicit per-route pipe even where a global one would validate
-  // the input. Off by default: the rule reports only shapes no ValidationPipe
-  // can validate — missing annotation, any, unknown, object, inline type
-  // literals (default: false)
+  // the input. Off by default: where a global pipe exists (detected or
+  // assumed), the rule reports only shapes no ValidationPipe can validate —
+  // missing annotation, any, unknown, object, inline type literals
+  // (default: false)
   requireExplicitPipe?: boolean;
 }
 ```
+
+### What is reported
+
+An input bound with `@Body()`, `@Query()` or `@Param()` on a controller route,
+with no pipe on the parameter, no `@UsePipes(ValidationPipe)` on the handler or
+controller, and:
+
+- **no global pipe** (none detected, none assumed): reported whatever its type —
+  a typed DTO is as unvalidated as `any` when nothing runs the validation. This
+  is the ❌ example above.
+- **a global pipe**: reported only when its shape carries no runtime class for
+  the pipe to validate against (no annotation, `any`, `unknown`, `object`, an
+  inline type literal) — or always, under `requireExplicitPipe`.
+
+A scalar (`string`, `number`, `boolean`, literal types) is coerced by the
+framework and never reported. A `Parse*Pipe` in `@UsePipes` is not a
+ValidationPipe. `ValidationPipe` is recognised however `@nestjs/common` was
+imported (`import { ValidationPipe as VP }`, a namespace import).
 
 ## Recommended ValidationPipe Options
 
@@ -123,7 +142,9 @@ new ValidationPipe({
 
 ## When Not To Use It
 
-- If you have `app.useGlobalPipes(new ValidationPipe())` in `main.ts`, set `assumeGlobalPipes: true`
+- If you have `app.useGlobalPipes(new ValidationPipe())` somewhere the cross-file
+  scan cannot see, set `assumeGlobalPipes: true` — inputs no pipe can validate
+  are still reported.
 
 ## Cross-File Detection
 
@@ -169,16 +190,3 @@ class MyController {}
 ```
 
 **Mitigation**: Document custom decorators. Use standard @UsePipes.
-
-### Module-Level Providers
-
-**Why**: Validation pipes as providers are not detected.
-
-```typescript
-// ❌ NOT DETECTED - Pipe as module provider
-@Module({
-  providers: [{ provide: APP_PIPE, useClass: ValidationPipe }]
-})
-```
-
-**Mitigation**: Configure assumeGlobalPipes for modules with APP_PIPE provider.

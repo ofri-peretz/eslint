@@ -10,8 +10,8 @@ autofix: false
 
 > Ensures all AI tools have Zod schema validation for input parameters.
 
-
 <!-- @rule-summary -->
+
 Get weather
 <!-- @/rule-summary -->
 
@@ -73,8 +73,8 @@ const weatherTool = tool({
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
+| Option         | Type      | Default | Description                                   |
+| -------------- | --------- | ------- | --------------------------------------------- |
 | `allowInTests` | `boolean` | `false` | Allow tools without inputSchema in test files |
 
 ## 🛡️ Why This Matters
@@ -96,6 +96,9 @@ Without input validation, AI agents can:
 - A spread in a tool definition may supply the schema and counts; quoted
   `'inputSchema'` / `'tools'` keys are the same properties.
 - A `tool()` without a schema is named by its key in the `tools` object.
+- A tools map bound to a name ending in `tools` (`const tools = { … }`, as in
+  the ❌ example above) is checked like an inline `tools` option; there an
+  entry counts as a tool when it has an `execute`.
 
 ## Known False Negatives
 
@@ -174,10 +177,10 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-20](https://cwe.mitre.org/data/definitions/20.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Improper Input Validation detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                     |
+| :------------------------ | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-20](https://cwe.mitre.org/data/definitions/20.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Improper Input Validation detected`                                                                                                                                                                                                                        |
+| **Severity & Compliance** | Impact assessment      | `HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]`                                                                                                                                                                                                                   |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                        |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/)                                                                                                                                                                                                 |

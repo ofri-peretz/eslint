@@ -17,7 +17,7 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const nest = <T,>(cases: T[]): T[] =>
+const nest = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asNest(c) as T;
     const t = c as Case;
@@ -43,7 +43,6 @@ const nest = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester();
 
@@ -177,3 +176,47 @@ describe('reported severity metadata', () => {
     expect(noHybridAppConfigLoss.meta.docs.cvss).toBe(5.3);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quint fidelity model (benchmarks/suites/fidelity/models/nestjs-security)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-hybrid-app-config-loss (fidelity)', noHybridAppConfigLoss, {
+  valid: nest([
+    {
+      name: 'a spread after inheritAppConfig: false may override it',
+      code: `app.connectMicroservice(kafkaConfig, { inheritAppConfig: false, ...hybridOptions });`,
+    },
+    {
+      name: 'a runtime-computed key may be inheritAppConfig',
+      code: `app.connectMicroservice(kafkaConfig, { [flagName]: true });`,
+    },
+    {
+      name: 'a non-literal inheritAppConfig may be true at runtime',
+      code: `app.connectMicroservice(kafkaConfig, { inheritAppConfig: cfg.inherit });`,
+    },
+  ]),
+  invalid: nest([
+    {
+      name: 'an explicit inheritAppConfig: false after a spread overrides whatever the spread carried',
+      code: `app.connectMicroservice(kafkaConfig, { ...hybridOptions, inheritAppConfig: false });`,
+      errors: [{ messageId: 'configNotInherited' }],
+    },
+  ]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run(
+  'no-hybrid-app-config-loss (mutation audit)',
+  noHybridAppConfigLoss,
+  {
+    valid: nest([
+      {
+        name: 'a bare connectMicroservice() function is not the application method',
+        code: `connectMicroservice(kafkaConfig);`,
+      },
+    ]),
+    invalid: nest([]),
+  },
+);

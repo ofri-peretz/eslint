@@ -34,8 +34,33 @@ describe('no-ecb-mode', () => {
       },
       { code: 'crypto.createCipheriv(algorithm, key, iv);' },
       { code: 'createCipheriv("aes-256-gcm", key, iv);' },
+      {
+        name: 'asking getCipherInfo about an ECB cipher encrypts nothing',
+        code: 'crypto.getCipherInfo("aes-256-ecb");',
+      },
     ],
     invalid: [
+      {
+        name: 'allowInTests does not exempt a file that is not a test',
+        code: 'crypto.createCipheriv("aes-256-ecb", key, iv);',
+        options: [{ allowInTests: true }],
+        filename: 'src/crypto.ts',
+        errors: [
+          {
+            messageId: 'ecbMode',
+            suggestions: [
+              {
+                messageId: 'useGcm',
+                output: 'crypto.createCipheriv("aes-256-gcm", key, iv);',
+              },
+              {
+                messageId: 'useCbc',
+                output: 'crypto.createCipheriv("aes-256-cbc", key, iv);',
+              },
+            ],
+          },
+        ],
+      },
       {
         name: 'ECB leaks structure — identical blocks encrypt identically',
         code: 'crypto.createCipheriv("aes-256-ecb", key, iv);',
@@ -92,6 +117,7 @@ describe('no-ecb-mode', () => {
         ],
       },
       {
+        name: 'a bare createCipheriv with aes-256-ecb is reported with GCM and CBC suggestions',
         code: 'createCipheriv("aes-256-ecb", key, iv);',
         errors: [
           {

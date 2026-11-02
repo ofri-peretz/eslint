@@ -49,12 +49,26 @@ export function calleeName(callee: TSESTree.Node): string | null {
   return null;
 }
 
-/** The SDK function `node` calls, if it calls one of `names` by exact name. */
+/**
+ * The SDK function `node` calls, if it calls one of `names` by exact name.
+ *
+ * A renamed import (`import { generateText as callModel } from 'ai'`) is
+ * resolved through the import, so `callModel()` is `generateText` — the alias
+ * is still the SDK function, and only the binding knows it.
+ */
 export function sdkCallName(
   node: TSESTree.CallExpression,
+  sourceCode: TSESLint.SourceCode,
   names: readonly string[] = AI_SDK_CALLS,
 ): string | null {
-  const name = calleeName(node.callee);
+  const binding =
+    node.callee.type === AST_NODE_TYPES.Identifier
+      ? resolveModuleBinding(node.callee, sourceCode.getScope(node))
+      : undefined;
+  const name =
+    binding && isSdkModule(binding.module) && binding.path.length === 1
+      ? binding.path[0]
+      : calleeName(node.callee);
   return name !== null && names.includes(name) ? name : null;
 }
 
@@ -121,7 +135,7 @@ function isParameter(
  * The request body itself: `await req.json()`, `await req.formData()`,
  * `await req.text()`, or `req.body` — where `req` is a parameter of the
  * enclosing function, i.e. the route handler's request — or a query-string
- * read, `searchParams.get(...)`.
+ * read, `req.query` / `searchParams.get(...)`.
  */
 function isRequestBody(
   node: TSESTree.Node,
@@ -146,12 +160,16 @@ function isRequestBody(
       isParameter(callee.object, scope)
     );
   }
+  // `req.body` / `req.query` — Express-style handlers expose both parsed.
   return (
     target.type === AST_NODE_TYPES.MemberExpression &&
-    propertyName(target) === 'body' &&
+    REQUEST_INPUTS.has(propertyName(target) as string) &&
     isParameter(target.object, scope)
   );
 }
+
+/** The request properties that carry the caller's input. */
+const REQUEST_INPUTS = new Set(['body', 'query']);
 
 /**
  * Is any part of this value read out of the request?

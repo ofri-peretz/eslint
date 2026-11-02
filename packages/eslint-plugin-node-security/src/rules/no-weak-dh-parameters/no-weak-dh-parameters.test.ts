@@ -29,6 +29,11 @@ describe('no-weak-dh-parameters', () => {
                crypto.createDiffieHellman(3072);`,
       },
       {
+        name: 'probing whether a weak curve is supported does not choose it',
+        code: `const crypto = require('crypto');
+               const legacy = crypto.getCurves().includes('secp160k1');`,
+      },
+      {
         name: 'prime256v1 is not a weak curve',
         code: `const crypto = require('crypto');
                crypto.createECDH('prime256v1');`,
@@ -193,6 +198,33 @@ describe('no-weak-dh-parameters', () => {
                crypto.getDiffieHellman('modp14');`,
         options: [{ minPrimeBits: 3072 }],
         errors: [{ messageId: 'weakModpGroup' }],
+      },
+      {
+        name: 'a floor above 8192 bits knows the size of every large MODP group',
+        code: `const crypto = require('crypto');
+               crypto.getDiffieHellman('modp15');
+               crypto.getDiffieHellman('modp16');
+               crypto.getDiffieHellman('modp17');
+               crypto.getDiffieHellman('modp18');`,
+        options: [{ minPrimeBits: 16384 }],
+        errors: [
+          {
+            messageId: 'weakModpGroup',
+            data: { group: 'modp15', bits: '3072', minimum: '16384' },
+          },
+          {
+            messageId: 'weakModpGroup',
+            data: { group: 'modp16', bits: '4096', minimum: '16384' },
+          },
+          {
+            messageId: 'weakModpGroup',
+            data: { group: 'modp17', bits: '6144', minimum: '16384' },
+          },
+          {
+            messageId: 'weakModpGroup',
+            data: { group: 'modp18', bits: '8192', minimum: '16384' },
+          },
+        ],
       },
     ],
   });

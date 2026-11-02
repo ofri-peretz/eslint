@@ -30,7 +30,6 @@ const AI_PROGRAM = {
   comments: [],
 };
 
-
 /**
  * Every fixture imports the AI SDK, because the rules now abstain in files with
  * no `ai` / `@ai-sdk` in them. Wrapping the arrays rather than editing each
@@ -48,7 +47,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -75,7 +74,6 @@ const xai = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -83,63 +81,67 @@ const ruleTester = new RuleTester({
   },
 });
 
-ruleTester.run('require-tool-confirmation (branch coverage)', requireToolConfirmation, {
-  valid: xai([
-    // Computed (non-Identifier, non-Literal) key — handler bails immediately.
-    {
-      code: `const t = { [cfg.name]: { execute: run } };`,
-    },
-    // Destructive tool outside a tools object — grandparent is not a Property.
-    {
-      code: `const x = { deleteUser: { execute: run } };`,
-    },
-    // Wrapper key is not literally 'tools'.
-    {
-      code: `generateText({ notTools: { deleteUser: { execute: run } } });`,
-    },
-    // (Changed 2026-10-10) A quoted `'tools'` key used to be skipped here; it is
-    // the same property, so it is now checked — see the fp-fn audit suite.
-    // (Changed 2026-10-10) A spread inside the tool may carry `needsApproval`
-    // or omit `execute`; the rule cannot see into it, so it stays silent.
-    {
-      name: 'a spread in the tool may carry needsApproval, so it stays silent',
-      code: `generateText({ tools: { deleteUser: { ...baseTool } } });`,
-    },
-    // (Changed 2026-10-10) A quoted confirmation key is the same property and
-    // now counts — this was recorded as a known FN.
-    {
-      name: 'a quoted confirmation key counts as confirmation',
-      code: `generateText({ tools: { deleteUser: { 'requiresConfirmation': true, execute: run } } });`,
-    },
-    // A tool() call with no object argument is not a definition this rule reads.
-    {
-      name: 'a tool() call with no object argument is not a definition the rule reads',
-      code: `generateText({ tools: { deleteUser: tool(def) } });`,
-    },
-    // A call to some other factory is not a tool definition.
-    {
-      name: 'a call to another factory is not a tool definition',
-      code: `generateText({ tools: { deleteUser: makeTool({ execute: run }) } });`,
-    },
-    // Destructive tool defined via the tool() helper CallExpression — assumed handled.
-    {
-      name: 'a tool() definition with a confirmation flag is confirmed',
-      code: `generateText({ tools: { deleteUser: tool({ requiresConfirmation: true }) } });`,
-    },
-  ]),
-  invalid: xai([
-    // String-literal tool name — resolved via String(key.value).
-    {
-      code: `generateText({ tools: { 'deleteUser': { execute: run } } });`,
-      errors: [
-        {
-          messageId: 'missingConfirmation',
-          data: { toolName: 'deleteUser', operation: 'delete' },
-        },
-      ],
-    },
-  ]),
-});
+ruleTester.run(
+  'require-tool-confirmation (branch coverage)',
+  requireToolConfirmation,
+  {
+    valid: xai([
+      // Computed (non-Identifier, non-Literal) key — handler bails immediately.
+      {
+        code: `const t = { [cfg.name]: { execute: run } };`,
+      },
+      // Destructive tool outside a tools object — grandparent is not a Property.
+      {
+        code: `const x = { deleteUser: { execute: run } };`,
+      },
+      // Wrapper key is not literally 'tools'.
+      {
+        code: `generateText({ notTools: { deleteUser: { execute: run } } });`,
+      },
+      // (Changed 2026-10-10) A quoted `'tools'` key used to be skipped here; it is
+      // the same property, so it is now checked — see the fp-fn audit suite.
+      // (Changed 2026-10-10) A spread inside the tool may carry `needsApproval`
+      // or omit `execute`; the rule cannot see into it, so it stays silent.
+      {
+        name: 'a spread in the tool may carry needsApproval, so it stays silent',
+        code: `generateText({ tools: { deleteUser: { ...baseTool } } });`,
+      },
+      // (Changed 2026-10-10) A quoted confirmation key is the same property and
+      // now counts — this was recorded as a known FN.
+      {
+        name: 'a quoted confirmation key counts as confirmation',
+        code: `generateText({ tools: { deleteUser: { 'requiresConfirmation': true, execute: run } } });`,
+      },
+      // A tool() call with no object argument is not a definition this rule reads.
+      {
+        name: 'a tool() call with no object argument is not a definition the rule reads',
+        code: `generateText({ tools: { deleteUser: tool(def) } });`,
+      },
+      // A call to some other factory is not a tool definition.
+      {
+        name: 'a call to another factory is not a tool definition',
+        code: `generateText({ tools: { deleteUser: makeTool({ execute: run }) } });`,
+      },
+      // Destructive tool defined via the tool() helper CallExpression — assumed handled.
+      {
+        name: 'a tool() definition with a confirmation flag is confirmed',
+        code: `generateText({ tools: { deleteUser: tool({ requiresConfirmation: true }) } });`,
+      },
+    ]),
+    invalid: xai([
+      // String-literal tool name — resolved via String(key.value).
+      {
+        code: `generateText({ tools: { 'deleteUser': { execute: run } } });`,
+        errors: [
+          {
+            messageId: 'missingConfirmation',
+            data: { toolName: 'deleteUser', operation: 'delete' },
+          },
+        ],
+      },
+    ]),
+  },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Layer 2: synthetic AST for the parser-unreachable orphan-Property guard.
@@ -149,10 +151,13 @@ type Listener = (node: unknown) => void;
 
 describe('require-tool-confirmation — synthetic AST', () => {
   it('does not report a destructive Property detached from any object (parent null)', () => {
-    const { listeners, reports } = createWithMockContext(requireToolConfirmation, {
-      ast: AI_PROGRAM,
-      options: [{}],
-    });
+    const { listeners, reports } = createWithMockContext(
+      requireToolConfirmation,
+      {
+        ast: AI_PROGRAM,
+        options: [{}],
+      },
+    );
     const orphanProperty = {
       type: 'Property',
       key: { type: 'Identifier', name: 'deleteUser' },

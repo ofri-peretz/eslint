@@ -158,11 +158,8 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        ({
-          allowInTests = false,
-          sensitivePatterns = [...NON_BEARER_SECRET_TERMS],
-          checkSessionStorage = false,
-        } = options as Options);
+        ({ allowInTests, sensitivePatterns, checkSessionStorage } =
+          options as Required<Options>);
 
         const isTestFile = allowInTests && isTestFilePath(context.filename);
 
@@ -188,9 +185,9 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
         );
         if (storage === null) return;
 
-        const keyArg = node.arguments[0];
-        const valueArg = node.arguments[1];
-        if (keyArg === undefined || valueArg === undefined) return;
+        // A second argument implies a first.
+        const [keyArg, valueArg] = node.arguments;
+        if (valueArg === undefined) return;
 
         check(
           node,

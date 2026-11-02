@@ -21,7 +21,7 @@ type AiCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
 };
-const xai = <T,>(cases: T[]): T[] =>
+const xai = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asAi(c) as T;
     const test = c as AiCase;
@@ -47,7 +47,6 @@ const xai = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -197,57 +196,63 @@ ruleTester.run('require-validated-prompt', requireValidatedPrompt, {
 // ─────────────────────────────────────────────────────────────────────────────
 // Coverage-gap fixtures (Layer 1): option paths, key shapes, argument shapes
 // ─────────────────────────────────────────────────────────────────────────────
-ruleTester.run('require-validated-prompt (coverage gaps)', requireValidatedPrompt, {
-  valid: xai([
-    // allowInTests skips test files entirely
-    {
-      code: `generateText({ prompt: userInput });`,
-      options: [{ allowInTests: true }],
-      filename: 'prompt.test.ts',
-    },
-    // no arguments at all
-    { code: `generateText();` },
-    // non-object first argument
-    { code: `generateText(cfg);` },
-    // spread-only options object (property is not a Property node)
-    { code: `generateText({ ...cfg });` },
-    // computed key is skipped (keyName resolves to null)
-    { code: `generateText({ [getKey()]: userInput });` },
-    // concatenation of two static strings is safe
-    { code: `generateText({ prompt: 'a' + 'b' });` },
-    // template literal whose expressions are not user input
-    { code: `generateText({ prompt: \`ctx: \${staticVal}\` });` },
-    // static system prompt alongside validated prompt
-    { code: `generateText({ system: 'static', prompt: validateInput(userInput) });` },
-  ]),
-  invalid: xai([
-    // string-literal 'prompt' key still resolves and reports
-    {
-      code: `generateText({ 'prompt': userInput });`,
-      errors: [{ messageId: 'unsafePrompt' }],
-    },
-    // concatenation with user input on the right side
-    {
-      code: `generateText({ prompt: 'prefix: ' + userInput });`,
-      errors: [{ messageId: 'unsafePrompt' }],
-    },
-    // concatenation with user input on the left side
-    {
-      code: `generateText({ prompt: userInput + ' suffix' });`,
-      errors: [{ messageId: 'unsafePrompt' }],
-    },
-    // member expression user input (req.body)
-    {
-      code: `generateText({ prompt: req.body });`,
-      errors: [{ messageId: 'unsafePrompt' }],
-    },
-    // string-literal 'system' key with dynamic user input
-    {
-      code: `generateText({ 'system': userInput });`,
-      errors: [{ messageId: 'unsafeSystemPrompt' }],
-    },
-  ]),
-});
+ruleTester.run(
+  'require-validated-prompt (coverage gaps)',
+  requireValidatedPrompt,
+  {
+    valid: xai([
+      // allowInTests skips test files entirely
+      {
+        code: `generateText({ prompt: userInput });`,
+        options: [{ allowInTests: true }],
+        filename: 'prompt.test.ts',
+      },
+      // no arguments at all
+      { code: `generateText();` },
+      // non-object first argument
+      { code: `generateText(cfg);` },
+      // spread-only options object (property is not a Property node)
+      { code: `generateText({ ...cfg });` },
+      // computed key is skipped (keyName resolves to null)
+      { code: `generateText({ [getKey()]: userInput });` },
+      // concatenation of two static strings is safe
+      { code: `generateText({ prompt: 'a' + 'b' });` },
+      // template literal whose expressions are not user input
+      { code: `generateText({ prompt: \`ctx: \${staticVal}\` });` },
+      // static system prompt alongside validated prompt
+      {
+        code: `generateText({ system: 'static', prompt: validateInput(userInput) });`,
+      },
+    ]),
+    invalid: xai([
+      // string-literal 'prompt' key still resolves and reports
+      {
+        code: `generateText({ 'prompt': userInput });`,
+        errors: [{ messageId: 'unsafePrompt' }],
+      },
+      // concatenation with user input on the right side
+      {
+        code: `generateText({ prompt: 'prefix: ' + userInput });`,
+        errors: [{ messageId: 'unsafePrompt' }],
+      },
+      // concatenation with user input on the left side
+      {
+        code: `generateText({ prompt: userInput + ' suffix' });`,
+        errors: [{ messageId: 'unsafePrompt' }],
+      },
+      // member expression user input (req.body)
+      {
+        code: `generateText({ prompt: req.body });`,
+        errors: [{ messageId: 'unsafePrompt' }],
+      },
+      // string-literal 'system' key with dynamic user input
+      {
+        code: `generateText({ 'system': userInput });`,
+        errors: [{ messageId: 'unsafeSystemPrompt' }],
+      },
+    ]),
+  },
+);
 
 // (Removed 2026-10-10) A Layer-2 synthetic test pinned the `|| 'user input'`
 // label fallback for an Identifier with an empty name. The report label is now
@@ -258,104 +263,205 @@ ruleTester.run('require-validated-prompt (coverage gaps)', requireValidatedPromp
 // AI SDK v7 renamed the system prompt to `instructions` (`system` is deprecated
 // in the SDK's own types). Regression lock: the rule used to match `system` only.
 // ─────────────────────────────────────────────────────────────────────────────
-ruleTester.run('require-validated-prompt (instructions prop)', requireValidatedPrompt, {
-  valid: [],
-  invalid: xai([
-    {
-      code: `
+ruleTester.run(
+  'require-validated-prompt (instructions prop)',
+  requireValidatedPrompt,
+  {
+    valid: [],
+    invalid: xai([
+      {
+        code: `
         await generateText({
           model: openai('gpt-4'),
           instructions: \`You are an assistant. \${userInput}\`,
         });
       `,
-      errors: [{ messageId: 'unsafeSystemPrompt' }],
-    },
-  ]),
-});
+        errors: [{ messageId: 'unsafeSystemPrompt' }],
+      },
+    ]),
+  },
+);
 
 // Computed key colliding with the property name — see no-dynamic-system-prompt.
-ruleTester.run('require-validated-prompt (computed key collision)', requireValidatedPrompt, {
-  valid: xai([
-    {
-      code: `
+ruleTester.run(
+  'require-validated-prompt (computed key collision)',
+  requireValidatedPrompt,
+  {
+    valid: xai([
+      {
+        code: `
         const instructions = 'topP';
         generateText({ model, [instructions]: userInput });
       `,
-    },
-  ]),
-  invalid: [],
-});
-
+      },
+    ]),
+    invalid: [],
+  },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FP/FN audit 2026-10-10: user input is recognised by SHAPE (read from the
 // request), and a name pattern must be the name's head noun, whole words —
 // `inputTokens` is a count of tokens, not an input.
 // ─────────────────────────────────────────────────────────────────────────────
-ruleTester.run('require-validated-prompt (fp-fn audit)', requireValidatedPrompt, {
-  valid: xai([
-    {
-      name: 'a constant whose name merely starts with "input" is not user input',
-      code: `
+ruleTester.run(
+  'require-validated-prompt (fp-fn audit)',
+  requireValidatedPrompt,
+  {
+    valid: xai([
+      {
+        name: 'a constant whose name merely starts with "input" is not user input',
+        code: `
         const inputTokens = 1200;
         await generateText({ model, prompt: \`Summarize the usage report (\${inputTokens} tokens).\` });
       `,
-    },
-    {
-      name: 'a value parsed through a schema is validated',
-      code: `
+      },
+      {
+        name: 'a value parsed through a schema is validated',
+        code: `
         export async function POST(req) {
           const { query } = z.object({ query: z.string().max(500) }).parse(await req.json());
           return streamText({ model, prompt: query });
         }
       `,
-    },
-    {
-      name: 'a value bound from a validator call is validated',
-      code: `
+      },
+      {
+        name: 'a value bound from a validator call is validated',
+        code: `
         const safeInput = validateInput(userInput);
         await generateText({ model, prompt: safeInput });
       `,
-    },
-    {
-      name: 'a runtime-keyed member names no property to match',
-      code: `await generateText({ model, prompt: data[key] });`,
-    },
-    {
-      name: 'a member of an unrelated object whose head noun is not an input word',
-      code: `await generateText({ model, prompt: settings.inputMode });`,
-    },
-  ]),
-  invalid: xai([
-    {
-      name: 'prompt destructured straight out of the request, under a neutral name',
-      code: `
+      },
+      {
+        name: 'a runtime-keyed member names no property to match',
+        code: `await generateText({ model, prompt: data[key] });`,
+      },
+      {
+        name: 'a member of an unrelated object whose head noun is not an input word',
+        code: `await generateText({ model, prompt: settings.inputMode });`,
+      },
+    ]),
+    invalid: xai([
+      {
+        name: 'prompt destructured straight out of the request, under a neutral name',
+        code: `
         export async function POST(req) {
           const { prompt } = await req.json();
           return streamText({ model, prompt });
         }
       `,
-      errors: [{ messageId: 'unsafePrompt' }],
-    },
-    {
-      name: 'a member of the parsed body interpolated into the prompt',
-      code: `
+        errors: [{ messageId: 'unsafePrompt' }],
+      },
+      {
+        name: 'a member of the parsed body interpolated into the prompt',
+        code: `
         export async function POST(req) {
           const body = await req.json();
           return streamText({ model, prompt: \`Translate to French: \${body.text}\` });
         }
       `,
-      errors: [{ messageId: 'unsafePrompt' }],
-    },
-    {
-      name: 'a query-string value in the system prompt',
-      code: `
+        errors: [{ messageId: 'unsafePrompt' }],
+      },
+      {
+        name: 'a query-string value in the system prompt',
+        code: `
         export async function GET(req) {
           const q = new URL(req.url).searchParams.get('q') ?? '';
           return streamText({ model, system: \`Answer about \${q}\`, prompt: 'go' });
         }
       `,
-      errors: [{ messageId: 'unsafeSystemPrompt' }],
+        errors: [{ messageId: 'unsafeSystemPrompt' }],
+      },
+    ]),
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quint fidelity model (benchmarks/suites/fidelity/models/vercel-ai-security)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-validated-prompt (fidelity)', requireValidatedPrompt, {
+  valid: xai([
+    {
+      name: 'a helper listed in validatorFunctions validates the input',
+      code: `export async function POST(req) { return generateText({ prompt: cleanUserInput(req.body.question) }); }`,
+      options: [{ validatorFunctions: ['cleanUserInput'] }],
+    },
+    {
+      name: 'a call on a value that is not user input is not reported',
+      code: `export async function POST(req, inputTokens) { return generateText({ prompt: String(inputTokens) }); }`,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'a query-string value read from req.query is user input',
+      code: `export async function POST(req) { return generateText({ prompt: req.query.q }); }`,
+      errors: [{ messageId: 'unsafePrompt' }],
+    },
+    {
+      name: 'a string method on request input is not validation',
+      code: `export async function POST(req) { return generateText({ prompt: req.body.question.trim() }); }`,
+      errors: [{ messageId: 'unsafePrompt' }],
+    },
+    {
+      name: 'a helper not listed in validatorFunctions is not validation',
+      code: `export async function POST(req) { return generateText({ prompt: cleanUserInput(req.body.question) }); }`,
+      errors: [{ messageId: 'unsafePrompt' }],
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run(
+  'require-validated-prompt (mutation audit)',
+  requireValidatedPrompt,
+  {
+    valid: xai([
+      {
+        name: 'a body field of a non-request object is not user input',
+        code: `await generateText({ prompt: template.body });`,
+      },
+      {
+        name: 'a non-content field read off a value named message is not user input',
+        code: `await generateText({ prompt: message.role });`,
+      },
+    ]),
+    invalid: xai([
+      {
+        name: 'a test file is still checked by default (allowInTests is off)',
+        code: `await generateText({ prompt: userInput });`,
+        filename: 'prompt.test.ts',
+        errors: [{ messageId: 'unsafePrompt' }],
+      },
+      {
+        name: 'allowInTests only exempts test files — a source file is still checked',
+        code: `await generateText({ prompt: userInput });`,
+        filename: 'prompt.ts',
+        options: [{ allowInTests: true }],
+        errors: [{ messageId: 'unsafePrompt' }],
+      },
+      {
+        name: 'a for-of loop variable named input is user input',
+        code: `for (const input of inputs) await generateText({ prompt: input });`,
+        errors: [{ messageId: 'unsafePrompt' }],
+      },
+      {
+        name: 'user input in a later template expression is still found',
+        code: 'await generateText({ prompt: `${systemContext} ${userInput}` });',
+        errors: [{ messageId: 'unsafePrompt' }],
+      },
+      {
+        // @found mutation testing
+        name: 'FN: a parameter named requestBody is the request body',
+        code: `async function handle(requestBody) { await generateText({ prompt: requestBody }); }`,
+        errors: [{ messageId: 'unsafePrompt' }],
+      },
+      {
+        name: 'user input passed as a later argument of a helper is still found',
+        code: `await generateText({ prompt: format(header, userInput) });`,
+        errors: [{ messageId: 'unsafePrompt' }],
+      },
+    ]),
+  },
+);

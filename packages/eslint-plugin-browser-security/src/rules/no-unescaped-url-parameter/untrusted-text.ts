@@ -235,10 +235,8 @@ function isDomElement(
     }
 
     case AST_NODE_TYPES.MemberExpression: {
-      // `querySelectorAll(...)[0]` — one element out of a NodeList.
-      if (node.computed && node.property.type !== AST_NODE_TYPES.Literal) {
-        return isDomElement(node.object, sourceCode, seen);
-      }
+      // `querySelectorAll(...)[0]` — one element out of a NodeList: an index
+      // has no static property name.
       const property = staticProperty(node);
       if (property === null) return isDomElement(node.object, sourceCode, seen);
       // `inputRef.current` — how most React code holds an element. Proven from
@@ -401,7 +399,7 @@ function hasClosedType(annotation: TSESTree.TypeNode | undefined): boolean {
  * `${page + 1}` as an unescaped URL parameter is exactly the noise that gets a
  * security rule switched off.
  */
-function isArithmetic(node: TSESTree.BinaryExpression): boolean {
+export function isArithmetic(node: TSESTree.BinaryExpression): boolean {
   const isNumericLiteral = (n: TSESTree.Node): boolean =>
     n.type === AST_NODE_TYPES.Literal && typeof n.value === 'number';
   const isTextual = (n: TSESTree.Node): boolean =>

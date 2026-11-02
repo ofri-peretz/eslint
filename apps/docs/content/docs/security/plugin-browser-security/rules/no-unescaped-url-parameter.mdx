@@ -89,8 +89,8 @@ A hole in the authority chooses the scheme or host. That is an open redirect
 (CWE-601) and belongs to `no-insecure-redirects` / `require-url-validation`, so
 `` `https://${host}/v1/status` `` is not reported here.
 
-Absolute text (`https://…`, `//…`) is a URL wherever it is written. Relative
-text (`/v1/items?…`) is only a URL once it reaches a sink — `fetch`, `new URL`,
+Absolute text (`https://…`, `//…`) is a URL wherever it is written. Any other
+text (`/v1/items?…`, `./x`, `api/items?…`) is only a URL once it reaches a sink — `fetch`, `new URL`,
 `new Request`, `axios`/`ky`, `xhr.open(method, url)`, or a JSX `href`/`src`/
 `action`/`formAction`/`poster` — resolved through one binding hop.
 
@@ -213,8 +213,7 @@ flowchart TD
     A["🔍 TemplateLiteral / outermost + chain"] --> B{"Test file & allowInTests?"}
     B -->|Yes| C["✅ Skip"]
     B -->|No| D["Assemble the URL's STATIC TEXT<br/>cooked quasis + string literals"]
-    D --> E{"Absolute, relative, or not a URL?"}
-    E -->|Not a URL| C
+    D --> E{"Absolute or relative?"}
     E -->|Relative| F{"Reaches a URL sink?"}
     F -->|No| C
     F -->|Yes| G

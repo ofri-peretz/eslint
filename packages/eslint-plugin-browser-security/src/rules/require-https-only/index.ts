@@ -62,14 +62,14 @@ export interface Options {}
 type RuleOptions = [Options?];
 
 /**
- * The authority a `http://` template literal actually writes down, or `null`
- * when the next `${…}` supplies it.
+ * The authority a `http://` template literal actually writes down — empty when
+ * the next `${…}` supplies it, which no exemption matches.
  *
  * `` `http://${host}/api` `` has no host to test against the loopback list, so
  * there is nothing to exempt and the call reports. `` `http://localhost:${p}` ``
  * writes `localhost` down, so it is exempt exactly like the literal form.
  */
-function writtenAuthority(cooked: string): string | null {
+function writtenAuthority(cooked: string): string {
   // Only reached after the caller has already matched `^http://`, so the regex
   // cannot fail. Asserting beats an unreachable branch in a package held to
   // 100% coverage.
@@ -79,8 +79,7 @@ function writtenAuthority(cooked: string): string | null {
   // the trailing colon makes the host unparseable and a dev-server URL becomes
   // a HIGH finding, which is the exact false positive the loopback exemption
   // exists to prevent.
-  const authority = rest[1].replace(/:$/, '');
-  return authority === '' ? null : authority;
+  return rest[1].replace(/:$/, '');
 }
 
 export const requireHttpsOnly = createRule<RuleOptions, MessageIds>({
@@ -191,7 +190,7 @@ export const requireHttpsOnly = createRule<RuleOptions, MessageIds>({
         // `fetch` there is no ambiguity, the request is cleartext whatever the
         // host resolves to.
         const authority = writtenAuthority(prefix);
-        if (authority !== null && isNonTransmittingUrl(`http://${authority}`)) {
+        if (isNonTransmittingUrl(`http://${authority}`)) {
           return;
         }
         report(url);

@@ -64,18 +64,18 @@ ruleTester.run('no-missing-cors-check (final coverage)', noMissingCorsCheck, {
     // null so node.arguments is scanned (L314/L315 alternate arms); no
     // wildcard origin, so no report.
     { code: 'app.use({ handler: cors(cb) });', filename: 'server.ts' },
-    // Identifier cors argument resolved through an arrow function with an
-    // EXPRESSION body: scopeBody falls back to [] (L353 alternate arm) and
-    // the immediate-scope-only search finds nothing.
+  ],
+  invalid: [
+    // A bound config used from an expression-bodied arrow is still the
+    // wildcard. This was pinned valid (an FN of the old scope-body search).
     {
       code: [
         'const corsOpts = { origin: "*" };',
         'const setup = (app) => app.use(cors(corsOpts));',
       ].join('\n'),
       filename: 'server.ts',
+      errors: [{ messageId: 'missingCorsCheck' }],
     },
-  ],
-  invalid: [
     // Wildcard literal in a Property whose key is NOT origin/allowedOrigins
     // (L210 else path) but still inside a cors(...) call context.
     {
@@ -89,75 +89,91 @@ ruleTester.run('no-missing-cors-check (final coverage)', noMissingCorsCheck, {
 // ---------------------------------------------------------------------------
 // no-sensitive-localstorage
 // ---------------------------------------------------------------------------
-ruleTester.run('no-sensitive-localstorage (final coverage)', noSensitiveLocalstorage, {
-  valid: [
-    // Key argument that is neither a string Literal nor an Identifier
-    // (L177 else-if fall-through: keyValue stays null)
-    { code: 'localStorage.setItem(getKey(), data);', filename: 'app.ts' },
-  ],
-  invalid: [],
-});
+ruleTester.run(
+  'no-sensitive-localstorage (final coverage)',
+  noSensitiveLocalstorage,
+  {
+    valid: [
+      // Key argument that is neither a string Literal nor an Identifier
+      // (L177 else-if fall-through: keyValue stays null)
+      { code: 'localStorage.setItem(getKey(), data);', filename: 'app.ts' },
+    ],
+    invalid: [],
+  },
+);
 
 // ---------------------------------------------------------------------------
 // no-sensitive-sessionstorage
 // ---------------------------------------------------------------------------
-ruleTester.run('no-sensitive-sessionstorage (final coverage)', noSensitiveSessionstorage, {
-  valid: [
-    // Key argument that is neither a string Literal nor an Identifier
-    // (L147 else-if fall-through: keyValue stays null)
-    { code: 'sessionStorage.setItem(getKey(), data);', filename: 'app.ts' },
-  ],
-  invalid: [],
-});
+ruleTester.run(
+  'no-sensitive-sessionstorage (final coverage)',
+  noSensitiveSessionstorage,
+  {
+    valid: [
+      // Key argument that is neither a string Literal nor an Identifier
+      // (L147 else-if fall-through: keyValue stays null)
+      { code: 'sessionStorage.setItem(getKey(), data);', filename: 'app.ts' },
+    ],
+    invalid: [],
+  },
+);
 
 // ---------------------------------------------------------------------------
 // no-unescaped-url-parameter
 // ---------------------------------------------------------------------------
-ruleTester.run('no-unescaped-url-parameter (final coverage)', noUnescapedUrlParameter, {
-  valid: [
-    // BinaryExpression with a non-`+` operator (L282 else path)
-    { code: 'const masked = a & b;', filename: 'app.ts' },
-    // URL concatenation whose right side is not user input (L311 else path)
-    {
-      code: 'const u = "https://api.example.com/items?page=" + pageNumber;',
-      filename: 'app.ts',
-    },
-    // Self-referential initializer: the recursive isUserControlled call hits
-    // the visited-set short-circuit (L351 true path) and returns false.
-    {
-      code: 'var q = q; window.location.href = q;',
-      filename: 'app.ts',
-    },
-    // Identifier whose initializer is a plain Literal: not user-controlled,
-    // not a TemplateLiteral, not a BinaryExpression (L371 else path).
-    {
-      code: 'const dest = 5; window.location.href = dest;',
-      filename: 'app.ts',
-    },
-    // Assignment target whose object is a CallExpression: objectName falls
-    // back to '' (L392 alternate arm) and isLocationAssignment stays false
-    // (L395 else, L404 else).
-    { code: 'getWin().href = value;', filename: 'app.ts' },
-    // Computed property on a location member: propName falls back to ''
-    // (L393 alternate arm).
-    { code: 'window.location["href"] = value;', filename: 'app.ts' },
-    // Identifier assignment target that is not `location` (L399 else path)
-    { code: 'dest2 = "https://example.com";', filename: 'app.ts' },
-  ],
-  invalid: [],
-});
+ruleTester.run(
+  'no-unescaped-url-parameter (final coverage)',
+  noUnescapedUrlParameter,
+  {
+    valid: [
+      // BinaryExpression with a non-`+` operator (L282 else path)
+      { code: 'const masked = a & b;', filename: 'app.ts' },
+      // URL concatenation whose right side is not user input (L311 else path)
+      {
+        code: 'const u = "https://api.example.com/items?page=" + pageNumber;',
+        filename: 'app.ts',
+      },
+      // Self-referential initializer: the recursive isUserControlled call hits
+      // the visited-set short-circuit (L351 true path) and returns false.
+      {
+        code: 'var q = q; window.location.href = q;',
+        filename: 'app.ts',
+      },
+      // Identifier whose initializer is a plain Literal: not user-controlled,
+      // not a TemplateLiteral, not a BinaryExpression (L371 else path).
+      {
+        code: 'const dest = 5; window.location.href = dest;',
+        filename: 'app.ts',
+      },
+      // Assignment target whose object is a CallExpression: objectName falls
+      // back to '' (L392 alternate arm) and isLocationAssignment stays false
+      // (L395 else, L404 else).
+      { code: 'getWin().href = value;', filename: 'app.ts' },
+      // Computed property on a location member: propName falls back to ''
+      // (L393 alternate arm).
+      { code: 'window.location["href"] = value;', filename: 'app.ts' },
+      // Identifier assignment target that is not `location` (L399 else path)
+      { code: 'dest2 = "https://example.com";', filename: 'app.ts' },
+    ],
+    invalid: [],
+  },
+);
 
 // ---------------------------------------------------------------------------
 // no-worker-message-innerhtml
 // ---------------------------------------------------------------------------
-ruleTester.run('no-worker-message-innerhtml (final coverage)', noWorkerMessageInnerhtml, {
-  valid: [
-    // addEventListener('message') on a MemberExpression object: obj is not
-    // an Identifier so it is never registered as a worker (L150 else path).
-    {
-      code: 'self.pool.addEventListener("message", onMsg);',
-      filename: 'app.ts',
-    },
-  ],
-  invalid: [],
-});
+ruleTester.run(
+  'no-worker-message-innerhtml (final coverage)',
+  noWorkerMessageInnerhtml,
+  {
+    valid: [
+      // addEventListener('message') on a MemberExpression object: obj is not
+      // an Identifier so it is never registered as a worker (L150 else path).
+      {
+        code: 'self.pool.addEventListener("message", onMsg);',
+        filename: 'app.ts',
+      },
+    ],
+    invalid: [],
+  },
+);

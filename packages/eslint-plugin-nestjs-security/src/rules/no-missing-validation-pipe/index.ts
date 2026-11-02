@@ -19,6 +19,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  staticString,
 } from '@interlace/eslint-devkit';
 import {
   decoratorCall,
@@ -28,15 +29,23 @@ import {
   findDecorator,
   INPUT_DECORATORS,
   isControllerClass,
+  isModuleExport,
   isRouteHandler,
 } from '../../utils/nest-ast';
 import { getProjectContext } from '../../utils/project-context';
-import { hasParserServices, getParserServices } from '@interlace/eslint-devkit';
+import {
+  hasParserServices,
+  getParserServices,
+  resolveModuleBinding,
+} from '@interlace/eslint-devkit';
 import type ts from 'typescript';
 import { loadTypeScript } from '../../utils/typescript-peer';
 import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 
 type MessageIds = 'missingValidation' | 'undecoratedDto';
+
+/** `app.useGlobalPipes(…)` or an `APP_PIPE` provider — the project scan's own test. */
+const GLOBAL_PIPE_REGISTRATION = /\buseGlobalPipes\s*\(|\bAPP_PIPE\b/;
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -68,6 +77,45 @@ export interface Options {
 }
 
 type RuleOptions = [Options?];
+
+/** A route parameter this rule reads: a named binding or a destructured object. */
+type InputParam = TSESTree.Identifier | TSESTree.ObjectPattern;
+
+/** How a parameter is named in a message. */
+function paramLabel(param: InputParam): string {
+  if (param.type === AST_NODE_TYPES.Identifier) return param.name;
+  const names = param.properties.map((p) =>
+    p.type === AST_NODE_TYPES.Property &&
+    p.value.type === AST_NODE_TYPES.Identifier
+      ? p.value.name
+      : '…',
+  );
+  return `{ ${names.join(', ')} }`;
+}
+
+/**
+ * The type checker and the TypeScript module, when the file was parsed with
+ * type information; null otherwise.
+ *
+ * Type information is optional. Without `parserOptions.project` the rule keeps
+ * its syntax-only behaviour exactly; with it, one more question becomes
+ * answerable. TypeScript is loaded lazily, only once parser services exist,
+ * so the emitted output carries no top-level `require("typescript")` — this
+ * package does not depend on it.
+ */
+function typeInformation(context: TSESLint.RuleContext<string, RuleOptions>): {
+  services: ReturnType<typeof getParserServices>;
+  checker: ts.TypeChecker;
+  tsm: typeof ts;
+} | null {
+  if (!hasParserServices(context)) return null;
+  const services = getParserServices(context);
+  const tsm = loadTypeScript();
+  // `hasParserServices` already proved a program exists.
+  const program = services.program as ts.Program;
+  // Null only where TypeScript is not installed, which parser services rule out.
+  return tsm && { services, checker: program.getTypeChecker(), tsm };
+}
 
 export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-validation-pipe',
@@ -142,42 +190,32 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
       },
     ],
   },
-  defaultOptions: [{ allowInTests: true, assumeGlobalPipes: false }],
-  create(
-    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}],
-  ) {
+  defaultOptions: [
+    {
+      allowInTests: true,
+      assumeGlobalPipes: false,
+      detectGlobalPipes: true,
+      requireExplicitPipe: false,
+    },
+  ],
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
     // Registering no visitors is both the gate and the cheap path: a file
     // that does not use this SDK does no work at all.
     if (!fileUsesNestjs(context.sourceCode.ast)) return {};
 
+    // Merged with `defaultOptions` before `create` runs.
     const {
-      allowInTests = true,
-      assumeGlobalPipes = false,
-      detectGlobalPipes = true,
-      requireExplicitPipe = false,
-    } = options as Options;
-
-    // Skip entirely if global ValidationPipe is assumed (configured in main.ts)
-    if (assumeGlobalPipes) {
-      return {};
-    }
+      allowInTests,
+      assumeGlobalPipes,
+      detectGlobalPipes,
+      requireExplicitPipe,
+    } = options as Required<Options>;
 
     if (allowInTests && isTestFilePath(context.filename)) {
       return {};
     }
 
-    // Type information is optional. Without `parserOptions.project` the rule
-    // keeps its syntax-only behaviour exactly; with it, one more question
-    // becomes answerable.
-    const services = hasParserServices(context)
-      ? getParserServices(context)
-      : null;
-    const checker = services?.program?.getTypeChecker?.() ?? null;
-    // Only reachable once parser services exist, which means TypeScript ran,
-    // which means it is installed. Loaded lazily so the emitted output carries
-    // no top-level `require("typescript")` — this package does not depend on it.
-    const tsModule = services === null ? null : loadTypeScript();
+    const types = typeInformation(context);
 
     // The registration lives in another file, so this is the only way a
     // single-file rule can know it exists. Without it the rule reports every
@@ -187,9 +225,17 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
     // `any`, `unknown`, `object`, type literals and unannotated inputs — the
     // shapes carrying no runtime metatype, which a global pipe passes straight
     // through exactly as a local one would. A global registration is evidence
-    // about typed DTOs and about nothing else.
+    // about typed DTOs and about nothing else — and that holds equally for one
+    // the user tells us about with `assumeGlobalPipes`, which used to switch
+    // the whole rule off.
+    //
+    // A registration in this very file counts too: it is visible without the
+    // scan, which reads files from disk and so misses an unsaved buffer.
     const hasGlobalPipe =
-      detectGlobalPipes && getProjectContext(context).hasGlobalValidationPipe;
+      assumeGlobalPipes ||
+      (detectGlobalPipes &&
+        (GLOBAL_PIPE_REGISTRATION.test(context.sourceCode.text) ||
+          getProjectContext(context).hasGlobalValidationPipe));
 
     /**
      * Whether @UsePipes(...) on this node installs a ValidationPipe.
@@ -201,9 +247,17 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
       const dec = findDecorator(decorators, 'UsePipes');
       const call = dec ? decoratorCall(dec) : null;
       if (!call) return false;
-      return call.arguments.some(
-        (arg) => expressionName(arg) === 'ValidationPipe',
-      );
+      return call.arguments.some((arg) => {
+        const target =
+          arg.type === AST_NODE_TYPES.NewExpression ? arg.callee : arg;
+        const scope = context.sourceCode.getScope(arg);
+        // A pipe hung off an object this file cannot trace (`ns.ValidationPipe`
+        // with no `ns` import) gets the benefit of the doubt: this check only
+        // ever silences, and a guess here costs a false positive.
+        return resolveModuleBinding(target, scope) === undefined
+          ? expressionName(target) === 'ValidationPipe'
+          : isModuleExport(target, scope, '@nestjs/common', 'ValidationPipe');
+      });
     }
 
     /** Built-ins that coerce a scalar and cannot validate a DTO's shape. */
@@ -226,11 +280,8 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
     function hasParameterPipe(decorator: TSESTree.Decorator): boolean {
       const args = decoratorCall(decorator)?.arguments ?? [];
       return args.some((arg, index) => {
-        const isPropertyKey =
-          index === 0 &&
-          arg.type === AST_NODE_TYPES.Literal &&
-          typeof arg.value === 'string';
-        if (isPropertyKey) return false;
+        // `'key'` and `` `key` `` are the same property key.
+        if (index === 0 && staticString(arg) !== null) return false;
         return !TRANSFORM_ONLY_PIPE.test(expressionName(arg));
       });
     }
@@ -252,7 +303,7 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
      * Whether a ValidationPipe could validate this parameter at all.
      * An absent annotation is the worst case: no metatype, nothing to check.
      */
-    function isUnvalidatable(param: TSESTree.Identifier): boolean {
+    function isUnvalidatable(param: InputParam): boolean {
       const annotation = param.typeAnnotation?.typeAnnotation;
       if (!annotation) return true;
       return UNVALIDATABLE_TYPES.has(annotation.type);
@@ -275,7 +326,7 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
      * Unions are unwrapped, because `@Query('error') error: string | undefined`
      * is an optional scalar query parameter, not an unvalidated object.
      */
-    function isScalarTyped(param: TSESTree.Identifier): boolean {
+    function isScalarTyped(param: InputParam): boolean {
       const annotation = param.typeAnnotation?.typeAnnotation;
       if (!annotation) return false;
       if (annotation.type === AST_NODE_TYPES.TSUnionType) {
@@ -300,14 +351,10 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
      * extends something. Null means abstain.
      */
     function dtoDeclaresValidators(
-      param: TSESTree.Identifier,
+      param: InputParam,
     ): { dto: string; validated: boolean } | null {
-      if (services === null || checker === null || tsModule === null) {
-        return null;
-      }
-      // Bound after the guard so the nested helpers get a non-null module;
-      // TypeScript cannot narrow a closed-over `let` from their caller.
-      const tsm = tsModule;
+      if (types === null) return null;
+      const { services, checker, tsm } = types;
       const annotation = param.typeAnnotation?.typeAnnotation;
       if (annotation?.type !== AST_NODE_TYPES.TSTypeReference) return null;
 
@@ -342,7 +389,9 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
 
       const dto = symbol.getName();
       const validated = declaration.members.some((member) =>
-        decoratorsOf(member, tsm).some((d) => isValidatorDecorator(d, tsm)),
+        decoratorsOf(member, tsm).some((d) =>
+          isValidatorDecorator(d, tsm, checker),
+        ),
       );
       return { dto, validated };
     }
@@ -375,17 +424,18 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
     function isValidatorDecorator(
       decorator: ts.Decorator,
       tsm: typeof ts,
+      checker: ts.TypeChecker,
     ): boolean {
       const expression = decorator.expression;
       const callee = tsm.isCallExpression(expression)
         ? expression.expression
         : expression;
-      const symbol = checker?.getSymbolAtLocation(callee);
+      const symbol = checker.getSymbolAtLocation(callee);
       // An imported binding points at the import statement; follow it to the
       // declaration so the *origin* decides, not the local name.
       const resolved =
         symbol !== undefined && symbol.flags & tsm.SymbolFlags.Alias
-          ? checker?.getAliasedSymbol(symbol)
+          ? checker.getAliasedSymbol(symbol)
           : symbol;
       const file = resolved?.declarations?.[0]?.getSourceFile().fileName;
       return file !== undefined && /[/\\]class-validator[/\\]/.test(file);
@@ -407,7 +457,14 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
         // TypeScript forbids decorating an overload, so a decorated route
         // handler always has a real body; both value shapes expose `params`.
         for (const param of node.value.params) {
-          if (param.type !== AST_NODE_TYPES.Identifier) continue;
+          // `@Body() { email, password }: LoginDto` binds the same DTO as
+          // `@Body() dto: LoginDto`; only its label differs.
+          if (
+            param.type !== AST_NODE_TYPES.Identifier &&
+            param.type !== AST_NODE_TYPES.ObjectPattern
+          ) {
+            continue;
+          }
 
           const inputDecorator = findDecorator(
             param.decorators,
@@ -436,7 +493,7 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
               node: param,
               messageId: 'undecoratedDto',
               data: {
-                param: `@${decoratorName(inputDecorator)}() ${param.name}`,
+                param: `@${decoratorName(inputDecorator)}() ${paramLabel(param)}`,
                 dto: dto.dto,
               },
             });
@@ -445,17 +502,16 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
 
           // A global pipe validates a typed DTO wherever it is declared — but
           // it has no metatype to validate an unvalidatable shape against.
-          if (hasGlobalPipe && !isUnvalidatable(param)) continue;
-
-          // By default only report what no ValidationPipe could have saved.
-          // Opt into requireExplicitPipe to demand a per-route pipe as well.
-          if (!requireExplicitPipe && !isUnvalidatable(param)) continue;
+          // With no pipe anywhere, a typed DTO is as unvalidated as any other
+          // input. `requireExplicitPipe` demands a per-route pipe regardless.
+          if (hasGlobalPipe && !requireExplicitPipe && !isUnvalidatable(param))
+            continue;
 
           context.report({
             node: param,
             messageId: 'missingValidation',
             data: {
-              param: `@${decoratorName(inputDecorator)}() ${param.name}`,
+              param: `@${decoratorName(inputDecorator)}() ${paramLabel(param)}`,
             },
           });
         }

@@ -67,6 +67,31 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
   ],
   invalid: [
     {
+      name: 'a SharedWorker delivers through its port, so port.onmessage data written to innerHTML is reported',
+      code: `
+        const worker = new SharedWorker('shared.js');
+        worker.port.onmessage = (e) => { element.innerHTML = e.data; };
+      `,
+      errors: 1,
+    },
+    {
+      name: 'an inline new SharedWorker(...).port.onmessage handler is resolved without a binding',
+      code: `
+        new SharedWorker('shared.js').port.onmessage = (e) => { element.outerHTML = e.data; };
+      `,
+      errors: 1,
+    },
+    {
+      name: 'a SharedWorker port message listener feeding insertAdjacentHTML is reported',
+      code: `
+        const worker = new SharedWorker('shared.js');
+        worker.port.addEventListener('message', function (e) {
+          element.insertAdjacentHTML('beforeend', e.data);
+        });
+      `,
+      errors: 1,
+    },
+    {
       name: 'worker message data written to innerHTML',
       // Was `valid` — but `button` is constructed as a Worker, so this IS a
       // worker message handler. It only passed because the receiver's NAME
@@ -103,6 +128,7 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
     },
     // outerHTML
     {
+      name: 'Worker message data assigned to outerHTML is reported',
       code: `
         const worker = new Worker('worker.js');
         worker.onmessage = (e) => {

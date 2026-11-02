@@ -1,6 +1,6 @@
 ---
 title: no-weak-password-recovery
-description: "ESLint Rule: no-weak-password-recovery with LLM-optimized suggestions and auto-fix capabilities"
+description: 'ESLint Rule: no-weak-password-recovery with LLM-optimized suggestions and auto-fix capabilities'
 tags: ['security', 'core']
 category: security
 severity: medium
@@ -11,6 +11,7 @@ autofix: false
 > **Keywords:** no weak password recovery, security, ESLint rule, JavaScript, TypeScript, CWE-640, CWE-620, authentication, ATO, tokens
 
 <!-- @rule-summary -->
+
 ESLint Rule: no-weak-password-recovery with LLM-optimized suggestions and auto-fix capabilities
 <!-- @/rule-summary -->
 
@@ -26,7 +27,7 @@ ESLint Rule: no-weak-password-recovery with LLM-optimized suggestions and auto-f
 | **CWE Reference** | [CWE-640](https://cwe.mitre.org/data/definitions/640.html) (Weak Password Recovery) |
 | **Severity**      | Error (Security)                                                                    |
 | **Auto-Fix**      | ❌ No                                                                               |
-| **Category**   | Security |
+| **Category**      | Security                                                                            |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                             |
 | **Best For**      | Authentication systems, User management                                             |
 | **Suggestions**   | ✅ Advice on secure token generation                                                |
@@ -158,12 +159,47 @@ if (!reset || reset.expiresAt < Date.now()) {
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `secureTokenFunctions` | `string[]` | `["crypto.randomBytes","crypto.randomUUID","randomBytes","generateSecureToken"]` | Functions that generate cryptographically secure tokens |
-| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as secure |
-| `trustedAnnotations` | `string[]` | `["secure-recovery","rate-limited"]` | Additional JSDoc annotations to consider as safe markers |
-| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
+| Option                 | Type       | Default                                                                          | Description                                                                      |
+| ---------------------- | ---------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `secureTokenFunctions` | `string[]` | `["crypto.randomBytes","crypto.randomUUID","randomBytes","generateSecureToken"]` | Functions that generate cryptographically secure tokens                          |
+| `trustedSanitizers`    | `string[]` | `[]`                                                                             | Additional function names to consider as secure                                  |
+| `trustedAnnotations`   | `string[]` | `["secure-recovery","rate-limited"]`                                             | Additional JSDoc annotations to consider as safe markers                         |
+| `strictMode`           | `boolean`  | `false`                                                                          | Disable all false positive detection (strict mode)                               |
+| `recoveryWords`        | `string[]` | `["reset","recover","recovery","forgot","restore"]`                              | Whole words naming a recovery action in an identifier (**replaces** the default) |
+| `recoverySecretWords`  | `string[]` | `["token","code","otp","pin"]`                                                   | Whole words naming a recovery secret in an identifier (**replaces** the default) |
+
+### `recoveryWords` and `recoverySecretWords`
+
+A binding is a recovery secret — the low-entropy value CWE-640 is about — when
+its name holds a word from **both** lists, as whole words of the split
+identifier: `resetCode`, `recovery_token` and `forgotOtp` qualify, while
+`resetEncoder` (a `code` substring only) does not. Names with a password word
+(`passwordResetToken`) are recognised independently of these lists.
+
+Each option **replaces** its default. A product whose account-unlock flow hands
+out the same kind of one-time secret adds the word; one where `pin` is a map
+marker drops it:
+
+```json
+{
+  "rules": {
+    "secure-coding/no-weak-password-recovery": [
+      "error",
+      {
+        "recoveryWords": [
+          "reset",
+          "recover",
+          "recovery",
+          "forgot",
+          "restore",
+          "unlock"
+        ],
+        "recoverySecretWords": ["token", "code", "otp"]
+      }
+    ]
+  }
+}
+```
 
 ## Error Message Format
 

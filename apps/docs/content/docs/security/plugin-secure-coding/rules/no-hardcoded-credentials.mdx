@@ -209,6 +209,27 @@ The allowlist applies only to non-structural findings. A JWT, an `sk_live_`
 key, or a `postgres://user:pass@host` string keeps its shape whatever words it
 contains, so those still report.
 
+### ✅ Also correct — a development default after `process.env`
+
+```typescript
+const apiKey = process.env.API_KEY || 'dev-only-default'; // ✅ `||`
+const apiKey = process.env.API_KEY ?? 'dev-only-default'; // ✅ `??` is the same fallback
+const apiKey = config.env.API_KEY || 'AKIA…'; // ❌ only `process.env` is the environment
+```
+
+### ✅ Also correct — routes, label tables, and values that restate their slot
+
+```typescript
+const authPaths = { callbackToken: '/auth/[provider]/token' }; // ✅ a route, dynamic segments included
+const fieldLabels = { password: 'aaAA@123' }; // ✅ a table bound to a *Label(s)/*Name/*Placeholder name
+const sha256Secret = 'SHA256_SECRET'; // ✅ the value spells its own slot
+```
+
+The `detect*` options gate a context-only finding by the category of the slot's
+name, read from its last `_`/`-`-separated word and accepting a plural:
+`reset_password_token` is a token, `oauth_token_secret` an API secret, and
+`passwords` a password list.
+
 ## Configuration
 
 ```javascript

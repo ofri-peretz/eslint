@@ -29,6 +29,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
@@ -64,6 +65,20 @@ type RuleOptions = [Options?];
 
 /** `@Res()` and its documented alias. */
 const RESPONSE_DECORATORS = new Set(['Res', 'Response']);
+
+/**
+ * Response methods that declare the body's content type. Express spells it
+ * `res.type()` / `res.contentType()` and, as a header, `res.set()` /
+ * `res.header()` / `res.setHeader()`; Fastify's reply has `type()` and
+ * `header()`.
+ */
+const CONTENT_TYPE_SETTERS = new Set([
+  'type',
+  'contentType',
+  'set',
+  'header',
+  'setHeader',
+]);
 
 /** Response methods that serialize their argument into the body. */
 const BODY_WRITERS = new Set(['json', 'jsonp', 'send']);
@@ -108,16 +123,10 @@ function mountsSerializer(decorators: readonly TSESTree.Decorator[]): boolean {
     if (name === 'SerializeOptions') return true;
     if (name !== 'UseInterceptors') continue;
     for (const arg of decoratorCall(decorator)?.arguments ?? []) {
-      // Both `@UseInterceptors(ClassSerializerInterceptor)` and the
-      // `new ClassSerializerInterceptor(reflector)` spelling.
-      const named =
-        arg.type === AST_NODE_TYPES.NewExpression ? arg.callee : arg;
-      if (
-        named.type === AST_NODE_TYPES.Identifier &&
-        named.name === 'ClassSerializerInterceptor'
-      ) {
-        return true;
-      }
+      // `@UseInterceptors(ClassSerializerInterceptor)`, the
+      // `new ClassSerializerInterceptor(reflector)` spelling, and either one
+      // through a namespace import (`common.ClassSerializerInterceptor`).
+      if (expressionName(arg) === 'ClassSerializerInterceptor') return true;
     }
   }
   return false;
@@ -253,10 +262,9 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
         ) {
           return true;
         }
-        return (
-          callee.type === AST_NODE_TYPES.MemberExpression &&
-          expressionName(callee) === 'toString'
-        );
+        // Any `toString()` returns a string — the method, and the bare global
+        // (`Object.prototype.toString`) alike.
+        return expressionName(callee) === 'toString';
       }
 
       /**
@@ -292,25 +300,21 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
             // meant an unrelated `this.cache.setHeader('text/plain', …)`
             // silenced the rule for a handler that then wrote a DTO.
             const receiver = callReceiver(node.callee);
-            if (
-              receiver?.name === binding &&
-              (name === 'type' ||
-                name === 'setHeader' ||
-                name === 'contentType')
-            ) {
+            if (receiver?.name === binding && CONTENT_TYPE_SETTERS.has(name)) {
               for (const arg of node.arguments) {
+                // `'text/html'` and `` `text/html` `` are the same string.
+                const value = staticString(arg);
                 if (
-                  arg.type === AST_NODE_TYPES.Literal &&
-                  typeof arg.value === 'string' &&
+                  value !== null &&
                   (/^(text\/|application\/(xml|xhtml|rss|atom|pdf|octet-stream)|image\/)/i.test(
-                    arg.value,
+                    value,
                   ) ||
                     // Express `res.type()` also takes a bare extension and runs
                     // it through mime.lookup — `res.type('html')` is
                     // `text/html`. Matching only full MIME types meant novu's
                     // `res.type('html').send(buildPopupHtml(...))` was read as
                     // a JSON response leaking @Exclude()d fields.
-                    NON_JSON_TYPE_SHORTHANDS.has(arg.value.toLowerCase()))
+                    NON_JSON_TYPE_SHORTHANDS.has(value.toLowerCase()))
                 ) {
                   found = true;
                   return;

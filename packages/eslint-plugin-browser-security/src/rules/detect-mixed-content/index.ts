@@ -104,7 +104,8 @@ export const detectMixedContent = createRule<RuleOptions, MessageIds>({
       // is interpolated, so without this the deferral would leave the shape
       // uncovered by every rule in the family.
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
-        const cooked = node.quasis[0]?.value.cooked;
+        // A template always has at least one quasi.
+        const cooked = node.quasis[0].value.cooked;
         if (
           // `!= null`, not `!== undefined`: @typescript-eslint 8.68.0 nulls
           // `cooked` for an invalid escape (8.54.0 handed back the raw text),
