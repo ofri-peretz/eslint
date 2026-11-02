@@ -1,33 +1,33 @@
 # ILB-Flagship Scorecard
 
-> Per-rule × per-repo: latency (cached + uncached), findings, head-to-head overlap, and synthetic-corpus P/R/F1. Generated from `2026-10-26.json`.
+> Per-rule × per-repo: latency (cached + uncached), findings, head-to-head overlap, and synthetic-corpus P/R/F1. Generated from `2026-11-02.json`.
 
-- **Generated**: 2026-10-26T17:18:52.350Z · **Schema**: ilb-flagship/v2
-- **ESLint**: v9.39.4 · **oxlint**: 1.63.0 · **Node**: v24.21.0
+- **Generated**: 2026-11-02T20:47:22.583Z · **Schema**: ilb-flagship/v2
+- **ESLint**: v9.39.4 · **oxlint**: 1.63.0 · **Node**: v24.22.1
 - **OOS root**: `/home/runner/work/eslint/eslint/oos`
 
 ## 1. Latency (cold → warm) and findings count
 
 | Rule                                              | Repo      |   ⭐ | Tier | Ours cold | Ours warm | Ours findings | Comp cold | Comp warm | Comp findings | oxlint cold | oxlint warm | oxlint findings |
 | :------------------------------------------------ | :-------- | ---: | :--: | --------: | --------: | ------------: | --------: | --------: | ------------: | ----------: | ----------: | --------------: |
-| `import-next/no-cycle`                            | next.js   | 131K |  T1  | 41,966 ms |    563 ms |            12 | 55,487 ms |    625 ms |             0 |      858 ms |      856 ms |              92 |
-| `pg/no-unsafe-query`                              | supabase  |  78K |  T1  | 34,980 ms |  1,058 ms |             0 |         — |         — |             — |           — |           — |               — |
-| `secure-coding/no-hardcoded-credentials`          | vercel-ai |  15K |  T2  |  7,715 ms |    521 ms |           947 |  9,339 ms |    495 ms |           531 |           — |           — |               — |
-| `secure-coding/no-redos-vulnerable-regex`         | lodash    |  60K |  T1  |    295 ms |    235 ms |             1 |    330 ms |    253 ms |             0 |           — |           — |               — |
-| `mongodb-security/no-unsafe-query`                | payload   |  35K |  T2  |  8,706 ms |    602 ms |           297 |         — |         — |             — |           — |           — |               — |
-| `jwt/no-algorithm-none`                           | supabase  |  78K |  T1  | 34,261 ms |  1,075 ms |             0 |         — |         — |             — |           — |           — |               — |
-| `browser-security/no-postmessage-wildcard-origin` | next.js   | 131K |  T1  | 40,024 ms |    546 ms |             2 |         — |         — |             — |           — |           — |               — |
-| `react-features/hooks-exhaustive-deps`            | next.js   | 131K |  T1  | 39,467 ms |    585 ms |           134 | 41,259 ms |    588 ms |            53 |      339 ms |      355 ms |              22 |
-| `react-a11y/alt-text`                             | shadcn-ui | 100K |  T1  |    222 ms |    225 ms |             0 | 10,107 ms |    640 ms |             0 |      129 ms |      128 ms |               0 |
-| `vercel-ai-security/no-unsafe-output-handling`    | vercel-ai |  15K |  T2  |  7,711 ms |    488 ms |             1 |         — |         — |             — |           — |           — |               — |
+| `import-next/no-cycle`                            | next.js   | 131K |  T1  | 42,366 ms |    598 ms |            12 | 61,193 ms |    642 ms |             0 |    1,084 ms |    1,109 ms |              92 |
+| `pg/no-unsafe-query`                              | supabase  |  78K |  T1  | 35,914 ms |  1,095 ms |             0 |         — |         — |             — |           — |           — |               — |
+| `secure-coding/no-hardcoded-credentials`          | vercel-ai |  15K |  T2  |  8,457 ms |    575 ms |           953 | 10,069 ms |    516 ms |           532 |           — |           — |               — |
+| `secure-coding/no-redos-vulnerable-regex`         | lodash    |  60K |  T1  |    305 ms |    254 ms |             1 |    361 ms |    280 ms |             0 |           — |           — |               — |
+| `mongodb-security/no-unsafe-query`                | payload   |  35K |  T2  |  8,713 ms |    651 ms |           298 |         — |         — |             — |           — |           — |               — |
+| `jwt/no-algorithm-none`                           | supabase  |  78K |  T1  | 36,810 ms |  1,156 ms |             0 |         — |         — |             — |           — |           — |               — |
+| `browser-security/no-postmessage-wildcard-origin` | next.js   | 131K |  T1  | 43,269 ms |    574 ms |             2 |         — |         — |             — |           — |           — |               — |
+| `react-features/hooks-exhaustive-deps`            | next.js   | 131K |  T1  | 44,471 ms |    607 ms |           134 | 46,332 ms |    682 ms |            53 |      435 ms |      446 ms |              22 |
+| `react-a11y/alt-text`                             | shadcn-ui | 100K |  T1  |    262 ms |    265 ms |             0 | 10,823 ms |    686 ms |             0 |      146 ms |      145 ms |               0 |
+| `vercel-ai-security/no-unsafe-output-handling`    | vercel-ai |  15K |  T2  |  8,590 ms |    528 ms |             1 |         — |         — |             — |           — |           — |               — |
 
 ## 2. Cache effectiveness (median across rules)
 
 | Stack                | Median cold | Median warm |         Δ | Cache benefit |
 | :------------------- | ----------: | ----------: | --------: | ------------: |
-| Ours (ESLint)        |   21,484 ms |      555 ms | 20,929 ms |           97% |
-| Peer (ESLint)        |   10,107 ms |      588 ms |  9,519 ms |           94% |
-| oxlint native (peer) |      339 ms |      355 ms |    -16 ms |           -5% |
+| Ours (ESLint)        |   22,314 ms |      587 ms | 21,727 ms |           97% |
+| Peer (ESLint)        |   10,823 ms |      642 ms | 10,181 ms |           94% |
+| oxlint native (peer) |      435 ms |      446 ms |    -11 ms |           -3% |
 
 ## 3. Synthetic corpus — true precision / recall / F1
 
@@ -50,7 +50,7 @@ Set ops on `(file, line)` keys between our cold-run findings and the competitor'
 | Rule                                      | Repo      | Both | Ours-only | Theirs-only |
 | :---------------------------------------- | :-------- | ---: | --------: | ----------: |
 | `import-next/no-cycle`                    | next.js   |    0 |        12 |           0 |
-| `secure-coding/no-hardcoded-credentials`  | vercel-ai |   47 |       900 |         472 |
+| `secure-coding/no-hardcoded-credentials`  | vercel-ai |   48 |       905 |         472 |
 | `secure-coding/no-redos-vulnerable-regex` | lodash    |    0 |         1 |           0 |
 | `react-features/hooks-exhaustive-deps`    | next.js   |    3 |       127 |          28 |
 | `react-a11y/alt-text`                     | shadcn-ui |    0 |         0 |           0 |
@@ -73,11 +73,11 @@ Each row is a finding the competitor caught that ours missed. Triage to determin
 
 | File                                                                                                   |  Line | Message                                                                                                    |
 | :----------------------------------------------------------------------------------------------------- | ----: | :--------------------------------------------------------------------------------------------------------- |
-| `packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.browser.development.js` | 10732 | React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array. |
-| `packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.browser.production.js`  |  3647 | React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array. |
-| `packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.node.development.js`    | 10732 | React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array. |
-| `packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.node.production.js`     |  3695 | React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array. |
-| `packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.browser.development.js`        | 11379 | React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array. |
+| `packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.browser.development.js` | 10733 | React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array. |
+| `packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.browser.production.js`  |  3648 | React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array. |
+| `packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.node.development.js`    | 10733 | React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array. |
+| `packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.node.production.js`     |  3696 | React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array. |
+| `packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.browser.development.js`        | 11392 | React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array. |
 
 ## 6. Where we beat competitors (ours-only samples, top 5 each)
 
@@ -93,7 +93,7 @@ Each row is a finding ours caught that theirs missed. Triage same way — could 
 | `packages/next/src/client/with-router.tsx`                              |    8 | 🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 \| Circular dependency detected \| MEDIUM · Fix: Extract shared types to - export type with-routerId, routerId · - export interface with-routerSummary, routerSummary file \| https://en.wikipedia.org/wiki/Dependency_inversion_principle          |
 | `packages/next/src/server/app-render/console-async-storage-instance.ts` |    2 | 🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 \| Circular dependency detected \| MEDIUM · Fix: Extract shared types to - export type console-async-storage-instanceId, console-async-storage.externalId · - export interface console-async-storage-instanceSummary, console-async-storage.externa |
 
-### `secure-coding/no-hardcoded-credentials` on vercel-ai — 900 ours-only finding(s)
+### `secure-coding/no-hardcoded-credentials` on vercel-ai — 905 ours-only finding(s)
 
 | File                                      | Line | Message                                                                                                                                                                                                                                                  |
 | :---------------------------------------- | ---: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -121,7 +121,7 @@ Each row is a finding ours caught that theirs missed. Triage same way — could 
 
 ## 7. Green-field rule samples (no competitor)
 
-### `mongodb-security/no-unsafe-query` on payload — 297 finding(s) (showing top 5)
+### `mongodb-security/no-unsafe-query` on payload — 298 finding(s) (showing top 5)
 
 | File                                                                    | Line | Message                                                                                                                                                                                                                                                                                    |
 | :---------------------------------------------------------------------- | ---: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
