@@ -322,10 +322,7 @@
           "timeout": 0
         }
       },
-      "pending": [
-        "utils/mongo-evidence",
-        "utils/receiver"
-      ]
+      "pending": ["utils/mongo-evidence", "utils/receiver"]
     },
     "node-security": {
       "rules": {
