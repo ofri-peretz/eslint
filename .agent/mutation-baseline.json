@@ -95,7 +95,15 @@
           "noCoverage": 0,
           "timeout": 0
         }
-      }
+      },
+      "pending": [
+        "utils/cross-file",
+        "utils/lifetime",
+        "utils/nest-modules",
+        "utils/provenance",
+        "utils/type-info",
+        "utils/value-flow"
+      ]
     },
     "postgresql-security": {
       "rules": {
@@ -190,7 +198,14 @@
           "noCoverage": 0,
           "timeout": 3
         }
-      }
+      },
+      "pending": [
+        "utils/connection-config",
+        "utils/cross-file",
+        "utils/pool-receiver",
+        "utils/query-call",
+        "utils/sql-scan"
+      ]
     },
     "mongodb-security": {
       "rules": {
@@ -306,7 +321,8 @@
           "noCoverage": 0,
           "timeout": 0
         }
-      }
+      },
+      "pending": ["utils/mongo-evidence", "utils/receiver"]
     },
     "node-security": {
       "rules": {
@@ -986,7 +1002,25 @@
           "noCoverage": 0,
           "timeout": 0
         }
-      }
+      },
+      "pending": [
+        "utils/analytics-sinks",
+        "utils/cors-middleware",
+        "utils/csp-directive",
+        "utils/dynamic-code-sinks",
+        "utils/express-app",
+        "utils/global-object",
+        "utils/loopback-hosts",
+        "utils/namespace-uris",
+        "utils/navigation-targets",
+        "utils/payload-source",
+        "utils/protocol-inspection",
+        "utils/regexp-anchoring",
+        "utils/resolve-binding",
+        "utils/sensitive-value-evidence",
+        "utils/transport-ownership",
+        "utils/url-taint"
+      ]
     },
     "secure-coding": {
       "rules": {
@@ -1343,7 +1377,15 @@
           "noCoverage": 0,
           "timeout": 0
         }
-      }
+      },
+      "pending": [
+        "utils/flow",
+        "utils/prompt-props",
+        "utils/records",
+        "utils/sdk",
+        "utils/type-info",
+        "utils/vercel-ai-evidence"
+      ]
     }
   }
 }
