@@ -5,6 +5,16 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.8.3
+
+### Patch Changes
+
+- **🐛 Fix** — `no-insecure-rsa-padding` and `no-unsafe-buffer-alloc` read the value, not the spelling
+
+  - `no-insecure-rsa-padding` reports PKCS#1 v1.5 padding held in a `const` or passed as a shorthand `{ padding }`.
+  - `no-unsafe-buffer-alloc` treats only an upper bound that rejects the request as a guard. A lower bound (`size > 0`), a check that does not leave, a guard after the allocation, and a cap the peer chooses no longer silence it.
+  - `no-dynamic-require` documents its `allowPatterns` option.
+
 ## 5.8.2
 
 ### Patch Changes
