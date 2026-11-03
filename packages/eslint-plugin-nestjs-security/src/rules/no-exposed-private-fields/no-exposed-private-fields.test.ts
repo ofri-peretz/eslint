@@ -652,6 +652,16 @@ ruleTester.run('no-exposed-private-fields (fidelity)', noExposedPrivateFields, {
       `,
       errors: [{ messageId: 'exposedField' }],
     },
+    // @found computed-key blind-spot probe (check:computed-keys), 2026-11-03
+    {
+      name: "FN: a field declared ['password'] is the same field as password",
+      code: `
+        import { Exclude } from 'class-transformer';
+        @Exclude({ ['toClassOnly']: true })
+        export class UserResponse { ['password']: string; }
+      `,
+      errors: [{ messageId: 'exposedField' }],
+    },
   ],
 });
 

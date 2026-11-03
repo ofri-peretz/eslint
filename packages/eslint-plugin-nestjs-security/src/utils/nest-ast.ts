@@ -22,7 +22,11 @@
  * needed. Keep new rules on these helpers.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, resolveModuleBinding } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  objectKeyName,
+  resolveModuleBinding,
+} from '@interlace/eslint-devkit';
 
 /** Classes a member can live in. */
 export type ClassNode = TSESTree.ClassDeclaration | TSESTree.ClassExpression;
@@ -278,15 +282,14 @@ export function routeMethodName(
 export function memberName(
   node: TSESTree.MethodDefinition | TSESTree.PropertyDefinition,
 ): string | null {
-  if (node.computed) return null;
-  if (node.key.type === AST_NODE_TYPES.Identifier) return node.key.name;
+  // `['password']: string` declares the same field as `password: string`. A
+  // numeric key names no field a decorator or a sensitive-name list speaks of.
   if (
     node.key.type === AST_NODE_TYPES.Literal &&
-    typeof node.key.value === 'string'
-  ) {
-    return node.key.value;
-  }
-  return null;
+    typeof node.key.value === 'number'
+  )
+    return null;
+  return objectKeyName(node);
 }
 
 /** The class's declared superclass name, if it extends a plain identifier. */

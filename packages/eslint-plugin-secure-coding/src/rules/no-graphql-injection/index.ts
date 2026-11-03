@@ -91,7 +91,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         issueName: 'GraphQL Injection',
         cwe: 'CWE-89',
         description: 'GraphQL injection vulnerability detected',
-        severity: 'HIGH',
+        severity: 'CRITICAL',
         fix: 'Use GraphQL variables or query builders instead of string concatenation',
         documentationLink: 'https://owasp.org/Top10/2025/A05_2025-Injection/',
       }),
