@@ -21,7 +21,7 @@
       "rules": 35,
       "description": "ESLint plugin for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "5.6.1",
+      "version": "5.6.2",
       "published": true
     },
     {
@@ -173,7 +173,7 @@
       "rules": 10,
       "description": "ESLint plugin for NestJS security — detects missing auth guards, missing validation pipes, unthrottled routes, and exposed private fields",
       "category": "framework",
-      "version": "3.2.1",
+      "version": "3.2.2",
       "published": true
     },
     {
