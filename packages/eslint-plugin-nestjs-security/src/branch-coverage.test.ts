@@ -41,7 +41,7 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const nest = <T,>(cases: T[]): T[] =>
+const nest = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asNest(c) as T;
     const t = c as Case;
@@ -67,7 +67,6 @@ const nest = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester();
 
@@ -175,13 +174,27 @@ ruleTester.run('require-guards (branch edges)', requireGuards, {
       options: [{ allowPublicDecorator: false }],
       errors: [{ messageId: 'missingGuards', data: { name: 'findAll' } }],
     },
-    // Computed method key reports as <anonymous>
+    // A computed string key names the handler, as the dotted spelling does
     {
+      name: "a handler declared ['dynamic']() is named dynamic",
       code: `
         @Controller('u')
         class ComputedKey {
           @Get()
           ['dynamic']() {}
+        }
+      `,
+      errors: [{ messageId: 'missingGuards', data: { name: 'dynamic' } }],
+    },
+    // A key computed at runtime names nothing: reports as <anonymous>
+    {
+      name: 'a handler keyed by a runtime value is reported as <anonymous>',
+      code: `
+        const route = 'dynamic';
+        @Controller('u')
+        class RuntimeKey {
+          @Get()
+          [route]() {}
         }
       `,
       errors: [{ messageId: 'missingGuards', data: { name: '<anonymous>' } }],
@@ -416,13 +429,28 @@ ruleTester.run('require-throttler (branch edges)', requireThrottler, {
       options: [{ onlySensitiveRoutes: false }],
       errors: [{ messageId: 'missingThrottler', data: { name: 'findAll' } }],
     },
-    // Computed method key reports as <anonymous>
+    // A computed string key names the handler, as the dotted spelling does
     {
+      name: "a handler declared ['dynamic']() is named dynamic",
       code: `
         @Controller('u')
         class ComputedKey {
           @Get()
           ['dynamic']() {}
+        }
+      `,
+      options: [{ onlySensitiveRoutes: false }],
+      errors: [{ messageId: 'missingThrottler', data: { name: 'dynamic' } }],
+    },
+    // A key computed at runtime names nothing: reports as <anonymous>
+    {
+      name: 'a handler keyed by a runtime value is reported as <anonymous>',
+      code: `
+        const route = 'dynamic';
+        @Controller('u')
+        class RuntimeKey {
+          @Get()
+          [route]() {}
         }
       `,
       options: [{ onlySensitiveRoutes: false }],
