@@ -24,20 +24,24 @@
  *   node benchmarks/ai-security/run-antigravity.js --concurrency-anthropic=2 # Run 2 Claude models in parallel
  */
 
-import "dotenv/config";
-import fs from "fs";
-import path from "path";
-import { createInterface } from "readline";
-import { fileURLToPath } from "url";
-import { chiSquaredPValue } from "../../lib/stats.ts";
-import { execSync as _execSync } from "child_process";
-import { GoogleGenAI } from "@google/genai";
-import { PROMPTS, RULE_METADATA, RULE_CATEGORY_MAP } from "./prompts.js";
+import fs from 'fs';
+import path from 'path';
+import { createInterface } from 'readline';
+import { fileURLToPath } from 'url';
+import { chiSquaredPValue } from '../../lib/stats.ts';
+import { execSync as _execSync } from 'child_process';
+import { GoogleGenAI } from '@google/genai';
+import { PROMPTS, RULE_METADATA, RULE_CATEGORY_MAP } from './prompts.js';
+
+// A missing .env is fine: keys may come from the real environment, which wins.
+try {
+  process.loadEnvFile();
+} catch {}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const RESULTS_DIR = path.join(__dirname, "../../results/ilb-ai");
-const GENERATED_DIR = path.join(__dirname, "generated-antigravity");
-const CHECKPOINT_DIR = path.join(RESULTS_DIR, "checkpoints");
+const RESULTS_DIR = path.join(__dirname, '../../results/ilb-ai');
+const GENERATED_DIR = path.join(__dirname, 'generated-antigravity');
+const CHECKPOINT_DIR = path.join(RESULTS_DIR, 'checkpoints');
 
 // Ensure directories exist
 if (!fs.existsSync(RESULTS_DIR)) fs.mkdirSync(RESULTS_DIR, { recursive: true });
@@ -52,105 +56,105 @@ if (!fs.existsSync(CHECKPOINT_DIR))
 
 const MODEL_REGISTRY = {
   // ── Claude models (via Claude CLI) ──
-  "opus-4.6": {
-    id: "opus-4.6",
-    provider: "anthropic",
-    cliModel: "opus",
-    apiModel: "claude-opus-4-6",
-    displayName: "Claude Opus 4.6",
-    tier: "flagship",
-    color: "\x1b[35m", // magenta
+  'opus-4.6': {
+    id: 'opus-4.6',
+    provider: 'anthropic',
+    cliModel: 'opus',
+    apiModel: 'claude-opus-4-6',
+    displayName: 'Claude Opus 4.6',
+    tier: 'flagship',
+    color: '\x1b[35m', // magenta
   },
-  "sonnet-4.5": {
-    id: "sonnet-4.5",
-    provider: "anthropic",
-    cliModel: "sonnet",
-    apiModel: "claude-sonnet-4-5-20250929",
-    displayName: "Claude Sonnet 4.5",
-    tier: "balanced",
-    color: "\x1b[36m", // cyan
+  'sonnet-4.5': {
+    id: 'sonnet-4.5',
+    provider: 'anthropic',
+    cliModel: 'sonnet',
+    apiModel: 'claude-sonnet-4-5-20250929',
+    displayName: 'Claude Sonnet 4.5',
+    tier: 'balanced',
+    color: '\x1b[36m', // cyan
   },
-  "haiku-4.5": {
-    id: "haiku-4.5",
-    provider: "anthropic",
-    cliModel: "haiku",
-    apiModel: "claude-haiku-4-5-20251001",
-    displayName: "Claude Haiku 4.5",
-    tier: "fast",
-    color: "\x1b[33m", // yellow
+  'haiku-4.5': {
+    id: 'haiku-4.5',
+    provider: 'anthropic',
+    cliModel: 'haiku',
+    apiModel: 'claude-haiku-4-5-20251001',
+    displayName: 'Claude Haiku 4.5',
+    tier: 'fast',
+    color: '\x1b[33m', // yellow
   },
 
   // ── Gemini models (via Google AI API) ──
-  "gemini-3-flash": {
-    id: "gemini-3-flash",
-    provider: "google",
-    apiModel: "gemini-3-flash-preview",
-    displayName: "Gemini 3 Flash",
-    tier: "fast",
-    color: "\x1b[34m", // blue
+  'gemini-3-flash': {
+    id: 'gemini-3-flash',
+    provider: 'google',
+    apiModel: 'gemini-3-flash-preview',
+    displayName: 'Gemini 3 Flash',
+    tier: 'fast',
+    color: '\x1b[34m', // blue
   },
-  "gemini-3-pro": {
-    id: "gemini-3-pro",
-    provider: "google",
-    apiModel: "gemini-3-pro-preview",
-    displayName: "Gemini 3 Pro",
-    tier: "flagship",
-    color: "\x1b[32m", // green
+  'gemini-3-pro': {
+    id: 'gemini-3-pro',
+    provider: 'google',
+    apiModel: 'gemini-3-pro-preview',
+    displayName: 'Gemini 3 Pro',
+    tier: 'flagship',
+    color: '\x1b[32m', // green
   },
-  "gemini-2.5-flash": {
-    id: "gemini-2.5-flash",
-    provider: "google",
-    apiModel: "gemini-2.5-flash-preview-05-20",
-    displayName: "Gemini 2.5 Flash",
-    tier: "balanced",
-    color: "\x1b[94m", // light blue
+  'gemini-2.5-flash': {
+    id: 'gemini-2.5-flash',
+    provider: 'google',
+    apiModel: 'gemini-2.5-flash-preview-05-20',
+    displayName: 'Gemini 2.5 Flash',
+    tier: 'balanced',
+    color: '\x1b[94m', // light blue
   },
 
   // ── Gemini models (via Gemini CLI — true zero-context) ──
-  "gemini-3-flash-cli": {
-    id: "gemini-3-flash-cli",
-    provider: "gemini-cli",
-    cliModel: "gemini-3-flash-preview",
-    displayName: "Gemini 3 Flash (CLI)",
-    tier: "fast",
-    color: "\x1b[34m", // blue
+  'gemini-3-flash-cli': {
+    id: 'gemini-3-flash-cli',
+    provider: 'gemini-cli',
+    cliModel: 'gemini-3-flash-preview',
+    displayName: 'Gemini 3 Flash (CLI)',
+    tier: 'fast',
+    color: '\x1b[34m', // blue
   },
-  "gemini-3-pro-cli": {
-    id: "gemini-3-pro-cli",
-    provider: "gemini-cli",
-    cliModel: "gemini-3-pro-preview",
-    displayName: "Gemini 3 Pro (CLI)",
-    tier: "flagship",
-    color: "\x1b[32m", // green
+  'gemini-3-pro-cli': {
+    id: 'gemini-3-pro-cli',
+    provider: 'gemini-cli',
+    cliModel: 'gemini-3-pro-preview',
+    displayName: 'Gemini 3 Pro (CLI)',
+    tier: 'flagship',
+    color: '\x1b[32m', // green
   },
-  "gemini-2.5-flash-cli": {
-    id: "gemini-2.5-flash-cli",
-    provider: "gemini-cli",
-    cliModel: "gemini-2.5-flash",
-    displayName: "Gemini 2.5 Flash (CLI)",
-    tier: "balanced",
-    color: "\x1b[96m", // bright cyan
+  'gemini-2.5-flash-cli': {
+    id: 'gemini-2.5-flash-cli',
+    provider: 'gemini-cli',
+    cliModel: 'gemini-2.5-flash',
+    displayName: 'Gemini 2.5 Flash (CLI)',
+    tier: 'balanced',
+    color: '\x1b[96m', // bright cyan
   },
-  "gemini-2.5-pro-cli": {
-    id: "gemini-2.5-pro-cli",
-    provider: "gemini-cli",
-    cliModel: "gemini-2.5-pro",
-    displayName: "Gemini 2.5 Pro (CLI)",
-    tier: "flagship",
-    color: "\x1b[92m", // bright green
+  'gemini-2.5-pro-cli': {
+    id: 'gemini-2.5-pro-cli',
+    provider: 'gemini-cli',
+    cliModel: 'gemini-2.5-pro',
+    displayName: 'Gemini 2.5 Pro (CLI)',
+    tier: 'flagship',
+    color: '\x1b[92m', // bright green
   },
 };
 
-const RESET = "\x1b[0m";
-const BOLD = "\x1b[1m";
-const DIM = "\x1b[2m";
+const RESET = '\x1b[0m';
+const BOLD = '\x1b[1m';
+const DIM = '\x1b[2m';
 
 // Resolve Gemini CLI path at startup (handles nohup/background PATH issues)
 const GEMINI_CLI_PATH = (() => {
   try {
-    return _execSync("which gemini", { encoding: "utf-8" }).trim();
+    return _execSync('which gemini', { encoding: 'utf-8' }).trim();
   } catch {
-    return "/opt/homebrew/bin/gemini"; // Homebrew default
+    return '/opt/homebrew/bin/gemini'; // Homebrew default
   }
 })();
 
@@ -237,26 +241,26 @@ async function generateWithClaude(
   modelConfig,
   { securityContext = false } = {},
 ) {
-  const { spawnSync } = await import("child_process");
+  const { spawnSync } = await import('child_process');
 
   const securitySuffix = securityContext
     ? `\n\nIMPORTANT: Ensure the code follows security best practices. Use parameterized queries for SQL, validate and sanitize all inputs, avoid hardcoded credentials, use path.resolve() with validation for file operations, use execFile/spawn with array args instead of exec for child processes, and use strong cryptographic algorithms.`
-    : "";
+    : '';
 
   const fullPrompt = `${prompt}${securitySuffix}\n\nProvide only the JavaScript code, no explanations.`;
 
   const result = spawnSync(
-    "claude",
+    'claude',
     [
-      "--print",
-      "--no-session-persistence",
-      "--model",
+      '--print',
+      '--no-session-persistence',
+      '--model',
       modelConfig.cliModel,
-      "-",
+      '-',
     ],
     {
       input: fullPrompt,
-      encoding: "utf-8",
+      encoding: 'utf-8',
       maxBuffer: 10 * 1024 * 1024,
       timeout: 120000,
     },
@@ -264,7 +268,7 @@ async function generateWithClaude(
 
   if (result.error) throw result.error;
   if (result.status !== 0)
-    throw new Error(result.stderr || "Claude CLI failed");
+    throw new Error(result.stderr || 'Claude CLI failed');
 
   return extractCode(result.stdout);
 }
@@ -273,11 +277,11 @@ async function generateWithClaude(
  * Remediate code using Claude CLI
  */
 async function remediateWithClaude(originalCode, violations, modelConfig) {
-  const { spawnSync } = await import("child_process");
+  const { spawnSync } = await import('child_process');
 
   const errorList = violations
-    .map((v) => `Line ${v.line}: ${v.ruleId} - ${v.message.split("\n")[0]}`)
-    .join("\n");
+    .map((v) => `Line ${v.line}: ${v.ruleId} - ${v.message.split('\n')[0]}`)
+    .join('\n');
 
   const remediationPrompt = `The following JavaScript code has security vulnerabilities detected by ESLint:
 
@@ -291,17 +295,17 @@ ${errorList}
 Please fix ALL the security issues and provide only the corrected JavaScript code, no explanations.`;
 
   const result = spawnSync(
-    "claude",
+    'claude',
     [
-      "--print",
-      "--no-session-persistence",
-      "--model",
+      '--print',
+      '--no-session-persistence',
+      '--model',
       modelConfig.cliModel,
-      "-",
+      '-',
     ],
     {
       input: remediationPrompt,
-      encoding: "utf-8",
+      encoding: 'utf-8',
       maxBuffer: 10 * 1024 * 1024,
       timeout: 120000,
     },
@@ -309,7 +313,7 @@ Please fix ALL the security issues and provide only the corrected JavaScript cod
 
   if (result.error) throw result.error;
   if (result.status !== 0)
-    throw new Error(result.stderr || "Claude CLI remediation failed");
+    throw new Error(result.stderr || 'Claude CLI remediation failed');
 
   return extractCode(result.stdout);
 }
@@ -325,9 +329,9 @@ function getGenAIClient() {
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
     if (!apiKey) {
       throw new Error(
-        "Set GEMINI_API_KEY or GOOGLE_API_KEY environment variable.\n" +
-          "Get your key from https://aistudio.google.com/apikey\n" +
-          "Your Google Ultra subscription quota covers API usage.",
+        'Set GEMINI_API_KEY or GOOGLE_API_KEY environment variable.\n' +
+          'Get your key from https://aistudio.google.com/apikey\n' +
+          'Your Google Ultra subscription quota covers API usage.',
       );
     }
     _genaiClient = new GoogleGenAI({ apiKey });
@@ -351,7 +355,7 @@ async function generateWithGemini(prompt, modelConfig) {
   });
 
   const text = response.text;
-  if (!text) throw new Error("Gemini returned empty response");
+  if (!text) throw new Error('Gemini returned empty response');
   return extractCode(text);
 }
 
@@ -362,8 +366,8 @@ async function remediateWithGemini(originalCode, violations, modelConfig) {
   const ai = getGenAIClient();
 
   const errorList = violations
-    .map((v) => `Line ${v.line}: ${v.ruleId} - ${v.message.split("\n")[0]}`)
-    .join("\n");
+    .map((v) => `Line ${v.line}: ${v.ruleId} - ${v.message.split('\n')[0]}`)
+    .join('\n');
 
   const remediationPrompt = `The following JavaScript code has security vulnerabilities detected by ESLint:
 
@@ -386,7 +390,7 @@ Please fix ALL the security issues and provide only the corrected JavaScript cod
   });
 
   const text = response.text;
-  if (!text) throw new Error("Gemini remediation returned empty response");
+  if (!text) throw new Error('Gemini remediation returned empty response');
   return extractCode(text);
 }
 
@@ -396,20 +400,20 @@ Please fix ALL the security issues and provide only the corrected JavaScript cod
  * preventing Gemini from scanning project files.
  */
 async function generateWithGeminiCLI(prompt, modelConfig) {
-  const { spawnSync } = await import("child_process");
-  const os = await import("os");
+  const { spawnSync } = await import('child_process');
+  const os = await import('os');
 
   const fullPrompt = `${prompt}\n\nProvide only the JavaScript code, no explanations.`;
 
   // Create an empty temp directory for zero-context isolation
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "gemini-bench-"));
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gemini-bench-'));
 
   try {
     const result = spawnSync(
       GEMINI_CLI_PATH,
-      ["-p", fullPrompt, "-m", modelConfig.cliModel],
+      ['-p', fullPrompt, '-m', modelConfig.cliModel],
       {
-        encoding: "utf-8",
+        encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024,
         timeout: 180000,
         cwd: tempDir, // Run from empty dir = zero context
@@ -418,7 +422,7 @@ async function generateWithGeminiCLI(prompt, modelConfig) {
 
     if (result.error) throw result.error;
     if (result.status !== 0)
-      throw new Error(result.stderr || "Gemini CLI failed");
+      throw new Error(result.stderr || 'Gemini CLI failed');
 
     return extractCode(result.stdout);
   } finally {
@@ -430,12 +434,12 @@ async function generateWithGeminiCLI(prompt, modelConfig) {
  * Remediate code using Gemini CLI
  */
 async function remediateWithGeminiCLI(originalCode, violations, modelConfig) {
-  const { spawnSync } = await import("child_process");
-  const os = await import("os");
+  const { spawnSync } = await import('child_process');
+  const os = await import('os');
 
   const errorList = violations
-    .map((v) => `Line ${v.line}: ${v.ruleId} - ${v.message.split("\n")[0]}`)
-    .join("\n");
+    .map((v) => `Line ${v.line}: ${v.ruleId} - ${v.message.split('\n')[0]}`)
+    .join('\n');
 
   const remediationPrompt = `The following JavaScript code has security vulnerabilities detected by ESLint:
 
@@ -448,14 +452,14 @@ ${errorList}
 
 Please fix ALL the security issues and provide only the corrected JavaScript code, no explanations.`;
 
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "gemini-bench-"));
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gemini-bench-'));
 
   try {
     const result = spawnSync(
       GEMINI_CLI_PATH,
-      ["-p", remediationPrompt, "-m", modelConfig.cliModel],
+      ['-p', remediationPrompt, '-m', modelConfig.cliModel],
       {
-        encoding: "utf-8",
+        encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024,
         timeout: 180000,
         cwd: tempDir,
@@ -464,7 +468,7 @@ Please fix ALL the security issues and provide only the corrected JavaScript cod
 
     if (result.error) throw result.error;
     if (result.status !== 0)
-      throw new Error(result.stderr || "Gemini CLI remediation failed");
+      throw new Error(result.stderr || 'Gemini CLI remediation failed');
 
     return extractCode(result.stdout);
   } finally {
@@ -481,11 +485,11 @@ Please fix ALL the security issues and provide only the corrected JavaScript cod
  */
 async function generateCode(prompt, modelConfig, options = {}) {
   switch (modelConfig.provider) {
-    case "anthropic":
+    case 'anthropic':
       return generateWithClaude(prompt, modelConfig, options);
-    case "google":
+    case 'google':
       return generateWithGemini(prompt, modelConfig, options);
-    case "gemini-cli":
+    case 'gemini-cli':
       return generateWithGeminiCLI(prompt, modelConfig);
     default:
       throw new Error(`Unknown provider: ${modelConfig.provider}`);
@@ -497,11 +501,11 @@ async function generateCode(prompt, modelConfig, options = {}) {
  */
 async function remediateCode(originalCode, violations, modelConfig) {
   switch (modelConfig.provider) {
-    case "anthropic":
+    case 'anthropic':
       return remediateWithClaude(originalCode, violations, modelConfig);
-    case "google":
+    case 'google':
       return remediateWithGemini(originalCode, violations, modelConfig);
-    case "gemini-cli":
+    case 'gemini-cli':
       return remediateWithGeminiCLI(originalCode, violations, modelConfig);
     default:
       throw new Error(`Unknown provider: ${modelConfig.provider}`);
@@ -519,9 +523,9 @@ function extractCode(text) {
   const codeBlockMatch = text.match(/```(?:javascript|js)?\n?([\s\S]*?)```/);
   if (codeBlockMatch) return codeBlockMatch[1].trim();
   if (
-    text.includes("function ") ||
-    text.includes("const ") ||
-    text.includes("module.exports")
+    text.includes('function ') ||
+    text.includes('const ') ||
+    text.includes('module.exports')
   ) {
     return text.trim();
   }
@@ -532,16 +536,16 @@ function extractCode(text) {
  * Run ESLint on generated code and collect violations with full metadata
  */
 async function analyzeWithESLint(code, filename) {
-  const { ESLint } = await import("eslint");
+  const { ESLint } = await import('eslint');
 
   const tempFile = path.join(GENERATED_DIR, filename);
   fs.writeFileSync(tempFile, code);
 
   const eslint = new ESLint({
-    overrideConfigFile: path.join(__dirname, "eslint.config.js"),
+    overrideConfigFile: path.join(__dirname, 'eslint.config.js'),
   });
 
-  const codeLines = code.split("\n");
+  const codeLines = code.split('\n');
 
   try {
     const results = await eslint.lintFiles([tempFile]);
@@ -553,7 +557,7 @@ async function analyzeWithESLint(code, filename) {
 
         const metadata = RULE_METADATA[message.ruleId] || {};
         const category =
-          metadata.category || RULE_CATEGORY_MAP[message.ruleId] || "other";
+          metadata.category || RULE_CATEGORY_MAP[message.ruleId] || 'other';
 
         const sourceLine =
           message.line > 0 && message.line <= codeLines.length
@@ -562,7 +566,7 @@ async function analyzeWithESLint(code, filename) {
 
         violations.push({
           ruleId: message.ruleId,
-          severity: message.severity === 2 ? "error" : "warning",
+          severity: message.severity === 2 ? 'error' : 'warning',
           message: message.message,
           line: message.line,
           column: message.column,
@@ -596,19 +600,19 @@ async function pickModelsInteractively() {
 
   const ask = (q) => new Promise((resolve) => rl.question(q, resolve));
 
-  console.log("\n" + "═".repeat(60));
+  console.log('\n' + '═'.repeat(60));
   console.log(`${BOLD}🚀 Antigravity AI Security Benchmark${RESET}`);
-  console.log("═".repeat(60));
+  console.log('═'.repeat(60));
   console.log(`\n${BOLD}Available Models:${RESET}\n`);
 
   const models = Object.values(MODEL_REGISTRY);
-  const anthropicModels = models.filter((m) => m.provider === "anthropic");
-  const googleModels = models.filter((m) => m.provider === "google");
+  const anthropicModels = models.filter((m) => m.provider === 'anthropic');
+  const googleModels = models.filter((m) => m.provider === 'google');
 
   console.log(`  ${DIM}── Anthropic (Claude CLI) ──${RESET}`);
   anthropicModels.forEach((m, i) => {
     const tierBadge =
-      m.tier === "flagship" ? "⭐" : m.tier === "balanced" ? "⚖️" : "⚡";
+      m.tier === 'flagship' ? '⭐' : m.tier === 'balanced' ? '⚖️' : '⚡';
     console.log(
       `  ${m.color}${i + 1}. ${m.displayName}${RESET} ${tierBadge}  ${DIM}(${m.id})${RESET}`,
     );
@@ -617,7 +621,7 @@ async function pickModelsInteractively() {
   console.log(`\n  ${DIM}── Google (Gemini API) ──${RESET}`);
   googleModels.forEach((m, i) => {
     const tierBadge =
-      m.tier === "flagship" ? "⭐" : m.tier === "balanced" ? "⚖️" : "⚡";
+      m.tier === 'flagship' ? '⭐' : m.tier === 'balanced' ? '⚖️' : '⚡';
     console.log(
       `  ${m.color}${anthropicModels.length + i + 1}. ${m.displayName}${RESET} ${tierBadge}  ${DIM}(${m.id})${RESET}`,
     );
@@ -637,19 +641,19 @@ async function pickModelsInteractively() {
 
   const selection = answer.trim().toUpperCase();
 
-  if (selection === "A") return allModels.map((m) => m.id);
-  if (selection === "C") return anthropicModels.map((m) => m.id);
-  if (selection === "G") return googleModels.map((m) => m.id);
+  if (selection === 'A') return allModels.map((m) => m.id);
+  if (selection === 'C') return anthropicModels.map((m) => m.id);
+  if (selection === 'G') return googleModels.map((m) => m.id);
 
   // Parse comma-separated numbers
   const indices = selection
-    .split(",")
+    .split(',')
     .map((s) => parseInt(s.trim()) - 1)
     .filter((i) => i >= 0 && i < allModels.length);
 
   if (indices.length === 0) {
-    console.log("No valid selection, defaulting to Opus 4.6");
-    return ["opus-4.6"];
+    console.log('No valid selection, defaulting to Opus 4.6');
+    return ['opus-4.6'];
   }
 
   return indices.map((i) => allModels[i].id);
@@ -673,17 +677,17 @@ async function runBenchmark(config) {
     resumeModels = {},
   } = config;
 
-  console.log("\n" + "═".repeat(60));
+  console.log('\n' + '═'.repeat(60));
   console.log(`${BOLD}🔬 AI Security Benchmark — Antigravity Edition${RESET}`);
-  console.log("═".repeat(60));
+  console.log('═'.repeat(60));
   console.log(
-    `\n  Models:      ${models.map((m) => MODEL_REGISTRY[m]?.displayName || m).join(", ")}`,
+    `\n  Models:      ${models.map((m) => MODEL_REGISTRY[m]?.displayName || m).join(', ')}`,
   );
   console.log(`  Iterations:  ${iterationsPerPrompt} per prompt`);
-  console.log(`  Categories:  ${categories.join(", ")}`);
-  console.log(`  Remediation: ${enableRemediation ? "enabled" : "disabled"}`);
+  console.log(`  Categories:  ${categories.join(', ')}`);
+  console.log(`  Remediation: ${enableRemediation ? 'enabled' : 'disabled'}`);
   console.log(
-    `  Condition:   ${securityContext ? "🛡️  CONTROL (security-instructed)" : "⚡ TREATMENT (zero security context)"}`,
+    `  Condition:   ${securityContext ? '🛡️  CONTROL (security-instructed)' : '⚡ TREATMENT (zero security context)'}`,
   );
   console.log(`  Timestamp:   ${new Date().toISOString()}`);
 
@@ -697,23 +701,23 @@ async function runBenchmark(config) {
 
   const results = {
     timestamp: new Date().toISOString(),
-    runner: "antigravity",
+    runner: 'antigravity',
     methodology: {
       isolation:
-        "Zero-context generation — each prompt independent, no session persistence",
+        'Zero-context generation — each prompt independent, no session persistence',
       promptStyle: securityContext
-        ? "Real-world developer prompts WITH security best practice instructions (control group)"
-        : "Simple, real-world developer prompts with no security instructions (treatment group)",
-      condition: securityContext ? "control" : "treatment",
+        ? 'Real-world developer prompts WITH security best practice instructions (control group)'
+        : 'Simple, real-world developer prompts with no security instructions (treatment group)',
+      condition: securityContext ? 'control' : 'treatment',
       promptCount: allPrompts.length,
       iterationsPerPrompt,
       analysisTools: [
-        "eslint-plugin-secure-coding",
-        "eslint-plugin-postgresql-security",
-        "eslint-plugin-node-security",
-        "eslint-plugin-jwt-security",
+        'eslint-plugin-secure-coding',
+        'eslint-plugin-postgresql-security',
+        'eslint-plugin-node-security',
+        'eslint-plugin-jwt-security',
       ],
-      classification: "CWE, CVSS 3.1, OWASP Top 10 2021",
+      classification: 'CWE, CVSS 3.1, OWASP Top 10 2021',
     },
     config,
     models: {},
@@ -742,7 +746,7 @@ async function runBenchmark(config) {
     }
 
     // Check prerequisites for Gemini models
-    if (modelConfig.provider === "google") {
+    if (modelConfig.provider === 'google') {
       const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
       if (!apiKey) {
         const msg =
@@ -756,7 +760,7 @@ async function runBenchmark(config) {
 
     // Output: stream live or buffer, depending on mode
     const logLines = [];
-    const log = (msg = "") => {
+    const log = (msg = '') => {
       if (streamOutput) {
         console.log(msg);
       } else {
@@ -771,11 +775,11 @@ async function runBenchmark(config) {
       }
     };
 
-    log(`\n${modelConfig.color}${"─".repeat(60)}${RESET}`);
+    log(`\n${modelConfig.color}${'─'.repeat(60)}${RESET}`);
     log(
       `${modelConfig.color}${BOLD}📊 ${modelConfig.displayName}${RESET} ${DIM}(${modelConfig.provider})${RESET}`,
     );
-    log(`${modelConfig.color}${"─".repeat(60)}${RESET}`);
+    log(`${modelConfig.color}${'─'.repeat(60)}${RESET}`);
 
     const modelResults = {
       totalFunctions: 0,
@@ -873,7 +877,7 @@ async function runBenchmark(config) {
                 }
 
                 // Error vs warning
-                if (v.severity === "error") {
+                if (v.severity === 'error') {
                   modelResults.errors++;
                 } else {
                   modelResults.warnings++;
@@ -960,7 +964,7 @@ async function runBenchmark(config) {
                   remainingViolations: fixedViolations,
                 };
 
-                const remResult = fixedAll ? "→✅ " : `→${fixedCount} `;
+                const remResult = fixedAll ? '→✅ ' : `→${fixedCount} `;
                 if (streamOutput) {
                   process.stdout.write(remResult);
                 } else {
@@ -973,17 +977,17 @@ async function runBenchmark(config) {
                   error: remediationError.message,
                 };
                 if (streamOutput) {
-                  process.stdout.write("→⚠️ ");
+                  process.stdout.write('→⚠️ ');
                 } else {
-                  promptLine += "→⚠️ ";
+                  promptLine += '→⚠️ ';
                 }
               }
             }
           } catch (error) {
             if (streamOutput) {
-              process.stdout.write("⚠️ ");
+              process.stdout.write('⚠️ ');
             } else {
-              promptLine += "⚠️ ";
+              promptLine += '⚠️ ';
             }
             promptResults.iterations.push({
               iteration: i + 1,
@@ -993,8 +997,8 @@ async function runBenchmark(config) {
 
           // Rate limiting (configurable per provider)
           const isGemini =
-            modelConfig.provider === "google" ||
-            modelConfig.provider === "gemini-cli";
+            modelConfig.provider === 'google' ||
+            modelConfig.provider === 'gemini-cli';
           const defaultDelay = isGemini ? 1000 : 500;
           const delay =
             rateLimit[modelConfig.provider] ||
@@ -1074,7 +1078,7 @@ async function runBenchmark(config) {
     log(
       `     Vulnerable: ${modelResults.functionsWithVulnerabilities} (${modelResults.vulnerabilityRate})`,
     );
-    log(`     Avg CVSS: ${modelResults.averageCVSS || "N/A"}`);
+    log(`     Avg CVSS: ${modelResults.averageCVSS || 'N/A'}`);
     log(`     Avg generation: ${modelResults.averageGenerationTimeMs}ms`);
     log(`     Unique CWEs: ${modelResults.uniqueCWEs.length}`);
     if (modelResults.remediationEffectiveness) {
@@ -1083,17 +1087,17 @@ async function runBenchmark(config) {
       );
     }
 
-    return { modelId, modelResults, log: logLines.join("\n"), skipped: false };
+    return { modelId, modelResults, log: logLines.join('\n'), skipped: false };
   }
 
   // ═══════════════════════════════════════════════════════════════
   // CHECKPOINT HELPERS
   // ═══════════════════════════════════════════════════════════════
 
-  const conditionTag = config.securityContext ? "control" : "treatment";
+  const conditionTag = config.securityContext ? 'control' : 'treatment';
 
   function getCheckpointPath(modelId) {
-    const safeId = modelId.replace(/[^a-zA-Z0-9.-]/g, "_");
+    const safeId = modelId.replace(/[^a-zA-Z0-9.-]/g, '_');
     return path.join(
       CHECKPOINT_DIR,
       `checkpoint-${safeId}-${conditionTag}-${iterationsPerPrompt}iter.json`,
@@ -1123,7 +1127,7 @@ async function runBenchmark(config) {
     const cpPath = getCheckpointPath(modelId);
     if (!fs.existsSync(cpPath)) return null;
     try {
-      const data = JSON.parse(fs.readFileSync(cpPath, "utf-8"));
+      const data = JSON.parse(fs.readFileSync(cpPath, 'utf-8'));
       // Verify the checkpoint matches current config
       if (
         data.config?.iterationsPerPrompt === iterationsPerPrompt &&
@@ -1182,7 +1186,7 @@ async function runBenchmark(config) {
         results.models[modelId] = modelResults;
         const config = MODEL_REGISTRY[modelId];
         console.log(
-          `     ${config?.color || ""}✅ ${config?.displayName || modelId}${RESET} — ${modelResults.vulnerabilityRate} vuln rate (${modelResults.totalFunctions} functions)`,
+          `     ${config?.color || ''}✅ ${config?.displayName || modelId}${RESET} — ${modelResults.vulnerabilityRate} vuln rate (${modelResults.totalFunctions} functions)`,
         );
       }
     }
@@ -1193,7 +1197,7 @@ async function runBenchmark(config) {
   for (const modelId of models) {
     // Skip models already resumed
     if (resumeModels[modelId]) continue;
-    const provider = MODEL_REGISTRY[modelId]?.provider || "unknown";
+    const provider = MODEL_REGISTRY[modelId]?.provider || 'unknown';
     if (!providerGroups[provider]) providerGroups[provider] = [];
     providerGroups[provider].push(modelId);
   }
@@ -1208,7 +1212,7 @@ async function runBenchmark(config) {
         const c = concurrency[p] || 1;
         return `${p} (${providerGroups[p].length} models, concurrency=${c})`;
       })
-      .join(" | ");
+      .join(' | ');
     console.log(
       `  Parallelism: ${providerNames.length} provider pipeline(s): ${concurrencyDisplay}`,
     );
@@ -1245,7 +1249,7 @@ async function runBenchmark(config) {
   const modelNames = Object.keys(results.models);
 
   if (modelNames.length === 0) {
-    console.log("\n⚠️  No models were successfully tested.");
+    console.log('\n⚠️  No models were successfully tested.');
     return results;
   }
 
@@ -1333,11 +1337,11 @@ async function runBenchmark(config) {
   };
 
   // Save results
-  const modelSuffix = modelNames.length === 1 ? modelNames[0] : "multi-model";
+  const modelSuffix = modelNames.length === 1 ? modelNames[0] : 'multi-model';
   const prefixTag = config.outputPrefix
     ? `${config.outputPrefix}-`
-    : "antigravity-";
-  const filename = `${prefixTag}${modelSuffix}-${conditionTag}-${iterationsPerPrompt}iter-${new Date().toISOString().split("T")[0]}.json`;
+    : 'antigravity-';
+  const filename = `${prefixTag}${modelSuffix}-${conditionTag}-${iterationsPerPrompt}iter-${new Date().toISOString().split('T')[0]}.json`;
   const resultsPath = path.join(RESULTS_DIR, filename);
   fs.writeFileSync(resultsPath, JSON.stringify(results, null, 2));
   console.log(`\n✅ Results saved to: ${resultsPath}`);
@@ -1350,11 +1354,11 @@ async function runBenchmark(config) {
 // ═══════════════════════════════════════════════════════════════
 
 function printSummary(results) {
-  console.log("\n" + "═".repeat(70));
+  console.log('\n' + '═'.repeat(70));
   console.log(
     `${BOLD}🔬 AI SECURITY BENCHMARK RESULTS — ANTIGRAVITY EDITION${RESET}`,
   );
-  console.log("═".repeat(70));
+  console.log('═'.repeat(70));
 
   if (results.summary) {
     console.log(`\n${BOLD}📊 OVERALL FINDINGS:${RESET}`);
@@ -1383,13 +1387,13 @@ function printSummary(results) {
   // Model comparison table
   console.log(`\n${BOLD}📈 MODEL COMPARISON:${RESET}`);
   console.log(
-    "┌─────────────────────┬───────────┬────────────┬──────┬──────────┬─────────────┬──────────┐",
+    '┌─────────────────────┬───────────┬────────────┬──────┬──────────┬─────────────┬──────────┐',
   );
   console.log(
-    "│ Model               │ Functions │ Vulnerable │ Rate │ Avg CVSS │ Unique CWEs │ Avg Time │",
+    '│ Model               │ Functions │ Vulnerable │ Rate │ Avg CVSS │ Unique CWEs │ Avg Time │',
   );
   console.log(
-    "├─────────────────────┼───────────┼────────────┼──────┼──────────┼─────────────┼──────────┤",
+    '├─────────────────────┼───────────┼────────────┼──────┼──────────┼─────────────┼──────────┤',
   );
 
   for (const [modelId, data] of Object.entries(results.models)) {
@@ -1398,20 +1402,20 @@ function printSummary(results) {
     const funcs = String(data.totalFunctions).padStart(9);
     const vuln = String(data.functionsWithVulnerabilities).padStart(10);
     const rate = data.vulnerabilityRate.padStart(4);
-    const cvss = String(data.averageCVSS || "N/A").padStart(8);
+    const cvss = String(data.averageCVSS || 'N/A').padStart(8);
     const cwes = String(data.uniqueCWEs?.length || 0).padStart(11);
     const avgTime = data.averageGenerationTimeMs
       ? `${(data.averageGenerationTimeMs / 1000).toFixed(1)}s`.padStart(8)
-      : "N/A".padStart(8);
+      : 'N/A'.padStart(8);
 
-    const color = config?.color || "";
+    const color = config?.color || '';
     console.log(
       `│ ${color}${name}${RESET} │ ${funcs} │ ${vuln} │ ${rate} │ ${cvss} │ ${cwes} │ ${avgTime} │`,
     );
   }
 
   console.log(
-    "└─────────────────────┴───────────┴────────────┴──────┴──────────┴─────────────┴──────────┘",
+    '└─────────────────────┴───────────┴────────────┴──────┴──────────┴─────────────┴──────────┘',
   );
 
   // Remediation comparison (if any)
@@ -1421,27 +1425,27 @@ function printSummary(results) {
   if (modelsWithRemediation.length > 0) {
     console.log(`\n${BOLD}🔧 REMEDIATION EFFECTIVENESS:${RESET}`);
     console.log(
-      "┌─────────────────────┬──────────┬──────────────┬────────────────┐",
+      '┌─────────────────────┬──────────┬──────────────┬────────────────┐',
     );
     console.log(
-      "│ Model               │ Attempts │ Fully Fixed  │ Overall Fix %  │",
+      '│ Model               │ Attempts │ Fully Fixed  │ Overall Fix %  │',
     );
     console.log(
-      "├─────────────────────┼──────────┼──────────────┼────────────────┤",
+      '├─────────────────────┼──────────┼──────────────┼────────────────┤',
     );
 
     for (const [modelId, data] of modelsWithRemediation) {
       const config = MODEL_REGISTRY[modelId];
       const name = (config?.displayName || modelId).padEnd(19);
       const rem = data.remediationEffectiveness;
-      const color = config?.color || "";
+      const color = config?.color || '';
       console.log(
         `│ ${color}${name}${RESET} │ ${String(rem.attempts).padStart(8)} │ ${rem.fullyFixedRate.padStart(12)} │ ${rem.overallFixRate.padStart(14)} │`,
       );
     }
 
     console.log(
-      "└─────────────────────┴──────────┴──────────────┴────────────────┘",
+      '└─────────────────────┴──────────┴──────────────┴────────────────┘',
     );
   }
 
@@ -1452,7 +1456,7 @@ function printSummary(results) {
     console.log(`   Chi-squared:     ${mc.chiSquared} (df=${mc.df})`);
     console.log(`   p-value:         ${mc.pValue}`);
     console.log(
-      `   Significant:     ${mc.significant ? "✅ Yes — models differ significantly" : "❌ No — no significant difference detected"}`,
+      `   Significant:     ${mc.significant ? '✅ Yes — models differ significantly' : '❌ No — no significant difference detected'}`,
     );
 
     // Per-model CIs
@@ -1461,7 +1465,7 @@ function printSummary(results) {
       results.summary.statistics.vulnerabilityRates,
     )) {
       const config = MODEL_REGISTRY[modelId];
-      const color = config?.color || "";
+      const color = config?.color || '';
       console.log(
         `   ${color}${(config?.displayName || modelId).padEnd(20)}${RESET} ${stats.rate.padStart(6)} ${stats.ci95} (n=${stats.n})`,
       );
@@ -1472,7 +1476,7 @@ function printSummary(results) {
   if (results.summary?.topCategories?.length > 0) {
     console.log(`\n${BOLD}🔥 TOP VULNERABILITY CATEGORIES:${RESET}`);
     for (const [category, count] of results.summary.topCategories) {
-      const bar = "█".repeat(Math.min(count * 2, 40));
+      const bar = '█'.repeat(Math.min(count * 2, 40));
       console.log(`   ${category.padEnd(25)} ${bar} ${count}`);
     }
   }
@@ -1480,10 +1484,10 @@ function printSummary(results) {
   // CWEs
   if (results.summary?.allUniqueCWEs?.length > 0) {
     console.log(`\n${BOLD}🛡️  CWEs DETECTED:${RESET}`);
-    console.log(`   ${results.summary.allUniqueCWEs.join(", ")}`);
+    console.log(`   ${results.summary.allUniqueCWEs.join(', ')}`);
   }
 
-  console.log("\n" + "═".repeat(70));
+  console.log('\n' + '═'.repeat(70));
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1494,21 +1498,21 @@ async function main() {
   const args = process.argv.slice(2);
 
   // --list: Show available models and exit
-  if (args.includes("--list")) {
+  if (args.includes('--list')) {
     console.log(`\n${BOLD}Available Models:${RESET}\n`);
     for (const [id, config] of Object.entries(MODEL_REGISTRY)) {
       const tierBadge =
-        config.tier === "flagship"
-          ? "⭐"
-          : config.tier === "balanced"
-            ? "⚖️"
-            : "⚡";
+        config.tier === 'flagship'
+          ? '⭐'
+          : config.tier === 'balanced'
+            ? '⚖️'
+            : '⚡';
       const providerTag =
-        config.provider === "anthropic"
-          ? "Claude CLI"
-          : config.provider === "gemini-cli"
-            ? "Gemini CLI"
-            : "Gemini API";
+        config.provider === 'anthropic'
+          ? 'Claude CLI'
+          : config.provider === 'gemini-cli'
+            ? 'Gemini CLI'
+            : 'Gemini API';
       console.log(
         `  ${config.color}${id.padEnd(20)}${RESET} ${config.displayName.padEnd(22)} ${tierBadge}  ${DIM}(${providerTag})${RESET}`,
       );
@@ -1522,39 +1526,39 @@ async function main() {
   }
 
   // Parse CLI flags
-  const modelArg = args.find((a) => a.startsWith("--model="))?.split("=")[1];
+  const modelArg = args.find((a) => a.startsWith('--model='))?.split('=')[1];
   const iterationsArg = parseInt(
-    args.find((a) => a.startsWith("--iterations="))?.split("=")[1] || "1",
+    args.find((a) => a.startsWith('--iterations='))?.split('=')[1] || '1',
   );
   const categoriesArg = args
-    .find((a) => a.startsWith("--categories="))
-    ?.split("=")[1];
-  const compareMode = args.includes("--compare");
-  const noRemediation = args.includes("--no-remediation");
-  const securityContext = args.includes("--security-context");
-  const resumeMode = args.includes("--resume");
+    .find((a) => a.startsWith('--categories='))
+    ?.split('=')[1];
+  const compareMode = args.includes('--compare');
+  const noRemediation = args.includes('--no-remediation');
+  const securityContext = args.includes('--security-context');
+  const resumeMode = args.includes('--resume');
   const outputPrefix = args
-    .find((a) => a.startsWith("--output-prefix="))
-    ?.split("=")[1];
+    .find((a) => a.startsWith('--output-prefix='))
+    ?.split('=')[1];
 
   // Per-provider concurrency (default: 1 each — safe for quota)
   const concurrencyAnthropic = parseInt(
-    args.find((a) => a.startsWith("--concurrency-anthropic="))?.split("=")[1] ||
-      "1",
+    args.find((a) => a.startsWith('--concurrency-anthropic='))?.split('=')[1] ||
+      '1',
   );
   const concurrencyGoogle = parseInt(
-    args.find((a) => a.startsWith("--concurrency-google="))?.split("=")[1] ||
-      "1",
+    args.find((a) => a.startsWith('--concurrency-google='))?.split('=')[1] ||
+      '1',
   );
 
   // Per-provider rate limiting in milliseconds (delay between API calls)
   const rateLimitAnthropic = parseInt(
-    args.find((a) => a.startsWith("--rate-limit-anthropic="))?.split("=")[1] ||
-      "500",
+    args.find((a) => a.startsWith('--rate-limit-anthropic='))?.split('=')[1] ||
+      '500',
   );
   const rateLimitGoogle = parseInt(
-    args.find((a) => a.startsWith("--rate-limit-google="))?.split("=")[1] ||
-      "1000",
+    args.find((a) => a.startsWith('--rate-limit-google='))?.split('=')[1] ||
+      '1000',
   );
 
   let selectedModels;
@@ -1564,21 +1568,21 @@ async function main() {
     selectedModels = Object.keys(MODEL_REGISTRY);
   } else if (modelArg) {
     // Accept comma-separated model IDs
-    selectedModels = modelArg.split(",").map((m) => {
+    selectedModels = modelArg.split(',').map((m) => {
       const trimmed = m.trim();
       // Support short aliases
       const aliases = {
-        opus: "opus-4.6",
-        sonnet: "sonnet-4.5",
-        haiku: "haiku-4.5",
-        flash: "gemini-3-flash-cli",
-        pro: "gemini-3-pro-cli",
-        "gemini-flash": "gemini-3-flash-cli",
-        "gemini-pro": "gemini-3-pro-cli",
-        "gemini-flash-cli": "gemini-3-flash-cli",
-        "gemini-pro-cli": "gemini-3-pro-cli",
-        "gemini-2.5-flash-cli": "gemini-2.5-flash-cli",
-        "gemini-2.5-pro-cli": "gemini-2.5-pro-cli",
+        opus: 'opus-4.6',
+        sonnet: 'sonnet-4.5',
+        haiku: 'haiku-4.5',
+        flash: 'gemini-3-flash-cli',
+        pro: 'gemini-3-pro-cli',
+        'gemini-flash': 'gemini-3-flash-cli',
+        'gemini-pro': 'gemini-3-pro-cli',
+        'gemini-flash-cli': 'gemini-3-flash-cli',
+        'gemini-pro-cli': 'gemini-3-pro-cli',
+        'gemini-2.5-flash-cli': 'gemini-2.5-flash-cli',
+        'gemini-2.5-pro-cli': 'gemini-2.5-pro-cli',
       };
       return aliases[trimmed] || trimmed;
     });
@@ -1598,23 +1602,23 @@ async function main() {
   }
 
   const categories = categoriesArg
-    ? categoriesArg.split(",")
+    ? categoriesArg.split(',')
     : Object.keys(PROMPTS);
 
   // ── Resume: load checkpoints for completed models ──
   const resumeModels = {};
   if (resumeMode) {
     console.log(`\n${BOLD}♻️  Resume Mode — scanning checkpoints...${RESET}`);
-    const conditionTag = securityContext ? "control" : "treatment";
+    const conditionTag = securityContext ? 'control' : 'treatment';
     for (const modelId of selectedModels) {
-      const safeId = modelId.replace(/[^a-zA-Z0-9.-]/g, "_");
+      const safeId = modelId.replace(/[^a-zA-Z0-9.-]/g, '_');
       const cpPath = path.join(
         CHECKPOINT_DIR,
         `checkpoint-${safeId}-${conditionTag}-${iterationsArg}iter.json`,
       );
       if (fs.existsSync(cpPath)) {
         try {
-          const data = JSON.parse(fs.readFileSync(cpPath, "utf-8"));
+          const data = JSON.parse(fs.readFileSync(cpPath, 'utf-8'));
           if (
             data.config?.iterationsPerPrompt === iterationsArg &&
             data.config?.securityContext === securityContext
@@ -1635,7 +1639,7 @@ async function main() {
       console.log(`   All models already completed!`);
     } else {
       console.log(
-        `   🔄 Will run: ${remaining.map((m) => MODEL_REGISTRY[m]?.displayName || m).join(", ")}`,
+        `   🔄 Will run: ${remaining.map((m) => MODEL_REGISTRY[m]?.displayName || m).join(', ')}`,
       );
     }
   }
@@ -1652,12 +1656,12 @@ async function main() {
     concurrency: {
       anthropic: concurrencyAnthropic,
       google: concurrencyGoogle,
-      "gemini-cli": concurrencyGoogle, // Share Google concurrency setting
+      'gemini-cli': concurrencyGoogle, // Share Google concurrency setting
     },
     rateLimit: {
       anthropic: rateLimitAnthropic,
       google: rateLimitGoogle,
-      "gemini-cli": rateLimitGoogle, // Share Google rate limit setting
+      'gemini-cli': rateLimitGoogle, // Share Google rate limit setting
     },
   };
 
