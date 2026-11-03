@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-nestjs-security",
-  "version": "3.2.1",
+  "version": "3.2.2",
   "description": "The nestjs-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-nestjs-security.",
   "type": "commonjs",
   "main": "./index.js",
@@ -67,6 +67,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-nestjs-security": "3.2.1"
+    "eslint-plugin-nestjs-security": "3.2.2"
   }
 }
