@@ -54,6 +54,7 @@ describe('no-unchecked-loop-condition', () => {
         // branch covered above).
         {
           code: 'while (flag) { doWork(); }',
+          name: 'a while loop on an ordinary flag is not reported',
         },
         {
           name: 'while (true) whose body breaks — the reference for the for(;;) exemption',

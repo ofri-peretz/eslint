@@ -10,6 +10,9 @@
  * scripts/__tests__/mutation-ratchet.test.ts).
  */
 
+import { existsSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+
 /** The subset of mutation-testing-report-schema the ratchet reads. */
 export interface MutationReport {
   files: Record<
@@ -220,4 +223,24 @@ export function selectRules(
   }
   const pending = new Set(entry?.pending ?? []);
   return shipped.filter((r) => !pending.has(r)).toSorted();
+}
+
+/**
+ * The units a plugin ships: `src/rules/<rule>/`, flat `src/rules/<rule>.ts`,
+ * and each `src/utils/<file>.ts` as `utils/<file>`. The grader and the
+ * baseline lock both read this, so they cannot disagree on what is graded.
+ */
+export function shippedRules(pluginDir: string): string[] {
+  const dir = join(pluginDir, 'src', 'rules');
+  const utils = join(pluginDir, 'src', 'utils');
+  return [
+    ...readdirSync(dir).map((d) =>
+      statSync(join(dir, d)).isDirectory() ? d : ruleOf(`src/rules/${d}`),
+    ),
+    ...(existsSync(utils)
+      ? readdirSync(utils).map((f) => ruleOf(`src/utils/${f}`))
+      : []),
+  ]
+    .filter((r): r is string => r !== undefined)
+    .toSorted();
 }

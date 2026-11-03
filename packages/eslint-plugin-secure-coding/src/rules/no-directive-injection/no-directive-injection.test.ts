@@ -270,6 +270,7 @@ describe('no-directive-injection', () => {
         // data is in user input variables
         {
           code: '<div is={data}></div>',
+          name: 'an is binding to the data variable is reported',
           errors: [
             {
               messageId: 'unsafeComponentBinding',

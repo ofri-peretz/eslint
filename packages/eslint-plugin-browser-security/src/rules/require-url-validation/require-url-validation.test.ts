@@ -90,7 +90,7 @@ ruleTester.run('require-url-validation', requireUrlValidation, {
       code: 'window[go](location.hash);',
     },
     { code: "const url = 'https://example.com'" },
-    { code: 'const x = 1' },
+    { code: 'const x = 1', name: 'a numeric constant navigates nowhere' },
   ],
 
   invalid: [

@@ -43,7 +43,7 @@ ruleTester.run('no-tracking-without-consent', noTrackingWithoutConsent, {
       code: "if (hasConsent === false) { showBanner(); } else { gtag('event', 'x'); }",
     },
     // Non-tracking calls
-    { code: 'const x = 1' },
+    { code: 'const x = 1', name: 'a numeric constant performs no tracking' },
     { code: "console.log('test')" },
     { code: 'analytics.flush()' },
     { code: 'if (isMobile) { renderApp(); }' },

@@ -304,22 +304,10 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
         return true;
       }
 
-      // Also check for compound patterns that strongly indicate password recovery
-      const strongRecoveryPatterns = [
-        'resetpassword',
-        'passwordreset',
-        'forgotpassword',
-        'passwordrecovery',
-        'recoverytoken',
-        'password_reset',
-        'forgot_password',
-        'reset_password',
-        'passwordforgot',
-        'recoverpassword',
-      ];
-      return strongRecoveryPatterns.some((pattern) =>
-        lowerText.includes(pattern),
-      );
+      // The one compound that carries no password word: every other former
+      // "strong pattern" (resetpassword, forgot_password, …) already contains
+      // a password keyword AND a recovery keyword, so the test above decides it.
+      return lowerText.includes('recoverytoken');
     };
 
     /**
@@ -448,12 +436,12 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
               const { callee } = definition.node.init;
               // `Math['random']()` is the same weak generator `Math.random()`
               // is, and a reset token built from it is just as guessable.
+              // An Identifier callee (`nanoid()`) is a scope reference, so the
+              // loop above has already answered for it.
               const calleeName =
-                callee.type === 'Identifier'
-                  ? callee.name
-                  : callee.type === 'MemberExpression'
-                    ? propertyName(callee)
-                    : null;
+                callee.type === 'MemberExpression'
+                  ? propertyName(callee)
+                  : null;
               if (
                 calleeName !== null &&
                 CREDENTIAL_GENERATORS.has(calleeName)
@@ -491,7 +479,7 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
     const isDeclarationOnly = (fn: TSESTree.FunctionDeclaration): boolean =>
       // Only reached from the FunctionDeclaration visitor, whose body is
       // always a BlockStatement — a concise-body check here would be dead.
-      fn.body.body.length === 1 && fn.body.body[0]?.type === 'ReturnStatement';
+      fn.body.body.length === 1 && fn.body.body[0].type === 'ReturnStatement';
 
     /**
      * Check if token has expiration
@@ -545,10 +533,11 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const varName = node.id.name.toLowerCase();
-
         // Check if variable is specifically password-recovery-related (not just any token)
-        if (isRecoveryRelated(varName) || namesRecoverySecret(node.id.name)) {
+        if (
+          isRecoveryRelated(node.id.name) ||
+          namesRecoverySecret(node.id.name)
+        ) {
           const initText = sourceCode.getText(node.init);
 
           // Check for weak token generation
@@ -563,8 +552,9 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
             ) {
               // FALSE POSITIVE REDUCTION
               if (
-                safetyChecker.isSafe(node, context) ||
-                (node.parent && safetyChecker.isSafe(node.parent, context))
+                // isSafe walks the ancestors' comments, so an annotation on
+                // the `const` declaration is already seen from the declarator.
+                safetyChecker.isSafe(node, context)
               ) {
                 return;
               }
@@ -578,20 +568,25 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
                 },
               });
             }
-          } else if (node.init.type === 'BinaryExpression') {
+          } else {
             // `usesPredictableSource` rather than a second list of literal
             // substrings. The list here read 'Date.now()' and 'Math.random()',
             // so `Date['now']() + salt` — the same predictable token — matched
             // neither. That helper already accepts both spellings, and keeping
             // one definition means the next source added is added once.
+            // Any non-call initializer, not only a `+`: `\`${Date.now()}\`` is
+            // the same predictable token. The `timestamp` NAME heuristic stays
+            // confined to a concatenation, where it was written.
             if (
               usesPredictableSource(node.init) ||
-              initText.includes('timestamp')
+              (node.init.type === 'BinaryExpression' &&
+                initText.includes('timestamp'))
             ) {
               // FALSE POSITIVE REDUCTION
               if (
-                safetyChecker.isSafe(node, context) ||
-                (node.parent && safetyChecker.isSafe(node.parent, context))
+                // isSafe walks the ancestors' comments, so an annotation on
+                // the `const` declaration is already seen from the declarator.
+                safetyChecker.isSafe(node, context)
               ) {
                 return;
               }

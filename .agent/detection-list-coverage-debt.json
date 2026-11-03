@@ -178,16 +178,13 @@
     "forgot-password",
     "healthz",
     "logout",
-    "oauth",
     "readiness",
     "registration",
     "reset-password",
     "robots",
     "robots.txt",
-    "sign-in",
     "sign-out",
     "sign-up",
-    "signin",
     "signout",
     "signup",
     "sso",
@@ -206,15 +203,13 @@
     "refresh",
     "registration",
     "session",
-    "sign-in",
     "sign-up",
     "signin",
     "signup",
     "totp"
   ],
   "packages/eslint-plugin-node-security/src/rules/detect-child-process/index.ts#DEFAULT_TAINT_SOURCES": [
-    "ctx",
-    "event"
+    "ctx"
   ],
   "packages/eslint-plugin-node-security/src/rules/detect-non-literal-fs-filename/index.ts#SENSITIVE_SEGMENTS": [
     ".aws/credentials",
@@ -224,7 +219,6 @@
     ".ssh/id_dsa",
     "etc/hosts",
     "etc/sudoers",
-    "proc/self",
     "windows/system32/config/sam"
   ],
   "packages/eslint-plugin-node-security/src/rules/no-buffer-overread/index.ts#DEFAULT_BUFFER_METHODS": [
@@ -256,8 +250,7 @@
     "verify"
   ],
   "packages/eslint-plugin-node-security/src/rules/no-ssrf/index.ts#USER_INPUT_SUBSTRINGS": [
-    "href",
-    "link"
+    "href"
   ],
   "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/index.ts#DEFAULT_SECRET_PATTERNS": [
     "auth_token",
@@ -392,8 +385,7 @@
   "packages/eslint-plugin-secure-coding/src/rules/no-ldap-injection/index.ts#DEFAULT_ESCAPE_FUNCTIONS": [
     "dnEscape",
     "dnValue",
-    "escape.dnValue",
-    "filterEscape"
+    "escape.dnValue"
   ],
   "packages/eslint-plugin-secure-coding/src/rules/no-log-injection/index.ts#DEFAULT_LOGGER_RECEIVERS": [
     "bunyan",

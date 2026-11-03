@@ -99,3 +99,106 @@ ruleTester.run(
     ],
   },
 );
+
+/** A directory whose `package.json` is exactly `manifest`. */
+function projectWith(manifest: Record<string, unknown>): string {
+  const root = mkdtempSync(join(tmpdir(), 'js-yaml-manifest-'));
+  writeFileSync(join(root, 'package.json'), JSON.stringify(manifest));
+  return root;
+}
+
+/** A workspace package at `root/packages/app` with its own manifest. */
+function workspacePackage(root: string, manifest: Record<string, unknown>) {
+  const pkg = join(root, 'packages', 'app');
+  mkdirSync(join(pkg, 'src'), { recursive: true });
+  writeFileSync(join(pkg, 'package.json'), JSON.stringify(manifest));
+  return pkg;
+}
+
+const devOnly = projectWith({ devDependencies: { 'js-yaml': '^4.1.0' } });
+const peerOnly = projectWith({
+  dependencies: {},
+  peerDependencies: { 'js-yaml': '^4.1.0' },
+});
+const twoDigitMajor = projectWith({ dependencies: { 'js-yaml': '^10.0.0' } });
+const hoisted = projectWith({ devDependencies: { 'js-yaml': '^4.1.0' } });
+const hoistedApp = workspacePackage(hoisted, {
+  dependencies: { express: '^4.0.0' },
+});
+const workspaceRange = projectWith({
+  devDependencies: { 'js-yaml': '^4.1.0' },
+});
+const workspaceRangeApp = workspacePackage(workspaceRange, {
+  dependencies: { 'js-yaml': 'workspace:*' },
+});
+const farAbove = projectWith({ dependencies: { 'js-yaml': '^4.1.0' } });
+// The manifest that pins v4 is the thirteenth directory up: one past the walk.
+const farBelow = join(farAbove, ...'abcdefghijkl'.split(''));
+mkdirSync(farBelow, { recursive: true });
+
+afterAll(() => {
+  for (const dir of [
+    devOnly,
+    peerOnly,
+    twoDigitMajor,
+    hoisted,
+    workspaceRange,
+    farAbove,
+  ]) {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+const SERIALIZE = [
+  "import { unserialize } from 'node-serialize';",
+  'export function restore(req) { return unserialize(req.body.session); }',
+].join('\n');
+
+ruleTester.run(
+  'no-unsafe-deserialization — which manifest field and which manifest',
+  noUnsafeDeserialization,
+  {
+    valid: [
+      {
+        name: 'a devDependencies-only declaration still names the major',
+        code: LOAD,
+        filename: join(devOnly, 'i18n.js'),
+      },
+      {
+        name: 'a peerDependencies declaration is read when dependencies names other packages',
+        code: LOAD,
+        filename: join(peerOnly, 'i18n.js'),
+      },
+      {
+        name: 'a two-digit major is read whole',
+        code: LOAD,
+        filename: join(twoDigitMajor, 'i18n.js'),
+      },
+      {
+        name: 'a workspace package that does not name js-yaml reads the hoisted root declaration',
+        code: LOAD,
+        filename: join(hoistedApp, 'src', 'i18n.js'),
+      },
+    ],
+    invalid: [
+      {
+        name: 'a digit-less workspace: range names no major, even under a root that pins v4',
+        code: LOAD,
+        filename: join(workspaceRangeApp, 'src', 'i18n.js'),
+        errors: [{ messageId: 'unsafeYamlParsing' as const }],
+      },
+      {
+        name: 'the walk gives up twelve directories above the file',
+        code: LOAD,
+        filename: join(farBelow, 'i18n.js'),
+        errors: [{ messageId: 'unsafeYamlParsing' as const }],
+      },
+      {
+        name: 'a js-yaml v4 pin does not make node-serialize safe',
+        code: SERIALIZE,
+        filename: join(v4, 'src', 'session.js'),
+        errors: [{ messageId: 'unsafeDeserialization' as const }],
+      },
+    ],
+  },
+);

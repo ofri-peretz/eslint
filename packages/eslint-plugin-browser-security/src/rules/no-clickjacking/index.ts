@@ -31,7 +31,10 @@ import {
   createSafetyChecker,
   type SecurityRuleOptions,
 } from '@interlace/eslint-devkit';
-import { parsePolicy } from '../../utils/csp-directive';
+import {
+  isFetchDirectiveName,
+  parsePolicy,
+} from '../../utils/csp-directive';
 import { resolveInitializer } from '../../utils/resolve-binding';
 
 type MessageIds =
@@ -77,7 +80,7 @@ const FRAME_REFS = new Set(['top', 'self', 'parent', 'window']);
 function isPolicyPermittingFraming(text: string): boolean {
   const directives = parsePolicy(text);
   return (
-    directives.some((directive) => directive.name.endsWith('-src')) &&
+    directives.some((directive) => isFetchDirectiveName(directive.name)) &&
     !directives.some(
       (directive) =>
         directive.name === 'frame-ancestors' &&

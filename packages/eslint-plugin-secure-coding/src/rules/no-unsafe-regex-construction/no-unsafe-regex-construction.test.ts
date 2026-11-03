@@ -39,7 +39,10 @@ describe('no-unsafe-regex-construction', () => {
           'const regex = new RegExp(sanitize(userInput));',
           'const regex = new RegExp(escape(input));',
           // Non-RegExp calls
-          'console.log("test");',
+          {
+            code: 'console.log("test");',
+            name: 'a console.log call constructs no RegExp',
+          },
           'const result = someFunction(input);',
           // RegExp with no arguments (edge case)
           'const regex = new RegExp();',

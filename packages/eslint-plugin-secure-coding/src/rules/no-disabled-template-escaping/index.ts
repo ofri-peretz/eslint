@@ -40,6 +40,9 @@ type MessageIds = 'escapingDisabled';
  */
 const ESCAPE_OPTION = 'escapeMarkup';
 
+/** Assignment operators that can leave `escapeMarkup` false. */
+const DISABLING_OPERATORS: ReadonlySet<string> = new Set(['=', '&&=', '??=']);
+
 export const noDisabledTemplateEscaping = createRule<[], MessageIds>({
   name: 'no-disabled-template-escaping',
   meta: {
@@ -72,8 +75,10 @@ export const noDisabledTemplateEscaping = createRule<[], MessageIds>({
   createOnce(context) {
     return {
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        // `&&=` turns an enabled escape off and `??=` turns an unset (default)
+        // one off; only `||=` leaves an enabled escape alone.
         if (
-          node.operator === '=' &&
+          DISABLING_OPERATORS.has(node.operator) &&
           node.left.type === AST_NODE_TYPES.MemberExpression &&
           propertyName(node.left) === ESCAPE_OPTION &&
           node.right.type === AST_NODE_TYPES.Literal &&

@@ -64,6 +64,7 @@ import {
   ruleOf,
   scoreReport,
   selectRules,
+  shippedRules,
   type Baseline,
   type MutationReport,
   type RuleScore,
@@ -112,26 +113,6 @@ const plugins = has('--all') ? Object.keys(baseline.plugins) : named;
 if (plugins.length === 0) usage('name a plugin with --plugin, or pass --all');
 if (ALLOW_REGRESSION && !UPDATE)
   usage('--allow-regression only means something with --update-baseline');
-
-/** Rule names a plugin ships: `src/rules/<rule>/` or flat `src/rules/<rule>.ts`. */
-function shippedRules(pluginDir: string): string[] {
-  const dir = path.join(pluginDir, 'src', 'rules');
-  const utils = path.join(pluginDir, 'src', 'utils');
-  return [
-    ...fs
-      .readdirSync(dir)
-      .map((d) =>
-        fs.statSync(path.join(dir, d)).isDirectory()
-          ? d
-          : ruleOf(`src/rules/${d}`),
-      ),
-    ...(fs.existsSync(utils)
-      ? fs.readdirSync(utils).map((f) => ruleOf(`src/utils/${f}`))
-      : []),
-  ]
-    .filter((r): r is string => r !== undefined)
-    .toSorted();
-}
 
 /**
  * Stryker `--mutate` globs for a rule list. Stryker splits the flag on `,`,

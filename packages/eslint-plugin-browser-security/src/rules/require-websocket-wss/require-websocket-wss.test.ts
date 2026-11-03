@@ -50,6 +50,7 @@ ruleTester.run('require-websocket-wss', requireWebsocketWss, {
     // Variable URL (can't analyze statically)
     {
       code: `const ws = new WebSocket(wsUrl);`,
+      name: 'a WebSocket URL held in a variable cannot be judged statically',
     },
     // Test files allowed by default
     {

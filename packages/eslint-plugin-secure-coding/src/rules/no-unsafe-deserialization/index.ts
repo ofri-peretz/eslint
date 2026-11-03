@@ -33,6 +33,7 @@ import {
   resolveModuleBinding,
   unwrapTypeSyntax,
   namesOneOf,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
@@ -52,7 +53,10 @@ export interface Options extends SecurityRuleOptions {
   /** Dangerous deserialization functions to detect */
   dangerousFunctions?: string[];
 
-  /** Functions that validate input before deserialization */
+  /**
+   * Accepted so existing configurations keep validating. It has never changed
+   * a verdict: the set it fed was written and never read.
+   */
   validationFunctions?: string[];
 
   /**
@@ -363,7 +367,8 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
               'checkSchema',
               'validateSchema',
             ],
-            description: 'Function names that count as input validation',
+            description:
+              'No effect: accepted so existing configurations keep validating. The rule never read it.',
           },
           trustedSanitizers: {
             type: 'array',
@@ -428,12 +433,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         'deserialize',
         'parseUnsafe',
       ],
-      validationFunctions: [
-        'validateInput',
-        'sanitizeData',
-        'checkSchema',
-        'validateSchema',
-      ],
       trustedSanitizers: [],
       trustedAnnotations: [],
       strictMode: false,
@@ -445,7 +444,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
   ],
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let dangerousFunctions: string[];
-    let validationFunctions: string[];
     let trustedSanitizers: string[];
     let trustedAnnotations: string[];
     let strictMode: boolean;
@@ -456,7 +454,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
     let safeSchemas: Set<string>;
     let inertPackages: Set<string>;
     let sourceCode: Readonly<TSESLint.SourceCode>;
-    let filename: string;
     let safetyChecker: {
       isSafe(
         node: TSESTree.Node,
@@ -471,9 +468,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         context: TSESLint.RuleContext<string, unknown[]>,
       ): boolean;
     };
-    let validatedVariables: Set<string>;
     let untrustedVariables: Set<string>;
-    let literalPathFileVars: Set<string>;
 
     /**
      * Check if this is a dangerous deserialization function
@@ -494,10 +489,11 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
       const optionsArg = node.arguments[1];
       if (optionsArg?.type !== 'ObjectExpression') return false;
       return optionsArg.properties.some((property) => {
-        if (property.type !== 'Property' || property.computed) return false;
+        // `{ schema: S }`, `{ 'schema': S }` and `{ ['schema']: S }` are the same
+        // option; a spread or a dynamic key names nothing this can read.
         if (
-          property.key.type !== 'Identifier' ||
-          property.key.name !== 'schema'
+          property.type !== 'Property' ||
+          objectKeyName(property) !== 'schema'
         ) {
           return false;
         }
@@ -596,15 +592,12 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
           return isStringValued(node.arguments[0]);
         }
 
-        // Parsers that do not execute their input are never a CWE-502 sink.
-        // `JSON.parse` is the REMEDIATION this rule's own message recommends,
-        // and `yaml.safeLoad` is the safe variant by construction — but `parse`
-        // and `load` both appear on the dangerous lists below, so without this
-        // they would match by method name alone.
-        if (
-          (objectName === 'JSON' && memberName === 'parse') ||
-          (objectName === 'yaml' && memberName === 'safeLoad')
-        ) {
+        // `JSON.parse` does not execute its input — it is the REMEDIATION this
+        // rule's own message recommends — and stays exempt even when a consumer
+        // puts `parse` on `dangerousFunctions`. A `yaml.safeLoad` arm used to sit
+        // here too: `safeLoad` is on no sink list, so it was unreachable under
+        // every default, and it keyed on the receiver's local NAME.
+        if (objectName === 'JSON' && memberName === 'parse') {
           return false;
         }
 
@@ -653,28 +646,10 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         }
       }
 
-      // Check for require() calls with dangerous libraries
-      if (callee.type === 'Identifier' && callee.name === 'require') {
-        const args = node.arguments;
-        if (
-          args.length > 0 &&
-          args[0].type === 'Literal' &&
-          typeof args[0].value === 'string'
-        ) {
-          const moduleName = args[0].value.toLowerCase();
-          if (
-            [
-              'node-serialize',
-              'serialize-javascript',
-              'yaml',
-              'js-yaml',
-            ].includes(moduleName)
-          ) {
-            return true;
-          }
-        }
-      }
-
+      // A `require('node-serialize')` call used to count as a sink here. Its
+      // only argument is the module-name literal, which is never untrusted, so
+      // the finding it enabled could not be reported; the require is resolved
+      // where it matters, through `resolveModuleBinding` above.
       return false;
     };
 
@@ -713,10 +688,9 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
       }
       if (inputNode.type === 'CallExpression') {
         const callee = inputNode.callee;
-        if (
-          callee.type === 'MemberExpression' &&
-          propertyName(callee) !== null
-        ) {
+        // A computed callee (`x[k]()`) names no method, so only its receiver
+        // can carry provenance — `namesOneOf(null, …)` is false for both lists.
+        if (callee.type === 'MemberExpression') {
           // Reading a response or a request body yields remote bytes.
           if (
             namesOneOf(propertyName(callee), [
@@ -746,8 +720,10 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
             return true;
           }
         }
-        return inputNode.arguments.some(
-          (arg) => arg.type !== 'SpreadElement' && isUntrustedInput(arg),
+        // `join(...req.body.parts)` passes the request's own elements, so a
+        // spread carries what it spreads.
+        return inputNode.arguments.some((arg) =>
+          isUntrustedInput(arg.type === 'SpreadElement' ? arg.argument : arg),
         );
       }
 
@@ -792,10 +768,13 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
               | TSESTree.ArrowFunctionExpression;
             if (
               func.params.some((param: TSESTree.Parameter) => {
-                if (param.type === 'Identifier') {
-                  return param.name === inputNode.name;
-                }
-                return false;
+                // `function run(code = '')` — a default is only a fallback; the
+                // caller still decides the value.
+                const target =
+                  param.type === 'AssignmentPattern' ? param.left : param;
+                return (
+                  target.type === 'Identifier' && target.name === inputNode.name
+                );
               })
             ) {
               return true; // Function parameters are untrusted
@@ -938,12 +917,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
           context.report({
             node,
             messageId: 'dangerousFunctionConstructor',
-            data: {
-              filePath: context.filename,
-              line: String(node.loc?.start.line ?? 0),
-              severity: 'HIGH',
-              safeAlternative: 'Avoid dynamic function creation',
-            },
           });
           return;
         }
@@ -984,9 +957,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
               node,
               messageId,
               data: {
-                library: calleeText,
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
                 severity: 'HIGH',
                 safeAlternative:
                   'Use JSON.parse() or validated safe deserialization libraries',
@@ -1048,12 +1018,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
             'deserialize',
             'parseUnsafe',
           ],
-          validationFunctions = [
-            'validateInput',
-            'sanitizeData',
-            'checkSchema',
-            'validateSchema',
-          ],
           trustedSanitizers = [],
           trustedAnnotations = [],
           strictMode = false,
@@ -1073,7 +1037,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         ]);
 
         sourceCode = context.sourceCode;
-        filename = context.filename;
 
         // Create safety checker for false positive detection
         safetyChecker = createSafetyChecker({
@@ -1083,14 +1046,8 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
           strictMode,
         });
 
-        // Track variables that have been validated/sanitized
-        validatedVariables = new Set<string>();
         // Track variables that contain untrusted data
         untrustedVariables = new Set<string>();
-        // Variables read from a literal-string file path (e.g. fs.readFileSync('config.json')).
-        // These are still "untrusted" for eval/Function but safe for JSON.parse and other
-        // schema-validating parsers because the file content is statically bundled.
-        literalPathFileVars = new Set<string>();
       },
       // Track variable assignments from untrusted sources
       VariableDeclaration(node: TSESTree.VariableDeclaration) {
@@ -1101,29 +1058,10 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
               untrustedVariables.add(declarator.id.name);
             }
 
-            // Check if it's assigned from fs operations or other untrusted sources
-            if (declarator.init.type === 'CallExpression') {
-              const callee = declarator.init.callee;
-              if (
-                callee.type === 'MemberExpression' &&
-                callee.object.type === 'Identifier' &&
-                callee.object.name === 'fs' &&
-                // @vocabulary Node fs API
-                // `fs['readFileSync'](p)` reads the same untrusted bytes.
-                namesOneOf(propertyName(callee), ['readFile', 'readFileSync'])
-              ) {
-                untrustedVariables.add(declarator.id.name);
-                // Track whether the path is a literal — used downstream to skip
-                // safe deserializers (JSON.parse) on known-static files.
-                const pathArg = declarator.init.arguments[0];
-                if (
-                  pathArg?.type === 'Literal' &&
-                  typeof pathArg.value === 'string'
-                ) {
-                  literalPathFileVars.add(declarator.id.name);
-                }
-              }
-            }
+            // `fs.readFileSync(…)` needs no arm of its own: `isUntrustedInput`
+            // already treats a readFile/readFileSync call as untrusted, so the
+            // line above records it. A second, name-keyed arm (`fs.` only) and
+            // a `literalPathFileVars` set nothing ever read used to sit here.
           }
         }
       },
@@ -1143,44 +1081,31 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         checkCallExpression(node);
       },
 
-      // Check for dangerous require/import patterns
-      VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        if (!node.init) {
-          return;
-        }
-
-        // Track variables assigned from validation functions
-        if (
-          node.id.type === 'Identifier' &&
-          node.init.type === 'CallExpression' &&
-          node.init.callee.type === 'Identifier' &&
-          (validationFunctions.includes(node.init.callee.name) ||
-            trustedSanitizers.includes(node.init.callee.name))
-        ) {
-          validatedVariables.add(node.id.name);
-        }
-
-        // A second reporting path for `require`d libraries used to live here.
-        //
-        // It walked the declared variable's references and reported any
-        // `.unserialize` / `.deserialize` / `.load` / `.parse` call on it,
-        // WITHOUT asking whether the argument was untrusted, and at CRITICAL.
-        // Two defects followed, both reproduced on the corpus:
-        //
-        //   const serialize = require('node-serialize');
-        //   serialize.unserialize(req.cookies.session);   // reported TWICE,
-        //   // once here and once from checkCallExpression, at the same range —
-        //   // one defect, two findings, two suppression comments to write.
-        //
-        //   const YAML = require('yaml');
-        //   const cfg = YAML.parse(readFileSync('./defaults.yaml', 'utf8'));
-        //   // reported at CRITICAL with no untrusted input anywhere: a pure
-        //   // YAML 1.2 parser, on a file that ships inside the bundle.
-        //
-        // Everything it caught that was real is caught by `checkCallExpression`
-        // via MODULE_SINKS, which resolves the same `require` through scope
-        // analysis and additionally requires untrusted input to reach the sink.
-      },
+      // `validationFunctions` used to feed a `validatedVariables` set from a
+      // VariableDeclarator visitor here. Nothing ever read the set, so the
+      // option has never changed a verdict; it stays in the schema only so
+      // existing configurations keep validating.
+      //
+      // A second reporting path for `require`d libraries used to live here.
+      //
+      // It walked the declared variable's references and reported any
+      // `.unserialize` / `.deserialize` / `.load` / `.parse` call on it,
+      // WITHOUT asking whether the argument was untrusted, and at CRITICAL.
+      // Two defects followed, both reproduced on the corpus:
+      //
+      //   const serialize = require('node-serialize');
+      //   serialize.unserialize(req.cookies.session);   // reported TWICE,
+      //   // once here and once from checkCallExpression, at the same range —
+      //   // one defect, two findings, two suppression comments to write.
+      //
+      //   const YAML = require('yaml');
+      //   const cfg = YAML.parse(readFileSync('./defaults.yaml', 'utf8'));
+      //   // reported at CRITICAL with no untrusted input anywhere: a pure
+      //   // YAML 1.2 parser, on a file that ships inside the bundle.
+      //
+      // Everything it caught that was real is caught by `checkCallExpression`
+      // via MODULE_SINKS, which resolves the same `require` through scope
+      // analysis and additionally requires untrusted input to reach the sink.
     };
   },
 });

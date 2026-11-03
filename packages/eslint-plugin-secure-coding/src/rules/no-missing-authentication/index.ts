@@ -22,6 +22,7 @@ import {
   matchesAnyUserPattern,
   nameHasAnyWord,
   propertyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 import {
   createRule,
@@ -291,16 +292,16 @@ function referencedName(node: TSESTree.Node): string | null {
     return node.name;
   }
   if (node.type === AST_NODE_TYPES.MemberExpression) {
-    // `app['get']` names the same route registration `app.get` names. The
-    // resolver abstains on a key chosen at runtime, which genuinely names
-    // nothing this function could return.
+    // `auth['jwt']` names the same middleware `auth.jwt` names.
     const property = propertyName(node);
-    if (property === null) return null;
-    const objectPart =
-      node.object.type === AST_NODE_TYPES.Identifier
-        ? `${node.object.name}.`
-        : '';
-    return `${objectPart}${property}`;
+    const objectName =
+      node.object.type === AST_NODE_TYPES.Identifier ? node.object.name : null;
+    if (property === null) {
+      // `auth[mode]` picks its key at runtime, but whichever key it picks is a
+      // member of `auth` — the object is the only name the AST offers.
+      return objectName;
+    }
+    return objectName === null ? property : `${objectName}.${property}`;
   }
   return null;
 }
@@ -609,18 +610,13 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
         return false;
       }
 
-      // Check if init is a CallExpression to auth middleware
-      if (
+      // An auth middleware call, judged the way an inline argument is:
+      // `const guard = passport.authenticate('jwt')` is as much auth as
+      // `passport.authenticate('jwt')` written in place.
+      return (
         declarator.init.type === 'CallExpression' &&
-        declarator.init.callee.type === 'Identifier'
-      ) {
-        return nameHasAnyWord(
-          declarator.init.callee.name,
-          authMiddlewarePatterns,
-        );
-      }
-
-      return false;
+        isAuthMiddlewareArg(declarator.init, authMiddlewarePatterns)
+      );
     }
 
     /**
@@ -696,11 +692,13 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
             }
 
             if (methodName === 'use') {
-              const first = node.arguments[0];
+              // A mount path is a string, an expression-free template or a
+              // regular expression — Express accepts all three.
+              const first = node.arguments.at(0);
               const mountsAPath =
                 first !== undefined &&
-                first.type === 'Literal' &&
-                typeof first.value === 'string';
+                (staticString(first) !== null ||
+                  (first.type === 'Literal' && 'regex' in first));
               if (!mountsAPath) {
                 return;
               }
@@ -744,9 +742,11 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
             // `use` is exempt: `app.use('/api', authenticate())` legitimately
             // mounts middleware as its final argument.
             const firstMiddlewareIndex = chainedPath === undefined ? 1 : 0;
+            // For `use` the first argument is the static mount path, which is
+            // never middleware, so all arguments can be scanned.
             const middlewareArgs =
               methodName === 'use'
-                ? node.arguments.slice(firstMiddlewareIndex)
+                ? node.arguments
                 : node.arguments.slice(firstMiddlewareIndex, -1);
 
             // Check if authentication middleware is present in arguments
@@ -768,16 +768,13 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
             }
 
             // Check if the handler function itself is inside an auth middleware context
-            if (!hasAuth && node.arguments.length > 0) {
+            // A registration always has at least one argument by now. The
+            // handler's spelling does not matter: a named handler inside an
+            // auth wrapper is wrapped exactly as an inline one is.
+            if (!hasAuth) {
               const lastArg = node.arguments[node.arguments.length - 1];
-              if (
-                lastArg.type === 'ArrowFunctionExpression' ||
-                lastArg.type === 'FunctionExpression'
-              ) {
-                // Check if the handler is inside an auth middleware call
-                if (isInsideAuthMiddleware(lastArg, authMiddlewarePatterns)) {
-                  hasAuth = true;
-                }
+              if (isInsideAuthMiddleware(lastArg, authMiddlewarePatterns)) {
+                hasAuth = true;
               }
             }
 

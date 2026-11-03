@@ -1045,6 +1045,7 @@ describe('structural predicates', () => {
       // …including on the right of a provably-string left operand.
       {
         code: 'if ("a" == true) { go(); }',
+        name: 'a boolean literal compared loosely to a string literal is reported',
         errors: [{ messageId: 'looseEqualityTypeCheck' }],
       },
       // A call to something else proves nothing.

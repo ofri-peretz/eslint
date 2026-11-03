@@ -60,7 +60,7 @@ The same comparison through a helper counts too: `buf.equals(other)`, `Buffer.co
 
 ## Configuration
 
-The options and their defaults are listed under [⚙️ Options](#️-options) below.
+The options and their defaults are listed under [⚙️ Options](#-options) below.
 
 ```javascript
 {

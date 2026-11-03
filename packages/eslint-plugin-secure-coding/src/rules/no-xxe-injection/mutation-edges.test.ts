@@ -42,3 +42,21 @@ describe('no-xxe-injection (mutation edges)', () => {
     ],
   });
 });
+
+describe('no-xxe-injection (edges, 2026-11-02)', () => {
+  ruleTester.run('no-xxe-injection', noXxeInjection, {
+    valid: [
+      {
+        name: 'a parser assigned after a bare declaration has no construction initializer',
+        code: "import { XMLParser } from 'fast-xml-parser'; let parser; parser = new XMLParser(); parser.parse(req.body);",
+      },
+    ],
+    invalid: [
+      {
+        name: 'the receiver resolves to its own construction, not the first binding in scope',
+        code: "import { XMLParser } from 'fast-xml-parser'; const other = 1; const parser = new XMLParser({ processEntities: true }); parser.parse(req.body);",
+        errors: [{ messageId: 'unsafeXmlParser' as const }],
+      },
+    ],
+  });
+});

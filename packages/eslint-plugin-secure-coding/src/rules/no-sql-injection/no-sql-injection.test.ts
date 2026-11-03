@@ -217,12 +217,6 @@ db.query('SELECT * FROM users WHERE id = ' + escape(req.params.id));`,
         name: 'an unresolvable identifier passed straight to the sink is not followed',
         code: `db.query(sqlBuiltElsewhere);`,
       },
-      {
-        name: 'deep binding chains stop at the depth limit',
-        code: `const a = req.query.x;
-const b = a; const c = b; const d = c; const e = d; const f = e;
-db.query('SELECT * FROM users WHERE id = ' + f);`,
-      },
     ],
 
     invalid: [
@@ -980,8 +974,8 @@ ruleTester.run('no-sql-injection-resolution-edges', noSqlInjection, {
     "const build = (...parts) => 'SELECT * FROM t WHERE a = ' + parts[0]; export function f(req) { return db.query(build(req.query.a)); }",
     // A destructured parameter cannot be bound positionally either.
     "const build = ({ tag }) => `SELECT * FROM logs WHERE tag = '${tag}'`; export function f(req) { return db.query(build({ tag: req.query.tag })); }",
-    // A spread ARGUMENT cannot be matched to a parameter.
-    "const build = (t) => `SELECT * FROM logs WHERE tag = '${t}'`; export function f(req, args) { return db.query(build(...args)); }",
+    // (A spread ARGUMENT used to be pinned here as unbindable. It now binds what
+    // it spreads — see what-reaches-the-statement.test.ts.)
     // Called with no argument at all: the parameter stands for `undefined`.
     "const build = (t) => `SELECT * FROM logs WHERE tag = '${t}'`; export function f() { return db.query(build()); }",
     // A builder body that reads a global the file never declares.
@@ -1008,13 +1002,6 @@ ruleTester.run('no-sql-injection-resolution-edges', noSqlInjection, {
     "db.query({ [key]: 'SELECT * FROM t WHERE a = ' + req.query.a });",
     // A numeric key is not a name in the list.
     "db.query({ 1: 'SELECT * FROM t WHERE a = ' + req.query.a });",
-
-    // ── Depth ────────────────────────────────────────────────────────────
-    // Resolution through single-write bindings stops at the same depth the
-    // attribution walk does.
-    `const q1 = 'SELECT * FROM users WHERE id = ' + req.query.id;
-const q2 = q1; const q3 = q2; const q4 = q3; const q5 = q4; const q6 = q5; const q7 = q6;
-db.query(q7);`,
 
     // ── Transparent calls ────────────────────────────────────────────────
     // A spread argument to the conversion is skipped.

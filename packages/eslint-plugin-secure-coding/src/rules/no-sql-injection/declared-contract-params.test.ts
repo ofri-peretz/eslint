@@ -54,7 +54,7 @@ describe('no-sql-injection — a declared contract is not an inlet', () => {
         name: 'n8n shape: annotated parameter, destructured one line later',
         code: `async function up(context: MigrationContext) {
           const { queryRunner, tablePrefix } = context;
-          await queryRunner.query(\`DROP TABLE "\${tablePrefix}workflow_entity";\`);
+          await queryRunner.query(\`DELETE FROM "\${tablePrefix}workflow_entity";\`);
         }`,
       },
       {

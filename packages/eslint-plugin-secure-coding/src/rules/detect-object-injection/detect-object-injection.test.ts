@@ -189,6 +189,7 @@ describe('detect-object-injection', () => {
         },
         {
           code: 'let y = 5;',
+          name: 'a plain variable declaration accesses no object property',
         },
         {
           code: 'z += 10;',
@@ -1297,28 +1298,39 @@ describe('detect-object-injection', () => {
       },
     );
 
+    // Flipped 2026-11: a key's SPELLING no longer clears it — see
+    // name-is-not-provenance.test.ts. These keys are free identifiers with no
+    // declaration in the file, so nothing proves them constant. The reads stay
+    // valid for the unrelated reason that a plain read cannot pollute.
     ruleTester.run(
-      'SCREAMING_SNAKE_CASE identifiers are treated as safe compile-time constants',
+      'a SCREAMING_SNAKE_CASE spelling does not make a key a constant',
       detectObjectInjection,
       {
-        valid: [
-          { code: 'obj[STATUS_CODE] = value;' },
-          { code: 'const v = obj[PARAMTYPES_METADATA];' },
+        valid: [{ code: 'const v = obj[PARAMTYPES_METADATA];' }],
+        invalid: [
+          {
+            code: 'obj[STATUS_CODE] = value;',
+            errors: [{ messageId: 'objectInjection' }],
+          },
         ],
-        invalid: [],
       },
     );
 
     ruleTester.run(
-      'camelCase identifiers with a typed or enumerated suffix are treated as safe',
+      'a typed-looking camelCase suffix does not make a key a constant',
       detectObjectInjection,
       {
-        valid: [
-          { code: 'obj[errorHttpStatusCode] = value;' },
-          { code: 'obj[retryCount] = value;' },
-          { code: 'const v = obj[reqType];' },
+        valid: [{ code: 'const v = obj[reqType];' }],
+        invalid: [
+          {
+            code: 'obj[errorHttpStatusCode] = value;',
+            errors: [{ messageId: 'objectInjection' }],
+          },
+          {
+            code: 'obj[retryCount] = value;',
+            errors: [{ messageId: 'objectInjection' }],
+          },
         ],
-        invalid: [],
       },
     );
   });

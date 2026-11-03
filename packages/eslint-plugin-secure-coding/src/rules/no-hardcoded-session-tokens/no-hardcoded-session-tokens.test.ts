@@ -34,7 +34,7 @@ ruleTester.run('no-hardcoded-session-tokens', noHardcodedSessionTokens, {
     },
     // Short strings (not tokens)
     { code: "const id = 'abc'" },
-    { code: 'const x = 1' },
+    { code: 'const x = 1', name: 'a numeric constant holds no session token' },
     // Starts with 'eyJ' and is long enough, but has no dots at all
     // (exercises the `match(...) || []` null-match fallback branch).
     { code: `const x = 'eyJ${'a'.repeat(60)}'` },

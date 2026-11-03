@@ -197,15 +197,44 @@
           "survived": 177,
           "noCoverage": 0,
           "timeout": 3
+        },
+        "utils/connection-config": {
+          "score": 81.9,
+          "killed": 86,
+          "survived": 19,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/cross-file": {
+          "score": 87.7,
+          "killed": 422,
+          "survived": 59,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/pool-receiver": {
+          "score": 88.4,
+          "killed": 115,
+          "survived": 15,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/query-call": {
+          "score": 94.1,
+          "killed": 16,
+          "survived": 1,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/sql-scan": {
+          "score": 90.3,
+          "killed": 90,
+          "survived": 12,
+          "noCoverage": 0,
+          "timeout": 22
         }
       },
-      "pending": [
-        "utils/connection-config",
-        "utils/cross-file",
-        "utils/pool-receiver",
-        "utils/query-call",
-        "utils/sql-scan"
-      ]
+      "pending": []
     },
     "mongodb-security": {
       "rules": {
@@ -1001,26 +1030,121 @@
           "survived": 5,
           "noCoverage": 0,
           "timeout": 0
+        },
+        "utils/analytics-sinks": {
+          "score": 75.7,
+          "killed": 50,
+          "survived": 16,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/cors-middleware": {
+          "score": 95,
+          "killed": 57,
+          "survived": 3,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/csp-directive": {
+          "score": 75.1,
+          "killed": 100,
+          "survived": 33,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/dynamic-code-sinks": {
+          "score": 87.5,
+          "killed": 133,
+          "survived": 19,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/express-app": {
+          "score": 88.2,
+          "killed": 120,
+          "survived": 16,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/global-object": {
+          "score": 90.9,
+          "killed": 20,
+          "survived": 2,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/loopback-hosts": {
+          "score": 91.3,
+          "killed": 53,
+          "survived": 5,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/namespace-uris": {
+          "score": 89.8,
+          "killed": 71,
+          "survived": 8,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/navigation-targets": {
+          "score": 87.6,
+          "killed": 575,
+          "survived": 82,
+          "noCoverage": 0,
+          "timeout": 6
+        },
+        "utils/payload-source": {
+          "score": 73.8,
+          "killed": 78,
+          "survived": 28,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "utils/protocol-inspection": {
+          "score": 88.4,
+          "killed": 23,
+          "survived": 3,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/regexp-anchoring": {
+          "score": 93.7,
+          "killed": 136,
+          "survived": 9,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/resolve-binding": {
+          "score": 92,
+          "killed": 46,
+          "survived": 4,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/sensitive-value-evidence": {
+          "score": 77.4,
+          "killed": 361,
+          "survived": 105,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/transport-ownership": {
+          "score": 75.4,
+          "killed": 193,
+          "survived": 63,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "utils/url-taint": {
+          "score": 81.3,
+          "killed": 220,
+          "survived": 51,
+          "noCoverage": 0,
+          "timeout": 3
         }
       },
-      "pending": [
-        "utils/analytics-sinks",
-        "utils/cors-middleware",
-        "utils/csp-directive",
-        "utils/dynamic-code-sinks",
-        "utils/express-app",
-        "utils/global-object",
-        "utils/loopback-hosts",
-        "utils/namespace-uris",
-        "utils/navigation-targets",
-        "utils/payload-source",
-        "utils/protocol-inspection",
-        "utils/regexp-anchoring",
-        "utils/resolve-binding",
-        "utils/sensitive-value-evidence",
-        "utils/transport-ownership",
-        "utils/url-taint"
-      ]
+      "pending": []
     },
     "secure-coding": {
       "rules": {
@@ -1376,16 +1500,51 @@
           "survived": 0,
           "noCoverage": 0,
           "timeout": 0
+        },
+        "utils/flow": {
+          "score": 82.9,
+          "killed": 234,
+          "survived": 48,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/prompt-props": {
+          "score": 76.1,
+          "killed": 16,
+          "survived": 5,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/records": {
+          "score": 84.5,
+          "killed": 89,
+          "survived": 17,
+          "noCoverage": 0,
+          "timeout": 4
+        },
+        "utils/sdk": {
+          "score": 86.3,
+          "killed": 279,
+          "survived": 45,
+          "noCoverage": 0,
+          "timeout": 6
+        },
+        "utils/type-info": {
+          "score": 88.8,
+          "killed": 8,
+          "survived": 1,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "utils/vercel-ai-evidence": {
+          "score": 74.4,
+          "killed": 140,
+          "survived": 48,
+          "noCoverage": 0,
+          "timeout": 0
         }
       },
-      "pending": [
-        "utils/flow",
-        "utils/prompt-props",
-        "utils/records",
-        "utils/sdk",
-        "utils/type-info",
-        "utils/vercel-ai-evidence"
-      ]
+      "pending": []
     }
   }
 }

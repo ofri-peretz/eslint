@@ -55,7 +55,10 @@ ruleTester.run('no-allow-arbitrary-loads', noAllowArbitraryLoads, {
     // A computed key names nothing knowable, and a numeric key names no
     // plist entry.
     { code: 'const ats = { [flagName]: true };' },
-    { code: 'const ats = { 1: true };' },
+    {
+      code: 'const ats = { 1: true };',
+      name: 'a numeric key names no plist entry',
+    },
     // A different Apple key that is not an opt-out.
     {
       code: 'export default { ios: { infoPlist: { NSAppTransportSecurity: { NSExceptionDomains: { "api.example.com": {} } } } } };',

@@ -37,7 +37,10 @@ describe('no-insecure-rsa-padding coverage gaps', () => {
         filename: 'rsa.ts',
       },
       // Non-object first argument → ObjectExpression check false
-      { code: 'crypto.privateDecrypt(privateKey, buf);' },
+      {
+        code: 'crypto.privateDecrypt(privateKey, buf);',
+        name: 'privateDecrypt with a bare key names no padding to judge',
+      },
     ],
     invalid: [
       // Bare identifier RSA call → second operand group of isRsaCall

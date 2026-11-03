@@ -32,15 +32,15 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
 /**
- * Every directive name CSP3 defines, plus the ones still widely deployed.
+ * Every directive name CSP3 defines, plus the ones still widely deployed. The
+ * fetch directives (CSP3 §6.1) come first, as their own list.
  *
  * Closed set, straight from the specification's directive registry. Helmet
  * accepts the same names in camelCase, so both spellings are recognised — the
  * camelCase forms are derived below rather than listed by hand so the two
  * spellings can never drift apart.
  */
-const CSP_DIRECTIVE_NAMES_KEBAB: readonly string[] = [
-  // Fetch directives
+const FETCH_DIRECTIVE_NAMES_KEBAB: readonly string[] = [
   'child-src',
   'connect-src',
   'default-src',
@@ -59,6 +59,10 @@ const CSP_DIRECTIVE_NAMES_KEBAB: readonly string[] = [
   'style-src-elem',
   'style-src-attr',
   'worker-src',
+];
+
+const CSP_DIRECTIVE_NAMES_KEBAB: readonly string[] = [
+  ...FETCH_DIRECTIVE_NAMES_KEBAB,
   // Document directives
   'base-uri',
   'sandbox',
@@ -86,6 +90,22 @@ const CSP_DIRECTIVE_NAMES: ReadonlySet<string> = new Set([
   ...CSP_DIRECTIVE_NAMES_KEBAB,
   ...CSP_DIRECTIVE_NAMES_KEBAB.map(toCamelCase),
 ]);
+
+/** Lowercased, as `parsePolicy` hands names back, in both spellings. */
+const FETCH_DIRECTIVE_NAMES: ReadonlySet<string> = new Set(
+  FETCH_DIRECTIVE_NAMES_KEBAB.flatMap((name) => [
+    name,
+    toCamelCase(name).toLowerCase(),
+  ]),
+);
+
+/**
+ * Is this the name of a fetch directive (CSP3 §6.1) — one that governs where
+ * a resource may load from?
+ */
+export function isFetchDirectiveName(name: string): boolean {
+  return FETCH_DIRECTIVE_NAMES.has(name.toLowerCase());
+}
 
 /**
  * Is this the name of a CSP directive?

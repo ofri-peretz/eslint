@@ -3,9 +3,8 @@
  * Security: CWE-502 (Unsafe Deserialization)
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll, expect } from 'vitest';
+import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
-import { createWithMockContext } from '@interlace/eslint-devkit';
 import { noUnsafeDeserialization } from './index';
 
 // Configure RuleTester for Vitest
@@ -641,63 +640,10 @@ describe('no-unsafe-deserialization', () => {
     );
   });
 
-  // Layer 2 — mock context for node.loc?.start.line ?? 0 fallback branches
-  describe('Layer 2 - mock context', () => {
-    it('NewExpression dangerousFunctionConstructor falls back to line 0 when loc missing (id 45)', () => {
-      const { listeners, reports } = createWithMockContext(
-        noUnsafeDeserialization,
-        {
-          sourceText: 'new Function(req.body.code)',
-        },
-      );
-      (listeners.NewExpression as (n: unknown) => void)({
-        type: 'NewExpression',
-        callee: { type: 'Identifier', name: 'Function' },
-        arguments: [
-          {
-            type: 'MemberExpression',
-            object: { type: 'Identifier', name: 'req' },
-            property: { type: 'Identifier', name: 'body' },
-          },
-        ],
-      });
-      expect(reports).toHaveLength(1);
-      expect(reports[0].messageId).toBe('dangerousFunctionConstructor');
-      expect(reports[0].data?.line).toBe('0');
-    });
-
-    it('CallExpression dangerousEvalUsage falls back to line 0 when loc missing (id 54)', () => {
-      const { listeners, reports } = createWithMockContext(
-        noUnsafeDeserialization,
-        {
-          sourceText: 'eval(req.body.data)',
-        },
-      );
-      (listeners.CallExpression as (n: unknown) => void)({
-        type: 'CallExpression',
-        callee: { type: 'Identifier', name: 'eval' },
-        arguments: [
-          {
-            type: 'MemberExpression',
-            object: { type: 'Identifier', name: 'req' },
-            property: { type: 'Identifier', name: 'body' },
-          },
-        ],
-      });
-      expect(reports).toHaveLength(1);
-      expect(reports[0].messageId).toBe('dangerousEvalUsage');
-      expect(reports[0].data?.line).toBe('0');
-    });
-
-    // REMOVED — `VariableDeclarator reference tracking falls back to line 0
-    // (id 90)`.
-    //
-    // It exercised a SECOND reporting path that walked a `require`d binding's
-    // references and reported `s.unserialize(...)` a second time, at the same
-    // range `checkCallExpression` already reported, and without asking whether
-    // the argument was untrusted. That path is deleted; see the rule source for
-    // the two defects it caused. Nothing is left for this mock to drive.
-  });
+  // REMOVED — `Layer 2 - mock context` (ids 45, 54, 90). Each drove a
+  // hand-built node without `loc` to pin a `line: '0'` fallback in the report
+  // data. No message template renders `line` (nor `filePath` / `library`), so
+  // that data was deleted and nothing is left for these mocks to observe.
 });
 
 /**
@@ -730,7 +676,10 @@ describe('no-unsafe-deserialization — corpus regression', () => {
         'function schedule(cb) { setInterval(cb, 1000); }',
         'function schedule(cb) { window.setTimeout(cb, 1000); }',
         'function poll(cb) { setTimeout(() => cb(), 0); }',
-        'setTimeout();',
+        {
+          code: 'setTimeout();',
+          name: 'setTimeout with no arguments evaluates no string',
+        },
         'function f(a, b) { setTimeout(a + b, 100); }',
         // Verbatim shape from webpack lib/Module.js:1321 and ~30 sibling files
         'class Dep extends Base { deserialize(context) { super.deserialize(context); } }',

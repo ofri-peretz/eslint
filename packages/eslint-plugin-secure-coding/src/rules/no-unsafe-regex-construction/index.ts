@@ -397,8 +397,8 @@ function isRegExpConstructor(
 function isTrustedMemberEscaper(callee: TSESTree.Node): boolean {
   if (callee.type !== 'MemberExpression') return false;
   // A SUPPRESSION path: `RegExp['escape'](s)` escapes as `RegExp.escape(s)`
-  // does, and missing it reports an already-escaped pattern.
-  if (propertyName(callee) === null) return false;
+  // does, and missing it reports an already-escaped pattern. (A dynamic key
+  // resolves to null, which is neither 'escape' nor in MEMBER_ESCAPERS.)
   // The ES2025 built-in, identified by the global it hangs off.
   if (
     propertyName(callee) === 'escape' &&
@@ -416,7 +416,6 @@ function isTrustedMemberEscaper(callee: TSESTree.Node): boolean {
 function isEscaped(
   node: TSESTree.Node,
   trustedFunctions: string[],
-  sourceCode: TSESLint.SourceCode,
   scope: TSESLint.Scope.Scope,
 ): boolean {
   // Check if the node itself is a call to a trusted escaping function
@@ -456,35 +455,12 @@ function isEscaped(
     return true;
   }
 
-  // Also check if it's wrapped in a trusted function call (for complex cases).
-  // `current` is only assigned from `node` (truthy on entry) or `parent` after
-  // an explicit `if (!parent) break;`, so it's never null at the loop check
-  // (CodeQL: `js/useless-conditional` on the `current &&` test).
-  let current: TSESTree.Node = node;
-  let depth = 0;
-  const maxDepth = 5; // Prevent infinite loops
-
-  while (depth < maxDepth) {
-    const parent =
-      sourceCode.getNodeByRangeIndex?.(current.range[0] - 1) ||
-      (current as TSESTree.Node).parent;
-
-    if (!parent) break;
-
-    if (
-      parent.type === 'CallExpression' &&
-      parent.callee.type === 'Identifier'
-    ) {
-      const functionName = parent.callee.name;
-      if (trustedFunctions.includes(functionName)) {
-        return true;
-      }
-    }
-
-    current = parent as TSESTree.Node;
-    depth++;
-  }
-
+  // No ancestor walk. One used to climb five levels from the pattern looking
+  // for a trusted call AROUND it — but every ancestor of the pattern argument
+  // is the `new RegExp(…)` itself or something wrapping it, so the only calls
+  // it could find escape the constructed regex, not its source:
+  // `escapeRegExp(String(new RegExp(req.query.q)))` compiled the raw input and
+  // was silenced.
   return false;
 }
 
@@ -563,7 +539,6 @@ function hasDynamicFlags(
  */
 function extractPattern(
   node: TSESTree.CallExpression | TSESTree.NewExpression,
-  sourceCode: TSESLint.SourceCode,
   trustedFunctions: string[],
   scope: TSESLint.Scope.Scope,
   requestRoots: ReadonlySet<string>,
@@ -573,7 +548,7 @@ function extractPattern(
   taintedBy: string | null;
   isEscaped: boolean;
 } {
-  const patternNode = node.arguments.length > 0 ? node.arguments[0] : null;
+  const patternNode = node.arguments[0] ?? null;
 
   if (!patternNode) {
     return {
@@ -596,12 +571,7 @@ function extractPattern(
     ...new Set([...DEFAULT_TRUSTED_ESCAPING_FUNCTIONS, ...trustedFunctions]),
   ];
 
-  const isEscapedValue = isEscaped(
-    patternNode,
-    allTrustedFunctions,
-    sourceCode,
-    scope,
-  );
+  const isEscapedValue = isEscaped(patternNode, allTrustedFunctions, scope);
 
   return {
     patternNode,
@@ -719,7 +689,6 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
         isEscaped: isEscapedValue,
       } = extractPattern(
         node,
-        sourceCode,
         trustedEscapingFunctions,
         sourceCode.getScope(node),
         requestRoots,

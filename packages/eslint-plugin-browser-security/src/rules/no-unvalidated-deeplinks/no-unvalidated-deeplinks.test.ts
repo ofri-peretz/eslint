@@ -39,7 +39,10 @@ ruleTester.run('no-unvalidated-deeplinks', noUnvalidatedDeeplinks, {
       code: "import { Linking as L } from './my-linking'; L.addEventListener('url', (ev) => { L.openURL(ev.url); });",
     },
     { name: 'a numeric constant involves no deep link', code: 'const x = 42;' },
-    'const flag = true;',
+    {
+      code: 'const flag = true;',
+      name: 'a boolean constant opens no deep link',
+    },
     'function noop() {}',
     // Static URLs are safe
     { name: 'a literal URL', code: "Linking.openURL('https://example.com')" },

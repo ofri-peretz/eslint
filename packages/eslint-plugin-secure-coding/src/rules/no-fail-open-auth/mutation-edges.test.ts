@@ -23,6 +23,10 @@ describe('no-fail-open-auth (mutation edges)', () => {
   ruleTester.run('no-fail-open-auth', noFailOpenAuth, {
     valid: [
       {
+        name: 'a guard whose consequent returns on every nested branch closes the deny path',
+        code: 'async function f(t) { let token = null; try { token = await verifyToken(t); } catch (e) {} if (token) { audit(token); if (fast) { return quick(); } else { return ok(); } } await purge(); }',
+      },
+      {
         name: 'a test file is skipped',
         filename: 'src/auth.test.ts',
         code: 'async function f(t) { try { await verifyToken(t); } catch (e) {} await purge(); }',
@@ -37,6 +41,21 @@ describe('no-fail-open-auth (mutation edges)', () => {
       },
     ],
     invalid: [
+      {
+        name: 'a string status code is not a numeric denial',
+        code: "async function f(req, res) { try { await verifyToken(req.t); } catch (e) { res.status('401'); } await purge(); }",
+        errors: swallow,
+      },
+      {
+        name: 'an undeclared target has no deny state',
+        code: 'async function f(t) { try { auth = await verifyToken(t); } catch (e) {} if (!auth) { return deny(); } await purge(); }',
+        errors: swallow,
+      },
+      {
+        name: 'a binding declared after the try had no prior deny state',
+        code: 'async function f(t) { try { token = await verifyToken(t); } catch (e) {} if (!token) { return deny(); } await purge(); var token = null; }',
+        errors: swallow,
+      },
       {
         name: 'a call whose name only starts with a denial word does not deny',
         code: 'async function f(t) { try { await verifyToken(t); } catch (e) { nextAttempt(); } await purge(); }',

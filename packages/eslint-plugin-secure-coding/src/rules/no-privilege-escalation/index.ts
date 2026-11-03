@@ -23,7 +23,8 @@ import {
   matchesAnyUserPattern,
   nameHasAnyWord,
   type PatternTest,
-  staticString,
+  propertyName,
+  objectKeyName,
   memberPropertyName,
 } from '@interlace/eslint-devkit';
 import { createRule, isTestFilePath } from '@interlace/eslint-devkit';
@@ -195,14 +196,12 @@ function isPrivilegeOperationName(
 function assignedPropertyName(
   member: TSESTree.MemberExpression,
 ): string | null {
-  if (!member.computed && member.property.type === AST_NODE_TYPES.Identifier) {
+  // A non-computed key is an Identifier or, inside a class, a
+  // PrivateIdentifier — `this.#role` is the role field just as `this.role` is.
+  if (member.property.type === AST_NODE_TYPES.PrivateIdentifier) {
     return member.property.name;
   }
-  const staticText = staticString(member.property);
-  if (staticText !== null) {
-    return staticText;
-  }
-  return null;
+  return propertyName(member);
 }
 
 /** Every descendant node, `parent` links excluded. */
@@ -751,23 +750,23 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
       if (isTestFile) return;
 
       for (const prop of node.properties) {
-        if (prop.type === 'Property' && prop.key.type === 'Identifier') {
-          const keyName = prop.key.name.toLowerCase();
+        if (prop.type !== 'Property') continue;
+        // `{ 'role': … }` declares the same field `{ role: … }` does; a
+        // computed `{ [role]: … }` is a variable and names nothing.
+        const keyName = objectKeyName(prop)?.toLowerCase();
+        if (keyName !== undefined && privilegeProps.has(keyName)) {
+          const text = sourceCode.getText(prop);
+          if (matchesIgnorePattern(text, ignorePatterns)) continue;
 
-          if (privilegeProps.has(keyName)) {
-            const text = sourceCode.getText(prop);
-            if (matchesIgnorePattern(text, ignorePatterns)) continue;
-
-            if (isUserControlled(prop.value)) {
-              if (!isRoleChecked(node)) {
-                context.report({
-                  node: prop,
-                  messageId: 'privilegeEscalation',
-                  data: {
-                    issue: `Role assignment in object from user input: ${sourceCode.getText(prop)}`,
-                  },
-                });
-              }
+          if (isUserControlled(prop.value)) {
+            if (!isRoleChecked(node)) {
+              context.report({
+                node: prop,
+                messageId: 'privilegeEscalation',
+                data: {
+                  issue: `Role assignment in object from user input: ${sourceCode.getText(prop)}`,
+                },
+              });
             }
           }
         }

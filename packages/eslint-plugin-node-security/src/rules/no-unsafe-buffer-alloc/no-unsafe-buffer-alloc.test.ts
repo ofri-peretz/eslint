@@ -45,7 +45,7 @@ describe('no-unsafe-buffer-alloc', () => {
       { code: 'const fn = Buffer.allocUnsafe;' },
       // Unrelated Buffer members.
       { code: 'Buffer.byteLength("hi")' },
-      { code: 'Buffer.isBuffer(x)' },
+      { code: 'Buffer.isBuffer(x)', name: 'Buffer.isBuffer allocates nothing' },
 
       // ── FP lock: covered before it is ever read ──────────────────────────
       //
@@ -594,7 +594,7 @@ describe('no-unsafe-buffer-alloc', () => {
         // isClamped: guarded by a comparison inside a logical test — once on
         // the LEFT of the `||`, once on the right.
         `function decodeWithLength(length, chunk) {
-           if (length < 0 || other > MAX) throw new Error('bad');
+           if (length > MAX || other < 0) throw new Error('bad');
            return new Array(length);
          }
          function decode(chunk) { return decodeWithLength(readLen(chunk), chunk); }`,

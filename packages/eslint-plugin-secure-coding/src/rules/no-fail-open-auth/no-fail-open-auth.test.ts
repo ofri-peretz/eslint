@@ -216,6 +216,7 @@ async function handleAdminAction(req, res) {
       // No catch parameter at all.
       {
         code: `function f(t) { try { hasPermission(t); } catch {} purge(); }`,
+        name: 'a catch with no parameter still swallows the auth failure',
         errors: [{ messageId: 'failOpenSwallow' as const }],
       },
       // A `throw` inside a callback declared in the handler belongs to the

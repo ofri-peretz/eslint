@@ -419,7 +419,6 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
     let incapablePackages: Set<string>;
     let parseMethods: Set<string>;
     let dangerousKeys: Set<string>;
-    let filename: string;
     let sourceCode: Readonly<TSESLint.SourceCode>;
 
     /**
@@ -438,11 +437,6 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
         mime.value.toLowerCase().startsWith('text/html')
       );
     };
-
-    const reportData = (node: TSESTree.Node) => ({
-      filePath: filename,
-      line: String(node.loc.start.line),
-    });
 
     /** Does this expression resolve to something exported by an XML package? */
     const resolvesToXmlModule = (node: TSESTree.Node): boolean => {
@@ -624,7 +618,6 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
           ...additionalDangerousParserOptions,
         ]);
 
-        filename = context.filename;
         sourceCode = context.sourceCode;
       },
       CallExpression(node: TSESTree.CallExpression) {
@@ -653,7 +646,6 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
           context.report({
             node: callOptions as TSESTree.Node,
             messageId: 'externalEntityEnabled',
-            data: reportData(node),
           });
           return;
         }
@@ -662,7 +654,6 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
           context.report({
             node: node.callee,
             messageId: 'unsafeXmlParser',
-            data: reportData(node),
           });
           return;
         }
@@ -691,7 +682,6 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
         context.report({
           node: xmlInput,
           messageId: 'untrustedXmlSource',
-          data: reportData(node),
         });
       },
 
@@ -705,7 +695,6 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
           context.report({
             node,
             messageId: 'xxeInjection',
-            data: reportData(node),
           });
         }
       },
@@ -717,7 +706,6 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
           context.report({
             node,
             messageId: 'xxeInjection',
-            data: reportData(node),
           });
         }
       },

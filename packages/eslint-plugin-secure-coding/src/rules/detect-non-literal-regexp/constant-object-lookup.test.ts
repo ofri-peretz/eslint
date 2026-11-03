@@ -37,103 +37,120 @@ import { detectNonLiteralRegexp } from './index';
 
 const ruleTester = new RuleTester();
 
-ruleTester.run('detect-non-literal-regexp — constant lookup', detectNonLiteralRegexp, {
-  valid: [
-    {
-      name: 'a property of an as-const table',
-      code: `const P = { email: '^[a-z]+$' } as const; export function f() { return new RegExp(P.email); }`,
-    },
-    {
-      name: 'a property of a plain const table',
-      code: `const P = { email: '^[a-z]+$' }; export function f() { return new RegExp(P.email); }`,
-    },
-    {
-      name: 'a table whose values are themselves built from literals',
-      code: `const P = { email: '^' + '[a-z]+' + '$' }; export function f() { return new RegExp(P.email); }`,
-    },
-    {
-      // A type assertion is an annotation, not a value — `'^a$' as string` is
-      // still the literal. TypeScript codebases write this around config reads.
-      name: 'a literal behind a type assertion',
-      code: `export function f() { return new RegExp('^[a-z]+$' as string); }`,
-    },
-    {
-      name: 'a table property behind a type assertion',
-      code: `const P = { email: '^[a-z]+$' as string }; export function f() { return new RegExp(P.email); }`,
-    },
-    {
-      // The whole sub-table as the pattern. Almost certainly a mistake by
-      // whoever wrote it, but a fully determined one — it stringifies to
-      // "[object Object]" every time — so it is not a pattern decided at
-      // runtime and this rule is not the one to complain.
-      name: 'a sub-table used directly as the pattern',
-      code: `const P = { user: { email: '^[a-z]+$' } }; export function f() { return new RegExp(P.user); }`,
-    },
-    {
-      name: 'a nested table',
-      code: `const P = { user: { email: '^[a-z]+$' } }; export function f() { return new RegExp(P.user.email); }`,
-    },
-  ],
-  invalid: [
-    {
-      // THE TRAP. The declaration is const and the initialiser is a literal,
-      // but the table is written through before use.
-      name: 'a table mutated from a request is not constant',
-      code: `const P = { email: '^ok$' }; export function f(req) { P.email = req.body.p; return new RegExp(P.email); }`,
-      errors: 1,
-    },
-    {
-      // The write is somewhere else entirely, which is the realistic shape —
-      // a config loader that patches the table at startup.
-      name: 'a table mutated anywhere in the file is not constant',
-      code: `const P = { email: '^ok$' }; export function load(cfg) { P.email = cfg.pattern; } export function f() { return new RegExp(P.email); }`,
-      errors: 1,
-    },
-    {
-      // A key the table does not define resolves to undefined at runtime, so
-      // nothing is proven about it.
-      name: 'a key the table does not define',
-      code: `const P = { email: '^ok$' }; export function f() { return new RegExp(P.phone); }`,
-      errors: 1,
-    },
-    {
-      // CONTROL: the assertion does not make a runtime value constant. This is
-      // the shape that makes `as` dangerous to trust — it changes the type and
-      // nothing else.
-      name: 'CONTROL: a request value behind a type assertion still reports',
-      code: `export function f(req) { return new RegExp(req.body.p as string); }`,
-      errors: 1,
-    },
-    {
-      // CONTROL: the receiver is a call result, not a binding, so there is no
-      // declaration to resolve.
-      name: 'CONTROL: a lookup on a call result',
-      code: `export function f() { return new RegExp(loadConfig().pattern); }`,
-      errors: 1,
-    },
-    {
-      // CONTROL: an increment is a mutation too — a hit counter on the table.
-      name: 'CONTROL: a table with a counter incremented on it',
-      code: `const P = { email: '^ok$', hits: 0 }; export function bump() { P.hits++; } export function f() { return new RegExp(P.email); }`,
-      errors: 1,
-    },
-    {
-      // CONTROL: `delete` is a mutation too.
-      name: 'CONTROL: a table a key is deleted from',
-      code: `const P = { email: '^ok$' }; export function drop() { delete P.email; } export function f() { return new RegExp(P.email); }`,
-      errors: 1,
-    },
-    {
-      // CONTROL: a value that is not a literal.
-      name: 'CONTROL: a table holding a runtime value',
-      code: `export function f(req) { const P = { email: req.body.p }; return new RegExp(P.email); }`,
-      errors: 1,
-    },
-    {
-      // CONTROL: computed access with a runtime key picks an unknown entry.
-      name: 'CONTROL: a computed lookup with a request-chosen key',
-      code: `const P = { a: '^a$', b: '^b$' }; export function f(req) { return new RegExp(P[req.body.k]); }`,
-      errors: 1,
-    },
-  ],
-});
+ruleTester.run(
+  'detect-non-literal-regexp — constant lookup',
+  detectNonLiteralRegexp,
+  {
+    valid: [
+      {
+        name: 'a property of an as-const table',
+        code: `const P = { email: '^[a-z]+$' } as const; export function f() { return new RegExp(P.email); }`,
+      },
+      {
+        name: 'a property of a plain const table',
+        code: `const P = { email: '^[a-z]+$' }; export function f() { return new RegExp(P.email); }`,
+      },
+      {
+        name: 'a table whose values are themselves built from literals',
+        code: `const P = { email: '^' + '[a-z]+' + '$' }; export function f() { return new RegExp(P.email); }`,
+      },
+      {
+        // A type assertion is an annotation, not a value — `'^a$' as string` is
+        // still the literal. TypeScript codebases write this around config reads.
+        name: 'a literal behind a type assertion',
+        code: `export function f() { return new RegExp('^[a-z]+$' as string); }`,
+      },
+      {
+        name: 'a table property behind a type assertion',
+        code: `const P = { email: '^[a-z]+$' as string }; export function f() { return new RegExp(P.email); }`,
+      },
+      {
+        // The whole sub-table as the pattern. Almost certainly a mistake by
+        // whoever wrote it, but a fully determined one — it stringifies to
+        // "[object Object]" every time — so it is not a pattern decided at
+        // runtime and this rule is not the one to complain.
+        name: 'a sub-table used directly as the pattern',
+        code: `const P = { user: { email: '^[a-z]+$' } }; export function f() { return new RegExp(P.user); }`,
+      },
+      {
+        name: 'a nested table',
+        code: `const P = { user: { email: '^[a-z]+$' } }; export function f() { return new RegExp(P.user.email); }`,
+      },
+      // @found Stryker mutation-survivor triage, 2026-11-03
+      {
+        // This was a CONTROL asserting a report, and it contradicted the rule's
+        // own contract: the LOCKED header and the docs' `good:` example both say
+        // `PATTERNS[req.query.kind]` lets the caller choose WHICH pattern, never
+        // WHAT. The same lookup through a `const p = …` binding was already
+        // exempt; only this spelling reported. Whatever the key — even
+        // `'constructor'`, which yields the native-code text of `Object` — the
+        // value is one the program wrote.
+        name: 'FP: a request-chosen key into a constant table picks WHICH pattern, never WHAT',
+        code: `const P = { a: '^a$', b: '^b$' }; export function f(req) { return new RegExp(P[req.body.k]); }`,
+      },
+    ],
+    invalid: [
+      {
+        // THE TRAP. The declaration is const and the initialiser is a literal,
+        // but the table is written through before use.
+        name: 'a table mutated from a request is not constant',
+        code: `const P = { email: '^ok$' }; export function f(req) { P.email = req.body.p; return new RegExp(P.email); }`,
+        errors: 1,
+      },
+      {
+        // The write is somewhere else entirely, which is the realistic shape —
+        // a config loader that patches the table at startup.
+        name: 'a table mutated anywhere in the file is not constant',
+        code: `const P = { email: '^ok$' }; export function load(cfg) { P.email = cfg.pattern; } export function f() { return new RegExp(P.email); }`,
+        errors: 1,
+      },
+      {
+        // A key the table does not define resolves to undefined at runtime, so
+        // nothing is proven about it.
+        name: 'a key the table does not define',
+        code: `const P = { email: '^ok$' }; export function f() { return new RegExp(P.phone); }`,
+        errors: 1,
+      },
+      {
+        // CONTROL: the assertion does not make a runtime value constant. This is
+        // the shape that makes `as` dangerous to trust — it changes the type and
+        // nothing else.
+        name: 'CONTROL: a request value behind a type assertion still reports',
+        code: `export function f(req) { return new RegExp(req.body.p as string); }`,
+        errors: 1,
+      },
+      {
+        // CONTROL: the receiver is a call result, not a binding, so there is no
+        // declaration to resolve.
+        name: 'CONTROL: a lookup on a call result',
+        code: `export function f() { return new RegExp(loadConfig().pattern); }`,
+        errors: 1,
+      },
+      {
+        // CONTROL: an increment is a mutation too — a hit counter on the table.
+        name: 'CONTROL: a table with a counter incremented on it',
+        code: `const P = { email: '^ok$', hits: 0 }; export function bump() { P.hits++; } export function f() { return new RegExp(P.email); }`,
+        errors: 1,
+      },
+      {
+        // CONTROL: `delete` is a mutation too.
+        name: 'CONTROL: a table a key is deleted from',
+        code: `const P = { email: '^ok$' }; export function drop() { delete P.email; } export function f() { return new RegExp(P.email); }`,
+        errors: 1,
+      },
+      {
+        // CONTROL: a value that is not a literal.
+        name: 'CONTROL: a table holding a runtime value',
+        code: `export function f(req) { const P = { email: req.body.p }; return new RegExp(P.email); }`,
+        errors: 1,
+      },
+      {
+        // CONTROL for the request-chosen key below: one runtime entry is enough
+        // — the caller can choose it.
+        name: 'CONTROL: a request-chosen key into a table holding one runtime value',
+        code: `export function f(req) { const P = { a: '^a$', b: req.body.p }; return new RegExp(P[req.body.k]); }`,
+        errors: 1,
+      },
+    ],
+  },
+);

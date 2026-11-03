@@ -133,14 +133,14 @@ const VERIFICATION_CALLBACKS = new Set(['checkServerIdentity']);
  * A return value that cannot express "verification failed".
  *
  * Node calls `checkServerIdentity` and treats ANY non-Error return as success,
- * so a callback that can only produce `undefined`, `null` or `true` has
- * disabled hostname verification while leaving `rejectUnauthorized` true — the
- * shape that reads as hardened in review.
+ * so a callback that can only produce `undefined` or a literal — `null`,
+ * `true`, and `false` just as much — has disabled hostname verification while
+ * leaving `rejectUnauthorized` true, the shape that reads as hardened in review.
+ * No literal is an Error.
  */
 const isBenignReturnValue = (node: TSESTree.Node): boolean =>
   (node.type === AST_NODE_TYPES.Identifier && node.name === 'undefined') ||
-  (node.type === AST_NODE_TYPES.Literal &&
-    (node.value === null || node.value === true));
+  node.type === AST_NODE_TYPES.Literal;
 
 const isNoopCallback = (node: TSESTree.Node): boolean => {
   if (
@@ -160,7 +160,7 @@ const isNoopCallback = (node: TSESTree.Node): boolean => {
   const [only] = node.body.body;
   if (
     node.body.body.length !== 1 ||
-    only?.type !== AST_NODE_TYPES.ReturnStatement
+    only.type !== AST_NODE_TYPES.ReturnStatement
   )
     return false;
 
@@ -177,11 +177,7 @@ const isNoopCallback = (node: TSESTree.Node): boolean => {
 const propertyKey = (node: TSESTree.Property): string | undefined => {
   if (node.computed) return undefined;
   if (node.key.type === AST_NODE_TYPES.Identifier) return node.key.name;
-  const staticText = staticString(node.key);
-  if (staticText !== null) {
-    return staticText;
-  }
-  return undefined;
+  return staticString(node.key) ?? undefined;
 };
 
 /**

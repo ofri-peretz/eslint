@@ -2,7 +2,8 @@
 // RSA_PKCS1_PADDING passed to any of the four RSA encrypt/decrypt calls is
 // reported, whichever way the constant is spelled (crypto.constants.X,
 // destructured constants, subscript, or its numeric value 1) and whichever
-// way the function is reached. OAEP / PSS / no explicit padding are not.
+// way the function is reached, including through a `const` that holds it.
+// OAEP / PSS / no explicit padding are not.
 module no_insecure_rsa_padding {
   // allowInTests (default false): on a test file the rule is silent only when the
   // option is set. TestDefault = src/app.test.ts with the option at its
@@ -12,13 +13,14 @@ module no_insecure_rsa_padding {
   var testCtx: TestCtx
   type Fn = PrivateDecrypt | PublicDecrypt | PrivateEncrypt | PublicEncrypt | Sign
   type Access = Member | NamedImport | RequireNode | OptionsConst
-  type Padding = CryptoConstants | DestructuredConstants | ConstantsSubscript | NumericOne | Oaep | Pss | Omitted
+  type Padding = CryptoConstants | DestructuredConstants | ConstantsSubscript | NumericOne | ConstBound | Oaep | Pss | Omitted
 
   pure def pkcs1(p: Padding): bool = match p {
     | CryptoConstants => true
     | DestructuredConstants => true
     | ConstantsSubscript => true
     | NumericOne => true
+    | ConstBound => true
     | _ => false
   }
 
@@ -32,7 +34,7 @@ module no_insecure_rsa_padding {
   action step = {
     nondet f = Set(PrivateDecrypt, PublicDecrypt, PrivateEncrypt, PublicEncrypt, Sign).oneOf()
     nondet a = Set(Member, NamedImport, RequireNode, OptionsConst).oneOf()
-    nondet p = Set(CryptoConstants, DestructuredConstants, ConstantsSubscript, NumericOne, Oaep, Pss, Omitted).oneOf()
+    nondet p = Set(CryptoConstants, DestructuredConstants, ConstantsSubscript, NumericOne, ConstBound, Oaep, Pss, Omitted).oneOf()
     nondet tc = Set(Prod, TestDefault, TestFlip).oneOf()
     all { fn' = f, access' = a, padding' = p, testCtx' = tc, verdict' = (reports(f, a, p) and not(exempt(tc))) }
   }

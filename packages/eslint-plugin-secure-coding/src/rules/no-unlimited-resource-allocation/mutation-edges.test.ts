@@ -90,6 +90,10 @@ describe('no-unlimited-resource-allocation (mutation edges)', () => {
           code: 'Buffer.alloc(headerSize + 2 * 1024 * 1024);',
         },
         {
+          name: 'an unknown right-hand term makes the size estimate unknown',
+          code: 'Buffer.alloc(2 * 1024 * 1024 + extra);',
+        },
+        {
           name: 'a difference that lands exactly on the limit is within it',
           code: 'Buffer.alloc(2 * 1024 * 1024 - 1024 * 1024);',
         },
@@ -187,6 +191,19 @@ describe('no-unlimited-resource-allocation (mutation edges)', () => {
         },
       ],
       invalid: [
+        // @found Stryker mutation-survivor triage, 2026-11-03
+        {
+          name: 'FN: a size destructured through the request property is the request value',
+          // @found mutation testing
+          code: 'function h(req) { const { query: { limit } } = req; return Buffer.alloc(limit); }',
+          errors: userSize,
+        },
+        {
+          name: 'FN: a request property destructured off the request is the request value',
+          // @found mutation testing
+          code: 'function h(req) { const { body } = req; return Buffer.alloc(body.size); }',
+          errors: userSize,
+        },
         {
           name: 'a request value at the edge of the walk budget is still followed',
           code: `Buffer.alloc(${nest(10, '(', ' + 1)')});`,

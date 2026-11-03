@@ -54,6 +54,7 @@ ruleTester.run('no-websocket-eval', noWebsocketEval, {
       code: `
         eval(code);
       `,
+      name: 'eval at the top level, outside any WebSocket handler, is left alone',
     },
     // Test files allowed by default
     {

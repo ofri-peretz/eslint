@@ -31,7 +31,10 @@ ruleTester.run('no-sensitive-data-in-analytics', noSensitiveDataInAnalytics, {
       code: "gtag('event', 'click', { element: 'button' })",
     },
     // Non-analytics code
-    { code: 'const x = 1' },
+    {
+      code: 'const x = 1',
+      name: 'a numeric constant sends nothing to analytics',
+    },
   ],
 
   invalid: [

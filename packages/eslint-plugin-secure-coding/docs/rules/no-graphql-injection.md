@@ -82,6 +82,18 @@ String concatenations are evaluated on their reassembled **static string
 value**, not on `sourceCode.getText()` — otherwise the JS quoting (`"query {…`)
 sits in front of the query and defeats the start-of-line test.
 
+Templates, string literals and concatenations go through **one** scan, and it
+looks at every line-leading occurrence of a keyword — a comment line that
+mentions `query` before the operation does not hide the operation. A
+`query {` whose selection is entirely interpolated counts as GraphQL when the
+string is attributed to GraphQL (a `gql`/`graphql` tag, a `typeDefs`/`schema`/
+`sdl` binding, or a GraphQL library call); without attribution it must name at
+least one field.
+
+Interpolating another GraphQL document is composition, not input: a `const`
+holding a fragment clears its `${FRAGMENT}` whether the constant is a template
+or a plain string literal.
+
 ### Why This Matters
 
 | Issue            | Impact                   | Solution                            |

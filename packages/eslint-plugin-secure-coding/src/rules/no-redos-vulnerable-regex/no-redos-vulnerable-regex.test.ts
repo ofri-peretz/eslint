@@ -258,7 +258,13 @@ describe('no-redos-vulnerable-regex', () => {
     // checkNewRegExp: zero-argument RegExp()/new RegExp() calls have no
     // size argument to inspect and are silently skipped.
     ruleTester.run('valid - RegExp with no arguments', noRedosVulnerableRegex, {
-      valid: ['RegExp();', 'new RegExp();'],
+      valid: [
+        'RegExp();',
+        {
+          code: 'new RegExp();',
+          name: 'new RegExp with no arguments has no pattern to analyse',
+        },
+      ],
       invalid: [],
     });
 

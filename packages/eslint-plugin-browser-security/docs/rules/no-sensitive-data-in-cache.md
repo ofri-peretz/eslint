@@ -94,7 +94,7 @@ flowchart TD
 
 ## Configuration
 
-See [Options](#️-options).
+See [Options](#-options).
 
 ## Examples
 

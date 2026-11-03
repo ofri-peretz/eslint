@@ -30,6 +30,14 @@ describe('no-unchecked-loop-condition (mutation edges)', () => {
   ruleTester.run('no-unchecked-loop-condition', noUncheckedLoopCondition, {
     valid: [
       {
+        name: 'a BigInt loop bound under maxStaticIterations is not large',
+        code: 'let i = 0n; while (i < 100n) { i++; }',
+      },
+      {
+        name: 'a clamped destructured bound is not user-controlled',
+        code: 'function h(req) { const { limit } = { limit: Math.min(req.query.limit, 100) }; for (let i = 0; i < limit; i++) {} }',
+      },
+      {
         name: 'a custom two-name list is not the default list, so event is not a request',
         options: [{ userInputVariables: ['req', 'input'] }],
         code: 'for (const r of event.records) {}',
@@ -94,6 +102,25 @@ describe('no-unchecked-loop-condition (mutation edges)', () => {
       },
     ],
     invalid: [
+      // @found Stryker mutation-survivor triage, 2026-11-03
+      {
+        name: 'FN: a BigInt loop bound is estimated against maxStaticIterations',
+        // @found mutation testing
+        code: 'let i = 0n; while (i < 10_000_000n) { i++; }',
+        errors: large,
+      },
+      {
+        name: 'FN: a bound destructured from the request query is user-controlled',
+        // @found mutation testing
+        code: 'function h(req) { const { limit } = req.query; for (let i = 0; i < limit; i++) {} }',
+        errors: bound,
+      },
+      {
+        name: 'FN: a bound destructured through the request property is user-controlled',
+        // @found mutation testing
+        code: 'function h(req) { const { query: { limit = 10 } } = req; for (let i = 0; i < limit; i++) {} }',
+        errors: bound,
+      },
       {
         name: 'a custom list matches any of its names, not only the first',
         options: [{ userInputVariables: ['input', 'payload'] }],

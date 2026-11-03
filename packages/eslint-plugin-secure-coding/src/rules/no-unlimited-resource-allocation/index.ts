@@ -26,6 +26,7 @@ import {
   isStaticExpression,
   namesOneOf,
   memberPropertyName,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
@@ -341,6 +342,40 @@ export const noUnlimitedResourceAllocation = createRule<
     };
 
     /**
+     * `const { query: { limit } } = req` / `const { body } = req` — a binding
+     * destructured straight off a request root, whose OUTERMOST key is a
+     * request surface. The initializer is the bare root, which is not itself
+     * a surface read, so the pattern's key is the evidence `req.query` would
+     * otherwise have been.
+     */
+    const destructuresRequestSurface = (id: TSESTree.Identifier): boolean => {
+      const def = context.sourceCode
+        .getScope(id)
+        .references.find((ref) => ref.identifier === id)?.resolved?.defs[0];
+      if (
+        def?.type !== 'Variable' ||
+        def.node.init?.type !== AST_NODE_TYPES.Identifier ||
+        !requestRoots.has(def.node.init.name.toLowerCase())
+      ) {
+        return false;
+      }
+      let outermostKey: string | null = null;
+      for (
+        let child: TSESTree.Node = def.name;
+        child !== def.node.id;
+        child = child.parent as TSESTree.Node
+      ) {
+        const parent = child.parent as TSESTree.Node;
+        // The walk starts at a binding, so it only ever reaches a Property
+        // through its value, never its key.
+        if (parent.type === AST_NODE_TYPES.Property) {
+          outermostKey = objectKeyName(parent);
+        }
+      }
+      return namesOneOf(outermostKey, REQUEST_SURFACE);
+    };
+
+    /**
      * @param depth Guards against a binding cycle (`var a = b; var b = a;`) and
      * caps the walk.
      *
@@ -366,6 +401,7 @@ export const noUnlimitedResourceAllocation = createRule<
           ) {
             return true;
           }
+          if (destructuresRequestSurface(node)) return true;
           const init = initializerOf(node);
           return init !== undefined && isInvokerControlled(init, depth + 1);
         }

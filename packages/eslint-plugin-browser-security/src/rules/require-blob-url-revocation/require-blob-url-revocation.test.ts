@@ -24,7 +24,10 @@ ruleTester.run('require-blob-url-revocation', requireBlobUrlRevocation, {
       name: 'a boolean constant creates no object URL',
       code: 'const flag = true;',
     },
-    'function noop() {}',
+    {
+      code: 'function noop() {}',
+      name: 'an empty function creates no object URL',
+    },
     // Properly revoked
     {
       name: 'the URL is revoked',

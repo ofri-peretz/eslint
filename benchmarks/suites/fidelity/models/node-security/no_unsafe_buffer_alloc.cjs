@@ -2,8 +2,8 @@ const { tag } = require('../../lib.cjs');
 
 module.exports = {
   rule: 'no-unsafe-buffer-alloc',
-  domain: 81, // 3 allocators x 9 uses x 3 sizes
-  traces: 900,
+  domain: 135, // 3 allocators x 9 uses x 5 sizes
+  traces: 1500,
   key: (s) => `${tag(s.alloc)}|${tag(s.use)}|${tag(s.allocSize)}`,
   code: (s) => {
     const fn = {
@@ -16,6 +16,14 @@ module.exports = {
       Param: ['', 'width'],
       ReqLength: [
         "const declared = Number(req.headers['content-length']);",
+        'declared',
+      ],
+      ReqUpperGuarded: [
+        "const declared = Number(req.headers['content-length']);\n  if (declared > 65536) throw new Error('too large');",
+        'declared',
+      ],
+      ReqLowerGuarded: [
+        "const declared = Number(req.headers['content-length']);\n  if (declared < 1) throw new Error('empty');",
         'declared',
       ],
     }[tag(s.allocSize)];

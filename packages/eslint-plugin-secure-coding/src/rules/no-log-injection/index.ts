@@ -303,11 +303,17 @@ function isCarriedByLoop(
  */
 function writtenRequestField(
   ref: TSESLint.Scope.Reference,
-  init: TSESTree.Expression,
   roots: ReadonlySet<string>,
   requestProperties: ReadonlySet<string>,
 ): string | null {
-  if (ref.init) return requestFieldOf(init, roots, requestProperties);
+  // An initializing write's expression is the declarator's `init`.
+  if (ref.init) {
+    return requestFieldOf(
+      ref.writeExpr as TSESTree.Expression,
+      roots,
+      requestProperties,
+    );
+  }
   const write = ref.identifier.parent;
   if (write.type !== 'AssignmentExpression' || write.operator !== '=') {
     return null;
@@ -340,16 +346,11 @@ function attributableSource(
   requestProperties: ReadonlySet<string>,
 ): string | null {
   if (node.type === 'Identifier') {
+    // Any local, not only one declared with an initializer: a parameter or
+    // `let name;` reassigned from the request before the log line carries the
+    // request field just the same. The writes below are what decide.
     const variable = findLocalVariable(scope, node.name);
     if (!variable) return null;
-    const definition = variable.defs[0];
-    if (
-      !definition ||
-      definition.type !== 'Variable' ||
-      !definition.node.init
-    ) {
-      return null;
-    }
     // `let name = req.query.name; name = name.replace(/[\r\n]/g, '');` — the
     // initializer is not what reaches the log line, the write is. So attribute
     // the writes that can reach the read: walking back from the read, every
@@ -379,12 +380,7 @@ function attributableSource(
       }
     }
     for (const ref of reaching) {
-      const field = writtenRequestField(
-        ref,
-        definition.node.init,
-        roots,
-        requestProperties,
-      );
+      const field = writtenRequestField(ref, roots, requestProperties);
       if (field) return field;
     }
     return null;

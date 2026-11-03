@@ -75,6 +75,7 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
       code: `
         element.innerHTML = serverData;
       `,
+      name: 'an innerHTML write outside any WebSocket handler is left alone',
     },
     // Test files allowed by default
     {

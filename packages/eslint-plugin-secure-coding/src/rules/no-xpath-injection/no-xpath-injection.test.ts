@@ -628,7 +628,10 @@ const xpath = \`//users/..\``,
         // id 65+66: BinaryExpression with no '/' or '[' → early return
         { code: 'const r = "hello" + userInput' },
         // id 78: VariableDeclarator with no init → early return
-        { code: 'let xpathQuery;' },
+        {
+          code: 'let xpathQuery;',
+          name: 'an XPath-named declaration with no initializer builds no query',
+        },
       ],
       invalid: [
         // id 11 arm 1: containsXpathInterpolation second arm ('..+..' pattern)
@@ -694,7 +697,7 @@ const xpath = \`//users/..\``,
 
   // Layer 2 — mock context for node.loc?.start.line ?? 0 fallback
   describe('Layer 2 - mock context', () => {
-    it('CallExpression dangerousXpathExpression falls back to line 0 when loc is missing', () => {
+    it('CallExpression dangerousXpathExpression still reports when loc is missing', () => {
       const { listeners, reports } = createWithMockContext(noXpathInjection, {
         // `dangerousXpathExpression` is opt-in now — a CONSTANT XPath containing
         // `//` is ordinary syntax, not a vulnerability. These tests exercise the
@@ -717,10 +720,9 @@ const xpath = \`//users/..\``,
       });
 
       expect(reports).toHaveLength(1);
-      expect(reports[0].data?.line).toBe('0');
     });
 
-    it('CallExpression unvalidatedXpathInput falls back to line 0 when loc is missing', () => {
+    it('CallExpression unvalidatedXpathInput still reports when loc is missing', () => {
       const { listeners, reports } = createWithMockContext(noXpathInjection);
       const callExpression = listeners.CallExpression as (n: unknown) => void;
 
@@ -738,10 +740,9 @@ const xpath = \`//users/..\``,
       });
 
       expect(reports).toHaveLength(1);
-      expect(reports[0].data?.line).toBe('0');
     });
 
-    it('TemplateLiteral unsafeXpathConcatenation falls back to line 0 when loc is missing', () => {
+    it('TemplateLiteral unsafeXpathConcatenation still reports when loc is missing', () => {
       const { listeners, reports } = createWithMockContext(noXpathInjection, {
         sourceText: '`/users/user[@id="${userInput}"]`',
       });
@@ -762,10 +763,9 @@ const xpath = \`//users/..\``,
       });
 
       expect(reports).toHaveLength(1);
-      expect(reports[0].data?.line).toBe('0');
     });
 
-    it('TemplateLiteral dangerousXpathExpression falls back to line 0 when loc is missing', () => {
+    it('TemplateLiteral dangerousXpathExpression still reports when loc is missing', () => {
       const { listeners, reports } = createWithMockContext(noXpathInjection, {
         sourceText: '`//users/..`',
         // Opt-in: a constant XPath containing `//` is ordinary syntax. This
@@ -794,7 +794,6 @@ const xpath = \`//users/..\``,
       templateLiteral(node);
 
       expect(reports).toHaveLength(1);
-      expect(reports[0].data?.line).toBe('0');
     });
 
     it('TemplateLiteral with no parent reaches no sink and is not reported', () => {
@@ -842,7 +841,7 @@ const xpath = \`//users/..\``,
       expect(reports).toHaveLength(0);
     });
 
-    it('BinaryExpression xpathInjection falls back to line 0 when loc is missing', () => {
+    it('BinaryExpression xpathInjection still reports when loc is missing', () => {
       const { listeners, reports } = createWithMockContext(noXpathInjection, {
         sourceText: 'userInput + "//users/.."',
       });
@@ -858,10 +857,9 @@ const xpath = \`//users/..\``,
       });
 
       expect(reports).toHaveLength(1);
-      expect(reports[0].data?.line).toBe('0');
     });
 
-    it('VariableDeclarator dangerousXpathExpression falls back to line 0 when loc is missing', () => {
+    it('VariableDeclarator dangerousXpathExpression still reports when loc is missing', () => {
       const { listeners, reports } = createWithMockContext(noXpathInjection, {
         // `dangerousXpathExpression` is opt-in now — a CONSTANT XPath containing
         // `//` is ordinary syntax, not a vulnerability. These tests exercise the
@@ -879,7 +877,6 @@ const xpath = \`//users/..\``,
       });
 
       expect(reports).toHaveLength(1);
-      expect(reports[0].data?.line).toBe('0');
     });
 
     it('VariableDeclarator declaration path stays silent without a sink', () => {

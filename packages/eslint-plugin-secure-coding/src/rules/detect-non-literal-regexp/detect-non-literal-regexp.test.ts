@@ -338,6 +338,7 @@ describe('detect-non-literal-regexp', () => {
         invalid: [
           {
             code: 'new RegExp(a++);',
+            name: 'a pattern built from an update expression is decided at runtime',
             errors: [{ messageId: 'runtimeDecidedPattern' }],
           },
         ],

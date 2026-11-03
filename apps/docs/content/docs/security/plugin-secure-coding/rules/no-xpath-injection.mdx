@@ -28,7 +28,7 @@ Detects XPath injection vulnerabilities. This rule is part of [`eslint-plugin-se
 | **CWE Reference** | [CWE-643](https://cwe.mitre.org/data/definitions/643.html) (XPath Injection) |
 | **Severity**      | Critical (CVSS 9.8)                                                          |
 | **Auto-Fix**      | 💡 Suggestions available                                                     |
-| **Category**   | Security |
+| **Category**      | Security                                                                     |
 
 ## Vulnerability and Risk
 
@@ -72,7 +72,8 @@ const search = `/items/item[contains(text(), '${searchTerm}')]`;
 ### ✅ Correct
 
 ```typescript
-const safeId = validateId(userInput); const xpath = `/users/user[@id="${safeId}"]`;
+const safeId = validateId(userInput);
+const xpath = `/users/user[@id="${safeId}"]`;
 ```
 
 ## Configuration
@@ -91,17 +92,17 @@ const safeId = validateId(userInput); const xpath = `/users/user[@id="${safeId}"
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `reportDangerousConstructs` | `boolean` | `false` | Also report constant XPath containing ordinary axis syntax (//, text(), .., /*). These are not vulnerabilities; a constant expression has nothing to inject into. Off by default because it reported essentially every XPath in existence at CVSS 9.8. |
-| `xpathFunctions` | `string[]` | `["evaluate","selectSingleNode","selectNodes","xpath","select","select1"]` | XPath evaluation methods treated as query sinks |
-| `safeXpathConstructors` | `string[]` | `["buildXPath","createXPath","safeXPath","xpathBuilder"]` | Builders that produce a parameterized XPath expression |
-| `xpathValidationFunctions` | `string[]` | `["validateXPath","escapeXPath","sanitizeXPath","cleanXPath"]` | Function names that escape or validate XPath input |
-| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as XPath sanitizers |
-| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
-| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
-| `xpathPackages` | `string[]` | `["xpath","xmldom-xpath","xpath.js","libxmljs","libxmljs2","@xmldom/xmldom"]` | Module specifiers whose exports evaluate an XPath expression, matched against a resolved import binding. Replaces the built-in list. |
-| `additionalXpathPackages` | `string[]` | `[]` | Extra XPath package specifiers, on top of `xpathPackages`. |
+| Option                      | Type       | Default                                                                       | Description                                                                                                                                                                                                                                            |
+| --------------------------- | ---------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `reportDangerousConstructs` | `boolean`  | `false`                                                                       | Also report constant XPath containing ordinary axis syntax (//, text(), .., /*). These are not vulnerabilities; a constant expression has nothing to inject into. Off by default because it reported essentially every XPath in existence at CVSS 9.8. |
+| `xpathFunctions`            | `string[]` | `["evaluate","selectSingleNode","selectNodes","xpath","select","select1"]`    | XPath evaluation methods treated as query sinks                                                                                                                                                                                                        |
+| `safeXpathConstructors`     | `string[]` | `["buildXPath","createXPath","safeXPath","xpathBuilder"]`                     | Builders that produce a parameterized XPath expression                                                                                                                                                                                                 |
+| `xpathValidationFunctions`  | `string[]` | `["validateXPath","escapeXPath","sanitizeXPath","cleanXPath"]`                | Function names that escape or validate XPath input                                                                                                                                                                                                     |
+| `trustedSanitizers`         | `string[]` | `[]`                                                                          | Additional function names to consider as XPath sanitizers                                                                                                                                                                                              |
+| `trustedAnnotations`        | `string[]` | `[]`                                                                          | Additional JSDoc annotations to consider as safe markers                                                                                                                                                                                               |
+| `strictMode`                | `boolean`  | `false`                                                                       | Disable all false positive detection (strict mode)                                                                                                                                                                                                     |
+| `xpathPackages`             | `string[]` | `["xpath","xmldom-xpath","xpath.js","libxmljs","libxmljs2","@xmldom/xmldom"]` | Module specifiers whose exports evaluate an XPath expression, matched against a resolved import binding. Replaces the built-in list.                                                                                                                   |
+| `additionalXpathPackages`   | `string[]` | `[]`                                                                          | Extra XPath package specifiers, on top of `xpathPackages`.                                                                                                                                                                                             |
 
 ## Error Message Format
 
@@ -118,17 +119,24 @@ const safeId = validateId(userInput); const xpath = `/users/user[@id="${safeId}"
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Query from Variable
+### Query Passed to a Function That Is Not an Evaluator
 
-**Why**: Query strings from variables not traced.
+**Why**: A concatenated query held in a variable is reported unless every use of
+the variable is shown not to reach an evaluator. A use is followed through a
+TypeScript cast (`q as string`), a non-null assertion (`q!`), either arm of a
+ternary (`ok ? q : '//a'`) and further `const` bindings. A helper function that
+evaluates its argument is not followed into.
 
 ```typescript
-// ❌ NOT DETECTED - Query from variable
-const query = `SELECT * FROM users WHERE id = ${userId}`;
-db.execute(query);
+// ✅ DETECTED - the cast does not hide the evaluator
+const q = "//user[@id='" + id + "']";
+xpath.select(q as string, doc);
+
+// ❌ NOT DETECTED - when the helper is the only use and the query is a template
+runQuery(`//user[@id='${trustedLookingName}']`);
 ```
 
-**Mitigation**: Always use parameterized queries.
+**Mitigation**: Build the query where it is evaluated, or escape every value.
 
 ### Custom Query Builders
 

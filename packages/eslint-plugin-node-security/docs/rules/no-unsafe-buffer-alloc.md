@@ -127,8 +127,12 @@ like wire data whose origin is invisible (a parameter, an import, a `for…of`
 element), or passed into a parameter — of a function, or of a class
 constructor through `new` — that some call in the file feeds wire data. Local
 bindings are followed through their last write however many hops long the
-chain is. `Math.min(size, MAX)` with a bound the peer cannot move, or an `if`
-comparing the size, counts as a clamp; `Math.max` does not.
+chain is. `Math.min(size, MAX)` with a bound the peer cannot move counts as a
+clamp; `Math.max` does not. A guard counts only when it caps the size from
+above against such a bound: an enclosing `if (size < MAX)` / `if (size <= MAX)`
+(or the `else` of `if (size > MAX)`), or an earlier `if (size > MAX) throw` /
+`return` in an enclosing block. A lower-bound check (`if (size > 0)`, rejecting
+`size < 1`) lets every huge size through and is not a guard.
 
 ## Why `allocUnsafe` is dangerous
 
@@ -219,8 +223,6 @@ codec that hands the buffer to native code to fill.
   a computed key that resolves to a constant (`Buffer['allocUnsafe'](n)`) is.
 - Member aliases (`const alloc = Buffer.allocUnsafe; alloc(n);`) are not
   tracked; a destructured one (`const { allocUnsafe } = Buffer`) is.
-- Any `if` that compares the size counts as a guard, whatever the direction:
-  `if (size > 0) Buffer.alloc(size)` is treated as bounded.
 - Buffer shims and polyfills that ship their own `allocUnsafe` are out of scope.
 - A loop write at a moving offset is treated as covering. A loop that writes
   only part of the buffer — an early `break`, a bound smaller than the

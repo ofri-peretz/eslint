@@ -63,6 +63,7 @@ ruleTester.run('no-postmessage-innerhtml', noPostmessageInnerhtml, {
       code: `
         element.innerHTML = userInput;
       `,
+      name: 'an innerHTML write outside any message handler is left alone',
     },
     // Test files allowed by default
     {

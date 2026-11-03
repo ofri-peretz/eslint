@@ -27,7 +27,7 @@ ruleTester.run('no-credentials-in-query-params', noCredentialsInQueryParams, {
       name: 'a fetch URL with no query string',
       code: "fetch('https://api.example.com/users')",
     },
-    { code: 'const x = 1' },
+    { code: 'const x = 1', name: 'a numeric constant builds no URL' },
 
     // --- A template is not a URL just because it contains "token=" ----------
     // Shopify/cli session-lifecycle.ts:56. A DEBUG LOG whose value is

@@ -208,7 +208,7 @@ ruleTester.run(
 ruleTester.run('edge shapes', noUnsafeEvalCsp, {
   valid: [
     // Not a string.
-    { code: `const n = 42;` },
+    { code: `const n = 42;`, name: 'a non-string value holds no policy' },
     // Empty and whitespace-only segments.
     { code: `const c = ';;  ;';` },
     // A directive name with no sources.

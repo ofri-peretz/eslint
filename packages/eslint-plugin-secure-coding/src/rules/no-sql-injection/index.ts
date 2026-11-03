@@ -32,12 +32,67 @@ import {
 interface Substitution {
   node: TSESTree.Node | null;
   scope: TSESLint.Scope.Scope;
+  /**
+   * The bindings in force where the argument was written. A builder called
+   * from inside another builder passes its OWN parameter, and what that
+   * stands for is the outer call's argument — dropping these lost it.
+   */
+  substitutions: Substitutions;
 }
 
 /** Parameter bindings carried across a resolved local builder call. */
 type Substitutions = ReadonlyMap<TSESLint.Scope.Variable, Substitution>;
 
 const NO_SUBSTITUTIONS: Substitutions = new Map();
+
+/**
+ * What the walk is in the middle of following: the bindings whose writes it is
+ * reading, the calls it is inlining and the parameter bindings it is chasing.
+ * Meeting one of them again is a cycle — `var a = a`, a builder that calls
+ * itself, defaults that read each other — and the cycle adds no value the
+ * first visit does not. This replaced a depth cap of 5, which also stopped a
+ * legitimate chain of six aliases and so locked in a missed finding.
+ */
+type Visiting = Set<TSESTree.Node | Substitution>;
+
+/** Follow `key` unless the walk is already inside it. */
+function unlessVisiting<T>(
+  visiting: Visiting,
+  key: TSESTree.Node | Substitution,
+  onCycle: T,
+  follow: () => T,
+): T {
+  if (visiting.has(key)) return onCycle;
+  visiting.add(key);
+  try {
+    return follow();
+  } finally {
+    visiting.delete(key);
+  }
+}
+
+/**
+ * The expression a builder parameter finally stands for: through each nested
+ * builder's binding back to the argument the outermost call wrote.
+ */
+function boundExpression(bound: Substitution): {
+  node: TSESTree.Node | null;
+  scope: TSESLint.Scope.Scope;
+} {
+  const seen = new Set<Substitution>();
+  let current = bound;
+  for (;;) {
+    seen.add(current);
+    const next =
+      current.node === null
+        ? undefined
+        : substitutionFor(current.node, current.scope, current.substitutions);
+    if (next === undefined || seen.has(next)) {
+      return { node: current.node, scope: current.scope };
+    }
+    current = next;
+  }
+}
 
 /**
  * The caller-supplied expression a binding stands for, when the binding is a
@@ -89,9 +144,10 @@ function hasRawUnattributedPart(
     // decides staticness is the argument the caller actually passed.
     const bound = substitutionFor(part, scope, substitutions);
     if (bound !== undefined) {
+      const { node: argument, scope: argumentScope } = boundExpression(bound);
       return (
-        bound.node !== null &&
-        !isStaticExpression({ node: bound.node, scope: bound.scope })
+        argument !== null &&
+        !isStaticExpression({ node: argument, scope: argumentScope })
       );
     }
     return !isStaticExpression({ node: part, scope });
@@ -247,12 +303,13 @@ const SQL_DRIVER_MODULES: ReadonlySet<string> = new Set([
  * Whether a module specifier names a SQL driver.
  *
  * Compared on the package root so `mysql2/promise` and `@prisma/client/edge`
- * count. A relative or absolute specifier is never a package and is rejected
- * outright — otherwise `'./pg'` would silence this rule in a repo that has no
- * `pg`, which is a false negative rather than a partition.
+ * count. A relative or absolute specifier is never a package — otherwise `'./pg'`
+ * would silence this rule in a repo that has no `pg`, which is a false negative
+ * rather than a partition.
  */
 function isSqlDriverSpecifier(specifier: string): boolean {
-  if (specifier.startsWith('.') || specifier.startsWith('/')) return false;
+  // A relative (`./pg`) or absolute (`/pg`) specifier needs no test of its own:
+  // its root segment is `.`, `..` or empty, and no package name is any of those.
   const parts = specifier.split('/');
   const root = specifier.startsWith('@')
     ? parts.slice(0, 2).join('/')
@@ -328,13 +385,19 @@ function invokedMethodName(
  * `UPDATE … SET` and the rest means the static text has to be shaped like a
  * statement, not merely contain a word that also appears in one.
  */
+//
+// Not anchored to the start of the text. `WITH recent AS (SELECT …) SELECT …`,
+// a leading `/* comment */` and a parenthesised `(SELECT …) UNION …` are all
+// statements whose first token is not the verb, and an anchor made every one of
+// them invisible. The verb-plus-companion pairing is what separates a statement
+// from prose; the anchor added nothing to it but false negatives.
 const SQL_STATEMENTS: readonly RegExp[] = [
-  /^\s*select\b[\s\S]*\bfrom\b/i,
-  /^\s*insert\s+into\b/i,
-  /^\s*update\b[\s\S]*\bset\b/i,
-  /^\s*delete\s+from\b/i,
-  /^\s*replace\s+into\b/i,
-  /^\s*merge\s+into\b/i,
+  /\bselect\b[\s\S]*\bfrom\b/i,
+  /\binsert\s+into\b/i,
+  /\bupdate\b[\s\S]*\bset\b/i,
+  /\bdelete\s+from\b/i,
+  /\breplace\s+into\b/i,
+  /\bmerge\s+into\b/i,
 ];
 
 /** Literal text of a string expression, ignoring interpolated values. */
@@ -358,14 +421,6 @@ function staticText(node: TSESTree.Node): string {
 function looksLikeSqlStatement(nodes: readonly TSESTree.Node[]): boolean {
   const text = nodes.map(staticText).join('');
   return SQL_STATEMENTS.some((pattern) => pattern.test(text));
-}
-
-/** Whether an expression builds a string out of parts. */
-function isBuiltString(node: TSESTree.Node): boolean {
-  if (node.type === AST_NODE_TYPES.TemplateLiteral) {
-    return node.expressions.length > 0;
-  }
-  return node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+';
 }
 
 /** Identifier roots that denote an inbound request. Overridable via `requestRoots`. */
@@ -495,8 +550,8 @@ function bindsADeclaredContract(def: TSESLint.Scope.Definition): boolean {
 }
 
 /**
- * A binding whose every write in this file is a static value cannot carry taint
- * to the sink, whatever its declaration kind.
+ * Is the caller's value of this parameter replaced by a constant before `use`
+ * on every path?
  *
  *   function fmt(v) { v = 'id'; return db.query('SELECT * FROM t ORDER BY ' + v); }
  *
@@ -504,14 +559,41 @@ function bindsADeclaredContract(def: TSESLint.Scope.Definition): boolean {
  * but the only value that can reach the statement is the literal written over
  * it. Returns `false` when there is no write at all, which is the ordinary
  * parameter: nothing was overwritten, so nothing was made safe.
+ *
+ * Every write being static is NOT enough. `if (!sort) sort = 'id'` writes a
+ * constant on one branch and leaves the caller's value on the other, and a
+ * default parameter (`sort = 'id'`) applies only when the caller passes
+ * nothing; both used to clear the parameter. So one of the static writes also
+ * has to be a plain assignment statement in the function's own body, ahead of
+ * the use — the one shape every path to the use runs through.
  */
-function allWritesStatic(
+function isOverwrittenWithConstant(
   variable: TSESLint.Scope.Variable,
   scope: TSESLint.Scope.Scope,
+  use: TSESTree.Node,
 ): boolean {
-  const writes = writeExpressions(variable);
+  const writes = variable.references.filter((reference) => reference.writeExpr);
   if (writes.length === 0) return false;
-  return writes.every((node) => isStaticExpression({ node, scope }));
+  if (
+    !writes.every((reference) =>
+      isStaticExpression({ node: reference.writeExpr as TSESTree.Node, scope }),
+    )
+  ) {
+    return false;
+  }
+  const declaring = variable.defs[0]?.node;
+  return writes.some((reference) => {
+    const assignment = reference.identifier.parent;
+    const statement = assignment?.parent;
+    return (
+      assignment?.type === AST_NODE_TYPES.AssignmentExpression &&
+      assignment.operator === '=' &&
+      statement?.type === AST_NODE_TYPES.ExpressionStatement &&
+      statement.parent.type === AST_NODE_TYPES.BlockStatement &&
+      statement.parent.parent === declaring &&
+      statement.range[1] <= use.range[0]
+    );
+  });
 }
 
 /**
@@ -524,8 +606,10 @@ function allWritesStatic(
 function writeExpressions(variable: TSESLint.Scope.Variable): TSESTree.Node[] {
   const written: TSESTree.Node[] = [];
   for (const reference of variable.references) {
+    // Only a write carries `writeExpr`, and a write with nothing inspectable
+    // (`x++`) carries `null` — so its presence is the whole test.
     const { writeExpr } = reference;
-    if (reference.isWrite() && writeExpr !== undefined && writeExpr !== null) {
+    if (writeExpr) {
       written.push(writeExpr);
     }
   }
@@ -600,32 +684,37 @@ function attributedThroughCall(
   node: TSESTree.CallExpression,
   scope: TSESLint.Scope.Scope,
   attribution: Attribution,
-  depth: number,
+  visiting: Visiting,
 ): string | null {
   if (
     node.callee.type === AST_NODE_TYPES.Identifier &&
     attribution.transparentCalls.has(node.callee.name) &&
     isAmbientGlobal(node.callee.name, scope)
   ) {
-    for (const argument of node.arguments) {
-      if (argument.type === AST_NODE_TYPES.SpreadElement) continue;
-      const found = attributedSource(argument, scope, attribution, depth + 1);
+    // A transparent call hands through its ARGUMENT — `String(v)` reads only
+    // the first. A spread there attributes to nothing, like any other node the
+    // walk has no arm for.
+    const [argument] = node.arguments;
+    return argument === undefined
+      ? null
+      : attributedSource(argument, scope, attribution, visiting);
+  }
+
+  // An unresolvable call comes back as itself. Following it again is how the
+  // chain "breaks" here: it re-enters this function on the same call, which is
+  // a cycle, so no separate "resolved to itself" exit is needed.
+  return unlessVisiting(visiting, node, null, () => {
+    const inlined = effectiveExpression(node, scope, attribution);
+    const inner: Attribution = {
+      ...attribution,
+      substitutions: inlined.substitutions,
+    };
+    for (const candidate of inlined.nodes) {
+      const found = attributedSource(candidate, inlined.scope, inner, visiting);
       if (found !== null) return found;
     }
     return null;
-  }
-
-  const inlined = effectiveExpression(node, scope, attribution);
-  if (inlined.nodes.length === 1 && inlined.nodes[0] === node) return null;
-  const inner: Attribution = {
-    ...attribution,
-    substitutions: inlined.substitutions,
-  };
-  for (const candidate of inlined.nodes) {
-    const found = attributedSource(candidate, inlined.scope, inner, depth + 1);
-    if (found !== null) return found;
-  }
-  return null;
+  });
 }
 
 /**
@@ -667,10 +756,8 @@ function attributedSource(
   node: TSESTree.Node,
   scope: TSESLint.Scope.Scope,
   attribution: Attribution,
-  depth = 0,
+  visiting: Visiting = new Set(),
 ): string | null {
-  if (depth > 5) return null;
-
   // `x as string` reads exactly what `x` reads — the cast is erased at compile
   // time. Without this the walker falls through to its null/false default, and
   // Express types `req.query.q` as `string | string[] | ParsedQs | undefined`,
@@ -678,11 +765,11 @@ function attributedSource(
   // was written without one, which is why the gap survived review.
   const bare = unwrapTypeSyntax(node);
   if (bare !== node)
-    return attributedSource(bare, scope, attribution, depth + 1);
+    return attributedSource(bare, scope, attribution, visiting);
 
   if (node.type === AST_NODE_TYPES.TemplateLiteral) {
     for (const expression of node.expressions) {
-      const found = attributedSource(expression, scope, attribution, depth + 1);
+      const found = attributedSource(expression, scope, attribution, visiting);
       if (found !== null) return found;
     }
     return null;
@@ -694,8 +781,8 @@ function attributedSource(
         node.left as TSESTree.Node,
         scope,
         attribution,
-        depth + 1,
-      ) ?? attributedSource(node.right, scope, attribution, depth + 1)
+        visiting,
+      ) ?? attributedSource(node.right, scope, attribution, visiting)
     );
   }
 
@@ -750,8 +837,8 @@ function attributedSource(
   // only the value's type made the whole shape invisible.
   if (node.type === AST_NODE_TYPES.ConditionalExpression) {
     return (
-      attributedSource(node.consequent, scope, attribution, depth + 1) ??
-      attributedSource(node.alternate, scope, attribution, depth + 1)
+      attributedSource(node.consequent, scope, attribution, visiting) ??
+      attributedSource(node.alternate, scope, attribution, visiting)
     );
   }
 
@@ -759,13 +846,13 @@ function attributedSource(
   // more common of the two.
   if (node.type === AST_NODE_TYPES.LogicalExpression) {
     return (
-      attributedSource(node.left, scope, attribution, depth + 1) ??
-      attributedSource(node.right, scope, attribution, depth + 1)
+      attributedSource(node.left, scope, attribution, visiting) ??
+      attributedSource(node.right, scope, attribution, visiting)
     );
   }
 
   if (node.type === AST_NODE_TYPES.CallExpression) {
-    return attributedThroughCall(node, scope, attribution, depth);
+    return attributedThroughCall(node, scope, attribution, visiting);
   }
 
   if (node.type === AST_NODE_TYPES.Identifier) {
@@ -774,16 +861,20 @@ function attributedSource(
 
     // A builder's own parameter carries no provenance; the ARGUMENT does. The
     // bound expression is read back in the caller's scope, which is where it
-    // was written.
+    // was written — under the caller's own bindings, so a builder that passes
+    // its parameter on to another builder still reaches the outer argument.
     const bound = attribution.substitutions.get(variable);
     if (bound !== undefined) {
-      return bound.node === null
+      const argument = bound.node;
+      return argument === null
         ? null
-        : attributedSource(
-            bound.node,
-            bound.scope,
-            { ...attribution, substitutions: NO_SUBSTITUTIONS },
-            depth + 1,
+        : unlessVisiting(visiting, bound, null, () =>
+            attributedSource(
+              argument,
+              bound.scope,
+              { ...attribution, substitutions: bound.substitutions },
+              visiting,
+            ),
           );
     }
 
@@ -800,7 +891,9 @@ function attributedSource(
     // expression as that binding's write.
     const writes = writeExpressions(variable);
     for (const write of writes) {
-      const found = attributedSource(write, scope, attribution, depth + 1);
+      const found = unlessVisiting(visiting, write, null, () =>
+        attributedSource(write, scope, attribution, visiting),
+      );
       if (found !== null) return found;
     }
 
@@ -812,7 +905,7 @@ function attributedSource(
     if (
       attribution.untrustedParameters &&
       isParameterBinding(variable) &&
-      !allWritesStatic(variable, scope) &&
+      !isOverwrittenWithConstant(variable, scope, node) &&
       // …unless the file narrows it to a fixed set before use. See
       // `isNarrowedByGuardClause`: an allowlist plus a leaving guard is the
       // correct fix for an identifier no driver can bind, and reporting it
@@ -851,24 +944,21 @@ function isNarrowedByGuardClause(
   node: TSESTree.Node,
   sourceCode: TSESLint.SourceCode,
 ): boolean {
-  // Find the function body this identifier lives in.
-  // Walk to the enclosing function, stopping at Program. No separate
-  // `fn === undefined` guard: this only runs for a value that resolved to a
-  // parameter, so a function always encloses it, and the branch would be
-  // uncoverable. Program falls out through the block-body check below, whose
-  // other side an expression-bodied arrow reaches.
+  // Walk to the enclosing function. No stop at Program and no "no body"
+  // guard: this only runs for a reference to a parameter, which lies inside the
+  // function declaring it, so the walk always ends at a function and every one
+  // of the three has a body. Both guards that used to sit here could not change
+  // an outcome. An expression-bodied arrow has no statements to hold a guard.
   let fn: TSESTree.Node = node;
   while (
-    fn.parent !== undefined &&
     fn.type !== AST_NODE_TYPES.FunctionDeclaration &&
     fn.type !== AST_NODE_TYPES.FunctionExpression &&
     fn.type !== AST_NODE_TYPES.ArrowFunctionExpression
   ) {
     fn = fn.parent as TSESTree.Node;
   }
-  const body = (fn as { body?: TSESTree.Node }).body;
-  if (body === undefined || body.type !== AST_NODE_TYPES.BlockStatement)
-    return false;
+  const { body } = fn;
+  if (body.type !== AST_NODE_TYPES.BlockStatement) return false;
 
   for (const statement of body.body) {
     // Only statements BEFORE the interpolation can constrain it.
@@ -981,31 +1071,34 @@ function effectiveExpression(
   node: TSESTree.Node,
   scope: TSESLint.Scope.Scope,
   attribution: Attribution,
-  depth = 0,
+  visiting: Visiting = new Set(),
 ): Resolution {
   const unresolved: Resolution = {
     nodes: [node],
     scope,
-    substitutions: NO_SUBSTITUTIONS,
+    substitutions: attribution.substitutions,
   };
-  if (depth > 5) return unresolved;
 
   // A cast and an `await` both hand back the very value they wrap.
   const bare = unwrapTypeSyntax(node);
   if (bare !== node) {
-    return effectiveExpression(bare, scope, attribution, depth + 1);
+    return effectiveExpression(bare, scope, attribution, visiting);
   }
   if (node.type === AST_NODE_TYPES.AwaitExpression) {
-    return effectiveExpression(node.argument, scope, attribution, depth + 1);
+    return effectiveExpression(node.argument, scope, attribution, visiting);
   }
 
   if (node.type === AST_NODE_TYPES.CallExpression) {
     // `[fragment, value].join(' ')` assembles a statement exactly as `+` does.
     const joined = joinedArrayElements(node, scope);
     if (joined !== null) {
-      return { nodes: joined, scope, substitutions: NO_SUBSTITUTIONS };
+      return { nodes: joined, scope, substitutions: attribution.substitutions };
     }
-    return resolveBuilderCall(node, scope, attribution) ?? unresolved;
+    return (
+      unlessVisiting(visiting, node, null, () =>
+        resolveBuilderCall(node, scope, attribution, visiting),
+      ) ?? unresolved
+    );
   }
 
   // The driver's query-config form: `db.query({ text, values })`. The statement
@@ -1016,23 +1109,38 @@ function effectiveExpression(
     const text = queryTextProperty(node, attribution.queryTextProperties);
     return text === null
       ? unresolved
-      : effectiveExpression(text, scope, attribution, depth + 1);
+      : effectiveExpression(text, scope, attribution, visiting);
   }
 
   if (node.type !== AST_NODE_TYPES.Identifier) return unresolved;
   const variable = resolveVariable(node.name, scope);
   if (variable === null) return unresolved;
+  // Inside an inlined builder, a parameter IS the argument the call passed:
+  // `const run = (s) => s; db.query(run(sql))` executes `sql`.
+  const bound = attribution.substitutions.get(variable);
+  if (bound !== undefined) {
+    const argument = bound.node;
+    return argument === null
+      ? unresolved
+      : unlessVisiting(visiting, bound, unresolved, () =>
+          effectiveExpression(
+            argument,
+            bound.scope,
+            { ...attribution, substitutions: bound.substitutions },
+            visiting,
+          ),
+        );
+  }
+  // No write at all (a plain parameter) falls through to an empty list: no
+  // node, so no statement text, which is exactly what `[node]` would give.
   const writes = writeExpressions(variable);
-  if (writes.length === 0) return unresolved;
-  if (writes.length === 1) {
-    return effectiveExpression(
-      writes[0] as TSESTree.Node,
-      scope,
-      attribution,
-      depth + 1,
+  const [only] = writes;
+  if (writes.length === 1 && only !== undefined) {
+    return unlessVisiting(visiting, only, unresolved, () =>
+      effectiveExpression(only, scope, attribution, visiting),
     );
   }
-  return { nodes: writes, scope, substitutions: NO_SUBSTITUTIONS };
+  return { nodes: writes, scope, substitutions: attribution.substitutions };
 }
 
 /**
@@ -1050,8 +1158,12 @@ function effectiveExpression(
  * what keeps `db.query(build('admin'))` quiet: the argument is a literal, so
  * the interpolated value is static.
  *
- * Only when the callee resolves HERE and its body is visibly an interpolated
- * string. An imported call — `escapeIdentifier(req.query.sort)` — does not
+ * Only when the callee resolves HERE and hands back one visible expression. That
+ * expression used to have to be an interpolated string too, which let a
+ * pass-through helper launder the value: `const orDefault = (v) => v ?? 'id'`
+ * resolved to nothing, so `'… ORDER BY ' + orDefault(req.query.sort)` was
+ * silent. Whatever the body returns is now followed, and a returned call that
+ * does not itself resolve still breaks the chain. An imported call — `escapeIdentifier(req.query.sort)` — does not
  * resolve, so the documented fix stays quiet. Escapers come from libraries;
  * builders are written in the file.
  */
@@ -1059,30 +1171,29 @@ function resolveBuilderCall(
   node: TSESTree.CallExpression,
   scope: TSESLint.Scope.Scope,
   attribution: Attribution,
+  visiting: Visiting,
 ): Resolution | null {
   if (node.callee.type !== AST_NODE_TYPES.Identifier) return null;
   const impl = resolveLocalFunction(node.callee.name, scope);
   if (impl === null) return null;
   const returned = returnedExpression(impl);
-  if (
-    returned === null ||
-    (returned.type !== AST_NODE_TYPES.TemplateLiteral &&
-      returned.type !== AST_NODE_TYPES.BinaryExpression)
-  ) {
-    return null;
-  }
+  if (returned === null) return null;
   const bindings = bindParameters(
     impl,
     node.arguments,
     scope,
+    attribution.substitutions,
     attribution.sourceCode,
   );
   if (bindings === null) return null;
-  return {
-    nodes: [returned],
-    scope: attribution.sourceCode.getScope(returned),
-    substitutions: bindings,
-  };
+  // Followed on, so a builder that returns another builder's call
+  // (`const outer = (u) => build(u)`) reaches the statement `build` writes.
+  return effectiveExpression(
+    returned,
+    attribution.sourceCode.getScope(returned),
+    { ...attribution, substitutions: bindings },
+    visiting,
+  );
 }
 
 /** Any function this file declares under `name`, however it was written. */
@@ -1123,9 +1234,10 @@ function resolveLocalFunction(
 /**
  * The single expression a function hands back.
  *
- * A block body qualifies only when it is EXACTLY one `return`. Any other
- * statement could sanitise, branch or reassign, and inlining past it would be a
- * guess rather than a resolution.
+ * A block body qualifies only when its FIRST statement is a `return`. Any
+ * statement before it could sanitise, branch or reassign, and inlining past it
+ * would be a guess rather than a resolution; a statement after it is
+ * unreachable and changes nothing.
  */
 function returnedExpression(
   impl:
@@ -1134,14 +1246,9 @@ function returnedExpression(
     | TSESTree.FunctionDeclaration,
 ): TSESTree.Node | null {
   if (impl.body.type !== AST_NODE_TYPES.BlockStatement) return impl.body;
-  const [only] = impl.body.body;
-  if (
-    impl.body.body.length !== 1 ||
-    only?.type !== AST_NODE_TYPES.ReturnStatement
-  ) {
-    return null;
-  }
-  return only.argument ?? null;
+  const [first] = impl.body.body;
+  if (first?.type !== AST_NODE_TYPES.ReturnStatement) return null;
+  return first.argument; // a bare `return;` carries `null`, not undefined
 }
 
 /**
@@ -1170,12 +1277,17 @@ function joinedArrayElements(
     receiver = init;
   }
   if (receiver.type !== AST_NODE_TYPES.ArrayExpression) return null;
+  // A spread contributes what it spreads: `[...req.query.ids].join(',')` is the
+  // request's list, and skipping the element made it invisible. A hole
+  // contributes nothing.
   const elements: TSESTree.Node[] = [];
   for (const element of receiver.elements) {
-    if (element === null || element.type === AST_NODE_TYPES.SpreadElement) {
-      continue;
-    }
-    elements.push(element);
+    if (element === null) continue;
+    elements.push(
+      element.type === AST_NODE_TYPES.SpreadElement
+        ? element.argument
+        : element,
+    );
   }
   return elements;
 }
@@ -1198,13 +1310,37 @@ function queryTextProperty(
 }
 
 /**
+ * The argument that supplies a parameter's position, or `undefined` when the
+ * call passes none. A spread supplies its own position and every later one, so
+ * whatever it spreads is what those parameters receive.
+ */
+function argumentAt(
+  args: readonly TSESTree.CallExpressionArgument[],
+  position: number,
+): TSESTree.Node | undefined {
+  for (const [index, argument] of args.entries()) {
+    if (argument.type === AST_NODE_TYPES.SpreadElement)
+      return argument.argument;
+    if (index === position) return argument;
+  }
+  return undefined;
+}
+
+/**
  * Bind a builder's parameters to the arguments a call site passed.
  *
  * `null` means the binding cannot be established exactly — a destructured or
- * rest parameter, or a spread argument. Then the builder is NOT substituted at
- * all, rather than substituted with parameters standing for nothing: a
- * placeholder with no known argument reads as "cannot attribute", which is the
- * shape that produces guesses.
+ * rest parameter. Then the builder is NOT substituted at all, rather than
+ * substituted with parameters standing for nothing: a placeholder with no known
+ * argument reads as "cannot attribute", which is the shape that produces
+ * guesses.
+ *
+ * Bound by POSITION, parameter by parameter. An earlier revision zipped the
+ * scope's parameter variables against the arguments after filtering out those
+ * typed with a named contract — so `build(prefix: TablePrefix, id)` bound `id`
+ * to the FIRST argument and `build(PREFIX, req.query.id)` went silent. A default
+ * (`col = 'id'`) binds the caller's argument when there is one and the default
+ * when there is not; a spread binds what it spreads.
  */
 function bindParameters(
   impl:
@@ -1213,23 +1349,48 @@ function bindParameters(
     | TSESTree.FunctionDeclaration,
   args: readonly TSESTree.CallExpressionArgument[],
   callerScope: TSESLint.Scope.Scope,
+  callerSubstitutions: Substitutions,
   sourceCode: TSESLint.SourceCode,
 ): Substitutions | null {
-  if (args.some((a) => a.type === AST_NODE_TYPES.SpreadElement)) return null;
-  if (impl.params.some((p) => p.type !== AST_NODE_TYPES.Identifier))
-    return null;
-
-  // Taken from the SCOPE, not by resolving each parameter's name: the scope
-  // analyser already lists a function's parameter variables in declaration
-  // order, so there is no lookup that can come back empty and no branch that
-  // no input can reach.
-  const bindings = new Map<TSESLint.Scope.Variable, Substitution>();
-  sourceCode
+  // The scope lists one parameter variable per Identifier parameter, in
+  // declaration order — `this` included — so once every parameter is known to
+  // be a plain or defaulted Identifier the two lists line up index for index.
+  const parameters = sourceCode
     .getDeclaredVariables(impl)
-    .filter((variable) => isParameterBinding(variable))
-    .forEach((variable, index) => {
-      bindings.set(variable, { node: args[index] ?? null, scope: callerScope });
-    });
+    .filter((variable) => variable.defs[0]?.type === 'Parameter');
+  const bindings = new Map<TSESLint.Scope.Variable, Substitution>();
+  let position = 0;
+  for (const [index, param] of impl.params.entries()) {
+    const target =
+      param.type === AST_NODE_TYPES.AssignmentPattern ? param.left : param;
+    if (target.type !== AST_NODE_TYPES.Identifier) return null;
+    // TypeScript's `this` parameter is a type annotation on the receiver: it
+    // takes no argument. `this` is a keyword, so no other binding is spelled so.
+    if (target.name === 'this') continue;
+    const variable = parameters[index];
+    const passed = argumentAt(args, position);
+    position += 1;
+    if (passed !== undefined) {
+      bindings.set(variable, {
+        node: passed,
+        scope: callerScope,
+        substitutions: callerSubstitutions,
+      });
+    } else if (param.type === AST_NODE_TYPES.AssignmentPattern) {
+      bindings.set(variable, {
+        node: param.right,
+        scope: sourceCode.getScope(impl),
+        // A default reads the builder's other parameters, not the caller's.
+        substitutions: bindings,
+      });
+    } else {
+      bindings.set(variable, {
+        node: null,
+        scope: callerScope,
+        substitutions: callerSubstitutions,
+      });
+    }
+  }
   return bindings;
 }
 
@@ -1386,9 +1547,13 @@ export const noSqlInjection = createRule<[Options?], MessageIds>({
           // Compared by CONTENT, not by `=== undefined`: typescript-eslint merges
           // `defaultOptions` in, so the key is always present and the absence test
           // silently disabled the shape path everywhere.
-          trustRequestShape:
-            requestRoots.length === REQUEST_ROOTS.length &&
-            REQUEST_ROOTS.every((name, index) => requestRoots[index] === name),
+          // NARROWED means a default root was removed. Widening the list
+          // (`[...defaults, 'evt']`) or reordering it narrows nothing, and an
+          // earlier element-by-element comparison switched the shape path off
+          // for both.
+          trustRequestShape: REQUEST_ROOTS.every((name) =>
+            requestRoots.includes(name),
+          ),
           requestProperties: new Set(requestProperties),
           transparentCalls: new Set(transparentCalls),
           queryTextProperties: new Set(queryTextProperties),
@@ -1435,28 +1600,21 @@ export const noSqlInjection = createRule<[Options?], MessageIds>({
         const method = invokedMethodName(node.callee, callScope);
         if (method === null || !sinks.has(method)) return;
 
+        // A spread first argument resolves to itself and has no static text,
+        // so the statement test below rejects it without an arm of its own.
         const [firstArgument] = node.arguments;
-        if (
-          firstArgument === undefined ||
-          firstArgument.type === AST_NODE_TYPES.SpreadElement
-        ) {
-          return;
-        }
+        if (firstArgument === undefined) return;
 
         const { nodes, scope, substitutions } = effectiveExpression(
           firstArgument,
           callScope,
           attribution,
         );
-        // Assembled from parts: either a single expression that is visibly a
-        // template or a `+`, or several writes to one binding of which at least
-        // one is not static. A statement written in one piece is not a finding
-        // however dynamic its provenance, because nothing was interpolated.
-        const built =
-          nodes.some(isBuiltString) ||
-          (nodes.length > 1 &&
-            nodes.some((n) => !isStaticExpression({ node: n, scope })));
-        if (!built) return;
+        // A statement written in one piece is not a finding however dynamic its
+        // provenance, because nothing was interpolated. That needs no test of its
+        // own: the only single node with statement text is a string literal, and
+        // a literal attributes to nothing and has no part to call raw. A
+        // `built` pre-check used to sit here and could not change one verdict.
         if (!looksLikeSqlStatement(nodes)) return;
 
         const sinkAttribution: Attribution = { ...attribution, substitutions };

@@ -179,7 +179,10 @@ jsxRuleTester.run('detect-mixed-content (jsx)', detectMixedContent, {
     // A namespaced JSX attribute name is not a subresource attribute.
     { code: '<img xlink:href="http://www.w3.org/1999/xlink" src="/a.png" />' },
     // A valueless attribute has no URL to judge.
-    { code: '<img src />' },
+    {
+      code: '<img src />',
+      name: 'a valueless src attribute has no URL to judge',
+    },
     // The remediation.
     { code: '<img src="https://cdn.acmecorp.io/logo.png" />' },
     { code: '<img src="/static/logo.png" />' },

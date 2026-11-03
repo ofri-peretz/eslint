@@ -174,6 +174,7 @@ describe('no-insecure-comparison', () => {
         invalid: [
           {
             code: 'if (x != y) {}',
+            name: 'loose inequality is reported with a strict-equality suggestion',
             errors: [
               {
                 messageId: 'insecureComparison',

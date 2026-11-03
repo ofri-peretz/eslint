@@ -1,7 +1,7 @@
 const { tag } = require('../../lib.cjs');
 
 module.exports = {
-  domain: 34,
+  domain: 38,
   traces: 400,
   rule: 'no-unchecked-loop-condition',
   key: (s) =>
@@ -20,13 +20,16 @@ module.exports = {
     const n = {
       ReqDirect: 'req.query.count',
       ParseIntReq: 'count',
+      DestructReq: 'count',
       Clamped: 'count',
       SmallLit: '100',
       HugeLit: '1000000',
+      HugeBigInt: '1000000n',
     }[tag(s.bound)];
     const pre =
       {
         ParseIntReq: 'const count = parseInt(req.query.count, 10);',
+        DestructReq: 'const { count } = req.query;',
         Clamped:
           'const count = Math.min(parseInt(req.query.count, 10) || 0, 1000);',
       }[tag(s.bound)] ?? '';

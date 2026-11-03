@@ -93,6 +93,10 @@ crypto.publicEncrypt(
   },
   data,
 );
+
+// A const holding the constant is the constant
+const PADDING = crypto.constants.RSA_PKCS1_PADDING;
+crypto.privateDecrypt({ key: privateKey, padding: PADDING }, data); // ❌ Vulnerable
 ```
 
 ### ✅ Correct

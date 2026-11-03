@@ -70,6 +70,10 @@ for (let i = 0; i < iterations; i++) {
   doWork(); // Could run billions of times!
 }
 
+// Destructuring reads the same request field
+const { limit } = req.query;
+for (let i = 0; i < limit; i++) doWork();
+
 // Unbounded recursion
 function recurse(data) {
   return recurse(data.child);
@@ -128,15 +132,15 @@ function recurse(data, depth = 0, maxDepth = 100) {
 
 ## Options
 
-| Option                    | Type       | Default                                                    | Description                                              |
-| ------------------------- | ---------- | ---------------------------------------------------------- | -------------------------------------------------------- |
-| `maxStaticIterations`     | `number`   | `10000`                                                    | Literal iteration count above which a loop is reported   |
-| `userInputVariables`      | `string[]` | `["req","request","body","query","params","input","data"]` | Variable names treated as user-controlled input          |
+| Option                    | Type       | Default                                                    | Description                                                                                                                                                      |
+| ------------------------- | ---------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `maxStaticIterations`     | `number`   | `10000`                                                    | Literal iteration count (number or BigInt) above which a loop is reported                                                                                        |
+| `userInputVariables`      | `string[]` | `["req","request","body","query","params","input","data"]` | Variable names treated as user-controlled input                                                                                                                  |
 | `allowWhileTrueWithBreak` | `boolean`  | `true`                                                     | Allow an infinite-loop form (`while (true)`, `while (1)`, `do … while (true)`, `for (;;)`) whose body leaves it: a `break` of that loop, a `return` or a `throw` |
-| `maxRecursionDepth`       | `number`   | `10`                                                       | Recursion depth above which a call is reported           |
-| `trustedSanitizers`       | `string[]` | `[]`                                                       | Additional function names to consider as loop protectors |
-| `trustedAnnotations`      | `string[]` | `[]`                                                       | Additional JSDoc annotations to consider as safe markers |
-| `strictMode`              | `boolean`  | `false`                                                    | Disable all false positive detection (strict mode)       |
+| `maxRecursionDepth`       | `number`   | `10`                                                       | Recursion depth above which a call is reported                                                                                                                   |
+| `trustedSanitizers`       | `string[]` | `[]`                                                       | Additional function names to consider as loop protectors                                                                                                         |
+| `trustedAnnotations`      | `string[]` | `[]`                                                       | Additional JSDoc annotations to consider as safe markers                                                                                                         |
+| `strictMode`              | `boolean`  | `false`                                                    | Disable all false positive detection (strict mode)                                                                                                               |
 
 ## Error Message Format
 

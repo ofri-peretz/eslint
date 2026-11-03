@@ -310,7 +310,10 @@ describe('no-weak-password-recovery', () => {
       valid: [
         // VariableDeclarator with no initializer at all — early return
         // before any recovery-name check.
-        'let passwordResetToken;',
+        {
+          code: 'let passwordResetToken;',
+          name: 'a recovery-token declaration with no initializer has nothing to judge',
+        },
         // Anonymous FunctionDeclaration (node.id === null) — only valid as
         // a default export; early return before any name check.
         'export default function() {};',

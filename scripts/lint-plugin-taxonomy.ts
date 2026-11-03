@@ -135,11 +135,12 @@ const GRANDFATHERED: Grandfathered[] = [
   },
   {
     file: 'eslint-plugin-secure-coding/src/rules/no-directive-injection/index.ts',
-    tokens: ['vue', 'handlebars', 'ejs', 'pug', 'mustache'],
+    tokens: ['ejs', 'pug', 'mustache'],
     reason:
       'Template-directive sinks are per-framework. Splits into the framework plugins at the ' +
-      'next major. `angular`, `react` and `svelte` came off the list on 2026-08-16 — the rule ' +
-      'no longer names them in code, only in prose explaining what it does not gate on.',
+      'next major. `angular`, `react` and `svelte` came off the list on 2026-08-16, and `vue` ' +
+      'and `handlebars` on 2026-11-03 — the rule no longer names them in code, only in prose ' +
+      'explaining what it does not gate on.',
   },
   {
     file: 'eslint-plugin-secure-coding/src/rules/no-missing-authentication/index.ts',

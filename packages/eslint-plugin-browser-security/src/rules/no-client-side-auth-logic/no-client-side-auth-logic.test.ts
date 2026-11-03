@@ -28,7 +28,7 @@ ruleTester.run('no-client-side-auth-logic', noClientSideAuthLogic, {
       name: 'a storage key that names no auth decision',
       code: "if (localStorage.getItem('theme')) { setTheme() }",
     },
-    { code: 'const x = 1' },
+    { code: 'const x = 1', name: 'a numeric constant makes no auth decision' },
 
     // --- A flag test is not an auth decision -------------------------------
     // Corpus: okta/okta-signin-widget

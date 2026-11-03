@@ -796,91 +796,89 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           }
         }
 
-        // Check for format specifiers in subsequent arguments (could indicate user input in format position)
-        // Only check if the format string itself is not validated/safe
-        const fmtArg = args[0];
-        const isFormatSafe = isInputValidated(fmtArg);
+        // Check for format specifiers in subsequent arguments (could indicate
+        // user input in format position). No separate "is the format string
+        // validated" gate: a validated identifier is caught by `isSafe` below,
+        // and a sanitizer around the whole call validates every argument too.
 
-        if (!isFormatSafe) {
-          let hasUserInputInArgs = false;
-          let hasSpecifiersInFormat = false;
+        let hasUserInputInArgs = false;
+        let hasSpecifiersInFormat = false;
 
-          // Check if any argument contains user input (skip first arg which is format string)
-          for (let i = 1; i < args.length; i++) {
-            const arg = args[i];
-            if (isUserInputNode(arg) && !isInputValidated(arg)) {
-              hasUserInputInArgs = true;
-              break;
-            }
+        // Check if any argument contains user input (skip first arg which is format string)
+        for (let i = 1; i < args.length; i++) {
+          const arg = args[i];
+          if (isUserInputNode(arg) && !isInputValidated(arg)) {
+            hasUserInputInArgs = true;
+            break;
           }
+        }
 
-          // Could the first argument carry specifiers? A literal one can, but
-          // a literal is a constant format string, which the report below
-          // excludes anyway; only a binding the file cannot read is a question.
-          const firstArg = args[0];
-          if (firstArg.type === 'Identifier') {
-            // Check if the identifier name suggests it contains format specifiers
-            const varName = firstArg.name.toLowerCase();
-            if (
-              varName.includes('format') ||
-              varName.includes('template') ||
-              varName.includes('pattern')
-            ) {
-              hasSpecifiersInFormat = true;
-            }
-          }
-
+        // Could the first argument carry specifiers? A literal one can, but
+        // a literal is a constant format string, which the report below
+        // excludes anyway; only a binding the file cannot read is a question.
+        const firstArg = args[0];
+        if (firstArg.type === 'Identifier') {
+          // Check if the identifier name suggests it contains format specifiers
+          const varName = firstArg.name.toLowerCase();
           if (
-            hasSpecifiersInFormat &&
-            hasUserInputInArgs &&
-            // THE FIX, and it removes a false positive this suite used to
-            // assert as correct behaviour.
-            //
-            // Three fixtures pinned the safe pattern as the vulnerability:
-            //
-            //   console.log('Format: %s', userMessage)
-            //   util.format('%s', req.body.format)
-            //   const formatStr = 'User: %s, Data: %j';
-            //   util.format(formatStr, user, data)
-            //
-            // In every one the format string is a constant and the untrusted
-            // value is an ARGUMENT. That is CWE-134's remediation, not
-            // CWE-134: substituted values are emitted verbatim, so a `%d`
-            // inside `req.body.format` reaches the output as the two
-            // characters `%d`. The offered suggestion made it worse — it
-            // rewrote the argument to `.replace(/%/g, '%%')`, doubling every
-            // literal percent sign in the user's data.
-            //
-            // A constant format string is now out of scope for this site.
-            // The genuine finding — an attacker-controlled format string — is
-            // still reported here when the first argument does not resolve to
-            // a constant, and by the `userControlledFormatString` path.
-            !isStaticFormatString(firstArg)
+            varName.includes('format') ||
+            varName.includes('template') ||
+            varName.includes('pattern')
           ) {
-            if (safetyChecker.isSafe(node, context)) {
-              return;
-            }
-
-            context.report({
-              node: node,
-              messageId: 'missingFormatValidation',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
-              suggest: [
-                {
-                  messageId: 'escapeFormatString',
-                  fix: (fixer: TSESLint.RuleFixer) => {
-                    // Never the format argument: a user-input one returned
-                    // through `userControlledFormatString` above.
-                    const arg = node.arguments.find((a) => isUserInputNode(a))!;
-                    return fixer.insertTextAfter(arg, '.replace(/%/g, "%%")');
-                  },
-                },
-              ],
-            });
+            hasSpecifiersInFormat = true;
           }
+        }
+
+        if (
+          hasSpecifiersInFormat &&
+          hasUserInputInArgs &&
+          // THE FIX, and it removes a false positive this suite used to
+          // assert as correct behaviour.
+          //
+          // Three fixtures pinned the safe pattern as the vulnerability:
+          //
+          //   console.log('Format: %s', userMessage)
+          //   util.format('%s', req.body.format)
+          //   const formatStr = 'User: %s, Data: %j';
+          //   util.format(formatStr, user, data)
+          //
+          // In every one the format string is a constant and the untrusted
+          // value is an ARGUMENT. That is CWE-134's remediation, not
+          // CWE-134: substituted values are emitted verbatim, so a `%d`
+          // inside `req.body.format` reaches the output as the two
+          // characters `%d`. The offered suggestion made it worse — it
+          // rewrote the argument to `.replace(/%/g, '%%')`, doubling every
+          // literal percent sign in the user's data.
+          //
+          // A constant format string is now out of scope for this site.
+          // The genuine finding — an attacker-controlled format string — is
+          // still reported here when the first argument does not resolve to
+          // a constant, and by the `userControlledFormatString` path.
+          !isStaticFormatString(firstArg)
+        ) {
+          if (safetyChecker.isSafe(node, context)) {
+            return;
+          }
+
+          context.report({
+            node: node,
+            messageId: 'missingFormatValidation',
+            data: {
+              filePath: filename,
+              line: String(node.loc?.start.line ?? 0),
+            },
+            suggest: [
+              {
+                messageId: 'escapeFormatString',
+                fix: (fixer: TSESLint.RuleFixer) => {
+                  // Never the format argument: a user-input one returned
+                  // through `userControlledFormatString` above.
+                  const arg = node.arguments.find((a) => isUserInputNode(a))!;
+                  return fixer.insertTextAfter(arg, '.replace(/%/g, "%%")');
+                },
+              },
+            ],
+          });
         }
       },
 
@@ -896,7 +894,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
             isFormatFunctionCall(templateCurrent)
           ) {
             const args = templateCurrent.arguments;
-            if (args.length > 0 && args[0] === node) {
+            if (args[0] === node) {
               isFormatString = true;
               break;
             }

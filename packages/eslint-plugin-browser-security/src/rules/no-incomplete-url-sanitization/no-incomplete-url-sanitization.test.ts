@@ -122,7 +122,10 @@ ruleTester.run('no-incomplete-url-sanitization', noIncompleteUrlSanitization, {
 
     // ── Needle is not a host string ──────────────────────────────────────
     { code: 'if (url.includes(host)) { go(); }' },
-    { code: 'if (url.includes(42)) { go(); }' },
+    {
+      code: 'if (url.includes(42)) { go(); }',
+      name: 'a numeric needle is not a host string',
+    },
 
     // ── Scheme denylist: complete, or not a denylist at all ──────────────
     {

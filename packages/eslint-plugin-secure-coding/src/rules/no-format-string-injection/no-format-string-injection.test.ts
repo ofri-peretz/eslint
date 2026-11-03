@@ -122,6 +122,7 @@ describe('no-format-string-injection', () => {
             // read `metadata` and `paymentData` as user input. `userFormat` is a
             // whole name on the declared list.
             code: 'printf(userFormat);',
+            name: 'printf with a userFormat argument is reported',
             errors: [
               {
                 messageId: 'userControlledFormatString',

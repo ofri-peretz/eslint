@@ -811,6 +811,7 @@ ruleTester.run(
       },
       {
         code: 'archive(req.body.id);',
+        name: 'a bare archive verb is not privileged when only impersonate is configured',
         options: [{ additionalBarePrivilegeVerbs: ['impersonate'] }],
       },
     ],
