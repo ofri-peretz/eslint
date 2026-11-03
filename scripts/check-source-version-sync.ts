@@ -16,7 +16,7 @@
 
 import { readFileSync, existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { glob } from 'glob';
+import { globSync } from './lib/glob.js';
 
 interface VersionMismatch {
   package: string;
@@ -59,7 +59,7 @@ function getPackagesToCheck(): { name: string; path: string; packageJsonVersion:
   const packages: { name: string; path: string; packageJsonVersion: string }[] = [];
 
   // Find all package.json files in packages/
-  const packageJsonFiles = glob.sync('packages/*/package.json');
+  const packageJsonFiles = globSync('packages/*/package.json');
 
   for (const pkgJsonPath of packageJsonFiles) {
     try {
@@ -87,7 +87,7 @@ function checkSourceFiles(pkg: { name: string; path: string; packageJsonVersion:
   if (!existsSync(srcDir)) return;
 
   // Find TypeScript/JavaScript files
-  const sourceFiles = glob.sync(`${srcDir}/**/*.{ts,tsx,js,jsx}`, {
+  const sourceFiles = globSync(`${srcDir}/**/*.{ts,tsx,js,jsx}`, {
     ignore: ['**/*.test.*', '**/*.spec.*', '**/__tests__/**', '**/tests/**'],
   });
 

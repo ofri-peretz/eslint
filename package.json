@@ -467,7 +467,6 @@
     "fumadocs-mdx": "15.4.10",
     "fumadocs-twoslash": "^4.0.4",
     "fumadocs-ui": "16.17.9",
-    "glob": "^14.0.3",
     "lucide-react": "^1.65.0",
     "mermaid": "^12.2.0",
     "motion": "^14.8.0",

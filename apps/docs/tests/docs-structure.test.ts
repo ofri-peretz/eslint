@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
-import { globSync } from 'glob';
+import { globSync } from '../../../scripts/lib/glob';
 import { dirname, join, relative } from 'path';
 import { fileURLToPath } from 'url';
 

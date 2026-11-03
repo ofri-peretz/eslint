@@ -16,7 +16,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
-import { globSync } from 'glob';
+import { globSync } from '../../../../scripts/lib/glob';
 import { join, resolve } from 'path';
 import { getTweet } from 'react-tweet/api';
 import { shouldFailSync } from '../../scripts/sync-tweet-cache';

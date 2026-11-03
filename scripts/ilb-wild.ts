@@ -39,7 +39,7 @@ import { execSync, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { globSync } from 'glob';
+import { globSync } from './lib/glob.js';
 import { cloneRepo, resolveBenchDir } from '../benchmarks/lib/clone-repo';
 import { parseHealthProblem } from './lib/ilb-parse-health';
 

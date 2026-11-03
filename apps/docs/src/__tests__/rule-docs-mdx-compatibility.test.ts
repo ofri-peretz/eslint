@@ -21,7 +21,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
-import { globSync } from 'glob';
+import { globSync } from '../../../../scripts/lib/glob';
 import { dirname, join, resolve } from 'path';
 import { fileURLToPath } from 'url';
 

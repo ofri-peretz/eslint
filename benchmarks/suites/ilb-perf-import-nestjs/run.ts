@@ -19,7 +19,7 @@ import { spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { globSync } from 'glob';
+import { globSync } from '../../../scripts/lib/glob';
 import { cloneRepo, resolveBenchDir } from '../../lib/clone-repo';
 import { getToolchain } from '../../lib/toolchain';
 import { capturePreregistration } from '../../lib/preregister';
