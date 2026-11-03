@@ -741,6 +741,7 @@ describe('no-hardcoded-credentials', () => {
         // Non-string literals
         {
           code: 'const num = 12345;',
+          name: 'a numeric literal is not a credential',
         },
         {
           code: 'const bool = true;',

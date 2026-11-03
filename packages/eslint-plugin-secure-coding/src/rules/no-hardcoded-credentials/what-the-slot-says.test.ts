@@ -159,7 +159,7 @@ ruleTester.run(
       {
         name: 'ignorePatterns silences a structural match',
         code: `const k = 'AKIAIOSFODNN7EXAMPLE';`,
-        options: [{ ignorePatterns: ['^AKIAIOSFODNN7'] }],
+        options: [{ ignorePatterns: ['^AKIA[A-Z0-9]*EXAMPLE$'] }],
       },
       {
         name: 'ignorePatterns silences a secret-shaped value in a credential slot',
@@ -434,7 +434,7 @@ ruleTester.run(
         ['an OpenAI-style sk- key', 'sk-FIXTURExNOTxLIVEx0000xVALUEx1234'],
         ['a Sentry org token', 'sntrys_FIXTURE_NOT_LIVE_0000_VALUE_1234'],
         ['a Sentry user token', 'sntryu_FIXTURE_NOT_LIVE_0000_VALUE_1234'],
-        ['a Slack bot token', 'xoxb-FIXTURE-NOT-LIVE-0000-VALUE-1234'],
+        ['a Slack bot token', 'xoxb-FAKE-NOT-LIVE-0000-VALUE-1234'],
         ['a Stripe restricted key', 'rk_live_EXAMPLE_NOT_A_REAL_KEY_000'],
         ['a JWT', 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJlMDA'],
         ['a private key block', '-----BEGIN-FIXTURE-NOT-LIVE-0000-VALUE-1234'],

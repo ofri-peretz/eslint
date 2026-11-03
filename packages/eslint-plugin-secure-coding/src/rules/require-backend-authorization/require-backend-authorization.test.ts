@@ -34,7 +34,10 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-backend-authorization', requireBackendAuthorization, {
   valid: [
-    'const x = 42;',
+    {
+      code: 'const x = 42;',
+      name: 'a numeric constant makes no authorization decision',
+    },
     'const flag = true;',
     {
       name: 'the permission is checked on the server',

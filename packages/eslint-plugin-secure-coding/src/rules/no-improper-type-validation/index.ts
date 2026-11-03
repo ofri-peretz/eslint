@@ -228,7 +228,6 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
     let trustedAnnotations: string[];
     let strictMode: boolean;
     let sourceCode: Readonly<TSESLint.SourceCode>;
-    let filename: string;
     let safetyChecker: {
       isSafe(
         node: TSESTree.Node,
@@ -374,7 +373,9 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
       ) {
         chain = chain.parent;
       }
-      return chain !== node && guards(chain);
+      // With no enclosing chain this asks `node` itself, a `typeof` comparison,
+      // which is never a null exclusion — so no `chain !== node` guard is needed.
+      return guards(chain);
     };
 
     /**
@@ -451,11 +452,7 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
 
     const report = (node: TSESTree.Node, messageId: MessageIds): void => {
       if (safetyChecker.isSafe(node, context)) return;
-      context.report({
-        node,
-        messageId,
-        data: { filePath: filename, line: String(node.loc.start.line) },
-      });
+      context.report({ node, messageId });
     };
 
     return {
@@ -470,7 +467,6 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         } = options);
 
         sourceCode = context.sourceCode;
-        filename = context.filename;
 
         safetyChecker = createSafetyChecker({
           trustedSanitizers,
@@ -547,7 +543,7 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         }
         // Only when the value is COMPARED. A node whose parent is a BinaryExpression
         // is necessarily one of its two operands, so there is nothing further to test.
-        if (node.parent?.type !== 'BinaryExpression') return;
+        if (node.parent.type !== 'BinaryExpression') return;
         report(node, 'unreliableConstructorCheck');
       },
     };

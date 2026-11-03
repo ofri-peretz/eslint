@@ -50,7 +50,7 @@ ruleTester.run('no-insecure-websocket', noInsecureWebsocket, {
     },
     { code: 'new WebSocket(`wss://acmecorp.io/${path}`)' },
     // Non-WebSocket code
-    { code: 'const x = 1' },
+    { code: 'const x = 1', name: 'a numeric constant opens no socket' },
 
     // --- deferred to `require-websocket-wss` --------------------------------
     // The constructor argument belongs to the sibling, which reports the same

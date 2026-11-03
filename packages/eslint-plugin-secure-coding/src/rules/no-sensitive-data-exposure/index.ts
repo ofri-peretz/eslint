@@ -244,13 +244,11 @@ function memberCarriesSecret(
   // Identifier IS the name; in `user[password]` the identically-shaped node is
   // a *variable holding* the name, and reading it would report `obj[password]`
   // for a lookup whose key nobody can see statically.
+  // A non-computed property is an Identifier or, in a class, a
+  // PrivateIdentifier: `this.#password` holds a password as `this.password` does.
   const propName = node.computed
-    ? staticString(prop) !== null
-      ? staticString(prop)
-      : null
-    : prop.type === AST_NODE_TYPES.Identifier
-      ? prop.name
-      : null;
+    ? staticString(prop)
+    : (prop as TSESTree.Identifier | TSESTree.PrivateIdentifier).name;
   const fromProp = propName
     ? identifierNamesSecret(propName, patterns, descriptors)
     : null;
@@ -344,6 +342,23 @@ function isDiagnosticAccessor(node: TSESTree.Node): boolean {
     namesOneOf(propertyName(value), DIAGNOSTIC_ACCESSORS)
   );
 }
+
+/**
+ * @vocabulary ECMAScript built-in Error constructors.
+ *
+ * @protocol-constant The complete set ECMA-262 defines (§20.5). A codebase's own
+ * error subclass is a different question, and not one a word list answers.
+ */
+const ERROR_CONSTRUCTORS: ReadonlySet<string> = new Set([
+  'Error',
+  'TypeError',
+  'RangeError',
+  'SyntaxError',
+  'ReferenceError',
+  'EvalError',
+  'URIError',
+  'AggregateError',
+]);
 
 function containsSensitiveData(
   text: string,
@@ -600,8 +615,9 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
         // Only when something is actually interpolated: a template with no
         // expressions is a constant string, and reporting it would be the prose
         // false positive this guard exists to prevent.
+        // (`every` over no holes is true, so a template with nothing
+        // interpolated is already excluded by `!allHolesAreDiagnostic`.)
         const fromText =
-          arg.expressions.length > 0 &&
           !allHolesAreDiagnostic &&
           literalCarriesSecret(joined, sensitivePatterns)
             ? containsSensitiveData(joined, sensitivePatterns)
@@ -875,9 +891,10 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
       if (!checkErrorMessages) {
         return;
       }
+      // Every built-in Error constructor carries its message the same way.
       if (
         node.callee.type === AST_NODE_TYPES.Identifier &&
-        node.callee.name === 'Error'
+        ERROR_CONSTRUCTORS.has(node.callee.name)
       ) {
         reportFirstExposure(node.arguments, 'error messages');
       }

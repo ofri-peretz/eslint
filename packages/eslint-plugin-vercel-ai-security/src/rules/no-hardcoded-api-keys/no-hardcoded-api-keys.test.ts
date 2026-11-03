@@ -440,7 +440,7 @@ ruleTester.run('no-hardcoded-api-keys (mutation audit)', noHardcodedApiKeys, {
     },
     {
       name: 'a Stripe-style secret ending in an uppercase run is not an environment variable name',
-      code: `const c = { apiKey: 'sk_live_51HxABCDEF0123456789XYZ' };`,
+      code: `const c = { apiKey: 'sk_live_51HxFAKE0123456789XYZ' };`,
       errors: [{ messageId: 'hardcodedApiKey' }],
     },
     {

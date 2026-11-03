@@ -6,7 +6,7 @@
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * 🔒 LOCKED 2026-08-17 — read this whole block before changing anything here.
+ * 🔒 LOCKED 2026-11-02 — read this whole block before changing anything here.
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * Scored against `eslint-plugin-security`'s rule of the same name, on 13 cases
@@ -19,6 +19,23 @@
  * The entire gap is precision, and it came from two guards NEITHER rule
  * recognised. Pinned by `neutralised-pattern.test.ts`; 3 of its 12 cases fail
  * when the guards are disabled.
+ *
+ * Reopened 2026-11-02 (mutation triage), each change pinned by a case that
+ * fails with it reverted:
+ *   - the escape guard accepted ANY class holding one metacharacter, with or
+ *     without `g` — `/[.]/g` (1,314 ms) and the full class without `g`
+ *     (2,779 ms) left `(a+)+$` intact. It now needs one global class naming
+ *     all fourteen metacharacters (neutralised-pattern.test.ts, `FN:` cases);
+ *   - the closed-set guard accepted any literal table, unread and unwritten-
+ *     checked; it now lives in the constant walk, which checks every entry and
+ *     every write through the table, destructuring and loop heads included —
+ *     and the direct spelling `new RegExp(P[k])`, which reported while the
+ *     one-hop spelling did not, is now judged the same way;
+ *   - the same escape spelled `.replaceAll(…)`, or with its search held in a
+ *     binding written once (lodash's own `reRegExpChar`), reported; both are
+ *     the identical regex applied the identical way (neutralised-pattern.test.ts);
+ *   - what-the-walk-proves.test.ts holds the rest (`FP:`/`FN:` cases).
+ * The corpus numbers below predate this and have not been re-measured.
  *
  * ── THE WEAKNESS HAS TWO FACES ─────────────────────────────────────────────
  *
@@ -110,6 +127,7 @@ import {
   MessageIcons,
   staticString,
   namesOneOf,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
@@ -144,23 +162,6 @@ export interface Options {
 }
 
 type RuleOptions = [Options?];
-
-/**
- * RegExp creation patterns and their security implications
- */
-interface RegExpPattern {
-  pattern: string;
-  dangerous: boolean;
-  // Only ever 'redos'. The union carried 'injection' and 'performance' and no
-  // arm in the rule ever produced either — dead configuration that made the
-  // table look like it decided something. It selects remediation text; the
-  // verdict was always the same.
-  vulnerability: 'redos';
-  safeAlternative: string;
-  example: { bad: string; good: string };
-  effort: string;
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
-}
 
 /**
  * String/array methods that turn constant inputs into a constant output.
@@ -236,7 +237,9 @@ function isBuildTimeConstant(
   depth = 0,
 ): boolean {
   // Bounded walk: a cyclic or absurdly deep expression resolves to "unknown",
-  // which reports. Erring toward a finding is the safe direction here.
+  // which reports. Erring toward a finding is the safe direction here. The
+  // bound is what ends a binding that feeds itself — `p = p + '|b'` — so every
+  // step below that can come back round to the same binding adds one.
   if (depth > 6) {
     return false;
   }
@@ -249,13 +252,13 @@ function isBuildTimeConstant(
         isBuildTimeConstant(expression, sourceCode, depth + 1),
       );
     case 'BinaryExpression':
+      // Any operator over constants is a constant: `'{' + width * 2 + '}'`
+      // can no more change than `'{' + width + '}'` can. This used to accept
+      // `+` alone, which devkit's `isStaticExpression` — the first question
+      // this rule asks — never did; the two walks gave `width * 2` opposite
+      // verdicts depending on whether the operand was a `const`.
       return (
-        node.operator === '+' &&
-        isBuildTimeConstant(
-          node.left as TSESTree.Node,
-          sourceCode,
-          depth + 1,
-        ) &&
+        isBuildTimeConstant(node.left, sourceCode, depth + 1) &&
         isBuildTimeConstant(node.right, sourceCode, depth + 1)
       );
     case 'ArrayExpression':
@@ -264,21 +267,19 @@ function isBuildTimeConstant(
       // sight of a SpreadElement gave the two spellings of one value opposite verdicts.
       // The argument still has to prove itself, so `[...rest]` over a parameter — and
       // `[...new Set(…)]`, whose contents are reachable through .add/.delete — report.
-      return node.elements.every((element) => {
-        if (element === null) return false;
-        const value =
-          element.type === 'SpreadElement' ? element.argument : element;
-        return isBuildTimeConstant(value, sourceCode, depth + 1);
-      });
+      return node.elements.every(
+        (element) =>
+          element !== null &&
+          isBuildTimeConstant(unspread(element), sourceCode, depth + 1),
+      );
     case 'CallExpression':
+      // The same holds for arguments: `A.concat(...B)` is `A.concat([...B])`.
       return (
         node.callee.type === 'MemberExpression' &&
         namesOneOf(propertyName(node.callee), CONSTANT_PRESERVING_METHODS) &&
         isBuildTimeConstant(node.callee.object, sourceCode, depth + 1) &&
-        node.arguments.every(
-          (argument) =>
-            argument.type !== 'SpreadElement' &&
-            isBuildTimeConstant(argument, sourceCode, depth + 1),
+        node.arguments.every((argument) =>
+          isBuildTimeConstant(unspread(argument), sourceCode, depth + 1),
         )
       );
     case 'TaggedTemplateExpression':
@@ -295,15 +296,17 @@ function isBuildTimeConstant(
     case 'TSTypeAssertion':
       return isBuildTimeConstant(node.expression, sourceCode, depth + 1);
     case 'ObjectExpression':
-      return node.properties.every(
-        (property) =>
-          property.type === 'Property' &&
-          !property.computed &&
-          isBuildTimeConstant(
-            property.value as TSESTree.Node,
-            sourceCode,
-            depth + 1,
-          ),
+      // A table is constant when every value it can hand out is. Keys do not
+      // enter into it — `{ [K]: '^a$' }` holds the same one string whatever K
+      // is — and a spread is judged by what it spreads, as in an array.
+      return node.properties.every((property) =>
+        isBuildTimeConstant(
+          property.type === 'SpreadElement'
+            ? property.argument
+            : (property.value as TSESTree.Node),
+          sourceCode,
+          depth + 1,
+        ),
       );
     case 'MemberExpression':
       return isConstantTableLookup(node, sourceCode, depth);
@@ -312,17 +315,34 @@ function isBuildTimeConstant(
   }
 }
 
+/** What an element or argument contributes: a spread contributes what it spreads. */
+function unspread(
+  node: TSESTree.Expression | TSESTree.SpreadElement,
+): TSESTree.Node {
+  return node.type === 'SpreadElement' ? node.argument : node;
+}
+
 /**
- * `PATTERNS.email`, where PATTERNS is a table the program fully decides.
+ * `PATTERNS.email` or `PATTERNS[kind]`, where PATTERNS is a table the program
+ * fully decides.
  *
  * The rule's own documentation has recommended this shape as the safe
  * alternative for as long as it has existed — `const PATTERNS = {...};
  * PATTERNS[userChoice]` — and reported it anyway. An adversarial wave caught
  * that on 2026-08-19.
  *
+ * A named key reads one entry, so that entry has to be constant; a key the
+ * table does not define resolves to undefined at runtime and nothing is proven
+ * about it: absent is not constant. A computed key — the caller's choice —
+ * picks WHICH entry, never WHAT, so the lookup is constant when every entry
+ * is. That second shape used to be a separate one-hop special case inside the
+ * neutralisation check, which accepted any object or array literal without
+ * looking at its values or at writes through it: `{ a: req.query.p }` and a
+ * table patched with `T.a = input` both passed as a closed set.
+ *
  * ## Why resolving the declaration is not enough
  *
- * `const` prevents REBINDING, not MUTATION:
+ * A declaration prevents REBINDING at most, never MUTATION:
  *
  * ```js
  * const PATTERNS = { email: '^ok$' };
@@ -334,17 +354,18 @@ function isBuildTimeConstant(
  * write through it. The write can be anywhere — a config loader patching the
  * table at startup is the realistic shape, not an assignment two lines above
  * the use — so every reference is checked, not just the ones nearby.
- *
- * Bounded by the same depth counter as the rest of the walk, and a key the
- * table does not define resolves to nothing and reports: absent is not
- * constant.
  */
 function isConstantTableLookup(
   node: TSESTree.MemberExpression,
   sourceCode: TSESLint.SourceCode,
   depth: number,
 ): boolean {
-  const value = resolveLookup(node, sourceCode, depth);
+  // `P['email']` is `P.email` spelled with brackets and reads one entry; a key
+  // with no static name chooses among all of them.
+  const value =
+    propertyName(node) !== null
+      ? resolveLookup(node, sourceCode)
+      : tableOf(node.object, sourceCode);
   return value !== null && isBuildTimeConstant(value, sourceCode, depth + 1);
 }
 
@@ -361,7 +382,25 @@ function withoutTypeAnnotation(node: TSESTree.Node): TSESTree.Node {
 }
 
 /**
- * The value a chain of non-computed lookups names, or null.
+ * The table an object position names: a binding nothing writes through, or an
+ * entry of one (`P.user`). Recursion is over `node.object`, a strict subtree,
+ * so it ends with the expression; the walk's depth bound is for bindings that
+ * lead back to themselves, and is applied by `isBuildTimeConstant`.
+ */
+function tableOf(
+  node: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+): TSESTree.Node | null {
+  if (node.type === 'Identifier') {
+    return constObjectBinding(node, sourceCode);
+  }
+  return node.type === 'MemberExpression'
+    ? resolveLookup(node, sourceCode)
+    : null;
+}
+
+/**
+ * The value a chain of named lookups names, or null.
  *
  * Recursive, so `P.user.email` costs no more code than `P.email` — an earlier
  * revision had a second near-identical resolver for exactly one extra level,
@@ -370,134 +409,129 @@ function withoutTypeAnnotation(node: TSESTree.Node): TSESTree.Node {
 function resolveLookup(
   node: TSESTree.MemberExpression,
   sourceCode: TSESLint.SourceCode,
-  depth: number,
 ): TSESTree.Node | null {
-  if (depth > 6 || node.computed || node.property.type !== 'Identifier') {
-    return null;
-  }
-
-  const table =
-    node.object.type === 'Identifier'
-      ? constObjectBinding(node.object, sourceCode)
-      : node.object.type === 'MemberExpression'
-        ? resolveLookup(node.object, sourceCode, depth + 1)
-        : null;
+  const name = propertyName(node);
+  const table = name === null ? null : tableOf(node.object, sourceCode);
   if (table === null) {
     return null;
   }
-
   const unwrapped = withoutTypeAnnotation(table);
   if (unwrapped.type !== 'ObjectExpression') {
     return null;
   }
-  const name = node.property.name;
+  // `{ 'email': … }` and `{ email: … }` define the same entry.
   const match = unwrapped.properties.find(
-    (property) =>
-      property.type === 'Property' &&
-      !property.computed &&
-      property.key.type === 'Identifier' &&
-      property.key.name === name,
+    (property): property is TSESTree.Property =>
+      property.type === 'Property' && objectKeyName(property) === name,
   );
-  // A key the table does not define resolves to undefined at runtime, so
-  // nothing is proven about it: absent is not constant.
-  return match !== undefined && match.type === 'Property'
-    ? (match.value as TSESTree.Node)
-    : null;
+  return match === undefined ? null : (match.value as TSESTree.Node);
 }
 
-/** The object literal a `const` binding holds, if nothing writes through it. */
+/** The initialiser of a binding that is written once and never written through. */
 function constObjectBinding(
   node: TSESTree.Identifier,
   sourceCode: TSESLint.SourceCode,
 ): TSESTree.Node | null {
   const variable = resolveVariable(node.name, sourceCode.getScope(node));
-  if (variable === null || variable.defs.length !== 1) {
+  const definition = variable?.defs[0];
+  if (variable === null || definition?.type !== 'Variable') {
     return null;
   }
-  const definition = variable.defs[0]!;
-  if (
-    definition.type !== 'Variable' ||
-    definition.parent.kind !== 'const' ||
-    definition.node.init === null
-  ) {
-    return null;
-  }
-  return isMutatedThroughAnyReference(variable) ? null : definition.node.init;
+  // The keyword is not the question, the writes are: a `let` table nothing
+  // rebinds holds what it was declared with, and a `var` declared twice holds
+  // whichever ran last. Exactly one write — the declaration's own — is the
+  // table this file wrote. (`let P; P = {…}` has one write and no initialiser,
+  // and resolves to nothing.)
+  const writes = variable.references.filter((reference) => reference.isWrite());
+  return writes.length === 1 && !isMutatedThroughAnyReference(variable)
+    ? definition.node.init
+    : null;
 }
 
-/** Is any reference to this binding the object of an assignment target? */
+/** Is any reference to this binding the object of a write target? */
 function isMutatedThroughAnyReference(
   variable: TSESLint.Scope.Variable,
 ): boolean {
   return variable.references.some((reference) => {
-    let current: TSESTree.Node | undefined =
-      reference.identifier as TSESTree.Node;
+    let current: TSESTree.Node = reference.identifier;
     let parent = current.parent;
     while (parent?.type === 'MemberExpression' && parent.object === current) {
       current = parent;
       parent = parent.parent;
     }
-    if (current === reference.identifier) {
-      return false;
-    }
-    return (
-      (parent?.type === 'AssignmentExpression' && parent.left === current) ||
-      (parent?.type === 'UpdateExpression' && parent.argument === current) ||
-      (parent?.type === 'UnaryExpression' &&
-        parent.operator === 'delete' &&
-        parent.argument === current)
-    );
+    // A bare reference that writes — `P = …`, `[P] = …`, `for (P of …)` — is
+    // a write to the BINDING, which the caller has already counted; here it
+    // reaches `isWriteTarget` and says the same thing.
+    return isWriteTarget(current);
   });
 }
 
-/** Resolve an identifier to its single declaration and judge that. */
+/**
+ * Does the program write to this member expression?
+ *
+ * Assignment, `++`/`--` and `delete` were checked; destructuring and loop
+ * heads were not, so `[T.a] = req.body.list`, `({ a: T.a } = req.body)` and
+ * `for (T.a of req.body.list)` each put attacker data into a table this rule
+ * then trusted. A member expression can only appear inside a pattern when the
+ * pattern is an assignment target — `const [T.a] = …` is a syntax error — so
+ * reaching a pattern is already proof of a write.
+ */
+function isWriteTarget(node: TSESTree.Node): boolean {
+  const parent = node.parent;
+  switch (parent?.type) {
+    case 'AssignmentExpression':
+    case 'ForInStatement':
+    case 'ForOfStatement':
+      return parent.left === node;
+    case 'UpdateExpression':
+    case 'ArrayPattern':
+    case 'RestElement':
+      return true;
+    case 'UnaryExpression':
+      return parent.operator === 'delete';
+    case 'AssignmentPattern':
+      return parent.left === node;
+    case 'Property':
+      return parent.value === node && parent.parent.type === 'ObjectPattern';
+    default:
+      return false;
+  }
+}
+
+/** Resolve an identifier to its declaration and judge every write to it. */
 function isConstantBinding(
   node: TSESTree.Identifier,
   sourceCode: TSESLint.SourceCode,
   depth: number,
 ): boolean {
   const variable = resolveVariable(node.name, sourceCode.getScope(node));
-  // Shadowed or re-declared bindings are not worth reasoning about.
-  if (variable === null || variable.defs.length !== 1) {
-    return false;
-  }
-
-  const definition = variable.defs[0]!;
-  if (definition.type !== 'Variable') {
+  // A parameter, an import, a function or an undeclared global is not a value
+  // this file writes. A second declaration of a `var` is just another write,
+  // and every write is judged below.
+  const definition = variable?.defs[0];
+  if (variable === null || definition?.type !== 'Variable') {
     return false;
   }
 
   // A `for (let i = 0; …)` counter is driven by the loop, not by input.
-  if (definition.parent.parent?.type === 'ForStatement') {
+  if (definition.parent.parent.type === 'ForStatement') {
     return true;
   }
 
-  const init = definition.node.init;
-
   // `for (const source of REDACTION_SOURCES)` — the binding carries no
-  // initialiser of its own, so reading `declarator.init` finds `null` and the
-  // old check gave up. What the binding can hold is decided entirely by the
-  // iterable, and a module constant of literals is as fixed as the
-  // `CONST_ARRAY.join('|')` shape this function already cleared. Covering one
-  // and not the other was an accident of node types, not a security judgement.
-  if (init === null) {
-    const loop = definition.parent.parent;
-    return (
-      loop?.type === 'ForOfStatement' &&
-      loop.left === definition.parent &&
-      isBuildTimeConstant(loop.right, sourceCode, depth + 1)
-    );
-  }
-
-  if (!isBuildTimeConstant(init, sourceCode, depth + 1)) {
-    return false;
-  }
+  // initialiser of its own, and the old check read `declarator.init`, found
+  // `null` and gave up. Scope analysis records the ITERABLE as that write's
+  // expression, so the write check below judges it — a module constant of
+  // literals is as fixed as the `CONST_ARRAY.join('|')` shape already cleared,
+  // and `for (const key in TABLE)` is the same fact about the table's keys.
 
   // The declaration KEYWORD was the old test, and it is the wrong question.
   // `let source = '^\d+$'; if (mode === 'word') source = '^\w+$';` can only ever
   // hold one of the strings written in this file — the set of values is closed
   // whatever the keyword says. What matters is that every write is itself
-  // build-time constant.
+  // build-time constant: the initialiser when there is one, and every later
+  // assignment — `let source; if (word) source = '^\w+$'; else source = '^\d+$'`
+  // is the same closed set written without one.
   //
   // Two write shapes must not clear the binding. A write whose expression is
   // itself unproven — `for (p of userPatterns)` over an already-declared
@@ -512,11 +546,8 @@ function isConstantBinding(
       return true;
     }
     const written = reference.writeExpr;
-    if (!written) {
-      return false;
-    }
     return (
-      written === init || isBuildTimeConstant(written, sourceCode, depth + 1)
+      written != null && isBuildTimeConstant(written, sourceCode, depth + 1)
     );
   });
 }
@@ -568,9 +599,7 @@ function isRegExpClone(
   const [patternArg] = node.arguments;
   if (
     patternArg?.type !== 'MemberExpression' ||
-    patternArg.computed ||
-    patternArg.property.type !== 'Identifier' ||
-    patternArg.property.name !== 'source'
+    propertyName(patternArg) !== 'source'
   ) {
     return false;
   }
@@ -614,11 +643,7 @@ function isRegExpClone(
     sourceCode.getScope(receiver),
   );
   const def = variable?.defs.length === 1 ? variable.defs[0] : null;
-  if (
-    !def ||
-    def.type !== 'Variable' ||
-    def.node.type !== 'VariableDeclarator'
-  ) {
+  if (!def || def.type !== 'Variable') {
     return false;
   }
   const init = def.node.init;
@@ -634,6 +659,89 @@ function isRegExpClone(
     ((init.type === 'NewExpression' || init.type === 'CallExpression') &&
       isRegExpConstructor(init.callee, sourceCode))
   );
+}
+
+/**
+ * Every character that changes what a pattern matches. An escape has to cover
+ * all of them: lodash `escapeRegExp`, `escape-string-regexp` and MDN's
+ * `escapeRegExp` each list exactly these fourteen.
+ */
+const PATTERN_METACHARACTERS = '\\^$.*+?()[]{}|';
+
+/**
+ * `replaceAll` with a global regex replaces exactly what `replace` with it
+ * does (and throws on a non-global one), so both spell the escape.
+ */
+const ESCAPING_METHODS: ReadonlySet<string> = new Set([
+  'replace',
+  'replaceAll',
+]);
+
+/**
+ * `raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')` — the escape idiom, recognised by
+ * what the search CAN match, never by the name of a wrapper.
+ *
+ * The old test accepted any character class holding ONE metacharacter, and no
+ * flag. Measured with `(a+)+$` against 27 `a`s and a `!`: raw 5,595 ms;
+ * `.replace(/[.]/g, …)` leaves it intact, 1,314 ms; the full class without `g`
+ * escapes only the first match, so `.(a+)+$` keeps its quantifiers, 2,779 ms;
+ * the full class with `g`, 0.0 ms. So: a single, non-negated class naming
+ * every metacharacter, applied globally.
+ */
+function escapesEveryMetacharacter(
+  node: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  if (
+    node.type !== 'CallExpression' ||
+    node.callee.type !== 'MemberExpression' ||
+    !namesOneOf(propertyName(node.callee), ESCAPING_METHODS)
+  ) {
+    return false;
+  }
+  const [argument] = node.arguments;
+  // lodash's own escapeRegExp holds the search in a module constant and
+  // replaces through it: a binding written once, never written through, is
+  // the regex it was declared with.
+  const search =
+    argument?.type === 'Identifier'
+      ? constObjectBinding(argument, sourceCode)
+      : argument;
+  if (search?.type !== 'Literal' || !('regex' in search)) {
+    return false;
+  }
+  const { pattern, flags } = search.regex;
+  const members = /^\[(?!\^)((?:\\.|[^\\\]])*)\]$/
+    .exec(pattern)?.[1]
+    ?.replace(/\\(.)/g, '$1');
+  return (
+    flags.includes('g') &&
+    members !== undefined &&
+    [...PATTERN_METACHARACTERS].every((character) =>
+      members.includes(character),
+    )
+  );
+}
+
+/**
+ * The length `maxPatternLength` is compared against.
+ *
+ * A written-out pattern — a string literal or a template with no
+ * substitutions — is measured by the string it compiles from, so
+ * `"x".repeat(100)` written out is 100 whether it is quoted or backticked. The
+ * template arm used to read `Literal.value`, which a template does not have,
+ * and measured every template as `"undefined".length` — nine — however long it
+ * was. Anything else (a const binding, an escaped value) has no string at the
+ * call site, and is measured by its source text, as before.
+ */
+function patternLength(
+  patternNode: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+): number {
+  const literal = staticString(patternNode);
+  return literal !== null
+    ? literal.length
+    : sourceCode.getText(patternNode).length;
 }
 
 export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
@@ -726,233 +834,66 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
     // `++` or `??` as TEXT in the printed source. With the table gone nothing
     // reaches it, so the function collapsed to a constant — which is what it
     // always was for every finding the rule can still justify.
+    //
+    // The report used to carry `pattern`, `vulnerability`, `steps` and
+    // `effort` too, built by a `detectVulnerability` table and a
+    // `generateRefactoringSteps` helper. The message renders `{{riskLevel}}`
+    // and `{{safeAlternative}}` and nothing else, so all of it reached no
+    // reader; what survives is the one fact the two arms differ in.
     const RISK_LEVEL = 'HIGH';
 
     /**
-     * Check if a node is a literal string (potentially safe)
-     * Includes template literals without expressions
+     * Has the attacker's control over this pattern been NEUTRALISED?
+     *
+     * Two guards, both verified by running them:
+     *
+     * **1. Regex escaping.** `attacker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')`
+     * turns every metacharacter into a literal. Measured: the pattern
+     * `(a+)+$` takes **39,812 ms** through `new RegExp` unescaped and
+     * **0.0 ms** escaped, because after escaping there are no quantifiers
+     * left to backtrack over — it matches the six characters `(a+)+$`.
+     *
+     * This is also the remediation the rule's own message recommends, and
+     * reporting a developer who followed it makes the rule unsatisfiable.
+     *
+     * Recognised STRUCTURALLY: a `.replace()` whose first argument is a regex
+     * literal containing a metacharacter class, not a call named
+     * `escapeRegExp`. A name-based check would be defeated by
+     * `const escapeRegExp = (s) => s`, which is the failure mode this
+     * ecosystem already shipped once with a sanitiser allowlist.
+     *
+     * **2. Closed-set lookup.** `PATTERNS[req.query.kind]` can only yield a
+     * pattern the program wrote. The caller picks WHICH, never WHAT, so
+     * neither the DoS nor the semantic bypass is reachable — and the bypass
+     * matters here as much as the DoS: an attacker who supplies `.*` to an
+     * allow decision matches everything, verified. That guard lives in
+     * `isConstantTableLookup` now, where the table's values and every write
+     * through it are checked; this one accepted any literal table.
      */
-    // oxlint-disable-next-line consistent-function-scoping
-    // Both spellings are static, and `staticString` already says so.
-    const isLiteralString = (node: TSESTree.Node): boolean =>
-      staticString(node) !== null;
-
-    /**
-     * Extract regex pattern from RegExp construction
-     */
-    const extractPattern = (
-      node: TSESTree.CallExpression | TSESTree.NewExpression,
-    ): {
-      pattern: string;
-      patternNode: TSESTree.Node | null;
-      constructor: string;
-      isDynamic: boolean;
-      length: number;
-    } => {
-      const sourceCode = context.sourceCode;
-
-      // Determine constructor type
-      let constructor = 'RegExp';
-      if (node.type === 'NewExpression' && node.callee.type === 'Identifier') {
-        constructor = `new ${node.callee.name}`;
-      }
-
-      /**
-       * Has the attacker's control over this pattern been NEUTRALISED?
-       *
-       * Two guards, both verified by running them:
-       *
-       * **1. Regex escaping.** `attacker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')`
-       * turns every metacharacter into a literal. Measured: the pattern
-       * `(a+)+$` takes **39,812 ms** through `new RegExp` unescaped and
-       * **0.0 ms** escaped, because after escaping there are no quantifiers
-       * left to backtrack over — it matches the six characters `(a+)+$`.
-       *
-       * This is also the remediation the rule's own message recommends, and
-       * reporting a developer who followed it makes the rule unsatisfiable.
-       *
-       * Recognised STRUCTURALLY: a `.replace()` whose first argument is a regex
-       * literal containing a metacharacter class, not a call named
-       * `escapeRegExp`. A name-based check would be defeated by
-       * `const escapeRegExp = (s) => s`, which is the failure mode this
-       * ecosystem already shipped once with a sanitiser allowlist.
-       *
-       * **2. Closed-set lookup.** `PATTERNS[req.query.kind]` can only yield a
-       * pattern the program wrote. The caller picks WHICH, never WHAT, so
-       * neither the DoS nor the semantic bypass is reachable — and the bypass
-       * matters here as much as the DoS: an attacker who supplies `.*` to an
-       * allow decision matches everything, verified.
-       */
-      const isNeutralised = (patternNode: TSESTree.Node): boolean => {
-        const escaped = (n: TSESTree.Node): boolean => {
-          if (n.type !== 'CallExpression') return false;
-          const callee = (n as TSESTree.CallExpression).callee;
-          if (
-            callee.type !== 'MemberExpression' ||
-            callee.computed ||
-            callee.property.type !== 'Identifier' ||
-            callee.property.name !== 'replace'
-          ) {
-            return false;
-          }
-          const search = (n as TSESTree.CallExpression).arguments[0];
-          if (search === undefined || search.type !== 'Literal') return false;
-          const re = (search as TSESTree.RegExpLiteral).regex;
-          // A character class carrying regex metacharacters is the escaping
-          // idiom; `.replace(/foo/g, 'bar')` is not and must not suppress.
-          return (
-            re !== undefined && /\[[^\]]*[.*+?^${}()|][^\]]*\]/.test(re.pattern)
-          );
-        };
-        if (escaped(patternNode)) return true;
-
-        // Follow ONE binding hop: `const safe = raw.replace(...); new RegExp(safe)`.
-        if (patternNode.type === 'Identifier') {
-          const v = context.sourceCode
-            .getScope(patternNode)
-            .references.find((r) => r.identifier === patternNode)?.resolved;
-          if (v && v.defs.length === 1 && v.defs[0].type === 'Variable') {
-            // A reassigned binding no longer holds what it was declared with.
-            if (v.references.filter((r) => r.isWrite()).length > 1)
-              return false;
-            const init = (v.defs[0].node as TSESTree.VariableDeclarator).init;
-            if (init && escaped(init)) return true;
-            // Closed-set lookup: `PATTERNS[k]` where PATTERNS is a literal map
-            // this file wrote.
-            if (init?.type === 'MemberExpression' && init.computed) {
-              const obj = init.object;
-              if (obj.type === 'Identifier') {
-                const ov = context.sourceCode
-                  .getScope(obj)
-                  .references.find((r) => r.identifier === obj)?.resolved;
-                const oinit =
-                  ov && ov.defs.length === 1 && ov.defs[0].type === 'Variable'
-                    ? (ov.defs[0].node as TSESTree.VariableDeclarator).init
-                    : undefined;
-                if (
-                  oinit?.type === 'ObjectExpression' ||
-                  oinit?.type === 'ArrayExpression'
-                ) {
-                  return true;
-                }
-              }
-            }
-          }
-        }
-        return false;
-      };
-
-      // First argument is the pattern
-      const patternNode = node.arguments.length > 0 ? node.arguments[0] : null;
-      const pattern = patternNode ? sourceCode.getText(patternNode) : '';
-      // "Dynamic" means an attacker can change the pattern, not that it is spelled
-      // as something other than a literal. `const source = 'ab+c'; new RegExp(source)`
-      // is fixed at build time — a case eslint-plugin-security's own corpus marks
-      // valid, and one we reported. `isStaticExpression` follows const bindings,
-      // template parts and concatenation through ESLint's scope analysis.
-      //
-      // `isLiteralString` still gates the LENGTH below: that path reads
-      // `patternNode.value` directly, which only exists on an actual literal node.
-      const isDynamic = patternNode
-        ? !isStaticExpression({
-            node: patternNode,
-            scope: context.sourceCode.getScope(patternNode),
-          }) && !isNeutralised(patternNode)
-        : false;
-      const length =
-        patternNode && isLiteralString(patternNode)
-          ? String((patternNode as TSESTree.Literal).value).length
-          : pattern.length;
-
-      return { pattern, patternNode, constructor, isDynamic, length };
-    };
-
-    /**
-     * Detect the specific vulnerability pattern
-     */
-    const detectVulnerability = (
-      pattern: string,
-      isDynamic: boolean,
-    ): RegExpPattern => {
-      // One outcome, because there was only ever one.
-      //
-      // A REGEXP_PATTERNS table used to be consulted here, matched with
-      // `new RegExp(entry.pattern, 'i').test(printedSource)`. Three entries:
-      // two were `new RegExp(...)` and `RegExp(...)` — the same shape with and
-      // without `new` — and the third matched `**`, `++` or `??` appearing as
-      // TEXT and escalated the finding to `critical`.
-      //
-      // Every entry returned `vulnerability: 'redos'`, and so did the
-      // fall-through, so the table never changed the verdict. What it did change
-      // was severity, on a textual guess at catastrophic backtracking — the one
-      // claim this rule proves nothing about and `no-redos-vulnerable-regex`
-      // decides with `recheck`. The literal branch below already said as much
-      // about "the two hand-written regexes that used to live here"; this branch
-      // kept its own.
-      //
-      // Deleting it removes a regex over printed source (the `textual-matching`
-      // defect the rule audit reports on rules), a word list no option could
-      // override (`unconfigurable-vocabulary`, red since 2026-08-18), and a
-      // severity signal that was never evidence.
-      if (isDynamic) {
-        return {
-          pattern: 'dynamic',
-          dangerous: true,
-          vulnerability: 'redos',
-          safeAlternative: 'Pre-defined RegExp constants',
-          example: {
-            bad: pattern,
-            good: 'const PATTERNS = { email: /^[a-zA-Z0-9]+$/ }; PATTERNS[type]',
-          },
-          effort: '10-15 minutes',
-          riskLevel: 'high',
-        };
-      }
-
-      // A literal pattern is not a *non-literal* regexp. It only reaches here
-      // when `allowLiterals` is off, i.e. the user asked to be told about
-      // `new RegExp('…')` in favour of `/…/` syntax. ReDoS inside a literal is
-      // `no-redos-vulnerable-regex`'s remit, which runs a real automaton
-      // analysis instead of the two hand-written regexes that used to live here.
-      return {
-        pattern: 'literal-construction',
-        dangerous: false,
-        vulnerability: 'redos',
-        safeAlternative: 'Regex literal syntax',
-        example: {
-          bad: `new RegExp(${pattern})`,
-          good: '/pattern/',
-        },
-        effort: '2 minutes',
-        riskLevel: 'high',
-      };
-    };
-
-    /**
-     * Generate refactoring steps based on the vulnerability
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    const generateRefactoringSteps = (vulnerability: RegExpPattern): string => {
-      if (vulnerability.pattern === 'dynamic') {
-        return [
-          '   1. Create a whitelist of allowed regex patterns',
-          '   2. Use object lookup: PATTERNS[userChoice]',
-          '   3. If dynamic needed: escape input with regex escaping function',
-          '   4. Add pattern length validation',
-          '   5. Consider using a safe regex library',
-        ].join('\n');
-      }
-
-      // `detectVulnerability` returns exactly two shapes, so this is the other
-      // one. A third arm used to follow, reachable only from REGEXP_PATTERNS
-      // entries; deleting the table left it unreachable, and it advised on
-      // nested quantifiers and possessive syntax — backtracking advice, from
-      // the rule that does not decide backtracking.
-      return [
-        "   1. Replace new RegExp('…') with a /…/ literal",
-        '   2. Keep the flags as literal suffixes: /…/gi',
-        '   3. Escaping differs: a literal needs one backslash, not two',
-      ].join('\n');
+    const isNeutralised = (patternNode: TSESTree.Node): boolean => {
+      if (escapesEveryMetacharacter(patternNode, context.sourceCode))
+        return true;
+      // Follow ONE binding hop: `const safe = raw.replace(...); new RegExp(safe)`.
+      // Every write has to be an escape — a binding escaped where it is
+      // declared and reassigned later no longer holds the escaped value, and
+      // `let safe; safe = raw.replace(...)` is the same escape written later.
+      if (patternNode.type !== 'Identifier') return false;
+      const variable = resolveVariable(
+        patternNode.name,
+        context.sourceCode.getScope(patternNode),
+      );
+      return (
+        variable?.defs[0]?.type === 'Variable' &&
+        variable.references.every(
+          (reference) =>
+            !reference.isWrite() ||
+            (reference.writeExpr != null &&
+              escapesEveryMetacharacter(
+                reference.writeExpr,
+                context.sourceCode,
+              )),
+        )
+      );
     };
 
     /**
@@ -974,11 +915,23 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      const { pattern, patternNode, isDynamic, length } = extractPattern(node);
-
-      if (!patternNode) {
+      // First argument is the pattern. `new RegExp()` has none: it compiles
+      // the empty pattern `(?:)`, which no one wrote and no one can steer.
+      const [patternNode] = node.arguments;
+      if (patternNode === undefined) {
         return;
       }
+
+      // "Dynamic" means an attacker can change the pattern, not that it is spelled
+      // as something other than a literal. `const source = 'ab+c'; new RegExp(source)`
+      // is fixed at build time — a case eslint-plugin-security's own corpus marks
+      // valid, and one we reported. `isStaticExpression` follows const bindings,
+      // template parts and concatenation through ESLint's scope analysis.
+      const isDynamic =
+        !isStaticExpression({
+          node: patternNode,
+          scope: context.sourceCode.getScope(patternNode),
+        }) && !isNeutralised(patternNode);
 
       if (isDynamic) {
         // The pattern is built, but the program decides every part of it —
@@ -987,32 +940,26 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
         if (isBuildTimeConstant(patternNode, context.sourceCode)) {
           return;
         }
-      } else if (allowLiterals && length <= maxPatternLength) {
+      } else if (
+        allowLiterals &&
+        patternLength(patternNode, context.sourceCode) <= maxPatternLength
+      ) {
         return;
       }
-
-      const vulnerability = detectVulnerability(pattern, isDynamic);
-
-      // `detectVulnerability` always returns non-null when `isDynamic` is
-      // true (either a matched REGEXP_PATTERNS entry or its own generic
-      // "dynamic" object), so `vulnerability` can only be null when
-      // `isDynamic` is false — meaning a synthetic `isDynamic ? {...} :
-      // Both branches of `detectVulnerability` return an object — the dynamic
-      // one and the literal-construction one — so there is no null to guard.
-      const riskLevel = RISK_LEVEL;
-      const steps = generateRefactoringSteps(vulnerability);
 
       context.report({
         node,
         messageId: 'runtimeDecidedPattern',
         data: {
-          pattern:
-            pattern.substring(0, 30) + (pattern.length > 30 ? '...' : ''),
-          riskLevel,
-          vulnerability: vulnerability.vulnerability,
-          safeAlternative: vulnerability.safeAlternative,
-          steps,
-          effort: vulnerability.effort,
+          riskLevel: RISK_LEVEL,
+          // A literal pattern is not a *non-literal* regexp. It only reaches
+          // here when `allowLiterals` is off (or the literal is over
+          // `maxPatternLength`), i.e. the user asked to be told about
+          // `new RegExp('…')` in favour of `/…/` syntax. ReDoS inside a
+          // literal is `no-redos-vulnerable-regex`'s remit.
+          safeAlternative: isDynamic
+            ? 'Pre-defined RegExp constants'
+            : 'Regex literal syntax',
         },
       });
     };

@@ -22,8 +22,14 @@
  * developer who followed the advice made the rule unsatisfiable — and an
  * unsatisfiable rule gets disabled, which costs every other finding it makes.
  *
- * Recognised STRUCTURALLY: a `.replace()` whose search argument is a regex
- * literal containing a metacharacter class. NOT by the callee's name — a check
+ * Recognised STRUCTURALLY: a `.replace()` whose search argument is a GLOBAL
+ * regex literal that is one character class naming every metacharacter
+ * (`\ ^ $ . * + ? ( ) [ ] { } |` — the set lodash, escape-string-regexp and MDN
+ * all list). Until 2026-11-02 any class holding ONE metacharacter, with or
+ * without `g`, passed; measured with `(a+)+$` against 27 `a`s and a `!`, raw
+ * 5,595 ms: `/[.]/g` leaves it intact (1,314 ms), and the full class without
+ * `g` escapes only the first metacharacter, so `.(a+)+$` keeps its quantifiers
+ * (2,779 ms). The full class with `g`: 0.0 ms. NOT by the callee's name — a check
  * for `escapeRegExp` is defeated by `const escapeRegExp = (s) => s`, which is
  * exactly the failure mode this ecosystem shipped once with a sanitiser
  * allowlist. The fake-escaper CONTROL below pins that.
@@ -78,13 +84,48 @@ export function search(req) {
   return new RegExp(p);
 }`,
       },
+      {
+        name: "lodash's escapeRegExp class is the same escape",
+        code: `export function search(req) {
+  return new RegExp(req.query.q.replace(/[\\\\^$.*+?()[\\]{}|]/g, '\\\\$&'));
+}`,
+      },
+      {
+        name: "escape-string-regexp's class is the same escape",
+        code: `export function search(req) {
+  return new RegExp(req.query.q.replace(/[|\\\\{}()[\\]^$+*?.]/g, '\\\\$&'));
+}`,
+      },
+      {
+        // lodash's own escapeRegExp holds the search in a module constant
+        // (`reRegExpChar`) and replaces through it — the same regex, the same
+        // 0.0 ms, one binding away.
+        // @found mutation testing
+        name: 'FP: the escape search held in a const binding is the same escape',
+        code: `const ESC = /[.*+?^\${}()|[\\]\\\\]/g;
+export function search(req) {
+  return new RegExp(req.query.q.replace(ESC, '\\$&'));
+}`,
+      },
+      {
+        // replaceAll with a global regex is replace with a global regex:
+        // every match is escaped (and a non-global one throws).
+        // @found mutation testing
+        name: 'FP: replaceAll with the escape class is the same escape',
+        code: `export function search(req) {
+  return new RegExp(req.query.q${ESCAPE.replace('.replace(', '.replaceAll(')});
+}`,
+      },
       { name: 'a string literal', code: `const re = new RegExp('^[a-z]+$');` },
       {
         name: 'a module constant is fixed at build time',
         code: `const PAT = '^[a-z]+$';
 const re = new RegExp(PAT);`,
       },
-      { name: 'constructed from a regex literal', code: `const re = new RegExp(/^[a-z]+$/);` },
+      {
+        name: 'constructed from a regex literal',
+        code: `const re = new RegExp(/^[a-z]+$/);`,
+      },
       {
         // The closed set can be an ARRAY as well as an object — same argument,
         // the caller indexes a list the program wrote.
@@ -161,6 +202,64 @@ export function search(req) {
 export function search(req) {
   const p = config.patterns[req.query.kind];
   return new RegExp(p);
+}`,
+        errors: [{ messageId: 'runtimeDecidedPattern' }],
+      },
+      // @found Stryker mutation-survivor triage, 2026-11-03
+      {
+        // Measured 1,314 ms on `(a+)+$` (raw 5,595 ms): only `.` is touched, so
+        // every quantifier and group survives.
+        name: 'FN: a class that escapes only dots is not an escape',
+        code: `export function search(req) {
+  return new RegExp(req.query.q.replace(/[.]/g, '\\$&'));
+}`,
+        errors: [{ messageId: 'runtimeDecidedPattern' }],
+      },
+      // @found Stryker mutation-survivor triage, 2026-11-03
+      {
+        // Measured 2,779 ms on `.(a+)+$`: without `g` only the first match is
+        // escaped, and the attacker chooses what comes first.
+        name: 'FN: the full class without the g flag escapes one character',
+        code: `export function search(req) {
+  return new RegExp(req.query.q.replace(/[.*+?^\${}()|[\\]\\\\]/, '\\$&'));
+}`,
+        errors: [{ messageId: 'runtimeDecidedPattern' }],
+      },
+      // @found Stryker mutation-survivor triage, 2026-11-03
+      {
+        // A negated class matches everything EXCEPT the metacharacters, so
+        // escaping its matches leaves every metacharacter bare.
+        name: 'FN: a negated class escapes everything but the metacharacters',
+        code: `export function search(req) {
+  return new RegExp(req.query.q.replace(/[^.*+?^\${}()|[\\]\\\\]/g, '\\$&'));
+}`,
+        errors: [{ messageId: 'runtimeDecidedPattern' }],
+      },
+      // @found Stryker mutation-survivor triage, 2026-11-03
+      {
+        // The class is one alternative among others, not the whole search.
+        name: 'FN: a metacharacter class inside a longer search is not the escape idiom',
+        code: `export function search(req) {
+  return new RegExp(req.query.q.replace(/x[.*+?^\${}()|[\\]\\\\]/g, '\\$&'));
+}`,
+        errors: [{ messageId: 'runtimeDecidedPattern' }],
+      },
+      {
+        // The binding is rebound, so the search it holds when replace runs is
+        // not the one it was declared with.
+        name: 'CONTROL: a let search binding that is rebound is not a proven escape',
+        code: `let ESC = /[.*+?^\${}()|[\\]\\\\]/g;
+ESC = /x/g;
+export function search(req) {
+  return new RegExp(req.query.q.replace(ESC, '\\$&'));
+}`,
+        errors: [{ messageId: 'runtimeDecidedPattern' }],
+      },
+      {
+        name: 'CONTROL: a const search binding that escapes only dots is not an escape',
+        code: `const DOTS = /[.]/g;
+export function search(req) {
+  return new RegExp(req.query.q.replaceAll(DOTS, '\\$&'));
 }`,
         errors: [{ messageId: 'runtimeDecidedPattern' }],
       },

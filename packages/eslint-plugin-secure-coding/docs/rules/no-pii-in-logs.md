@@ -11,6 +11,7 @@ autofix: suggestions
 > **CWE:** [CWE-359: Exposure of Private Personal Information to an Unauthorized Actor](https://cwe.mitre.org/data/definitions/359.html)
 
 <!-- @rule-summary -->
+
 Prevent personally identifiable information (PII) — emails, SSNs, credit cards, phone numbers — from reaching `console.*` or logger output. Logs are routinely shipped to third-party platforms (Datadog, Sentry, CloudWatch) and indexed by people who never had access authorization for that data.
 <!-- @/rule-summary -->
 
@@ -18,13 +19,13 @@ This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/packa
 
 ## Quick Summary
 
-| Aspect         | Details                                                                  |
-| -------------- | ------------------------------------------------------------------------ |
-| **Severity**   | High (Security / Compliance — GDPR Art. 32, HIPAA §164.312)              |
-| **Auto-Fix**   | 💡 Suggestions (redact, hash, or replace with stable user id)            |
-| **Category**   | Secure Coding                                                            |
-| **CWE**        | [CWE-359](https://cwe.mitre.org/data/definitions/359.html)               |
-| **Best For**   | Any service that handles user data and ships logs off-host               |
+| Aspect       | Details                                                       |
+| ------------ | ------------------------------------------------------------- |
+| **Severity** | High (Security / Compliance — GDPR Art. 32, HIPAA §164.312)   |
+| **Auto-Fix** | 💡 Suggestions (redact, hash, or replace with stable user id) |
+| **Category** | Secure Coding                                                 |
+| **CWE**      | [CWE-359](https://cwe.mitre.org/data/definitions/359.html)    |
+| **Best For** | Any service that handles user data and ships logs off-host    |
 
 ## Why this matters
 
@@ -40,13 +41,14 @@ GDPR Article 32 (security of processing) and HIPAA §164.312 (technical safeguar
 
 The rule flags PII patterns whether they enter the log call as a literal, a templated string, or a member access on an `user`/`person`/`account` identifier:
 
-| Pattern                                   | Detected as                          |
-| :---------------------------------------- | :----------------------------------- |
-| Hard-coded email regex match              | `email`                              |
-| `user.email`, `account.ssn`               | inferred via identifier shape        |
-| `JSON.stringify(user)`                    | a whole person record, serialized    |
-| 13–19 digit number passing Luhn           | `credit-card`                        |
-| US SSN (`\d{3}-\d{2}-\d{4}`)              | `ssn`                                |
+| Pattern                         | Detected as                          |
+| :------------------------------ | :----------------------------------- |
+| Hard-coded email regex match    | `email`                              |
+| `user.email`, `account.ssn`     | inferred via identifier shape        |
+| `JSON.stringify(user)`          | a whole person record, serialized    |
+| `+user.phone`, `user.ssn * 1`   | a numeric conversion keeps the value |
+| 13–19 digit number passing Luhn | `credit-card`                        |
+| US SSN (`\d{3}-\d{2}-\d{4}`)    | `ssn`                                |
 
 The sinks are `console.log` / `error` / `warn` / `info` (configurable through
 `consoleMethods`) and every level method — `trace`, `debug`, `verbose`, `info`,
@@ -96,15 +98,15 @@ logger.debug({ user: redactPii(user) });
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `consoleMethods` | `string[]` | `["log","error","warn","info"]` | `console` methods treated as a log sink, matched as an exact method name. Replaces the built-in list. |
-| `additionalConsoleMethods` | `string[]` | `[]` | Extra `console` methods, on top of `consoleMethods`. |
-| `piiTerms` | `string[]` | `["email","ssn","password","credit card","phone"]` | Field vocabulary, matched as WHOLE WORDS of an identifier — never as a substring. Multi-word terms such as "credit card" match consecutive segments. Replaces the built-in list. |
-| `additionalPiiTerms` | `string[]` | `[]` | Extra PII field terms, on top of `piiTerms`. |
-| `piiLabels` | `string[]` | `["email:","ssn:","password:","credit card:","creditcard:"]` | String literals that are EXACTLY a field label announcing the next argument. Compared case-insensitively after trimming. Replaces the built-in list. |
-| `additionalPiiLabels` | `string[]` | `[]` | Extra field labels, on top of `piiLabels`. |
-| `loggers` | `string[]` | `["logger","log"]` | Receiver names that denote an application logger (`logger.info`, `this.logger.error`); every level method on one is a log sink. Replaces the built-in list. |
-| `additionalLoggers` | `string[]` | `[]` | Extra logger receiver names, on top of `loggers`. |
-| `piiRecords` | `string[]` | `["user","person","customer","account","applicant","patient"]` | Words naming a whole person record, matched as WHOLE WORDS of an identifier. `JSON.stringify` of one is reported. Replaces the built-in list. |
-| `additionalPiiRecords` | `string[]` | `[]` | Extra person-record words, on top of `piiRecords`. |
+| Option                     | Type       | Default                                                        | Description                                                                                                                                                                      |
+| -------------------------- | ---------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `consoleMethods`           | `string[]` | `["log","error","warn","info"]`                                | `console` methods treated as a log sink, matched as an exact method name. Replaces the built-in list.                                                                            |
+| `additionalConsoleMethods` | `string[]` | `[]`                                                           | Extra `console` methods, on top of `consoleMethods`.                                                                                                                             |
+| `piiTerms`                 | `string[]` | `["email","ssn","password","credit card","phone"]`             | Field vocabulary, matched as WHOLE WORDS of an identifier — never as a substring. Multi-word terms such as "credit card" match consecutive segments. Replaces the built-in list. |
+| `additionalPiiTerms`       | `string[]` | `[]`                                                           | Extra PII field terms, on top of `piiTerms`.                                                                                                                                     |
+| `piiLabels`                | `string[]` | `["email:","ssn:","password:","credit card:","creditcard:"]`   | String literals that are EXACTLY a field label announcing the next argument. Compared case-insensitively after trimming. Replaces the built-in list.                             |
+| `additionalPiiLabels`      | `string[]` | `[]`                                                           | Extra field labels, on top of `piiLabels`.                                                                                                                                       |
+| `loggers`                  | `string[]` | `["logger","log"]`                                             | Receiver names that denote an application logger (`logger.info`, `this.logger.error`); every level method on one is a log sink. Replaces the built-in list.                      |
+| `additionalLoggers`        | `string[]` | `[]`                                                           | Extra logger receiver names, on top of `loggers`.                                                                                                                                |
+| `piiRecords`               | `string[]` | `["user","person","customer","account","applicant","patient"]` | Words naming a whole person record, matched as WHOLE WORDS of an identifier. `JSON.stringify` of one is reported. Replaces the built-in list.                                    |
+| `additionalPiiRecords`     | `string[]` | `[]`                                                           | Extra person-record words, on top of `piiRecords`.                                                                                                                               |

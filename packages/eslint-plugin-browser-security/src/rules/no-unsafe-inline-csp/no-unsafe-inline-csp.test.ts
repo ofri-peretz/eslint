@@ -121,7 +121,10 @@ ruleTester.run(
       // A numeric key is neither an identifier nor a header name.
       `const rows = { 1: "'unsafe-inline'" };`,
       // A single-argument call is not a header setter.
-      `log("'unsafe-inline'");`,
+      {
+        code: `log("'unsafe-inline'");`,
+        name: 'a single-argument call is not a header setter',
+      },
       // A two-argument call whose first argument is not a string literal.
       `res.setHeader(headerName, "'unsafe-inline'");`,
     ],

@@ -124,7 +124,7 @@ ruleTester.run('no-http-urls', noHttpUrls, {
     },
     // Non-URL strings
     { code: "const protocol = 'http'" },
-    { code: 'const x = 1' },
+    { code: 'const x = 1', name: 'a numeric constant holds no HTTP URL' },
 
     // --- Interpolated authority: not a HARDCODED URL ------------------------
     // 5 of the 8 remaining corpus findings. Each reports on the old code with

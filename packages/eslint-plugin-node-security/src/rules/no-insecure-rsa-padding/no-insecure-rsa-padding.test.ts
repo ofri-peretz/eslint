@@ -23,6 +23,10 @@ const ruleTester = new RuleTester({
 describe('no-insecure-rsa-padding', () => {
   ruleTester.run('no-insecure-rsa-padding', noInsecureRsaPadding, {
     valid: [
+      {
+        name: 'a padding const holding OAEP is not PKCS#1 v1.5',
+        code: 'const P = crypto.constants.RSA_PKCS1_OAEP_PADDING; crypto.privateDecrypt({ key, padding: P }, d);',
+      },
       // Valid: OAEP padding
       {
         name: 'OAEP',
@@ -48,6 +52,42 @@ describe('no-insecure-rsa-padding', () => {
       },
     ],
     invalid: [
+      // @found Stryker mutation-survivor triage, 2026-11-03
+      {
+        name: 'FN: a padding constant held in a const is the constant',
+        // @found mutation testing
+        code: 'const P = crypto.constants.RSA_PKCS1_PADDING; crypto.privateDecrypt({ key, padding: P }, d);',
+        errors: [
+          {
+            messageId: 'insecureRsaPadding',
+            suggestions: [
+              {
+                messageId: 'useOaep',
+                output:
+                  'const P = crypto.constants.RSA_PKCS1_PADDING; crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, d);',
+              },
+            ],
+          },
+        ],
+      },
+      // @found Stryker mutation-survivor triage, 2026-11-03
+      {
+        name: 'FN: a shorthand padding bound to the numeric constant is the constant',
+        // @found mutation testing
+        code: 'const padding = 1; crypto.privateDecrypt({ key, padding }, d);',
+        errors: [
+          {
+            messageId: 'insecureRsaPadding',
+            suggestions: [
+              {
+                messageId: 'useOaep',
+                output:
+                  'const padding = 1; crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, d);',
+              },
+            ],
+          },
+        ],
+      },
       {
         name: 'allowInTests does not exempt a file that is not a test',
         code: 'crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_PADDING }, buffer);',

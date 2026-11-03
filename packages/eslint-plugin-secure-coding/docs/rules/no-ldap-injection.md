@@ -75,6 +75,35 @@ const ldapFilter = `(&(objectClass=user)(mail=${email}))`;
 const filter = `(uid=${ldap.escape.filterValue(userId)})`;
 ```
 
+### What the rule judges
+
+Nothing is examined unless the file loads an LDAP client (`ldapPackages` /
+`additionalLdapPackages`). Within such a file:
+
+- **A built filter** — a template literal, a `+` concatenation (including a
+  conditional choosing between two), or a binding written once with one — is
+  reported (`unsafeLdapFilter`) when its static text is filter grammar
+  (`(attr=`, `(attr~=`, `(attr>=`, …) and a part of it is neither a constant
+  this file wrote nor passed through a configured escape or validation
+  function.
+- **Request data handed over whole** — `req.query.f`, a name bound to it, an
+  `{ filter: … }` option carrying it (the key may be `filter`, `'filter'`,
+  `['filter']` or a constant bound to `'filter'`), or a helper given it in any
+  argument, spread included — is reported (`unescapedLdapInput`).
+- **A distinguished name** built from a dynamic part, or taken from the
+  request, is reported (`ldapInjection`); a DN concatenated from constants is
+  not.
+- **A hardcoded match-everything filter** — one ending in a wildcard (`(uid=*)`),
+  the absolute-true `(&)`, `*|*`, `*&*` — is reported
+  (`dangerousLdapOperation`). The absolute-false `(|)` matches nothing and is
+  not; a `!` inside an assertion value is a literal character; a number
+  concatenated into the filter is part of its text.
+- **A receiver that is provably not an LDAP client** — every write to its
+  binding (or its class field's initialiser) is a collection, a literal, or a
+  call/`new` not made from an LDAP import — is skipped, so `set.add(…)` is not
+  an LDAP `add`. A receiver bound to an unknown name is not provably anything
+  and stays in view.
+
 ## Configuration
 
 ```javascript

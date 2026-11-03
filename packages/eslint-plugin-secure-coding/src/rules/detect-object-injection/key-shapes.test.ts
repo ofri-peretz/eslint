@@ -129,22 +129,22 @@ describe('detect-object-injection — key and object shapes', () => {
         errors: reported,
       },
       {
-        name: 'a lower-case parameter is not a SCREAMING_CASE constant',
+        name: 'a mixed-case parameter used as a write key reports',
         code: `export function f(o, myKEY, v) { o[myKEY] = v; }`,
         errors: reported,
       },
       {
-        name: 'a plural with a lower-case tail is not a SCREAMING_CASE constant',
+        name: 'an upper-case-led parameter used as a write key reports',
         code: `export function f(o, KEYs, v) { o[KEYs] = v; }`,
         errors: reported,
       },
       {
-        name: 'a PascalCase name ending in Status is not a camelCase status field',
+        name: 'a PascalCase parameter ending in Status used as a write key reports',
         code: `export function f(o, UserStatus, v) { o[UserStatus] = v; }`,
         errors: reported,
       },
       {
-        name: 'Type in the middle of a name is not a Type suffix',
+        name: 'a parameter with Type mid-name used as a write key reports',
         code: `export function f(o, itemTypeName, v) { o[itemTypeName] = v; }`,
         errors: reported,
       },

@@ -162,6 +162,11 @@ ruleTester.run('no-clickjacking — mutation edges', noClickjacking, {
       errors: missing,
     },
     {
+      name: 'a camelCase fetch directive is a policy, and one without frame-ancestors permits framing',
+      code: `export const csp = "scriptSrc 'self'; frame-ancestors *";`,
+      errors: weak,
+    },
+    {
       name: 'a multi-line template policy whose frame-ancestors is * permits framing',
       code: "export const csp = `default-src 'self';\n  frame-ancestors *\n`;",
       errors: weak,

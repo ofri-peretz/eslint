@@ -181,6 +181,7 @@ describe('no-unlimited-resource-allocation', () => {
           // of `args.length > 0` in the recursive-data-structure detector.
           {
             code: `arr.map();`,
+            name: 'arr.map with no arguments builds no recursive structure',
           },
           // `new Buffer()` called with zero arguments - exercises the false
           // side of `args.length > 0` in the NewExpression Buffer handler.

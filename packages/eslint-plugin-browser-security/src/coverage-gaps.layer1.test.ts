@@ -87,7 +87,11 @@ jsxRuleTester.run('no-clickjacking (coverage)', noClickjacking, {
     // was pinned as frameManipulation; only an assignment to it navigates.
     { code: `const z = top.location + '';`, filename: 'lib.ts' },
     // entry-point file without UI elements -> no missing-frame-busting report
-    { code: 'const a = 1;', filename: 'index.tsx' },
+    {
+      code: 'const a = 1;',
+      name: 'an entry-point file with no UI elements needs no frame-busting',
+      filename: 'index.tsx',
+    },
     // The four shapes that used to report purely because of the FILENAME.
     {
       code: `export const App = () => <button onClick={go}>hi</button>;`,
@@ -303,7 +307,10 @@ ruleTester.run('no-client-side-auth-logic (coverage)', noClientSideAuthLogic, {
 // ---------------------------------------------------------------------------
 ruleTester.run('no-cookie-auth-tokens (coverage)', noCookieAuthTokens, {
   valid: [
-    `x = 'token=y';`,
+    {
+      code: `x = 'token=y';`,
+      name: 'a token-shaped string assigned to a plain variable sets no cookie',
+    },
     `foo.cookie = 'accessToken=x';`,
     `document.title = 'accessToken=x';`,
     `document.cookie = 42;`,
@@ -346,7 +353,10 @@ ruleTester.run(
       `process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1';`,
       `foo.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';`,
       `x = '0';`,
-      `a.b = '0';`,
+      {
+        code: `a.b = '0';`,
+        name: 'a zero assigned to an unrelated property is not the TLS env flag',
+      },
     ],
     invalid: [
       {
@@ -411,7 +421,10 @@ ruleTester.run('no-filereader-innerhtml (coverage)', noFilereaderInnerhtml, {
     // object of onload assignment is itself a member expression
     `const reader = new FileReader(); obj.reader.onload = (e) => { el.innerHTML = e.target.result; };`,
     // handler is an identifier reference
-    `const reader = new FileReader(); reader.onload = handleLoad;`,
+    {
+      code: `const reader = new FileReader(); reader.onload = handleLoad;`,
+      name: 'a FileReader onload handler passed by reference has no inline sink to judge',
+    },
     // handler without parameters
     `const reader = new FileReader(); reader.onload = () => { el.innerHTML = window.cached; };`,
     // destructured handler parameter
@@ -592,7 +605,10 @@ ruleTester.run('no-insecure-redirects (coverage)', noInsecureRedirects, {
     // argument resolves to a non-user-input initializer
     `const other = '/home'; res.redirect(other);`,
     // undeclared identifier cannot be resolved -> assumed safe
-    `res.redirect(unknownVar);`,
+    {
+      code: `res.redirect(unknownVar);`,
+      name: 'a redirect to an undeclared identifier the rule cannot resolve is left alone',
+    },
     // declaration without initializer
     `let pending; res.redirect(pending);`,
     // declaration with a different name in scope
@@ -669,7 +685,10 @@ ruleTester.run('no-jwt-in-storage (coverage)', noJwtInStorage, {
     `localStorage.setItem();`,
     `localStorage.setItem(someKey, value);`,
     `x = 5;`,
-    `foo['token'] = value;`,
+    {
+      code: `foo['token'] = value;`,
+      name: 'a token key written to a non-storage object is not web storage',
+    },
     `a.b['token'] = value;`,
     `localStorage[someKey] = value;`,
     `localStorage[k.x] = value;`,
@@ -863,7 +882,10 @@ ruleTester.run(
       // A method chosen at RUNTIME names nothing to match against the header API.
       `res[method]('X-Frame-Options', 'DENY');`,
       // non-header method
-      `res.json({});`,
+      {
+        code: `res.json({});`,
+        name: 'a response method that sets no header is not judged',
+      },
     ],
     invalid: [
       // Was pinned above as valid under the comment "computed member property".
@@ -939,7 +961,10 @@ ruleTester.run(
 ruleTester.run('no-sensitive-cookie-js (coverage)', noSensitiveCookieJs, {
   valid: [
     `x = y;`,
-    `a.b.cookie = 'token=v';`,
+    {
+      code: `a.b.cookie = 'token=v';`,
+      name: 'a cookie property on a nested object is not document.cookie',
+    },
     `document.title = 'token=v';`,
     // no key=value shape -> extractCookieKey returns null
     `document.cookie = 'noequalsign';`,
@@ -1000,7 +1025,10 @@ ruleTester.run(
     valid: [
       `cache['set']('password', x);`,
       `cache.remove('password');`,
-      `cache.set();`,
+      {
+        code: `cache.set();`,
+        name: 'cache.set with no arguments stores nothing',
+      },
       `cache.set(key);`,
       `cache.set(null);`,
       `cache.set(123);`,
@@ -1024,7 +1052,10 @@ ruleTester.run('no-sensitive-indexeddb (coverage)', noSensitiveIndexeddb, {
     `db.createObjectStore();`,
     `db.createObjectStore(storeName);`,
     `store.add(record);`,
-    `store.put();`,
+    {
+      code: `store.put();`,
+      name: 'store.put with no arguments stores nothing',
+    },
   ],
   invalid: [],
 });
@@ -1042,7 +1073,10 @@ ruleTester.run(
       `x = y;`,
       `foo['token'] = v;`,
       `localStorage[idx] = v;`,
-      `localStorage[0] = v;`,
+      {
+        code: `localStorage[0] = v;`,
+        name: 'a numeric localStorage index is not a sensitive key',
+      },
       // sessionStorage excluded when checkSessionStorage is false
       {
         code: `sessionStorage['token'] = v;`,
@@ -1070,7 +1104,10 @@ ruleTester.run(
       `sessionStorage.setItem(someKey, v);`,
       `x = y;`,
       `foo['token'] = v;`,
-      `a.b['token'] = v;`,
+      {
+        code: `a.b['token'] = v;`,
+        name: 'a token key on a nested object is not sessionStorage',
+      },
       `sessionStorage[someKey] = v;`,
       `sessionStorage[0] = v;`,
     ],
@@ -1155,6 +1192,7 @@ ruleTester.run(
       // custom protocol without a secure alternative (literal)
       {
         code: `const u = 'gopher://host';`,
+        name: 'a configured insecure protocol with no secure counterpart is still reported',
         options: [{ insecureProtocols: ['gopher://'] }],
         errors: [{ messageId: 'unencryptedTransmission' }],
       },
@@ -1200,7 +1238,7 @@ ruleTester.run(
         filename: 'url.test.ts',
       },
       // a `+` chain that builds no URL at all
-      `const s = a + b;`,
+      { code: `const s = a + b;`, name: 'a plus chain that builds no URL' },
       // user ignorePatterns, both visitors
       {
         code: `const u = 'https://x.example.com/v1?q=' + req.query.id;`,
@@ -1616,7 +1654,14 @@ ruleTester.run(
   'require-cookie-secure-attrs (coverage)',
   requireCookieSecureAttrs,
   {
-    valid: [`x = 'a=b';`, `foo.cookie = 'a=b';`, `document.foo = 'a=b';`],
+    valid: [
+      {
+        code: `x = 'a=b';`,
+        name: 'a cookie-shaped string assigned to a plain variable sets no cookie',
+      },
+      `foo.cookie = 'a=b';`,
+      `document.foo = 'a=b';`,
+    ],
     invalid: [
       // `document['cookie']` is the SAME sink. This used to be asserted VALID.
       {
@@ -1639,7 +1684,7 @@ ruleTester.run('require-csp-headers (coverage)', requireCspHeaders, {
     `res.send(\`plain text\`);`,
     `res.send('plain text');`,
     `res.send(42);`,
-    `res.send();`,
+    { code: `res.send();`, name: 'res.send with no body sends no HTML' },
     `res.json(x);`,
     `send(html);`,
   ],
@@ -1672,7 +1717,7 @@ ruleTester.run('require-https-only (coverage)', requireHttpsOnly, {
     `axios.custom('http://x.example.com');`,
     `other.get('http://x.example.com');`,
     `fetch(url);`,
-    `fetch(42);`,
+    { code: `fetch(42);`, name: 'fetch of a numeric argument carries no URL' },
   ],
   invalid: [],
 });
@@ -1691,7 +1736,10 @@ ruleTester.run(
       `import multer from 'multer';\nmulter({ fileFilter: f }).single('file');`,
       // The `upload(...)` detector matched a CALLEE'S SPELLING and reported it at
       // CWE-434 / CVSS 8.8. Both of these were asserted as true positives.
-      `upload();`,
+      {
+        code: `upload();`,
+        name: 'an upload() call not resolvable to multer is no evidence of a file upload',
+      },
       `upload(file);`,
       `upload('literal.png');`,
     ],
@@ -1726,7 +1774,10 @@ ruleTester.run(
   requirePostmessageOriginCheck,
   {
     valid: [
-      `addEventListener();`,
+      {
+        code: `addEventListener();`,
+        name: 'addEventListener with no arguments registers no message handler',
+      },
       `addEventListener(evtName, handler);`,
       `addEventListener('click', handler);`,
       `window.addEventListener('message');`,

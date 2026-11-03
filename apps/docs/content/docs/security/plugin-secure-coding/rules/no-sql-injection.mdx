@@ -65,10 +65,16 @@ All four must hold — the rule is deliberately quiet otherwise:
 3. **A statement shape** — the static text reads as SQL: `SELECT … FROM`,
    `INSERT INTO`, `UPDATE … SET`, `DELETE FROM`, `REPLACE INTO`, `MERGE INTO`.
    A lone verb is not enough; `'update available for ' + pkg` is a status
-   message, not a statement.
+   message, not a statement. The verb must be a whole word (`autoupdate … set`
+   is prose) but need not open the text: `WITH recent AS (SELECT …) SELECT …`
+   and a statement after a leading `/* comment */` are statements.
 4. **An attributable source** — the interpolated value traces to an inbound
    request (`req` / `request` / `ctx` with `body`, `query`, `params`, `headers`,
    `cookies`, `url`, `path`), directly or through a written-once local binding.
+   A local helper or builder whose body is one visible expression is followed
+   into that expression with its parameters bound to the call's arguments —
+   by position, through defaults and spreads — so `orDefault(req.query.sort)`
+   is the request value. An imported call is not followed.
 
 "I cannot prove this is safe" is not a finding. A query built from a function
 parameter, a module constant or a config value is a query builder doing its job.
@@ -162,7 +168,7 @@ Without this rule, that code is uncovered.
 | ------ | ---- | ------- | ----------- |
 | `reportUnattributedInterpolation` | `boolean` | `false` | Report SQL built by interpolation even when the interpolated value cannot be traced to a request in this file (a property of `this`, a property of a non-request object, a helper return). Parameterise either way. Set false to report only attributable taint. |
 | `treatParametersAsUntrusted` | `boolean` | `true` | Treat a function parameter spliced into statement text as an untrusted inlet — nothing in this file constrains what a caller passes. Set false to report only values traceable to a request within the linted file. |
-| `requestRoots` | `string[]` | `["req","request","ctx","event"]` | Identifier roots that denote an inbound request. Matched exactly. |
+| `requestRoots` | `string[]` | `["req","request","ctx","event"]` | Identifier roots that denote an inbound request. Matched exactly. While every default root is still listed (widened or reordered), a request-shaped parameter (`inbound.query.id`) also counts; removing a default root turns that shape inference off. |
 | `requestProperties` | `string[]` | `["query","params","body","headers","cookies","url","path"]` | Request properties that carry caller-supplied data. Matched exactly. |
 | `sinkMethods` | `string[]` | `["query","execute"]` | Method names that execute a raw SQL string. Matched exactly against the called member name. |
 | `queryTextProperties` | `string[]` | `["text","sql"]` | Properties of a driver query-config object that hold the statement text. Matched exactly. |

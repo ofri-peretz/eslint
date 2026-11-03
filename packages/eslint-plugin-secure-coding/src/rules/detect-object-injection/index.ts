@@ -1143,44 +1143,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Does this identifier resolve to a declaration whose initialiser we can SEE
-     * and which is provably not build-time constant?
-     *
-     * The two name-shaped suppressions below are a guess about provenance made
-     * from a spelling. When the binding's initialiser is visible, the guess is
-     * unnecessary and it is wrong: `const eventType = req.body.type` and
-     * `const FLAG_NAME = req.body.flag` are attacker-chosen keys whose names
-     * happen to match a convention. Evidence beats the convention wherever
-     * evidence exists.
-     *
-     * Deliberately narrow. A parameter, an import or an ambient binding has no
-     * visible initialiser, so the suppressions still apply there and the
-     * false positives they were added for (NestJS decorator metadata,
-     * `errorHttpStatusCode`) stay closed.
-     */
-    const hasVisibleNonConstantInitialiser = (
-      node: TSESTree.Identifier,
-    ): boolean => {
-      const scope = sourceCode.getScope(node);
-      const variable = resolvedReference(scope, node);
-      if (!variable || variable.defs.length !== 1) {
-        return false;
-      }
-      const def = variable.defs[0];
-      if (def.type !== 'Variable') {
-        return false;
-      }
-      const init = (def.node as TSESTree.VariableDeclarator).init;
-      if (!init) {
-        return false;
-      }
-      return !isStaticExpression({
-        node: init,
-        scope: sourceCode.getScope(init),
-      });
-    };
-
-    /**
      * The identifier a member chain is rooted at — `req` for `req.body.name`.
      */
     const chainRoot = (node: TSESTree.Node): TSESTree.Identifier | null => {
@@ -1422,40 +1384,13 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // resolves the identifier to its declaration instead, which covers the
       // genuine counters and refuses the parameters.
 
-      // SAFE: SCREAMING_SNAKE_CASE identifiers are TypeScript module-level constants
-      // (e.g. PATH_METADATA, METHOD_METADATA, PARAMTYPES_METADATA, BRANCH_EFFECT).
-      // They are compile-time string/symbol values defined in the codebase, never
-      // derived from user input — prototype pollution via a constant key is impossible.
-      // Pattern: at least 3 chars, ALL_CAPS letters, digits, underscores only.
-      //
-      // Both name-shaped suppressions below are guesses about provenance drawn
-      // from a spelling, and both are DEFEATED by visible evidence — see
-      // `hasVisibleNonConstantInitialiser`. `metrics[eventType] = 1` with
-      // `const eventType = req.body.type` used to be silent purely because the
-      // name ends in `Type`, while the identical program with the key renamed
-      // `eventName` reported. Quiet in the suppress direction is a missed
-      // vulnerability, which is the worst place for a spelling to decide.
-      if (
-        propertyNode.type === AST_NODE_TYPES.Identifier &&
-        !hasVisibleNonConstantInitialiser(propertyNode as TSESTree.Identifier)
-      ) {
-        const name = (propertyNode as TSESTree.Identifier).name;
-        if (/^[A-Z][A-Z0-9_]{2,}$/.test(name)) {
-          return false;
-        }
-
-        // SAFE: camelCase identifiers whose suffix implies a typed/enumerated value.
-        // HTTP status codes, version numbers, type discriminants, mode flags — these
-        // are never raw user input. Examples: errorHttpStatusCode, uuidVersion, reqType.
-        if (
-          /^[a-z]/.test(name) &&
-          /(?:Code|Status|Version|Kind|Mode|Type|Stage|Level|Phase|Step|Flag|Num|Count)$/.test(
-            name,
-          )
-        ) {
-          return false;
-        }
-      }
+      // A key's SPELLING never clears it. Until 2026-11 a SCREAMING_CASE name,
+      // or one ending in Code/Status/Type/…, was trusted unless its own
+      // declaration visibly said otherwise — so a PARAMETER spelled `MODE` or
+      // `userStatus` was silent while the same program with the parameter
+      // renamed reported. A constant is cleared by its declaration (const
+      // literal, import, literal list, numeric expression), never by its name.
+      // Pinned by name-is-not-provenance.test.ts.
 
       // Check if it's a literal string first
       if (isLiteralString(propertyNode)) {

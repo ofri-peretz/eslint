@@ -483,6 +483,7 @@ describe('no-electron-security-issues', () => {
           // ipcMain/ipcRenderer call with zero arguments.
           {
             code: 'ipcRenderer.send();',
+            name: 'an IPC send with no arguments names no channel',
           },
           // First argument is not a string literal channel name.
           {

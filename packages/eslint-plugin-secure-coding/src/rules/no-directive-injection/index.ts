@@ -143,16 +143,13 @@ function findUnsafeSanitizerConfig(
     const option =
       property.key.type === 'Identifier'
         ? property.key.name
-        : staticString(property.key) !== null
-          ? staticString(property.key)
-          : null;
+        : staticString(property.key);
     if (option === null) continue;
 
     // `{ ALLOWED_TAGS }` shorthand names a constant defined elsewhere. Its
     // contents are unknowable here, and assuming the worst is what produced
-    // the reported false positive — so shorthand is left alone.
-    if (property.shorthand) continue;
-
+    // the reported false positive — its value is an Identifier, not an array
+    // literal, so the line below leaves it alone.
     const values = staticStringArray(property.value);
     if (!values) continue;
 
@@ -566,13 +563,11 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
 
         // Check for dynamic directive names (Angular/Vue style)
         // Check for dynamic directive names (Angular/Vue style)
+        // `ng:x` / `v:x` always parse as a JSXNamespacedName — a JSXIdentifier
+        // cannot contain a colon — so that is the only shape to test.
         const isNamespaceDirective =
-          (attrName.type === 'JSXNamespacedName' &&
-            (attrName.namespace.name === 'v' ||
-              attrName.namespace.name === 'ng')) ||
-          (attrName.type === 'JSXIdentifier' &&
-            (attrName.name.startsWith('ng:') ||
-              attrName.name.startsWith('v:')));
+          attrName.type === 'JSXNamespacedName' &&
+          (attrName.namespace.name === 'v' || attrName.namespace.name === 'ng');
 
         if (isNamespaceDirective && attrValue) {
           if (attrValue.type === 'JSXExpressionContainer') {
@@ -634,21 +629,10 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
 
         // Check for element.innerHTML = userInput
         if (left.type === 'MemberExpression' && isMarkupSink(left)) {
-          // A sanitizer call IS the documented fix for this defect, so reporting
-          // `node.innerHTML = DOMPurify.sanitize(html, { ALLOWED_TAGS: [...] })` tells the
-          // reader to do what they already did. Only skip when the config is not one of the
-          // known-unsafe widenings — findUnsafeSanitizerConfig still catches
-          // `{ ADD_TAGS: ['script'] }` and friends, which are reported elsewhere.
-          const isSanitizedValue =
-            right.type === 'CallExpression' &&
-            right.callee.type === 'MemberExpression' &&
-            propertyName(right.callee) === 'sanitize' &&
-            findUnsafeSanitizerConfig(right) === null;
-
-          if (isSanitizedValue) {
-            return;
-          }
-
+          // A sanitizer call needs no exemption here: a call's return value is
+          // never attributable (see isUserInputExpression), so
+          // `el.innerHTML = DOMPurify.sanitize(html, …)` is quiet on that
+          // ground, and an unsafe sanitizer config is reported at the call.
           // Check if right side contains user input
           if (isUserInputExpression(right)) {
             if (safetyChecker.isSafe(node, context)) {
@@ -707,8 +691,7 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
             ['compile', 'template', '$compile', '$interpolate'].includes(
               methodName,
             ) ||
-            (objectName === 'Handlebars' && methodName === 'compile') ||
-            (objectName === '_' && methodName === 'template') ||
+            // `Handlebars.compile` / `_.template` are covered by the list above.
             (objectName === 'ejs' && methodName === 'render') ||
             (objectName === 'pug' && methodName === 'render') ||
             (objectName === 'mustache' && methodName === 'render')
@@ -738,8 +721,11 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
             }
           }
 
-          // Check for Vue.js v-html directive
-          if (objectName === 'Vue' && methodName === 'directive') {
+          // Directive registration: Vue 2's `Vue.directive(name, def)`, Vue 3's
+          // `app.directive(name, def)` and AngularJS's
+          // `module.directive(name, factory)` — the receiver does not change
+          // what a user-chosen directive name does.
+          if (methodName === 'directive') {
             const args = node.arguments;
             if (args.length >= 2) {
               const directiveName = args[0];
@@ -810,7 +796,7 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
           if (current.type === 'JSXExpressionContainer') {
             // Check if we are inside dangerouslySetInnerHTML attribute
             if (
-              current.parent?.type === 'JSXAttribute' &&
+              current.parent.type === 'JSXAttribute' &&
               current.parent.name.type === 'JSXIdentifier' &&
               current.parent.name.name === 'dangerouslySetInnerHTML'
             ) {

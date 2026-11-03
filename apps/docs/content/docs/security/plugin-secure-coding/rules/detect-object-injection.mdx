@@ -35,7 +35,7 @@ Detects `variable[key]` written as an assignment target, or read and then invoke
 | **CWE Reference** | [CWE-915](https://cwe.mitre.org/data/definitions/915.html) (Prototype Pollution) |
 | **Severity**      | Critical (security vulnerability)                                                |
 | **Auto-Fix**      | ⚠️ Suggests fixes (manual application)                                           |
-| **Category**   | Security |
+| **Category**      | Security                                                                         |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                          |
 | **Best For**      | All applications, especially those handling user input for object properties     |
 
@@ -83,6 +83,27 @@ flowchart TD
 ```
 
 
+### What clears a key — and what never does
+
+A key is cleared only by evidence about where its value comes from: a `const`
+bound to a literal, an import, a `for…of` over a literal list, an `Object.keys` /
+`for…in` key, a numeric expression, or a guard (`Object.hasOwn`, an allowlist
+`includes`, `k in o`) on the branch that reaches the write.
+
+**A key's spelling never clears it.** `PATH_METADATA`, `userStatus` and
+`eventType` are reported exactly like `k` when nothing in the file proves their
+value — a parameter spelled like a constant is still whatever the caller
+passed:
+
+```typescript
+const PATH_METADATA = 'path';
+obj[PATH_METADATA] = value; // ✅ cleared — the declaration is a literal
+
+function set(o, MODE, v) {
+  o[MODE] = v; // ❌ reported — MODE is a parameter; its name proves nothing
+}
+```
+
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
@@ -94,13 +115,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component                 | Purpose                | Example                                                                                                                                                                                                                         |
-| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                       |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Risk Standards**        | Security benchmarks    | [CWE-915](https://cwe.mitre.org/data/definitions/915.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description**     | Specific vulnerability | `Object Injection detected`                                                                                                                                                                                                     |
-| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,ISO27001]`                                                                                                                                                                                              |
-| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                            |
-| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/)                                                                                                                                                                     |
+| **Issue Description**     | Specific vulnerability | `Object Injection detected`                                                                                                                                                                                                                                   |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,ISO27001]`                                                                                                                                                                                                                            |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                          |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/)                                                                                                                                                                                                   |
 
 ## Configuration
 
@@ -366,7 +387,7 @@ const obj = JSON.parse(userJson); // May have __proto__
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowLiterals` | `boolean` | `false` | Allow bracket notation with literal strings |
+| Option                | Type       | Default                                   | Description                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------- | ---------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `allowLiterals`       | `boolean`  | `false`                                   | Allow bracket notation with literal strings                                                                                                                                                                                                                                                                                                                                   |
 | `dangerousProperties` | `string[]` | `["__proto__","prototype","constructor"]` | Property NAMES treated as dangerous where the name is visible in the source — `obj['__proto__'] = v`. It cannot apply to a dynamic key (`obj[k] = v`), because there is no name to compare, and it does not gate the CWE-1321 traversal check, which is a fact about the language rather than a vocabulary. Set it to [] to stop reporting literal dangerous-property writes. |

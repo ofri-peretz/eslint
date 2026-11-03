@@ -140,8 +140,8 @@ function isGrant(node: TSESTree.Expression | null): boolean {
 function hasWorkAfter(tryStatement: TSESTree.TryStatement): boolean {
   const parent = tryStatement.parent;
   if (
-    parent?.type !== AST_NODE_TYPES.BlockStatement &&
-    parent?.type !== AST_NODE_TYPES.Program
+    parent.type !== AST_NODE_TYPES.BlockStatement &&
+    parent.type !== AST_NODE_TYPES.Program
   ) {
     return false;
   }
@@ -365,7 +365,6 @@ export const noFailOpenAuth = createRule<RuleOptions, MessageIds>({
         // binding written first inside the try has no prior deny state.
         return (
           init !== null &&
-          init !== undefined &&
           init.type === AST_NODE_TYPES.Literal &&
           !init.value &&
           definition.node.range[1] < tryStatement.range[0]
@@ -387,14 +386,11 @@ export const noFailOpenAuth = createRule<RuleOptions, MessageIds>({
       // work, so that IS fail-open. Nightscout's shape differs in exactly one
       // way — `if (token) { …; return results; }` — and that is the difference
       // this looks for: a test on the variable whose consequent leaves.
+      // Every target is an Identifier by now — `targets` required it.
       const names = new Set(
-        assignments
-          .map((assignment) => assignment.left)
-          .filter(
-            (left): left is TSESTree.Identifier =>
-              left.type === AST_NODE_TYPES.Identifier,
-          )
-          .map((left) => left.name),
+        assignments.map(
+          (assignment) => (assignment.left as TSESTree.Identifier).name,
+        ),
       );
       return hasExitingGuard(tryStatement, names);
     }

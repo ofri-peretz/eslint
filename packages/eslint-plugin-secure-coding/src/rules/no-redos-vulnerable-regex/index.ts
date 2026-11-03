@@ -536,11 +536,15 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
           if (element.type !== 'Group' && element.type !== 'CapturingGroup') {
             return;
           }
-          const sets = element.alternatives.map(charSetOf);
-          if (sets.some((s) => s === null)) return;
+          // Branches that are not one character class are left out of the
+          // comparison, not allowed to veto it: in `(a|a|bc)*` the `a|a` pair is
+          // decided — and catastrophic — whatever `bc` is.
+          const sets = element.alternatives
+            .map(charSetOf)
+            .filter((set) => set !== null);
           for (let i = 0; i < sets.length && !catastrophic; i++) {
             for (let j = i + 1; j < sets.length; j++) {
-              if (!sets[i]!.isDisjointWith(sets[j]!)) {
+              if (!sets[i].isDisjointWith(sets[j])) {
                 catastrophic = true;
                 break;
               }

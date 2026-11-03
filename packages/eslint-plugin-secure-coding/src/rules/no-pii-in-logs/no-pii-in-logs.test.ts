@@ -20,7 +20,7 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-pii-in-logs', noPiiInLogs, {
   valid: [
-    'const x = 42;',
+    { code: 'const x = 42;', name: 'a numeric constant logs no PII' },
     'const flag = true;',
     'function noop() {}',
     'const items = [];',

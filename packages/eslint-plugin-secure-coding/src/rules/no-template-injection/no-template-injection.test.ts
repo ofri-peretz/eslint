@@ -46,7 +46,10 @@ describe('no-template-injection', () => {
       { code: 'Handlebars[methodName](userTemplate)' },
       // Known engine + known method, but called with zero arguments
       { code: 'Handlebars.compile()' },
-      { code: 'ejs.render()' },
+      {
+        code: 'ejs.render()',
+        name: 'ejs.render with no arguments renders no template',
+      },
       {
         name: 'lodash is matched on template alone, so _.create is not a template API',
         code: "const _ = require('lodash'); _.create(userInput);",

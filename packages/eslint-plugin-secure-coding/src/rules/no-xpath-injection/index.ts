@@ -417,7 +417,6 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
     let strictMode: boolean;
     let xpathPackageSet: Set<string>;
     let sourceCode: Readonly<TSESLint.SourceCode>;
-    let filename: string;
     let moduleEvaluatesXpath: boolean;
     let wildcardPending: TSESTree.Node[];
     let DOM_XPATH_MEMBERS: Set<string>;
@@ -449,8 +448,8 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
     function everyUseAvoidsSink(node: TSESTree.Node): boolean {
       const declarator = node.parent;
       if (
+        // A BinaryExpression under a declarator can only be its `init`.
         declarator?.type !== AST_NODE_TYPES.VariableDeclarator ||
-        declarator.init !== node ||
         declarator.id.type !== AST_NODE_TYPES.Identifier
       ) {
         return false;
@@ -532,7 +531,54 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       );
     }
 
-    function reachesXpathSink(node: TSESTree.Node): boolean {
+    /**
+     * `q as string`, `q!`, `q satisfies string`, `<string>q` and either arm of
+     * `ok ? q : '//a'` all hand `q` on unchanged, so whatever consumes the
+     * wrapper consumes `q`. The outermost such wrapper is where the value lands.
+     */
+    function outermostValue(node: TSESTree.Node): TSESTree.Node {
+      let current = node;
+      for (
+        let parent = current.parent;
+        parent !== undefined && passesValueThrough(parent, current);
+        parent = current.parent
+      ) {
+        current = parent;
+      }
+      return current;
+    }
+
+    function passesValueThrough(
+      parent: TSESTree.Node,
+      child: TSESTree.Node,
+    ): boolean {
+      switch (parent.type) {
+        case AST_NODE_TYPES.TSAsExpression:
+        case AST_NODE_TYPES.TSNonNullExpression:
+        case AST_NODE_TYPES.TSSatisfiesExpression:
+        case AST_NODE_TYPES.TSTypeAssertion:
+          return true;
+        case AST_NODE_TYPES.ConditionalExpression:
+          // The test decides which arm, it is not the value produced.
+          return parent.test !== child;
+        default:
+          return false;
+      }
+    }
+
+    /** Is this value the expression argument of an XPath evaluator? */
+    function isXpathSinkArgument(value: TSESTree.Node): boolean {
+      const consumed = outermostValue(value);
+      const call = consumed.parent;
+      return (
+        call?.type === AST_NODE_TYPES.CallExpression &&
+        call.arguments[0] === consumed &&
+        isXpathSinkCall(call)
+      );
+    }
+
+    function reachesXpathSink(start: TSESTree.Node): boolean {
+      const node = outermostValue(start);
       const parent = node.parent;
       if (!parent) return false;
 
@@ -559,14 +605,9 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
           .references.find(
             (r) => r.identifier.name === declared.name,
           )?.resolved;
-        return (resolved?.references ?? []).some((ref) => {
-          const refParent = ref.identifier.parent;
-          return (
-            refParent?.type === AST_NODE_TYPES.CallExpression &&
-            refParent.arguments[0] === ref.identifier &&
-            isXpathSinkCall(refParent)
-          );
-        });
+        return (resolved?.references ?? []).some((ref) =>
+          isXpathSinkArgument(ref.identifier),
+        );
       }
 
       // `//user` + suffix, or a nested template — keep walking outward.
@@ -706,28 +747,20 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         return true;
       }
 
-      // Check if it comes from function parameters
-      let current: TSESTree.Node | undefined = inputNode;
-      while (current) {
-        if (
-          current.type === 'FunctionDeclaration' ||
-          current.type === 'FunctionExpression' ||
-          current.type === 'ArrowFunctionExpression'
-        ) {
-          const func = current as
-            | TSESTree.FunctionDeclaration
-            | TSESTree.FunctionExpression
-            | TSESTree.ArrowFunctionExpression;
-          return func.params.some((param: TSESTree.Parameter): boolean => {
-            if (param.type === 'Identifier') {
-              return param.name === inputNode.name;
-            }
-            return false;
-          });
+      // Does it resolve to a function PARAMETER? Asked of the binding, not of the
+      // nearest function's parameter list: `function f({ id })` binds `id` as a
+      // parameter too, and a block-local `const id = 5` inside `function f(id)`
+      // is not the parameter it shadows.
+      for (
+        let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(inputNode);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.set.get(inputNode.name);
+        if (variable) {
+          return variable.defs.some((def) => def.type === 'Parameter');
         }
-        current = current.parent as TSESTree.Node;
       }
-
       return false;
     };
 
@@ -794,21 +827,12 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
     ): boolean => {
       // No `id.type !== Identifier` guard here: the VariableDeclarator handler already
       // returns on that, so a second check would be unreachable.
-      const name = (declarator.id as TSESTree.Identifier).name;
-      for (
-        let scope: ReturnType<typeof context.sourceCode.getScope> | null =
-          context.sourceCode.getScope(declarator.id);
-        scope;
-        scope = scope.upper
-      ) {
-        const variable = scope.variables.find((v) => v.name === name);
-        if (variable) {
-          return variable.references.some((ref) =>
-            reachesXpathSink(ref.identifier),
-          );
-        }
-      }
-      return false;
+      // An Identifier id declares exactly one variable.
+      return context.sourceCode
+        .getDeclaredVariables(declarator)
+        .some((variable) =>
+          variable.references.some((ref) => reachesXpathSink(ref.identifier)),
+        );
     };
 
     return {
@@ -843,7 +867,6 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         ]);
 
         sourceCode = context.sourceCode;
-        filename = context.filename;
 
         /**
          * Does this module evaluate XPath at all?
@@ -938,14 +961,11 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
             context.report({
               node: xpathArg,
               messageId: 'dangerousXpathExpression',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
             });
           }
-        } else if (xpathArg.type === 'Identifier') {
-          // Check if XPath comes from untrusted input
+        } else {
+          // Check if XPath comes from untrusted input. Not only a bare
+          // identifier: `xpath.select(req.query.q, doc)` is the direct case.
           if (
             isUntrustedXpathInput(xpathArg) &&
             !isXpathInputValidated(xpathArg) &&
@@ -966,10 +986,6 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
             context.report({
               node: xpathArg,
               messageId: 'unvalidatedXpathInput',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
             });
           }
         }
@@ -1003,13 +1019,6 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
           context.report({
             node: pending,
             messageId: 'unsafeXpathConcatenation',
-            data: {
-              filePath: filename,
-              // No `?? 0` fallback here, unlike the sites a mock-context test
-              // reaches: `loc` is non-optional on a parsed node, so the guard
-              // would be an uncoverable branch and this repo gates on 100%.
-              line: String(pending.loc.start.line),
-            },
           });
         }
       },
@@ -1061,37 +1070,30 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         // counts. Every other marker stands alone. See `isWildcardOnlyXpath`.
         const wildcardOnly = isWildcardOnlyXpath(staticText);
 
-        // Check for interpolation in XPath-like expressions
-        if (node.expressions.length > 0) {
-          // Check if any interpolated values are untrusted
-          const hasUntrustedInterpolation = node.expressions.some(
-            (expr: TSESTree.Expression) =>
-              isUntrustedXpathInput(expr) &&
-              !isXpathInputValidated(expr) &&
-              !(
-                expr.type === 'Identifier' && validatedVariables.has(expr.name)
-              ),
-          );
+        // Check for interpolation in XPath-like expressions (a template with
+        // no expressions has nothing to interpolate, and `some` says so).
+        // Check if any interpolated values are untrusted
+        const hasUntrustedInterpolation = node.expressions.some(
+          (expr: TSESTree.Expression) =>
+            isUntrustedXpathInput(expr) &&
+            !isXpathInputValidated(expr) &&
+            !(expr.type === 'Identifier' && validatedVariables.has(expr.name)),
+        );
 
-          if (hasUntrustedInterpolation) {
-            // FALSE POSITIVE REDUCTION: Check for safe annotation
-            if (hasSafeAnnotationOnStatement(node)) {
-              return;
-            }
-
-            if (wildcardOnly) {
-              wildcardPending.push(node);
-              return;
-            }
-            context.report({
-              node,
-              messageId: 'unsafeXpathConcatenation',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
-            });
+        if (hasUntrustedInterpolation) {
+          // FALSE POSITIVE REDUCTION: Check for safe annotation
+          if (hasSafeAnnotationOnStatement(node)) {
+            return;
           }
+
+          if (wildcardOnly) {
+            wildcardPending.push(node);
+            return;
+          }
+          context.report({
+            node,
+            messageId: 'unsafeXpathConcatenation',
+          });
         }
 
         // Check for dangerous patterns in template literals, but only where
@@ -1105,20 +1107,14 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
           context.report({
             node,
             messageId: 'dangerousXpathExpression',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-            },
           });
         }
       },
 
       // Check binary expressions (string concatenation)
       BinaryExpression(node: TSESTree.BinaryExpression) {
-        if (node.operator !== '+') {
-          return;
-        }
-
+        // A non-`+` operator contributes no literal text (`literalTextOf`), so
+        // the XPath-shape test below already rejects it.
         // Check if this looks like XPath construction.
         //
         // Read from the AST, never from printed source. `includes('/')` was the
@@ -1224,8 +1220,6 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
             node,
             messageId: 'xpathInjection',
             data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
               severity: 'HIGH',
               safeAlternative:
                 'Use parameterized XPath construction with input validation',
@@ -1236,9 +1230,6 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
 
       // Check variable assignments with XPath expressions
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        // Computed once and shared by both reports below, so the loc fallback is a single
-        // branch rather than one per report.
-        const declLine = String(node.loc?.start.line ?? 0);
         if (!node.init || node.id.type !== 'Identifier') {
           return;
         }
@@ -1302,10 +1293,6 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
             context.report({
               node: node.init,
               messageId: 'dangerousXpathExpression',
-              data: {
-                filePath: filename,
-                line: declLine,
-              },
             });
           }
         } else if (
@@ -1327,8 +1314,6 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
             node: node.init,
             messageId: 'xpathInjection',
             data: {
-              filePath: filename,
-              line: declLine,
               severity: 'MEDIUM',
               safeAlternative: 'Use safe XPath construction methods',
             },

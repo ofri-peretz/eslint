@@ -79,6 +79,19 @@ of them false, all at CVSS 9.8 CRITICAL:
   layer of it — webpack's `static deserialize(context)` factories account for 33
   of the 35 findings. A rule that cannot see the protocol cannot judge it.
 
+### What counts as untrusted
+
+A request read (`req.body`, `req.query.x`), a fetched body (`res.text()`,
+`res.json()`), file contents (`fs.readFileSync(…)`), and any parameter of an
+enclosing function — including one with a default value, `function run(code = '')`.
+Taint travels through `+` concatenation, template literals, method calls on a
+tainted receiver, a helper call with a tainted argument (spread arguments
+included: `join(...req.body.parts)`), and `const`/`let` bindings. Arithmetic
+does not carry it: `eval(req.body.n * 2)` evaluates a number.
+
+A js-yaml `load` pinned to a safe schema is not reported however the key is
+spelled: `{ schema: S }`, `{ 'schema': S }` and `{ ['schema']: S }` are one option.
+
 ### Why This Matters
 
 | Issue                      | Impact                 | Solution                       |
@@ -124,7 +137,6 @@ const obj = safeDeserialize(userInput);
   rules: {
     'secure-coding/no-unsafe-deserialization': ['error', {
       dangerousFunctions: ['eval', 'Function', 'serialize.unserialize'],
-      validationFunctions: ['isValidJson', 'validateInput']
     }]
   }
 }
@@ -135,7 +147,7 @@ const obj = safeDeserialize(userInput);
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `dangerousFunctions` | `string[]` | `["eval","Function","setTimeout","setInterval","unserialize","deserialize","parseUnsafe"]` | Functions that execute or deserialize untrusted input |
-| `validationFunctions` | `string[]` | `["validateInput","sanitizeData","checkSchema","validateSchema"]` | Function names that count as input validation |
+| `validationFunctions` | `string[]` | `["validateInput","sanitizeData","checkSchema","validateSchema"]` | No effect: accepted so existing configurations keep validating. The rule never read it. |
 | `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as safe deserializers |
 | `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
 | `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |

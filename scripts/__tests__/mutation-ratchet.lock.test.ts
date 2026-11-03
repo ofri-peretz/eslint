@@ -37,7 +37,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import {
   bank,
@@ -46,6 +46,7 @@ import {
   ruleOf,
   scoreReport,
   selectRules,
+  shippedRules,
   type Baseline,
 } from '../lib/mutation-score';
 
@@ -247,21 +248,11 @@ describe('the committed baseline', () => {
   });
 
   it.each(Object.keys(baseline.plugins))(
-    '%s has a banked score, or a place in its pending backlog, for every rule it ships',
+    '%s has a banked score, or a place in its pending backlog, for every rule and helper it ships',
     (plugin) => {
-      const dir = join(
-        ROOT,
-        'packages',
-        `eslint-plugin-${plugin}`,
-        'src',
-        'rules',
+      const shipped = shippedRules(
+        join(ROOT, 'packages', `eslint-plugin-${plugin}`),
       );
-      const shipped = readdirSync(dir)
-        .map((d) =>
-          statSync(join(dir, d)).isDirectory() ? d : ruleOf(`src/rules/${d}`),
-        )
-        .filter((r): r is string => r !== undefined)
-        .toSorted();
       const { rules, pending = [] } = baseline.plugins[plugin];
       // Disjoint: a rule is graded or it is pending, never both.
       expect(pending.filter((r) => r in rules)).toEqual([]);

@@ -718,7 +718,10 @@ describe('no-ldap-injection — the LDAP client gate', () => {
       // Corpus: Shopify/cli packages/theme/src/cli/services/package.ts:28. A zip
       // glob. `inputDirectory` starts with `input`; the parentheses are the
       // alternation group of the glob.
-      `const matchFilePattern = \`\${inputDirectory}/(\${themeFilesPattern})\`;`,
+      {
+        code: `const matchFilePattern = \`\${inputDirectory}/(\${themeFilesPattern})\`;`,
+        name: 'a zip glob in a file with no LDAP client is not a filter',
+      },
       // The `Set` method that opened the OLD gate. `add`, `search`, `bind` and
       // `delete` were accepted as "an LDAP sink is present"; `intentKeys.add()`
       // is on the line above the type-generation finding.

@@ -92,7 +92,10 @@ describe('no-missing-csrf-protection', () => {
           // rather than a route path.
           { code: `${APP}app.post(buildPath(), handler);` },
           // An empty path array names no route.
-          { code: `${APP}app.post([], handler);` },
+          {
+            code: `${APP}app.post([], handler);`,
+            name: 'an empty path array names no route',
+          },
           // `.route(path)` with nothing registered on it.
           { code: `${APP}app.route("/api/users").post();` },
 

@@ -1,8 +1,8 @@
 const { tag } = require('../../lib.cjs');
 
 module.exports = {
-  domain: 64,
-  traces: 600,
+  domain: 72,
+  traces: 700,
   rule: 'no-pii-in-logs',
   key: (s) => `${tag(s.sink)}|${tag(s.value)}|${tag(s.shape)}`,
   config: () => ({}),
@@ -13,6 +13,7 @@ module.exports = {
       CreditCard: 'customer.creditCard',
       Ssn: 'record.ssn',
       StringifyUser: 'JSON.stringify(user)',
+      NumericPhone: '+user.phone',
       UserId: 'user.id',
       Emailer: 'user.emailer',
       Hashed: 'hashStable(record.ssn)',

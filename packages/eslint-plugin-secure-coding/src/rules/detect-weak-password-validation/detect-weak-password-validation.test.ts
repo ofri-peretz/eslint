@@ -43,7 +43,7 @@ ruleTester.run(
       },
       // Non-password length checks
       { code: 'if (name.length >= 2) { valid() }' },
-      { code: 'const x = 1' },
+      { code: 'const x = 1', name: 'a numeric constant validates no password' },
       // Operator not in the tracked comparison set — false branch of the operator check
       { code: 'if (password.length != 4) { accept() }' },
       // Left side is not a MemberExpression at all — false branch of that check

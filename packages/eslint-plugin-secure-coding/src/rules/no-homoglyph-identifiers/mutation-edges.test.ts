@@ -184,3 +184,17 @@ describe('no-homoglyph-identifiers (mutation edges)', () => {
     ],
   });
 });
+
+describe('no-homoglyph-identifiers (edges, 2026-11-02)', () => {
+  ruleTester.run('no-homoglyph-identifiers', noHomoglyphIdentifiers, {
+    valid: [],
+    invalid: [
+      // @found Stryker mutation-survivor triage, 2026-11-03
+      {
+        name: 'FN: a zero-width space pasted into a regex literal hides in the pattern',
+        code: 'const re = /adm​in/;',
+        errors: [{ messageId: 'invisibleCharacter' as const }],
+      },
+    ],
+  });
+});

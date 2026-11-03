@@ -91,8 +91,8 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         issueName: 'GraphQL Injection',
         cwe: 'CWE-89',
         description: 'GraphQL injection vulnerability detected',
-        severity: '{{severity}}',
-        fix: '{{safeAlternative}}',
+        severity: 'HIGH',
+        fix: 'Use GraphQL variables or query builders instead of string concatenation',
         documentationLink: 'https://owasp.org/Top10/2025/A05_2025-Injection/',
       }),
       introspectionQuery: formatLLMMessage({
@@ -222,7 +222,6 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     let trustedSanitizers: string[];
     let trustedAnnotations: string[];
     let strictMode: boolean;
-    let filename: string;
     let sourceCode: Readonly<TSESLint.SourceCode>;
     let safetyChecker: {
       isSafe(
@@ -312,8 +311,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         // Don't walk past function boundaries
         if (
           current.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-          current.type === AST_NODE_TYPES.FunctionExpression ||
-          current.type === AST_NODE_TYPES.FunctionDeclaration
+          current.type === AST_NODE_TYPES.FunctionExpression
         ) {
           break;
         }
@@ -324,21 +322,27 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       return false;
     };
 
-    // ─── AST-based GraphQL detection helpers ──────────────────────────
+    // ─── Text scanning helpers ────────────────────────────────────────
+    // Every scan below reads characters with `charAt`, which answers '' past
+    // the end of the text — so no scan needs its own bounds check, and '' is
+    // neither a word character nor whitespace.
     // oxlint-disable-next-line consistent-function-scoping
-    const isWordChar = (ch: string): boolean => {
-      const code = ch.charCodeAt(0);
-      return (
-        (code >= 65 && code <= 90) || // A-Z
-        (code >= 97 && code <= 122) || // a-z
-        (code >= 48 && code <= 57) || // 0-9
-        code === 95
-      ); // _
-    };
+    const isWordChar = (ch: string): boolean => /\w/.test(ch);
 
     // oxlint-disable-next-line consistent-function-scoping
-    const isWhitespace = (ch: string): boolean =>
-      ch === ' ' || ch === '\n' || ch === '\t' || ch === '\r';
+    const isWhitespace = (ch: string): boolean => /\s/.test(ch);
+
+    /** The first index at or after `from` whose character fails `accept`. */
+    // oxlint-disable-next-line consistent-function-scoping
+    const skip = (
+      text: string,
+      from: number,
+      accept: (ch: string) => boolean,
+    ): number => {
+      let at = from;
+      while (accept(text.charAt(at))) at++;
+      return at;
+    };
 
     /**
      * A GraphQL document declares its operations and type definitions at the
@@ -359,6 +363,22 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         if (!isWhitespace(ch)) return false;
       }
       return true;
+    };
+
+    /** The deepest brace nesting in the text — `{ a { b } }` is 2. */
+    // oxlint-disable-next-line consistent-function-scoping
+    const maxBraceDepth = (text: string): number => {
+      let depth = 0;
+      let open = 0;
+      for (const ch of text) {
+        if (ch === '{') {
+          open++;
+          depth = Math.max(depth, open);
+        } else if (ch === '}') {
+          open--;
+        }
+      }
+      return depth;
     };
 
     /**
@@ -386,48 +406,51 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       // quoted string on the left of a colon cannot occur.
       if (/\{\{|\}\}/.test(trimmed)) return false;
       if (/"[^"]*"\s*:/.test(trimmed)) return false;
-      let braceDepth = 0;
-      for (const ch of trimmed) {
-        if (ch === '{') {
-          braceDepth++;
-          if (braceDepth >= 2) return true;
-        } else if (ch === '}') {
-          braceDepth = Math.max(0, braceDepth - 1);
-        }
-      }
-      return false;
+      // A selection set nests: the operation's braces hold a field's braces.
+      // `{ a } and { b }` never does.
+      return maxBraceDepth(trimmed) >= 2;
     };
 
-    /**
-     * Find keyword at word boundary in text. Returns index or -1.
-     * Uses simple character checks instead of regex \b.
-     */
-    // NOTE: this loop always terminates via one of its two internal `return`
-    // statements: `text.indexOf` eventually returns -1 for any finite input,
-    // and each successful-but-boundary-failing match only advances `pos` by 1
-    // (never past `text.length`) before the next `indexOf` call runs. There is
-    // no fallthrough path once the `while` condition becomes false, so the
-    // loop is written with `while (true)` + internal returns instead of a
-    // trailing `return -1` that static analysis (and coverage) would flag as
-    // dead code.
+    /** Index of `keyword` at a word boundary, from `startFrom`, or -1. */
+    // oxlint-disable-next-line consistent-function-scoping
     const findKeywordAtBoundary = (
       text: string,
       keyword: string,
       startFrom = 0,
     ): number => {
       let pos = startFrom;
+      // Terminates: each miss advances `pos`, and `indexOf` returns -1 once
+      // no occurrence is left.
       // oxlint-disable-next-line no-constant-condition
       while (true) {
         const idx = text.indexOf(keyword, pos);
         if (idx === -1) return -1;
-
         const beforeOk = idx === 0 || !isWordChar(text[idx - 1]);
-        const afterIdx = idx + keyword.length;
-        const afterOk = afterIdx >= text.length || !isWordChar(text[afterIdx]);
-
+        const afterOk = !isWordChar(text.charAt(idx + keyword.length));
         if (beforeOk && afterOk) return idx;
         pos = idx + 1;
       }
+    };
+
+    /**
+     * Where each line-leading occurrence of `keyword` ENDS. Every occurrence
+     * is offered, not only the first: `query` may appear in a comment line
+     * before the operation that is really there.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    const keywordEndsAtLineStart = (
+      text: string,
+      keyword: string,
+    ): number[] => {
+      const ends: number[] = [];
+      for (
+        let idx = findKeywordAtBoundary(text, keyword);
+        idx !== -1;
+        idx = findKeywordAtBoundary(text, keyword, idx + 1)
+      ) {
+        if (isAtLineStart(text, idx)) ends.push(idx + keyword.length);
+      }
+      return ends;
     };
 
     const hasGraphqlAttribution = (node: TSESTree.Node): boolean => {
@@ -467,113 +490,13 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       return false;
     };
 
-    /**
-     * AST-based: Check if a TemplateLiteral contains GraphQL syntax.
-     * Examines quasis (static template parts) directly — no regex, no sourceCode.getText().
-     */
-    const isGraphqlTemplate = (node: TSESTree.TemplateLiteral): boolean => {
-      // Build combined static text from quasis for keyword scanning
-      const staticText = node.quasis
-        .map((q) => (q.value.cooked ?? q.value.raw).toLowerCase())
-        .join('');
+    /** The static text of a template — its quasis joined, interpolations dropped. */
+    // oxlint-disable-next-line consistent-function-scoping
+    const templateText = (node: TSESTree.TemplateLiteral): string =>
+      node.quasis.map((q) => q.value.cooked ?? q.value.raw).join('');
 
-      // 1. Check for GraphQL operation keywords (query, mutation, subscription)
-      //    Must be followed by optional name then { or (
-      for (const keyword of GRAPHQL_OP_KEYWORDS) {
-        let pos = 0;
-        while (pos < staticText.length) {
-          const idx = findKeywordAtBoundary(staticText, keyword, pos);
-          if (idx === -1) break;
-          pos = idx + 1;
-          if (!isAtLineStart(staticText, idx)) continue;
-
-          // Scan past keyword, skip whitespace, skip optional name, skip whitespace, expect { or (
-          let scan = idx + keyword.length;
-          while (scan < staticText.length && isWhitespace(staticText[scan]))
-            scan++;
-          while (scan < staticText.length && isWordChar(staticText[scan]))
-            scan++;
-          while (scan < staticText.length && isWhitespace(staticText[scan]))
-            scan++;
-          if (scan < staticText.length && staticText[scan] === '(') {
-            return true;
-          }
-          if (scan < staticText.length && staticText[scan] === '{') {
-            // A GraphQL selection set names at least one field. Joining the quasis drops
-            // the interpolations, so a real query still shows its field names
-            // (`query { user(id: "") }`) while a string that merely READS like one does
-            // not: Mongoose's `Query.prototype[Symbol.toStringTag]` returns
-            // `` `Query { ${this.op} }` `` -> `Query {  }`, which was reported as a
-            // GraphQL injection in a file that has never seen GraphQL.
-            let probe = scan + 1;
-            while (probe < staticText.length && isWhitespace(staticText[probe]))
-              probe++;
-            if (probe < staticText.length && isWordChar(staticText[probe])) {
-              return true;
-            }
-            continue;
-          }
-        }
-      }
-
-      // Check for fragment keyword: fragment Name on Type
-      {
-        let pos = 0;
-        while (pos < staticText.length) {
-          const idx = findKeywordAtBoundary(staticText, 'fragment', pos);
-          if (idx === -1) break;
-          pos = idx + 1;
-          if (!isAtLineStart(staticText, idx)) continue;
-
-          let scan = idx + 8; // 'fragment'.length
-          while (scan < staticText.length && isWhitespace(staticText[scan]))
-            scan++;
-          const nameStart = scan;
-          while (scan < staticText.length && isWordChar(staticText[scan]))
-            scan++;
-          if (scan === nameStart) continue; // no name
-          while (scan < staticText.length && isWhitespace(staticText[scan]))
-            scan++;
-          if (
-            staticText.slice(scan, scan + 2) === 'on' &&
-            (scan + 2 >= staticText.length || !isWordChar(staticText[scan + 2]))
-          ) {
-            return true;
-          }
-        }
-      }
-
-      // 2. Check for schema definition keywords (type User, interface Foo, etc.)
-      // A schema definition always has a body, so the text must contain a
-      // brace. Without this, `enum value with ',' delimiter. Available values:
-      // ${...}` (ack-nestjs-boilerplate's Swagger docs) reads as an `enum`
-      // definition named `value`.
-      // …and the string must be attributed to GraphQL — see
-      // hasGraphqlAttribution. `interface Name {` is TypeScript too.
-      if (hasGraphqlAttribution(node) && staticText.includes('{'))
-        for (const keyword of GRAPHQL_SCHEMA_KEYWORDS) {
-          let pos = 0;
-          while (pos < staticText.length) {
-            const idx = findKeywordAtBoundary(staticText, keyword, pos);
-            if (idx === -1) break;
-            pos = idx + 1;
-            if (!isAtLineStart(staticText, idx)) continue;
-
-            let scan = idx + keyword.length;
-            // Must have whitespace then a word (type name)
-            if (scan >= staticText.length || !isWhitespace(staticText[scan]))
-              continue;
-            while (scan < staticText.length && isWhitespace(staticText[scan]))
-              scan++;
-            if (scan < staticText.length && isWordChar(staticText[scan])) {
-              return true;
-            }
-          }
-        }
-
-      // 3. Check for selection sets (nested braces): { users { name } }
-      return isStandaloneSelectionSet(staticText);
-    };
+    const isGraphqlTemplate = (node: TSESTree.TemplateLiteral): boolean =>
+      containsGraphqlText(templateText(node), hasGraphqlAttribution(node));
 
     /**
      * The interpolation is another GraphQL document — composition, not input.
@@ -591,7 +514,8 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
      * reporting — `cartFragment: string` is a hole a caller fills.
      */
     const isGraphqlComposition = (expr: TSESTree.Expression): boolean => {
-      if (expr.type !== AST_NODE_TYPES.Identifier) return false;
+      // Only an identifier is ever a reference, so anything else resolves to
+      // null below.
       const variable = resolvedReference(sourceCode.getScope(expr), expr);
       if (variable === null || variable.defs.length !== 1) return false;
       // `defs.length === 1` above, so index 0 exists.
@@ -606,16 +530,18 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       // `as const` is how a typed client pins a document literal.
       const literal =
         init.type === AST_NODE_TYPES.TSAsExpression ? init.expression : init;
+      // A document held in a plain string constant composes exactly as one
+      // held in a template does.
+      const text =
+        literal.type === AST_NODE_TYPES.TemplateLiteral
+          ? templateText(literal)
+          : staticString(literal);
       return (
-        literal.type === AST_NODE_TYPES.TemplateLiteral &&
-        isGraphqlTemplate(literal)
+        text !== null &&
+        containsGraphqlText(text, hasGraphqlAttribution(literal))
       );
     };
 
-    /**
-     * Check if a TemplateLiteral contains introspection patterns.
-     * AST-based: scans quasis directly.
-     */
     // oxlint-disable-next-line consistent-function-scoping
     const hasIntrospectionField = (text: string): boolean => {
       const lower = text.toLowerCase();
@@ -625,38 +551,21 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       );
     };
 
-    const templateHasIntrospection = (
-      node: TSESTree.TemplateLiteral,
-    ): boolean => {
-      return node.quasis.some((q) =>
-        hasIntrospectionField(q.value.cooked ?? q.value.raw),
-      );
-    };
-
     /**
-     * Calculate query depth from template quasis (brace depth scan).
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    const templateQueryDepth = (node: TSESTree.TemplateLiteral): number => {
-      let depth = 0;
-      let braceCount = 0;
-      for (const q of node.quasis) {
-        const text = q.value.cooked ?? q.value.raw;
-        for (const char of text) {
-          if (char === '{') {
-            braceCount++;
-            depth = Math.max(depth, braceCount);
-          } else if (char === '}') {
-            braceCount--;
-          }
-        }
-      }
-      return depth;
-    };
-
-    /**
-     * Text-based GraphQL detection for string Literals and BinaryExpressions.
-     * Uses simple string methods — only regex is for fragment pattern.
+     * Is this text a GraphQL document?
+     *
+     * One scan for every node shape — a template's joined quasis, a string
+     * literal, a flattened concatenation. Two near-copies used to exist, and
+     * the literal copy looked only at the FIRST occurrence of each keyword
+     * while the template copy looked at all of them.
+     *
+     *   - `query|mutation|subscription [Name] (` or `… {` followed by a field;
+     *   - `fragment Name on`;
+     *   - a schema keyword followed by a type name, only when the text is
+     *     attributed to GraphQL and has a body (see hasGraphqlAttribution);
+     *   - a standalone selection set.
+     *
+     * Each keyword must start a line.
      */
     const containsGraphqlText = (
       text: string,
@@ -664,61 +573,62 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     ): boolean => {
       const lower = text.toLowerCase();
 
-      // Check operation keywords
       for (const keyword of GRAPHQL_OP_KEYWORDS) {
-        const idx = findKeywordAtBoundary(lower, keyword);
-        if (idx === -1) continue;
-        if (!isAtLineStart(lower, idx)) continue;
-        let scan = idx + keyword.length;
-        while (scan < lower.length && isWhitespace(lower[scan])) scan++;
-        while (scan < lower.length && isWordChar(lower[scan])) scan++;
-        while (scan < lower.length && isWhitespace(lower[scan])) scan++;
-        if (scan < lower.length && lower[scan] === '(') return true;
-        if (scan < lower.length && lower[scan] === '{') {
-          // A GraphQL selection set names at least one field. Requiring that separates a
-          // real document from any string that happens to read `Word {`:
-          // Mongoose's `Query.prototype[Symbol.toStringTag]` returns
-          // `` `Query { ${this.op} }` `` — an interpolation and nothing else — and was
-          // reported as a GraphQL injection. Attribution (a gql tag, a graphql client)
-          // still short-circuits this via `attributed`.
-          if (attributed) return true;
-          let probe = scan + 1;
-          while (probe < lower.length && isWhitespace(lower[probe])) probe++;
-          if (probe < lower.length && isWordChar(lower[probe])) return true;
-        }
-      }
-
-      // Check fragment
-      const fragIdx = findKeywordAtBoundary(lower, 'fragment');
-      if (fragIdx !== -1 && isAtLineStart(lower, fragIdx)) {
-        let scan = fragIdx + 8;
-        while (scan < lower.length && isWhitespace(lower[scan])) scan++;
-        const nameStart = scan;
-        while (scan < lower.length && isWordChar(lower[scan])) scan++;
-        if (scan > nameStart) {
-          while (scan < lower.length && isWhitespace(lower[scan])) scan++;
+        for (const end of keywordEndsAtLineStart(lower, keyword)) {
+          const afterName = skip(
+            lower,
+            skip(lower, skip(lower, end, isWhitespace), isWordChar),
+            isWhitespace,
+          );
+          const next = lower.charAt(afterName);
+          if (next === '(') return true;
+          // A GraphQL selection set names at least one field. Joining the
+          // quasis drops the interpolations, so a real query still shows its
+          // field names (`query { user(id: "") }`) while a string that merely
+          // READS like one does not: Mongoose's
+          // `Query.prototype[Symbol.toStringTag]` returns `` `Query { ${this.op} }` ``
+          // -> `Query {  }`, which was reported as a GraphQL injection in a
+          // file that has never seen GraphQL. Attribution (a gql tag, a
+          // graphql client) settles it without the field.
           if (
-            lower.slice(scan, scan + 2) === 'on' &&
-            (scan + 2 >= lower.length || !isWordChar(lower[scan + 2]))
-          )
+            next === '{' &&
+            (attributed ||
+              isWordChar(
+                lower.charAt(skip(lower, afterName + 1, isWhitespace)),
+              ))
+          ) {
             return true;
+          }
         }
       }
 
-      // Check schema keywords — a schema definition always has a body, and
-      // the string must be attributed to GraphQL (see hasGraphqlAttribution).
-      if (attributed && lower.includes('{'))
-        for (const keyword of GRAPHQL_SCHEMA_KEYWORDS) {
-          const idx = findKeywordAtBoundary(lower, keyword);
-          if (idx === -1) continue;
-          if (!isAtLineStart(lower, idx)) continue;
-          let scan = idx + keyword.length;
-          if (scan >= lower.length || !isWhitespace(lower[scan])) continue;
-          while (scan < lower.length && isWhitespace(lower[scan])) scan++;
-          if (scan < lower.length && isWordChar(lower[scan])) return true;
+      for (const end of keywordEndsAtLineStart(lower, 'fragment')) {
+        const on = skip(
+          lower,
+          skip(lower, skip(lower, end, isWhitespace), isWordChar),
+          isWhitespace,
+        );
+        // `fragment on` has no name: the word read as the name was `on`
+        // itself, so `on` is not found again after it.
+        if (lower.startsWith('on', on) && !isWordChar(lower.charAt(on + 2))) {
+          return true;
         }
+      }
 
-      // Check nested braces — only as a standalone selection set.
+      // A schema definition has a body, so the text must contain a brace.
+      // Without this, `enum value with ',' delimiter. Available values: ${...}`
+      // (ack-nestjs-boilerplate's Swagger docs) reads as an `enum` named
+      // `value`. And `interface Name {` is TypeScript too, hence attribution.
+      if (attributed && lower.includes('{')) {
+        for (const keyword of GRAPHQL_SCHEMA_KEYWORDS) {
+          for (const end of keywordEndsAtLineStart(lower, keyword)) {
+            if (isWordChar(lower.charAt(skip(lower, end, isWhitespace)))) {
+              return true;
+            }
+          }
+        }
+      }
+
       return isStandaloneSelectionSet(text);
     };
 
@@ -736,9 +646,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       // it is read before `staticString` — which only answers for one with
       // none, and would send an interpolated query down the empty path.
       if (node.type === 'TemplateLiteral') {
-        return node.quasis
-          .map((q: TSESTree.TemplateElement) => q.value.cooked ?? q.value.raw)
-          .join('');
+        return templateText(node);
       }
       return staticString(node) ?? '';
     };
@@ -789,7 +697,6 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
           strictMode = false,
         } = options);
 
-        filename = context.filename;
         sourceCode = context.sourceCode;
 
         // Create safety checker for false positive detection
@@ -877,7 +784,14 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for introspection queries (AST-based)
-        if (!allowIntrospection && templateHasIntrospection(node)) {
+        // Asked per quasi: joining them could glue `__type` to the text after
+        // an interpolation and hide the boundary.
+        if (
+          !allowIntrospection &&
+          node.quasis.some((q) =>
+            hasIntrospectionField(q.value.cooked ?? q.value.raw),
+          )
+        ) {
           // FALSE POSITIVE REDUCTION: Skip if annotated as safe
           if (safetyChecker.isSafe(node, context)) {
             return;
@@ -886,46 +800,31 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
           context.report({
             node,
             messageId: 'introspectionQuery',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-            },
           });
           return;
         }
 
-        // Check for unsafe interpolation (AST-based: just check expressions array)
-        if (node.expressions.length > 0) {
-          // FALSE POSITIVE REDUCTION: Skip if all expressions are validated
-          const allExpressionsSafe = node.expressions.every(
-            (expr: TSESTree.Expression) =>
-              isGraphqlComposition(expr) ||
-              isInputValidated(expr) ||
-              safetyChecker.isSafe(expr, context),
-          );
-
-          if (!allExpressionsSafe) {
-            context.report({
-              node,
-              messageId: 'unsafeVariableInterpolation',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
-            });
-          }
+        // Unsafe interpolation: an expression that is neither another
+        // document, validated, nor marked safe. A template with no
+        // expressions passes `every` vacuously.
+        const allExpressionsSafe = node.expressions.every(
+          (expr: TSESTree.Expression) =>
+            isGraphqlComposition(expr) ||
+            isInputValidated(expr) ||
+            safetyChecker.isSafe(expr, context),
+        );
+        if (!allExpressionsSafe) {
+          context.report({
+            node,
+            messageId: 'unsafeVariableInterpolation',
+          });
         }
 
         // Check query depth for DoS protection (AST-based)
-        const depth = templateQueryDepth(node);
-        if (depth > maxQueryDepth) {
+        if (maxBraceDepth(templateText(node)) > maxQueryDepth) {
           context.report({
             node,
             messageId: 'complexQueryDos',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-            },
           });
         }
       },
@@ -948,42 +847,22 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
           context.report({
             node,
             messageId: 'introspectionQuery',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-            },
           });
         }
 
-        // Check query depth via brace scanner
-        let depth = 0;
-        let bc = 0;
-        for (const ch of queryText) {
-          if (ch === '{') {
-            bc++;
-            depth = Math.max(depth, bc);
-          } else if (ch === '}') {
-            bc--;
-          }
-        }
-        if (depth > maxQueryDepth) {
+        if (maxBraceDepth(queryText) > maxQueryDepth) {
           context.report({
             node,
             messageId: 'complexQueryDos',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-            },
           });
         }
       },
 
       // Check binary expressions (string concatenation)
       BinaryExpression(node: TSESTree.BinaryExpression) {
-        if (node.operator !== '+') {
-          return;
-        }
-
+        // Only `+` builds a string: every other operator's static text is
+        // empty below, so no separate operator check is needed.
+        //
         // Use the concatenation's STATIC STRING VALUE, not its source text.
         // `sourceCode.getText()` includes the JS quoting and the `+ ident +`
         // scaffolding, so a query starting at the very beginning of the string
@@ -1003,13 +882,6 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         context.report({
           node,
           messageId: 'graphqlInjection',
-          data: {
-            filePath: filename,
-            line: String(node.loc?.start.line ?? 0),
-            severity: 'HIGH',
-            safeAlternative:
-              'Use GraphQL variables or query builders instead of string concatenation',
-          },
         });
       },
 
@@ -1044,10 +916,6 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
               context.report({
                 node: arg,
                 messageId: 'missingInputValidation',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
-                },
               });
             }
           }

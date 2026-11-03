@@ -58,7 +58,10 @@ ruleTester.run('no-password-in-url', noPasswordInUrl, {
     // Not a URL at all.
     { code: "const s = 'user:password@example.com'" },
     { code: "const t = 'postgres-user:secret'" },
-    { code: 'const n = 42' },
+    {
+      code: 'const n = 42',
+      name: 'a numeric constant holds no URL credentials',
+    },
   ],
 
   invalid: [
@@ -180,6 +183,7 @@ ruleTester.run('no-password-in-url — fold refusals', noPasswordInUrl, {
     // literal — the one carrying the authority — sits at the depth of the
     // whole chain, and any URL built from ten or more pieces lost its
     // credentials. The AST is finite; the fold needs no budget.
+    // @found Stryker mutation-survivor triage, 2026-11-03
     {
       name: 'FN: a concatenation of ten pieces still carries its leading userinfo',
       code: `const deep = 'https://svc:s3cr3t@host'${" + 'x'".repeat(10)};`,

@@ -156,3 +156,28 @@ describe('no-log-injection (mutation edges)', () => {
     ],
   });
 });
+
+describe('no-log-injection (edges, 2026-11-02)', () => {
+  ruleTester.run('no-log-injection', noLogInjection, {
+    valid: [
+      {
+        name: 'a unary-plus request value in a message is a number',
+        code: "function h(req) { logger.info('count=' + +req.query.count); }",
+      },
+    ],
+    invalid: [
+      // @found Stryker mutation-survivor triage, 2026-11-03
+      {
+        name: 'FN: a parameter reassigned from the request carries it',
+        code: 'function h(req, name) { name = req.query.name; logger.info(`user ${name}`); }',
+        errors: [{ messageId: 'logInjection' as const }],
+      },
+      // @found Stryker mutation-survivor triage, 2026-11-03
+      {
+        name: 'FN: a binding declared without a value and assigned from the request carries it',
+        code: 'function h(req) { let name; name = req.query.name; logger.info(`user ${name}`); }',
+        errors: [{ messageId: 'logInjection' as const }],
+      },
+    ],
+  });
+});

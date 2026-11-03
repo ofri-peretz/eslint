@@ -138,6 +138,7 @@ processValue(getValue()); // Cross-file not tracked
 | Option          | Type       | Default | Description                                                                                                                                                                                                                             |
 | --------------- | ---------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `allowContexts` | `string[]` | `[]`    | Allow dynamic requires in files whose path marks a context — a substring test on the linted file path: test (.test., .spec., /**tests**/), config (config, webpack, rollup), build (build, scripts, tools), runtime (runtime, dynamic). |
+| `allowPatterns` | `string[]` | `[]`    | Regex patterns matched against the source text of the require argument; a match suppresses the report.                                                                                                                                  |
 
 ### `allowContexts`
 
@@ -154,7 +155,6 @@ path**. In a file that matches a listed context, the rule reports nothing.
 It is a substring test, not a path-segment test: `src/configure.ts` matches `config`
 and `src/rebuild.ts` matches `build`. Prefer `allowPatterns` when the exemption is about
 the specifier rather than about the file.
-| `allowPatterns` | `string[]` | `[]` | Regex patterns matched against the source text of the require argument; a match suppresses the report. |
 
 ## Not a finding
 

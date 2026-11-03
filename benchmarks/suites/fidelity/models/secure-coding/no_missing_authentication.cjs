@@ -1,8 +1,8 @@
 const { tag } = require('../../lib.cjs');
 
 module.exports = {
-  domain: 120,
-  traces: 1000,
+  domain: 144,
+  traces: 1200,
   rule: 'no-missing-authentication',
   key: (s) => `${tag(s.router)}|${tag(s.method)}|${tag(s.auth)}|${tag(s.path)}`,
   config: () => ({}),
@@ -18,6 +18,7 @@ module.exports = {
       AuthenticateCall: 'authenticate(), ',
       PassportAuth: "passport.authenticate('jwt', { session: false }), ",
       RequireAuthRef: 'requireAuth, ',
+      DynamicAuthMember: 'auth[mode], ',
       RateLimitOnly: 'rateLimit({ max: 10 }), ',
     }[tag(s.auth)];
     const path = {
@@ -26,6 +27,6 @@ module.exports = {
       Health: '/health',
     }[tag(s.path)];
     const method = tag(s.method) === 'Get' ? 'get' : 'post';
-    return `import express from 'express';\nimport fastify from 'fastify';\nimport passport from 'passport';\nimport rateLimit from 'express-rate-limit';\nimport { authenticate, requireAuth } from './auth';\n${decl}\n${name}.${method}('${path}', ${mw}(req: any, res: any) => {\n  res.json(req.user);\n});\n`;
+    return `import express from 'express';\nimport fastify from 'fastify';\nimport passport from 'passport';\nimport rateLimit from 'express-rate-limit';\nimport { auth, authenticate, requireAuth } from './auth';\ndeclare const mode: string;\n${decl}\n${name}.${method}('${path}', ${mw}(req: any, res: any) => {\n  res.json(req.user);\n});\n`;
   },
 };

@@ -111,8 +111,8 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 | Option               | Type       | Default | Description                         |
 | -------------------- | ---------- | ------- | ----------------------------------- |
-| `allowLiterals`      | `boolean`  | `false` | Allow literal string regex patterns |
-| `maxPatternLength`   | `number`   | `100`   | Maximum allowed length for a DYNAMIC pattern before it reports      |
+| `allowLiterals`      | `boolean`  | `true`  | Allow literal string regex patterns |
+| `maxPatternLength`   | `number`   | `100`   | Longest literal pattern `allowLiterals` lets through, measured on the string it spells |
 
 ## Examples
 
@@ -283,7 +283,7 @@ obj[method](userInput);
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowLiterals` | `boolean` | `true` | Allow literal string regex patterns — `new RegExp('^[a-z]+$')`. A rule named "non-literal" reporting a literal by default contradicted its own contract. Set false to prefer `/…/` literal syntax; measured effect on the 30-fixture corpus: +6 findings, all on safe/ files. |
-| `maxPatternLength` | `number` | `100` | Maximum allowed pattern length for dynamic regex |
+| `maxPatternLength` | `number` | `100` | Longest literal pattern `allowLiterals` lets through. Measured on the string the literal spells — `'x'.repeat(100)` written out is 100 whether quoted or backticked (a backticked one used to measure 9). A runtime-decided pattern reports at any length. |
 
 ## Not a finding
 
@@ -299,6 +299,19 @@ reporting direction.
 | `const EXTS = ['png','jpg']; new RegExp(EXTS.join('\|'))` | Constant-preserving methods over a constant array. |
 | `const P = '^v'; new RegExp(P + '\\d+')` | Concatenation of constants. |
 | `for (let i = 0; i < 3; i++) new RegExp('{' + i + '}')` | The loop drives the counter. |
+| `let p; if (word) p = '^\\w+$'; else p = '^\\d+$'; new RegExp(p)` | Every write is a constant: the set of values is closed, whatever the keyword. |
+| `const P = { a: '^a$', b: '^b$' }; new RegExp(P[req.query.k])` | A constant table: the caller picks WHICH entry, never WHAT. Holds for arrays, quoted keys, computed keys and spreads of constant tables. |
+| `new RegExp(raw.replace(/[.*+?^${}()\|[\]\\]/g, '\\$&'))` | The escape idiom: one global character class naming every metacharacter (`\ ^ $ . * + ? ( ) [ ] { } \|`), as lodash, escape-string-regexp and MDN write it. Also through `.replaceAll(…)`, and with the search held in a binding written once (`const ESC = /[…]/g; raw.replace(ESC, '\\$&')`, lodash's own spelling). |
+
+**Still a finding**, because the value is not what it looks like:
+
+| Code | Why it reports |
+| --- | --- |
+| `raw.replace(/[.]/g, '\\$&')` | Escapes dots only; `(a+)+$` survives (measured 1,314 ms). |
+| `raw.replace(/[.*+?^${}()\|[\]\\]/, '\\$&')` | No `g`: escapes the first metacharacter only (`.(a+)+$`, 2,779 ms). |
+| `let ESC = /[…]/g; ESC = /x/g; raw.replace(ESC, …)` | A rebound search binding is not the regex it was declared with. |
+| `const P = { a: '^a$', b: req.query.p }; new RegExp(P[k])` | One runtime entry is enough — the caller can choose it. |
+| `[P.a] = list`, `({ x: P.a } = cfg)`, `for (P.a of list)` | Writes through the table, the same as `P.a = …`. |
 
 **If it fires**, the pattern reaches a name this file cannot resolve, or a
 constant-preserving chain deeper than the walk follows. A parameter could be anything,

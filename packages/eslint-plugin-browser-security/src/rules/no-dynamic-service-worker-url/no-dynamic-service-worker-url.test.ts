@@ -114,7 +114,10 @@ ruleTester.run(
         code: `const { serviceWorker } = pluginHost;\nserviceWorker.register(descriptor);`,
       },
       // `register` is a very common method name.
-      { code: `router.register(dynamicRoute);` },
+      {
+        code: `router.register(dynamicRoute);`,
+        name: 'a register call on a router is not service worker registration',
+      },
       // Reading registrations installs nothing.
       {
         code: `const list = await navigator.serviceWorker.getRegistrations();`,

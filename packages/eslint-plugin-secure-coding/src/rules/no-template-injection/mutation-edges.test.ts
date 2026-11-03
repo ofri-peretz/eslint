@@ -90,3 +90,77 @@ describe('no-template-injection (mutation edges)', () => {
     ],
   });
 });
+
+/** The source walk spends one of its six levels per hop. */
+const SRC = 'req.body.tpl';
+const nest = (levels: number, open: string, close: string): string =>
+  `${open.repeat(levels)}${SRC}${close.repeat(levels)}`;
+/** A cast around a `+`: two hops per level, one of them the cast. */
+const castLevels = (levels: number): string => {
+  let expression = SRC;
+  for (let i = 0; i < levels; i++)
+    expression = `(${expression} + 'b' as string)`;
+  return expression;
+};
+const sink = (expression: string): string =>
+  `async function f(req) { return Handlebars.compile(${expression}); }`;
+
+describe('no-template-injection (walk budget and edges, 2026-11-02)', () => {
+  ruleTester.run('no-template-injection', noTemplateInjection, {
+    valid: [
+      ...(
+        [
+          ['through + on the left', nest(7, '(', " + 'a')")],
+          ['through + on the right', nest(7, "('a' + ", ')')],
+          ['through templates', nest(7, '`${', '}`')],
+          ['through awaits', nest(7, '(await ', ')')],
+          ['through && right operands', nest(7, '(ok && ', ')')],
+          ['through || left operands', nest(7, '(', ' || d)')],
+          ['through || right operands', nest(7, '(d || ', ')')],
+          ['through ?: consequents', nest(7, '(c ? ', ' : d)')],
+          ['through ?: alternates', nest(7, '(c ? d : ', ')')],
+          ['through call arguments', nest(7, 'wrap(', ')')],
+          ['through casts', castLevels(4)],
+        ] as const
+      ).map(([kind, expression]) => ({
+        name: `a request value nested past the walk budget ${kind} is not followed`,
+        code: sink(expression),
+      })),
+      {
+        name: 'a unary-plus request value is a number, not a template',
+        code: 'Handlebars.compile(+req.body.n);',
+      },
+      {
+        name: 'argv off a non-process object is not process.argv',
+        code: 'Handlebars.compile(cli.argv[2]);',
+      },
+    ],
+    invalid: [
+      {
+        name: 'a request value at the edge of the walk budget is still followed',
+        code: sink(nest(6, '(', " + 'a')")),
+        errors,
+      },
+      {
+        name: 'Mustache.parse compiles an attacker template',
+        code: 'Mustache.parse(userTemplate);',
+        errors: [
+          {
+            messageId: 'templateInjection' as const,
+            data: { engine: 'Mustache', method: 'parse' },
+          },
+        ],
+      },
+      {
+        name: 'an imported engine is named by its local binding',
+        code: "import Handlebars from 'handlebars'; Handlebars.compile(req.body.tpl);",
+        errors: [
+          {
+            messageId: 'templateInjection' as const,
+            data: { engine: 'Handlebars', method: 'compile' },
+          },
+        ],
+      },
+    ],
+  });
+});

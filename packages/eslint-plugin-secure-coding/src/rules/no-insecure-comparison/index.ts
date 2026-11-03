@@ -19,6 +19,7 @@ import {
   MessageIcons,
   isTestFilePath,
   propertyName,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import { createRule, createModuleEvidence } from '@interlace/eslint-devkit';
 
@@ -369,9 +370,12 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         // neighbouring segments finds `api`+`key` wherever it sits in the name,
         // and the keyword set stays closed, so this widens the match without
         // widening what counts as a secret.
+        // Underscore-joined only: every two-word entry in `secretKeywords` is
+        // listed in both spellings (`apikey`/`api_key`, `secretkey`/…), so the
+        // bare concatenation would find nothing the underscore form does not.
         const pairs: string[] = [];
         for (let i = 0; i + 1 < parts.length; i += 1) {
-          pairs.push(parts[i] + parts[i + 1], `${parts[i]}_${parts[i + 1]}`);
+          pairs.push(`${parts[i]}_${parts[i + 1]}`);
         }
         return [
           ...parts,
@@ -397,24 +401,39 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
        */
       const scopeAtNode = sourceCode.getScope(node);
 
+      /**
+       * Nodes a binding identifier can sit inside within one pattern.
+       *
+       * @protocol-constant ESTree's complete set of destructuring node types. A
+       * consumer cannot add a pattern shape the parser does not produce.
+       */
+      const PATTERN_PARTS: ReadonlySet<string> = new Set([
+        'Property',
+        'ObjectPattern',
+        'ArrayPattern',
+        'AssignmentPattern',
+        'RestElement',
+      ]);
+
       /** The key names a destructuring pattern binds `target` under, e.g. `{ token: t }` → 'token'. */
       // oxlint-disable-next-line consistent-function-scoping
       const destructuringKeys = (
         pattern: TSESTree.Node,
-        target: TSESTree.Identifier,
+        target: TSESTree.Node,
       ): string[] => {
         const keys: string[] = [];
         const walkPattern = (n: TSESTree.Node): void => {
           if (n.type === 'ObjectPattern') {
             for (const property of n.properties) {
               if (property.type !== 'Property') continue;
-              if (
-                property.value === target &&
-                !property.computed &&
-                property.key.type === 'Identifier'
-              ) {
-                keys.push(property.key.name);
-              }
+              // `{ token: t }`, `{ token: t = '' }` and `{ 'token': t }` all
+              // bind `t` under the key `token`.
+              const bound =
+                property.value.type === 'AssignmentPattern'
+                  ? property.value.left
+                  : property.value;
+              const key = objectKeyName(property);
+              if (bound === target && key !== null) keys.push(key);
               walkPattern(property.value);
             }
           } else if (n.type === 'ArrayPattern') {
@@ -497,9 +516,19 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
             ) {
               walk(writes[0].writeExpr);
             }
+            // The destructuring key, for a declaration AND for a parameter:
+            // `function verify({ token: t }, presented)` binds `t` under
+            // `token` exactly as `const { token: t } = session` does. Walk out
+            // from the bound name to the whole pattern it sits in.
             for (const def of variable.defs) {
-              if (def.type !== 'Variable') continue;
-              out.push(...destructuringKeys(def.node.id, def.name));
+              let pattern: TSESTree.Node = def.name;
+              while (
+                pattern.parent !== undefined &&
+                PATTERN_PARTS.has(pattern.parent.type)
+              ) {
+                pattern = pattern.parent;
+              }
+              out.push(...destructuringKeys(pattern, def.name));
             }
             return;
           }

@@ -20,6 +20,7 @@ import {
   memberPropertyName,
   propertyName,
   staticString,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
@@ -214,6 +215,22 @@ function constantTextHasPii(node: TSESTree.Node): boolean {
   );
 }
 
+/** Unary operators whose result still carries the operand's value. */
+const INVERTIBLE_UNARY: ReadonlySet<string> = new Set(['+', '-', '~']);
+
+/**
+ * Binary operators whose result still carries both operands' value.
+ *
+ * @protocol-constant JavaScript's arithmetic operators. They are the
+ * language's, not a codebase's, so there is nothing for an option to extend.
+ */
+const VALUE_PRESERVING_BINARY: ReadonlySet<string> = new Set([
+  '+',
+  '-',
+  '*',
+  '/',
+]);
+
 /** `JSON.stringify(x)` — serializes `x` verbatim into the logged string. */
 function stringifiedValue(node: TSESTree.Node): TSESTree.Node | null {
   if (
@@ -259,8 +276,10 @@ function collectLoggedValues(root: TSESTree.Node): TSESTree.Node[] {
       pending.push(...node.expressions);
     } else if (
       node.type === AST_NODE_TYPES.BinaryExpression &&
-      node.operator === '+'
+      VALUE_PRESERVING_BINARY.has(node.operator)
     ) {
+      // `+` concatenation, and invertible arithmetic (`user.ssn * 1`,
+      // `phone - 0`) that keeps every digit; a modulus or a shift does not.
       pending.push(node.left, node.right);
     } else if (node.type === AST_NODE_TYPES.ObjectExpression) {
       for (const property of node.properties) {
@@ -270,6 +289,13 @@ function collectLoggedValues(root: TSESTree.Node): TSESTree.Node[] {
       }
     } else if (node.type === AST_NODE_TYPES.ConditionalExpression) {
       pending.push(node.consequent, node.alternate);
+    } else if (
+      node.type === AST_NODE_TYPES.UnaryExpression &&
+      INVERTIBLE_UNARY.has(node.operator)
+    ) {
+      // `+user.phone` / `-x` / `~x` — a numeric conversion the value
+      // survives intact; `!x`, `typeof x` and `void x` do not.
+      pending.push(node.argument);
     } else {
       // `JSON.stringify(user.email)` is the one call that IS value-preserving:
       // it serializes its argument into the string, it does not digest it.
@@ -448,14 +474,18 @@ export const noPiiInLogs = createRule<RuleOptions, MessageIds>({
 
       return resolved.defs.some((def) => {
         const declared = def.name as TSESTree.Node;
-        const parent = declared.parent;
+        // `{ email = '' }` puts a default between the binding and its property.
+        const bound =
+          declared.parent?.type === AST_NODE_TYPES.AssignmentPattern
+            ? declared.parent
+            : declared;
+        const parent = bound.parent;
 
-        // `const { email } = applicant` — the binding IS the property.
-        if (
-          parent?.type === AST_NODE_TYPES.Property &&
-          parent.key.type === AST_NODE_TYPES.Identifier
-        ) {
-          return nameHasAnyWord(parent.key.name, terms);
+        // `const { email } = applicant` — the binding IS the property, and
+        // `{ 'email': e }` names the same property.
+        if (parent?.type === AST_NODE_TYPES.Property) {
+          const key = objectKeyName(parent);
+          return key !== null && nameHasAnyWord(key, terms);
         }
 
         // `const email = applicant.email` — the binding holds the field read.

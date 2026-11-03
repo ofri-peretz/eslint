@@ -77,6 +77,7 @@ describe('no-bidi-characters', () => {
       // Opt-in additional confusables.
       {
         code: `const s = '${ZWSP}';`,
+        name: 'a zero-width space is reported once listed in additionalCharacters',
         options: [{ additionalCharacters: ['U+200B'] }],
         errors: 1,
       },

@@ -607,7 +607,10 @@ describe('no-graphql-injection', () => {
         valid: [
           // Numeric, boolean, null, and regex literals must short-circuit
           // before any GraphQL text scanning.
-          'const n = 42;',
+          {
+            code: 'const n = 42;',
+            name: 'a numeric literal is not GraphQL text',
+          },
           'const b = true;',
           'const nul = null;',
           'const r = /query/;',
@@ -1056,92 +1059,9 @@ describe('no-graphql-injection', () => {
   });
 
   // ─── Layer 2: raw unit tests via createWithMockContext ───────────────────
-  // Cover defensive branches that a real parser cannot produce through
-  // RuleTester (missing `loc`, empty quasis array).
+  // Cover shapes a real parser produces only rarely through RuleTester: a
+  // `cooked: null` quasi (an invalid escape, legal in a tagged template).
   describe('Layer 2 - mock context / synthetic AST', () => {
-    it('TemplateLiteral report uses fallback line "0" when node.loc is missing', () => {
-      const { listeners, reports } = createWithMockContext(noGraphqlInjection, {
-        options: [{}],
-      });
-
-      const templateListener = listeners['TemplateLiteral'] as (
-        node: unknown,
-      ) => void;
-      const node = {
-        type: 'TemplateLiteral',
-        parent: undefined,
-        quasis: [
-          {
-            value: {
-              cooked: '{ __schema { types { name } } }',
-              raw: '{ __schema { types { name } } }',
-            },
-          },
-        ],
-        expressions: [],
-        loc: undefined,
-      };
-
-      templateListener(node);
-
-      expect(reports).toHaveLength(1);
-      expect(reports[0]?.messageId).toBe('introspectionQuery');
-      expect(reports[0]?.data?.['line']).toBe('0');
-    });
-
-    it('Literal report uses fallback line "0" when node.loc is missing', () => {
-      const { listeners, reports } = createWithMockContext(noGraphqlInjection, {
-        options: [{}],
-      });
-
-      const literalListener = listeners['Literal'] as (node: unknown) => void;
-      const node = {
-        type: 'Literal',
-        value: 'query { __schema { types { name } } }',
-        loc: undefined,
-      };
-
-      literalListener(node);
-
-      expect(reports).toHaveLength(1);
-      expect(reports[0]?.messageId).toBe('introspectionQuery');
-      expect(reports[0]?.data?.['line']).toBe('0');
-    });
-
-    it('BinaryExpression report uses fallback line "0" when node.loc is missing', () => {
-      const { listeners, reports, context } = createWithMockContext(
-        noGraphqlInjection,
-        {
-          options: [{}],
-          sourceText: 'query { user(id: "" + userId + "") { name } }',
-        },
-      );
-
-      const binaryListener = listeners['BinaryExpression'] as (
-        node: unknown,
-      ) => void;
-      // The rule reads the concatenation's static string parts from the AST
-      // (not sourceCode.getText), so the synthetic node carries real Literals.
-      const node = {
-        type: 'BinaryExpression',
-        operator: '+',
-        left: {
-          type: 'Literal',
-          value: 'query { user(id: "',
-          parent: undefined,
-        },
-        right: { type: 'Literal', value: '") { name } }', parent: undefined },
-        loc: undefined,
-      };
-      void context;
-
-      binaryListener(node);
-
-      expect(reports).toHaveLength(1);
-      expect(reports[0]?.messageId).toBe('graphqlInjection');
-      expect(reports[0]?.data?.['line']).toBe('0');
-    });
-
     it('BinaryExpression static-text reassembly falls back to a quasi raw value when cooked is absent', () => {
       const { listeners, reports } = createWithMockContext(noGraphqlInjection, {
         options: [{}],
@@ -1175,38 +1095,6 @@ describe('no-graphql-injection', () => {
       expect(reports[0]?.messageId).toBe('graphqlInjection');
     });
 
-    it('CallExpression missingInputValidation report uses fallback line "0" when node.loc is missing', () => {
-      const { listeners, reports } = createWithMockContext(noGraphqlInjection, {
-        options: [{}],
-      });
-
-      const callListener = listeners['CallExpression'] as (
-        node: unknown,
-      ) => void;
-      const argNode = {
-        type: 'Identifier',
-        name: 'userInput',
-        parent: undefined,
-      };
-      const node = {
-        type: 'CallExpression',
-        callee: {
-          type: 'MemberExpression',
-          object: { type: 'Identifier', name: 'graphql' },
-          property: { type: 'Identifier', name: 'execute' },
-        },
-        arguments: [argNode],
-        loc: undefined,
-      };
-      (argNode as { parent?: unknown }).parent = node;
-
-      callListener(node);
-
-      expect(reports).toHaveLength(1);
-      expect(reports[0]?.messageId).toBe('missingInputValidation');
-      expect(reports[0]?.data?.['line']).toBe('0');
-    });
-
     it('BinaryExpression with non "+" operator is ignored (no report)', () => {
       const { listeners, reports } = createWithMockContext(noGraphqlInjection, {
         options: [{}],
@@ -1223,79 +1111,6 @@ describe('no-graphql-injection', () => {
       });
 
       expect(reports).toHaveLength(0);
-    });
-
-    it('TemplateLiteral unsafeVariableInterpolation report uses fallback line "0" when node.loc is missing', () => {
-      const { listeners, reports } = createWithMockContext(noGraphqlInjection, {
-        options: [{}],
-      });
-
-      const templateListener = listeners['TemplateLiteral'] as (
-        node: unknown,
-      ) => void;
-      const expr = { type: 'Identifier', name: 'userId', parent: undefined };
-      const node = {
-        type: 'TemplateLiteral',
-        parent: undefined,
-        quasis: [
-          {
-            value: { cooked: 'query { user(id: "', raw: 'query { user(id: "' },
-          },
-          { value: { cooked: '") { name } }', raw: '") { name } }' } },
-        ],
-        expressions: [expr],
-        loc: undefined,
-      };
-      (expr as { parent?: unknown }).parent = node;
-
-      templateListener(node);
-
-      expect(reports).toHaveLength(1);
-      expect(reports[0]?.messageId).toBe('unsafeVariableInterpolation');
-      expect(reports[0]?.data?.['line']).toBe('0');
-    });
-
-    it('TemplateLiteral complexQueryDos report uses fallback line "0" when node.loc is missing', () => {
-      const { listeners, reports } = createWithMockContext(noGraphqlInjection, {
-        options: [{ maxQueryDepth: 1 }],
-      });
-
-      const templateListener = listeners['TemplateLiteral'] as (
-        node: unknown,
-      ) => void;
-      const deepText = 'query { a { b { c } } }';
-      const node = {
-        type: 'TemplateLiteral',
-        parent: undefined,
-        quasis: [{ value: { cooked: deepText, raw: deepText } }],
-        expressions: [],
-        loc: undefined,
-      };
-
-      templateListener(node);
-
-      expect(reports).toHaveLength(1);
-      expect(reports[0]?.messageId).toBe('complexQueryDos');
-      expect(reports[0]?.data?.['line']).toBe('0');
-    });
-
-    it('Literal complexQueryDos report uses fallback line "0" when node.loc is missing', () => {
-      const { listeners, reports } = createWithMockContext(noGraphqlInjection, {
-        options: [{ maxQueryDepth: 1, allowIntrospection: true }],
-      });
-
-      const literalListener = listeners['Literal'] as (node: unknown) => void;
-      const node = {
-        type: 'Literal',
-        value: 'query { a { b { c } } }',
-        loc: undefined,
-      };
-
-      literalListener(node);
-
-      expect(reports).toHaveLength(1);
-      expect(reports[0]?.messageId).toBe('complexQueryDos');
-      expect(reports[0]?.data?.['line']).toBe('0');
     });
 
     it('isGraphqlTemplate falls back to quasi.value.raw when cooked is nullish', () => {
@@ -1324,7 +1139,6 @@ describe('no-graphql-injection', () => {
 
       expect(reports).toHaveLength(1);
       expect(reports[0]?.messageId).toBe('introspectionQuery');
-      expect(reports[0]?.data?.['line']).toBe('7');
     });
 
     it('templateHasIntrospection falls back to quasi.value.raw when cooked is nullish', () => {

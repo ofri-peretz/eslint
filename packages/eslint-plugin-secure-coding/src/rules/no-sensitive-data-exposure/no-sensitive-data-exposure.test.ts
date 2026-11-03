@@ -266,6 +266,7 @@ describe('no-sensitive-data-exposure', () => {
           // Direct log() function call
           {
             code: `log('password: 123');`,
+            name: 'a password in a bare log() call is reported',
             errors: [{ messageId: 'sensitiveDataExposure' }],
           },
           // customLogger() function

@@ -67,7 +67,10 @@ describe('no-xxe-injection', () => {
         `const cfg = JSON.parse(req.body);`,
         `const when = Date.parse(input);`,
         `const parts = path.parse(userPath);`,
-        `const q = url.parse(req.url);`,
+        {
+          code: `const q = url.parse(req.url);`,
+          name: 'url.parse is not an XML parser',
+        },
         // Receivers that are not XML.
         `const rows = lib.csv.parse(req.body);`,
         `const v = new Semver().parse(req.body);`,

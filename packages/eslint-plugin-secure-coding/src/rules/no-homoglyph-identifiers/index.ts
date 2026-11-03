@@ -228,8 +228,9 @@ function invisibleIn(
   for (let index = 0; index < text.length; index++) {
     if (!INVISIBLE.test(text[index])) continue;
 
-    const before = index > 0 ? text.charCodeAt(index - 1) : -1;
-    const after = index + 1 < text.length ? text.charCodeAt(index + 1) : -1;
+    // Out of range, charCodeAt is NaN, which is not visible ASCII either.
+    const before = text.charCodeAt(index - 1);
+    const after = text.charCodeAt(index + 1);
     if (!isVisibleAscii(before) && !isVisibleAscii(after)) continue;
 
     return { index, codepoint: text.charCodeAt(index) };
@@ -343,7 +344,9 @@ export const noHomoglyphIdentifiers = createRule<RuleOptions, MessageIds>({
 
       Literal(node: TSESTree.Literal) {
         if (!checkStrings) return;
-        if (typeof node.value !== 'string') return;
+        // Every literal's raw text, not only strings: a zero-width character
+        // pasted into a regular-expression literal hides in the pattern just
+        // as it does in a string. (Numbers, booleans and null cannot hold one.)
         // `raw`, not `value`. A zero-width space written as an escape is
         // visible in the diff and in review — the reviewer can see the
         // codepoint and decide. What this rule exists for is the character

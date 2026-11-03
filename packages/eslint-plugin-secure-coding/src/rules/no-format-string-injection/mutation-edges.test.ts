@@ -19,13 +19,21 @@ const ruleTester = new RuleTester({
 
 const userFormat = [{ messageId: 'userControlledFormatString' as const }];
 const injection = [{ messageId: 'formatStringInjection' as const }];
-const customVocabulary = [
-  { userInputVariables: ['payload'], userInputAliases: [] },
-];
+const customVocabulary: [
+  { userInputVariables: string[]; userInputAliases: string[] },
+] = [{ userInputVariables: ['payload'], userInputAliases: [] }];
 
 describe('no-format-string-injection (mutation edges)', () => {
   ruleTester.run('no-format-string-injection', noFormatStringInjection, {
     valid: [
+      {
+        name: 'a unary-plus request value logged alone is not a format string',
+        code: 'console.log(+req.query.count);',
+      },
+      {
+        name: 'a unary-plus initializer is not a concatenation',
+        code: 'const strCount = +req.query.count;',
+      },
       {
         name: 'a fallback between two constants is not user input',
         code: "const fmt = '%s'; util.format(fmt || '%d', value);",

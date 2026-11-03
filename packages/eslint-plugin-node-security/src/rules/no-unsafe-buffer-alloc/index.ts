@@ -808,49 +808,111 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
       }
       if (size.type !== AST_NODE_TYPES.Identifier) return false;
       const name = size.name;
-      let current: TSESTree.Node | undefined = size.parent;
-      while (current) {
+      // Only a cap from ABOVE bounds a size: `if (n > 0)` lets every huge `n`
+      // through, and so does rejecting `n < 1`. The guard is either an
+      // enclosing `if` whose taken arm implies `n <= MAX`, or an earlier
+      // statement of an enclosing block that leaves when `n > MAX`.
+      let child: TSESTree.Node = size;
+      for (
+        // Program's parent is `null` at runtime, whatever its type says.
+        let current: TSESTree.Node | null | undefined = size.parent;
+        current;
+        child = current, current = current.parent
+      ) {
         if (current.type === AST_NODE_TYPES.IfStatement) {
-          if (mentionsInComparison(current.test, name)) return true;
+          if (child === current.consequent && capsWhenTrue(current.test, name))
+            return true;
+          if (child === current.alternate && capsWhenFalse(current.test, name))
+            return true;
+        }
+        if (current.type === AST_NODE_TYPES.BlockStatement) {
+          const before = current.body.slice(
+            0,
+            current.body.indexOf(child as TSESTree.Statement),
+          );
+          if (before.some((statement) => rejectsOversized(statement, name)))
+            return true;
         }
         if (
           current.type === AST_NODE_TYPES.FunctionDeclaration ||
           current.type === AST_NODE_TYPES.FunctionExpression ||
           current.type === AST_NODE_TYPES.ArrowFunctionExpression
         ) {
-          // A guard may also sit as an earlier statement in the same body.
-          const body = current.body;
-          if (body.type === AST_NODE_TYPES.BlockStatement) {
-            for (const statement of body.body) {
-              if (
-                statement.type === AST_NODE_TYPES.IfStatement &&
-                mentionsInComparison(statement.test, name)
-              ) {
-                return true;
-              }
-            }
-          }
           return false;
         }
-        current = current.parent;
       }
       return false;
     }
 
-    /** Does this test compare `name` against something? */
-    // oxlint-disable-next-line consistent-function-scoping
-    function mentionsInComparison(test: TSESTree.Node, name: string): boolean {
-      if (test.type === AST_NODE_TYPES.LogicalExpression) {
+    /**
+     * `if (n > MAX) throw …` / `if (n > MAX) { …; return; }` — a statement
+     * that leaves whenever the size is over the cap, so the code after it
+     * only runs with `n <= MAX`.
+     */
+    function rejectsOversized(
+      statement: TSESTree.Statement,
+      name: string,
+    ): boolean {
+      if (statement.type !== AST_NODE_TYPES.IfStatement) return false;
+      const taken = statement.consequent;
+      const last =
+        taken.type === AST_NODE_TYPES.BlockStatement
+          ? taken.body.at(-1)
+          : taken;
+      return (
+        (last?.type === AST_NODE_TYPES.ThrowStatement ||
+          last?.type === AST_NODE_TYPES.ReturnStatement) &&
+        capsWhenFalse(statement.test, name)
+      );
+    }
+
+    /** Does `test` being TRUE imply `name <= bound`? (`n < MAX`, `a && n <= MAX`) */
+    function capsWhenTrue(test: TSESTree.Node, name: string): boolean {
+      if (
+        test.type === AST_NODE_TYPES.LogicalExpression &&
+        test.operator === '&&'
+      ) {
+        return capsWhenTrue(test.left, name) || capsWhenTrue(test.right, name);
+      }
+      return comparesAgainstCap(test, name, 'below');
+    }
+
+    /** Does `test` being FALSE imply `name <= bound`? (`n > MAX`, `a || n > MAX`) */
+    function capsWhenFalse(test: TSESTree.Node, name: string): boolean {
+      if (
+        test.type === AST_NODE_TYPES.LogicalExpression &&
+        test.operator === '||'
+      ) {
         return (
-          mentionsInComparison(test.left, name) ||
-          mentionsInComparison(test.right, name)
+          capsWhenFalse(test.left, name) || capsWhenFalse(test.right, name)
         );
       }
+      return comparesAgainstCap(test, name, 'above');
+    }
+
+    /**
+     * `name < cap` / `cap > name` (`side: 'below'`) or `name > cap` /
+     * `cap < name` (`side: 'above'`), with or without equality, against a cap
+     * the peer cannot move — a cap read off the wire is no cap.
+     */
+    function comparesAgainstCap(
+      test: TSESTree.Node,
+      name: string,
+      side: 'below' | 'above',
+    ): boolean {
       if (test.type !== AST_NODE_TYPES.BinaryExpression) return false;
-      if (!['<', '<=', '>', '>='].includes(test.operator)) return false;
-      const named = (side: TSESTree.Node): boolean =>
-        side.type === AST_NODE_TYPES.Identifier && side.name === name;
-      return named(test.left as TSESTree.Node) || named(test.right);
+      const less = test.operator === '<' || test.operator === '<=';
+      const greater = test.operator === '>' || test.operator === '>=';
+      if (!less && !greater) return false;
+      const named = (operand: TSESTree.Node): boolean =>
+        operand.type === AST_NODE_TYPES.Identifier && operand.name === name;
+      const left = test.left as TSESTree.Node;
+      // `n < cap` reads "n below"; `cap < n` reads "n above".
+      const nameBelow = named(left) ? less : greater;
+      const cap = named(left) ? test.right : named(test.right) ? left : null;
+      return (
+        cap !== null && nameBelow === (side === 'below') && !readsWire(cap)
+      );
     }
 
     /** The size argument of an allocation, if this call is one. */

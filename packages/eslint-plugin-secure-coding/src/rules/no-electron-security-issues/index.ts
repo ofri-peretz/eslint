@@ -418,13 +418,9 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
      * Check for unsafe IPC patterns
      */
     const checkIpcCall = (node: TSESTree.CallExpression): void => {
-      const args = node.arguments;
-      if (args.length === 0) {
-        return;
-      }
-
-      // Check channel name (first argument)
-      const channelArg = args[0];
+      // Check channel name (first argument). With no argument there is no
+      // channel: staticString(undefined) is null.
+      const channelArg = node.arguments[0];
       const staticText2 = staticString(channelArg);
       if (staticText2 !== null) {
         const channel = staticText2;
@@ -470,22 +466,17 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
       //
       // `renderer` and `preload` remain — those ARE Electron's own convention — and they no
       // longer decide anything on their own: `fileUsesElectron` has to agree.
-      const segments = filename.toLowerCase().split(/[\\/]/).filter(Boolean);
-      if (segments.length === 0) return false;
-      const base = segments[segments.length - 1].replace(/\.[cm]?[jt]sx?$/, '');
-      // built per call from one
-      // filename and read twice. Allocating a Set each call to replace two
-      // `includes` over 1-3 elements is slower, not faster.
-      // eslint-disable-next-line unicorn/prefer-set-has
-      const dirs = segments.slice(0, -1);
-
+      // A segment named `renderer`/`preload` (a directory, or an
+      // extension-less file), or a file name that starts `renderer.` /
+      // `preload.` — `renderer.ts` and `renderer.worker.ts` alike, so no
+      // extension needs stripping first. `split` never returns an empty array.
+      const segments = filename.toLowerCase().split(/[\\/]/);
+      const base = segments[segments.length - 1];
       return (
-        base === 'renderer' ||
-        base === 'preload' ||
+        segments.includes('renderer') ||
+        segments.includes('preload') ||
         base.startsWith('renderer.') ||
-        base.startsWith('preload.') ||
-        dirs.includes('renderer') ||
-        dirs.includes('preload')
+        base.startsWith('preload.')
       );
     };
 
@@ -553,7 +544,7 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
         try {
           if (isBrowserWindowCreation(node)) {
             const args = node.arguments;
-            if (args.length > 0 && args[0]?.type === 'ObjectExpression') {
+            if (args[0]?.type === 'ObjectExpression') {
               checkBrowserWindowOptions(args[0]);
             }
           }

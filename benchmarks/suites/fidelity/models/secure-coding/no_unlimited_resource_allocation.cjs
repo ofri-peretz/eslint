@@ -1,7 +1,7 @@
 const { tag } = require('../../lib.cjs');
 
 module.exports = {
-  domain: 24,
+  domain: 28,
   traces: 250,
   rule: 'no-unlimited-resource-allocation',
   key: (s) => `${tag(s.alloc)}|${tag(s.amount)}`,
@@ -11,6 +11,7 @@ module.exports = {
     const pre =
       {
         ParseIntReq: 'const size = parseInt(req.query.size, 10);',
+        DestructReq: 'const {\n    query: { size },\n  } = req;',
         Clamped:
           'const size = Math.min(parseInt(req.query.size, 10) || 0, MAX_SIZE);',
         Checked:
@@ -19,6 +20,7 @@ module.exports = {
     const arg = {
       ReqQuery: 'req.query.size',
       ParseIntReq: 'size',
+      DestructReq: 'size',
       Clamped: 'size',
       Checked: 'size',
       SmallLit: '1024',

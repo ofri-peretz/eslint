@@ -29,6 +29,7 @@ import {
   isStaticExpression,
   staticString,
   memberPropertyName,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
@@ -41,8 +42,7 @@ type MessageIds =
   | 'ldapInjection'
   | 'unsafeLdapFilter'
   | 'unescapedLdapInput'
-  | 'dangerousLdapOperation'
-  | 'validateLdapInput';
+  | 'dangerousLdapOperation';
 
 export interface Options extends SecurityRuleOptions {
   /** LDAP-related function names to check */
@@ -82,12 +82,15 @@ type RuleOptions = [Options?];
  * testability — this function is pure and captures no closure state.
  */
 export function containsDangerousLdapFilter(filterText: string): boolean {
-  // Dangerous LDAP filter patterns
+  // Dangerous LDAP filter patterns.
+  //
+  // `|)` and `!)` at the end used to be here too, and neither is evidence of a
+  // match-everything filter: `(|)` is RFC 4526's absolute FALSE — it matches
+  // nothing — and `!` is an ordinary character inside an assertion value, so
+  // `(cn=Hello!)` was reported. `(&)` is the absolute TRUE and stays.
   const dangerousPatterns = [
     /\*\)$/, // Ending with *) to match everything
-    /\|\)$/, // Ending with |) for OR operations
-    /&\)$/, // Ending with &) for AND operations
-    /!\)$/, // Ending with !) for NOT operations
+    /&\)$/, // Ending with &): `(&)` is the absolute-true filter
     /\*\|\*/, // *|* pattern for matching everything
     /\*&\*/, // *&* pattern
     /\*!/, // NOT operations that could be exploited
@@ -278,15 +281,6 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
         fix: 'Validate LDAP filters and restrict allowed operations',
         documentationLink: 'https://ldap.com/ldap-filters/',
       }),
-
-      validateLdapInput: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate LDAP Input',
-        description: 'Validate LDAP input before processing',
-        severity: 'LOW',
-        fix: 'Validate input against allowed patterns',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/90.html',
-      }),
     },
     schema: [
       {
@@ -391,7 +385,6 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
     let requestRootSet: Set<string>;
     let fileImportsLdapClient: (ast: TSESTree.Program) => boolean;
     let sourceCode: Readonly<TSESLint.SourceCode>;
-    let filename: string;
     let safetyChecker: {
       isSafe(
         node: TSESTree.Node,
@@ -411,18 +404,23 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
     let reported: Set<TSESTree.Node>;
 
     const collectLdapLocals = (program: TSESTree.Program): void => {
-      const record = (node: TSESTree.Node | null | undefined): void => {
-        if (node?.type === 'Identifier') ldapLocals.add(node.name);
-        else if (node?.type === 'ObjectPattern') {
+      const record = (node: TSESTree.Node): void => {
+        if (node.type === 'Identifier') ldapLocals.add(node.name);
+        else if (node.type === 'ObjectPattern') {
           for (const property of node.properties) {
             if (property.type === 'Property') record(property.value);
           }
         }
       };
-      const isLdapSource = (raw: unknown): boolean =>
-        typeof raw === 'string' &&
-        (ldapPackageSet.has(raw) ||
-          [...LDAP_SCOPES].some((scope) => raw.startsWith(`${scope}/`)));
+      // A scoped package is `@scope/name`: the scope is the first segment, and
+      // a bare `@scope` with no name is not a package at all.
+      const isLdapSource = (specifier: string): boolean => {
+        const [scope, name] = specifier.split('/');
+        return (
+          ldapPackageSet.has(specifier) ||
+          (name !== undefined && LDAP_SCOPES.has(scope))
+        );
+      };
 
       for (const statement of program.body) {
         if (
@@ -434,13 +432,15 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
         if (statement.type === 'VariableDeclaration') {
           for (const declarator of statement.declarations) {
             const init = declarator.init;
-            if (
+            // `require(name)` with a name this file does not spell has no
+            // specifier to judge; `staticString` returns null for it.
+            const specifier =
               init?.type === 'CallExpression' &&
               init.callee.type === 'Identifier' &&
-              init.callee.name === 'require' &&
-              init.arguments[0]?.type === 'Literal' &&
-              isLdapSource(init.arguments[0].value)
-            ) {
+              init.callee.name === 'require'
+                ? staticString(init.arguments[0])
+                : null;
+            if (specifier !== null && isLdapSource(specifier)) {
               record(declarator.id);
             }
           }
@@ -476,37 +476,34 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
           (v) => v.name === identifier.name,
         );
         if (!variable) continue;
-        return variable.references
-          .filter((ref) => ref.isWrite() && ref.writeExpr)
-          .map((ref) => ref.writeExpr as TSESTree.Expression);
+        // Only a write reference carries a `writeExpr`; `x++` is a write that
+        // carries none, and has no expression to judge.
+        return variable.references.flatMap((ref) =>
+          ref.writeExpr ? [ref.writeExpr as TSESTree.Expression] : [],
+        );
       }
       return [];
     };
 
-    /** The single value a binding provably holds, or undefined if it is written more than once. */
+    /**
+     * The single value a binding provably holds, with TypeScript-only syntax
+     * removed — every caller judges the value, not its annotation — or undefined
+     * if it is written more than once.
+     */
     const soleWriteOf = (
       identifier: TSESTree.Identifier,
-    ): TSESTree.Expression | undefined => {
+    ): TSESTree.Node | undefined => {
       const writes = writesOf(identifier);
-      return writes.length === 1 ? writes[0] : undefined;
+      return writes.length === 1 ? unwrap(writes[0]) : undefined;
     };
 
     /**
      * Is this expression a construction of an LDAP client, made from a binding this file
      * imported from an LDAP package? `ldap.createClient({…})`, `new Client({…})`.
      */
-    const isLdapConstruction = (node: TSESTree.Node): boolean => {
-      const expression = unwrap(node);
-      if (expression.type === 'NewExpression') {
-        const { callee } = expression;
-        if (callee.type === 'Identifier') return ldapLocals.has(callee.name);
-        return (
-          callee.type === 'MemberExpression' &&
-          callee.object.type === 'Identifier' &&
-          ldapLocals.has(callee.object.name)
-        );
-      }
-      if (expression.type !== 'CallExpression') return false;
+    const isLdapConstruction = (
+      expression: TSESTree.NewExpression | TSESTree.CallExpression,
+    ): boolean => {
       const { callee } = expression;
       if (callee.type === 'Identifier') return ldapLocals.has(callee.name);
       return (
@@ -532,6 +529,32 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * A value that is known, not guessed, to be something other than an LDAP
+     * client: a collection, an object or array literal, a primitive, or a call or
+     * `new` that is not an LDAP construction (`new Set()`, `makeQueue()`).
+     *
+     * One predicate for every place a receiver's value is read — the receiver
+     * itself, each write to its binding, a class field's initialiser — so
+     * `const q = makeQueue(); q.add(…)`, `makeQueue().add(…)` and
+     * `this.q.add(…)` over `q = makeQueue()` agree. An identifier, a member
+     * read or anything else unresolved is NOT known, and keeps the call in view.
+     */
+    const isNonLdapValue = (node: TSESTree.Node): boolean => {
+      const value = unwrap(node);
+      switch (value.type) {
+        case 'ArrayExpression':
+        case 'ObjectExpression':
+        case 'Literal':
+          return true;
+        case 'NewExpression':
+        case 'CallExpression':
+          return !isLdapConstruction(value);
+        default:
+          return false;
+      }
+    };
+
+    /**
      * Does the receiver of this method call provably resolve to something that is NOT
      * an LDAP client?
      *
@@ -549,39 +572,12 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
     const isProvablyNotLdapReceiver = (receiver: TSESTree.Node): boolean => {
       const expression = unwrap(receiver);
 
-      if (
-        expression.type === 'ArrayExpression' ||
-        expression.type === 'ObjectExpression' ||
-        expression.type === 'Literal'
-      ) {
-        return true;
-      }
-
-      if (
-        expression.type === 'NewExpression' ||
-        expression.type === 'CallExpression'
-      ) {
-        return !isLdapConstruction(expression);
-      }
-
+      // Every write has to be known to be something else: one write that
+      // constructs an LDAP client, or one that is merely unresolved, keeps the
+      // call in view.
       if (expression.type === 'Identifier') {
         const writes = writesOf(expression);
-        if (writes.length === 0) return false;
-        // Any write that constructs an LDAP client is enough to keep looking.
-        if (writes.some(isLdapConstruction)) return false;
-        return writes.every((write) => {
-          const value = unwrap(write);
-          return (
-            // A call or a `new` that is not an LDAP construction — the same test the
-            // direct-receiver arm above applies, so `const q = makeQueue()` and
-            // `makeQueue().add(…)` agree.
-            value.type === 'NewExpression' ||
-            value.type === 'CallExpression' ||
-            value.type === 'ArrayExpression' ||
-            value.type === 'ObjectExpression' ||
-            value.type === 'Literal'
-          );
-        });
+        return writes.length > 0 && writes.every(isNonLdapValue);
       }
 
       // `this.client` — read the class field's initializer, when the class declares one.
@@ -602,11 +598,12 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
             member.key.type === 'Identifier' &&
             member.key.name === fieldName,
         ) as TSESTree.PropertyDefinition | undefined;
-        if (!field?.value) return false;
-        return !isLdapConstruction(field.value);
+        // A field with no initialiser, or one initialised from a name
+        // (`client = sharedClient`), is not known to be anything.
+        return field?.value != null && isNonLdapValue(field.value);
       }
 
-      return false;
+      return isNonLdapValue(expression);
     };
 
     /**
@@ -619,14 +616,17 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
      */
     const isEscaped = (node: TSESTree.Node): boolean => {
       const expression = unwrap(node);
-      if (expression.type === 'Identifier') {
-        const write = soleWriteOf(expression);
-        if (write && write !== expression && isEscapedAt(write)) return true;
+      if (
+        expression.type === 'Identifier' &&
+        isEscapedAt(soleWriteOf(expression))
+      ) {
+        return true;
       }
       return isEscapedAt(node);
     };
 
-    function isEscapedAt(node: TSESTree.Node): boolean {
+    /** Is `node`, or anything it is an argument of, an escaping/validating call? */
+    function isEscapedAt(node: TSESTree.Node | undefined): boolean {
       for (
         let current: TSESTree.Node | undefined = node;
         current;
@@ -637,8 +637,9 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
         // `esc['filterValue'](x)` escapes exactly as `esc.filterValue(x)` does.
         // Resolved once, before the guard, so the guard tests the binding the
         // body reads rather than casting a second call past the same question.
+        // `memberPropertyName` is null for anything that is not a member read.
         const escapeMethod = memberPropertyName(callee);
-        if (callee.type === 'MemberExpression' && escapeMethod !== null) {
+        if (escapeMethod !== null) {
           // Exact membership against the configured escape functions, matching either
           // the bare name (`filterEscape`) or the tail of a dotted path
           // (`escape.filterValue` -> `filterValue`). The previous test was
@@ -671,10 +672,11 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
     /**
      * The attacker-influencable parts of a STRING-CONSTRUCTION expression.
      *
-     * `null` means "this is not a string being built" — an options object, a
-     * `new EqualityFilter({…})`, a lookup into a frozen table. Those are not filter
-     * grammar and must not be reported. `[]` means the string is built entirely from
-     * values written in this file. A non-empty array is the injection.
+     * `[]` means either "this is not a string being built" — an options object, a
+     * `new EqualityFilter({…})`, a lookup into a frozen table, none of them filter
+     * grammar — or a string built entirely from values written in this file. Both
+     * mean "no injection here", and no caller ever told them apart, so they share
+     * one answer. A non-empty array is the injection.
      *
      * This replaces two heuristics that decided by spelling: a list of variable-name
      * substrings (`user`, `input`, `id`, `dn`, `name`, `term`…) for "is it tainted",
@@ -685,9 +687,9 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
     const dynamicParts = (
       node: TSESTree.Node,
       seen: Set<TSESTree.Node> = new Set(),
-    ): TSESTree.Node[] | null => {
+    ): TSESTree.Node[] => {
       const expression = unwrap(node);
-      if (seen.has(expression)) return null;
+      if (seen.has(expression)) return [];
       seen.add(expression);
 
       if (expression.type === 'TemplateLiteral') {
@@ -715,23 +717,23 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
           (leaf) =>
             staticString(leaf) !== null || leaf.type === 'TemplateLiteral',
         );
-        if (!hasStringPart) return null;
+        if (!hasStringPart) return [];
         return leaves.filter((leaf) => !isStatic(leaf) && !isEscaped(leaf));
       }
 
       if (expression.type === 'ConditionalExpression') {
-        const consequent = dynamicParts(expression.consequent, seen);
-        const alternate = dynamicParts(expression.alternate, seen);
-        if (consequent === null && alternate === null) return null;
-        return [...(consequent ?? []), ...(alternate ?? [])];
+        return [
+          ...dynamicParts(expression.consequent, seen),
+          ...dynamicParts(expression.alternate, seen),
+        ];
       }
 
       if (expression.type === 'Identifier') {
         const write = soleWriteOf(expression);
-        return write ? dynamicParts(write, seen) : null;
+        return write ? dynamicParts(write, seen) : [];
       }
 
-      return null;
+      return [];
     };
 
     /**
@@ -761,20 +763,18 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       // and a project's own sanitizer by `trustedSanitizers`.
       if (expression.type === 'CallExpression') {
         if (isEscaped(expression)) return false;
-        return expression.arguments.some(
-          (argument) =>
-            argument.type !== 'SpreadElement' && isRequestValue(argument, seen),
+        // `build(...req.query.parts)` hands the request's own array over.
+        return expression.arguments.some((argument) =>
+          isRequestValue(
+            argument.type === 'SpreadElement' ? argument.argument : argument,
+            seen,
+          ),
         );
       }
       // `req.body['x']` reads the same request field `req.body.x` reads, and a
-      // bundler emits the first. Only a key chosen at RUNTIME is refused —
-      // `propertyName` returns null for exactly that, which is the distinction
-      // the bare `expression.computed` test could not make.
-      if (
-        expression.type !== 'MemberExpression' ||
-        propertyName(expression) === null
-      )
-        return false;
+      // bundler emits the first. Only a key chosen at RUNTIME is refused — by
+      // `isUntrustedRequestChain`, which asks `propertyName` of every segment.
+      if (expression.type !== 'MemberExpression') return false;
       return !isStatic(expression) && isUntrustedRequestChain(expression);
     };
 
@@ -839,23 +839,17 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       if (expression.type !== 'ObjectExpression') return undefined;
       for (const property of expression.properties) {
         if (property.type !== 'Property') continue;
+        // `{ filter }`, `{ 'filter': … }` and `{ ['filter']: … }`. A computed
+        // `{ [filter]: … }` is NOT read by the variable's spelling.
+        if (objectKeyName(property) === 'filter') return property.value;
+        // `{ [FILTER_KEY]: … }` — resolve the key through its binding.
         const { key } = property;
         if (
-          !property.computed &&
+          property.computed &&
           key.type === 'Identifier' &&
-          key.name === 'filter'
+          staticString(soleWriteOf(key)) === 'filter'
         ) {
           return property.value;
-        }
-        if (key.type === 'Literal' && key.value === 'filter')
-          return property.value;
-        // `{ [FILTER_KEY]: … }` — resolve the key through its binding.
-        if (property.computed && key.type === 'Identifier') {
-          const keyWrite = soleWriteOf(key);
-          if (keyWrite && unwrap(keyWrite).type === 'Literal') {
-            const literal = unwrap(keyWrite) as TSESTree.Literal;
-            if (literal.value === 'filter') return property.value;
-          }
         }
       }
       return undefined;
@@ -869,15 +863,7 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       if (reported.has(node)) return;
       if (safetyChecker.isSafe(node, context)) return;
       reported.add(node);
-      context.report({
-        node,
-        messageId,
-        data: {
-          filePath: filename,
-          line: String(node.loc.start.line),
-          ...data,
-        },
-      });
+      context.report({ node, messageId, data });
     };
 
     /**
@@ -893,9 +879,10 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       const expression = unwrap(node);
       if (seen.has(expression)) return '';
       seen.add(expression);
-      if (expression.type === 'Literal') {
-        return typeof expression.value === 'string' ? expression.value : '';
-      }
+      // `'(n=*' + 7 + ')'` is the text `(n=*7)`: a number, a boolean or `null`
+      // concatenates as its own spelling, and dropping it made a substring
+      // filter read as match-everything. `String()` is what `+` does.
+      if (expression.type === 'Literal') return String(expression.value);
       if (expression.type === 'TemplateLiteral') {
         return expression.quasis.map((quasi) => quasi.value.raw).join('\u0000');
       }
@@ -930,11 +917,15 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
      * because the two sites are different nodes holding the same value.
      */
     const originOf = (node: TSESTree.Node): TSESTree.Node => {
+      // Bounded by the bindings already visited, not a hop count: `var a = b;
+      // var b = a;` cycles and stops; an alias chain of any length resolves.
+      const seen = new Set<TSESTree.Node>();
       let current = unwrap(node);
-      for (let hops = 0; current.type === 'Identifier' && hops < 8; hops += 1) {
+      while (current.type === 'Identifier' && !seen.has(current)) {
+        seen.add(current);
         const write = soleWriteOf(current);
         if (!write) break;
-        current = unwrap(write);
+        current = write;
       }
       return current;
     };
@@ -942,8 +933,7 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
     /** A filter expression: report the injection, or the dangerous hardcoded filter. */
     const checkFilter = (rawFilterNode: TSESTree.Node): void => {
       const filterNode = originOf(rawFilterNode);
-      const parts = dynamicParts(filterNode);
-      if (parts && parts.length > 0) {
+      if (dynamicParts(filterNode).length > 0) {
         report(filterNode, 'unsafeLdapFilter', {});
         return;
       }
@@ -966,8 +956,7 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
     /** A distinguished-name argument: a DN has no parentheses, so shape is all there is. */
     const checkDn = (rawDnNode: TSESTree.Node): void => {
       const dnNode = originOf(rawDnNode);
-      const parts = dynamicParts(dnNode);
-      if (parts && parts.length > 0) {
+      if (dynamicParts(dnNode).length > 0) {
         report(dnNode, 'ldapInjection', {
           severity: 'HIGH',
           safeAlternative:
@@ -1016,7 +1005,6 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
         });
 
         sourceCode = context.sourceCode;
-        filename = context.filename;
 
         safetyChecker = createSafetyChecker({
           trustedSanitizers,
@@ -1036,9 +1024,6 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
          * construction call made from one of them, which a `new Set()` can never satisfy.
          */
         ldapLocals = new Set<string>();
-
-        /** Whether this file loads an LDAP client at all. Set from Program, visited first. */
-        ldapInFile = false;
 
         /**
          * One node, one report. A filter is commonly built into a variable and then handed

@@ -2,12 +2,9 @@
   "generated": "2026-11-02",
   "rules": {
     "secure-coding/detect-non-literal-regexp": [
-      "duplicate-coverage",
-      "dynamic-regexp"
+      "duplicate-coverage"
     ],
-    "secure-coding/detect-object-injection": [
-      "nominal-inference-suppress"
-    ],
+    "secure-coding/detect-object-injection": [],
     "secure-coding/detect-weak-password-validation": [],
     "secure-coding/no-bidi-characters": [
       "whole-program-text"
@@ -49,7 +46,6 @@
     ],
     "secure-coding/no-invisible-characters": [],
     "secure-coding/no-ldap-injection": [
-      "orphan-message",
       "unasserted-message",
       "unexercised-option",
       "unguarded-recursion"
@@ -246,9 +242,7 @@
     "browser-security/no-jwt-in-storage": [
       "unconfigurable-vocabulary"
     ],
-    "browser-security/no-missing-cors-check": [
-      "nominal-inference-suppress"
-    ],
+    "browser-security/no-missing-cors-check": [],
     "browser-security/no-missing-csrf-protection": [
       "unconfigurable-vocabulary"
     ],

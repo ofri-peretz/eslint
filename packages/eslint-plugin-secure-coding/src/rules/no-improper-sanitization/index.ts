@@ -333,47 +333,6 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       return !(hasQuoteEscaping && hasAmpersandEscaping);
     };
 
-    /**
-     * Check if output context suggests needed encoding
-     */
-    const needsContextEncoding = (outputNode: TSESTree.Node): string | null => {
-      let current: TSESTree.Node | undefined = outputNode;
-
-      // Look for context clues in surrounding code
-      while (current) {
-        const text = sourceCode.getText(current).toLowerCase();
-
-        if (text.includes('innerhtml') || text.includes('outerhtml')) {
-          return 'html';
-        }
-        if (
-          text.includes('href') ||
-          text.includes('src') ||
-          text.includes('url')
-        ) {
-          return 'url';
-        }
-        if (
-          text.includes('sql') ||
-          text.includes('query') ||
-          text.includes('execute')
-        ) {
-          return 'sql';
-        }
-        if (
-          text.includes('exec') ||
-          text.includes('spawn') ||
-          text.includes('command')
-        ) {
-          return 'command';
-        }
-
-        current = current.parent as TSESTree.Node;
-      }
-
-      return null;
-    };
-
     return {
       before() {
         const options = context.options[0] || {};
@@ -471,39 +430,36 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
           // assigns.
           const sink = (propertyName(left) ?? '').toLowerCase();
 
-          if (
-            ['innerhtml', 'outerhtml', 'innertext', 'textcontent'].includes(
-              sink,
-            )
-          ) {
-            const encodingContext = needsContextEncoding(node);
+          // Only the markup sinks parse what they are given. The former
+          // `needsContextEncoding` text probe answered 'html' for every one of
+          // these assignments (the assignment's own text names the sink), and
+          // only innerHTML was then checked, so `outerHTML` went unreported.
+          // `innerText`/`textContent` take text, never markup.
+          if (sink === 'innerhtml' || sink === 'outerhtml') {
+            // Check if right side is properly sanitized
+            const rightText = sourceCode.getText(right);
 
-            if (encodingContext === 'html' && sink === 'innerhtml') {
-              // Check if right side is properly sanitized
-              const rightText = sourceCode.getText(right);
+            if (!isSafeSanitizer(rightText)) {
+              // Check if right side contains user input
+              const hasUserInput =
+                rightText.includes('req.') ||
+                rightText.includes('body') ||
+                rightText.includes('query') ||
+                rightText.includes('input');
 
-              if (!isSafeSanitizer(rightText)) {
-                // Check if right side contains user input
-                const hasUserInput =
-                  rightText.includes('req.') ||
-                  rightText.includes('body') ||
-                  rightText.includes('query') ||
-                  rightText.includes('input');
-
-                if (hasUserInput) {
-                  if (safetyChecker.isSafe(node, context)) {
-                    return;
-                  }
-
-                  context.report({
-                    node: right,
-                    messageId: 'insufficientXssProtection',
-                    data: {
-                      filePath: filename,
-                      line: String(node.loc?.start.line ?? 0),
-                    },
-                  });
+              if (hasUserInput) {
+                if (safetyChecker.isSafe(node, context)) {
+                  return;
                 }
+
+                context.report({
+                  node: right,
+                  messageId: 'insufficientXssProtection',
+                  data: {
+                    filePath: filename,
+                    line: String(node.loc?.start.line ?? 0),
+                  },
+                });
               }
             }
           }
@@ -526,10 +482,11 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         // developer-authored, because the markup itself is the vector.
         // Only take the safe path when the literal is free of script
         // tags, inline event handlers, and `javascript:` URIs.
-        const directParent = node.parent as TSESTree.Node | undefined;
+        // A literal is always the RIGHT side of an assignment it sits in
+        // directly: the left side is a pattern or a member, never a literal.
+        const directParent = node.parent as TSESTree.Node;
         if (
-          directParent?.type === 'AssignmentExpression' &&
-          (directParent as TSESTree.AssignmentExpression).right === node &&
+          directParent.type === 'AssignmentExpression' &&
           (directParent as TSESTree.AssignmentExpression).left.type ===
             'MemberExpression'
         ) {
@@ -625,8 +582,10 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
           const enclosingArgument = (
             literal: TSESTree.Node,
           ): TSESTree.Node | undefined => {
+            // A literal always sits below a statement, and the climb stops at
+            // every statement, so `parent` is never undefined here.
             let current = literal;
-            let parent = current.parent as TSESTree.Node | undefined;
+            let parent = current.parent as TSESTree.Node;
             // Climb the text-composing nodes only: `+`, and the
             // `[...] .join(sep)` triple (ArrayExpression → the `.join` member
             // → its call). Anything else — `||`, `?:`, a member access, a
@@ -634,20 +593,21 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             // #441 false negatives closed.
             for (;;) {
               if (
-                parent?.type === 'BinaryExpression' &&
+                parent.type === 'BinaryExpression' &&
                 parent.operator === '+'
               ) {
                 current = parent;
-              } else if (parent?.type === 'ArrayExpression') {
+              } else if (parent.type === 'ArrayExpression') {
                 current = parent;
               } else if (
                 // `res.send({ error: "Sorry, can't find that" })` — an object
                 // argument is serialised as JSON and served as
                 // application/json, so an apostrophe in it is not markup. The
                 // literal was reported because `'` is in `dangerousChars`.
-                parent?.type === 'Property' ||
-                (parent?.type === 'ObjectExpression' &&
-                  current.type === 'Property')
+                // (Under an ObjectExpression `current` is always a Property:
+                // the climb never passes a SpreadElement.)
+                parent.type === 'Property' ||
+                parent.type === 'ObjectExpression'
               ) {
                 current = parent;
               } else if (
@@ -659,30 +619,30 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
                 // ArrayExpression arm was supposed to have closed it. The unit
                 // test written for that fix used a bare array and passed,
                 // which is why the real file is the one that settles it.
-                parent?.type === AST_NODE_TYPES.TSSatisfiesExpression ||
-                parent?.type === AST_NODE_TYPES.TSAsExpression ||
-                parent?.type === AST_NODE_TYPES.TSNonNullExpression ||
-                parent?.type === AST_NODE_TYPES.TSTypeAssertion
+                parent.type === AST_NODE_TYPES.TSSatisfiesExpression ||
+                parent.type === AST_NODE_TYPES.TSAsExpression ||
+                parent.type === AST_NODE_TYPES.TSNonNullExpression ||
+                parent.type === AST_NODE_TYPES.TSTypeAssertion
               ) {
                 current = parent;
               } else if (
-                parent?.type === 'MemberExpression' &&
+                parent.type === 'MemberExpression' &&
                 parent.object === current &&
                 propertyName(parent) === 'join'
               ) {
                 current = parent;
               } else if (
-                parent?.type === 'CallExpression' &&
+                parent.type === 'CallExpression' &&
                 parent.callee === current
               ) {
                 current = parent;
               } else {
                 break;
               }
-              parent = current.parent as TSESTree.Node | undefined;
+              parent = current.parent as TSESTree.Node;
             }
             if (
-              parent?.type === 'CallExpression' &&
+              parent.type === 'CallExpression' &&
               (parent as TSESTree.CallExpression).arguments.includes(
                 current as TSESTree.CallExpressionArgument,
               )
@@ -739,8 +699,16 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             }
             if (expr.type === 'TemplateLiteral')
               return expr.expressions.length === 0;
-            if (expr.type === 'BinaryExpression' && expr.operator === '+') {
-              return isSafeText(expr.left) && isSafeText(expr.right);
+            // Every unary operator yields a number, a boolean, a type name or
+            // `undefined`, and every binary operator but `+` a number or a
+            // boolean: none of them can carry markup.
+            // `'<p>Total: ' + price * qty + '</p>'` has nothing to escape.
+            if (expr.type === 'UnaryExpression') return true;
+            if (expr.type === 'BinaryExpression') {
+              return (
+                expr.operator !== '+' ||
+                (isSafeText(expr.left) && isSafeText(expr.right))
+              );
             }
             if (expr.type === 'ObjectExpression') {
               return expr.properties.every(
@@ -797,9 +765,8 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
                 propertyName(callee) === 'join' &&
                 callee.object.type === 'ArrayExpression'
               ) {
-                return callee.object.elements.every(
-                  (element) => element !== null && isSafeText(element),
-                );
+                // Joined text is safe exactly when the array is.
+                return isSafeText(callee.object);
               }
               // `res.send('user ' + escapeHtml(req.params.uid) + "'s pets")`
               // — this rule exists to demand escaping, and was reporting the

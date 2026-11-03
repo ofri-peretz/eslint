@@ -59,7 +59,11 @@ ruleTester.run('no-missing-cors-check (final coverage)', noMissingCorsCheck, {
   valid: [
     // Zero-argument use() call: firstArg ternary null arm (L288) and the
     // non-CallExpression firstArg guard (L301 else path)
-    { code: 'app.use();', filename: 'server.ts' },
+    {
+      code: 'app.use();',
+      name: 'app.use with no arguments installs no CORS middleware',
+      filename: 'server.ts',
+    },
     // ObjectExpression firstArg whose text mentions cors(: corsCallArg stays
     // null so node.arguments is scanned (L314/L315 alternate arms); no
     // wildcard origin, so no report.
@@ -171,6 +175,7 @@ ruleTester.run(
       // an Identifier so it is never registered as a worker (L150 else path).
       {
         code: 'self.pool.addEventListener("message", onMsg);',
+        name: 'a message listener on a member expression is not registered as a worker',
         filename: 'app.ts',
       },
     ],

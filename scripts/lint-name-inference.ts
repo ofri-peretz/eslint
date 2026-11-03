@@ -542,12 +542,6 @@ const REGISTERED: RegistryEntry[] = [
       'Withholds on /^(read|len|size|count|decode|parse)/i against a name. Costs recall the same way the file-access one does.',
   },
   {
-    file: 'eslint-plugin-secure-coding/src/rules/detect-object-injection/index.ts',
-    direction: 'suppress',
-    reason:
-      'A suffix vocabulary (Code|Status|Version|Kind|Mode|Type|…) withholds on the property name. The CONSTANT_CASE shape test beside it is a shape, not a vocabulary, and is the lesser half.',
-  },
-  {
     file: 'eslint-plugin-node-security/src/rules/no-math-random-crypto/index.ts',
     direction: 'report',
     reason:
@@ -631,14 +625,6 @@ const REGISTERED: RegistryEntry[] = [
   },
 
   // ── direction: suppress — a wrong guess costs a detection, silently ───
-  {
-    file: 'eslint-plugin-browser-security/src/rules/no-missing-cors-check/index.ts',
-    direction: 'suppress',
-    reason:
-      'trustedLibraries substring-matched against a callee name to withhold a finding. Anything ' +
-      'whose name contains the library string is trusted, so `notAxiosWrapper` silences the rule. ' +
-      'Already grandfathered in lint-plugin-taxonomy.ts as a duplicate-id rule slated for retirement.',
-  },
   {
     file: 'eslint-plugin-express-security/src/rules/no-missing-cors-check/index.ts',
     direction: 'suppress',

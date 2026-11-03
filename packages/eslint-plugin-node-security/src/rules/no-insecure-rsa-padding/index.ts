@@ -133,13 +133,19 @@ export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
               prop.type === AST_NODE_TYPES.Property &&
               objectKeyName(prop) === 'padding'
             ) {
-              const paddingText = sourceCode.getText(prop.value);
+              // `const P = crypto.constants.RSA_PKCS1_PADDING; { padding: P }`
+              // hands the call the same constant written inline.
+              const padding =
+                prop.value.type === AST_NODE_TYPES.Identifier
+                  ? (constInitializerOf(sourceCode, prop.value) ?? prop.value)
+                  : prop.value;
+              const paddingText = sourceCode.getText(padding);
               if (
                 // Any spelling of the constant — bare, `constants.`, `crypto.constants.`.
                 paddingText.includes('RSA_PKCS1_PADDING') ||
                 // `1` IS `crypto.constants.RSA_PKCS1_PADDING`.
-                (prop.value.type === AST_NODE_TYPES.Literal &&
-                  prop.value.value === RSA_PKCS1_PADDING_VALUE)
+                (padding.type === AST_NODE_TYPES.Literal &&
+                  padding.value === RSA_PKCS1_PADDING_VALUE)
               ) {
                 context.report({
                   node: prop,
@@ -147,12 +153,18 @@ export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
                   suggest: [
                     {
                       messageId: 'useOaep',
-                      fix: (fixer: TSESLint.RuleFixer) => {
-                        return fixer.replaceText(
-                          prop.value,
-                          'crypto.constants.RSA_PKCS1_OAEP_PADDING',
-                        );
-                      },
+                      // A shorthand `{ padding }` has no value of its own
+                      // to replace, so the whole property is rewritten.
+                      fix: (fixer: TSESLint.RuleFixer) =>
+                        prop.shorthand
+                          ? fixer.replaceText(
+                              prop,
+                              'padding: crypto.constants.RSA_PKCS1_OAEP_PADDING',
+                            )
+                          : fixer.replaceText(
+                              prop.value,
+                              'crypto.constants.RSA_PKCS1_OAEP_PADDING',
+                            ),
                     },
                   ],
                 });

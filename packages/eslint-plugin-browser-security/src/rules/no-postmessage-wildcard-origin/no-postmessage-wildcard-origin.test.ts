@@ -60,6 +60,7 @@ ruleTester.run('no-postmessage-wildcard-origin', noPostmessageWildcardOrigin, {
     // Using "/" for same-origin (allowed)
     {
       code: `window.postMessage(data, '/');`,
+      name: 'postMessage to a slash targets the same origin',
     },
   ],
   invalid: [

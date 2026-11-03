@@ -47,7 +47,7 @@ ruleTester.run('require-secure-defaults', requireSecureDefaults, {
       name: 'an empty object literal sets no insecure default',
       code: 'const obj = {};',
     },
-    'class Foo {}',
+    { code: 'class Foo {}', name: 'an empty class declares no defaults' },
     {
       name: 'secure and httpOnly both on',
       code: 'const config = { secure: true, httpOnly: true }',

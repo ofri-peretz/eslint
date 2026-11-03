@@ -898,7 +898,10 @@ ruleTester.run(
   {
     valid: [
       { code: "process.stdout.write(chalk.green(name + ' | '));" },
-      { code: "const s = 'a; b(c)';" },
+      {
+        code: "const s = 'a; b(c)';",
+        name: 'semicolons and parentheses in a string are not HTML-dangerous',
+      },
       { code: "const s = prefix + '${}';" },
       { code: 'const s = tag + "`" + value;' },
     ],

@@ -1,8 +1,8 @@
 const { tag } = require('../../lib.cjs');
 
 module.exports = {
-  domain: 36,
-  traces: 400,
+  domain: 60,
+  traces: 700,
   rule: 'no-xpath-injection',
   key: (s) => `${tag(s.build)}|${tag(s.wrap)}|${tag(s.sink)}|${tag(s.value)}`,
   config: () => ({}),
@@ -18,9 +18,12 @@ module.exports = {
       AssignOnly: 'return expr;',
       DomEvaluate: 'return xmlDoc.evaluate(expr, xmlDoc);',
       XpathSelect: 'return xpath.select(expr, xmlDoc);',
+      XpathSelectCast: 'return xpath.select(expr as string, xmlDoc);',
+      XpathSelectTernary: "return xpath.select(ok ? expr : '//none', xmlDoc);",
     }[tag(s.sink)];
-    const head =
-      tag(s.sink) === 'XpathSelect' ? "import xpath from 'xpath';\n" : '';
-    return `${head}declare const xmlDoc: any;\ndeclare function escapeXPath(v: string): string;\nexport function find(req: any, username: string) {\n  const expr = ${expr};\n  ${use}\n}\n`;
+    const head = tag(s.sink).startsWith('XpathSelect')
+      ? "import xpath from 'xpath';\n"
+      : '';
+    return `${head}declare const xmlDoc: any;\ndeclare const ok: boolean;\ndeclare function escapeXPath(v: string): string;\nexport function find(req: any, username: string) {\n  const expr = ${expr};\n  ${use}\n}\n`;
   },
 };

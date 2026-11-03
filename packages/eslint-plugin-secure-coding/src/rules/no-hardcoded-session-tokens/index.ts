@@ -128,7 +128,7 @@ export const noHardcodedSessionTokens = createRule<RuleOptions, MessageIds>({
         // Detect session_id patterns
         const parent = node.parent;
         if (
-          parent?.type === 'VariableDeclarator' &&
+          parent.type === 'VariableDeclarator' &&
           parent.id.type === 'Identifier'
         ) {
           const varName = parent.id.name.toLowerCase();

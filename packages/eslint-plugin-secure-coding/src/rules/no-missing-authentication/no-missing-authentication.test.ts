@@ -41,7 +41,10 @@ describe('no-missing-authentication', () => {
           // ministryofjustice/hmpps-arns-assessment-platform-ui.
           `const port = app.get('port');`,
           `app.listen(app.get('port'), () => logger.info('up'));`,
-          'app.get();',
+          {
+            code: 'app.get();',
+            name: 'app.get with no arguments registers no endpoint',
+          },
 
           {
             name: 'the route carries authenticate()',

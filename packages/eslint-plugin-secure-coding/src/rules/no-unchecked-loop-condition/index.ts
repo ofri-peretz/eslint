@@ -821,6 +821,12 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
           if (right.type === 'Literal' && typeof right.value === 'number') {
             return Math.abs(right.value);
           }
+          // `10_000_000n` counts iterations the same way `10_000_000` does.
+          // Read from the literal's digits: `value` is null on a runtime
+          // without BigInt support.
+          if (right.type === 'Literal' && 'bigint' in right) {
+            return Math.abs(Number(right.bigint));
+          }
         }
       }
 
@@ -943,9 +949,7 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       // Track variable declarations for tainting
       VariableDeclaration(node: TSESTree.VariableDeclaration) {
         for (const declarator of node.declarations) {
-          if (declarator.id.type === 'Identifier' && declarator.init) {
-            const varName = declarator.id.name;
-
+          if (declarator.init) {
             // Seed taint structurally, from the initializer's AST. This was a
             // substring test over the initializer's printed text against the
             // same seven names, and it is where the whole rule went wrong:
@@ -975,8 +979,16 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
             // inside a string or a comment counted just as well.
             const isSanitized = isClamped(declarator.init);
 
+            // Every name the declarator binds carries the initializer's
+            // value: `const { limit } = req.query` and
+            // `const { query: { limit } } = req` read the same request field
+            // `const limit = req.query.limit` does.
             if (hasUserInput && !isSanitized) {
-              taintedVariables.add(varName);
+              for (const variable of sourceCode.getDeclaredVariables(
+                declarator,
+              )) {
+                taintedVariables.add(variable.name);
+              }
             }
           }
         }

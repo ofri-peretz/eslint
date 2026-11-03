@@ -62,7 +62,10 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
     // A plain object that happens to have an `origin` key.
     { code: "const event = { origin: '*' }" },
     // Someone else's `cors` shaped call with a non-object argument.
-    { code: "cors('*')" },
+    {
+      code: "cors('*')",
+      name: 'a cors call with a string argument is not a cors options object',
+    },
   ],
 
   invalid: [

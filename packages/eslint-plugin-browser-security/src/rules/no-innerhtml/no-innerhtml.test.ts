@@ -403,7 +403,10 @@ ruleTester.run('no-innerhtml-edge-paths', noInnerhtml, {
     // A computed key bound to a NON-string const: resolvable, but not a sink name.
     'const IDX = 0; el[IDX] = value;',
     // A numeric computed key: a Literal whose value is not a string.
-    'el[0] = value;',
+    {
+      code: 'el[0] = value;',
+      name: 'a numeric computed key is not the innerHTML sink',
+    },
     // A key that is neither an Identifier nor a Literal.
     'Object.assign(el, { [`k${suffix}`]: incoming });',
     // Object.assign with a string-literal key that is not a sink.

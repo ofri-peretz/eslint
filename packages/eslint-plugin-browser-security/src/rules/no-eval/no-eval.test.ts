@@ -83,7 +83,11 @@ ruleTester.run('no-eval', noEval, {
     // node-security got no eval coverage at all — the partition assumed a plugin
     // that is not a dependency. Handing the deferral to the user turns "silently
     // uncovered" into "covered unless you say otherwise".
-    { code: `eval(data);`, options: [{ deferDynamicPayloads: true }] },
+    {
+      code: `eval(data);`,
+      name: 'eval of a dynamic payload is deferred when deferDynamicPayloads is on',
+      options: [{ deferDynamicPayloads: true }],
+    },
     // The generic dynamic case.
     { code: `eval(userInput);`, options: [{ deferDynamicPayloads: true }] },
     // underscore-min.js:1033 / speedscope demangle-cpp — dynamic Function body.
