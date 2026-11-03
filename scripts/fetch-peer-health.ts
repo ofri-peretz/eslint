@@ -705,8 +705,11 @@ function renderHeadToHead(rows: PeerHealth[]): string[] {
     stars && stars > 0 ? Math.round(downloads / stars).toLocaleString('en-US') : '—';
 
   const ourDownloads = total(ours, (r) => r.npm_.weeklyDownloads);
+  // total() counts a failed npm lookup as 0, so the row says how many it is short.
+  const missing = ours.filter((r) => r.npm_.weeklyDownloads === null).length;
+  const short = missing > 0 ? `, ${missing} without download data` : '';
   lines.push(
-    `| **Interlace (all ${ours.length} plugins)** | ${ourDownloads.toLocaleString('en-US')} | ${familyStars ?? '—'} | ${ratio(ourDownloads, familyStars)} |`,
+    `| **Interlace (all ${ours.length} plugins${short})** | ${ourDownloads.toLocaleString('en-US')} | ${familyStars ?? '—'} | ${ratio(ourDownloads, familyStars)} |`,
   );
 
   for (const peer of peers

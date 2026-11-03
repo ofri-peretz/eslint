@@ -1,6 +1,6 @@
 {
   "$comment": "The only place a security/<rule> ID's source is written (docs/intents/oxlint-plugin-security-drop-in, R2). index.js builds the plugin from this file; scripts/generate-oxlint-security.ts derives the README table and index.d.ts from it.",
-  "incumbent": { "name": "eslint-plugin-security", "version": "4.2.0" },
+  "incumbent": { "name": "eslint-plugin-security", "version": "4.2.1" },
   "rules": {
     "detect-bidi-characters": {
       "plugin": "secure-coding",
