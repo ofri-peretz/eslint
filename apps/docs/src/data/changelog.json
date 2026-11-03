@@ -1,7 +1,7 @@
 {
-  "releaseCount": 895,
+  "releaseCount": 899,
   "packageCount": 66,
-  "entryCount": 2485,
+  "entryCount": 2489,
   "oldestYear": 2024,
   "releases": [
     {
@@ -21235,6 +21235,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-nestjs-security",
+      "short": "eslint-plugin-nestjs-security",
+      "version": "3.2.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "a class member declared with a computed string key is the same member",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
@@ -21360,6 +21375,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.6.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-graphql-injection` labels an injection CRITICAL, as its CVSS 9.8 and its docs already say",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-supabase-security",
       "short": "eslint-plugin-supabase-security",
       "version": "1.0.0",
@@ -21375,6 +21405,36 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-nestjs-security",
+      "short": "oxlint-plugin-nestjs-security",
+      "version": "3.2.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-nestjs-security@3.2.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-secure-coding",
+      "short": "oxlint-plugin-secure-coding",
+      "version": "5.6.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@5.6.2`",
           "pr": null
         }
       ]
