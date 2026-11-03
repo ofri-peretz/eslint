@@ -2,23 +2,15 @@
 # past `ignoreUntil` the finding fails the gate again, so an exception cannot rot silently.
 
 [[IgnoredVulns]]
-id = "GHSA-vfj7-8cjw-p6xm"
-ignoreUntil = 2026-11-12
+id = "GHSA-g3hv-75wg-m249"
+ignoreUntil = 2026-12-04
 reason = """
-braces <= 3.0.3: stack-exhaustion DoS on deeply nested brace patterns (CVE-2026-93687, high).
-No fixed version exists. Reached only through the private monorepo root's lint tooling
-(root -> eslint-config-next -> ... -> micromatch -> braces); no published package depends on
-it, and the patterns it expands are this repo's own globs, not user input. Revisit when a
-patched braces ships, or by the date above.
-"""
-
-[[IgnoredVulns]]
-id = "GHSA-gcqx-w48m-w2h4"
-ignoreUntil = 2026-11-27
-reason = """
-deepmerge <= 4.3.1: prototype poisoning of objects returned by mergeObject() (CVE-2026-93753,
-medium). No fixed version exists. Dev-only: reached through the private monorepo root's test
-tooling (root -> jest -> @jest/core -> jest-config -> deepmerge), which merges this repo's own
-jest config objects, not untrusted input; no published package depends on it. Revisit when a
-patched deepmerge ships, or by the date above.
+minimatch < 11.0.1 (medium). The only fixed line is 11.x, and the linters this repo is built
+on have not moved to it: eslint 10.14.0 requires ^10.2.6, @eslint/config-array ^10.2.4,
+@typescript-eslint/typescript-estree ^10.2.2. Forcing 11 through `overrides` would also reach
+the v3 API that eslint-plugin-import / jsx-a11y / react still call, and break them.
+No published package of ours depends on minimatch; it reaches only lint tooling and the
+benchmark/compat lockfiles that pin old ESLint on purpose, and the patterns it matches are
+this repo's own config globs, not user input. Revisit when eslint ships on minimatch 11, or
+by the date above.
 """
