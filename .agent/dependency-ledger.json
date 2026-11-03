@@ -1,5 +1,7 @@
 {
   "$comment": "Every external package any workspace declares, and why it stays. core = technology we build on; subject = an API our rules lint or a competitor we benchmark; owned-soon = replaced by our own code or node: per docs/intents/2026-11-03-our-code-owns-the-tree/plan.md. Locked by scripts/__tests__/dependency-ledger.lock.test.ts.",
+  "command": null,
+  "maintainedBy": "Whoever adds or removes a dependency, classifying it against docs/intents/2026-11-03-our-code-owns-the-tree/plan.md (Phase 5b ledger); the lock test checks it against every workspace package.json.",
   "core": {
     "@anthropic-ai/claude-agent-sdk": "agent harness scripts",
     "@axe-core/playwright": "docs e2e and accessibility tests",

@@ -23,6 +23,7 @@ import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const KINDS = ['core', 'subject', 'owned-soon'] as const;
+const META = new Set(['$comment', 'command', 'maintainedBy']);
 const FIELDS = [
   'dependencies',
   'devDependencies',
@@ -72,7 +73,7 @@ describe('dependency ledger', () => {
   it('has only the three kinds', () => {
     expect(
       Object.keys(ledger)
-        .filter((k) => k !== '$comment')
+        .filter((k) => !META.has(k))
         .sort(),
     ).toEqual([...KINDS].sort());
   });
