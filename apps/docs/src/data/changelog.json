@@ -1,9 +1,94 @@
 {
-  "releaseCount": 879,
+  "releaseCount": 889,
   "packageCount": 66,
-  "entryCount": 2469,
+  "entryCount": 2479,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "oxlint-plugin-secure-coding",
+      "short": "oxlint-plugin-secure-coding",
+      "version": "5.5.1",
+      "date": "2026-11-01T22:39:15Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@5.5.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-node-security",
+      "short": "oxlint-plugin-node-security",
+      "version": "5.8.1",
+      "date": "2026-11-01T22:38:28Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-node-security@5.8.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.5.1",
+      "date": "2026-11-01T22:38:04Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` checks `for (k in opts.source)` copy loops",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.21.1",
+      "date": "2026-11-01T22:37:01Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "resolve nested, defaulted and rest destructuring, and `import x = require()`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.8.1",
+      "date": "2026-11-01T22:36:33Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-weak-hash-algorithm` reports `createHash('sha-1')`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.1`",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "oxlint-plugin-import-next",
       "short": "oxlint-plugin-import-next",
@@ -20775,21 +20860,6 @@
       ]
     },
     {
-      "package": "@interlace/eslint-devkit",
-      "short": "eslint-devkit",
-      "version": "1.21.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "resolve nested, defaulted and rest destructuring, and `import x = require()`",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.2.0",
@@ -20800,6 +20870,21 @@
         {
           "kind": "feature",
           "title": "the formatter is published. `eslint -f @interlace/eslint-formatter` emits ~408 tokens where `stylish` emits ~104,483, at the same measured signal score.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "2.2.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "rules match their documented contracts",
           "pr": null
         }
       ]
@@ -20925,21 +21010,31 @@
       ]
     },
     {
-      "package": "eslint-plugin-node-security",
-      "short": "eslint-plugin-node-security",
-      "version": "5.8.1",
+      "package": "eslint-plugin-nestjs-security",
+      "short": "eslint-plugin-nestjs-security",
+      "version": "3.2.1",
       "date": null,
       "isApp": false,
       "isPrivate": false,
       "entries": [
         {
           "kind": "fix",
-          "title": "`no-weak-hash-algorithm` reports `createHash('sha-1')`",
+          "title": "renamed imports, spreads and route paths follow the documented contract",
           "pr": null
-        },
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.8.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
         {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.1`",
+          "kind": "fix",
+          "title": "sinks are found by resolving the import, not by name",
           "pr": null
         }
       ]
@@ -21072,19 +21167,14 @@
     {
       "package": "eslint-plugin-secure-coding",
       "short": "eslint-plugin-secure-coding",
-      "version": "5.5.1",
+      "version": "5.6.0",
       "date": null,
       "isApp": false,
       "isPrivate": false,
       "entries": [
         {
-          "kind": "fix",
-          "title": "`detect-object-injection` checks `for (k in opts.source)` copy loops",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.1`",
+          "kind": "feature",
+          "title": "every rule is checked against a Quint model of its documented contract",
           "pr": null
         }
       ]
@@ -21110,16 +21200,61 @@
       ]
     },
     {
-      "package": "oxlint-plugin-node-security",
-      "short": "oxlint-plugin-node-security",
-      "version": "5.8.1",
+      "package": "eslint-plugin-vercel-ai-security",
+      "short": "eslint-plugin-vercel-ai-security",
+      "version": "2.4.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "a renamed SDK import is still the SDK call",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-browser-security",
+      "short": "oxlint-plugin-browser-security",
+      "version": "2.2.1",
       "date": null,
       "isApp": false,
       "isPrivate": false,
       "entries": [
         {
           "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-node-security@5.8.1`",
+          "title": "updated workspace dependencies: `eslint-plugin-browser-security@2.2.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-nestjs-security",
+      "short": "oxlint-plugin-nestjs-security",
+      "version": "3.2.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-nestjs-security@3.2.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-node-security",
+      "short": "oxlint-plugin-node-security",
+      "version": "5.8.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-node-security@5.8.2`",
           "pr": null
         }
       ]
@@ -21127,14 +21262,29 @@
     {
       "package": "oxlint-plugin-secure-coding",
       "short": "oxlint-plugin-secure-coding",
-      "version": "5.5.1",
+      "version": "5.6.0",
       "date": null,
       "isApp": false,
       "isPrivate": false,
       "entries": [
         {
           "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@5.5.1`",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@5.6.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-vercel-ai-security",
+      "short": "oxlint-plugin-vercel-ai-security",
+      "version": "2.4.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-vercel-ai-security@2.4.1`",
           "pr": null
         }
       ]

@@ -22,7 +22,7 @@
       "cwe": "CWE-915",
       "owasp": "",
       "cvss": "",
-      "description": "Detects variable[key] as a left- or right-hand assignment operand (prototype pollution)",
+      "description": "Detects variable[key] written as an assignment target, or read and then invoked (prototype pollution, method injection)",
       "typeStatus": "optional",
       "recommended": false,
       "warns": false,
@@ -529,5 +529,5 @@
     }
   ],
   "totalRules": 35,
-  "lastSynced": "2026-10-26T00:06:24.180Z"
+  "lastSynced": "2026-11-02T20:01:52.148Z"
 }

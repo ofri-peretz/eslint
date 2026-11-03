@@ -233,7 +233,8 @@
           "noCoverage": 0,
           "timeout": 22
         }
-      }
+      },
+      "pending": []
     },
     "mongodb-security": {
       "rules": {
@@ -1142,7 +1143,8 @@
           "noCoverage": 0,
           "timeout": 3
         }
-      }
+      },
+      "pending": []
     },
     "secure-coding": {
       "rules": {
@@ -1541,7 +1543,8 @@
           "noCoverage": 0,
           "timeout": 0
         }
-      }
+      },
+      "pending": []
     }
   }
 }

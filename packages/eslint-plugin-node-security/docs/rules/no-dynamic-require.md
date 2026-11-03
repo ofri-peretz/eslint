@@ -135,10 +135,10 @@ processValue(getValue()); // Cross-file not tracked
 
 ## ⚙️ Options
 
-| Option          | Type       | Default | Description                                                                                                                                                                                                                             |
-| --------------- | ---------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `allowContexts` | `string[]` | `[]`    | Allow dynamic requires in files whose path marks a context — a substring test on the linted file path: test (.test., .spec., /**tests**/), config (config, webpack, rollup), build (build, scripts, tools), runtime (runtime, dynamic). |
-| `allowPatterns` | `string[]` | `[]`    | Regex patterns matched against the source text of the require argument; a match suppresses the report.                                                                                                                                  |
+| Option          | Type       | Default | Description                                                                                                                                                                                                                                      |
+| --------------- | ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `allowContexts` | `string[]` | `[]`    | Allow dynamic requires in files whose path marks a context — a substring test on the linted file path: test (.test., .spec., /**tests**/), config (config, webpack, rollup), build (build, scripts, tools), runtime (runtime, dynamic).          |
+| `allowPatterns` | `string[]` | `[]`    | Regex patterns matched against the source text of the require argument; a match suppresses the report. A pattern that is an invalid regex or matches a catastrophic-backtracking shape falls back to a case-insensitive literal substring match. |
 
 ### `allowContexts`
 

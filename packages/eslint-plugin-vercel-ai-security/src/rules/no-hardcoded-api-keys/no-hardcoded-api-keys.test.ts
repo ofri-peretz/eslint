@@ -288,12 +288,12 @@ ruleTester.run('no-hardcoded-api-keys', noHardcodedApiKeys, {
   ]),
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────────────────────────
 // FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md)
 // A provider-prefixed key is a key wherever it sits; a generic long string is
 // one only under a key-ish name AND only if it is not a URL, a resource path or
 // the NAME of an environment variable.
-// ─────────────────────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────────────────────────
 ruleTester.run('no-hardcoded-api-keys (fp-fn audit)', noHardcodedApiKeys, {
   valid: xai([
     {
@@ -356,9 +356,9 @@ ruleTester.run('no-hardcoded-api-keys (fp-fn audit)', noHardcodedApiKeys, {
   ]),
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────────────────────────
 // Mutation audit 2026-11-02: each case pins one claim a surviving mutant broke.
-// ─────────────────────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────────────────────────
 ruleTester.run('no-hardcoded-api-keys (mutation audit)', noHardcodedApiKeys, {
   valid: xai([
     {
@@ -440,7 +440,7 @@ ruleTester.run('no-hardcoded-api-keys (mutation audit)', noHardcodedApiKeys, {
     },
     {
       name: 'a Stripe-style secret ending in an uppercase run is not an environment variable name',
-      code: `const c = { apiKey: 'sk_live_51HxFAKE0123456789XYZ' };`,
+      code: `const c = { apiKey: 'FAKE-NOT-A-REAL-SECRET-0123456789-XYZ' };`,
       errors: [{ messageId: 'hardcodedApiKey' }],
     },
     {

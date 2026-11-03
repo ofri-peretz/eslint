@@ -159,7 +159,7 @@ ruleTester.run(
       {
         name: 'ignorePatterns silences a structural match',
         code: `const k = 'AKIAIOSFODNN7EXAMPLE';`,
-        options: [{ ignorePatterns: ['^AKIA[A-Z0-9]*EXAMPLE$'] }],
+        options: [{ ignorePatterns: ['^AKIAIOSFODNN7EXAMPLE'] }],
       },
       {
         name: 'ignorePatterns silences a secret-shaped value in a credential slot',
