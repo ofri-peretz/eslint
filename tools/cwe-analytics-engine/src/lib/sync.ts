@@ -1,8 +1,6 @@
-import axios from 'axios';
-import fs from 'fs-extra';
+import fs from 'node:fs';
 import path, { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { format } from 'date-fns';
 
 // ESM-compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -11,39 +9,66 @@ const __dirname = dirname(__filename);
 // --- Configuration ---
 const DATA_DIR = path.join(__dirname, '../../data');
 const RAW_DATA_DIR = path.join(DATA_DIR, 'raw');
-const STATS_FILE = path.join(__dirname, '../../../../apps/docs/src/data/cwe-stats.json');
+const STATS_FILE = path.join(
+  __dirname,
+  '../../../../apps/docs/src/data/cwe-stats.json',
+);
 const METADATA_FILE = path.join(DATA_DIR, 'metadata.json');
 const NVD_API_URL = 'https://services.nvd.nist.gov/rest/json/cves/2.0';
 const RESULTS_PER_PAGE = 2000;
 
 // Ensure directories exist
-fs.ensureDirSync(RAW_DATA_DIR);
+fs.mkdirSync(RAW_DATA_DIR, { recursive: true });
+
+const readJson = async (file: string) =>
+  JSON.parse(await fs.promises.readFile(file, 'utf8'));
+const writeJson = (file: string, data: unknown) =>
+  fs.promises.writeFile(file, `${JSON.stringify(data, null, 2)}\n`);
+
+/** Local time, `yyyy-MM-dd'T'HH:mm:ss.000` — the shape the NVD API's lastMod* params take. */
+function nvdTimestamp(d = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}.000`;
+}
 
 async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function fetchWithRetry(url: string, params: Record<string, unknown>, apiKey?: string, retries = 5): Promise<unknown> {
+async function fetchWithRetry(
+  url: string,
+  params: Record<string, unknown>,
+  apiKey?: string,
+  retries = 5,
+): Promise<unknown> {
   const delay = apiKey ? 600 : 6000; // 6s without key, 0.6s with key
-  
+
   for (let i = 0; i < retries; i++) {
     try {
       console.log(`Fetching batch... (startIndex: ${params.startIndex})`);
-      const response = await axios.get(url, {
-        params,
+      const query = new URL(url);
+      for (const [key, value] of Object.entries(params))
+        query.searchParams.set(key, String(value));
+      const response = await fetch(query, {
         headers: apiKey ? { apiKey } : {},
-        timeout: 30000,
+        signal: AbortSignal.timeout(30000),
       });
-      
+      if (!response.ok) {
+        throw Object.assign(new Error(`NVD responded ${response.status}`), {
+          status: response.status,
+        });
+      }
+
       await sleep(delay); // Rate limit adherence
-      return response.data;
+      return await response.json();
     } catch (error: unknown) {
       if (i === retries - 1) throw error;
-      const axiosError = error as { response?: { status?: number } };
-      const status = axiosError.response?.status;
+      const status = (error as { status?: number }).status;
       if (status && [429, 500, 502, 503, 504].includes(status)) {
         const backoff = Math.pow(2, i) * 1000;
-        console.warn(`Retry ${i + 1}/${retries} after status ${status}. Waiting ${backoff}ms...`);
+        console.warn(
+          `Retry ${i + 1}/${retries} after status ${status}. Waiting ${backoff}ms...`,
+        );
         await sleep(backoff);
       } else {
         throw error;
@@ -80,26 +105,29 @@ async function upsertCve(vulnerability: Vulnerability) {
   const yearFile = path.join(RAW_DATA_DIR, `${year}.json`);
 
   let data: Record<string, Vulnerability> = {};
-  if (await fs.pathExists(yearFile)) {
-    data = await fs.readJson(yearFile);
+  if (fs.existsSync(yearFile)) {
+    data = await readJson(yearFile);
   }
 
   data[cveId] = vulnerability;
-  await fs.writeJson(yearFile, data, { spaces: 2 });
+  await writeJson(yearFile, data);
 }
 
 async function calculateStats() {
   console.log('Calculating aggregate stats...');
   const cweMap: Record<string, { scores: number[]; cveIds: string[] }> = {};
 
-  const files = await fs.readdir(RAW_DATA_DIR);
+  const files = await fs.promises.readdir(RAW_DATA_DIR);
   for (const file of files) {
     if (!file.endsWith('.json')) continue;
 
-    const cves = await fs.readJson(path.join(RAW_DATA_DIR, file));
-    for (const [cveId, vuln] of Object.entries(cves) as [string, Vulnerability][]) {
+    const cves = await readJson(path.join(RAW_DATA_DIR, file));
+    for (const [cveId, vuln] of Object.entries(cves) as [
+      string,
+      Vulnerability,
+    ][]) {
       const cve = vuln.cve || {};
-      
+
       // Extract CWEs
       const cwes: string[] = [];
       (cve.weaknesses || []).forEach((weak) => {
@@ -136,7 +164,15 @@ async function calculateStats() {
     }
   }
 
-  const finalStats: Record<string, { mean_cvss: number; max_cvss: number; cve_count: number; top_cves: string[] }> = {};
+  const finalStats: Record<
+    string,
+    {
+      mean_cvss: number;
+      max_cvss: number;
+      cve_count: number;
+      top_cves: string[];
+    }
+  > = {};
   for (const [cwe, data] of Object.entries(cweMap)) {
     const sum = data.scores.reduce((a, b) => a + b, 0);
     finalStats[cwe] = {
@@ -147,7 +183,7 @@ async function calculateStats() {
     };
   }
 
-  await fs.writeJson(STATS_FILE, finalStats, { spaces: 2 });
+  await writeJson(STATS_FILE, finalStats);
   console.log(`Stats saved to ${STATS_FILE}`);
 }
 
@@ -160,8 +196,8 @@ export async function sync() {
   const apiKey = process.env.NVD_API_KEY;
   let lastRun: string | null = null;
 
-  if (await fs.pathExists(METADATA_FILE)) {
-    const meta = await fs.readJson(METADATA_FILE);
+  if (fs.existsSync(METADATA_FILE)) {
+    const meta = await readJson(METADATA_FILE);
     lastRun = meta.last_run_timestamp;
   }
 
@@ -176,11 +212,15 @@ export async function sync() {
 
     if (lastRun) {
       params.lastModStartDate = lastRun;
-      params.lastModEndDate = format(new Date(), "yyyy-MM-dd'T'HH:mm:ss.000");
+      params.lastModEndDate = nvdTimestamp();
     }
 
     try {
-      const data = await fetchWithRetry(NVD_API_URL, params, apiKey) as NvdResponse;
+      const data = (await fetchWithRetry(
+        NVD_API_URL,
+        params,
+        apiKey,
+      )) as NvdResponse;
       totalResults = data.totalResults || 0;
       const vulnerabilities = data.vulnerabilities || [];
 
@@ -197,10 +237,10 @@ export async function sync() {
     }
   }
 
-  await fs.writeJson(METADATA_FILE, {
-    last_run_timestamp: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss.000"),
+  await writeJson(METADATA_FILE, {
+    last_run_timestamp: nvdTimestamp(),
     last_sync_count: startIndex,
-  }, { spaces: 2 });
+  });
 
   await calculateStats();
 }
