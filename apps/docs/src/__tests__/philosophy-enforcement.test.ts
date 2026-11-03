@@ -16,7 +16,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { relative, resolve } from 'path';
-import { globSync } from 'glob';
+import { globSync } from '../../../../scripts/lib/glob';
 
 // Use __dirname so this works regardless of whether vitest is invoked from the
 // repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).

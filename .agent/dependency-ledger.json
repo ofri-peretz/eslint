@@ -175,7 +175,6 @@
     "fast-check": "a seeded generator loop in the one test",
     "fs-extra": "node:fs",
     "get-tsconfig": "declared, never imported: remove after build + test stay green",
-    "glob": "node:fs globSync / fs.promises.glob",
     "gpt-tokenizer": "declared, never imported: remove after build + test stay green",
     "jiti": "declared, never imported: remove after build + test stay green",
     "next-themes": "root dependencies block: move to the workspace that imports it, or delete",

@@ -13,7 +13,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { glob } from 'glob';
+import { globSync } from './lib/glob.js';
 
 const isDryRun = process.argv.includes('--dry-run');
 
@@ -110,7 +110,7 @@ export function syncVersionsInContent(
  */
 function getPackages(): { name: string; path: string; version: string }[] {
   const packages: { name: string; path: string; version: string }[] = [];
-  const packageJsonFiles = glob.sync('packages/*/package.json');
+  const packageJsonFiles = globSync('packages/*/package.json');
 
   for (const pkgJsonPath of packageJsonFiles) {
     try {
@@ -171,7 +171,7 @@ function processPackage(pkg: { name: string; path: string; version: string }): v
   const srcDir = join(pkg.path, 'src');
   if (!existsSync(srcDir)) return;
 
-  const sourceFiles = glob.sync(`${srcDir}/**/*.{ts,tsx,js,jsx}`, {
+  const sourceFiles = globSync(`${srcDir}/**/*.{ts,tsx,js,jsx}`, {
     ignore: ['**/*.test.*', '**/*.spec.*', '**/__tests__/**', '**/tests/**'],
   });
 

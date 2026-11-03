@@ -10,7 +10,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { glob } from 'glob';
+import { globSync } from './lib/glob.js';
 
 const PHILOSOPHY_SECTION = `## Philosophy
 
@@ -30,7 +30,7 @@ async function findReadmeFiles(): Promise<string[]> {
   const packagesDir = path.join(__dirname, '..', 'packages');
   const pattern = path.join(packagesDir, '**/README.md');
   
-  const files = await glob(pattern, { 
+  const files = globSync(pattern, { 
     ignore: ['**/node_modules/**', '**/dist/**'] 
   });
   
