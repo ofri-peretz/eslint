@@ -19,7 +19,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { load } from 'js-yaml';
+import { parse } from 'yaml';
 
 const ROOT = resolve(__dirname, '..', '..');
 const SETUP = readFileSync(
@@ -47,7 +47,7 @@ describe('every composite action is parseable YAML', () => {
   });
 
   it.each(actions)('%s parses', (file) => {
-    expect(() => load(readFileSync(file, 'utf8'))).not.toThrow();
+    expect(() => parse(readFileSync(file, 'utf8'))).not.toThrow();
   });
 });
 

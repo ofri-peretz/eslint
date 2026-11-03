@@ -402,6 +402,7 @@
     "reflect-metadata": "^0.2.2",
     "remark-parse": "^11.0.0",
     "rxjs": "^7.8.2",
+    "semver": "^7.8.5",
     "sequelize": "^6.37.8",
     "shiki": "^4.5.0",
     "sqlite3": "^6.0.1",
@@ -416,7 +417,8 @@
     "verdaccio": "^7.0.2",
     "vite": "^7.3.1",
     "vite-plugin-dts": "~5.1.2",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "yaml": "^2.9.1"
   },
   "overrides": {
     "smol-toml": "^1.9.0",
