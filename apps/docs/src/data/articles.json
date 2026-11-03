@@ -1,26 +1,6 @@
 {
   "articles": [
     {
-      "id": 4965984,
-      "title": "My Harness Reported 0 Findings on 100 Files. All 100 Were Ignored.",
-      "description": "Three separate mechanisms make an ESLint run report zero while reading nothing — and every one of them exits 0 with an empty stderr. A clean bill of health and a file nobody opened are the same output.",
-      "url": "https://dev.to/ofri-peretz/my-harness-reported-0-findings-on-100-files-all-100-were-ignored-1okn",
-      "canonical_url": "https://ofriperetz.dev/articles/lint-harness-measured-nothing",
-      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Flint-harness-measured-nothing.jpg",
-      "published_at": "2026-11-03T02:15:06Z",
-      "readable_publish_date": "Nov 3",
-      "reading_time_minutes": 4,
-      "page_views_count": 0,
-      "public_reactions_count": 3,
-      "positive_reactions_count": 3,
-      "comments_count": 1,
-      "tag_list": [
-        "javascript",
-        "testing",
-        "webdev"
-      ]
-    },
-    {
       "id": 4939680,
       "title": "My Plugin Has 14 Rules. Two of Them Found 60% of Everything.",
       "description": "I pointed my own React plugin at a public codebase and counted per rule. 308 findings, and two rules produced 184 of them. Six rules produced nothing at all — and the reason that is not a bug is the whole article.",
@@ -2027,7 +2007,7 @@
       ]
     }
   ],
-  "total": 99,
-  "lastUpdated": "2026-11-03T10:52:54.711Z",
+  "total": 98,
+  "lastUpdated": "2026-11-03T11:02:41.303Z",
   "source": "public"
 }
