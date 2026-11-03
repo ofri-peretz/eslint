@@ -12,7 +12,7 @@ packages:
 cases: []
 ---
 
-# Intent: what a consumer installs is our code, ESLint and oxlint
+# Intent — what a consumer installs is our code, ESLint and oxlint
 
 > Stage 1 artifact. It was opened after the supply-chain floor stayed red on
 > `minimatch`/`glob`. Tracing it showed how much of that tree arrives through

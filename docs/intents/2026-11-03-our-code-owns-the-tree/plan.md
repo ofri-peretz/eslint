@@ -1,4 +1,4 @@
-# Plan: our code owns the tree
+# Plan — our code owns the tree
 
 Intent: [`intent.md`](./intent.md). **Status:** draft.
 
