@@ -75,7 +75,7 @@ Downloads per star. A HIGH number is silent adoption — a lot of people have it
 
 | Project | Weekly downloads | Stars | Downloads per star |
 | :--- | ---: | ---: | ---: |
-| **Interlace (all 31 plugins)** | 97,744 | 20 | 4,887 |
+| **Interlace (all 31 plugins, 3 without download data)** | 97,744 | 20 | 4,887 |
 | `@typescript-eslint/eslint-plugin` | 170,949,764 | 16463 | 10,384 |
 | `eslint-plugin-react-hooks` | 115,537,166 | — | — |
 | `eslint-plugin-import` | 81,621,501 | 5956 | 13,704 |
