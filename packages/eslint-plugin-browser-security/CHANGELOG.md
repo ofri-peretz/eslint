@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-browser-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.2.2
+
+### Patch Changes
+
+- **🐛 Fix** — `no-clickjacking` recognises a camelCase fetch directive
+
+  A policy is recognised by CSP3's own list of fetch directives rather than by an `-src` suffix, so a camelCase `scriptSrc` policy without `frame-ancestors` is reported like its kebab-case form.
+
 ## 2.2.1
 
 ### Patch Changes
