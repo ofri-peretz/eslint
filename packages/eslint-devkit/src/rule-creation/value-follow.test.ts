@@ -119,15 +119,35 @@ describe('resolveRelative', () => {
 });
 
 describe('parseModule and loadModule', () => {
-  it('falls back to @typescript-eslint/parser when the lint parser cannot parse for ESLint', () => {
+  it("falls back to ESLint's own espree when the lint parser cannot parse for ESLint", () => {
     expect(
-      parseModule('export const a = 1;', '/x.ts', undefined)?.ast.type,
+      parseModule('export const a = 1;', '/x.js', undefined)?.ast.type,
     ).toBe('Program');
     expect(
-      parseModule('export const a = 1;', '/x.ts', {
+      parseModule('export const a = 1;', '/x.js', {
         parseForESLint: () => ({ ast: {} }),
       })?.ast.type,
     ).toBe('Program');
+    // espree, not whatever TypeScript parser is installed: TS syntax abstains.
+    expect(
+      parseModule('export const a: number = 1;', '/x.ts', undefined),
+    ).toBeNull();
+  });
+
+  it('follows module.exports across files in a JS project with espree only', () => {
+    const dir = files({
+      'db.js': 'const shape = { q: "SELECT 1" };\nmodule.exports = shape;',
+    });
+    const file = path.join(dir, 'db.js');
+    const info = loadModule(file, undefined);
+    expect(info).not.toBeNull();
+    const value = exportedValue(info!, 'q', undefined);
+    expect(
+      value &&
+        fs
+          .readFileSync(file, 'utf8')
+          .slice(...(value.node.range as [number, number])),
+    ).toBe('"SELECT 1"');
   });
 
   it('abstains on text no parser can read', () => {

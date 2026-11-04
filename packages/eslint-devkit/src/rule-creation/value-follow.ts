@@ -153,12 +153,41 @@ export function resolveRelative(
   return candidates.find(isFile) ?? null;
 }
 
-/** `@typescript-eslint/parser`, when it is installed next to the project. */
+/**
+ * ESLint's own parser and scope analyser, `espree` + `eslint-scope`, resolved
+ * through the project's `eslint` so the result does not depend on which other
+ * parsers happen to be installed. Plain JS only: a `.ts` sibling is parsed by
+ * the linting parser (the first candidate) or abstains.
+ */
 function fallbackParser(): unknown {
   try {
-    return createRequire(path.join(process.cwd(), 'package.json'))(
-      '@typescript-eslint/parser',
+    const fromEslint = createRequire(
+      createRequire(path.join(process.cwd(), 'package.json')).resolve('eslint'),
     );
+    const espree = fromEslint('espree') as {
+      parse: (code: string, options: object) => TSESTree.Program;
+      latestEcmaVersion: number;
+    };
+    const { analyze } = fromEslint('eslint-scope') as {
+      analyze: (ast: unknown, options: object) => TSESLint.Scope.ScopeManager;
+    };
+    return {
+      parseForESLint(code: string): ParseResult {
+        const ast = espree.parse(code, {
+          ecmaVersion: 'latest',
+          sourceType: 'module',
+          range: true,
+          loc: true,
+        });
+        return {
+          ast,
+          scopeManager: analyze(ast, {
+            ecmaVersion: espree.latestEcmaVersion,
+            sourceType: 'module',
+          }),
+        };
+      },
+    };
   } catch {
     return null;
   }
