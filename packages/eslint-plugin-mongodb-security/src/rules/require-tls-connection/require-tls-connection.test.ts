@@ -27,14 +27,16 @@ type MongoCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly MongoSuggestion[] } | string>;
 };
-const xmo = <T,>(cases: T[]): T[] =>
+const xmo = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asMongo(c) as T;
     const test = c as MongoCase;
     return {
       ...c,
       code: asMongo(test.code),
-      ...(typeof test.output === 'string' ? { output: asMongo(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asMongo(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -53,7 +55,6 @@ const xmo = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -110,7 +111,7 @@ describe('require-tls-connection', () => {
         {
           code: `if (x == y) {}`,
           filename: 'test.spec.ts',
-          options: [{"allowInTests":true}],
+          options: [{ allowInTests: true }],
         },
       ]),
       invalid: [],
@@ -125,50 +126,69 @@ describe('require-tls-connection', () => {
         {
           name: 'connect with no TLS option',
           code: `mongoose.connect('mongodb://localhost/db', { useNewUrlParser: true });`,
-          errors: [{
-        messageId: 'requireTls',
-        suggestions: [{ messageId: 'suggestionAddTls', output: `mongoose.connect('mongodb://localhost/db', { useNewUrlParser: true, tls: true });` }],
-      }],
+          errors: [
+            {
+              messageId: 'requireTls',
+              suggestions: [
+                {
+                  messageId: 'suggestionAddTls',
+                  output: `mongoose.connect('mongodb://localhost/db', { useNewUrlParser: true, tls: true });`,
+                },
+              ],
+            },
+          ],
         },
       ]),
     });
   });
-describe('Suggestions', () => {
+  describe('Suggestions', () => {
     ruleTester.run('suggestion - adds tls: true', requireTlsConnection, {
       valid: [],
       invalid: xmo([
         // Existing options object: merge the property in.
         {
           code: `mongoose.connect('mongodb://localhost/db', { useNewUrlParser: true });`,
-          errors: [{
-            messageId: 'requireTls',
-            suggestions: [{
-              messageId: 'suggestionAddTls',
-              output: `mongoose.connect('mongodb://localhost/db', { useNewUrlParser: true, tls: true });`,
-            }],
-          }],
+          errors: [
+            {
+              messageId: 'requireTls',
+              suggestions: [
+                {
+                  messageId: 'suggestionAddTls',
+                  output: `mongoose.connect('mongodb://localhost/db', { useNewUrlParser: true, tls: true });`,
+                },
+              ],
+            },
+          ],
         },
         // Empty options object: replace it wholesale.
         {
           code: `mongoose.connect('mongodb://localhost/db', {});`,
-          errors: [{
-            messageId: 'requireTls',
-            suggestions: [{
-              messageId: 'suggestionAddTls',
-              output: `mongoose.connect('mongodb://localhost/db', { tls: true });`,
-            }],
-          }],
+          errors: [
+            {
+              messageId: 'requireTls',
+              suggestions: [
+                {
+                  messageId: 'suggestionAddTls',
+                  output: `mongoose.connect('mongodb://localhost/db', { tls: true });`,
+                },
+              ],
+            },
+          ],
         },
         // No options argument at all: append one.
         {
           code: `mongoose.connect('mongodb://localhost/db');`,
-          errors: [{
-            messageId: 'requireTls',
-            suggestions: [{
-              messageId: 'suggestionAddTls',
-              output: `mongoose.connect('mongodb://localhost/db', { tls: true });`,
-            }],
-          }],
+          errors: [
+            {
+              messageId: 'requireTls',
+              suggestions: [
+                {
+                  messageId: 'suggestionAddTls',
+                  output: `mongoose.connect('mongodb://localhost/db', { tls: true });`,
+                },
+              ],
+            },
+          ],
         },
         // Non-object second argument: no mechanical rewrite, no suggestion.
         {
@@ -177,5 +197,64 @@ describe('Suggestions', () => {
         },
       ]),
     });
+  });
+});
+
+// Found by the Quint fidelity model: Mongoose's named `connect` /
+// `createConnection` exports open the same connection, with no receiver.
+describe('named connection imports (fidelity)', () => {
+  ruleTester.run('named connection imports', requireTlsConnection, {
+    valid: xmo([
+      {
+        name: 'named connect with tls: true',
+        code: "import { connect } from 'mongoose';\nconnect(uri, { tls: true });",
+      },
+      {
+        name: 'named connect to a +srv URI',
+        code: "import { connect } from 'mongoose';\nconnect('mongodb+srv://cluster0.example.mongodb.net/app');",
+      },
+      {
+        name: 'connect from another package',
+        code: "import { connect } from 'amqplib';\nconnect('amqp://h');",
+      },
+      {
+        name: 'a local function called connect',
+        code: "function connect(u: string) {}\nconnect('mongodb://h/db');",
+      },
+    ]),
+    invalid: xmo([
+      {
+        name: 'named connect with tls: false',
+        code: "import { connect } from 'mongoose';\nconnect('mongodb://db.example.com/app', { tls: false });",
+        errors: [
+          {
+            messageId: 'requireTls',
+            suggestions: [
+              {
+                messageId: 'suggestionAddTls',
+                output:
+                  "import { connect } from 'mongoose';\nconnect('mongodb://db.example.com/app', { tls: true });",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'renamed createConnection with ssl: false',
+        code: "import { createConnection as open } from 'mongoose';\nopen(uri, { ssl: false });",
+        errors: [
+          {
+            messageId: 'requireTls',
+            suggestions: [
+              {
+                messageId: 'suggestionAddTls',
+                output:
+                  "import { createConnection as open } from 'mongoose';\nopen(uri, { ssl: true });",
+              },
+            ],
+          },
+        ],
+      },
+    ]),
   });
 });

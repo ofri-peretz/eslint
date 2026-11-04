@@ -18,6 +18,7 @@ import {
   isTestFilePath,
   staticString,
   propertyName,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
@@ -49,6 +50,23 @@ const DEFAULT_SENSITIVE_FIELDS = [
 ];
 
 const QUERY_METHODS = new Set(['find', 'findOne', 'findById']);
+
+/**
+ * Native-driver `find` options that take a number or a boolean. In the second
+ * slot they would otherwise read as a projection (`{ limit: 1 }`).
+ */
+const DRIVER_OPTIONS: ReadonlySet<string> = new Set([
+  'limit',
+  'skip',
+  'batchSize',
+  'maxTimeMS',
+  'timeout',
+  'noCursorTimeout',
+  'allowDiskUse',
+  'returnKey',
+  'showRecordId',
+  'raw',
+]);
 
 export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
   name: 'no-select-sensitive-fields',
@@ -109,56 +127,91 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
     let mongo: ReturnType<typeof analyzeMongoScope>;
     let sensitiveVisible: boolean;
 
+    type Verdict = 'safe' | 'exposes' | 'unknown';
+
     /**
-     * Native MongoDB driver accepts projection as the 2nd argument:
-     *   collection.find(filter, { projection: { _id: 1, name: 1 } })
-     * If the projection is an explicit inclusion list (1-valued keys) and
-     * does not name any sensitive field, the query is safe.
+     * One projection, as a list of `[field, included]` entries. It exposes a
+     * sensitive field it includes; it is safe when it includes only other
+     * fields (everything else is left out) or when it excludes a sensitive
+     * field (the query was written with that field in mind). Excluding only
+     * other fields returns the sensitive ones with the rest: no verdict.
      */
-    function classifyProjection(
-      node: TSESTree.CallExpression,
-    ): 'safe' | 'exposes' | 'unknown' {
-      const arg = node.arguments[1];
-      if (!arg || arg.type !== AST_NODE_TYPES.ObjectExpression)
-        return 'unknown';
-      const projProp = arg.properties.find(
-        (p): p is TSESTree.Property =>
-          p.type === AST_NODE_TYPES.Property &&
-          p.key.type === AST_NODE_TYPES.Identifier &&
-          p.key.name === 'projection',
+    function classifyEntries(
+      entries: ReadonlyArray<[string, boolean]>,
+    ): Verdict {
+      if (entries.some(([f, included]) => included && fields.includes(f)))
+        return 'exposes';
+      if (entries.some(([, included]) => included)) return 'safe';
+      return entries.some(([f]) => fields.includes(f)) ? 'safe' : 'unknown';
+    }
+
+    /**
+     * A projection string, as Mongoose reads it (`'name email'`,
+     * `'-password'`, `'+password'`): whitespace-separated field names, `-`
+     * excludes one, `+` forces a `select: false` field back in. A field is
+     * named only by its whole token: `passwordUpdatedAt` is not `password`.
+     */
+    const classifyString = (text: string): Verdict =>
+      classifyEntries(
+        text
+          .split(/\s+/)
+          .filter(Boolean)
+          .map((t): [string, boolean] =>
+            t.startsWith('-')
+              ? [t.slice(1), false]
+              : [t.replace(/^\+/, ''), true],
+          ),
       );
-      if (!projProp || projProp.value.type !== AST_NODE_TYPES.ObjectExpression)
-        return 'unknown';
-      const proj = projProp.value;
-      let hasInclusion = false;
+
+    /**
+     * A projection object: `{ password: 1 }` includes the field, `{ password:
+     * 0 }` excludes it. Only keys with a literal 0/1/true/false are read; an
+     * options object (`{ session }`, the driver's `{ limit: 1 }`) has none.
+     */
+    function classifyObject(proj: TSESTree.ObjectExpression): Verdict {
+      const entries: Array<[string, boolean]> = [];
       for (const p of proj.properties) {
         if (p.type !== AST_NODE_TYPES.Property) continue;
-        const keyName =
-          p.key.type === AST_NODE_TYPES.Identifier
-            ? p.key.name
-            : staticString(p.key) !== null
-              ? staticString(p.key)
-              : null;
-        if (!keyName) continue;
-        if (fields.includes(keyName)) {
-          // Sensitive field is named — only safe if explicitly excluded (value 0 / false)
-          if (
-            p.value.type === AST_NODE_TYPES.Literal &&
-            (p.value.value === 0 || p.value.value === false)
-          )
-            continue;
-          // The projection names a sensitive field and includes it — the
-          // query itself is the evidence, no schema lookup needed.
-          return 'exposes';
-        }
+        const keyName = objectKeyName(p);
         if (
-          p.value.type === AST_NODE_TYPES.Literal &&
-          (p.value.value === 1 || p.value.value === true)
+          keyName === null ||
+          DRIVER_OPTIONS.has(keyName) ||
+          p.value.type !== AST_NODE_TYPES.Literal ||
+          ![0, 1, true, false].includes(p.value.value as number | boolean)
         )
-          hasInclusion = true;
+          continue;
+        entries.push([keyName, p.value.value === 1 || p.value.value === true]);
       }
-      // Inclusion projection that doesn't name sensitive fields → safe.
-      return hasInclusion ? 'safe' : 'unknown';
+      return classifyEntries(entries);
+    }
+
+    /** A `.select()` argument or a projection: a string or an object. */
+    function classifyFields(node: TSESTree.Node | undefined): Verdict {
+      if (!node) return 'unknown';
+      const text = staticString(node);
+      if (text !== null) return classifyString(text);
+      return node.type === AST_NODE_TYPES.ObjectExpression
+        ? classifyObject(node)
+        : 'unknown';
+    }
+
+    /**
+     * The projection slot, second for every query method. Mongoose takes the
+     * projection itself there (`findById(id, 'name')`, `find({}, { name: 1
+     * })`); the native driver takes options, with the projection under
+     * `projection` (`find(filter, { projection: { name: 1 } })`).
+     */
+    function classifyProjection(node: TSESTree.CallExpression): Verdict {
+      const arg = node.arguments[1];
+      if (arg?.type === AST_NODE_TYPES.ObjectExpression) {
+        const projProp = arg.properties.find(
+          (p): p is TSESTree.Property =>
+            p.type === AST_NODE_TYPES.Property &&
+            objectKeyName(p) === 'projection',
+        );
+        if (projProp) return classifyFields(projProp.value);
+      }
+      return classifyFields(arg);
     }
 
     /**
@@ -241,35 +294,19 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
         // Check if the query chain includes .select()
         const parent = node.parent;
         if (
-          parent &&
           parent.type === AST_NODE_TYPES.MemberExpression &&
           propertyName(parent) === 'select'
         ) {
-          // Has .select() — check if it explicitly includes sensitive fields
+          // Has .select() — report only when it includes a sensitive field.
           const selectCall = parent.parent;
           if (
-            selectCall &&
             selectCall.type === AST_NODE_TYPES.CallExpression &&
-            selectCall.arguments.length > 0
+            classifyFields(selectCall.arguments[0]) === 'exposes'
           ) {
-            const arg = selectCall.arguments[0];
-            const staticText = staticString(arg);
-            if (staticText !== null) {
-              const selectStr = staticText;
-              // If field is in select without exclusion prefix, it's included
-              for (const field of fields) {
-                if (
-                  selectStr.includes(field) &&
-                  !selectStr.includes(`-${field}`)
-                ) {
-                  context.report({
-                    node: selectCall,
-                    messageId: 'selectSensitiveFields',
-                  });
-                  return;
-                }
-              }
-            }
+            context.report({
+              node: selectCall,
+              messageId: 'selectSensitiveFields',
+            });
           }
           return;
         }

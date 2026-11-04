@@ -27,14 +27,16 @@ type MongoCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly MongoSuggestion[] } | string>;
 };
-const xmo = <T,>(cases: T[]): T[] =>
+const xmo = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asMongo(c) as T;
     const test = c as MongoCase;
     return {
       ...c,
       code: asMongo(test.code),
-      ...(typeof test.output === 'string' ? { output: asMongo(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asMongo(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -53,7 +55,6 @@ const xmo = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -90,7 +91,7 @@ describe('no-unsafe-populate', () => {
         {
           code: `if (x == y) {}`,
           filename: 'test.spec.ts',
-          options: [{"allowInTests":true}],
+          options: [{ allowInTests: true }],
         },
         // Environment variable usage is safe (padding case 5)
         {
@@ -113,5 +114,65 @@ describe('no-unsafe-populate', () => {
         },
       ]),
     });
+  });
+});
+
+// Found by the Quint fidelity model: an options object's `select` and a nested
+// `populate` are as user-controlled as its `path`.
+describe('select and nested populate (fidelity)', () => {
+  ruleTester.run('select and nested populate', noUnsafePopulate, {
+    valid: xmo([
+      {
+        name: 'literal select in the options object',
+        code: "User.findById(id).populate({ path: 'author', select: 'name' });",
+      },
+      {
+        name: 'literal nested populate object',
+        code: "User.findById(id).populate({ path: 'author', populate: { path: 'org' } });",
+      },
+      {
+        name: 'literal nested populate array',
+        code: "User.findById(id).populate({ path: 'author', populate: ['org', 'team'] });",
+      },
+      {
+        name: 'const string select',
+        code: "const FIELDS = 'name email';\nUser.findById(id).populate({ path: 'author', select: FIELDS });",
+      },
+      // A hole in the array and a spread in the options object name no path.
+      {
+        name: 'array with a hole',
+        code: "User.findById(id).populate([, 'author']);",
+      },
+      {
+        name: 'spread beside a literal path',
+        code: "User.findById(id).populate({ ...base, path: 'author' });",
+      },
+      {
+        name: 'array holding a literal options object',
+        code: "User.findById(id).populate([{ path: 'author' }, 'comments']);",
+      },
+    ]),
+    invalid: xmo([
+      {
+        name: 'select from the request body',
+        code: "User.findById(id).populate({ path: 'author', select: req.body.fields });",
+        errors: [{ messageId: 'unsafePopulate' }],
+      },
+      {
+        name: 'nested populate path from the query',
+        code: "User.findById(id).populate({ path: 'author', populate: { path: req.query.nested } });",
+        errors: [{ messageId: 'unsafePopulate' }],
+      },
+      {
+        name: 'nested populate given the query value',
+        code: "User.findById(id).populate({ path: 'author', populate: req.query.nested });",
+        errors: [{ messageId: 'unsafePopulate' }],
+      },
+      {
+        name: 'nested populate inside arrays on a document',
+        code: "doc.populate([{ path: 'author', populate: [{ path: req.query.nested }] }]);",
+        errors: [{ messageId: 'unsafePopulate' }],
+      },
+    ]),
   });
 });

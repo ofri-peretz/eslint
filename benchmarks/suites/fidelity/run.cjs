@@ -41,6 +41,7 @@ const PLUGINS = [
   'node-security',
   'vercel-ai-security',
   'jwt-security',
+  'mongodb-security',
 ];
 
 const loadPlugin = (short) => {

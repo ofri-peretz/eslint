@@ -53,6 +53,14 @@ function hasChainedSelect(node: TSESTree.CallExpression): boolean {
   return false;
 }
 
+/** `null` or `undefined` written as an argument: a placeholder, not a value. */
+function isEmptySlot(node: TSESTree.CallExpressionArgument): boolean {
+  return (
+    (node.type === AST_NODE_TYPES.Literal && node.value === null) ||
+    (node.type === AST_NODE_TYPES.Identifier && node.name === 'undefined')
+  );
+}
+
 export const requireProjection = createRule<RuleOptions, MessageIds>({
   name: 'require-projection',
   meta: {
@@ -135,8 +143,10 @@ export const requireProjection = createRule<RuleOptions, MessageIds>({
         }
 
         // find(filter, projection), findOne(filter, projection) and
-        // findById(id, projection) all take the projection second.
-        if (node.arguments.length >= 2) {
+        // findById(id, projection) all take the projection second. A `null`
+        // or `undefined` there only holds the slot so options can follow
+        // (`find(filter, null, { sort })`): it projects nothing.
+        if (node.arguments.length >= 2 && !isEmptySlot(node.arguments[1])) {
           return; // has inline projection
         }
 

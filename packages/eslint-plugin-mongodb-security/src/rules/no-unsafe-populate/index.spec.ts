@@ -158,7 +158,7 @@ ruleTester.run('const paths and request-built paths', noUnsafePopulate, {
     },
     {
       name: 'a const string as the path of an options object',
-      code: `const AUTHOR = 'author';\nfunction h(req) { Post.find().populate({ path: AUTHOR, select: req.query.f }); }`,
+      code: `const AUTHOR = 'author';\nfunction h(req) { Post.find().populate({ path: AUTHOR, select: 'name' }); }`,
     },
     {
       name: 'an array of literal paths',

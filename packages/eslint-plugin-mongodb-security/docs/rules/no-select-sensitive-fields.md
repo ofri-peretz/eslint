@@ -5,14 +5,14 @@ tags: ['security', 'mongodb']
 category: security
 severity: medium
 cwe: CWE-200
-owasp: "A01:2021"
+owasp: 'A01:2021'
 autofix: false
 ---
 
 > **Keywords:** CWE-200, information exposure, password, Mongoose, security
 
-
 <!-- @rule-summary -->
+
 Detects queries that may return sensitive fields like passwords, tokens, or API keys.
 <!-- @/rule-summary -->
 
@@ -27,7 +27,7 @@ Detects queries that may return sensitive fields like passwords, tokens, or API 
 | **CWE Reference** | CWE-200 (Information Exposure)   |
 | **OWASP**         | A01:2021 - Broken Access Control |
 | **Severity**      | Medium (CVSS: 5.3)               |
-| **Category**   | Security |
+| **Category**      | Security                         |
 
 ## Rule Details
 
@@ -52,6 +52,10 @@ const user = await User.findById(id).select('-password -refreshToken');
 
 // Select only needed fields
 const user = await User.findById(id).select('name email avatar');
+
+// The same projection as Mongoose's second argument, a string or an object
+const user = await User.findById(id, 'name email');
+const user = await User.findById(id, { password: 0 });
 
 // Use schema select: false for sensitive fields
 const userSchema = new Schema({
@@ -94,12 +98,11 @@ the files that query them.
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
-| `sensitiveFields` | `string[]` | `["password","refreshToken","apiKey","secret"]` | Document field names treated as sensitive |
-| `requireVisibleSensitiveField` | `boolean` | `true` | Only report when a sensitive field is visibly selected |
-
+| Option                         | Type       | Default                                         | Description                                            |
+| ------------------------------ | ---------- | ----------------------------------------------- | ------------------------------------------------------ |
+| `allowInTests`                 | `boolean`  | `true`                                          | Skip this rule in `*.test.*` / `*.spec.*` files        |
+| `sensitiveFields`              | `string[]` | `["password","refreshToken","apiKey","secret"]` | Document field names treated as sensitive              |
+| `requireVisibleSensitiveField` | `boolean`  | `true`                                          | Only report when a sensitive field is visibly selected |
 
 ```json
 {

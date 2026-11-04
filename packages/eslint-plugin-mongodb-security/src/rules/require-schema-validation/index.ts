@@ -17,6 +17,7 @@ import {
   MessageIcons,
   isTestFilePath,
   staticString,
+  isModuleBinding,
 } from '@interlace/eslint-devkit';
 import {
   fileUsesMongo,
@@ -115,8 +116,19 @@ export const requireSchemaValidation = createRule<RuleOptions, MessageIds>({
         // as Mongo evidence.
         // A `Schema` imported from another package (dynamoose, ottoman) is
         // that library's, even in a file that also imports mongoose.
+        // `import { Schema as MongooseSchema } from 'mongoose'` is the same
+        // constructor under another name; the binding proves it.
         if (
-          !isSchemaConstruction(node, nonMongoImports(context.sourceCode.ast))
+          !isSchemaConstruction(
+            node,
+            nonMongoImports(context.sourceCode.ast),
+          ) &&
+          !isModuleBinding(
+            node.callee,
+            context.sourceCode.getScope(node),
+            'mongoose',
+            ['Schema'],
+          )
         ) {
           return;
         }

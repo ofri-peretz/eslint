@@ -27,14 +27,16 @@ type MongoCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly MongoSuggestion[] } | string>;
 };
-const xmo = <T,>(cases: T[]): T[] =>
+const xmo = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asMongo(c) as T;
     const test = c as MongoCase;
     return {
       ...c,
       code: asMongo(test.code),
-      ...(typeof test.output === 'string' ? { output: asMongo(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asMongo(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -53,7 +55,6 @@ const xmo = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -102,7 +103,7 @@ describe('require-projection', () => {
         {
           code: `if (x == y) {}`,
           filename: 'test.spec.ts',
-          options: [{"allowInTests":true}],
+          options: [{ allowInTests: true }],
         },
         // Environment variable usage is safe (padding case 5)
         {
@@ -125,5 +126,39 @@ describe('require-projection', () => {
         },
       ]),
     });
+  });
+});
+
+// Found by the Quint fidelity model: an explicit `null` in the projection slot
+// (`find(filter, null, options)`) is no projection.
+describe('null projection (fidelity)', () => {
+  ruleTester.run('null projection', requireProjection, {
+    valid: xmo([
+      {
+        name: 'string projection before options',
+        code: "User.find({ active: true }, 'name', { sort: { name: 1 } });",
+      },
+      {
+        name: 'object projection before options',
+        code: 'User.find({ active: true }, { name: 1 }, { sort: { name: 1 } });',
+      },
+      // A projection held in a variable is still a projection.
+      {
+        name: 'projection held in a variable',
+        code: 'User.find({ active: true }, fields);',
+      },
+    ]),
+    invalid: xmo([
+      {
+        name: 'null projection slot before options',
+        code: 'User.find({ active: true }, null, { sort: { name: 1 } });',
+        errors: [{ messageId: 'requireProjection' }],
+      },
+      {
+        name: 'undefined projection slot before options',
+        code: 'User.findOne({ email }, undefined, { lean: true });',
+        errors: [{ messageId: 'requireProjection' }],
+      },
+    ]),
   });
 });

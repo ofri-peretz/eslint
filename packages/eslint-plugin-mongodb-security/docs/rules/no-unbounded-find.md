@@ -103,6 +103,13 @@ User.find({}, null, { limit: 100 });
 
 ## Known False Negatives
 
+### Limit in the Wrong Slot
+
+```typescript
+// ❌ NOT DETECTED - Mongoose's second argument is the projection, not options
+User.find({}, { limit: 100 });
+```
+
 ### Dynamic Limit
 
 ```typescript

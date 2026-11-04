@@ -17,6 +17,7 @@ import {
   MessageIcons,
   isTestFilePath,
   propertyName,
+  isModuleBinding,
   staticString,
 } from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
@@ -102,22 +103,30 @@ export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
-          return;
-        }
+        if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
+          // `mongoose['connect'](url, opts)` opens the same connection.
+          const methodName = propertyName(node.callee);
 
-        // `mongoose['connect'](url, opts)` opens the same connection.
-        const methodName = propertyName(node.callee);
+          if (!methodName || !CONNECTION_METHODS.has(methodName)) {
+            return;
+          }
 
-        if (!methodName || !CONNECTION_METHODS.has(methodName)) {
-          return;
-        }
-
-        // Redis clients, TypeORM query runners and pino transports all have a
-        // `.connect()`. Calling one of those "a MongoDB connection" is the
-        // most damaging thing this rule can do, so require proof.
-        if (!mongo.isConnectionReceiver(node)) {
-          return;
+          // Redis clients, TypeORM query runners and pino transports all have
+          // a `.connect()`. Calling one of those "a MongoDB connection" is the
+          // most damaging thing this rule can do, so require proof.
+          if (!mongo.isConnectionReceiver(node)) {
+            return;
+          }
+        } else {
+          // `import { connect } from 'mongoose'` has no receiver to prove:
+          // the binding itself must resolve to one of Mongoose's exports.
+          const scope = context.sourceCode.getScope(node);
+          const isMongooseExport = [...CONNECTION_METHODS].some((name) =>
+            isModuleBinding(node.callee, scope, 'mongoose', [name]),
+          );
+          if (!isMongooseExport) {
+            return;
+          }
         }
 
         // The connection string is the other documented place to name it:

@@ -181,29 +181,40 @@ export const noUnsafePopulate = createRule<RuleOptions, MessageIds>({
           (value.type === AST_NODE_TYPES.Identifier &&
             !isConstString(value, scope));
 
-        for (const arg of node.arguments) {
-          if (
-            // `.populate(req.query.include)`, `` .populate(`${req.query.rel}`) ``,
-            // `.populate(userField)`
-            unsafePath(arg) ||
-            // `.populate([req.query.rel, 'author'])` — each element is a path.
-            (arg.type === AST_NODE_TYPES.ArrayExpression &&
-              arg.elements.some(
-                (element) => element !== null && fromRequest(element),
-              )) ||
-            // `.populate({ path: req.body.field })`
-            (arg.type === AST_NODE_TYPES.ObjectExpression &&
-              arg.properties.some(
-                (prop) =>
-                  prop.type === AST_NODE_TYPES.Property &&
-                  // `{ path }`, `{ 'path' }` and `{ ['path'] }` are one key.
-                  objectKeyName(prop) === 'path' &&
-                  unsafePath(prop.value),
-              ))
-          ) {
-            context.report({ node, messageId: 'unsafePopulate' });
-            return;
+        /**
+         * One populate argument: a path, an array of them, or an options
+         * object. In the object, `path` names the relation, `select` the
+         * fields read from it (`'+password'` from the client exposes them),
+         * and `populate` is a nested populate argument of its own.
+         */
+        const unsafeArg = (arg: TSESTree.Node): boolean => {
+          // `.populate(req.query.include)`, `` .populate(`${req.query.rel}`) ``,
+          // `.populate(userField)`
+          if (unsafePath(arg)) return true;
+          // `.populate([req.query.rel, 'author'])` — each element is a path,
+          // or an options object.
+          if (arg.type === AST_NODE_TYPES.ArrayExpression) {
+            return arg.elements.some(
+              (element) =>
+                element !== null &&
+                (fromRequest(element) ||
+                  (element.type === AST_NODE_TYPES.ObjectExpression &&
+                    unsafeArg(element))),
+            );
           }
+          if (arg.type !== AST_NODE_TYPES.ObjectExpression) return false;
+          return arg.properties.some((prop) => {
+            if (prop.type !== AST_NODE_TYPES.Property) return false;
+            // `{ path }`, `{ 'path' }` and `{ ['path'] }` are one key.
+            const key = objectKeyName(prop);
+            if (key === 'path') return unsafePath(prop.value);
+            if (key === 'select') return fromRequest(prop.value);
+            return key === 'populate' && unsafeArg(prop.value);
+          });
+        };
+
+        if (node.arguments.some(unsafeArg)) {
+          context.report({ node, messageId: 'unsafePopulate' });
         }
       },
     };
