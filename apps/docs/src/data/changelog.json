@@ -5,6 +5,36 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "oxlint-plugin-lambda-security",
+      "short": "oxlint-plugin-lambda-security",
+      "version": "2.2.2",
+      "date": "2026-11-04T19:01:27Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-lambda-security@2.2.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-lambda-security",
+      "short": "eslint-plugin-lambda-security",
+      "version": "2.2.2",
+      "date": "2026-11-04T18:59:55Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "rule fixes found by the Quint fidelity models.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "oxlint-plugin-postgresql-security",
       "short": "oxlint-plugin-postgresql-security",
       "version": "2.7.1",
@@ -21630,21 +21660,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-lambda-security",
-      "short": "eslint-plugin-lambda-security",
-      "version": "2.2.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "rule fixes found by the Quint fidelity models.",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
@@ -21785,21 +21800,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-lambda-security",
-      "short": "oxlint-plugin-lambda-security",
-      "version": "2.2.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-lambda-security@2.2.2`",
           "pr": null
         }
       ]
