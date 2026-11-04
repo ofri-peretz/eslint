@@ -5,7 +5,7 @@
       "rules": 46,
       "description": "ESLint plugin for browser security — detects DOM XSS, postMessage abuse, tokens in localStorage, insecure cookies, clickjacking, mixed content, and CSP gaps",
       "category": "security",
-      "version": "2.2.2",
+      "version": "2.2.3",
       "published": true
     },
     {
@@ -13,7 +13,7 @@
       "rules": 43,
       "description": "ESLint plugin for Node.js security — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto",
       "category": "security",
-      "version": "5.8.3",
+      "version": "5.8.4",
       "published": true
     },
     {
@@ -21,7 +21,7 @@
       "rules": 35,
       "description": "ESLint plugin for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "5.6.2",
+      "version": "5.6.3",
       "published": true
     },
     {
@@ -165,7 +165,7 @@
       "rules": 14,
       "description": "ESLint plugin for AWS Lambda security — detects overly permissive IAM policies and CORS, unvalidated event bodies, secrets in env vars, and leaked error details",
       "category": "framework",
-      "version": "2.2.0",
+      "version": "2.2.1",
       "published": true
     },
     {
@@ -260,5 +260,5 @@
   "totalRules": 495,
   "totalPlugins": 31,
   "allPluginsCount": 32,
-  "generatedAt": "2026-11-03"
+  "generatedAt": "2026-11-04"
 }
