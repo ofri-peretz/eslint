@@ -168,3 +168,23 @@ describe('no-unsafe-query — fp/fn review 2026-10', () => {
     ],
   });
 });
+
+describe('fidelity 2026-11', () => {
+  ruleTester.run('fidelity 2026-11', noUnsafeQuery, {
+    valid: [
+      {
+        // @found fidelity model typeorm-security/no_unsafe_query, RawOp
+        name: '`Raw()` returning a constant fragment',
+        code: "import { DataSource, Raw } from 'typeorm';\nconst repo = new DataSource({ type: 'postgres' }).getRepository('User');\nexport const h = () => repo.find({ where: { id: Raw(() => 'NOW()') } });",
+      },
+    ],
+    invalid: [
+      {
+        // @found fidelity model typeorm-security/no_unsafe_query, RawOp|WholeReq
+        name: 'FN: `Raw()` returning request data as the whole fragment',
+        code: "import { DataSource, Raw } from 'typeorm';\nconst repo = new DataSource({ type: 'postgres' }).getRepository('User');\nexport const h = (req: any) => repo.find({ where: { id: Raw((alias) => req.query.filter) } });",
+        errors: [{ messageId: 'noUnsafeQuery' }],
+      },
+    ],
+  });
+});

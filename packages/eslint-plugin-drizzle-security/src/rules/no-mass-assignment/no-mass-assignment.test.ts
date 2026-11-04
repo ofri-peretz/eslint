@@ -132,3 +132,23 @@ describe('no-mass-assignment — fp/fn review 2026-10', () => {
     ],
   });
 });
+
+describe('fidelity 2026-11', () => {
+  ruleTester.run('fidelity 2026-11', noMassAssignment, {
+    valid: [],
+    invalid: [
+      {
+        // @found fidelity model drizzle-security/no_mass_assignment, Bracket
+        name: "FN: the quoted `['values']` spelling of the insert write",
+        code: "import { drizzle } from 'drizzle-orm/node-postgres';\nimport { pgTable, text } from 'drizzle-orm/pg-core';\nconst db = drizzle(process.env.DATABASE_URL as string);\nconst users = pgTable('users', { name: text('name') });\nexport const h = (req: any) => db.insert(users)['values'](req.body);",
+        errors: [{ messageId: 'untrustedPayload' }],
+      },
+      {
+        // @found fidelity model drizzle-security/no_mass_assignment, Bracket
+        name: "FN: the quoted `['set']` spelling of the update write",
+        code: "import { drizzle } from 'drizzle-orm/node-postgres';\nimport { pgTable, text } from 'drizzle-orm/pg-core';\nconst db = drizzle(process.env.DATABASE_URL as string);\nconst users = pgTable('users', { name: text('name') });\nexport const h = (req: any) => db.update(users)['set'](req.body);",
+        errors: [{ messageId: 'untrustedPayload' }],
+      },
+    ],
+  });
+});

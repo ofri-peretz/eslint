@@ -162,3 +162,40 @@ describe('no-mass-assignment — fp/fn review 2026-10', () => {
     ],
   });
 });
+
+describe('fidelity 2026-11', () => {
+  ruleTester.run('fidelity 2026-11', noMassAssignment, {
+    valid: [
+      {
+        // @found fidelity model typeorm-security/no_mass_assignment, QbInsert|Named
+        name: 'a QueryBuilder insert that names its columns',
+        code: "import { DataSource } from 'typeorm';\nconst dataSource = new DataSource({ type: 'postgres' });\nexport const h = (req: any) => dataSource.createQueryBuilder().insert().into('User').values({ name: req.body.name }).execute();",
+      },
+      {
+        // @found fidelity model typeorm-security/no_mass_assignment, QbUpdate
+        name: '`.set()` on a Map in a TypeORM file is not a write',
+        code: "import { DataSource } from 'typeorm';\nconst cache = new Map<string, unknown>();\nexport const h = (req: any) => cache.set('k', req.body);",
+      },
+    ],
+    invalid: [
+      {
+        // @found fidelity model typeorm-security/no_mass_assignment, QbInsert|ReqBody
+        name: "FN: the request body as a QueryBuilder insert's values",
+        code: "import { DataSource } from 'typeorm';\nconst dataSource = new DataSource({ type: 'postgres' });\nexport const h = (req: any) => dataSource.createQueryBuilder().insert().into('User').values(req.body).execute();",
+        errors: [{ messageId: 'untrustedPayload' }],
+      },
+      {
+        // @found fidelity model typeorm-security/no_mass_assignment, QbUpdate|ReqBody
+        name: "FN: the request body as a QueryBuilder update's set",
+        code: "import { DataSource } from 'typeorm';\nconst dataSource = new DataSource({ type: 'postgres' });\nexport const h = (req: any, id: string) => dataSource.createQueryBuilder().update('User').set(req.body).where('id = :id', { id }).execute();",
+        errors: [{ messageId: 'untrustedPayload' }],
+      },
+      {
+        // @found fidelity model typeorm-security/no_mass_assignment, Bracket
+        name: "FN: the quoted `['save']` spelling",
+        code: "import { DataSource } from 'typeorm';\nconst repo = new DataSource({ type: 'sqlite', database: ':memory:' }).getRepository('User');\nexport const h = (req: any) => repo['save'](req.body);",
+        errors: [{ messageId: 'untrustedPayload' }],
+      },
+    ],
+  });
+});

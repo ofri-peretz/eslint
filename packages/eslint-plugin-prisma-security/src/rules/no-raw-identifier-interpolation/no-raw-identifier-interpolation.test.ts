@@ -169,3 +169,23 @@ describe('no-raw-identifier-interpolation — fp/fn review 2026-10', () => {
     ],
   });
 });
+
+describe('fidelity 2026-11', () => {
+  ruleTester.run('fidelity 2026-11', noRawIdentifierInterpolation, {
+    valid: [],
+    invalid: [
+      {
+        // @found fidelity model prisma-security/no_raw_identifier_interpolation, AnyTyped
+        name: 'FN: a client declared `any` is matched on the property name',
+        code: 'declare const prisma: any;\nexport const h = (table: string) => prisma.$queryRaw`SELECT id FROM ${table}`;',
+        errors: [{ messageId: 'identifierInterpolation' }],
+      },
+      {
+        // @found fidelity model prisma-security/no_raw_identifier_interpolation, AnyTyped
+        name: 'FN: a client parameter typed `any` is matched on the property name',
+        code: 'export const h = (prisma: any, table: string) => prisma.$queryRaw`SELECT id FROM ${table}`;',
+        errors: [{ messageId: 'identifierInterpolation' }],
+      },
+    ],
+  });
+});

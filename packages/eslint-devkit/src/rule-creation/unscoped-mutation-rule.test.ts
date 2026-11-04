@@ -151,11 +151,17 @@ describe('createUnscopedMutationRule', () => {
           code: D + 'deleteMany();',
         },
         {
-          name: 'computed sink name is not resolvable',
-          code: D + "prisma.user['deleteMany']();",
+          name: 'a sink name chosen at runtime is not resolvable',
+          code: D + 'declare const verb: string;\nprisma.user[verb]();',
         },
       ],
       invalid: [
+        {
+          // @found fidelity model prisma-security/no_unscoped_mutation, Bracket
+          name: 'the quoted sink name is the same call',
+          code: D + "prisma.user['deleteMany']();",
+          errors: [{ messageId: 'unscopedMutation' }],
+        },
         {
           name: 'no arguments at all',
           code: D + 'prisma.user.deleteMany();',
@@ -253,6 +259,20 @@ describe('createUnscopedMutationRule', () => {
           code: D + "knex('users').del().whereRaw('id = ?', [id]);",
         },
         {
+          // @found fidelity model drizzle-security/no_unscoped_mutation, Deferred
+          name: 'builder held in a binding and scoped through it later',
+          code:
+            D + 'const q = db.update(users).set({ a: 1 });\nq.where({ id });',
+        },
+        {
+          name: 'builder held in a binding and handed to a helper',
+          code: D + 'const q = db.update(users);\napplyScope(q);',
+        },
+        {
+          name: 'builder held in a binding and scoped through a quoted where',
+          code: D + "const q = db.update(users);\nq['whereIn']('id', ids);",
+        },
+        {
           name: 'drizzle table argument plus chained where',
           code:
             D +
@@ -268,6 +288,28 @@ describe('createUnscopedMutationRule', () => {
         {
           name: 'drizzle update with set but no where',
           code: D + 'db.update(users).set({ active: false });',
+          errors: [{ messageId: 'unscopedMutation' }],
+        },
+        {
+          name: 'builder held in a binding that is only read, never scoped',
+          code:
+            D +
+            'const q = db.update(users);\nconst r = q;\nlog(q.length);\nq[key]();\nq.returning();',
+          errors: [{ messageId: 'unscopedMutation' }],
+        },
+        {
+          name: 'builder inside an array literal is not a held builder',
+          code: D + 'const [q] = [db.update(users)];',
+          errors: [{ messageId: 'unscopedMutation' }],
+        },
+        {
+          name: 'builder passed to a call, not stored',
+          code: D + 'run(db.update(users));',
+          errors: [{ messageId: 'unscopedMutation' }],
+        },
+        {
+          name: 'builder destructured from the sink is not a held builder',
+          code: D + 'const { where } = db.update(users);',
           errors: [{ messageId: 'unscopedMutation' }],
         },
         {

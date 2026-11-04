@@ -151,3 +151,17 @@ describe('no-mass-assignment — fp/fn review 2026-10', () => {
     ],
   });
 });
+
+describe('fidelity 2026-11', () => {
+  ruleTester.run('fidelity 2026-11', noMassAssignment, {
+    valid: [],
+    invalid: [
+      {
+        // @found fidelity model knex-security/no_mass_assignment, Bracket
+        name: "FN: the quoted `['insert']` spelling",
+        code: "import knex from 'knex';\nconst db = knex({ client: 'pg' });\nexport const h = (req: any) => db('users')['insert'](req.body);",
+        errors: [{ messageId: 'untrustedPayload' }],
+      },
+    ],
+  });
+});

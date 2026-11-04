@@ -158,3 +158,23 @@ describe('no-unscoped-mutation — fp/fn review 2026-10', () => {
     ],
   });
 });
+
+describe('fidelity 2026-11', () => {
+  ruleTester.run('fidelity 2026-11', noUnscopedMutation, {
+    valid: [
+      {
+        // @found fidelity model prisma-security/no_unscoped_mutation, Bracket
+        name: "the quoted `['deleteMany']` spelling with a where",
+        code: "import { PrismaClient } from '@prisma/client';\nconst prisma = new PrismaClient();\nexport const h = (id: string) => prisma.user['deleteMany']({ where: { id } });",
+      },
+    ],
+    invalid: [
+      {
+        // @found fidelity model prisma-security/no_unscoped_mutation, Bracket
+        name: "FN: the quoted `['deleteMany']` spelling",
+        code: "import { PrismaClient } from '@prisma/client';\nconst prisma = new PrismaClient();\nexport const h = () => prisma.user['deleteMany']();",
+        errors: [{ messageId: 'unscopedMutation' }],
+      },
+    ],
+  });
+});

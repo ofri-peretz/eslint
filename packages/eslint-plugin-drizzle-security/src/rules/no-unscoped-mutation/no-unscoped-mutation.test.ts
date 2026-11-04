@@ -168,3 +168,29 @@ describe('no-unscoped-mutation — fp/fn review 2026-10', () => {
     ],
   });
 });
+
+describe('fidelity 2026-11', () => {
+  ruleTester.run('fidelity 2026-11', noUnscopedMutation, {
+    valid: [
+      {
+        // @found fidelity model drizzle-security/no_unscoped_mutation, Deferred
+        name: 'FP: a delete builder held in a variable and scoped with a later `.where()`',
+        code: "import { drizzle } from 'drizzle-orm/node-postgres';\nimport { eq } from 'drizzle-orm';\nimport { pgTable, serial } from 'drizzle-orm/pg-core';\nconst db = drizzle(process.env.DATABASE_URL as string);\nconst users = pgTable('users', { id: serial('id') });\nexport const h = (id: number) => {\n  const query = db.delete(users);\n  return query.where(eq(users.id, id));\n};",
+      },
+    ],
+    invalid: [
+      {
+        // @found fidelity model drizzle-security/no_unscoped_mutation, Bracket
+        name: "FN: the quoted `['delete']` spelling",
+        code: "import { drizzle } from 'drizzle-orm/node-postgres';\nimport { pgTable, serial } from 'drizzle-orm/pg-core';\nconst db = drizzle(process.env.DATABASE_URL as string);\nconst users = pgTable('users', { id: serial('id') });\nexport const h = () => db['delete'](users);",
+        errors: [{ messageId: 'unscopedMutation' }],
+      },
+      {
+        // @found fidelity model drizzle-security/no_unscoped_mutation, Deferred
+        name: 'FN: a delete builder held in a variable that is never scoped',
+        code: "import { drizzle } from 'drizzle-orm/node-postgres';\nimport { pgTable, serial } from 'drizzle-orm/pg-core';\nconst db = drizzle(process.env.DATABASE_URL as string);\nconst users = pgTable('users', { id: serial('id') });\nexport const h = () => {\n  const query = db.delete(users);\n  return query.returning();\n};",
+        errors: [{ messageId: 'unscopedMutation' }],
+      },
+    ],
+  });
+});

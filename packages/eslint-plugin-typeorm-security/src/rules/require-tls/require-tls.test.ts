@@ -150,3 +150,23 @@ describe('require-tls — fp/fn review 2026-10', () => {
     ],
   });
 });
+
+describe('fidelity 2026-11', () => {
+  ruleTester.run('fidelity 2026-11', requireTls, {
+    valid: [
+      {
+        // @found fidelity model typeorm-security/require_tls, OtherLib|UrlDisable
+        name: "FP: another library's connection URL in a TypeORM file",
+        code: "import { DataSource } from 'typeorm';\nimport { Pool } from 'pg';\nexport const ds = new DataSource({ type: 'postgres', url: process.env.DATABASE_URL });\nexport const pool = new Pool({ connectionString: 'postgres://db.internal:5432/app?sslmode=disable' });",
+      },
+    ],
+    invalid: [
+      {
+        // @found fidelity model typeorm-security/require_tls, UrlNoVerify
+        name: 'FN: `sslmode=no-verify` in the DataSource url',
+        code: "import { DataSource } from 'typeorm';\nexport const ds = new DataSource({ type: 'postgres', url: 'postgres://db.internal:5432/app?sslmode=no-verify' });",
+        errors: [{ messageId: 'certificateValidationDisabled' }],
+      },
+    ],
+  });
+});

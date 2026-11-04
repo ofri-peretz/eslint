@@ -169,3 +169,28 @@ describe('require-tls — fp/fn review 2026-10', () => {
     ],
   });
 });
+
+describe('fidelity 2026-11', () => {
+  ruleTester.run('fidelity 2026-11', requireTls, {
+    valid: [
+      {
+        // @found fidelity model knex-security/require_tls, OtherLib|UrlDisable
+        name: "FP: another library's connection URL in a Knex file",
+        code: "import knex from 'knex';\nimport { Pool } from 'pg';\nexport const db = knex({ client: 'pg', connection: process.env.DATABASE_URL });\nexport const pool = new Pool({ connectionString: 'postgres://db.internal:5432/app?sslmode=disable' });",
+      },
+      {
+        // @found fidelity model knex-security/require_tls, UrlRequire
+        name: '`sslmode=require` keeps TLS on',
+        code: "import knex from 'knex';\nexport const db = knex({ client: 'pg', connection: 'postgres://db.internal:5432/app?sslmode=require' });",
+      },
+    ],
+    invalid: [
+      {
+        // @found fidelity model knex-security/require_tls, UrlNoVerify
+        name: 'FN: `sslmode=no-verify` in the connection URL',
+        code: "import knex from 'knex';\nexport const db = knex({ client: 'pg', connection: 'postgres://db.internal:5432/app?sslmode=no-verify' });",
+        errors: [{ messageId: 'certificateValidationDisabled' }],
+      },
+    ],
+  });
+});

@@ -298,12 +298,9 @@ export function chainMethodNames(node: TSESTree.CallExpression): Set<string> {
       continue;
     }
     if (cursor.type === AST_NODE_TYPES.MemberExpression) {
-      if (
-        !cursor.computed &&
-        cursor.property.type === AST_NODE_TYPES.Identifier
-      ) {
-        names.add(cursor.property.name);
-      }
+      // `q.where(…)` and `q['where'](…)` are the same call.
+      const name = propertyName(cursor);
+      if (name !== null) names.add(name);
       cursor = cursor.object;
       continue;
     }
@@ -509,11 +506,10 @@ export function createUnscopedMutationRule(
         },
 
         CallExpression(node: TSESTree.CallExpression) {
+          // `db.delete(t)` and `db['delete'](t)` are the same call.
           if (
             node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-            node.callee.computed ||
-            node.callee.property.type !== AST_NODE_TYPES.Identifier ||
-            !sinks.has(node.callee.property.name)
+            !sinks.has(propertyName(node.callee) ?? '')
           ) {
             return;
           }
@@ -650,6 +646,47 @@ export function exportedFunctions(
 }
 
 /**
+ * Is the builder this sink returns stored in a binding and scoped through it
+ * later — `const q = db.delete(t); return q.where(…)`?
+ */
+function heldThenScoped(
+  node: TSESTree.CallExpression,
+  scopeMethods: readonly string[],
+  env: Env,
+): boolean {
+  let top: TSESTree.Node = node;
+  while (
+    (top.parent?.type === AST_NODE_TYPES.MemberExpression &&
+      top.parent.object === top) ||
+    (top.parent?.type === AST_NODE_TYPES.CallExpression &&
+      top.parent.callee === top)
+  ) {
+    top = top.parent;
+  }
+  // The chain can only be a declarator's `init`: its `id` is a pattern.
+  const declarator = top.parent;
+  if (
+    declarator?.type !== AST_NODE_TYPES.VariableDeclarator ||
+    declarator.id.type !== AST_NODE_TYPES.Identifier
+  ) {
+    return false;
+  }
+  // A declared name always resolves in its own scope.
+  const variable = lookup(declarator.id.name, env.scopeOf(declarator.id))!;
+  return variable.references.some((reference) => {
+    const use = reference.identifier.parent;
+    if (use.type === AST_NODE_TYPES.MemberExpression)
+      return scopeMethods.includes(propertyName(use) as string);
+    // Handed to a helper that may scope it, as in `scopedElsewhere`.
+    return (
+      (use.type === AST_NODE_TYPES.CallExpression ||
+        use.type === AST_NODE_TYPES.NewExpression) &&
+      use.arguments.some((argument) => argument === reference.identifier)
+    );
+  });
+}
+
+/**
  * Is the builder this chain starts from scoped by another statement — a
  * `.where…()` on the same binding, or the binding handed to a function that
  * may add one?
@@ -667,6 +704,7 @@ export function scopedElsewhere(
     root =
       root.type === AST_NODE_TYPES.MemberExpression ? root.object : root.callee;
   }
+  if (heldThenScoped(node, scopeMethods, env)) return true;
   if (root.type !== AST_NODE_TYPES.Identifier) return false;
   const variable = lookup(root.name, env.scopeOf(root));
   if (variable === null || variable.defs[0]?.type !== 'Variable') return false;

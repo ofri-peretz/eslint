@@ -42,6 +42,7 @@ import { createModuleEvidence } from './module-evidence';
 import { isTestFilePath } from './rule-creator';
 import { createOriginClassifier } from './driver-origin';
 import { isRequestPayload } from './request-source';
+import { propertyName } from '../ast/spellings';
 import {
   chainMethodNames,
   propertyKeyName,
@@ -246,9 +247,7 @@ export function createMassAssignmentRule(
             return (
               object.type === AST_NODE_TYPES.CallExpression &&
               object.callee.type === AST_NODE_TYPES.MemberExpression &&
-              WRITE_VERBS.has(
-                (object.callee.property as TSESTree.Identifier).name,
-              )
+              WRITE_VERBS.has(propertyName(object.callee) ?? '')
             );
           }
           default:
@@ -281,10 +280,10 @@ export function createMassAssignmentRule(
             }
             return;
           }
+          // `repo.save(x)` and `repo['save'](x)` are the same call.
           if (
             node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-            node.callee.property.type !== AST_NODE_TYPES.Identifier ||
-            !methods.has(node.callee.property.name)
+            !methods.has(propertyName(node.callee) ?? '')
           ) {
             return;
           }

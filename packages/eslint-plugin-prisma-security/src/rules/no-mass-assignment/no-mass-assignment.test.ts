@@ -156,3 +156,17 @@ describe('no-mass-assignment — fp/fn review 2026-10', () => {
     ],
   });
 });
+
+describe('fidelity 2026-11', () => {
+  ruleTester.run('fidelity 2026-11', noMassAssignment, {
+    valid: [],
+    invalid: [
+      {
+        // @found fidelity model prisma-security/no_mass_assignment, Bracket
+        name: "FN: the quoted `['create']` spelling",
+        code: "import { PrismaClient } from '@prisma/client';\nconst prisma = new PrismaClient();\nexport const h = (req: any) => prisma.user['create']({ data: req.body });",
+        errors: [{ messageId: 'untrustedPayload' }],
+      },
+    ],
+  });
+});

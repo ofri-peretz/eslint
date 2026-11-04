@@ -558,7 +558,11 @@ export function createSqlInjectionRule(
         const alias = callback.params[0];
         for (const result of returnedValues(callback) ?? []) {
           const text = unwrapTypeSyntax(result);
-          if (text.type !== AST_NODE_TYPES.TemplateLiteral) continue;
+          if (text.type !== AST_NODE_TYPES.TemplateLiteral) {
+            // `Raw(() => req.query.filter)` — the request IS the fragment.
+            if (isRequestText(text)) report(text, 'concat');
+            continue;
+          }
           const unsafe = sqlHoles(text).some(
             (hole) =>
               !(

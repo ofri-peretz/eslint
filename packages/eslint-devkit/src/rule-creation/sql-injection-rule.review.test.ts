@@ -246,6 +246,12 @@ describe('createSqlInjectionRule — review 2026-10', () => {
     ],
     invalid: [
       {
+        // @found fidelity model typeorm-security/no_unsafe_query, RawOp|WholeReq
+        name: 'alias callback returning request data whole',
+        code: "import { Raw } from 'drv';\nexport const h = (req) => Raw(() => req.query.filter);",
+        errors: [{ messageId: C }],
+      },
+      {
         name: 'fragment sink',
         code: D + 'db.whereRaw(`a = ${x}`);',
         errors: [{ messageId: T }],

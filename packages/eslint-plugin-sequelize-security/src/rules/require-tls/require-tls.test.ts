@@ -139,3 +139,40 @@ describe('require-tls — fp/fn review 2026-10', () => {
     ],
   });
 });
+
+describe('fidelity 2026-11', () => {
+  ruleTester.run('fidelity 2026-11', requireTls, {
+    valid: [
+      {
+        // @found fidelity model sequelize-security/require_tls, OtherLib|UrlDisable
+        name: "FP: another library's connection URL in a Sequelize file",
+        code: "import { Sequelize } from 'sequelize';\nimport { Pool } from 'pg';\nexport const sequelize = new Sequelize(process.env.DATABASE_URL as string);\nexport const pool = new Pool({ connectionString: 'postgres://db.internal:5432/app?sslmode=disable' });",
+      },
+      {
+        // @found fidelity model sequelize-security/require_tls, ConfigVar
+        name: 'a URL constant that keeps TLS on',
+        code: "import { Sequelize } from 'sequelize';\nconst url = 'postgres://db.internal:5432/app?sslmode=require';\nexport const sequelize = new Sequelize(url, { dialect: 'postgres' });",
+      },
+    ],
+    invalid: [
+      {
+        // @found fidelity model sequelize-security/require_tls, UrlNoVerify
+        name: 'FN: `sslmode=no-verify` in the Sequelize URL',
+        code: "import { Sequelize } from 'sequelize';\nexport const sequelize = new Sequelize('postgres://db.internal:5432/app?sslmode=no-verify');",
+        errors: [{ messageId: 'certificateValidationDisabled' }],
+      },
+      {
+        // @found fidelity model sequelize-security/require_tls, ConfigVar|UrlDisable
+        name: 'FN: a URL bound to a constant before it reaches Sequelize',
+        code: "import { Sequelize } from 'sequelize';\nconst url = 'postgres://db.internal:5432/app?sslmode=disable';\nexport const sequelize = new Sequelize(url, { dialect: 'postgres' });",
+        errors: [{ messageId: 'tlsDisabled' }],
+      },
+      {
+        // @found fidelity model sequelize-security/require_tls, CliConfig|UrlDisable
+        name: 'FN: a sequelize-cli config that gives the connection as `url`',
+        code: "module.exports = {\n  production: { dialect: 'postgres', url: 'postgres://db.internal:5432/app?sslmode=disable' },\n};",
+        errors: [{ messageId: 'tlsDisabled' }],
+      },
+    ],
+  });
+});

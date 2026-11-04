@@ -53,6 +53,8 @@ export const noHardcodedCredentials = createHardcodedCredentialsRule({
         'host',
         'dialectOptions',
         'use_env_variable',
+        // sequelize-cli also takes the whole connection as `url`.
+        'url',
       ],
     },
   ],

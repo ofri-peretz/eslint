@@ -51,6 +51,12 @@ const PLUGINS = [
   'openai-security',
   'mysql-security',
   'sqlite-security',
+  'drizzle-security',
+  'prisma-security',
+  'sequelize-security',
+  'supabase-security',
+  'typeorm-security',
+  'knex-security',
 ];
 
 const loadPlugin = (short) => {
