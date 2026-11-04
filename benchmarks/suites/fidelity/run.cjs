@@ -40,6 +40,7 @@ const PLUGINS = [
   'browser-security',
   'node-security',
   'vercel-ai-security',
+  'jwt-security',
 ];
 
 const loadPlugin = (short) => {

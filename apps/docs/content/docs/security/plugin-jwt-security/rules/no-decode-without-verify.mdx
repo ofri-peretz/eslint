@@ -40,7 +40,7 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ## Rule Details
 
-This rule detects usage of `jwt.decode()` or the `jwt-decode` library. Decoded JWTs can be tampered with by attackers since `decode()` never verifies the signature.
+This rule detects usage of `jwt.decode()` or the `jwt-decode` library, including a renamed import (`import { decode as parseToken } from 'jsonwebtoken'`). Decoded JWTs can be tampered with by attackers since `decode()` never verifies the signature.
 
 ## Examples
 
@@ -151,18 +151,6 @@ const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString());
 ```
 
 **Mitigation**: Code review for manual JWT parsing. Consider using `no-restricted-syntax` to ban base64 decode patterns.
-
-### Aliased Decode Function
-
-**Why**: The rule matches specific function names; renamed imports are not tracked.
-
-```typescript
-// ❌ NOT DETECTED - Aliased import
-import { decode as parseToken } from 'jsonwebtoken';
-const payload = parseToken(token); // 'parseToken' not recognized
-```
-
-**Mitigation**: Use consistent import naming. Add custom matchers via configuration.
 
 ### Dynamic Method Access
 

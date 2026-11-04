@@ -175,6 +175,31 @@ jwtVerify(token, key, { algorithms: ['none'] });`,
 signJWT(payload, key, { algorithm: 'none' });`,
           errors: [{ messageId: 'algorithmNone' }],
         },
+        // A renamed import is the same function: found by the fidelity model.
+        {
+          name: 'a renamed sign import',
+          code: `import { sign as issueToken } from 'jsonwebtoken';
+issueToken(payload, key, { algorithm: 'none' });`,
+          errors: [{ messageId: 'algorithmNone' }],
+        },
+        {
+          name: 'a renamed destructured require of verify',
+          code: `const { verify: checkToken } = require('jsonwebtoken');
+checkToken(token, key, { algorithms: ['none'] });`,
+          errors: [{ messageId: 'algorithmNoneInArray' }],
+        },
+        {
+          name: 'a renamed import written with a string export name',
+          code: `import { 'verify' as checkToken } from 'jsonwebtoken';
+checkToken(token, key, { algorithms: ['none'] });`,
+          errors: [{ messageId: 'algorithmNoneInArray' }],
+        },
+        {
+          name: 'a renamed destructured require with a computed key',
+          code: `const { ['sign']: issueToken } = require('jsonwebtoken');
+issueToken(payload, key, { algorithm: 'none' });`,
+          errors: [{ messageId: 'algorithmNone' }],
+        },
       ],
     });
   });

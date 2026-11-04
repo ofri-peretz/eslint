@@ -166,11 +166,12 @@ jwt.sign(payload, config.secret); // Member expression treated as safe
 
 ### Reassignable Bindings
 
-**Why**: the key is read through a same-file `const` (including `const SECRET = process.env.JWT_SECRET || 'secret'`), but a `let` / `var` can be reassigned, so its initial value proves nothing.
+**Why**: the key is read through a same-file `const` (including `const SECRET = process.env.JWT_SECRET || 'secret'`) and a `let` that is never reassigned, but a `let` / `var` that is reassigned may hold something else by the time it is used, so its initial value proves nothing.
 
 ```typescript
-// ⚠️ NOT DETECTED - a let can be reassigned
+// ⚠️ NOT DETECTED - the let is reassigned
 let key = 'my-secret-key';
+if (process.env.NODE_ENV === 'production') key = process.env.JWT_SECRET;
 jwt.sign(payload, key);
 ```
 

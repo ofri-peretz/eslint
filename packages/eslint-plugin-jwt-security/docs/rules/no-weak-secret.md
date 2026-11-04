@@ -105,14 +105,15 @@ The following patterns are **not detected** due to static analysis limitations:
 
 ### Reassignable Bindings
 
-**Why**: the secret is read through a same-file `const`, an `||` / `??` fallback and a byte wrapper, but a `let` / `var` can be reassigned.
+**Why**: the secret is read through a same-file `const`, a never-reassigned `let`, an `||` / `??` fallback and a byte wrapper, but a `let` / `var` that is reassigned may hold something else when it is used.
 
 ```typescript
 const weakSecret = 'abc';
 jwt.sign(payload, weakSecret); // ❌ detected through the const
 
-// ⚠️ NOT DETECTED - a let can be reassigned
+// ⚠️ NOT DETECTED - the let is reassigned
 let secret = 'abc';
+if (process.env.JWT_SECRET) secret = process.env.JWT_SECRET;
 jwt.sign(payload, secret);
 ```
 
