@@ -36,6 +36,10 @@ const DERIVES = {
   ForOfConcat:
     "let catalog = '';\nfor (const item of items) catalog += `- ${item.description}\\n`;",
   Stringify: 'const catalog = JSON.stringify(items);',
+  StringifyWrapped:
+    "const catalog = JSON.stringify({ server: 'docs', tools: items });",
+  StringifyReplacerFn:
+    "const catalog = JSON.stringify(items, () => 'redacted');",
   FilterFind:
     "const catalog = String(items.filter((t: any) => t.name !== 'debug').find((t: any) => t.description)?.description);",
   Count: 'const catalog = `You have ${items.length} tools.`;',
@@ -80,9 +84,9 @@ const HEAD = [
 
 module.exports = {
   rule: 'no-untrusted-tool-metadata-in-prompt',
-  // Flows: 5 derivations x 10 targets = 50. Wiring: 6 listings x 2 targets x 3 gates = 36.
-  domain: 86,
-  traces: 1000,
+  // Flows: 7 derivations x 10 targets = 70. Wiring: 6 listings x 2 targets x 3 gates = 36.
+  domain: 106,
+  traces: 1300,
   key: (s) =>
     [s.part, s.listing, s.derive, s.target, s.gate].map(tag).join('|'),
   code: (s) => {

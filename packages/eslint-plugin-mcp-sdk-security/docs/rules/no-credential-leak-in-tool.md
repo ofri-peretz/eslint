@@ -76,7 +76,8 @@ server.registerTool('list_repos', cfg, async (args, extra) =>
   returns, followed through same-file bindings.
 - **`process.env`** is the global `process` (unless shadowed) or
   `node:process`'s export, including the `env` export itself
-  (`import { env } from 'node:process'`) and `const { env } = process`.
+  (`import { env } from 'node:process'`) and `const { env } = process`. A
+  property that is merely named `env` (`config.env`, `{ env: 'prod' }`) is not.
   Reading one named variable — `process.env.NODE_ENV` — is not reported:
   whether it is secret is not something a name can prove.
 - **`authInfo`** is read from the request context the SDK passes each handler:

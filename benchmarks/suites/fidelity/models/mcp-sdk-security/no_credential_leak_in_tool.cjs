@@ -36,6 +36,15 @@ const SHAPES = {
     '',
     () => `const { env } = process;\n${text('JSON.stringify(env)')}`,
   ],
+  EnvDestructuredDefault: [
+    '',
+    () => `const { env = {} } = process;\n${text('JSON.stringify(env)')}`,
+  ],
+  EnvNamedKey: [
+    "import { env } from 'node:process';",
+    () =>
+      `const settings = { env: 'production', debug: String(env.DEBUG) };\nreturn { env: settings.env, content: [{ type: 'text', text: settings.debug }] };`,
+  ],
   EnvNamed: ['', () => text("process.env.NODE_ENV ?? 'development'")],
   EnvKeys: ['', () => text("Object.keys(process.env).join(', ')")],
   EnvIndexConst: ['', () => text('String(process.env[LOG_KEY])')],
@@ -117,8 +126,8 @@ const FILES = {
 module.exports = {
   rule: 'no-credential-leak-in-tool',
   // Wiring: 7 gates x 6 registrations - 2 invalid = 40, x 4 shapes = 160.
-  // Shapes: 24. Tests: 6 contexts x 4 shapes = 24.
-  domain: 208,
+  // Shapes: 26. Tests: 6 contexts x 4 shapes = 24.
+  domain: 210,
   traces: 2400,
   key: (s) =>
     `${tag(s.part)}|${tag(s.gate)}|${tag(s.reg)}|${tag(s.shape)}|${tag(s.ctx)}`,

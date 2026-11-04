@@ -81,8 +81,10 @@ await openai.chat.completions.create({
   resolved through its import. Its text is followed through destructuring,
   `.map` / `.flatMap` / `.filter` / `.find` / `.forEach` callbacks (inline or a
   same-file function), `for…of`, `Object.values` / `Object.entries`, string
-  building, `JSON.stringify` and the other derivations `utils/value-flow`
-  follows. A `.length` is a count and carries none of the text.
+  building, `JSON.stringify` (of the listing, or of an object or array
+  literal holding it; a replacer function is not looked into) and the other
+  derivations `utils/value-flow` follows. A listing's `.length` is a count
+  and carries none of the text.
 - **LLM calls** are resolved to their SDK: `.create()` / `.stream()` /
   `.parse()` on a client built by `@anthropic-ai/sdk` or `openai`,
   `generateContent` / `generateContentStream` on `@google/genai`, and

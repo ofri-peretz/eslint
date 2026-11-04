@@ -250,6 +250,14 @@ describe('fidelity model (2026-11-04): counts and serialised listings', () => {
           '}',
       },
       {
+        // review #1389: a replacer function decides what survives; not followed
+        name: 'a JSON.stringify whose replacer function the rule cannot see into',
+        code:
+          CLIENT +
+          'const { tools } = await client.listTools();\n' +
+          'await anthropic.messages.create({ system: JSON.stringify(tools, () => "redacted"), messages });',
+      },
+      {
         name: 'a JSON.stringify with nothing to serialise',
         code:
           CLIENT +
@@ -274,6 +282,36 @@ describe('fidelity model (2026-11-04): counts and serialised listings', () => {
           'const listing = await client.listPrompts();\n' +
           'await anthropic.messages.create({ messages: [{ role: "user", content: `Prompts: ${JSON.stringify(listing, null, 2)}` }] });',
         errors: [err('listing', 'messages', ANTHROPIC)],
+      },
+      {
+        // review #1389
+        name: 'FN: the listing wrapped in an object before JSON.stringify',
+        code:
+          CLIENT +
+          'const { tools } = await client.listTools();\n' +
+          'await anthropic.messages.create({ system: JSON.stringify({ available: tools, ...extra }), messages });',
+        errors: [err('client.listTools().tools', 'system', ANTHROPIC)],
+      },
+      {
+        // review #1389
+        name: 'FN: the listing in an array, through globalThis.JSON, with a null replacer',
+        code:
+          CLIENT +
+          'const { tools } = await client.listTools();\n' +
+          'await anthropic.messages.create({ system: globalThis.JSON.stringify([1, tools], null, 2), messages });',
+        errors: [err('client.listTools().tools', 'system', ANTHROPIC)],
+      },
+      {
+        // review #1389: .length of a const object literal is that field, not a count
+        name: 'FN: a length field holding a description',
+        code:
+          CLIENT +
+          'const { tools } = await client.listTools();\n' +
+          'const data = { length: tools[0].description };\n' +
+          'await anthropic.messages.create({ system: data.length, messages });',
+        errors: [
+          err('client.listTools().tools.description', 'system', ANTHROPIC),
+        ],
       },
     ],
   });

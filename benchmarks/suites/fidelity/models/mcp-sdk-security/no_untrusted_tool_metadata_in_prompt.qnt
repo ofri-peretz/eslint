@@ -1,18 +1,20 @@
 // Model of eslint-plugin-mcp-sdk-security/no-untrusted-tool-metadata-in-prompt (CWE-1427).
 // Text from an SDK Client's listTools / listPrompts / listResources /
 // listResourceTemplates result, followed through destructuring, .map /
-// .filter callbacks, for…of string building and JSON.stringify, is reported
+// .filter callbacks, for…of string building and JSON.stringify (also of an
+// object or array wrapping the listing), is reported
 // when it reaches any field of an LLM request except the tool definitions
 // (`tools`, `functions`, `tool_choice`): Anthropic and OpenAI clients'
 // create(), @google/genai's generateContent, and the `ai` package's
-// generateText. Its length (a number, not its text), a listing from
+// generateText. Its length (a number, not its text), a JSON.stringify whose
+// replacer function the rule cannot see into, a listing from
 // something that is not the SDK's Client, an LLM client the rule cannot
 // resolve (a parameter) and a log line are not reported. A file with no MCP
 // package is not judged.
 module no_untrusted_tool_metadata_in_prompt {
   type Part = Flows | Wiring
   type Listing = ListTools | ListPrompts | ListResources | ListResourceTemplates | NotClient | LookalikeClient
-  type Derive = MapJoin | ForOfConcat | Stringify | FilterFind | Count
+  type Derive = MapJoin | ForOfConcat | Stringify | StringifyWrapped | StringifyReplacerFn | FilterFind | Count
   type Target =
     | AnthropicSystem | AnthropicMessage | AnthropicTools
     | OpenAiSystemMessage | OpenAiTools
@@ -20,7 +22,7 @@ module no_untrusted_tool_metadata_in_prompt {
   type Gate = ClientEsm | ClientRequire | ClientV2
 
   pure def sdkListing(l: Listing): bool = l != NotClient and l != LookalikeClient
-  pure def carriesText(d: Derive): bool = d != Count
+  pure def carriesText(d: Derive): bool = d != Count and d != StringifyReplacerFn
   pure def promptField(t: Target): bool = match t {
     | AnthropicSystem => true
     | AnthropicMessage => true
@@ -43,7 +45,7 @@ module no_untrusted_tool_metadata_in_prompt {
   action step = {
     nondet pt = Set(Flows, Wiring).oneOf()
     nondet l = (if (pt == Flows) Set(ListTools) else Set(ListTools, ListPrompts, ListResources, ListResourceTemplates, NotClient, LookalikeClient)).oneOf()
-    nondet d = (if (pt == Flows) Set(MapJoin, ForOfConcat, Stringify, FilterFind, Count) else Set(MapJoin)).oneOf()
+    nondet d = (if (pt == Flows) Set(MapJoin, ForOfConcat, Stringify, StringifyWrapped, StringifyReplacerFn, FilterFind, Count) else Set(MapJoin)).oneOf()
     nondet t = (if (pt == Flows) Set(AnthropicSystem, AnthropicMessage, AnthropicTools, OpenAiSystemMessage, OpenAiTools, GenAiContents, AiSdkSystem, AiSdkTools, UnresolvedLlm, ConsoleLog) else Set(AnthropicSystem, OpenAiTools)).oneOf()
     nondet g = (if (pt == Flows) Set(ClientEsm) else Set(ClientEsm, ClientRequire, ClientV2)).oneOf()
     all {

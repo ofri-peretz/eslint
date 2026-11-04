@@ -351,6 +351,14 @@ describe('fidelity model (2026-11-04): process.env bound to a plain name', () =>
           'server.registerTool("t", schema, async ({ q }) => { const { env, argv, ...others } = process; return { content: [{ type: "text", text: JSON.stringify([argv, others]) }] }; });',
       },
       {
+        // review #1389: a key or member named env is not a read of the env binding
+        name: 'an object key and a member named env next to an imported env',
+        code:
+          SDK +
+          "import { env } from 'node:process';\n" +
+          'server.registerTool("t", schema, async ({ q }) => ({ env: "safe", content: [{ type: "text", text: String(config.env) }] }));',
+      },
+      {
         name: 'an env parameter is not process.env',
         code:
           SDK +
@@ -392,6 +400,23 @@ describe('fidelity model (2026-11-04): process.env bound to a plain name', () =>
           SDK +
           'server.registerTool("t", schema, async ({ q }) => { const { "env": vars } = process; return { content: [{ type: "text", text: JSON.stringify(vars) }] }; });',
         errors: [env('vars')],
+      },
+      {
+        // review #1389
+        name: 'FN: env destructured from process with a default',
+        code:
+          SDK +
+          'server.registerTool("t", schema, async ({ q }) => { const { env = {} } = process; return { content: [{ type: "text", text: JSON.stringify(env) }] }; });',
+        errors: [env('env')],
+      },
+      {
+        // review #1389: shorthand returns the binding itself
+        name: 'FN: the imported env returned under a shorthand key',
+        code:
+          SDK +
+          "import { env } from 'node:process';\n" +
+          'server.registerTool("t", schema, async ({ q }) => ({ content: [{ type: "text", text: JSON.stringify({ env }) }] }));',
+        errors: [env('env')],
       },
       {
         // @found fidelity model no_credential_leak_in_tool 2026-11-04

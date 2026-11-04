@@ -2,8 +2,8 @@
 // (CWE-526, CWE-200, CWE-441).
 // A tool result that holds process.env whole (stringified, spread, its
 // entries, through a binding, node:process's `env` export or default
-// `process`, or `env` destructured from the global `process`) or `process.env[name]`
-// with a tool-chosen name is reported; one named variable, the key list, a
+// `process`, or `env` destructured from the global `process`, with or without a default) or `process.env[name]`
+// with a tool-chosen name is reported; one named variable, a property merely named `env`, the key list, a
 // constant index and a shadowing local `process` are not. The caller's bearer
 // token (`authInfo.token`, or `authInfo` stringified) returned in a result,
 // or forwarded in an outbound request (fetch, axios, an SDK client
@@ -20,7 +20,8 @@ module no_credential_leak_in_tool {
   type Reg = Register | Destructured | NoSchema | LegacyNoSchema | LowLevel | ArgNamedAuthInfo
   type Shape =
     | EnvStringify | EnvSpread | EnvEntries | EnvIndexArg | EnvViaBinding | NodeProcessEnv
-    | NodeProcessDefault | RequireProcessEnv | EnvDestructured
+    | NodeProcessDefault | RequireProcessEnv | EnvDestructured | EnvDestructuredDefault
+    | EnvNamedKey
     | EnvNamed | EnvKeys | EnvIndexConst | ShadowedProcess
     | TokenResult | TokenTemplate | AuthInfoStringify | ClientIdResult | ScopesResult
     | TokenFetch | TokenAxios | TokenClientTransport | ServiceToken | ExchangedToken | TokenLogged
@@ -40,6 +41,7 @@ module no_credential_leak_in_tool {
     | NodeProcessDefault => true
     | RequireProcessEnv => true
     | EnvDestructured => true
+    | EnvDestructuredDefault => true
     | _ => false
   }
   pure def tokenLeak(s: Shape): bool = match s {
@@ -68,7 +70,7 @@ module no_credential_leak_in_tool {
     nondet p = Set(Wiring, Shapes, Tests).oneOf()
     nondet g = (if (p == Wiring) Set(Esm, Require, Namespace, V2, McpHandler, Lookalike, None) else Set(Esm)).oneOf()
     nondet r = (if (p == Wiring) Set(Register, Destructured, NoSchema, LegacyNoSchema, LowLevel, ArgNamedAuthInfo).filter(r => validReg(g, r)) else Set(Register)).oneOf()
-    nondet s = (if (p == Shapes) Set(EnvStringify, EnvSpread, EnvEntries, EnvIndexArg, EnvViaBinding, NodeProcessEnv, NodeProcessDefault, RequireProcessEnv, EnvDestructured, EnvNamed, EnvKeys, EnvIndexConst, ShadowedProcess, TokenResult, TokenTemplate, AuthInfoStringify, ClientIdResult, ScopesResult, TokenFetch, TokenAxios, TokenClientTransport, ServiceToken, ExchangedToken, TokenLogged) else Set(EnvStringify, TokenResult, TokenFetch, ClientIdResult)).oneOf()
+    nondet s = (if (p == Shapes) Set(EnvStringify, EnvSpread, EnvEntries, EnvIndexArg, EnvViaBinding, NodeProcessEnv, NodeProcessDefault, RequireProcessEnv, EnvDestructured, EnvDestructuredDefault, EnvNamedKey, EnvNamed, EnvKeys, EnvIndexConst, ShadowedProcess, TokenResult, TokenTemplate, AuthInfoStringify, ClientIdResult, ScopesResult, TokenFetch, TokenAxios, TokenClientTransport, ServiceToken, ExchangedToken, TokenLogged) else Set(EnvStringify, TokenResult, TokenFetch, ClientIdResult)).oneOf()
     nondet c = (if (p == Tests) Set(Prod, TestName, SpecName, TestDir, Fixtures, E2e) else Set(Prod)).oneOf()
     all {
       part' = p,

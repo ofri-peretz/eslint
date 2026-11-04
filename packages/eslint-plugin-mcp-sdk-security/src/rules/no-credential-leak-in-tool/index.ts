@@ -177,6 +177,17 @@ export const noCredentialLeakInTool = createRule<[], MessageIds>({
      * (imported or required), or `const { env } = process`?
      */
     function isEnvBinding(node: TSESTree.Identifier): boolean {
+      // `{ env: 'x' }` and `config.env` name a property, not the binding.
+      const parent = node.parent;
+      if (
+        (parent?.type === 'Property' &&
+          parent.key === node &&
+          !parent.computed) ||
+        (parent?.type === 'MemberExpression' &&
+          parent.property === node &&
+          !parent.computed)
+      )
+        return false;
       const scope = sourceCode.getScope(node);
       const binding = resolveModuleBinding(node, scope);
       if (binding)
@@ -189,7 +200,9 @@ export const noCredentialLeakInTool = createRule<[], MessageIds>({
         def.node.id.properties.some(
           (p) =>
             p.type === 'Property' &&
-            p.value === def.name &&
+            // `{ env = {} }` binds `env` to process.env all the same.
+            (p.value.type === 'AssignmentPattern' ? p.value.left : p.value) ===
+              def.name &&
             objectKeyName(p) === 'env',
         )
       );
