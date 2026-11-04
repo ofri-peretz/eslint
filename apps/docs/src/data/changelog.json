@@ -1,9 +1,39 @@
 {
-  "releaseCount": 914,
+  "releaseCount": 918,
   "packageCount": 66,
-  "entryCount": 2508,
+  "entryCount": 2512,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "oxlint-plugin-express-security",
+      "short": "oxlint-plugin-express-security",
+      "version": "3.3.1",
+      "date": "2026-11-04T16:42:11Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-express-security@3.3.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-express-security",
+      "short": "eslint-plugin-express-security",
+      "version": "3.3.1",
+      "date": "2026-11-04T16:40:38Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Fix false positives and false negatives found by the Quint fidelity models:",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "oxlint-plugin-mongodb-security",
       "short": "oxlint-plugin-mongodb-security",
@@ -21392,14 +21422,14 @@
     {
       "package": "eslint-plugin-express-security",
       "short": "eslint-plugin-express-security",
-      "version": "3.3.1",
+      "version": "3.3.2",
       "date": null,
       "isApp": false,
       "isPrivate": false,
       "entries": [
         {
           "kind": "fix",
-          "title": "Fix false positives and false negatives found by the Quint fidelity models:",
+          "title": "`require-express-body-parser-limits` reads a quoted or string-subscript `limit` key (`{ 'limit': '50mb' }`, `{ ['limit']: '50mb' }`), which it used to skip, and no longer treats a computed `[limit]` variable key as the option.",
           "pr": null
         }
       ]
@@ -21520,6 +21550,21 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mcp-sdk-security",
+      "short": "eslint-plugin-mcp-sdk-security",
+      "version": "1.1.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Fix false negatives and a false positive found by the Quint fidelity models:",
           "pr": null
         }
       ]
@@ -21672,14 +21717,29 @@
     {
       "package": "oxlint-plugin-express-security",
       "short": "oxlint-plugin-express-security",
-      "version": "3.3.1",
+      "version": "3.3.2",
       "date": null,
       "isApp": false,
       "isPrivate": false,
       "entries": [
         {
           "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-express-security@3.3.1`",
+          "title": "updated workspace dependencies: `eslint-plugin-express-security@3.3.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-mcp-sdk-security",
+      "short": "oxlint-plugin-mcp-sdk-security",
+      "version": "1.1.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-mcp-sdk-security@1.1.1`",
           "pr": null
         }
       ]
