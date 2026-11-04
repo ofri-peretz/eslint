@@ -331,6 +331,32 @@ So:
   risk), one in detection a missing `invalid` case (FN risk). See
   [docs/MUTATION_TESTING.md](./docs/MUTATION_TESTING.md).
 
+### Flag only clear problems; decide by structure, never by string values
+
+A rule reports what a senior engineer would agree is a real problem: a
+violated best practice the code itself proves. When the code does not prove
+it, the rule stays silent. A missed finding costs less than a rule people
+learn to ignore.
+
+- **Decide by structure.** Look at where a value flows, which call it reaches
+  and what the object configures. A `username` literal in a `find*` filter
+  is a lookup, not a credential. `ssl: false` in a connection config is an
+  explicit decision to drop TLS.
+- **Never decide by matching specific string values.** That rules out
+  hostname lists (`localhost`, private IP ranges, `*.internal`),
+  "looks remote / looks local" guesses and value allowlists standing in for
+  analysis. A rule cannot know the deployment context, and such a list is
+  wrong somewhere the moment it ships. (Key names the API itself defines,
+  such as `ssl`, `rejectUnauthorized` and `sslmode`, are structure, not
+  guesses.)
+- **A missing setting is not a finding** unless the code proves the risk.
+  `require-tls` reports explicit disabling only, never a config that omits
+  `ssl`.
+
+This also applies to fidelity-model judgment calls and to every agent brief:
+when a divergence comes down to judgment, the answer is silence, not a
+heuristic.
+
 ### Reporting posture: report the finding, let the consumer scope it
 
 Some rules are correct detections whose advice is arguably wrong in a
