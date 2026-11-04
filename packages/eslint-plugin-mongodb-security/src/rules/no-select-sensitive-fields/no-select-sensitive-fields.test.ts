@@ -27,14 +27,16 @@ type MongoCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly MongoSuggestion[] } | string>;
 };
-const xmo = <T,>(cases: T[]): T[] =>
+const xmo = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asMongo(c) as T;
     const test = c as MongoCase;
     return {
       ...c,
       code: asMongo(test.code),
-      ...(typeof test.output === 'string' ? { output: asMongo(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asMongo(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -53,7 +55,6 @@ const xmo = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -90,7 +91,7 @@ describe('no-select-sensitive-fields', () => {
         {
           code: `if (x == y) {}`,
           filename: 'test.spec.ts',
-          options: [{"allowInTests":true}],
+          options: [{ allowInTests: true }],
         },
         // Environment variable usage is safe (padding case 5)
         {
@@ -114,4 +115,98 @@ describe('no-select-sensitive-fields', () => {
       ]),
     });
   });
+});
+
+// Found by the Quint fidelity model: Mongoose takes a projection as the second
+// argument, and naming a field to EXCLUDE it is not exposing it.
+describe('Mongoose projection argument and field names (fidelity)', () => {
+  const schema = 'const s = new Schema({ name: String, password: String });\n';
+  ruleTester.run(
+    'projection argument and field names',
+    noSelectSensitiveFields,
+    {
+      valid: xmo([
+        {
+          name: 'Mongoose string projection of safe fields',
+          code: `${schema}User.findById(id, 'name email');`,
+        },
+        {
+          name: 'Mongoose object projection excluding the field',
+          code: `${schema}User.findById(id, { password: 0 });`,
+        },
+        {
+          name: 'Mongoose inclusion projection of safe fields',
+          code: `${schema}User.find({}, { name: 1, email: 1 });`,
+        },
+        {
+          name: 'select of a field that only starts with a sensitive name',
+          code: `${schema}User.findById(id).select('name passwordUpdatedAt');`,
+        },
+        {
+          name: 'select object excluding the field',
+          code: `${schema}User.findById(id).select({ password: 0 });`,
+        },
+        // An exclusion with no schema in view: naming the field is not exposing it.
+        {
+          name: 'exclusion projection with no schema in view',
+          code: 'User.findById(id, { password: 0 });',
+        },
+        {
+          name: 'string exclusion projection with requireVisibleSensitiveField off',
+          code: "User.findById(id, '-password');",
+          options: [{ requireVisibleSensitiveField: false }],
+        },
+        // The driver's options in the projection slot: `limit` is not a field.
+        {
+          name: 'driver limit beside an inclusion projection',
+          code: "db.collection('users').findOne({}, { limit: 1, projection: { name: 1 } });",
+          options: [{ requireVisibleSensitiveField: false }],
+        },
+        {
+          name: 'driver projection excluding the field beside limit',
+          code: "db.collection('users').find({}, { projection: { password: 0 }, limit: 10 });",
+          options: [{ requireVisibleSensitiveField: false }],
+        },
+      ]),
+      invalid: xmo([
+        {
+          name: 'Mongoose object projection including the field',
+          code: `${schema}User.findById(id, { password: 1, name: 1 });`,
+          errors: [{ messageId: 'selectSensitiveFields' }],
+        },
+        {
+          name: 'Mongoose string projection forcing the field in',
+          code: "User.findById(id, 'name +password');",
+          errors: [{ messageId: 'selectSensitiveFields' }],
+        },
+        {
+          name: 'select object including the field',
+          code: 'User.findById(id).select({ password: 1 });',
+          errors: [{ messageId: 'selectSensitiveFields' }],
+        },
+        {
+          name: 'empty projection string with requireVisibleSensitiveField off',
+          code: "User.findById(id, '');",
+          options: [{ requireVisibleSensitiveField: false }],
+          errors: [{ messageId: 'selectSensitiveFields' }],
+        },
+        {
+          name: 'driver options with no projection with requireVisibleSensitiveField off',
+          code: "db.collection('users').find({}, { limit: 1, [k]: 1, ...rest, session });",
+          options: [{ requireVisibleSensitiveField: false }],
+          errors: [{ messageId: 'selectSensitiveFields' }],
+        },
+        {
+          name: 'select object including apiKey',
+          code: 'User.findById(id).select({ apiKey: true });',
+          errors: [{ messageId: 'selectSensitiveFields' }],
+        },
+        {
+          name: 'null projection slot with the field in view',
+          code: `${schema}User.findById(id, null, { lean: true });`,
+          errors: [{ messageId: 'selectSensitiveFields' }],
+        },
+      ]),
+    },
+  );
 });

@@ -27,14 +27,16 @@ type MongoCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly MongoSuggestion[] } | string>;
 };
-const xmo = <T,>(cases: T[]): T[] =>
+const xmo = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asMongo(c) as T;
     const test = c as MongoCase;
     return {
       ...c,
       code: asMongo(test.code),
-      ...(typeof test.output === 'string' ? { output: asMongo(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asMongo(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -53,7 +55,6 @@ const xmo = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -86,7 +87,7 @@ describe('require-schema-validation', () => {
         {
           code: `if (x == y) {}`,
           filename: 'test.spec.ts',
-          options: [{"allowInTests":true}],
+          options: [{ allowInTests: true }],
         },
         // Environment variable usage is safe (padding case 4)
         {
@@ -113,5 +114,35 @@ describe('require-schema-validation', () => {
         },
       ]),
     });
+  });
+});
+
+// Found by the Quint fidelity model: a renamed `Schema` import is still
+// Mongoose's constructor.
+describe('renamed Schema import (fidelity)', () => {
+  ruleTester.run('renamed Schema import', requireSchemaValidation, {
+    valid: xmo([
+      {
+        name: 'renamed Schema import with a validated field',
+        code: "import { Schema as MongooseSchema } from 'mongoose';\nnew MongooseSchema({ name: { type: String, required: true } });",
+      },
+      // Another library's schema under an alias is not judged.
+      {
+        name: 'a Schema from another library under an alias',
+        code: "import { Schema as AvroSchema } from 'avsc';\nnew AvroSchema({ name: { type: String } });",
+      },
+    ]),
+    invalid: xmo([
+      {
+        name: 'renamed Schema import with a type-only field',
+        code: "import { Schema as MongooseSchema } from 'mongoose';\nnew MongooseSchema({ name: { type: String } });",
+        errors: [{ messageId: 'requireSchemaValidation' }],
+      },
+      {
+        name: 'Schema destructured from require with a default-only field',
+        code: "const { Schema: S } = require('mongoose');\nnew S({ role: { type: String, default: 'user' } });",
+        errors: [{ messageId: 'requireSchemaValidation' }],
+      },
+    ]),
   });
 });

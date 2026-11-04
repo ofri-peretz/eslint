@@ -61,6 +61,10 @@ Mongoose schemas without validation allow arbitrary data, potentially leading to
 ```typescript
 const schema = new Schema({ name: { type: String } });
 const other = new mongoose.Schema({ name: { type: String } });
+
+// A renamed import is the same constructor
+import { Schema as MongooseSchema } from 'mongoose';
+const third = new MongooseSchema({ name: { type: String } });
 ```
 
 ### ✅ Correct
@@ -99,6 +103,13 @@ const userSchema = new Schema({
 const fields = {};
 fields[fieldName] = String;
 const schema = new Schema(fields);
+```
+
+### Shorthand Field Types
+
+```typescript
+// ❌ NOT DETECTED - only `{ type: ... }` field definitions are checked
+const schema = new Schema({ name: String });
 ```
 
 ## When Not To Use It

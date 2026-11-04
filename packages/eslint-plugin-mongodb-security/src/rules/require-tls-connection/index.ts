@@ -17,6 +17,7 @@ import {
   MessageIcons,
   isTestFilePath,
   propertyName,
+  isModuleBinding,
   staticString,
 } from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
@@ -115,21 +116,30 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
-          return;
-        }
+        if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
+          // `mongoose['connect'](url)` opens the same connection.
+          const methodName = propertyName(node.callee);
 
-        // `mongoose['connect'](url)` opens the same connection.
-        const methodName = propertyName(node.callee);
+          if (!methodName || !CONNECT_METHODS.has(methodName)) {
+            return;
+          }
 
-        if (!methodName || !CONNECT_METHODS.has(methodName)) {
-          return;
-        }
-
-        // Same as require-auth-mechanism: a `.connect()` is not evidence of
-        // MongoDB.
-        if (!mongo.isConnectionReceiver(node)) {
-          return;
+          // Redis clients, TypeORM query runners and pino transports all have
+          // a `.connect()`. Calling one of those "a MongoDB connection" is the
+          // most damaging thing this rule can do, so require proof.
+          if (!mongo.isConnectionReceiver(node)) {
+            return;
+          }
+        } else {
+          // `import { connect } from 'mongoose'` has no receiver to prove:
+          // the binding itself must resolve to one of Mongoose's exports.
+          const scope = context.sourceCode.getScope(node);
+          const isMongooseExport = [...CONNECT_METHODS].some((name) =>
+            isModuleBinding(node.callee, scope, 'mongoose', [name]),
+          );
+          if (!isMongooseExport) {
+            return;
+          }
         }
 
         const optionsArg = node.arguments[1];

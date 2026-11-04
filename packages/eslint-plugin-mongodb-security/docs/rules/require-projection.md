@@ -5,14 +5,14 @@ tags: ['security', 'mongodb']
 category: security
 severity: medium
 cwe: CWE-200
-owasp: "A01:2021"
+owasp: 'A01:2021'
 autofix: false
 ---
 
 > **Keywords:** CWE-200, projection, field selection, MongoDB, information exposure
 
-
 <!-- @rule-summary -->
+
 Requires field projection on queries to minimize data exposure.
 <!-- @/rule-summary -->
 
@@ -27,7 +27,7 @@ Requires field projection on queries to minimize data exposure.
 | **CWE Reference** | CWE-200 (Information Exposure)   |
 | **OWASP**         | A01:2021 - Broken Access Control |
 | **Severity**      | Low (CVSS: 3.7)                  |
-| **Category**   | Security |
+| **Category**      | Security                         |
 
 ## Rule Details
 
@@ -46,6 +46,9 @@ const users = await User.find({ active: true });
 
 // All fields returned, including large embedded documents
 const post = await Post.findById(id);
+
+// `null` only holds the projection slot so options can follow
+const users = await User.find({ active: true }, null, { sort: { name: 1 } });
 ```
 
 ### ✅ Correct
@@ -131,6 +134,6 @@ const users = await db.collection('users').find({}).toArray(); // Missing projec
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| Option         | Type      | Default | Description                                     |
+| -------------- | --------- | ------- | ----------------------------------------------- |
+| `allowInTests` | `boolean` | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files |

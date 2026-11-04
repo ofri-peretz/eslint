@@ -27,14 +27,16 @@ type MongoCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly MongoSuggestion[] } | string>;
 };
-const xmo = <T,>(cases: T[]): T[] =>
+const xmo = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asMongo(c) as T;
     const test = c as MongoCase;
     return {
       ...c,
       code: asMongo(test.code),
-      ...(typeof test.output === 'string' ? { output: asMongo(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asMongo(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -53,7 +55,6 @@ const xmo = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -90,7 +91,7 @@ describe('no-debug-mode-production', () => {
         {
           code: `if (x == y) {}`,
           filename: 'test.spec.ts',
-          options: [{"allowInTests":true}],
+          options: [{ allowInTests: true }],
         },
         // Environment variable usage is safe (padding case 5)
         {
@@ -109,29 +110,121 @@ describe('no-debug-mode-production', () => {
         {
           name: 'debug mode prints every query, arguments included',
           code: `mongoose.set('debug', true);`,
-          errors: [{
-        messageId: 'debugModeProduction',
-        suggestions: [{ messageId: 'suggestionGateOnNodeEnv', output: `mongoose.set('debug', process.env.NODE_ENV !== 'production');` }],
-      }],
+          errors: [
+            {
+              messageId: 'debugModeProduction',
+              suggestions: [
+                {
+                  messageId: 'suggestionGateOnNodeEnv',
+                  output: `mongoose.set('debug', process.env.NODE_ENV !== 'production');`,
+                },
+              ],
+            },
+          ],
         },
       ]),
     });
   });
-describe('Suggestions', () => {
-    ruleTester.run('suggestion - gates debug on NODE_ENV', noDebugModeProduction, {
-      valid: [],
-      invalid: xmo([
-        {
-          code: `mongoose.set('debug', true);`,
-          errors: [{
+  describe('Suggestions', () => {
+    ruleTester.run(
+      'suggestion - gates debug on NODE_ENV',
+      noDebugModeProduction,
+      {
+        valid: [],
+        invalid: xmo([
+          {
+            code: `mongoose.set('debug', true);`,
+            errors: [
+              {
+                messageId: 'debugModeProduction',
+                suggestions: [
+                  {
+                    messageId: 'suggestionGateOnNodeEnv',
+                    output: `mongoose.set('debug', process.env.NODE_ENV !== 'production');`,
+                  },
+                ],
+              },
+            ],
+          },
+        ]),
+      },
+    );
+  });
+});
+
+// Found by the Quint fidelity model: Mongoose's named `set` export is the same
+// setter as `mongoose.set`, and a bare call has no receiver to read.
+describe('named set import (fidelity)', () => {
+  ruleTester.run('named set import', noDebugModeProduction, {
+    valid: xmo([
+      {
+        name: 'named set gated on NODE_ENV',
+        code: "import { set } from 'mongoose';\nset('debug', process.env.NODE_ENV !== 'production');",
+      },
+      {
+        name: 'named set of another setting',
+        code: "import { set } from 'mongoose';\nset('strictQuery', true);",
+      },
+      // A local function called `set` is not Mongoose's.
+      {
+        name: 'a local function called set',
+        code: "function set(k: string, v: unknown) {}\nset('debug', true);",
+      },
+      // Another Mongoose export is not the setter.
+      {
+        name: 'another mongoose export called with debug',
+        code: "import { model } from 'mongoose';\nmodel('debug', true);",
+      },
+    ]),
+    invalid: xmo([
+      {
+        name: 'named set import turns debug on',
+        code: "import { set } from 'mongoose';\nset('debug', true);",
+        errors: [
+          {
             messageId: 'debugModeProduction',
-            suggestions: [{
-              messageId: 'suggestionGateOnNodeEnv',
-              output: `mongoose.set('debug', process.env.NODE_ENV !== 'production');`,
-            }],
-          }],
-        },
-      ]),
-    });
+            suggestions: [
+              {
+                messageId: 'suggestionGateOnNodeEnv',
+                output:
+                  "import { set } from 'mongoose';\nset('debug', process.env.NODE_ENV !== 'production');",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'renamed set import, options-object form',
+        code: "import { set as configure } from 'mongoose';\nconfigure({ debug: true });",
+        errors: [
+          {
+            messageId: 'debugModeProduction',
+            suggestions: [
+              {
+                messageId: 'suggestionGateOnNodeEnv',
+                output:
+                  "import { set as configure } from 'mongoose';\nconfigure({ debug: process.env.NODE_ENV !== 'production' });",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'set destructured from require, logger callback',
+        code: "const { set } = require('mongoose');\nset('debug', (c) => log(c));",
+        errors: [
+          {
+            messageId: 'debugModeProduction',
+            suggestions: [
+              {
+                messageId: 'suggestionGateOnNodeEnv',
+                output:
+                  "const { set } = require('mongoose');\nset('debug', process.env.NODE_ENV !== 'production' && ((c) => log(c)));",
+              },
+            ],
+          },
+        ],
+      },
+    ]),
   });
 });

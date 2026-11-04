@@ -27,14 +27,16 @@ type MongoCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly MongoSuggestion[] } | string>;
 };
-const xmo = <T,>(cases: T[]): T[] =>
+const xmo = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asMongo(c) as T;
     const test = c as MongoCase;
     return {
       ...c,
       code: asMongo(test.code),
-      ...(typeof test.output === 'string' ? { output: asMongo(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asMongo(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -53,7 +55,6 @@ const xmo = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -98,7 +99,7 @@ describe('require-auth-mechanism', () => {
         {
           code: `if (x == y) {}`,
           filename: 'test.spec.ts',
-          options: [{"allowInTests":true}],
+          options: [{ allowInTests: true }],
         },
       ]),
       invalid: [],
@@ -117,5 +118,49 @@ describe('require-auth-mechanism', () => {
         },
       ]),
     });
+  });
+});
+
+// Found by the Quint fidelity model: Mongoose's named `connect` /
+// `createConnection` exports open the same connection, with no receiver.
+describe('named connection imports (fidelity)', () => {
+  ruleTester.run('named connection imports', requireAuthMechanism, {
+    valid: xmo([
+      {
+        name: 'named connect with authMechanism',
+        code: "import { connect } from 'mongoose';\nconnect(uri, { authMechanism: 'SCRAM-SHA-256' });",
+      },
+      {
+        name: 'named connect with authMechanism in the URI',
+        code: "import { connect } from 'mongoose';\nconnect('mongodb://u:p@h/db?authMechanism=SCRAM-SHA-256');",
+      },
+      // A `connect` from another package is not a MongoDB connection.
+      {
+        name: 'connect from another package',
+        code: "import { connect } from 'amqplib';\nconnect('amqp://u:p@h');",
+      },
+      // Nor is a local one.
+      {
+        name: 'a local function called connect',
+        code: "function connect(u: string) {}\nconnect('mongodb://u:p@h/db');",
+      },
+    ]),
+    invalid: xmo([
+      {
+        name: 'named connect with credentials in the URI',
+        code: "import { connect } from 'mongoose';\nconnect('mongodb://user:pass@host/db');",
+        errors: [{ messageId: 'requireAuthMechanism' }],
+      },
+      {
+        name: 'renamed createConnection with credentials in options',
+        code: "import { createConnection as open } from 'mongoose';\nopen(uri, { user: 'a', pass: 'b' });",
+        errors: [{ messageId: 'requireAuthMechanism' }],
+      },
+      {
+        name: 'connect destructured from require with auth credentials',
+        code: "const { connect } = require('mongoose');\nconnect(uri, { auth: { username: u, password: p } });",
+        errors: [{ messageId: 'requireAuthMechanism' }],
+      },
+    ]),
   });
 });
