@@ -109,7 +109,7 @@ All rules include structured remediation guidance designed for AI assistants:
 By providing this structured context (CWE, OWASP, Fix), we enable AI tools to **reason** about the security flaw rather than hallucinating. This allows Copilot/Cursor to suggest the _exact_ correct fix immediately.
 
 ## 💡 What You Get
-- **21 security rules** targeting browser-specific vulnerabilities
+- **46 security rules** targeting browser-specific vulnerabilities
 - **XSS prevention** via DOM manipulation and dynamic content detection
 - **Storage security** preventing sensitive data exposure in localStorage/sessionStorage/IndexedDB
 - **Cross-origin protection** with postMessage origin validation

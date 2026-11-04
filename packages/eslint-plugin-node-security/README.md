@@ -87,7 +87,7 @@ npm install eslint-plugin-node-security --save-dev
 | `crypto`      | Cryptographic security rules only                     |
 
 ## 💡 What You Get
-- **31 security rules** covering Node.js core module vulnerabilities
+- **43 security rules** covering Node.js core module vulnerabilities
 - **Command Injection Detection** for `child_process.exec`, `spawn`, and `execFile`
 - **Path Traversal Prevention** for `fs` module operations
 - **TOCTOU Race Condition Detection** for file system operations

@@ -1,7 +1,7 @@
 {
     "name": "ESLint Interlace",
     "short_name": "Interlace",
-    "description": "416+ security rules across 15 specialized ESLint plugins. LLM-optimized error messages with CWE, OWASP, and CVSS metadata.",
+    "description": "495 rules across 31 ESLint plugins, 290 of them security rules. LLM-optimized error messages with CWE, OWASP, and CVSS metadata.",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#0f0a1a",

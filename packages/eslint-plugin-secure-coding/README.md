@@ -76,7 +76,7 @@ npm install eslint-plugin-secure-coding --save-dev
 
 <!-- AUTO-GENERATED:INSTALL:END -->
 
-**Add to your `eslint.config.mjs` — one line activates 16 security rules:**
+**Add to your `eslint.config.mjs` — one line activates 18 security rules:**
 
 ```js
 import securePlugin from 'eslint-plugin-secure-coding';
@@ -85,7 +85,7 @@ export default [
   // Balanced: catches critical issues as errors, lower-confidence rules as warnings
   ...securePlugin.configs.recommended,
 
-  // Zero-tolerance: same 16 rules, all promoted to error (good for CI gates)
+  // Zero-tolerance: same 18 rules, all promoted to error (good for CI gates)
   // ...securePlugin.configs['recommended-strict'],
 ];
 ```
@@ -120,8 +120,8 @@ The competitor's entropy-only detection catches the high-entropy API-key shape b
 ## ⚙️ Configuration Presets
 | Preset                | Description                                                     |
 | :-------------------- | :-------------------------------------------------------------- |
-| `recommended`         | 16 core rules — critical issues as `error`, lower-confidence as `warn` |
-| `recommended-strict`  | Same 16 rules as `recommended`, all promoted to `error` — for CI gates |
+| `recommended`         | 18 core rules — critical issues as `error`, lower-confidence as `warn` |
+| `recommended-strict`  | Same 18 rules as `recommended`, all promoted to `error` — for CI gates |
 | `strict`              | All rules as `error` — maximum coverage including experimental rules |
 | `owasp-top-10`        | OWASP Top 10 Web 2021 compliance focused                        |
 | `owasp-mobile-top-10` | OWASP Mobile Top 10 2024 compliance focused                     |

@@ -112,7 +112,7 @@ src/handlers/api.ts
 By providing this structured context (CWE, OWASP, Fix), we enable AI tools to **reason** about the security flaw rather than hallucinating. This allows Copilot/Cursor to suggest the _exact_ correct fix immediately.
 
 ## 💡 What You Get
-- **Serverless-focused coverage:** 5 rules targeting Lambda-specific vulnerabilities (credentials, CORS, secrets, logging).
+- **Serverless-focused coverage:** 14 rules targeting Lambda-specific vulnerabilities (credentials, CORS, secrets, logging).
 - **LLM-optimized & MCP-ready:** Structured 2-line messages with CWE + OWASP + CVSS + concrete fixes so humans _and_ AI auto-fixers stay aligned.
 - **Standards aligned:** OWASP Serverless Top 10, CWE tagging, CVSS scoring in every finding for compliance mapping.
 - **Tiered presets:** `recommended`, `strict` for fast policy rollout.

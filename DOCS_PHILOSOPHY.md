@@ -31,7 +31,7 @@ When a docs-related change is proposed, check it against the principles AND the 
 
 1. **Two readers, equal weight.** Every page is simultaneously human-readable and agent-readable. Features that don't serialize cleanly to plaintext (heavy iframes, JSX-only widgets, client-side-only renders) are second-class.
 2. **Source of truth lives in `packages/*`.** The docs site is a *projection* of plugin metadata (`meta.schema`, `meta.docs`, `fixable`, `recommended`, `replacedBy`). Re-typing in prose is a drift bug, not a documentation choice.
-3. **Derive, don't curate.** With 272 rules, anything hand-maintained will rot. Page tree, schemas, examples, OG cards, and llms.txt entries must all be generated from the same metadata pipeline.
+3. **Derive, don't curate.** With ~500 rules, anything hand-maintained will rot. Page tree, schemas, examples, OG cards, and llms.txt entries must all be generated from the same metadata pipeline.
 4. **Bet on the strategic moat.** Agent-native docs (llms.txt + RuleSpec JSON + future MCP server) are where we win the IDE-agent integration war. Invest disproportionately there.
 5. **Don't ship weight for absent content.** No KaTeX without equations, no Storybook without components, no i18n without translation budget. YAGNI applies to docs infrastructure.
 
@@ -184,7 +184,7 @@ When a docs-related change is proposed, check it against the principles AND the 
 
 **Common failure modes.** (1) Shipping a locale switcher exposing 30%-translated pages — worse than English-only. (2) Paying for translation once, never refreshing — docs describing v1 APIs while English describes v3.
 
-**Our verdict — use-as-is, English-only (priority: none).** Stay English-only. Readers are developers and AI agents; both consume English. Translating 272 rules × N locales × release cadence is a permanent staffing commitment with near-zero strategic upside (rule IDs, AST node names, ESLint config keys are untranslatable). The lingua franca of static analysis is English. **Next step:** keep the `i18n.ts` scaffold as a documented escape hatch; revisit only when a single plugin crosses 10M weekly downloads with measurable non-English traffic.
+**Our verdict — use-as-is, English-only (priority: none).** Stay English-only. Readers are developers and AI agents; both consume English. Translating ~500 rules × N locales × release cadence is a permanent staffing commitment with near-zero strategic upside (rule IDs, AST node names, ESLint config keys are untranslatable). The lingua franca of static analysis is English. **Next step:** keep the `i18n.ts` scaffold as a documented escape hatch; revisit only when a single plugin crosses 10M weekly downloads with measurable non-English traffic.
 
 ---
 
