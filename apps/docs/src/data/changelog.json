@@ -5,6 +5,36 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "oxlint-plugin-postgresql-security",
+      "short": "oxlint-plugin-postgresql-security",
+      "version": "2.7.1",
+      "date": "2026-11-04T18:06:06Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-postgresql-security@2.7.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "short": "eslint-plugin-postgresql-security",
+      "version": "2.7.1",
+      "date": "2026-11-04T18:04:03Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "false negatives found by the Quint fidelity models.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "oxlint-plugin-mcp-sdk-security",
       "short": "oxlint-plugin-mcp-sdk-security",
       "version": "1.1.1",
@@ -21602,21 +21632,6 @@
     {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
-      "version": "2.7.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "false negatives found by the Quint fidelity models.",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-postgresql-security",
-      "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
       "date": null,
       "isApp": false,
@@ -21755,21 +21770,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-postgresql-security",
-      "short": "oxlint-plugin-postgresql-security",
-      "version": "2.7.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-postgresql-security@2.7.1`",
           "pr": null
         }
       ]
