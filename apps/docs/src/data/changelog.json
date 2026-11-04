@@ -1,7 +1,7 @@
 {
-  "releaseCount": 920,
+  "releaseCount": 922,
   "packageCount": 66,
-  "entryCount": 2514,
+  "entryCount": 2516,
   "oldestYear": 2024,
   "releases": [
     {
@@ -21630,6 +21630,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-lambda-security",
+      "short": "eslint-plugin-lambda-security",
+      "version": "2.2.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "rule fixes found by the Quint fidelity models.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
@@ -21770,6 +21785,21 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-lambda-security",
+      "short": "oxlint-plugin-lambda-security",
+      "version": "2.2.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-lambda-security@2.2.2`",
           "pr": null
         }
       ]
