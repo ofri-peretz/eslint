@@ -86,6 +86,9 @@ jobs:
           deps: 'lean'
           turbo-cache: 'false'
       - run: npm run lint:md
+      # The root README's numbers and package table are generated; a stale
+      # count used to reach the README unnoticed (#1373).
+      - run: npm run sync:root-readme:check
 
   changelog:
     name: CHANGELOG Check

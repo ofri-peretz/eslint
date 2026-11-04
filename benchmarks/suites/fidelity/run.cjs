@@ -168,16 +168,20 @@ for (const [short, model] of selected) {
   if (r.divergences.size || !complete) failed++;
 }
 
-// Completeness: only on a full run, so a filtered run stays usable.
+// Completeness: for every plugin run whole (no filter, or named bare), so a
+// single-model run stays usable and each CI matrix job still checks its plugin.
 const missing = [];
-if (!filters.length) {
+const whole = filters.length
+  ? PLUGINS.filter((short) => filters.includes(short))
+  : PLUGINS;
+if (whole.length) {
   const modelled = new Set(
     all.map(
       ([short, m]) =>
         `${short}/${require(path.join(MODELS_DIR, short, `${m}.cjs`)).rule}`,
     ),
   );
-  for (const short of PLUGINS) {
+  for (const short of whole) {
     for (const name of Object.keys(loadPlugin(short).rules)) {
       if (!modelled.has(`${short}/${name}`)) missing.push(`${short}/${name}`);
     }

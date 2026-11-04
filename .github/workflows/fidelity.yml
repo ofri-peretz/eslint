@@ -1,0 +1,99 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Model Fidelity
+
+# Every rule in the modelled plugins has a Quint model of what it SHOULD
+# decide (benchmarks/suites/fidelity/). This samples each model and lints every
+# sampled input with the built rule; one disagreement fails the run, and so does
+# a rule with no model. See benchmarks/suites/fidelity/AUTHORING.md.
+#
+# Until this workflow nothing ran it, so a rule could drift from its model and
+# only a manual `npm run fidelity` would notice. A full local run is ~33 min,
+# so it is a matrix, one job per plugin, and PRs run only the plugins they touch.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'packages/eslint-plugin-*/src/**'
+      - 'packages/eslint-devkit/src/**'
+      - 'benchmarks/suites/fidelity/**'
+      - '.github/workflows/fidelity.yml'
+  schedule:
+    - cron: '17 3 * * 0' # 03:17 UTC Sunday
+  workflow_dispatch:
+
+concurrency:
+  group: fidelity-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: Pick plugins
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      plugins: ${{ steps.pick.outputs.plugins }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: pick
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          all=$(ls benchmarks/suites/fidelity/models)
+          # A devkit, runner or workflow change can move any rule: run them all.
+          if [ "$EVENT" != pull_request ] ||
+             git diff --name-only "origin/$BASE_REF"...HEAD |
+               grep -qE '^(packages/eslint-devkit/|benchmarks/suites/fidelity/run\.cjs|\.github/workflows/fidelity\.yml)'; then
+            picked=$all
+          else
+            changed=$(git diff --name-only "origin/$BASE_REF"...HEAD)
+            picked=$(for p in $all; do
+              echo "$changed" | grep -qE "^(packages/eslint-plugin-$p/|benchmarks/suites/fidelity/models/$p/)" && echo "$p"
+            done; true)
+          fi
+          echo "plugins=$(printf '%s\n' $picked | jq -Rnc '[inputs | select(length > 0)]')" >> "$GITHUB_OUTPUT"
+
+  fidelity:
+    name: Fidelity (${{ matrix.plugin }})
+    needs: plan
+    if: needs.plan.outputs.plugins != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      # Required so the failure step can open / update the tracking issue.
+      issues: write
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin: ${{ fromJSON(needs.plan.outputs.plugins) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+        with:
+          deps: lean
+
+      - run: npx turbo run build --filter="eslint-plugin-${{ matrix.plugin }}"
+
+      - run: npm run fidelity -- "${{ matrix.plugin }}"
+
+      # A red cron notifies nobody by default. See .github/actions/report-failure.
+      - name: 🚨 Report a scheduled failure
+        if: failure() && github.event_name == 'schedule'
+        uses: ./.github/actions/report-failure
+        with:
+          title: 'Weekly model fidelity is failing'
+          body: 'A rule disagreed with its Quint model on a sampled input, a model stopped covering its domain, or a rule has no model. The job log prints the input and both verdicts.'
+          token: ${{ github.token }}
