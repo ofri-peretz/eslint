@@ -40,6 +40,8 @@ const PLUGINS = [
   'browser-security',
   'node-security',
   'vercel-ai-security',
+  'jwt-security',
+  'mongodb-security',
   'express-security',
 ];
 

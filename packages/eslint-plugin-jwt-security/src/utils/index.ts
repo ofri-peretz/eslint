@@ -526,12 +526,69 @@ export function isJwtLibraryCall(
     }
   }
 
-  // Check direct calls: jwtVerify(), jwtDecode()
+  // Check direct calls: jwtVerify(), jwtDecode(), and a renamed import of
+  // one, `import { verify as checkToken } from 'jsonwebtoken'`.
   if (node.callee.type === 'Identifier') {
-    return targetMethods.has(node.callee.name);
+    if (targetMethods.has(node.callee.name)) return true;
+    const imported = jwtImportedNameOf(node, node.callee.name);
+    return imported !== null && targetMethods.has(imported);
   }
 
   return false;
+}
+
+/**
+ * The export name a local binding was imported under from a JWT library, or
+ * null when it was not.
+ *
+ * Matching a bare callee by its own name misses every alias:
+ * `import { sign as issueToken } from 'jsonwebtoken'` and
+ * `const { verify: checkToken } = require('jsonwebtoken')` call the very same
+ * functions, and every rule in this plugin was silent on them.
+ */
+function jwtImportedNameOf(
+  node: TSESTree.CallExpression,
+  name: string,
+): string | null {
+  // Reached only after `fileImportsJwtLibrary` proved the root is a Program.
+  let root = node as TSESTree.Node;
+  while (root.parent) root = root.parent;
+
+  for (const stmt of (root as TSESTree.Program).body) {
+    if (stmt.type === AST_NODE_TYPES.ImportDeclaration) {
+      if (!JWT_LIBRARY_ROOTS.has(packageRootOf(String(stmt.source.value))))
+        continue;
+      for (const spec of stmt.specifiers) {
+        if (
+          spec.type === AST_NODE_TYPES.ImportSpecifier &&
+          spec.local.name === name
+        ) {
+          return spec.imported.type === AST_NODE_TYPES.Identifier
+            ? spec.imported.name
+            : String(spec.imported.value);
+        }
+      }
+    }
+    if (stmt.type === AST_NODE_TYPES.VariableDeclaration) {
+      for (const declarator of stmt.declarations) {
+        if (declarator.id.type !== AST_NODE_TYPES.ObjectPattern) continue;
+        const source = requireSpecifierOf(declarator.init);
+        if (source === null || !JWT_LIBRARY_ROOTS.has(packageRootOf(source)))
+          continue;
+        for (const prop of declarator.id.properties) {
+          if (
+            prop.type === AST_NODE_TYPES.Property &&
+            prop.value.type === AST_NODE_TYPES.Identifier &&
+            prop.value.name === name
+          ) {
+            // `{ verify: c }`, `{ 'verify': c }`, `{ ['verify']: c }`.
+            return objectKeyName(prop);
+          }
+        }
+      }
+    }
+  }
+  return null;
 }
 
 /**
@@ -1439,6 +1496,15 @@ export function isPublicKeySource(
   const value = resolveTerminal(node, sourceCode);
   const text = staticString(value);
   if (text !== null) return PUBLIC_PEM.test(text);
+  // `new X509Certificate(pem).publicKey`: the certificate is not a key, its
+  // `publicKey` KeyObject is what a verifier is handed. Without following it
+  // the X509Certificate evidence never applied to code that could run.
+  if (
+    value.type === AST_NODE_TYPES.MemberExpression &&
+    propertyName(value) === 'publicKey'
+  ) {
+    return isPublicKeySource(value.object, sourceCode);
+  }
   if (
     value.type !== AST_NODE_TYPES.CallExpression &&
     value.type !== AST_NODE_TYPES.NewExpression

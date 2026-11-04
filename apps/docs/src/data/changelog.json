@@ -1,9 +1,194 @@
 {
-  "releaseCount": 899,
+  "releaseCount": 912,
   "packageCount": 66,
-  "entryCount": 2489,
+  "entryCount": 2506,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "oxlint-plugin-jwt-security",
+      "short": "oxlint-plugin-jwt-security",
+      "version": "3.6.1",
+      "date": "2026-11-04T14:26:08Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-jwt-security@3.6.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
+      "version": "3.6.1",
+      "date": "2026-11-04T14:23:49Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Fix three false negatives found by the Quint fidelity models:",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "2.2.3",
+      "date": "2026-11-04T12:03:48+02:00",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "docs",
+          "title": "README rule counts match the shipped rules (browser-security 46, node-security 43, lambda-security 14). Republishes so the npm page stops showing the old numbers. No rule or config changes.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-secure-coding",
+      "short": "oxlint-plugin-secure-coding",
+      "version": "5.6.3",
+      "date": "2026-11-04T10:12:46Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@5.6.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-lambda-security",
+      "short": "oxlint-plugin-lambda-security",
+      "version": "2.2.1",
+      "date": "2026-11-04T10:12:19Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-lambda-security@2.2.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-browser-security",
+      "short": "oxlint-plugin-browser-security",
+      "version": "2.2.3",
+      "date": "2026-11-04T10:12:14Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-browser-security@2.2.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-node-security",
+      "short": "oxlint-plugin-node-security",
+      "version": "5.8.4",
+      "date": "2026-11-04T10:12:12Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-node-security@5.8.4`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.6.3",
+      "date": "2026-11-04T10:11:09Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "`recheck` ^4.6.2 is an optional peer dependency; when installed, the ReDoS regex rules use it to retract findings",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.21.2",
+      "date": "2026-11-04T10:10:43Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "cross-file value following parses with ESLint's own espree when the linting parser has no `parseForESLint`, instead of whichever `@typescript-eslint/parser` happens to be installed. Results no longer depend on what else is in `node_modules`; a TypeScript sibling is still read by the configured parser.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-lambda-security",
+      "short": "eslint-plugin-lambda-security",
+      "version": "2.2.1",
+      "date": "2026-11-04T10:10:43Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "docs",
+          "title": "README rule counts match the shipped rules (browser-security 46, node-security 43, lambda-security 14). Republishes so the npm page stops showing the old numbers. No rule or config changes.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.8.4",
+      "date": "2026-11-04T10:10:42Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "docs",
+          "title": "README rule counts match the shipped rules (browser-security 46, node-security 43, lambda-security 14). Republishes so the npm page stops showing the old numbers. No rule or config changes.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.2`",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "oxlint-plugin-nestjs-security",
       "short": "oxlint-plugin-nestjs-security",
@@ -21295,6 +21480,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-mongodb-security",
+      "short": "eslint-plugin-mongodb-security",
+      "version": "9.2.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Fix false negatives and false positives found by the Quint fidelity models:",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
@@ -21435,6 +21635,21 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-mongodb-security",
+      "short": "oxlint-plugin-mongodb-security",
+      "version": "9.2.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-mongodb-security@9.2.1`",
           "pr": null
         }
       ]

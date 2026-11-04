@@ -47,6 +47,10 @@ mongoose.set('debug', true);
 // The options-object form sets the same option
 mongoose.set({ debug: true, strictQuery: true });
 
+// Mongoose's named export is the same setter
+import { set } from 'mongoose';
+set('debug', true);
+
 // Debug callback in production
 mongoose.set('debug', (collectionName, method, query) => {
   console.log(collectionName, method, query);

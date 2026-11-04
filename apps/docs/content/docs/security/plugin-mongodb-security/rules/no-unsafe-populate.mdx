@@ -52,6 +52,13 @@ User.findById(id).populate({
 // A path built from user input
 User.findById(id).populate(`${req.query.relation}`);
 User.findById(id).populate([req.query.relation, 'author']);
+
+// The fields read from the related document, or a nested populate
+User.findById(id).populate({ path: 'author', select: req.query.fields });
+User.findById(id).populate({
+  path: 'author',
+  populate: { path: req.query.nested },
+});
 ```
 
 ### ✅ Correct
@@ -73,8 +80,8 @@ User.findById(id).populate({ path: 'author', select: 'name' });
 ### Spread Operator
 
 ```typescript
-// ❌ NOT DETECTED
-User.findById(id).populate(req.body.populateOptions);
+// ❌ NOT DETECTED - spread into the options object
+User.findById(id).populate({ ...req.body.populateOptions });
 ```
 
 ## When Not To Use It

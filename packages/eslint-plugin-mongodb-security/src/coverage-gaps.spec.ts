@@ -218,9 +218,11 @@ ruleTester.run(
       `User.find({}).select('-password');`,
     ]),
     invalid: xmo([
-      // Second argument is not an object — projection cannot be proven safe.
+      // Second argument is neither a projection string nor an object — the
+      // projection cannot be proven safe. (A string is Mongoose's projection:
+      // `find({}, 'name')` returns only `name`.)
       {
-        code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, "name");`,
+        code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, fields);`,
         errors: [{ messageId: 'selectSensitiveFields' }],
       },
       // Options object without a projection property.

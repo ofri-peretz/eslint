@@ -31,6 +31,9 @@ This rule enforces explicit algorithm specification in `verify()` calls. Without
 jwt.verify(token, secret);
 jwt.verify(token, secret, {});
 jwt.verify(token, secret, { complete: true });
+
+// `algorithm` (singular) is a sign option: verify ignores it and pins nothing
+jwt.verify(token, secret, { algorithm: 'RS256' });
 ```
 
 ### ✅ Correct
@@ -39,7 +42,6 @@ jwt.verify(token, secret, { complete: true });
 // Explicit algorithm whitelist
 jwt.verify(token, secret, { algorithms: ['RS256'] });
 jwt.verify(token, secret, { algorithms: ['RS256', 'ES256'] });
-jwt.verify(token, secret, { algorithm: 'RS256' });
 ```
 
 ## Options

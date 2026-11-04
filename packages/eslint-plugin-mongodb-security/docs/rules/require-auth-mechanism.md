@@ -95,7 +95,8 @@ A `.connect()` is not evidence of MongoDB. Redis clients, TypeORM query
 runners and pino transports all have one, and naming another database's
 connection "MongoDB" is worse than staying silent. This rule only fires when
 the receiver is bound to a `mongodb`/`mongoose` import, is a
-`new MongoClient(...)`, or is named `mongo*`.
+`new MongoClient(...)`, or is named `mongo*` — or, with no receiver, when the
+function is Mongoose's own named export (`import { connect } from 'mongoose'`).
 
 ```typescript
 // ✅ Not reported — Redis

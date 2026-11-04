@@ -19,6 +19,7 @@ import {
   objectKeyName,
   propertyName,
   resolveModuleBinding,
+  isModuleBinding,
 } from '@interlace/eslint-devkit';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
@@ -179,14 +180,16 @@ export const noDebugModeProduction = createRule<RuleOptions, MessageIds>({
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        if (
-          node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          propertyName(node.callee) !== 'set' ||
-          createdByExpress(
-            node.callee.object,
-            context.sourceCode.getScope(node),
-          )
-        ) {
+        const scope = context.sourceCode.getScope(node);
+        // `mongoose.set(...)` on any receiver Express did not make, or the
+        // bare `set(...)` Mongoose exports by name (`import { set } from
+        // 'mongoose'`), which has no receiver to read.
+        const isSet =
+          node.callee.type === AST_NODE_TYPES.MemberExpression
+            ? propertyName(node.callee) === 'set' &&
+              !createdByExpress(node.callee.object, scope)
+            : isModuleBinding(node.callee, scope, 'mongoose', ['set']);
+        if (!isSet) {
           return;
         }
         const [firstArg, secondArg] = node.arguments;

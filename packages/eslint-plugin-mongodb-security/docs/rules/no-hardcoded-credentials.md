@@ -5,14 +5,14 @@ tags: ['security', 'mongodb']
 category: security
 severity: critical
 cwe: CWE-798
-owasp: "A07:2021"
+owasp: 'A07:2021'
 autofix: false
 ---
 
 > **Keywords:** CWE-798, hardcoded credentials, MongoDB, authentication, security
 
-
 <!-- @rule-summary -->
+
 Detects hardcoded MongoDB authentication credentials in connection options.
 <!-- @/rule-summary -->
 
@@ -27,7 +27,7 @@ Detects hardcoded MongoDB authentication credentials in connection options.
 | **CWE Reference** | CWE-798 (Hardcoded Credentials)         |
 | **OWASP**         | A07:2021 - Identification/Auth Failures |
 | **Severity**      | High (CVSS: 7.5)                        |
-| **Category**   | Security |
+| **Category**      | Security                                |
 
 ## Error Message Format
 
@@ -40,17 +40,17 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Hardcoded Credentials detected` |
-| **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                       |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Hardcoded Credentials detected`                                                                                                                                                                                                                              |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]`                                                                                                                                                                                                        |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                          |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/)                                                                                                                                                                                                   |
 
 ## Rule Details
 
-This rule detects when MongoDB connection options contain hardcoded `user`, `pass`, `password`, or `authSource` values.
+This rule detects when MongoDB connection options contain hardcoded `user`, `username`, `pass`, `password`, or `auth` values. `authSource` names the database that holds the users, not a secret, so a literal one is not reported.
 
 ### ❌ Incorrect
 
@@ -113,6 +113,6 @@ mongoose.connect(uri, { pass: password });
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| Option         | Type      | Default | Description                                     |
+| -------------- | --------- | ------- | ----------------------------------------------- |
+| `allowInTests` | `boolean` | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files |
