@@ -218,9 +218,25 @@ export function urlDisablesTls(
   value: string,
   schemes: readonly string[],
 ): boolean {
-  if (!schemes.some((scheme) => value.startsWith(`${scheme}://`))) return false;
+  return urlTlsFinding(value, schemes) === 'tlsDisabled';
+}
+
+/**
+ * What a connection URL turns off: TLS itself (`sslmode=disable`,
+ * `ssl=false`), or only the certificate check (`sslmode=no-verify`, which
+ * pg-connection-string maps to `ssl: { rejectUnauthorized: false }`).
+ */
+export function urlTlsFinding(
+  value: string,
+  schemes: readonly string[],
+): RequireTlsMessageIds | null {
+  if (!schemes.some((scheme) => value.startsWith(`${scheme}://`))) return null;
   const query = value.split('#')[0]!;
-  return /[?&](?:sslmode=disable|ssl=(?:false|0))(?:&|$)/i.test(query);
+  if (/[?&](?:sslmode=disable|ssl=(?:false|0))(?:&|$)/i.test(query))
+    return 'tlsDisabled';
+  if (/[?&]sslmode=no-verify(?:&|$)/i.test(query))
+    return 'certificateValidationDisabled';
+  return null;
 }
 
 /** Is `inner` inside (or the same node as) `outer`? */
@@ -456,14 +472,52 @@ export function createRequireTlsRule(
         Literal(node: TSESTree.Literal) {
           if (!ownsFile) return;
           if (typeof node.value !== 'string') return;
-          if (!urlDisablesTls(node.value, urlSchemes)) return;
+          const finding = urlTlsFinding(node.value, urlSchemes);
+          if (finding === null) return;
           // Same discipline as the object path: a connection URL only counts
           // where a driver would actually read it. `inConnectionPosition` is
           // shared with no-hardcoded-credentials, so the two rules agree on
           // what "a connection string" means.
           if (!inConnectionPosition(node, connectionKeys, isDriverCallee))
             return;
-          context.report({ node, messageId: 'tlsDisabled' });
+          // `new Pool({ connectionString: '…' })` from another package in
+          // this file: that package's URL, not this driver's.
+          // In connection position, so the literal has a parent and that a
+          // parent of its own.
+          const owner = (node.parent as TSESTree.Node).parent as TSESTree.Node;
+          if (
+            owner.type === AST_NODE_TYPES.ObjectExpression &&
+            passedToForeign(owner, originOf, env)
+          ) {
+            return;
+          }
+          report(node, finding);
+        },
+
+        // `const url = '…?sslmode=disable'; new Sequelize(url)` — a URL bound
+        // earlier and handed to the driver. An inline literal argument is the
+        // Literal visitor's.
+        'CallExpression, NewExpression'(
+          node: TSESTree.CallExpression | TSESTree.NewExpression,
+        ) {
+          if (!ownsFile || !isDriverCallee(node.callee)) return;
+          for (const argument of node.arguments) {
+            if (argument.type === AST_NODE_TYPES.Literal) continue;
+            for (const value of possibleValues(valueAt(argument, env))) {
+              const literal = value.node;
+              if (
+                literal.type !== AST_NODE_TYPES.Literal ||
+                typeof literal.value !== 'string'
+              ) {
+                continue;
+              }
+              const finding = urlTlsFinding(literal.value, urlSchemes);
+              if (finding !== null) {
+                report(argument, finding);
+                break;
+              }
+            }
+          }
         },
       };
     },

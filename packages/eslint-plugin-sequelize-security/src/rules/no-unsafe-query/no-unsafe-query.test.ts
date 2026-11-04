@@ -196,3 +196,28 @@ describe('no-unsafe-query — fp/fn review 2026-10', () => {
     ],
   });
 });
+
+describe('fidelity 2026-11', () => {
+  ruleTester.run('fidelity 2026-11', noUnsafeQuery, {
+    valid: [
+      {
+        // @found fidelity model sequelize-security/no_unsafe_query, LiteralNamed
+        name: 'a named `literal` import over a constant fragment',
+        code: "import { Sequelize, literal } from 'sequelize';\nconst sequelize = new Sequelize('sqlite::memory:');\nconst User = sequelize.define('User', {});\nexport const h = () => User.findAll({ where: literal('active = true') });",
+      },
+      {
+        // @found fidelity model sequelize-security/no_unsafe_query, LiteralNamed
+        name: 'a local `literal` helper in a Sequelize file is not the fragment sink',
+        code: "import { Sequelize } from 'sequelize';\nconst literal = (s: string) => s.trim();\nexport const h = (req: any) => literal(`id = ${req.query.id}`);",
+      },
+    ],
+    invalid: [
+      {
+        // @found fidelity model sequelize-security/no_unsafe_query, LiteralNamed
+        name: 'FN: request data in a named `literal` import',
+        code: "import { Sequelize, literal } from 'sequelize';\nconst sequelize = new Sequelize('sqlite::memory:');\nconst User = sequelize.define('User', {});\nexport const h = (req: any) => User.findAll({ where: literal(`id = ${req.query.id}`) });",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+    ],
+  });
+});

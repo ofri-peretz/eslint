@@ -132,3 +132,23 @@ describe('no-hardcoded-credentials — fp/fn review 2026-10', () => {
     ],
   });
 });
+
+describe('fidelity 2026-11', () => {
+  ruleTester.run('fidelity 2026-11', noHardcodedCredentials, {
+    valid: [
+      {
+        // @found fidelity model sequelize-security/no_hardcoded_credentials, CliConfig
+        name: 'a sequelize-cli `url` read from the environment',
+        code: "module.exports = {\n  production: { dialect: 'postgres', url: process.env.DATABASE_URL },\n};",
+      },
+    ],
+    invalid: [
+      {
+        // @found fidelity model sequelize-security/no_hardcoded_credentials, CliConfig|UrlCreds
+        name: 'FN: a sequelize-cli config whose `url` carries the password',
+        code: "module.exports = {\n  development: { dialect: 'postgres', url: 'postgres://app:s3cret@db.internal:5432/app' },\n};",
+        errors: [{ messageId: 'credentialsInUrl' }],
+      },
+    ],
+  });
+});

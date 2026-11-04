@@ -79,6 +79,15 @@ const SEQ = "import { Sequelize } from 'sequelize';\n";
 describe('createRequireTlsRule', () => {
   ruleTester.run('require-tls (url driver)', urlDriver, {
     valid: [
+      {
+        // @found fidelity model knex-security/require_tls, OtherLib|UrlDisable
+        name: "another library's connection URL in a driver file",
+        code: `${IMPORT}import { Pool } from 'pg';\nnew Pool({ connectionString: 'mysql://h/db?ssl=false' });`,
+      },
+      {
+        name: 'driver arguments that hold no TLS-disabling URL',
+        code: `${IMPORT}const n = 3;\nconst url = 'mysql://h/db';\nmysql.createConnection(n, url, opts);`,
+      },
       // No driver import — the file is none of this rule's business, which is
       // the line between it and node-security.
       { code: "const config = { host: 'db', ssl: false };" },
@@ -127,6 +136,18 @@ describe('createRequireTlsRule', () => {
       },
     ],
     invalid: [
+      {
+        // @found fidelity model sequelize-security/require_tls, ConfigVar|UrlDisable
+        name: 'a URL bound to a constant before it reaches the driver',
+        code: `${IMPORT}const url = 'mysql://h/db?ssl=false';\nmysql.createConnection(url);`,
+        errors: [{ messageId: 'tlsDisabled' }],
+      },
+      {
+        // @found fidelity model knex-security/require_tls, UrlNoVerify
+        name: '`sslmode=no-verify` turns off only the certificate check',
+        code: `${IMPORT}mysql.createConnection('mysql://h/db?sslmode=no-verify');`,
+        errors: [{ messageId: 'certificateValidationDisabled' }],
+      },
       {
         code: `${IMPORT}const config = { host: 'db', ssl: false };`,
         errors: [{ messageId: 'tlsDisabled' }],

@@ -202,3 +202,23 @@ describe('no-unscoped-mutation — fp/fn review 2026-10', () => {
     ],
   });
 });
+
+describe('fidelity 2026-11', () => {
+  ruleTester.run('fidelity 2026-11', noUnscopedMutation, {
+    valid: [
+      {
+        // @found fidelity model knex-security/no_unscoped_mutation, Bracket
+        name: "the quoted `['del']` spelling after a quoted `['where']`",
+        code: "import knex from 'knex';\nconst db = knex({ client: 'pg' });\nexport const h = (id: string) => db('users')['where']({ id })['del']();",
+      },
+    ],
+    invalid: [
+      {
+        // @found fidelity model knex-security/no_unscoped_mutation, Bracket
+        name: "FN: the quoted `['del']` spelling",
+        code: "import knex from 'knex';\nconst db = knex({ client: 'pg' });\nexport const h = () => db('users')['del']();",
+        errors: [{ messageId: 'unscopedMutation' }],
+      },
+    ],
+  });
+});

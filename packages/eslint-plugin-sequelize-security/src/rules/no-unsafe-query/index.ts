@@ -40,6 +40,8 @@ export const noUnsafeQuery = createSqlInjectionRule({
   // used — `where`, `attributes`, `order` — so it is a FRAGMENT sink, never
   // keyword-gated (`literal(\`${sortColumn}\`)` has no SQL keyword of its own).
   fragmentMethods: ['literal'],
+  // `import { literal } from 'sequelize'` — the same fragment, called bare.
+  fragmentFunctions: ['literal'],
   // `sequelize.escape(v)` returns a quoted SQL literal.
   escapers: ['escape'],
   // `query` is also a GraphQL / HTTP client method. The statement gate applies

@@ -147,3 +147,17 @@ describe('no-unsafe-query — fp/fn review 2026-10', () => {
     ],
   });
 });
+
+describe('fidelity 2026-11', () => {
+  ruleTester.run('fidelity 2026-11', noUnsafeQuery, {
+    valid: [],
+    invalid: [
+      {
+        // @found fidelity model prisma-security/no_unsafe_query, TxAny
+        name: 'FN: a transaction handle annotated `any` is still the Prisma client',
+        code: "import { PrismaClient } from '@prisma/client';\nconst prisma = new PrismaClient();\nexport const h = (req: any) => prisma.$transaction(async (tx: any) => tx.$queryRawUnsafe(`SELECT id FROM users WHERE id = ${req.query.id}`));",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+    ],
+  });
+});
