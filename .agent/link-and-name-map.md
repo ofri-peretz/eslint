@@ -47,7 +47,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-node-security` | 5.8.4 | `node-security/` | — | `plugin-node-security` | security | `node` | ✅ | ✅ | ✅ |
 | `eslint-plugin-openai-security` | 1.1.0 | `openai-security/` | — | `plugin-openai-security` | security | `openai` | ✅ | ✅ | ✅ |
 | `eslint-plugin-operability` | 4.2.0 | `operability/` | — | `plugin-operability` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-postgresql-security` | 2.7.0 | `postgresql-security/` | `pg/` | `plugin-postgresql-security` | security | `postgresql` | ✅ | ✅ | ✅ |
+| `eslint-plugin-postgresql-security` | 2.7.1 | `postgresql-security/` | `pg/` | `plugin-postgresql-security` | security | `postgresql` | ✅ | ✅ | ✅ |
 | `eslint-plugin-prisma-security` | 1.1.0 | `prisma-security/` | — | `plugin-prisma-security` | security | `prisma` | ✅ | ✅ | ✅ |
 | `eslint-plugin-react-a11y` | 2.6.0 | `react-a11y/` | — | `plugin-react-a11y` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-react-features` | 1.8.0 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
