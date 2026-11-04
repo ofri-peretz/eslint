@@ -1,11 +1,11 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Mutation Testing
 
-# Stryker over the rule sources of every plugin opted in to
+# oxmutate over the rule sources of every plugin opted in to
 # .agent/mutation-baseline.json, graded per rule against that baseline.
 #
 # WHY. Coverage says a fixture executed a line; it does not say any fixture
-# would notice if the line were wrong. Stryker changes the line — `===` to
+# would notice if the line were wrong. oxmutate changes the line — `===` to
 # `!==`, a guard to `true`, a detection list to `[]` — and asks whether a test
 # goes red. A survivor in a guard or exclusion is a missing VALID case (a
 # false positive could ship unnoticed); a survivor in detection logic is a
@@ -95,8 +95,8 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          if [ -f benchmark-results/stryker/summary.md ]; then
-            cat benchmark-results/stryker/summary.md >> "$GITHUB_STEP_SUMMARY"
+          if [ -f benchmark-results/mutation/summary.md ]; then
+            cat benchmark-results/mutation/summary.md >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Upload HTML report
@@ -105,9 +105,9 @@ jobs:
         with:
           name: mutation-report
           path: |
-            benchmark-results/stryker/**/index.html
-            benchmark-results/stryker/**/mutation.json
-            benchmark-results/stryker/summary.md
+            benchmark-results/mutation/**/index.html
+            benchmark-results/mutation/**/mutation.json
+            benchmark-results/mutation/summary.md
           if-no-files-found: ignore
           retention-days: 14
 
@@ -117,5 +117,5 @@ jobs:
         uses: ./.github/actions/report-failure
         with:
           title: 'Weekly mutation testing is failing'
-          body: 'The weekly Stryker run failed: a rule in an opted-in plugin lost mutation score (a fixture stopped noticing a change to the rule), or Stryker itself broke. The step summary names the rule.'
+          body: 'The weekly mutation run failed: a rule in an opted-in plugin lost mutation score (a fixture stopped noticing a change to the rule), or oxmutate itself broke. The step summary names the rule.'
           token: ${{ github.token }}

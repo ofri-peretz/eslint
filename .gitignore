@@ -201,6 +201,5 @@ benchmarks/CANDIDATES.md
 # the ledger for everyone. Ignored so `git add -A` cannot pick it up.
 packages/*/src/tests/__coherence-probe.test.ts
 
-# Stryker HTML/JSON reports (scripts/mutation.mts) — CI uploads them as artifacts.
-benchmark-results/stryker/
-.stryker-tmp/
+# Mutation HTML/JSON reports (scripts/mutation.mts) — CI uploads them as artifacts.
+benchmark-results/mutation/

@@ -1,8 +1,8 @@
-# Mutation testing (Stryker)
+# Mutation testing (oxmutate)
 
 Coverage tells you a fixture _executed_ a line of a rule. It does not tell you
-any fixture would _notice_ if that line were wrong. [Stryker](https://stryker-mutator.io)
-answers the second question: it rewrites the rule source one small change at a
+any fixture would _notice_ if that line were wrong. [oxmutate](https://www.npmjs.com/package/oxmutate)
+(Stryker-compatible: same mutators, same JSON report) answers the second question: it rewrites the rule source one small change at a
 time (`===` → `!==`, a guard → `true`, a detection list → `[]`, a `return` →
 nothing), re-runs the tests that reach that line, and records whether anything
 went red.
@@ -24,7 +24,7 @@ npm run mutation -- --all                                       # every opted-in
 npm run mutation -- --plugin jwt-security --grade-only          # re-grade the last report
 ```
 
-The HTML report lands in `benchmark-results/stryker/<plugin>/index.html`
+The HTML report lands in `benchmark-results/mutation/<plugin>/index.html`
 (git-ignored). Open it; every survivor is shown inline on the source line with
 the exact replacement that lived.
 
@@ -35,17 +35,18 @@ for _static_ mutants (module-level code such as a pattern list): a new test
 that kills one is not noticed. Pass `--force` to re-test everything;
 `--update-baseline` always does, and CI has no cache. The incremental state
 also leaks into the report: a `--rules` or `--since` run's `mutation.json`
-still lists every other rule with its last cached result (Stryker carries
-out-of-scope mutants forward, even under `--force`). The grader ignores them
+may list other rules with their last cached result. The grader ignores them
 and grades only the rules the run mutated. A full pilot run of
 `postgresql-security` + `jwt-security` is ~30 minutes at concurrency 3.
 
-Everything is in one shared config, [`scripts/mutation/stryker.config.mjs`](../scripts/mutation/stryker.config.mjs).
+Everything is in one shared config, [`scripts/mutation/oxmutate.config.mjs`](../scripts/mutation/oxmutate.config.mjs).
+It sets `strykerCompat`, so the mutant set is Stryker 10's and scores banked under
+Stryker still compare.
 It mutates `src/rules/**` only — not tests, not the plugin's `utils/`. Two
 things are excluded on purpose, and both are documented in the config:
 
 - **String literals.** Mutating a message template proves nothing.
-- **A rule's `meta` block** ([`ignore-rule-meta.mjs`](../scripts/mutation/ignore-rule-meta.mjs)) —
+- **A rule's `meta` block** ([`ignore-rule-meta.ts`](../scripts/mutation/ignore-rule-meta.ts)) —
   docs URLs, CWE, schema. They cannot change a verdict. `defaultOptions` is
   _not_ excluded: a default the rule reads is behaviour.
 
@@ -200,10 +201,10 @@ belong in the weekly run and in `--since` PR runs, not in a local loop.
 
 ## How this differs from `check:lock-proofs`
 
-[`scripts/prove-locks.mts`](../scripts/prove-locks.mts) and Stryker both break
+[`scripts/prove-locks.mts`](../scripts/prove-locks.mts) and oxmutate both break
 code on purpose, in opposite directions:
 
-|           | `check:lock-proofs`                                    | Stryker                                      |
+|           | `check:lock-proofs`                                    | oxmutate                                     |
 | :-------- | :----------------------------------------------------- | :------------------------------------------- |
 | Mutations | one, hand-written in a lock's `@provenBy`              | every mutation the operators can generate    |
 | Subject   | a repo invariant (workflow, script, config)            | rule source under `src/rules/`               |

@@ -58,6 +58,7 @@
     "next-themes": "docs theme toggle (.interlace/components/chrome)",
     "oxc-resolver": "module resolution, oxc family",
     "oxlint": "host linter, and the bridge that turns off what oxlint covers",
+    "oxmutate": "mutation testing for the per-rule ratchet; our own engine (burgee)",
     "postcss": "docs and ui styling",
     "posthog-js": "docs analytics and impact data",
     "prettier": "commit and format gates",
@@ -163,8 +164,6 @@
     "yargs": "CLI frameworks eslint-plugin-cli-floor lints (peer range)"
   },
   "owned-soon": {
-    "@stryker-mutator/core": "replaced by oxmutate",
-    "@stryker-mutator/vitest-runner": "replaced by oxmutate",
     "@typescript-eslint/rule-tester": "phase 4: eslint RuleTester via devkit",
     "@typescript-eslint/types": "phase 1: devkit owns its AST and rule types",
     "@typescript-eslint/utils": "phase 1: devkit owns its AST and rule types",
