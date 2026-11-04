@@ -5,6 +5,301 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "oxlint-plugin-drizzle-security",
+      "short": "oxlint-plugin-drizzle-security",
+      "version": "1.1.1",
+      "date": "2026-11-04T20:01:49Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-drizzle-security@1.1.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-sequelize-security",
+      "short": "oxlint-plugin-sequelize-security",
+      "version": "1.1.1",
+      "date": "2026-11-04T20:00:47Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-sequelize-security@1.1.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-knex-security",
+      "short": "oxlint-plugin-knex-security",
+      "version": "1.1.1",
+      "date": "2026-11-04T19:59:25Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-knex-security@1.1.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-prisma-security",
+      "short": "oxlint-plugin-prisma-security",
+      "version": "1.1.1",
+      "date": "2026-11-04T19:58:47Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-prisma-security@1.1.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-typeorm-security",
+      "short": "oxlint-plugin-typeorm-security",
+      "version": "1.1.1",
+      "date": "2026-11-04T19:58:38Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-typeorm-security@1.1.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-mysql-security",
+      "short": "oxlint-plugin-mysql-security",
+      "version": "1.1.1",
+      "date": "2026-11-04T19:58:23Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-mysql-security@1.1.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-secure-coding",
+      "short": "oxlint-plugin-secure-coding",
+      "version": "5.6.4",
+      "date": "2026-11-04T19:58:23Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@5.6.4`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-sqlite-security",
+      "short": "oxlint-plugin-sqlite-security",
+      "version": "1.1.1",
+      "date": "2026-11-04T19:58:03Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-sqlite-security@1.1.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-typeorm-security",
+      "short": "eslint-plugin-typeorm-security",
+      "version": "1.1.1",
+      "date": "2026-11-04T19:57:06Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "two driver-tracing fixes found by the Quint fidelity models.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.6.4",
+      "date": "2026-11-04T19:57:05Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "two driver-tracing fixes found by the Quint fidelity models.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.21.3",
+      "date": "2026-11-04T19:56:59Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "two driver-tracing fixes found by the Quint fidelity models.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-sqlite-security",
+      "short": "eslint-plugin-sqlite-security",
+      "version": "1.1.1",
+      "date": "2026-11-04T19:56:51Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "two driver-tracing fixes found by the Quint fidelity models.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-prisma-security",
+      "short": "eslint-plugin-prisma-security",
+      "version": "1.1.1",
+      "date": "2026-11-04T19:56:48Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "two driver-tracing fixes found by the Quint fidelity models.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-knex-security",
+      "short": "eslint-plugin-knex-security",
+      "version": "1.1.1",
+      "date": "2026-11-04T19:56:34Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "two driver-tracing fixes found by the Quint fidelity models.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-sequelize-security",
+      "short": "eslint-plugin-sequelize-security",
+      "version": "1.1.1",
+      "date": "2026-11-04T19:56:19Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "two driver-tracing fixes found by the Quint fidelity models.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-drizzle-security",
+      "short": "eslint-plugin-drizzle-security",
+      "version": "1.1.1",
+      "date": "2026-11-04T19:56:13Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "two driver-tracing fixes found by the Quint fidelity models.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mysql-security",
+      "short": "eslint-plugin-mysql-security",
+      "version": "1.1.1",
+      "date": "2026-11-04T19:55:56Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "two driver-tracing fixes found by the Quint fidelity models.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "oxlint-plugin-lambda-security",
       "short": "oxlint-plugin-lambda-security",
       "version": "2.2.2",
@@ -21525,21 +21820,6 @@
       ]
     },
     {
-      "package": "@interlace/eslint-devkit",
-      "short": "eslint-devkit",
-      "version": "1.21.3",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "two driver-tracing fixes found by the Quint fidelity models.",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.2.0",
@@ -21550,26 +21830,6 @@
         {
           "kind": "feature",
           "title": "the formatter is published. `eslint -f @interlace/eslint-formatter` emits ~408 tokens where `stylish` emits ~104,483, at the same measured signal score.",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-drizzle-security",
-      "short": "eslint-plugin-drizzle-security",
-      "version": "1.1.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "two driver-tracing fixes found by the Quint fidelity models.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.3`",
           "pr": null
         }
       ]
@@ -21690,46 +21950,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-knex-security",
-      "short": "eslint-plugin-knex-security",
-      "version": "1.1.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "two driver-tracing fixes found by the Quint fidelity models.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-mysql-security",
-      "short": "eslint-plugin-mysql-security",
-      "version": "1.1.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "two driver-tracing fixes found by the Quint fidelity models.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.3`",
           "pr": null
         }
       ]
@@ -21860,86 +22080,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-prisma-security",
-      "short": "eslint-plugin-prisma-security",
-      "version": "1.1.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "two driver-tracing fixes found by the Quint fidelity models.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-secure-coding",
-      "short": "eslint-plugin-secure-coding",
-      "version": "5.6.4",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "two driver-tracing fixes found by the Quint fidelity models.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-sequelize-security",
-      "short": "eslint-plugin-sequelize-security",
-      "version": "1.1.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "two driver-tracing fixes found by the Quint fidelity models.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-sqlite-security",
-      "short": "eslint-plugin-sqlite-security",
-      "version": "1.1.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "two driver-tracing fixes found by the Quint fidelity models.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-supabase-security",
       "short": "eslint-plugin-supabase-security",
       "version": "1.0.0",
@@ -21955,146 +22095,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-typeorm-security",
-      "short": "eslint-plugin-typeorm-security",
-      "version": "1.1.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "two driver-tracing fixes found by the Quint fidelity models.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-drizzle-security",
-      "short": "oxlint-plugin-drizzle-security",
-      "version": "1.1.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-drizzle-security@1.1.1`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-knex-security",
-      "short": "oxlint-plugin-knex-security",
-      "version": "1.1.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-knex-security@1.1.1`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-mysql-security",
-      "short": "oxlint-plugin-mysql-security",
-      "version": "1.1.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-mysql-security@1.1.1`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-prisma-security",
-      "short": "oxlint-plugin-prisma-security",
-      "version": "1.1.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-prisma-security@1.1.1`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-secure-coding",
-      "short": "oxlint-plugin-secure-coding",
-      "version": "5.6.4",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@5.6.4`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-sequelize-security",
-      "short": "oxlint-plugin-sequelize-security",
-      "version": "1.1.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-sequelize-security@1.1.1`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-sqlite-security",
-      "short": "oxlint-plugin-sqlite-security",
-      "version": "1.1.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-sqlite-security@1.1.1`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-typeorm-security",
-      "short": "oxlint-plugin-typeorm-security",
-      "version": "1.1.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-typeorm-security@1.1.1`",
           "pr": null
         }
       ]
