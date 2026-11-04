@@ -43,6 +43,7 @@ const PLUGINS = [
   'jwt-security',
   'mongodb-security',
   'express-security',
+  'mcp-sdk-security',
 ];
 
 const loadPlugin = (short) => {

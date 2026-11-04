@@ -60,7 +60,11 @@ import {
   type Construction,
 } from '../../utils/instances';
 import { fileUsesMcpSdk, isMcpModule } from '../../utils/mcp-evidence';
-import { lookupVariable, resolveFunction } from '../../utils/tool-registration';
+import {
+  isFunctionNode,
+  lookupVariable,
+  resolveFunction,
+} from '../../utils/tool-registration';
 import {
   createFlow,
   flowOptionsFor,
@@ -238,6 +242,19 @@ export const noUntrustedToolMetadataInPrompt = createRule<[], MessageIds>({
           return carries(call.callee.object) ? ELEMENT : undefined;
         };
 
+        /** The built-in `JSON` (or `globalThis.JSON`), not a local of that name. */
+        const isGlobalJson = (node: TSESTree.Node): boolean => {
+          const [root, name] =
+            node.type === 'MemberExpression' && propertyName(node) === 'JSON'
+              ? [node.object, 'globalThis']
+              : [node, 'JSON'];
+          return (
+            root.type === 'Identifier' &&
+            root.name === name &&
+            !lookupVariable(name, sourceCode.getScope(root))?.defs.length
+          );
+        };
+
         const carries: (node: TSESTree.Node) => Taint | null = createFlow(
           sourceCode,
           callbackRoot,
@@ -268,11 +285,40 @@ export const noUntrustedToolMetadataInPrompt = createRule<[], MessageIds>({
                 element,
               ) as Taint | null;
             }
+            // `tools.length` is a count: it holds none of the listing's text.
+            // A `length` field of an object literal is left to the flow.
+            if (
+              node.type === 'MemberExpression' &&
+              propertyName(node) === 'length' &&
+              follow(node.object) !== null
+            )
+              return null;
             if (node.type !== 'CallExpression') return undefined;
             const callee = node.callee;
             if (callee.type !== 'MemberExpression') return undefined;
             const method = propertyName(callee);
             if (method === null) return undefined;
+            // `JSON.stringify(tools)` is every description the listing holds,
+            // also wrapped in an object or array literal. A replacer function
+            // decides what survives, and is not looked into.
+            if (method === 'stringify' && isGlobalJson(callee.object)) {
+              const [arg, replacer] = node.arguments;
+              if (arg === undefined || isFunctionNode(replacer)) return null;
+              const parts =
+                arg.type === 'ObjectExpression'
+                  ? arg.properties.map((p) =>
+                      p.type === 'Property' ? p.value : p.argument,
+                    )
+                  : arg.type === 'ArrayExpression'
+                    ? arg.elements
+                    : [arg];
+              for (const part of parts) {
+                const listed = part && follow(part);
+                if (listed)
+                  return { kind: 'value', text: listed.text, key: undefined };
+              }
+              return null;
+            }
             // The source: `client.listTools()` on the SDK's Client.
             if (LISTINGS.has(method)) {
               const client = builtBy(callee.object);
