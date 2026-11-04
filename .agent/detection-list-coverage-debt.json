@@ -96,17 +96,7 @@
   ],
   "packages/eslint-plugin-lambda-security/src/rules/no-exposed-debug-endpoints/index.ts#DEFAULT_DEBUG_PATHS": [
     "/_admin",
-    "/health",
-    "/test"
-  ],
-  "packages/eslint-plugin-lambda-security/src/rules/no-hardcoded-credentials-sdk/index.ts#CREDENTIAL_PROPERTY_NAMES": [
-    "awsAccessKeyId",
-    "awsSecretAccessKey"
-  ],
-  "packages/eslint-plugin-lambda-security/src/rules/no-missing-authorization-check/index.ts#AUTHORIZATION_CHECK_PATTERNS": [
-    "principalId",
-    "requestContext.identity",
-    "scope"
+    "/health"
   ],
   "packages/eslint-plugin-lambda-security/src/rules/no-unvalidated-event-body/index.ts#DANGEROUS_EVENT_PROPERTIES": [
     "headers",

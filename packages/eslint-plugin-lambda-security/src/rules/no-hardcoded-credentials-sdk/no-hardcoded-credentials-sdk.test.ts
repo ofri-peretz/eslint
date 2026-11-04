@@ -189,6 +189,14 @@ ruleTester.run('no-hardcoded-credentials-sdk', noHardcodedCredentialsSdk, {
   ]),
   invalid: lambda([
     {
+      name: 'the credentials key and the service read by string subscript',
+      code: `
+        const AWS = require('aws-sdk');
+        const db = new AWS['DynamoDB']['DocumentClient']({ ['credentials']: { accessKeyId: 'AKIAIOSFODNN7EXAMPLE' } });
+      `,
+      errors: [{ messageId: 'hardcodedCredentials' }],
+    },
+    {
       name: 'credential keys spelled as quoted and computed keys',
       code: `
         const client = new S3Client({ credentials: { 'accessKeyId': 'AKIAIOSFODNN7EXAMPLE', ['secretAccessKey']: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY', [dynamic]: 'x' } });

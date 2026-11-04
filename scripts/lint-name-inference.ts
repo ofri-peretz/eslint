@@ -330,6 +330,12 @@ const REGISTERED: RegistryEntry[] = [
 
   // --- The spelling IS the specification. Not a heuristic. ---
   {
+    file: 'eslint-plugin-lambda-security/src/rules/no-exposed-debug-endpoints/index.ts',
+    direction: 'report',
+    reason:
+      'The tested string is a URL path VALUE (an API Gateway route), not an identifier: `/debug/vars` is under `/debug` by the path grammar, segment-bounded so `/testimonials` is not `/test`. The local is merely named `path`.',
+  },
+  {
     file: 'eslint-plugin-react-a11y/src/rules/aria-props.ts',
     direction: 'report',
     reason:
@@ -506,12 +512,6 @@ const REGISTERED: RegistryEntry[] = [
       'Response-shape keys matched by regex. Closed set — exact membership is available.',
   },
   {
-    file: 'eslint-plugin-lambda-security/src/rules/no-exposed-error-details/index.ts',
-    direction: 'report',
-    reason:
-      'Error-ness matched by /error|err|e|exception/i — the `e` branch matches any identifier containing the letter. Needs the catch binding.',
-  },
-  {
     file: 'eslint-plugin-lambda-security/src/rules/no-secrets-in-env/index.ts',
     direction: 'report',
     reason:
@@ -592,13 +592,6 @@ const REGISTERED: RegistryEntry[] = [
     direction: 'report',
     reason:
       'node.id.name.toLowerCase().includes("credential") is the sole basis for the finding.',
-  },
-  {
-    file: 'eslint-plugin-lambda-security/src/rules/no-permissive-cors-response/index.ts',
-    direction: 'report',
-    reason:
-      'node.id.name.toLowerCase().includes("response") to decide a variable is an HTTP response ' +
-      'object, before judging its CORS headers.',
   },
   {
     file: 'eslint-plugin-node-security/src/rules/no-zip-slip/index.ts',

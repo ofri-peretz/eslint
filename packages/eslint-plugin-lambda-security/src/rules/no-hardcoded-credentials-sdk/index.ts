@@ -226,8 +226,7 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
 
         // Check for credentials property
         if (
-          prop.key.type === AST_NODE_TYPES.Identifier &&
-          prop.key.name === 'credentials' &&
+          objectKeyName(prop) === 'credentials' &&
           prop.value.type === AST_NODE_TYPES.ObjectExpression
         ) {
           // Check nested credentials object
