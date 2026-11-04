@@ -67,6 +67,18 @@ describe('no-permissive-cors-response schema', () => {
 
 ruleTester.run('no-permissive-cors-response', noPermissiveCorsResponse, {
   valid: lambda([
+    {
+      name: 'fetch options with a body are a request, not a response',
+      code: `await fetch(url, { method: 'POST', body: data, headers: { 'Access-Control-Allow-Origin': '*' } });`,
+    },
+    {
+      name: 'fetch options are a request, not a response',
+      code: `await fetch(url, { method: 'GET', headers: { 'Access-Control-Allow-Origin': '*' } });`,
+    },
+    {
+      name: 'a response with computed and spread header entries',
+      code: `const res = { statusCode: 200, [kind]: 1, headers: { [name]: '*', ...base }, multiValueHeaders: { 'Access-Control-Allow-Origin': [, origin] } };`,
+    },
     // ========== VALID: Specific origin ==========
     {
       name: 'a named origin',
@@ -134,6 +146,24 @@ ruleTester.run('no-permissive-cors-response', noPermissiveCorsResponse, {
     },
   ]),
   invalid: lambda([
+    {
+      name: 'a response in a variable of any name',
+      code: `const res = { statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*' } };`,
+      output: `const res = { statusCode: 200, headers: { 'Access-Control-Allow-Origin': "https://your-domain.com" } };`,
+      errors: [{ messageId: 'permissiveCors' }],
+    },
+    {
+      name: 'a response handed to the Lambda callback, header lower-cased',
+      code: `callback(null, { statusCode: 200, headers: { 'access-control-allow-origin': \`*\` } });`,
+      output: `callback(null, { statusCode: 200, headers: { 'access-control-allow-origin': "https://your-domain.com" } });`,
+      errors: [{ messageId: 'permissiveCors' }],
+    },
+    {
+      name: 'API Gateway v1 multiValueHeaders',
+      code: `const r = { body: '{}', multiValueHeaders: { 'Access-Control-Allow-Origin': ['*'] } };`,
+      output: `const r = { body: '{}', multiValueHeaders: { 'Access-Control-Allow-Origin': ["https://your-domain.com"] } };`,
+      errors: [{ messageId: 'permissiveCors' }],
+    },
     // ========== INVALID: Wildcard origin in return ==========
     {
       name: "Access-Control-Allow-Origin '*' on a handler response",

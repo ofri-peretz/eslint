@@ -51,6 +51,21 @@ const ruleTester = new RuleTester();
 
 ruleTester.run('no-secrets-in-env', noSecretsInEnv, {
   valid: lambda([
+    {
+      name: 'a Secrets Manager ARN points at the secret, it is not one',
+      code: `
+        process.env.DB_SECRET_ARN = 'arn:aws:secretsmanager:us-east-1:123456789012:secret:prod/db';
+        process.env['DB_PASSWORD'] = \`arn:aws:ssm:\${region}:123456789012:parameter/prod/db\`;
+      `,
+    },
+    {
+      name: 'an SSM parameter path in a CDK environment',
+      code: `new lambda.Function(this, 'H', { environment: { DB_PASSWORD_PARAM: '/prod/app/db-password' } });`,
+    },
+    {
+      name: 'a secret-named field in an object that is not an environment',
+      code: `const payload = { username: 'svc', password: 'hunter2hunter2' }; send({ [k]: { apiKey: 'example-api-key-123' } }); const { password = 'default-pass-123' } = input;`,
+    },
     // ========== VALID: Reading from process.env ==========
     {
       name: 'reading a secret out of the environment',
@@ -114,6 +129,26 @@ ruleTester.run('no-secrets-in-env', noSecretsInEnv, {
     },
   ]),
   invalid: lambda([
+    {
+      name: 'a base64 secret that happens to start with a slash',
+      code: `process.env.API_KEY = '/9xQ2mP7kL4v+Qw8=';`,
+      errors: [{ messageId: 'secretsInEnv' }],
+    },
+    {
+      name: 'a CDK function environment',
+      code: `new lambda.Function(this, 'Handler', { handler: 'index.handler', environment: { DB_PASSWORD: 'super-secret-password' } });`,
+      errors: [{ messageId: 'secretsInEnv' }],
+    },
+    {
+      name: 'the Lambda API Environment.Variables',
+      code: `new UpdateFunctionConfigurationCommand({ FunctionName: 'api', Environment: { Variables: { JWT_SECRET: 'jwt-signing-secret-123' } } });`,
+      errors: [{ messageId: 'secretsInEnv' }],
+    },
+    {
+      name: 'a serverless.ts provider environment',
+      code: `const serverlessConfiguration = { provider: { name: 'aws', environment: { 'API_KEY': \`example-secret-123\` } } };`,
+      errors: [{ messageId: 'secretsInEnv' }],
+    },
     // ========== INVALID: Direct process.env assignment ==========
     {
       name: 'a secret assigned into process.env, where the console shows it',

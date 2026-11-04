@@ -167,8 +167,6 @@ ruleTester.run(
       { code: `const x = pathName === '/debug/x';` },
       // MemberExpression object is not event/evt
       { code: `const x = req.path === '/debug/x';` },
-      // Computed event access → property is a Literal, not Identifier
-      { code: `const x = event['path'] === '/debug/x';` },
       // Event property outside the checked list
       { code: `const x = event.url === '/debug/x';` },
       // Computed identifier property with non-checked name
@@ -190,6 +188,13 @@ ruleTester.run(
         code: `const x = req.path === '/debug';`,
         errors: [{ messageId: 'violationDetected' }],
       },
+      // Was pinned VALID: `event['path']` is the route `event.path` is, and
+      // /debug/x sits under /debug.
+      {
+        name: 'a debug sub-path compared with the route read by subscript',
+        code: `const x = event['path'] === '/debug/x';`,
+        errors: [{ messageId: 'violationDetected' }],
+      },
       // Exact debug literal vs member expression whose object is a call → still reported
       {
         code: `const x = getEvent().path === '/debug';`,
@@ -205,14 +210,6 @@ ruleTester.run(
 
 ruleTester.run('no-exposed-error-details (coverage)', noExposedErrorDetails, {
   valid: lambda([
-    // Sensitive member whose parent is a BinaryExpression, not Property/Call (documented FN)
-    {
-      code: `
-        function h(err) {
-          return { statusCode: 500, body: err.stack + '' };
-        }
-      `,
-    },
     // CallExpression in response that is NOT JSON.stringify
     {
       code: `
@@ -231,6 +228,17 @@ ruleTester.run('no-exposed-error-details (coverage)', noExposedErrorDetails, {
     },
   ]),
   invalid: lambda([
+    // Was pinned VALID as a "documented FN": the stack concatenated into the
+    // body reaches the caller all the same.
+    {
+      name: 'a stack trace concatenated into the response body',
+      code: `
+        function h(err) {
+          return { statusCode: 500, body: err.stack + '' };
+        }
+      `,
+      errors: [{ messageId: 'exposedErrorDetails' }],
+    },
     // Was pinned VALID as a "documented FN". `err['stack']` returns exactly
     // the trace `err.stack` returns, and a bundler emits that spelling.
     {
@@ -278,11 +286,6 @@ ruleTester.run(
       {
         code: `const c = new S3Client({ credentials: { sessionToken: 'abc' } });`,
       },
-      // Credential property that is none of the three length-checked keys
-      // inside the nested credentials object (documented FN for aws* aliases)
-      {
-        code: `const c = new S3Client({ credentials: { awsAccessKeyId: 'AKIAIOSFODNN7EXAMPLE' } });`,
-      },
       // No constructor arguments
       { code: `const c = new S3Client();` },
       // First argument is not an object literal
@@ -310,6 +313,13 @@ ruleTester.run(
       // credential-named variable holding a credentials object literal
       {
         code: `const myCredentials = { accessKeyId: 'AKIAIOSFODNN7EXAMPLE' };`,
+        errors: [{ messageId: 'hardcodedCredentials' }],
+      },
+      // Was pinned VALID as a documented FN: the aws* aliases are judged as
+      // the plain keys are.
+      {
+        name: 'the awsAccessKeyId alias in a nested credentials object',
+        code: `const c = new S3Client({ credentials: { awsAccessKeyId: 'AKIAIOSFODNN7EXAMPLE' } });`,
         errors: [{ messageId: 'hardcodedCredentials' }],
       },
     ]),
@@ -380,14 +390,19 @@ ruleTester.run('no-permissive-cors-middy (coverage)', noPermissiveCorsMiddy, {
   valid: lambda([
     // Spread in options object
     { code: `httpCors({ ...defaults });` },
-    // String-literal key is skipped (documented FN)
-    { code: `httpCors({ 'origin': '*' });` },
     // Non-origin option key
     { code: `httpCors({ credentials: true });` },
     // Non-object argument
     { code: `httpCors(corsOptions);` },
   ]),
-  invalid: [],
+  invalid: lambda([
+    // Was pinned VALID as a documented FN: a quoted key is the same option.
+    {
+      name: 'a quoted origin key',
+      code: `httpCors({ 'origin': '*' });`,
+      errors: [{ messageId: 'permissiveCors' }],
+    },
+  ]),
 });
 
 // ---------------------------------------------------------------------------
@@ -722,8 +737,10 @@ describe('no-unvalidated-event-body — synthetic AST (Layer 2)', () => {
     listeners.MemberExpression(eventBody({ type: 'ChainExpression' }));
     expect(reports).toEqual([]);
 
-    // Control: identical node with a mundane parent DOES report.
+    // Control: identical node with a mundane parent DOES report — once the
+    // file is done, since a later middy validator would still cover it.
     listeners.MemberExpression(eventBody({ type: 'ExpressionStatement' }));
+    listeners['Program:exit'](undefined);
     expect(reports).toHaveLength(1);
     expect(reports[0].messageId).toBe('unvalidatedInput');
     expect(reports[0].data).toEqual({ property: 'event.body' });

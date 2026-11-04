@@ -19,6 +19,8 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  objectKeyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
@@ -73,15 +75,60 @@ export const noPermissiveCorsMidly = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     currentOptions,
   ) {
+    /** Where a binding was imported or required from, if it was. */
+    function moduleOf(
+      id: TSESTree.Identifier,
+      seen: Set<string> = new Set(),
+    ): string | null | undefined {
+      for (
+        let scope: TSESLint.Scope.Scope | null =
+          context.sourceCode.getScope(id);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.set.get(id.name);
+        if (!variable || variable.defs.length === 0) continue;
+        const def = variable.defs[0];
+        if (def.type === 'ImportBinding') {
+          return staticString(
+            (def.parent as TSESTree.ImportDeclaration).source,
+          );
+        }
+        const init =
+          def.node.type === AST_NODE_TYPES.VariableDeclarator
+            ? def.node.init
+            : null;
+        // `const cors = httpCors` is whatever `httpCors` is. `seen` stops a
+        // `const a = b, b = a` cycle.
+        if (init?.type === AST_NODE_TYPES.Identifier && !seen.has(init.name)) {
+          seen.add(id.name);
+          return moduleOf(init, seen);
+        }
+        return init?.type === AST_NODE_TYPES.CallExpression &&
+          init.callee.type === AST_NODE_TYPES.Identifier &&
+          init.callee.name === 'require'
+          ? staticString(init.arguments[0])
+          : null;
+      }
+      return undefined;
+    }
+
     /**
-     * Check if a call is to httpCors/cors middleware
+     * Whether a call is the `@middy/http-cors` middleware.
+     *
+     * Decided by where the callee comes from, under whatever name it is
+     * imported: `import corsMiddleware from '@middy/http-cors'` was invisible to
+     * the old name test, and a project's own `./cors` helper was reported.
+     * An undeclared `cors` / `httpCors` keeps the name reading.
      */
     function isCorsMiddlewareCall(node: TSESTree.CallExpression): boolean {
-      if (node.callee.type === AST_NODE_TYPES.Identifier) {
+      if (node.callee.type !== AST_NODE_TYPES.Identifier) return false;
+      const source = moduleOf(node.callee);
+      if (source === undefined) {
         const name = node.callee.name.toLowerCase();
         return name === 'httpcors' || name === 'cors';
       }
-      return false;
+      return source === '@middy/http-cors';
     }
 
     /**
@@ -94,34 +141,20 @@ export const noPermissiveCorsMidly = createRule<RuleOptions, MessageIds>({
       for (const prop of optionsObj.properties) {
         if (prop.type !== AST_NODE_TYPES.Property) continue;
 
-        // Check for 'origin' or 'origins' property
-        if (prop.key.type === AST_NODE_TYPES.Identifier) {
-          const keyName = prop.key.name.toLowerCase();
-
-          if (keyName === 'origin' || keyName === 'origins') {
-            // Check for wildcard string
-            if (
-              prop.value.type === AST_NODE_TYPES.Literal &&
-              prop.value.value === '*'
-            ) {
+        // Check for 'origin' or 'origins' property, however the key is spelled
+        const keyName = objectKeyName(prop)?.toLowerCase();
+        if (keyName === 'origin' || keyName === 'origins') {
+          // A wildcard string, or a wildcard among an array's entries
+          const values =
+            prop.value.type === AST_NODE_TYPES.ArrayExpression
+              ? prop.value.elements
+              : [prop.value];
+          for (const value of values) {
+            if (staticString(value) === '*') {
               context.report({
-                node: prop,
+                node: value === prop.value ? prop : (value as TSESTree.Node),
                 messageId: 'permissiveCors',
               });
-            }
-            // Check for array with wildcard
-            else if (prop.value.type === AST_NODE_TYPES.ArrayExpression) {
-              for (const element of prop.value.elements) {
-                if (
-                  element?.type === AST_NODE_TYPES.Literal &&
-                  element.value === '*'
-                ) {
-                  context.report({
-                    node: element,
-                    messageId: 'permissiveCors',
-                  });
-                }
-              }
             }
           }
         }

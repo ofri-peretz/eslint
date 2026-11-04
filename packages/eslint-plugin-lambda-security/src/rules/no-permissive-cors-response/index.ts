@@ -19,9 +19,12 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  namesOneOf,
+  objectKeyName,
   staticString,
 } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
+import { inResponsePosition } from '../../utils/response-position';
 
 type MessageIds = 'permissiveCors' | 'useSpecificOrigin';
 
@@ -91,16 +94,11 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
      * { statusCode, headers, body }
      */
     function isLambdaResponse(obj: TSESTree.ObjectExpression): boolean {
-      // oxlint-disable-next-line prefer-set-has
-      const propNames = obj.properties
-        .filter(
-          (p): p is TSESTree.Property => p.type === AST_NODE_TYPES.Property,
-        )
-        .map((p) =>
-          p.key.type === AST_NODE_TYPES.Identifier ? p.key.name : '',
-        );
-
-      return propNames.includes('statusCode') || propNames.includes('body');
+      return obj.properties.some(
+        (p) =>
+          p.type === AST_NODE_TYPES.Property &&
+          namesOneOf(objectKeyName(p), ['statusCode', 'body']),
+      );
     }
 
     /**
@@ -109,31 +107,21 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
     function checkHeadersObject(obj: TSESTree.ObjectExpression): void {
       for (const prop of obj.properties) {
         if (prop.type !== AST_NODE_TYPES.Property) continue;
-
-        // Get header name
-        let headerName = '';
-        if (prop.key.type === AST_NODE_TYPES.Identifier) {
-          headerName = prop.key.name;
-        } else {
-          headerName = staticString(prop.key) ?? '';
-        }
-
-        // Check for Access-Control-Allow-Origin
-        if (headerName.toLowerCase() === 'access-control-allow-origin') {
-          // Check if value is wildcard
-          if (
-            prop.value.type === AST_NODE_TYPES.Literal &&
-            prop.value.value === '*'
-          ) {
+        // HTTP header names are case-insensitive, however the key is written.
+        const headerName = objectKeyName(prop)?.toLowerCase();
+        if (headerName !== 'access-control-allow-origin') continue;
+        // `multiValueHeaders` (API Gateway v1) carries each value in a list.
+        const values =
+          prop.value.type === AST_NODE_TYPES.ArrayExpression
+            ? prop.value.elements
+            : [prop.value];
+        for (const value of values) {
+          if (value && staticString(value) === '*') {
             context.report({
               node: prop,
               messageId: 'permissiveCors',
-              fix: (fixer) => {
-                return fixer.replaceText(
-                  prop.value,
-                  '"https://your-domain.com"',
-                );
-              },
+              fix: (fixer) =>
+                fixer.replaceText(value, '"https://your-domain.com"'),
             });
           }
         }
@@ -142,16 +130,18 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
 
     /**
      * Check a Lambda-shaped response object literal for permissive CORS.
+     *
+     * Wherever it is written — returned, an arrow's implicit return, built in
+     * a variable of any name, handed to the Lambda `callback` — it is what
+     * API Gateway sends. The rule previously found a variable only when its
+     * name contained "response".
      */
     function checkResponseObject(obj: TSESTree.ObjectExpression): void {
       if (!isLambdaResponse(obj)) return;
-
-      // Find headers property
       for (const prop of obj.properties) {
         if (
           prop.type === AST_NODE_TYPES.Property &&
-          prop.key.type === AST_NODE_TYPES.Identifier &&
-          prop.key.name === 'headers' &&
+          namesOneOf(objectKeyName(prop), ['headers', 'multiValueHeaders']) &&
           prop.value.type === AST_NODE_TYPES.ObjectExpression
         ) {
           checkHeadersObject(prop.value);
@@ -176,31 +166,8 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
         }
         return true;
       },
-      // Check return statements that return Lambda response objects
-      ReturnStatement(node: TSESTree.ReturnStatement) {
-        if (node.argument?.type === AST_NODE_TYPES.ObjectExpression) {
-          checkResponseObject(node.argument);
-        }
-      },
-
-      // Implicit-return arrow helpers: `const jsonResponse = (s, d) => ({ ... })`
-      // are the idiomatic way to build Lambda responses, and have no
-      // ReturnStatement for the handler above to see.
-      ArrowFunctionExpression(node: TSESTree.ArrowFunctionExpression) {
-        if (node.body.type === AST_NODE_TYPES.ObjectExpression) {
-          checkResponseObject(node.body);
-        }
-      },
-
-      // Also check variable declarations with Lambda response pattern
-      VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        if (
-          node.id.type === AST_NODE_TYPES.Identifier &&
-          node.id.name.toLowerCase().includes('response') &&
-          node.init?.type === AST_NODE_TYPES.ObjectExpression
-        ) {
-          checkResponseObject(node.init);
-        }
+      ObjectExpression(node: TSESTree.ObjectExpression) {
+        if (inResponsePosition(node)) checkResponseObject(node);
       },
     };
   },

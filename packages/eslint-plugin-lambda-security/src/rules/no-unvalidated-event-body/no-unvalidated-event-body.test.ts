@@ -126,6 +126,24 @@ ruleTester.run('no-unvalidated-event-body', noUnvalidatedEventBody, {
         const handler = middy(baseHandler).use(validator({ inputSchema }));
       `,
     },
+    {
+      name: 'the middy validator middleware imported under another name',
+      code: `
+        import middy from '@middy/core';
+        import validateEvent from '@middy/validator';
+        const run = async (event, context) => db.find(event.queryStringParameters);
+        export const handler = middy(run).use(validateEvent({ eventSchema }));
+      `,
+    },
+    {
+      name: 'the middy validator required under another name',
+      code: `
+        const middy = require('@middy/core'), validateEvent = require('@middy/validator');
+        const { validator: v2 } = require('@middy/validator');
+        const run = async (event, context) => db.find(event.queryStringParameters);
+        export const handler = middy(run).use(validateEvent({ eventSchema }));
+      `,
+    },
     // Safe: typeof check
     {
       code: `
@@ -293,6 +311,15 @@ ruleTester.run('single-arg event, per import source', noUnvalidatedEventBody, {
     {
       name: '@aws-sdk/ subpath import',
       code: `import { S3Client } from '@aws-sdk/client-s3';
+        const run = async (event) => { const data = event.body; return data; };`,
+      errors: [{ messageId: 'unvalidatedInput' }],
+    },
+    {
+      name: 'a required SDK counts as an import',
+      code: `console.log('boot');
+        const ready = require(configPath);
+        let later;
+        const config = loadConfig(), { S3Client } = require('@aws-sdk/client-s3');
         const run = async (event) => { const data = event.body; return data; };`,
       errors: [{ messageId: 'unvalidatedInput' }],
     },

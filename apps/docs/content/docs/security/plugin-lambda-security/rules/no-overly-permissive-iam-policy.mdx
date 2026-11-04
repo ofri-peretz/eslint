@@ -40,7 +40,14 @@ This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/pac
 
 ## Rule Details
 
-This rule helps enforce secure coding practices for lambda-security applications.
+An IAM policy statement that **allows** a wildcard is reported: `Resource: '*'`,
+`Action: '*'` (alone or in a list, however the key is quoted), or a `Principal`
+of everyone (`'*'` or `{ AWS: '*' }`). This covers policy documents built in
+Lambda code, the `Principal` of a Lambda `AddPermission`, and the policy an API
+Gateway Lambda authorizer returns.
+
+A `Deny` statement on `'*'` restricts rather than grants — it is the standard
+"deny everything" policy an authorizer returns — and is not reported.
 
 ## Examples
 

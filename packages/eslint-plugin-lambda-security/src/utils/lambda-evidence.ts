@@ -25,12 +25,19 @@ const AWS_PACKAGES: ReadonlySet<string> = new Set([
   '@aws-lambda-powertools/logger',
   '@aws-lambda-powertools/tracer',
   '@aws-lambda-powertools/metrics',
+  // The CDK defines the functions, their environment and their IAM policies:
+  // the code those rules are about, with no handler or SDK import in it.
+  'aws-cdk-lib',
 ]);
 
 const AWS_PREFIXES: readonly string[] = [
   '@aws-sdk/',
   '@middy/',
   'serverless-',
+  // The framework's own scope: `@serverless/typescript` is the type every
+  // `serverless.ts` config is written against, and often its only import.
+  '@serverless/',
+  '@aws-cdk/',
   '@aws-lambda-powertools/',
 ];
 
@@ -85,7 +92,6 @@ function isImportEqualsLoad(node: TSESTree.Node): boolean {
     isAwsSpecifier(node.moduleReference.expression.value)
   );
 }
-
 
 /**
  * `require('aws-sdk')` and `await import('aws-sdk')` — the two dynamic forms.

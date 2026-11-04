@@ -45,8 +45,15 @@ Detects debug and admin endpoints in Lambda handlers that may be exposed without
 This rule detects:
 
 - Path literals like `/debug`, `/admin`, `/_admin`, `/__debug__`, `/test`
-- Route comparisons: `event.path === '/debug'`
-- Serverless Framework path configurations
+- Route comparisons and `switch` dispatch on the request path: API Gateway v1
+  `event.path` / `event.resource`, v2 `event.rawPath`, `event.routeKey`
+  (`'GET /admin'`) and `event.requestContext.http.path`, however the property is
+  read (`event['rawPath']`, `const { rawPath } = event`)
+- Serverless Framework `http` / `httpApi` path configurations, with or without a
+  leading slash
+
+Sub-paths count (`/admin/users` is under `/admin`); matching is per path
+segment, so `/testimonials` and `/latest` are not `/test`.
 
 ## Why This Matters
 

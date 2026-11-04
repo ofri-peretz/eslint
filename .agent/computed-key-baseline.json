@@ -14,7 +14,6 @@
     "browser-security/no-sensitive-localstorage",
     "browser-security/no-sensitive-sessionstorage",
     "browser-security/no-unsafe-eval-csp",
-    "lambda-security/no-exposed-error-details",
     "lambda-security/no-user-controlled-requests",
     "mysql-security/require-tls",
     "nestjs-security/no-permissive-cors",

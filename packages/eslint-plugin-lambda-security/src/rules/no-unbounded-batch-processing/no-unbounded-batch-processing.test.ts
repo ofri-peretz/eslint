@@ -137,6 +137,36 @@ ruleTester.run('no-unbounded-batch-processing', noUnboundedBatchProcessing, {
         };
       `,
     },
+    {
+      name: 'a bound above the default maxBatchSize passes once maxBatchSize is raised',
+      code: `
+        export const handler = async (event) => {
+          if (10000 < event.Records.length) throw new Error('Batch too large');
+          for (const record of event.Records.slice(0, 5000)) await processRecord(record);
+        };
+      `,
+      options: [{ maxBatchSize: 20000 }],
+    },
+    {
+      name: 'a destructured batch bounded by its own length',
+      code: `
+        export const handler = async (event) => {
+          const { Records, ...rest } = event;
+          if (Records.length > MAX_BATCH_SIZE) throw new Error('Batch too large');
+          for (const record of Records) await processRecord(record, rest);
+        };
+      `,
+    },
+    {
+      name: 'a batch limited by take(n) on the batch',
+      code: `
+        const WINDOW = 60 * 1000;
+        export const handler = async (event) => {
+          const deadline = Date.now() + WINDOW;
+          for (const record of event.Records.take(10)) await processRecord(record, deadline);
+        };
+      `,
+    },
     // Handler without batch access — no issue
     {
       code: `
@@ -158,6 +188,69 @@ ruleTester.run('no-unbounded-batch-processing', noUnboundedBatchProcessing, {
   ]),
 
   invalid: lambda([
+    {
+      name: 'a length check on something other than the batch bounds nothing',
+      code: `
+        export const handler = async (event) => {
+          if (tenantId.length > 64) throw new Error('bad tenant');
+          for (const record of event.Records) {
+            console.log(record.messageId.slice(0, 8));
+            await processRecord(record);
+          }
+        };
+      `,
+      errors: [{ messageId: 'unboundedBatch' }],
+    },
+    {
+      name: 'a limit above maxBatchSize does not bound the batch',
+      code: `
+        export const handler = async (event) => {
+          if (event.Records.length > 10000) throw new Error('Batch too large');
+          for (const record of event.Records.slice(0, 5000)) await processRecord(record);
+        };
+      `,
+      errors: [
+        { messageId: 'unboundedBatch' },
+        { messageId: 'unboundedBatch' },
+      ],
+    },
+    {
+      name: 'a nested local named Records does not bound the destructured batch',
+      code: `
+        export const handler = async (event) => {
+          const { Records } = event;
+          const check = (Records) => Records.length > 10;
+          for (const record of Records) await processRecord(record, check);
+        };
+      `,
+      errors: [{ messageId: 'unboundedBatch' }],
+    },
+    {
+      name: 'a slice with no end takes the whole batch',
+      code: `
+        export const handler = async (event) => {
+          for (const record of event.Records.slice(1)) await processRecord(record);
+          const rest = take(event.Records);
+        };
+      `,
+      errors: [
+        { messageId: 'unboundedBatch' },
+        { messageId: 'unboundedBatch' },
+      ],
+    },
+    {
+      name: 'a batch destructured off the event',
+      code: `
+        export const handler = async (event) => {
+          const { Records, [key]: other } = event;
+          const { Records: ignored } = config;
+          for (const record of Records) await processRecord(record, other, ignored);
+          const unrelated = chunk(items, 5);
+          const none = take();
+        };
+      `,
+      errors: [{ messageId: 'unboundedBatch' }],
+    },
     // Lambda handler processing Records without size check (classic FN)
     {
       name: 'every record processed with no bound on how many arrive',

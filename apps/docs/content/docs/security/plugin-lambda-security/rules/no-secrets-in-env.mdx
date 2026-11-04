@@ -81,6 +81,18 @@ async function getSecret() {
 }
 ```
 
+## Rule Details
+
+A secret-named environment variable (password, secret, API key or token, client
+secret, …) given a literal value is reported wherever Lambda environment is
+defined: assigning `process.env.X` / `process.env['X']`, a CDK
+`new lambda.Function(…, { environment })`, the Lambda API's
+`Environment: { Variables }`, a Serverless `provider.environment`.
+
+A value that points at the secret instead of being it — a Secrets Manager or
+SSM ARN (`arn:…`) or an SSM parameter path (`/prod/db/password`) — is the fix
+this rule recommends and is not reported.
+
 ## Options
 
 | Option | Type | Default | Description |

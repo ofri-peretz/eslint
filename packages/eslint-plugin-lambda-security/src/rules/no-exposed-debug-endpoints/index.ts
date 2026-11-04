@@ -9,12 +9,17 @@
  */
 
 import {
+  AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
+  memberPath,
   MessageIcons,
+  namesOneOf,
+  objectKeyName,
+  propertyName,
   staticString,
 } from '@interlace/eslint-devkit';
-import type { TSESTree } from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
 type MessageIds = 'violationDetected';
@@ -34,6 +39,35 @@ const DEFAULT_DEBUG_PATHS = [
   '/test',
   '/health',
 ];
+
+/** Where API Gateway puts the route: v1 `path`/`resource`, v2 `rawPath`/`routeKey`. */
+// @vocabulary AWS API Gateway v1/v2 event shape
+const ROUTE_PROPERTIES = new Set(['path', 'rawPath', 'resource', 'routeKey']);
+
+/** Event chains that carry the route, relative to `event`. */
+// @vocabulary AWS API Gateway v1/v2 event shape
+const ROUTE_CHAINS = new Set([
+  'path',
+  'rawPath',
+  'resource',
+  'routeKey',
+  'requestContext.path',
+  'requestContext.resourcePath',
+  'requestContext.http.path',
+]);
+
+/** String methods that test a route against a path. */
+const ROUTE_TESTS = new Set(['includes', 'startsWith', 'endsWith']);
+
+/**
+ * The path a route string names: `GET /admin` (a v2 `routeKey`) is `/admin`,
+ * and a Serverless `path: admin/users` is `/admin/users` — the framework's
+ * paths are relative to the API root, written with or without the slash.
+ */
+function routePath(text: string): string {
+  const path = text.replace(/^[A-Z]+\s+/, '').toLowerCase();
+  return path.startsWith('/') ? path : `/${path}`;
+}
 
 export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
   name: 'no-exposed-debug-endpoints',
@@ -80,8 +114,73 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
   createOnce(context) {
     let debugPaths: string[];
 
+    const reported = new Set<TSESTree.Node>();
+
     function report(node: TSESTree.Node) {
+      if (reported.has(node)) return;
+      reported.add(node);
       context.report({ node, messageId: 'violationDetected' });
+    }
+
+    /**
+     * Whether a route string names a debug path or a path beneath one.
+     *
+     * Segment-bounded: `/debug/vars` is under `/debug`, but `/testimonials`
+     * and `/latest` are different routes that merely share letters with
+     * `/test` — the previous substring match reported both.
+     */
+    function isDebugRoute(text: string): boolean {
+      const path = routePath(text);
+      return debugPaths.some((dp) => {
+        // An `endpoints` entry written with a trailing slash names the same path.
+        const debug = dp.toLowerCase().replace(/\/+$/, '');
+        return path === debug || path.startsWith(`${debug}/`);
+      });
+    }
+
+    /**
+     * Whether an expression reads the request's route off the Lambda event:
+     * `event.rawPath`, `event['path']`, `event.requestContext.http.path`, or a
+     * `rawPath` destructured out of it.
+     */
+    function readsRoute(node: TSESTree.Node): boolean {
+      if (node.type === AST_NODE_TYPES.Identifier) {
+        const variable = context.sourceCode
+          .getScope(node)
+          .references.find((r) => r.identifier === node)?.resolved;
+        return variable?.defs.some(destructuresRoute) ?? false;
+      }
+      const path = memberPath(node);
+      return (
+        path !== null &&
+        ['event', 'evt'].includes(path[0]) &&
+        ROUTE_CHAINS.has(path.slice(1).join('.'))
+      );
+    }
+
+    /**
+     * `const { rawPath } = event`, `const { rawPath: requested } = event`, or
+     * a handler's `({ rawPath }) =>` parameter. The KEY names the route; the
+     * local may be called anything, and a `path` destructured from some other
+     * object (`const { path } = options`) is not the request's.
+     */
+    function destructuresRoute(def: TSESLint.Scope.Definition): boolean {
+      const property = def.name.parent;
+      if (
+        property.type !== AST_NODE_TYPES.Property ||
+        !namesOneOf(objectKeyName(property), ROUTE_PROPERTIES)
+      ) {
+        return false;
+      }
+      if (def.type === 'Parameter') return true;
+      const init =
+        def.node.type === AST_NODE_TYPES.VariableDeclarator
+          ? def.node.init
+          : null;
+      return (
+        init?.type === AST_NODE_TYPES.Identifier &&
+        ['event', 'evt'].includes(init.name)
+      );
     }
 
     return {
@@ -90,6 +189,7 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
         // files, 98% of this plugin's findings were in files with no AWS anything.
         // Registering no visitors is both the gate and the cheap path.
         if (!fileIsLambda(context.sourceCode.ast)) return false;
+        reported.clear();
 
         const options = context.options[0] || {};
         debugPaths = options.endpoints || DEFAULT_DEBUG_PATHS;
@@ -102,100 +202,85 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
         return true;
       },
       Property(node: TSESTree.Property) {
+        // A Serverless Framework `http` / `httpApi` event declaring the route.
         const pathText = staticString(node.value);
         if (
-          node.key.type === 'Identifier' &&
-          node.key.name === 'path' &&
-          pathText !== null
+          objectKeyName(node) !== 'path' ||
+          pathText === null ||
+          !isDebugRoute(pathText)
         ) {
-          const path = pathText.toLowerCase();
-          if (debugPaths.some((dp) => path.includes(dp.toLowerCase()))) {
-            // Check if it's inside an 'http' or 'httpApi' block
-            let parent: TSESTree.Node | undefined = node.parent;
-            while (parent) {
-              if (
-                parent.type === 'Property' &&
-                parent.key.type === 'Identifier' &&
-                // @vocabulary Serverless Framework event keys
-                ['http', 'httpApi'].includes(parent.key.name)
-              ) {
-                report(node.value);
-                return;
-              }
-              parent = parent.parent;
-            }
-          }
+          return;
+        }
+        // Only inside a Serverless event: `events: [{ http: { path } }]`.
+        const event = node.parent.parent;
+        const list = event.parent?.parent;
+        if (
+          event.type === AST_NODE_TYPES.Property &&
+          // @vocabulary Serverless Framework event keys
+          namesOneOf(objectKeyName(event), ['http', 'httpApi']) &&
+          list?.type === AST_NODE_TYPES.ArrayExpression &&
+          list.parent.type === AST_NODE_TYPES.Property &&
+          objectKeyName(list.parent) === 'events'
+        ) {
+          report(node.value);
         }
       },
 
       BinaryExpression(node: TSESTree.BinaryExpression) {
-        // Detect event.path === '/debug' or event.rawPath.includes('/admin')
+        // event.rawPath === '/debug', '/admin' !== event.path
+        if (!['===', '==', '!==', '!='].includes(node.operator)) return;
+        for (const [side, other] of [
+          [node.left, node.right],
+          [node.right, node.left],
+        ]) {
+          const text = staticString(side);
+          if (text !== null && isDebugRoute(text) && readsRoute(other)) {
+            report(side);
+          }
+        }
+      },
+
+      CallExpression(node: TSESTree.CallExpression) {
+        // event.rawPath.startsWith('/admin/')
+        const callee = node.callee;
+        const text = staticString(node.arguments[0]);
         if (
-          node.operator === '===' ||
-          node.operator === '==' ||
-          node.operator === '!==' ||
-          node.operator === '!='
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          namesOneOf(propertyName(callee), ROUTE_TESTS) &&
+          text !== null &&
+          isDebugRoute(text) &&
+          readsRoute(callee.object)
         ) {
-          const checkNode = (side: TSESTree.Expression) => {
-            const staticText = staticString(side);
-            if (staticText !== null) {
-              const val = staticText.toLowerCase();
-              if (debugPaths.some((dp) => val.includes(dp.toLowerCase()))) {
-                // Check if the other side is an event property
-                const other = side === node.left ? node.right : node.left;
-                if (
-                  other.type === 'MemberExpression' &&
-                  other.object.type === 'Identifier' &&
-                  (other.object.name === 'event' ||
-                    other.object.name === 'evt') &&
-                  other.property.type === 'Identifier' &&
-                  // @vocabulary AWS API Gateway v1/v2 event shape
-                  ['path', 'rawPath', 'resource', 'routeKey'].includes(
-                    other.property.name,
-                  )
-                ) {
-                  report(side);
-                }
-              }
-            }
-          };
-          checkNode(node.left);
-          checkNode(node.right);
+          report(node.arguments[0]);
+        }
+      },
+
+      SwitchStatement(node: TSESTree.SwitchStatement) {
+        // switch (event.rawPath) { case '/debug': … }
+        if (!readsRoute(node.discriminant)) return;
+        for (const c of node.cases) {
+          const test = c.test;
+          if (test === null) continue;
+          const text = staticString(test);
+          if (text !== null && isDebugRoute(text)) report(test);
         }
       },
 
       Literal(node: TSESTree.Literal) {
-        if (typeof node.value === 'string') {
-          const path = node.value.toLowerCase();
-          if (debugPaths.some((dp) => path === dp.toLowerCase())) {
-            // Avoid double reporting if it's already in a BinaryExpression path check
-            const parent = node.parent;
-            if (
-              parent &&
-              parent.type === 'BinaryExpression' &&
-              (parent.left === node || parent.right === node)
-            ) {
-              const other = parent.left === node ? parent.right : parent.left;
-              if (
-                other.type === 'MemberExpression' &&
-                other.object.type === 'Identifier' &&
-                (other.object.name === 'event' || other.object.name === 'evt')
-              ) {
-                return;
-              }
-            }
-            // Avoid double reporting for Serverless config check handled by Property listener
-            if (
-              parent &&
-              parent.type === 'Property' &&
-              parent.key.type === 'Identifier' &&
-              parent.key.name === 'path'
-            ) {
-              return;
-            }
-            report(node);
-          }
+        // A bare debug-path literal anywhere else: `const p = '/__debug__'`.
+        if (typeof node.value !== 'string') return;
+        const path = node.value.toLowerCase();
+        if (!debugPaths.some((dp) => path === dp.toLowerCase())) return;
+        const parent = node.parent;
+        // A `path:` property outside a Serverless event is somebody's data.
+        if (
+          parent.type === AST_NODE_TYPES.Property &&
+          parent.value === node &&
+          objectKeyName(parent) === 'path'
+        ) {
+          return;
         }
+        report(node);
       },
     };
   },

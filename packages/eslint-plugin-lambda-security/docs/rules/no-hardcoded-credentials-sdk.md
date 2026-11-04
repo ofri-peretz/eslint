@@ -129,6 +129,14 @@ const client = new S3Client({
 });
 ```
 
+## Clients Checked
+
+- SDK v3 clients imported from `@aws-sdk/client-*`, under any local name
+  (renamed, namespace or `require`)
+- SDK v2 service constructors (`new AWS.S3({ accessKeyId, … })`, top-level or
+  nested `credentials`), `AWS.config.update({ … })` and
+  `new AWS.Credentials(accessKeyId, secretAccessKey)`
+
 ## Detection Patterns
 
 | Pattern                      | Risk Level  | Description                        |

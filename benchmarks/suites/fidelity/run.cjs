@@ -45,6 +45,7 @@ const PLUGINS = [
   'express-security',
   'mcp-sdk-security',
   'postgresql-security',
+  'lambda-security',
 ];
 
 const loadPlugin = (short) => {

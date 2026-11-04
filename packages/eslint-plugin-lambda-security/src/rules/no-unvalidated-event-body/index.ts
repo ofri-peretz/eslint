@@ -21,6 +21,7 @@ import {
   MessageIcons,
   isTestFilePath,
   propertyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unvalidatedInput';
@@ -150,7 +151,48 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
     let validatedVariables: Set<string>;
     let eventParameters: Set<string>;
     let hasValidationMiddleware: boolean;
+    /**
+     * Held until the whole file is read: a middy `.use(validator(…))` written
+     * after the handler it wraps validates that handler's input too.
+     */
+    let pending: { node: TSESTree.MemberExpression; property: string }[];
     let fileImportsLambda: boolean;
+    let validatorMiddleware: Set<string>;
+
+    /**
+     * Each module a top-level statement loads, with the local name bound to
+     * it: an `import` (every specifier), or each `const x = require(…)`
+     * declarator — not only the first.
+     */
+    function modulesLoadedBy(
+      node: TSESTree.ProgramStatement,
+    ): { source: string; locals: string[] }[] {
+      if (node.type === AST_NODE_TYPES.ImportDeclaration) {
+        return [
+          {
+            source: node.source.value,
+            locals: node.specifiers.map((spec) => spec.local.name),
+          },
+        ];
+      }
+      if (node.type !== AST_NODE_TYPES.VariableDeclaration) return [];
+      return node.declarations.flatMap((d) => {
+        const init = d.init;
+        const source =
+          init?.type === AST_NODE_TYPES.CallExpression &&
+          init.callee.type === AST_NODE_TYPES.Identifier &&
+          init.callee.name === 'require'
+            ? staticString(init.arguments[0])
+            : null;
+        if (source === null) return [];
+        return [
+          {
+            source,
+            locals: d.id.type === AST_NODE_TYPES.Identifier ? [d.id.name] : [],
+          },
+        ];
+      });
+    }
 
     /**
      * Check if an expression indicates validation has occurred
@@ -339,6 +381,7 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
         eventParameters = new Set<string>();
         // Track if we're inside a handler that uses validation middleware
         hasValidationMiddleware = false;
+        pending = [];
 
         // NOTE: a dedicated `isJsonParseOfEventBody(parent)` check used to live
         // here, but it was dead code: `JSON.parse(...)` always satisfies
@@ -356,16 +399,25 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
         // allowlist of `['event', 'evt', 'e', 'request', 'req']` was too
         // loose — see benchmarks/AUDIT_PATTERNS.md §2.4.
         const sourceCode = context.sourceCode;
-        fileImportsLambda = sourceCode.ast.body.some((n) => {
-          if (n.type !== AST_NODE_TYPES.ImportDeclaration) return false;
-          const src = String((n as TSESTree.ImportDeclaration).source.value);
-          return (
+        // `const { S3Client } = require('@aws-sdk/client-s3')` loads the same
+        // module an `import` does; the probe used to see only the latter.
+        const loads = sourceCode.ast.body.flatMap(modulesLoadedBy);
+        fileImportsLambda = loads.some(
+          ({ source: src }) =>
             src === 'aws-lambda' ||
             src.startsWith('@aws-sdk/') ||
             src.startsWith('@middy/') ||
-            src === '@aws-cdk/aws-lambda'
-          );
-        });
+            src === '@aws-cdk/aws-lambda',
+        );
+        // `import validateEvent from '@middy/validator'` or
+        // `const validateEvent = require('@middy/validator')`, under any name.
+        validatorMiddleware = new Set([
+          'validator',
+          'httpJsonBodyParser',
+          ...loads
+            .filter(({ source }) => source === '@middy/validator')
+            .flatMap(({ locals }) => locals),
+        ]);
         return true;
       },
       // Track arrow function/function parameters that match a Lambda
@@ -399,7 +451,7 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
             if (
               arg.type === AST_NODE_TYPES.CallExpression &&
               arg.callee.type === AST_NODE_TYPES.Identifier &&
-              ['validator', 'httpJsonBodyParser'].includes(arg.callee.name)
+              validatorMiddleware.has(arg.callee.name)
             ) {
               hasValidationMiddleware = true;
             }
@@ -421,9 +473,6 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
 
       // Check direct access to event properties without validation
       MemberExpression(node: TSESTree.MemberExpression) {
-        // Skip if validation middleware is present
-        if (hasValidationMiddleware) return;
-
         const eventAccess = isEventPropertyAccess(node);
         if (!eventAccess) return;
 
@@ -487,13 +536,19 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        context.report({
-          node,
-          messageId: 'unvalidatedInput',
-          data: {
-            property: `event.${eventAccess.property}`,
-          },
-        });
+        pending.push({ node, property: eventAccess.property });
+      },
+
+      'Program:exit'() {
+        // Validation middleware on the handler covers every access in it.
+        if (hasValidationMiddleware) return;
+        for (const { node, property } of pending) {
+          context.report({
+            node,
+            messageId: 'unvalidatedInput',
+            data: { property: `event.${property}` },
+          });
+        }
       },
     };
   },

@@ -20,6 +20,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  objectKeyName,
   staticString,
 } from '@interlace/eslint-devkit';
 
@@ -99,6 +100,42 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
       );
     }
 
+    /** Report each dangerous wildcard among a value's literal strings. */
+    function checkWildcards(
+      value: TSESTree.Node,
+      report: TSESTree.Node,
+      propertyName: string,
+    ): void {
+      const staticText = staticString(value);
+      if (staticText !== null && isDangerousWildcard(staticText)) {
+        context.report({
+          node: report,
+          messageId: 'permissivePolicy',
+          data: { property: propertyName, value: staticText },
+        });
+      }
+      if (value.type === AST_NODE_TYPES.ArrayExpression) {
+        for (const element of value.elements) {
+          if (element) checkWildcards(element, element, propertyName);
+        }
+      }
+    }
+
+    /**
+     * Whether the statement holding this property denies rather than allows.
+     * `{ Effect: 'Deny', Resource: '*' }` grants nothing — it is the standard
+     * "deny everything" policy a Lambda authorizer returns.
+     */
+    function inDenyStatement(node: TSESTree.Property): boolean {
+      const statement = node.parent as TSESTree.ObjectExpression;
+      // A repeated key keeps its last value, as in the object IAM receives.
+      const effects = statement.properties.filter(
+        (p): p is TSESTree.Property =>
+          p.type === AST_NODE_TYPES.Property && objectKeyName(p) === 'Effect',
+      );
+      return staticString(effects.at(-1)?.value) === 'Deny';
+    }
+
     /**
      * Check property values for wildcards
      */
@@ -106,40 +143,16 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
       node: TSESTree.Property,
       propertyName: string,
     ): void {
-      const value = node.value;
-
-      // Check literal string
-      const staticText = staticString(value);
-      if (staticText !== null) {
-        if (isDangerousWildcard(staticText)) {
-          context.report({
-            node,
-            messageId: 'permissivePolicy',
-            data: {
-              property: propertyName,
-              value: staticText,
-            },
-          });
-        }
-      }
-
-      // Check array of values
-      if (value.type === AST_NODE_TYPES.ArrayExpression) {
-        for (const element of value.elements) {
-          if (
-            element?.type === AST_NODE_TYPES.Literal &&
-            typeof element.value === 'string'
-          ) {
-            if (isDangerousWildcard(element.value)) {
-              context.report({
-                node: element,
-                messageId: 'permissivePolicy',
-                data: {
-                  property: propertyName,
-                  value: element.value,
-                },
-              });
-            }
+      if (inDenyStatement(node)) return;
+      checkWildcards(node.value, node, propertyName);
+      // `Principal: { AWS: '*' }` is everyone, as `Principal: '*'` is.
+      if (
+        propertyName === 'Principal' &&
+        node.value.type === AST_NODE_TYPES.ObjectExpression
+      ) {
+        for (const p of node.value.properties) {
+          if (p.type === AST_NODE_TYPES.Property) {
+            checkWildcards(p.value, p, propertyName);
           }
         }
       }
@@ -163,23 +176,10 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
         return true;
       },
       Property(node: TSESTree.Property) {
-        // Check for IAM policy properties
-        if (node.key.type === AST_NODE_TYPES.Identifier) {
-          const keyName = node.key.name;
-          if (POLICY_PROPERTIES.has(keyName)) {
-            checkPolicyProperty(node, keyName);
-          }
-        }
-
-        // Also check string key properties
-        if (
-          node.key.type === AST_NODE_TYPES.Literal &&
-          typeof node.key.value === 'string'
-        ) {
-          const keyName = node.key.value;
-          if (POLICY_PROPERTIES.has(keyName)) {
-            checkPolicyProperty(node, keyName);
-          }
+        // `Resource`, `'Resource'` and `['Resource']` are the same element.
+        const keyName = objectKeyName(node);
+        if (keyName !== null && POLICY_PROPERTIES.has(keyName)) {
+          checkPolicyProperty(node, keyName);
         }
       },
     };

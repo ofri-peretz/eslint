@@ -19,6 +19,8 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  memberPath,
+  objectKeyName,
   staticString,
 } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
@@ -136,15 +138,67 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
       );
     }
 
+    /** The variable an identifier refers to, through enclosing scopes. */
+    function resolve(id: TSESTree.Identifier) {
+      for (
+        let scope: TSESLint.Scope.Scope | null =
+          context.sourceCode.getScope(id);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.set.get(id.name);
+        if (variable) return variable;
+      }
+      return undefined;
+    }
+
+    /**
+     * Whether an identifier is bound to the AWS SDK: imported (named, renamed,
+     * default or namespace) or required from `aws-sdk` or `@aws-sdk/*`.
+     *
+     * The name list below only knows the canonical v3 class names, so
+     * `import { S3Client as Storage }`, `new s3.S3Client()` and every v2
+     * `new AWS.S3()` were invisible to it.
+     */
+    function isFromAwsSdk(id: TSESTree.Identifier): boolean {
+      const def = resolve(id)?.defs[0];
+      let source: TSESTree.Node | undefined;
+      if (def?.type === 'ImportBinding') {
+        source = (def.parent as TSESTree.ImportDeclaration).source;
+      } else if (
+        def?.type === 'Variable' &&
+        def.node.init?.type === AST_NODE_TYPES.CallExpression &&
+        def.node.init.callee.type === AST_NODE_TYPES.Identifier &&
+        def.node.init.callee.name === 'require'
+      ) {
+        source = def.node.init.arguments[0];
+      }
+      const specifier = staticString(source);
+      return specifier !== null && /^(aws-sdk|@aws-sdk\/)/.test(specifier);
+    }
+
+    /** The root identifier of a member chain: `AWS.DynamoDB.DocumentClient` → `AWS`. */
+    function rootIdentifier(node: TSESTree.Node): TSESTree.Identifier | null {
+      while (node.type === AST_NODE_TYPES.MemberExpression) node = node.object;
+      return node.type === AST_NODE_TYPES.Identifier ? node : null;
+    }
+
     /**
      * Get the AWS client name from the call expression
      * Only match known AWS SDK clients or names ending with 'Client' that look like AWS
      */
     function getAwsClientName(node: TSESTree.NewExpression): string | null {
+      if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
+        // `new AWS.S3()`, `new s3.S3Client()`, `new AWS.Credentials()`
+        const root = rootIdentifier(node.callee);
+        return root !== null && isFromAwsSdk(root)
+          ? (memberPath(node.callee) ?? [root.name]).join('.')
+          : null;
+      }
       if (node.callee.type === AST_NODE_TYPES.Identifier) {
         const name = node.callee.name;
         // Known AWS SDK v3 clients
-        if (AWS_SDK_V3_CLIENTS.has(name)) {
+        if (AWS_SDK_V3_CLIENTS.has(name) || isFromAwsSdk(node.callee)) {
           return name;
         }
         // Only match *Client if it looks like AWS (contains common AWS service prefixes)
@@ -172,25 +226,50 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
 
         // Check for credentials property
         if (
-          prop.key.type === AST_NODE_TYPES.Identifier &&
-          prop.key.name === 'credentials' &&
+          objectKeyName(prop) === 'credentials' &&
           prop.value.type === AST_NODE_TYPES.ObjectExpression
         ) {
           // Check nested credentials object
           checkCredentialsInner(prop.value, clientName);
         }
-
-        // Also check top-level credential properties (older pattern)
-        if (
-          prop.key.type === AST_NODE_TYPES.Identifier &&
-          isCredentialProperty(prop.key.name)
-        ) {
-          const staticText1 = staticString(prop.value);
-          if (staticText1 !== null) {
-            reportHardcodedCredential(prop, clientName, prop.key.name);
-          }
-        }
       }
+      // SDK v2 takes the keys at the top level too: `new AWS.S3({ accessKeyId })`.
+      // Judged as the nested object is — a LocalStack `'test'` is not a key.
+      checkCredentialsInner(obj, clientName);
+    }
+
+    /**
+     * Whether a literal credential value is a real one: an access key id in
+     * the AKIA/ASIA format, a secret of AWS length, a session token.
+     */
+    function isHardcoded(property: string, value: string): boolean {
+      switch (property.toLowerCase()) {
+        case 'accesskeyid':
+        case 'awsaccesskeyid':
+          return looksLikeAwsAccessKey(value);
+        // AWS secrets are 40 chars; short values are LocalStack placeholders.
+        case 'secretaccesskey':
+        case 'awssecretaccesskey':
+          return value.length >= 20;
+        default:
+          return value.length >= 15;
+      }
+    }
+
+    /**
+     * `new AWS.Credentials(accessKeyId, secretAccessKey, sessionToken)` — the
+     * SDK v2 constructor takes the keys positionally.
+     */
+    function checkPositionalCredentials(
+      node: TSESTree.NewExpression,
+      clientName: string,
+    ): void {
+      ['accessKeyId', 'secretAccessKey', 'sessionToken'].forEach((name, i) => {
+        const text = staticString(node.arguments[i]);
+        if (text !== null && isHardcoded(name, text)) {
+          reportHardcodedCredential(node.arguments[i], clientName, name);
+        }
+      });
     }
 
     /**
@@ -203,38 +282,19 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
       for (const prop of obj.properties) {
         if (prop.type !== AST_NODE_TYPES.Property) continue;
 
-        if (
-          prop.key.type === AST_NODE_TYPES.Identifier &&
-          isCredentialProperty(prop.key.name)
-        ) {
+        // `accessKeyId`, `'accessKeyId'` and `['accessKeyId']` are one key.
+        const key = objectKeyName(prop);
+        if (key !== null && isCredentialProperty(key)) {
           // Check for literal string values
           const staticText2 = staticString(prop.value);
           if (staticText2 !== null) {
-            const value = staticText2;
-            const keyName = prop.key.name.toLowerCase();
-
-            // For accessKeyId, check if it looks like an actual AWS key (AKIA/ASIA pattern)
-            if (keyName === 'accesskeyid') {
-              if (looksLikeAwsAccessKey(value)) {
-                reportHardcodedCredential(prop, clientName, prop.key.name);
-              }
-            }
-            // For secretAccessKey, require minimum length (AWS secrets are 40+ chars)
-            else if (keyName === 'secretaccesskey') {
-              if (value.length >= 20) {
-                reportHardcodedCredential(prop, clientName, prop.key.name);
-              }
-            }
-            // For sessionToken, any non-short value is suspicious
-            else if (keyName === 'sessiontoken') {
-              if (value.length >= 15) {
-                reportHardcodedCredential(prop, clientName, prop.key.name);
-              }
+            if (isHardcoded(key, staticText2)) {
+              reportHardcodedCredential(prop, clientName, key);
             }
           }
           // Check for template literals (always flag - dynamic construction is suspicious)
           else if (prop.value.type === AST_NODE_TYPES.TemplateLiteral) {
-            reportHardcodedCredential(prop, clientName, prop.key.name);
+            reportHardcodedCredential(prop, clientName, key);
           }
         }
       }
@@ -244,7 +304,7 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
      * Report hardcoded credential
      */
     function reportHardcodedCredential(
-      node: TSESTree.Property,
+      node: TSESTree.Node,
       clientName: string,
       propertyName: string,
     ): void {
@@ -285,6 +345,22 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
           node.arguments[0].type === AST_NODE_TYPES.ObjectExpression
         ) {
           checkCredentialsObject(node.arguments[0], clientName);
+        } else if (/(^|\.)Credentials$/.test(clientName)) {
+          checkPositionalCredentials(node, clientName);
+        }
+      },
+
+      // SDK v2 global configuration: `AWS.config.update({ accessKeyId, … })`.
+      CallExpression(node: TSESTree.CallExpression) {
+        const path = memberPath(node.callee);
+        const root = rootIdentifier(node.callee);
+        if (
+          path?.slice(1).join('.') === 'config.update' &&
+          root !== null &&
+          isFromAwsSdk(root) &&
+          node.arguments[0]?.type === AST_NODE_TYPES.ObjectExpression
+        ) {
+          checkCredentialsObject(node.arguments[0], `${root.name}.config`);
         }
       },
 

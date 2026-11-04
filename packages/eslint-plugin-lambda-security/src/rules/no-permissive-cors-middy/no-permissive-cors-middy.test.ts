@@ -107,6 +107,29 @@ ruleTester.run('no-permissive-cors-middy', noPermissiveCorsMidly, {
           .use(httpSecurityHeaders());
       `,
     },
+    {
+      name: "a project's own cors helper is not @middy/http-cors",
+      code: `
+        import cors from './cors';
+        const { cors: legacyCors } = require('./legacy');
+        middy(handler).use(cors({ origin: '*' })).use(legacyCors());
+      `,
+    },
+    {
+      name: 'a cors parameter or a local function is not the middleware',
+      code: `
+        function wire(cors) { return middy(handler).use(cors()); }
+        function httpCors(o) { return o; }
+        httpCors({ origin: '*' });
+      `,
+    },
+    {
+      name: 'a computed key and a hole in the origins',
+      code: `
+        import cors from '@middy/http-cors';
+        middy(handler).use(cors({ [key]: '*', origins: [, 'https://example.com'], ...rest }));
+      `,
+    },
     // ========== VALID: Variable for origins ==========
     {
       code: `
@@ -146,6 +169,38 @@ ruleTester.run('no-permissive-cors-middy', noPermissiveCorsMidly, {
       code: `
         middy(handler).use(httpCors({ origins: ['https://example.com', '*'] }));
       `,
+      errors: [{ messageId: 'permissiveCors' }],
+    },
+    {
+      name: 'the middleware imported under another name',
+      code: `
+        import corsMiddleware from '@middy/http-cors';
+        export const handler = middy(baseHandler).use(corsMiddleware({ origin: '*' }));
+      `,
+      errors: [{ messageId: 'permissiveCors' }],
+    },
+    {
+      name: 'the middleware required, the wildcard as a template literal',
+      code: `
+        const cors = require('@middy/http-cors');
+        export const handler = middy(baseHandler).use(cors({ origin: \`*\` }));
+      `,
+      errors: [{ messageId: 'permissiveCors' }],
+    },
+    {
+      name: 'the middleware aliased through another binding',
+      code: `
+        import httpCors from '@middy/http-cors';
+        const cors = httpCors;
+        const loopA = loopB, loopB = loopA;
+        loopA({ origin: '*' });
+        export const handler = middy(baseHandler).use(cors({ origin: '*' }));
+      `,
+      errors: [{ messageId: 'permissiveCors' }],
+    },
+    {
+      name: 'the origin key spelled as a string subscript',
+      code: `middy(handler).use(httpCors({ ['origin']: '*' }));`,
       errors: [{ messageId: 'permissiveCors' }],
     },
     // ========== INVALID: Test file with allowInTests: false ==========

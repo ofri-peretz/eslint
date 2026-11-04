@@ -31,6 +31,15 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+/** Calls that hand every value of their argument on to the log line. */
+const SERIALIZERS = new Set([
+  'JSON.stringify',
+  'Object.entries',
+  'Object.fromEntries',
+  'Object.values',
+  'Object.assign',
+]);
+
 // Logging function names
 const LOGGING_FUNCTIONS = new Set([
   'log',
@@ -79,58 +88,108 @@ export const noEnvLogging = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     currentOptions,
   ) {
-    let sourceCode: Readonly<TSESLint.SourceCode>;
-
-    /**
-     * Check if a node is process.env or process.env access
-     */
+    /** `process.env` / `process['env']` — the whole environment object. */
     function isProcessEnv(node: TSESTree.Node): boolean {
-      // Direct process.env
-      if (
+      return (
         node.type === AST_NODE_TYPES.MemberExpression &&
         node.object.type === AST_NODE_TYPES.Identifier &&
         node.object.name === 'process' &&
         propertyName(node) === 'env'
-      ) {
-        return true;
-      }
-      return false;
+      );
     }
 
     /**
-     * Check if a node contains process.env
+     * Whether evaluating `node` hands the environment's VALUES to the logger.
+     *
+     * Read off the AST, not the printed source. The previous check regexed the
+     * argument text for `process.env` followed by `,`, `)` or `]`, so
+     * `{ env: process.env }` and `{ ...process.env }` — the structured-logger
+     * payloads the docs lead with — passed, while `Object.keys(process.env)`,
+     * which prints only names, was reported.
+     *
+     * A template literal or `+` coerces a bare `process.env` to
+     * "[object Object]" and leaks nothing; only what is serialized inside them
+     * counts.
      */
-    function containsProcessEnv(node: TSESTree.Node): boolean {
-      const text = sourceCode.getText(node);
-      return text.includes('process.env');
+    function leaksEnv(node: TSESTree.Node): boolean {
+      switch (node.type) {
+        case AST_NODE_TYPES.MemberExpression:
+          return isProcessEnv(node);
+        case AST_NODE_TYPES.TSAsExpression:
+        case AST_NODE_TYPES.TSNonNullExpression:
+        case AST_NODE_TYPES.SpreadElement:
+          return leaksEnv(
+            node.type === AST_NODE_TYPES.SpreadElement
+              ? node.argument
+              : node.expression,
+          );
+        case AST_NODE_TYPES.ObjectExpression:
+          return node.properties.some((p) =>
+            leaksEnv(p.type === AST_NODE_TYPES.Property ? p.value : p),
+          );
+        case AST_NODE_TYPES.ArrayExpression:
+          return node.elements.some((e) => e !== null && leaksEnv(e));
+        case AST_NODE_TYPES.ConditionalExpression:
+          return leaksEnv(node.consequent) || leaksEnv(node.alternate);
+        case AST_NODE_TYPES.LogicalExpression:
+          return leaksEnv(node.left) || leaksEnv(node.right);
+        case AST_NODE_TYPES.AssignmentExpression:
+          // console.log(saved = process.env) logs the assigned value.
+          return node.operator === '=' && leaksEnv(node.right);
+        case AST_NODE_TYPES.SequenceExpression:
+          return leaksEnv(node.expressions[node.expressions.length - 1]);
+        case AST_NODE_TYPES.TemplateLiteral:
+          return node.expressions.some(leaksWhenCoerced);
+        case AST_NODE_TYPES.BinaryExpression:
+          // Only `+` builds a string; `===` and friends log a boolean.
+          return (
+            node.operator === '+' &&
+            [node.left, node.right].some(leaksWhenCoerced)
+          );
+        case AST_NODE_TYPES.CallExpression:
+          return (
+            node.callee.type === AST_NODE_TYPES.MemberExpression &&
+            node.callee.object.type === AST_NODE_TYPES.Identifier &&
+            SERIALIZERS.has(
+              `${node.callee.object.name}.${propertyName(node.callee)}`,
+            ) &&
+            node.arguments.some(leaksEnv)
+          );
+        default:
+          return false;
+      }
+    }
+
+    /**
+     * Inside a template literal or a `+`, an object is coerced to
+     * "[object Object]" — `${process.env}` and `${{ env: process.env }}` print
+     * nothing. Only an expression that is already a string carries the
+     * values: a serializer call, or a nested template / concatenation.
+     */
+    function leaksWhenCoerced(node: TSESTree.Node): boolean {
+      return (
+        (node.type === AST_NODE_TYPES.CallExpression ||
+          node.type === AST_NODE_TYPES.TemplateLiteral ||
+          node.type === AST_NODE_TYPES.BinaryExpression) &&
+        leaksEnv(node)
+      );
     }
 
     /**
      * Check if this is a console/logger call
      */
     function isLoggingCall(node: TSESTree.CallExpression): boolean {
-      if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
-        const obj = node.callee.object;
-        const prop = node.callee.property;
-
-        if (prop.type !== AST_NODE_TYPES.Identifier) return false;
-        const methodName = prop.name;
-
-        if (!LOGGING_FUNCTIONS.has(methodName)) return false;
-
-        // console.log, console.info, etc.
-        if (obj.type === AST_NODE_TYPES.Identifier && obj.name === 'console') {
-          return true;
-        }
-        // logger.log, log.info, etc.
-        if (
-          obj.type === AST_NODE_TYPES.Identifier &&
-          /log(ger)?/i.test(obj.name)
-        ) {
-          return true;
-        }
+      if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+      const obj = node.callee.object;
+      const methodName = propertyName(node.callee);
+      if (methodName === null || !LOGGING_FUNCTIONS.has(methodName)) {
+        return false;
       }
-      return false;
+      // console.log, console.info, logger.log, log.info, etc.
+      return (
+        obj.type === AST_NODE_TYPES.Identifier &&
+        (obj.name === 'console' || /log(ger)?/i.test(obj.name))
+      );
     }
 
     return {
@@ -149,35 +208,13 @@ export const noEnvLogging = createRule<RuleOptions, MessageIds>({
           return false;
         }
 
-        sourceCode = context.sourceCode;
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
         if (!isLoggingCall(node)) return;
-
-        // Check each argument for process.env
         for (const arg of node.arguments) {
-          // Direct process.env logging
-          if (isProcessEnv(arg)) {
-            context.report({
-              node: arg,
-              messageId: 'envLogging',
-            });
-          }
-          // process.env inside template literal or string concatenation
-          else if (containsProcessEnv(arg)) {
-            // Don't flag if it's just a specific env var access like process.env.AWS_REGION
-            const text = sourceCode.getText(arg);
-            // Flag if it's the entire process.env object
-            if (
-              /process\.env\s*[,)\]]/.test(text) ||
-              /JSON\.stringify\s*\(\s*process\.env\s*\)/.test(text)
-            ) {
-              context.report({
-                node: arg,
-                messageId: 'envLogging',
-              });
-            }
+          if (leaksEnv(arg)) {
+            context.report({ node: arg, messageId: 'envLogging' });
           }
         }
       },

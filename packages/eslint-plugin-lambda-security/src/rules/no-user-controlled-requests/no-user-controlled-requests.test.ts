@@ -57,6 +57,31 @@ const ruleTester = new RuleTester();
 
 ruleTester.run('no-user-controlled-requests', noUserControlledRequests, {
   valid: lambda([
+    {
+      name: 'a truthy literal on the left of || always wins',
+      code: `
+        export const handler = async (event) => {
+          const target = 'https://api.trusted.com' || event.queryStringParameters.url;
+          const fallback = '' || 'https://api.trusted.com';
+          return fetch(target + fallback);
+        };
+      `,
+    },
+    {
+      name: 'the documented allowlist check before fetching',
+      code: `
+        export const handler = async (event) => {
+          const body = JSON.parse(event.body);
+          const url = new URL(body.webhookUrl);
+          if (!ALLOWED_HOSTS.includes(url.host)) return { statusCode: 400 };
+          const meta = JSON.parse(config);
+          const empty = JSON.parse();
+          const { region } = settings;
+          const [first] = event.queryStringParameters.list;
+          return fetch(url.toString(), { headers: meta.headers });
+        };
+      `,
+    },
     // Safe: Static URL
     {
       name: 'a fetch to a fixed host',
@@ -108,6 +133,35 @@ ruleTester.run('no-user-controlled-requests', noUserControlledRequests, {
     },
   ]),
   invalid: lambda([
+    {
+      name: "the docs' parsed body field as the URL",
+      code: `
+        export const handler = async (event) => {
+          const body = JSON.parse(event.body ?? '{}');
+          await fetch(body.webhookUrl);
+          await axios({ url: (body as any).targetUrl, method: 'POST' });
+        };
+      `,
+      errors: [{ messageId: 'ssrfVulnerability' }, { messageId: 'ssrfVulnerability' }],
+    },
+    {
+      name: 'a URL destructured out of the query string or the parsed body',
+      code: `
+        export const handler = async (event) => {
+          const { url, ...rest } = event.queryStringParameters;
+          const { webhookUrl } = JSON.parse(event.body!);
+          const target = process.env.DEFAULT_URL || event.headers['x-target'];
+          await fetch(url);
+          await got(webhookUrl);
+          await fetch(target);
+        };
+      `,
+      errors: [
+        { messageId: 'ssrfVulnerability' },
+        { messageId: 'ssrfVulnerability' },
+        { messageId: 'ssrfVulnerability' },
+      ],
+    },
     // The query BAG is named, the key inside it is not. Still attacker-chosen,
     // so it still reports — the message just says `[...]` where a name would
     // otherwise go.

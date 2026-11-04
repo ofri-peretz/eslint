@@ -57,6 +57,23 @@ const ruleTester = new RuleTester();
 
 ruleTester.run('no-overly-permissive-iam-policy', noOverlyPermissiveIamPolicy, {
   valid: lambda([
+    {
+      name: "an authorizer's deny-everything policy grants nothing",
+      code: `
+        export const handler = async (event) => ({
+          principalId: 'anonymous',
+          policyDocument: { Version: '2012-10-17', Statement: [{ Effect: 'Deny', Action: '*', Resource: '*' }] },
+        });
+      `,
+    },
+    {
+      name: 'a named account principal',
+      code: `const policy = { Effect: 'Allow', Principal: { AWS: ['arn:aws:iam::123456789012:root'], [kind]: role }, Action: 's3:GetObject', Resource: 'arn:aws:s3:::b/*' };`,
+    },
+    {
+      name: 'a principal object built elsewhere',
+      code: `const policy = { Effect: 'Allow', Principal: { ...principals }, Resource: [, 'arn:aws:s3:::b/*'] };`,
+    },
     // Specific resource (multi-line)
     {
       name: 'a scoped bucket ARN',
@@ -133,6 +150,21 @@ ruleTester.run('no-overly-permissive-iam-policy', noOverlyPermissiveIamPolicy, {
     },
   ]),
   invalid: lambda([
+    {
+      name: 'a repeated Effect key keeps its last value',
+      code: `const policy = { Effect: 'Deny', Effect: 'Allow', Action: 's3:GetObject', Resource: '*' };`,
+      errors: [{ messageId: 'permissivePolicy' }],
+    },
+    {
+      name: 'a principal of every AWS account',
+      code: `const policy = { Effect: 'Allow', Principal: { AWS: '*' }, Action: 's3:GetObject', Resource: 'arn:aws:s3:::b/*' };`,
+      errors: [{ messageId: 'permissivePolicy' }],
+    },
+    {
+      name: 'an Allow statement with a computed Resource key',
+      code: `const policy = { Effect: 'Allow', Action: 's3:GetObject', ['Resource']: ['arn:aws:s3:::b/*', \`*\`] };`,
+      errors: [{ messageId: 'permissivePolicy' }],
+    },
     // Wildcard Resource (multi-line format)
     {
       name: "Resource '*' grants the action over every object in the account",

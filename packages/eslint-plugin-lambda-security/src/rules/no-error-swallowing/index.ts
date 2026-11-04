@@ -332,6 +332,19 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
         if (value.type === AST_NODE_TYPES.Literal && value.value === true)
           return false;
 
+        // `return callback(null, ok)` / `return next()` is a call into a
+        // forwarding callback, not a fallback value. Whether it handles the
+        // error is the forwarding question `analyze` already answers —
+        // `callback(error)` forwards, `callback(null, …)` is the Lambda
+        // runtime's success path and swallows it.
+        if (
+          value.type === AST_NODE_TYPES.CallExpression &&
+          value.callee.type === AST_NODE_TYPES.Identifier &&
+          FORWARDING_CALLBACKS.test(value.callee.name)
+        ) {
+          return false;
+        }
+
         // An object literal claiming a 2xx status is failure dressed as success.
         if (value.type === AST_NODE_TYPES.ObjectExpression) {
           const status = value.properties.find(

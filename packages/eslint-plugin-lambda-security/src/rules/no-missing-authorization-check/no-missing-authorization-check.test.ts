@@ -145,6 +145,44 @@ ruleTester.run('no-missing-authorization-check', noMissingAuthorizationCheck, {
         };
       `,
     },
+    {
+      name: 'IAM authorization through requestContext.identity',
+      code: `
+        export const handler = async (event) => {
+          if (!event.requestContext.identity.userArn) return { statusCode: 403 };
+          await db.query('DELETE FROM users');
+        };
+      `,
+    },
+    {
+      name: 'an HTTP API JWT authorizer read with optional chaining',
+      code: `
+        export const handler = async (event) => {
+          const caller = event.requestContext?.authorizer?.jwt?.claims;
+          await db.query('DELETE FROM users WHERE owner = $1', [caller]);
+        };
+      `,
+    },
+    {
+      name: 'a computed property read is not taken as identity',
+      code: `
+        export const handler = async (event) => {
+          const user = await verify(token);
+          if (!user[field]) return { statusCode: 401 };
+          await db.query('DELETE FROM users');
+        };
+      `,
+    },
+    {
+      name: 'handlerPatterns excludes a file it does not name',
+      code: `
+        export const handler = async (event) => {
+          await db.query('DELETE FROM users');
+        };
+      `,
+      filename: 'src/lib/purge.ts',
+      options: [{ handlerPatterns: ['handlers/'] }],
+    },
     // Handler without sensitive operations — no auth needed
     {
       code: `
@@ -226,6 +264,52 @@ ruleTester.run('no-missing-authorization-check', noMissingAuthorizationCheck, {
       errors: [{ messageId: 'missingAuthCheck' }],
     },
     // Lambda handler with DB query but no auth check (classic FN)
+    {
+      name: 'a field merely named like an identity claim in the body',
+      code: `
+        export const handler = async (event) => {
+          const body = JSON.parse(event.body);
+          console.log('purging', body.subject, body.userId);
+          await db.query('DELETE FROM users');
+        };
+      `,
+      errors: [{ messageId: 'missingAuthCheck' }],
+    },
+    {
+      name: 'the user id the client put in the path is not identity',
+      code: `
+        export const handler = async (event) => {
+          await db.delete({ id: event.pathParameters['userId'] });
+        };
+      `,
+      errors: [{ messageId: 'missingAuthCheck' }],
+    },
+    {
+      name: 'identity fields read off a parsed body stored under any name',
+      code: `
+        export const handler = async (event) => {
+          const payload = JSON.parse(event.body ?? '{}');
+          const params = event.pathParameters;
+          const raw = JSON.parse();
+          const local = 1;
+          let later;
+          console.log(payload.userId, params.sub, payload.authorization, raw.x, local, later);
+          await db.query('DELETE FROM users');
+        };
+      `,
+      errors: [{ messageId: 'missingAuthCheck' }],
+    },
+    {
+      name: 'handlerPatterns names the file',
+      code: `
+        export const handler = async (event) => {
+          await db.query('DELETE FROM users');
+        };
+      `,
+      filename: 'src/handlers/purge.ts',
+      options: [{ handlerPatterns: ['handlers/'] }],
+      errors: [{ messageId: 'missingAuthCheck' }],
+    },
     {
       name: 'a handler that deletes rows without checking who asked',
       code: `
