@@ -57,6 +57,7 @@ const PLUGINS = [
   'supabase-security',
   'typeorm-security',
   'knex-security',
+  'reliability',
 ];
 
 const loadPlugin = (short) => {
@@ -203,8 +204,16 @@ if (whole.length) {
       ),
   );
   for (const short of whole) {
-    for (const name of Object.keys(loadPlugin(short).rules)) {
-      if (!modelled.has(`${short}/${name}`)) missing.push(`${short}/${name}`);
+    const { rules } = loadPlugin(short);
+    // An alias (`error-handling/no-silent-errors` for `no-silent-errors`)
+    // exports the same rule object, so the one model covers both names.
+    const covered = new Set(
+      Object.keys(rules)
+        .filter((name) => modelled.has(`${short}/${name}`))
+        .map((name) => rules[name]),
+    );
+    for (const name of Object.keys(rules)) {
+      if (!covered.has(rules[name])) missing.push(`${short}/${name}`);
     }
   }
   if (missing.length)

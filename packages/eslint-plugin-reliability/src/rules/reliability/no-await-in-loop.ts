@@ -9,7 +9,7 @@
  * Disallow await inside loops without considering concurrency implications (unicorn-inspired)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, variableOf } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -64,6 +64,129 @@ function onceEvaluatedSlot(loop: TSESTree.Node): string | null {
     return 'init';
   }
   return null;
+}
+
+const SKIP_KEYS = new Set(['parent', 'tokens', 'comments', 'loc', 'range']);
+
+function isFunctionNode(node: TSESTree.Node): boolean {
+  return (
+    node.type === 'FunctionDeclaration' ||
+    node.type === 'FunctionExpression' ||
+    node.type === 'ArrowFunctionExpression'
+  );
+}
+
+/**
+ * Visit `node` and every descendant evaluated in the same function: a nested
+ * function runs in its own context, so its body is not this loop's code.
+ */
+function walkSameFunction(
+  node: TSESTree.Node,
+  visit: (n: TSESTree.Node) => void,
+): void {
+  visit(node);
+  if (isFunctionNode(node)) return;
+  for (const key in node) {
+    if (SKIP_KEYS.has(key)) continue;
+    const child = (node as unknown as Record<string, unknown>)[key];
+    const children = Array.isArray(child) ? child : [child];
+    for (const item of children) {
+      if (item && typeof item === 'object' && 'type' in item) {
+        walkSameFunction(item as TSESTree.Node, visit);
+      }
+    }
+  }
+}
+
+function someNode(
+  node: TSESTree.Node | null | undefined,
+  test: (n: TSESTree.Node) => boolean,
+): boolean {
+  if (!node) return false;
+  let found = false;
+  walkSameFunction(node, (n) => {
+    found ||= test(n);
+  });
+  return found;
+}
+
+/**
+ * Does this loop feed an awaited value into its own next iteration?
+ *
+ * Then the awaits cannot run concurrently, and the loop is the correct shape
+ * (the docs' "When Sequential is Required"). An awaited value is carried when
+ * it reaches — through declarations and assignments inside the loop — a
+ * binding that something deciding the next iteration reads: the loop's test or
+ * update (a cursor), the arguments of an await in the loop (an accumulator), or
+ * the test of a branch that leaves the loop (`if (res.done) break`, a retry
+ * that returns on success). A method call on a binding with the value as an
+ * argument (`results.push(r)`) stores it in that binding. An awaited value
+ * collected for later and never read back by the loop (`results.push(r)`,
+ * `total += r`) is not carried: the work is independent.
+ */
+function carriesAwaitedValue(
+  loop: TSESTree.Node,
+  awaits: readonly TSESTree.AwaitExpression[],
+  sourceCode: Readonly<TSESLint.SourceCode>,
+): boolean {
+  const awaitSet = new Set<TSESTree.Node>(awaits);
+  const tainted = new Set<unknown>();
+  const reads = (n: TSESTree.Node): boolean =>
+    n.type === 'Identifier' && tainted.has(variableOf(n, sourceCode));
+  const isTainted = (n: TSESTree.Node | null | undefined): boolean =>
+    someNode(n, (m) => awaitSet.has(m) || reads(m));
+
+  const writes: Array<[TSESTree.Identifier, TSESTree.Node | null]> = [];
+  const exits: TSESTree.Node[] = [];
+  walkSameFunction(loop, (n) => {
+    if (n.type === 'VariableDeclarator' && n.id.type === 'Identifier') {
+      writes.push([n.id, n.init]);
+    } else if (
+      n.type === 'AssignmentExpression' &&
+      n.left.type === 'Identifier'
+    ) {
+      writes.push([n.left, n.right]);
+    } else if (
+      n.type === 'CallExpression' &&
+      n.callee.type === 'MemberExpression' &&
+      n.callee.object.type === 'Identifier'
+    ) {
+      // `results.push(r)` stores the value in `results`.
+      writes.push([n.callee.object, n]);
+    } else if (
+      n.type === 'IfStatement' &&
+      someNode(
+        n,
+        (m) => m.type === 'BreakStatement' || m.type === 'ReturnStatement',
+      )
+    ) {
+      exits.push(n.test);
+    }
+  });
+
+  for (let grew = true; grew;) {
+    grew = false;
+    for (const [id, value] of writes) {
+      // An undeclared global resolves to no variable, and `undefined` must not
+      // stand for every other unresolved name.
+      const variable = variableOf(id, sourceCode);
+      if (variable && !tainted.has(variable) && isTainted(value)) {
+        tainted.add(variable);
+        grew = true;
+      }
+    }
+  }
+  if (tainted.size === 0) return false;
+
+  const header =
+    loop.type === 'ForStatement'
+      ? [loop.test, loop.update]
+      : loop.type === 'WhileStatement' || loop.type === 'DoWhileStatement'
+        ? [loop.test]
+        : [];
+  return [...header, ...awaits.map((a) => a.argument), ...exits].some((n) =>
+    someNode(n, reads),
+  );
 }
 
 export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
@@ -157,9 +280,11 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
 
     function analyzeLoop(node: TSESTree.Node, loopType: string) {
       // Skip allowed loop types
+      // `allowWhile` covers both spellings of a while loop.
       if (
         (loopType === 'ForOfStatement' && allowForOf) ||
-        (loopType === 'WhileStatement' && allowWhile)
+        ((loopType === 'WhileStatement' || loopType === 'DoWhileStatement') &&
+          allowWhile)
       ) {
         return;
       }
@@ -230,7 +355,10 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
 
       findAwaits(node, true);
 
-      if (awaitExpressions.length > 0) {
+      if (
+        awaitExpressions.length > 0 &&
+        !carriesAwaitedValue(node, awaitExpressions, context.sourceCode)
+      ) {
         // Analyze the loop context to determine the best suggestion
         const loopContext = analyzeLoopContext(node, loopType);
 

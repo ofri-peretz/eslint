@@ -56,13 +56,15 @@ describe('no-unhandled-promise', () => {
         {
           code: 'async () => { await promise; }',
         },
-        // In try/catch
+        // In try/catch, awaited: the await is what lets the catch see the rejection
         {
           code: `
-            try {
-              fetch(url);
-            } catch (error) {
-              console.error(error);
+            async function fn() {
+              try {
+                await fetch(url);
+              } catch (error) {
+                console.error(error);
+              }
             }
           `,
         },
@@ -626,6 +628,38 @@ describe('no-unhandled-promise', () => {
         {
           name: 'a local async function called and forgotten still reports beside a quiet parameter',
           code: 'async function save() {}\nasync function main(write: (s: string) => void) { write("x"); save(); }',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+      ],
+    });
+  });
+  describe('a try block does not catch a rejection it does not await (fidelity)', () => {
+    ruleTester.run('try without await', noUnhandledPromise, {
+      valid: [
+        {
+          name: 'awaited inside try',
+          code: 'async function save() {}\nasync function run() { try { await save(); } catch (e) { log(e); } }',
+        },
+      ],
+      invalid: [
+        {
+          name: 'a call in a try block, not awaited, rejects after the block has exited',
+          code: 'async function save() {}\nfunction run() { try { save(); } catch (e) { log(e); } }',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        {
+          name: 'a .then chain in a try block, not awaited',
+          code: 'function run() { try { client.connect().then(onReady); } catch (e) { log(e); } }',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        {
+          name: 'a call in the catch clause is not guarded by its own try',
+          code: 'async function report() {}\nfunction run() { try { work(); } catch (e) { report(); } }',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        {
+          name: 'a call in the finally clause is not guarded by the try',
+          code: 'async function flush() {}\nfunction run() { try { work(); } finally { flush(); } }',
           errors: [{ messageId: 'unhandledPromise' }],
         },
       ],

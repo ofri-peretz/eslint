@@ -16,6 +16,11 @@ Detect `*/` sequences inside JSDoc `@example` blocks that prematurely close the 
 
 This rule is part of [`eslint-plugin-reliability`](https://www.npmjs.com/package/eslint-plugin-reliability).
 
+> **Deprecated.** A block comment ends at its first `*/`, so in any file that
+> parses no comment can contain one: the inputs below are parse errors, which
+> the parser already reports. The rule cannot fire on a parseable file and is
+> kept only for configuration compatibility.
+
 ## Quick Summary
 
 | Aspect         | Details                                                                                    |

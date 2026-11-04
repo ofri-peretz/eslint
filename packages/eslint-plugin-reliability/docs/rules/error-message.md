@@ -88,6 +88,15 @@ flowchart TD
 | `EvalError`      | `new EvalError('message')`           |
 | `URIError`       | `new URIError('message')`            |
 
+### What counts as a missing message
+
+The constructor must be the built-in one — decided by binding, so a local class
+named `Error` is not it, and `globalThis.Error` is. The message is missing when
+the code proves it empty: no argument, `undefined`, a literal that is not a
+string (`null`, `42`), or a string literal or template with nothing but
+whitespace in it. A variable, a call or a template with a substitution may
+carry a message and is not reported.
+
 ## Examples
 
 ### ❌ Incorrect
@@ -101,6 +110,8 @@ throw new RangeError();
 // Empty string message
 throw new Error('');
 throw new Error('   ');
+throw new Error(``);
+throw new Error(undefined);
 
 // Function call without new (also caught)
 throw Error();
