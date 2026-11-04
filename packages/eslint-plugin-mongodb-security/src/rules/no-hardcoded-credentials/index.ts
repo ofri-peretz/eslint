@@ -141,13 +141,19 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       ) {
         return false;
       }
+      // Every use must be a data operation: the same object also handed to
+      // `create()` or exported is not only a filter.
       return context.sourceCode
         .getDeclaredVariables(declarator)
-        .some((variable) =>
-          variable.references.some((reference) =>
-            isDataArgument(reference.identifier),
-          ),
-        );
+        .some((variable) => {
+          const uses = variable.references.filter(
+            (reference) => !reference.init,
+          );
+          return (
+            uses.length > 0 &&
+            uses.every((reference) => isDataArgument(reference.identifier))
+          );
+        });
     };
 
     return {

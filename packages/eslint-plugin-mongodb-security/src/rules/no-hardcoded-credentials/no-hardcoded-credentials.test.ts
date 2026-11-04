@@ -137,6 +137,16 @@ describe('no-hardcoded-credentials', () => {
           errors: [{ messageId: 'hardcodedCredentials' }],
         },
         {
+          name: 'a const-bound object passed to create() is still reported',
+          code: `const f = { username: 'admin' };\nUser.create(f);`,
+          errors: [{ messageId: 'hardcodedCredentials' }],
+        },
+        {
+          name: 'a const-bound object used as a filter AND passed to create() is still reported',
+          code: `const f = { username: 'admin' };\nUser.findOne(f);\nUser.create(f);`,
+          errors: [{ messageId: 'hardcodedCredentials' }],
+        },
+        {
           name: 'a username passed to a plain function call (no receiver) is still reported',
           code: `findOne({ username: 'admin' });`,
           errors: [{ messageId: 'hardcodedCredentials' }],
