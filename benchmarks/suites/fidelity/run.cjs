@@ -175,11 +175,15 @@ const whole = filters.length
   ? PLUGINS.filter((short) => filters.includes(short))
   : PLUGINS;
 if (whole.length) {
+  // Only the plugins checked here, so one broken model elsewhere cannot
+  // crash an unrelated plugin's job.
   const modelled = new Set(
-    all.map(
-      ([short, m]) =>
-        `${short}/${require(path.join(MODELS_DIR, short, `${m}.cjs`)).rule}`,
-    ),
+    all
+      .filter(([short]) => whole.includes(short))
+      .map(
+        ([short, m]) =>
+          `${short}/${require(path.join(MODELS_DIR, short, `${m}.cjs`)).rule}`,
+      ),
   );
   for (const short of whole) {
     for (const name of Object.keys(loadPlugin(short).rules)) {

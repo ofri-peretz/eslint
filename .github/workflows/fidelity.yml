@@ -15,8 +15,9 @@ on:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
-      - 'packages/eslint-plugin-*/src/**'
-      - 'packages/eslint-devkit/src/**'
+      # Not just src/: package.json and tsconfig shape the built dist/ too.
+      - 'packages/eslint-plugin-*/**'
+      - 'packages/eslint-devkit/**'
       - 'benchmarks/suites/fidelity/**'
       - '.github/workflows/fidelity.yml'
   schedule:
@@ -48,11 +49,14 @@ jobs:
           EVENT: ${{ github.event_name }}
           BASE_REF: ${{ github.base_ref }}
         run: |
-          all=$(ls benchmarks/suites/fidelity/models)
-          # A devkit, runner or workflow change can move any rule: run them all.
+          # From run.cjs's PLUGINS, not models/: a plugin whose models were all
+          # deleted must still get a job, and fail as unmodelled.
+          all=$(node -e "const s=require('fs').readFileSync('benchmarks/suites/fidelity/run.cjs','utf8');console.log(s.match(/const PLUGINS = \[([^\]]*)\]/)[1].match(/'[^']+'/g).map((x)=>x.slice(1,-1)).join(' '))")
+          # A devkit, runner, shared suite helper or workflow change can move
+          # any rule: run them all.
           if [ "$EVENT" != pull_request ] ||
              git diff --name-only "origin/$BASE_REF"...HEAD |
-               grep -qE '^(packages/eslint-devkit/|benchmarks/suites/fidelity/run\.cjs|\.github/workflows/fidelity\.yml)'; then
+               grep -qE '^(packages/eslint-devkit/|benchmarks/suites/fidelity/[^/]+\.cjs$|\.github/workflows/fidelity\.yml)'; then
             picked=$all
           else
             changed=$(git diff --name-only "origin/$BASE_REF"...HEAD)
@@ -81,9 +85,13 @@ jobs:
         with:
           deps: lean
 
-      - run: npx turbo run build --filter="eslint-plugin-${{ matrix.plugin }}"
+      - run: npx turbo run build --filter="eslint-plugin-$PLUGIN"
+        env:
+          PLUGIN: ${{ matrix.plugin }}
 
-      - run: npm run fidelity -- "${{ matrix.plugin }}"
+      - run: npm run fidelity -- "$PLUGIN"
+        env:
+          PLUGIN: ${{ matrix.plugin }}
 
   # A red cron notifies nobody by default. See .github/actions/report-failure.
   report:
