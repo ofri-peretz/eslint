@@ -213,6 +213,14 @@ export function createOriginClassifier(
         ? 'unknown'
         : classify(valueAt(root, value.env), depth + 1, seen);
     }
+    // `any` / `unknown` say nothing about where the value came from, so the
+    // initialiser decides: `const pool: any = mysql.createPool(…)` is ours.
+    if (
+      node.type === AST_NODE_TYPES.TSAnyKeyword ||
+      node.type === AST_NODE_TYPES.TSUnknownKeyword
+    ) {
+      return 'unknown';
+    }
     if (node.type !== AST_NODE_TYPES.TSTypeReference) return 'foreign';
     // A type reference is always rooted at a name (`this` types are
     // `TSThisType`, never a reference).

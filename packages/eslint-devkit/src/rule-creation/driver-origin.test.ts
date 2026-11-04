@@ -340,6 +340,14 @@ describe('createOriginClassifier — types', () => {
     ).toBe('unknown');
   });
 
+  it('reads `any` and `unknown` as no evidence either way', () => {
+    expect(typeOrigin('let probeType: any;')).toBe('unknown');
+    expect(typeOrigin('let probeType: unknown;')).toBe('unknown');
+    expect(
+      origin("import drv from 'drv';\nconst db: any = drv();\nprobe(db);"),
+    ).toBe('ours');
+  });
+
   it('follows a relative type import to its declaration', () => {
     const dir = path.join(ROOT, `t${counter++}`);
     fs.mkdirSync(dir, { recursive: true });

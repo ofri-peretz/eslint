@@ -46,6 +46,11 @@ const PLUGINS = [
   'mcp-sdk-security',
   'postgresql-security',
   'lambda-security',
+  'anthropic-security',
+  'gemini-security',
+  'openai-security',
+  'mysql-security',
+  'sqlite-security',
 ];
 
 const loadPlugin = (short) => {

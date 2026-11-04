@@ -311,3 +311,23 @@ describe('no-unsafe-query — quint oracle 2026-10', () => {
     ],
   });
 });
+
+/**
+ * Disagreements the fidelity suite found (benchmarks/suites/fidelity/models/
+ * mysql-security/no_unsafe_query), each locked as the rendered case.
+ */
+describe('no-unsafe-query — fidelity 2026-11', () => {
+  ruleTester.run('fidelity 2026-11', noUnsafeQuery, {
+    valid: [],
+    invalid: [
+      {
+        // @found fidelity mysql-security/no_unsafe_query: Drivers|AnyTyped|TemplateReq
+        name: 'FN: a pool annotated `: any` is still the driver',
+        code:
+          "import mysql from 'mysql2/promise';\nconst foo: any = mysql.createPool({});\n" +
+          'export async function h(bar) { return foo.query(`SELECT * FROM t WHERE id = ${bar.query.id}`); }',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+    ],
+  });
+});
