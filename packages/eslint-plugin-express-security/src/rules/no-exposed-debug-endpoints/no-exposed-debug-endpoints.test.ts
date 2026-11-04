@@ -23,14 +23,16 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const xp = <T,>(cases: T[]): T[] =>
+const xp = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asExpress(c) as T;
     const test = c as Case;
     return {
       ...c,
       code: asExpress(test.code),
-      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asExpress(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -49,7 +51,6 @@ const xp = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -148,6 +149,25 @@ ruleTester.run(
         options: [{ ignoreFiles: ['scripts/'] }],
         filename: '/project/scripts/dev-server.ts',
       },
+      // ignoreFiles is a glob, as the documented `**/test/**` example writes it
+      {
+        name: 'a ** glob in ignoreFiles matches a nested directory',
+        code: `app.get('/debug', handler);`,
+        options: [{ ignoreFiles: ['**/internal/**'] }],
+        filename: '/project/src/internal/routes.ts',
+      },
+      {
+        name: 'a * glob in ignoreFiles matches a file name',
+        code: `app.get('/debug', handler);`,
+        options: [{ ignoreFiles: ['src/dev/*.ts'] }],
+        filename: '/project/src/dev/routes.ts',
+      },
+      {
+        name: 'a ? glob matches one character',
+        code: `app.get('/debug', handler);`,
+        options: [{ ignoreFiles: ['**/dev?/**'] }],
+        filename: 'C:\\project\\src\\dev2\\routes.ts',
+      },
       // route path is a variable, not a literal
       { code: `app.get(routePath, handler);` },
       // route path is a non-string literal
@@ -183,6 +203,21 @@ ruleTester.run(
         code: `app.get('/debug', handler);`,
         options: [{ ignoreFiles: ['scripts/'] }],
         filename: '/project/src/server.ts',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // a glob that does not match leaves the rule active; `*` stops at `/`
+      {
+        name: 'a * glob does not cross a directory',
+        code: `app.get('/debug', handler);`,
+        options: [{ ignoreFiles: ['src/*.ts', '**/test/**'] }],
+        filename: '/project/src/dev/routes.ts',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'a glob matches whole path segments',
+        code: `app.get('/debug', handler);`,
+        options: [{ ignoreFiles: ['**/internal/**'] }],
+        filename: '/project/src/internals/routes.ts',
         errors: [{ messageId: 'violationDetected' }],
       },
     ]),

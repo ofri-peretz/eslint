@@ -37,6 +37,11 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
 import {
+  isPackageCallee,
+  packageBindings,
+  type PackageBindings,
+} from '../../utils/import-bindings';
+import {
   AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
@@ -106,9 +111,17 @@ function propertyKeyName(prop: TSESTree.Property): string | null {
   return null;
 }
 
-/** `helmet.contentSecurityPolicy(...)` */
-function isCspFactory(node: TSESTree.CallExpression): boolean {
+/**
+ * `helmet.contentSecurityPolicy(...)`, or helmet's named export called
+ * directly (`import { contentSecurityPolicy } from 'helmet'`) or off a
+ * renamed helmet binding.
+ */
+function isCspFactory(
+  node: TSESTree.CallExpression,
+  helmet: PackageBindings,
+): boolean {
   const callee = node.callee;
+  if (isPackageCallee(callee, helmet, 'contentSecurityPolicy')) return true;
   if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
   if (callee.property.type !== AST_NODE_TYPES.Identifier) return false;
   if (callee.computed) return false;
@@ -119,11 +132,15 @@ function isCspFactory(node: TSESTree.CallExpression): boolean {
   );
 }
 
-/** `helmet(...)` */
-function isHelmetCall(node: TSESTree.CallExpression): boolean {
+/** `helmet(...)`, by its conventional name or the local the file binds. */
+function isHelmetCall(
+  node: TSESTree.CallExpression,
+  helmet: PackageBindings,
+): boolean {
   return (
-    node.callee.type === AST_NODE_TYPES.Identifier &&
-    node.callee.name === 'helmet'
+    (node.callee.type === AST_NODE_TYPES.Identifier &&
+      node.callee.name === 'helmet') ||
+    isPackageCallee(node.callee, helmet)
   );
 }
 
@@ -220,6 +237,7 @@ export const noUnsafeCspDirectives = createRule<RuleOptions, MessageIds>({
     currentOptions,
   ) {
     let withStyle: boolean;
+    let helmet: PackageBindings;
 
     /** Removes one source string (and its comma) from a directive array. */
     function removeElement(
@@ -370,16 +388,17 @@ export const noUnsafeCspDirectives = createRule<RuleOptions, MessageIds>({
 
         const { checkStyleSrc } = options as Options;
         withStyle = checkStyleSrc ?? true;
+        helmet = packageBindings(context.sourceCode.ast, ['helmet']);
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        if (isCspFactory(node)) {
+        if (isCspFactory(node, helmet)) {
           const config = node.arguments[0];
           if (config) checkCspConfig(config);
           return;
         }
 
-        if (!isHelmetCall(node)) return;
+        if (!isHelmetCall(node, helmet)) return;
         const config = node.arguments[0];
         if (!config || config.type !== AST_NODE_TYPES.ObjectExpression) return;
 

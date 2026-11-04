@@ -45,6 +45,8 @@ const HTTP_METHODS = new Set([
   'delete',
   'all',
   'use',
+  // `app.route(path).get(…)` — the path is registered by `route`.
+  'route',
 ]);
 
 /**
@@ -175,62 +177,72 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Check the route argument (first argument)
-        const routeArg = node.arguments[0];
-        if (!routeArg) {
+        // Check the route argument (first argument). Express also accepts an
+        // array of paths, each of which is a route.
+        const first = node.arguments[0];
+        if (!first) {
           return;
         }
+        const paths =
+          first.type === 'ArrayExpression' ? first.elements : [first];
+        for (const routeArg of paths) {
+          if (routeArg && routeArg.type !== 'SpreadElement') {
+            checkPath(routeArg);
+          }
+        }
+      },
+    };
 
-        // Check regex literal routes (e.g., /pattern/)
+    function checkPath(routeArg: TSESTree.Node): void {
+      // Check regex literal routes (e.g., /pattern/)
+      if (
+        routeArg.type === 'Literal' &&
+        'regex' in routeArg &&
+        routeArg.regex
+      ) {
+        const regexNode = routeArg as TSESTree.RegExpLiteral;
+        const pattern = regexNode.regex.pattern;
+        if (isVulnerableRegex(pattern)) {
+          context.report({
+            node: routeArg,
+            messageId: 'unsafeRegexRoute',
+          });
+        }
+        return;
+      }
+
+      // Check new RegExp() routes
+      if (
+        routeArg.type === 'NewExpression' &&
+        routeArg.callee.type === 'Identifier' &&
+        routeArg.callee.name === 'RegExp'
+      ) {
+        const patternArg = routeArg.arguments[0];
         if (
-          routeArg.type === 'Literal' &&
-          'regex' in routeArg &&
-          routeArg.regex
+          patternArg &&
+          patternArg.type === 'Literal' &&
+          typeof patternArg.value === 'string'
         ) {
-          const regexNode = routeArg as TSESTree.RegExpLiteral;
-          const pattern = regexNode.regex.pattern;
-          if (isVulnerableRegex(pattern)) {
+          if (isVulnerableRegex(patternArg.value)) {
             context.report({
               node: routeArg,
               messageId: 'unsafeRegexRoute',
             });
           }
-          return;
         }
+        return;
+      }
 
-        // Check new RegExp() routes
-        if (
-          routeArg.type === 'NewExpression' &&
-          routeArg.callee.type === 'Identifier' &&
-          routeArg.callee.name === 'RegExp'
-        ) {
-          const patternArg = routeArg.arguments[0];
-          if (
-            patternArg &&
-            patternArg.type === 'Literal' &&
-            typeof patternArg.value === 'string'
-          ) {
-            if (isVulnerableRegex(patternArg.value)) {
-              context.report({
-                node: routeArg,
-                messageId: 'unsafeRegexRoute',
-              });
-            }
-          }
-          return;
+      // Check string routes with vulnerable param patterns
+      const staticText = staticString(routeArg);
+      if (staticText !== null) {
+        if (hasVulnerableParamPattern(staticText)) {
+          context.report({
+            node: routeArg,
+            messageId: 'unsafeParamPattern',
+          });
         }
-
-        // Check string routes with vulnerable param patterns
-        const staticText = staticString(routeArg);
-        if (staticText !== null) {
-          if (hasVulnerableParamPattern(staticText)) {
-            context.report({
-              node: routeArg,
-              messageId: 'unsafeParamPattern',
-            });
-          }
-        }
-      },
-    };
+      }
+    }
   },
 });

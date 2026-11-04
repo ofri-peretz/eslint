@@ -33,13 +33,14 @@
  * - generic literal responses (`res.json({ error: 'Internal error' })`)
  * - server-side logging (`logger.error(err)`)
  * - `err.message` under the default `allowMessage: true`
- * - responses inside a NODE_ENV guard when `allowInDev: true`
+ * - responses in a development-only branch when `allowInDev: true`
  *
  * @see https://cwe.mitre.org/data/definitions/209.html
  * @see https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html
  */
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { inDevelopmentBranch } from '../../utils/environment';
 import { fileUsesExpress } from '../../utils/express-evidence';
 import {
   AST_NODE_TYPES,
@@ -66,8 +67,9 @@ export interface Options {
    */
   allowMessage?: boolean;
   /**
-   * Allow error details inside an if-guard that checks NODE_ENV
-   * (development-only debugging). Default: false
+   * Allow error details in a branch that only runs in development
+   * (`if (NODE_ENV === 'development')`, the `else` of a production check,
+   * `isDev && …`). Default: false
    */
   allowInDev?: boolean;
 }
@@ -138,7 +140,6 @@ export const noErrorDetailsInResponse = createRule<RuleOptions, MessageIds>({
   ) {
     let messageAllowed: boolean;
     let devAllowed: boolean;
-    let sourceCode: Readonly<TSESLint.SourceCode>;
     let frames: Frame[];
 
     function isErrorName(name: string): boolean {
@@ -224,10 +225,34 @@ export const noErrorDetailsInResponse = createRule<RuleOptions, MessageIds>({
       detail: string;
     }
 
+    /**
+     * A detail embedded in a string the response sends: a template literal
+     * (`` `Failed: ${err.stack}` ``) or a `+` concatenation.
+     */
+    function embeddedFindings(node: TSESTree.Node): Finding[] {
+      if (node.type === AST_NODE_TYPES.TemplateLiteral) {
+        return node.expressions.flatMap(valueFindings);
+      }
+      if (
+        node.type === AST_NODE_TYPES.BinaryExpression &&
+        node.operator === '+'
+      ) {
+        return [...valueFindings(node.left), ...valueFindings(node.right)];
+      }
+      return [];
+    }
+
+    /** Findings in one value: direct, or embedded in a string. */
+    function valueFindings(node: TSESTree.Node): Finding[] {
+      const direct = detailOf(node);
+      if (direct !== null) return [{ node, detail: direct }];
+      return embeddedFindings(node);
+    }
+
     /** Findings in a response-send argument (direct or one object level). */
     function collectFindings(arg: TSESTree.Node): Finding[] {
-      const direct = detailOf(arg);
-      if (direct !== null) return [{ node: arg, detail: direct }];
+      const value = valueFindings(arg);
+      if (value.length > 0) return value;
       if (arg.type !== AST_NODE_TYPES.ObjectExpression) return [];
 
       const findings: Finding[] = [];
@@ -244,25 +269,9 @@ export const noErrorDetailsInResponse = createRule<RuleOptions, MessageIds>({
           }
           continue;
         }
-        const detail = detailOf(prop.value);
-        if (detail !== null) findings.push({ node: prop.value, detail });
+        findings.push(...valueFindings(prop.value));
       }
       return findings;
-    }
-
-    /** True when an enclosing if-statement's test mentions NODE_ENV. */
-    function isInDevGuard(node: TSESTree.Node): boolean {
-      let current: TSESTree.Node | null | undefined = node.parent;
-      while (current != null) {
-        if (
-          current.type === AST_NODE_TYPES.IfStatement &&
-          sourceCode.getText(current.test).includes('NODE_ENV')
-        ) {
-          return true;
-        }
-        current = current.parent;
-      }
-      return false;
     }
 
     return {
@@ -277,7 +286,6 @@ export const noErrorDetailsInResponse = createRule<RuleOptions, MessageIds>({
         const { allowMessage, allowInDev } = options as Options;
         messageAllowed = allowMessage ?? true;
         devAllowed = allowInDev ?? false;
-        sourceCode = context.sourceCode;
 
         /** Active error bindings (catch params + error-first callback params). */
         frames = [];
@@ -306,7 +314,7 @@ export const noErrorDetailsInResponse = createRule<RuleOptions, MessageIds>({
 
         const arg = node.arguments[0];
         if (arg === undefined) return;
-        if (devAllowed && isInDevGuard(node)) return;
+        if (devAllowed && inDevelopmentBranch(node)) return;
 
         for (const finding of collectFindings(arg)) {
           context.report({

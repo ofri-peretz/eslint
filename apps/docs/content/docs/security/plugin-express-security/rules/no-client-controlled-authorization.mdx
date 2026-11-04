@@ -64,6 +64,7 @@ const ok = ADMIN_ROLES.includes(req.body.role);
 
 // An identity header the client can set as easily as the proxy
 if (req.headers['x-user-role'] === 'owner') { grant(); }
+if (req.get('x-user-role') === 'owner') { grant(); } // same header via Express's accessor
 
 // Ownership decided on a client-supplied id
 if (req.params.userId === record.ownerId) { allow(); }

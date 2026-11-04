@@ -21,14 +21,16 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const xp = <T,>(cases: T[]): T[] =>
+const xp = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asExpress(c) as T;
     const test = c as Case;
     return {
       ...c,
       code: asExpress(test.code),
-      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asExpress(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -47,7 +49,6 @@ const xp = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -130,9 +131,24 @@ module.exports = app;
       { code: `notify('host ' + req.headers.host);` },
     ]),
     invalid: xp([
+      {
+        name: "req.hostname and req.host are Express's reads of the Host header",
+        code: `
+const link = 'https://' + req.hostname + '/reset?token=' + token;
+const verify = \`https://\${req.host}/verify?token=\${token}\`;
+`,
+        errors: [
+          { messageId: 'hostHeaderInLink' },
+          { messageId: 'hostHeaderInLink' },
+        ],
+      },
       // Was pinned as valid because the callee property was computed.
       // `obj['send']` is the same mail-ish sink as `obj.send`.
-      { name: 'was pinned as valid because the callee property was computed', code: `obj['send']('host: ' + req.headers.host);`, errors: [{ messageId: 'hostHeaderInLink' }] },
+      {
+        name: 'was pinned as valid because the callee property was computed',
+        code: `obj['send']('host: ' + req.headers.host);`,
+        errors: [{ messageId: 'hostHeaderInLink' }],
+      },
       // Benchmark corpus: CWE-640/vulnerable/reset-link-host-header.js
       {
         name: 'a password-reset link built from req.headers.host',
@@ -339,12 +355,20 @@ ruleTester.run('no-host-header-in-links (coverage wave)', noHostHeaderInLinks, {
   invalid: xp([
     // Was pinned as valid because the callee property was computed.
     // `req['get']('host')` reads the same header as `req.get('host')`.
-    { name: 'was pinned as valid because the callee property was computed', code: `const u = 'https://' + req['get']('host');`, errors: [{ messageId: 'hostHeaderInLink' }] },
+    {
+      name: 'was pinned as valid because the callee property was computed',
+      code: `const u = 'https://' + req['get']('host');`,
+      errors: [{ messageId: 'hostHeaderInLink' }],
+    },
     // Was pinned as valid — a bracket on the request bag read as
     // unresolvable, in places labelled a "documented false negative".
     // `req['headers']` is the same bag as `req.headers`; the runtime-keyed
     // form left above is the genuine refusal.
-    { name: 'was pinned as valid — a bracket on the request bag read as unresolvable,', code: `const u = 'https://' + req['headers'].host;`, errors: [{ messageId: 'hostHeaderInLink' }] },
+    {
+      name: 'was pinned as valid — a bracket on the request bag read as unresolvable,',
+      code: `const u = 'https://' + req['headers'].host;`,
+      errors: [{ messageId: 'hostHeaderInLink' }],
+    },
     // Direct host read as a mail-call argument via member callee
     {
       code: 'mailer.send(`link: ${req.headers.host}/go`);',

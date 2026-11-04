@@ -32,6 +32,8 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
 import { APP_RECEIVER_SCHEMA, isAppReceiver } from '../../utils/app-receiver';
+import { packageBindings } from '../../utils/import-bindings';
+import { flattenMiddleware, routeChainRoot } from '../../utils/route-shapes';
 import {
   nodeReleasesBinding,
   RELEASE_SELECTOR,
@@ -111,17 +113,30 @@ const RATE_LIMIT_PACKAGES = [
 /**
  * Check if a node is a rate-limiting middleware usage
  */
+/** Packages whose export is a rate limiter, whatever the file names it. */
+const RATE_LIMIT_MODULES = [
+  'express-rate-limit',
+  'express-slow-down',
+  'express-brute',
+  'rate-limiter-flexible',
+];
+
 function isRateLimitMiddleware(
   node: TSESTree.CallExpression,
   alternatives: string[],
+  limiterBindings: ReadonlySet<string>,
 ): boolean {
   const allPatterns = [...RATE_LIMIT_PACKAGES, ...alternatives];
 
-  for (const arg of node.arguments) {
+  // Express flattens an array of middleware, so its elements count too.
+  for (const arg of flattenMiddleware(node.arguments)) {
     // rateLimit() or limiter()
     if (arg.type === 'CallExpression' && arg.callee.type === 'Identifier') {
       const calleeName = arg.callee.name.toLowerCase();
-      if (allPatterns.some((p) => calleeName.includes(p.toLowerCase()))) {
+      if (
+        limiterBindings.has(arg.callee.name) ||
+        allPatterns.some((p) => calleeName.includes(p.toLowerCase()))
+      ) {
         return true;
       }
     }
@@ -129,6 +144,7 @@ function isRateLimitMiddleware(
     // rateLimit identifier without call
     if (arg.type === 'Identifier') {
       if (
+        limiterBindings.has(arg.name) ||
         allPatterns.some((p) =>
           arg.name.toLowerCase().includes(p.toLowerCase()),
         )
@@ -215,6 +231,8 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
     } | null;
     let appBinding: string | null;
     let appEscapes: boolean;
+    let limiterBindings: Set<string>;
+    let expressFactories: Set<string>;
 
     return {
       before() {
@@ -271,6 +289,35 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
          * reported anyway.
          */
         appEscapes = false;
+        // `import throttle from 'express-rate-limit'`: the binding, not the
+        // name, makes it a limiter. A `const authLimiter = throttle({…})`
+        // instance is one too.
+        const bindings = packageBindings(
+          context.sourceCode.ast,
+          RATE_LIMIT_MODULES,
+        );
+        // `import createApp from 'express'`: the binding makes it the factory.
+        expressFactories = new Set([
+          'express',
+          ...packageBindings(context.sourceCode.ast, ['express']).modules,
+        ]);
+        limiterBindings = new Set([
+          ...bindings.modules,
+          ...bindings.named.keys(),
+        ]);
+        for (const stmt of context.sourceCode.ast.body) {
+          if (stmt.type !== 'VariableDeclaration') continue;
+          for (const d of stmt.declarations) {
+            if (
+              d.id.type === 'Identifier' &&
+              d.init?.type === 'CallExpression' &&
+              d.init.callee.type === 'Identifier' &&
+              limiterBindings.has(d.init.callee.name)
+            ) {
+              limiterBindings.add(d.id.name);
+            }
+          }
+        }
         return true;
       },
       // `module.exports = app`, `export default app`, `return app`.
@@ -289,7 +336,7 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for express() app creation
-        if (callee.type === 'Identifier' && callee.name === 'express') {
+        if (callee.type === 'Identifier' && expressFactories.has(callee.name)) {
           hasExpressApp = true;
           if (
             node.parent?.type === 'VariableDeclarator' &&
@@ -311,19 +358,31 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
 
         // A limiter anywhere in the file — `app.use(rateLimit())` or mounted
         // on a single route — covers the surface this rule judges.
-        if (isRateLimitMiddleware(node, alternativeMiddleware)) {
+        if (
+          isRateLimitMiddleware(node, alternativeMiddleware, limiterBindings)
+        ) {
           hasRateLimiting = true;
           return;
         }
 
         if (!STATE_CHANGING_METHODS.has(method)) return;
+        // `app.route('/login').post(h)`: the path went to `.route(…)` and
+        // every argument of the verb call is a handler.
+        const chainRoot = routeChainRoot(callee);
+        const registrar =
+          chainRoot !== null && chainRoot.callee.type === 'MemberExpression'
+            ? chainRoot.callee
+            : callee;
         if (
-          callee.object.type !== 'Identifier' ||
-          !isAppReceiver(callee.object.name, appReceiverNames)
+          registrar.object.type !== 'Identifier' ||
+          !isAppReceiver(registrar.object.name, appReceiverNames)
         ) {
           return;
         }
-        const [pathArg, ...rest] = node.arguments;
+        const [pathArg, ...rest] =
+          chainRoot !== null
+            ? [chainRoot.arguments[0], ...node.arguments]
+            : node.arguments;
         if (
           rest.length === 0 ||
           pathArg?.type !== 'Literal' ||

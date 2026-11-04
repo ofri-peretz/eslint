@@ -19,7 +19,7 @@ Disallow building absolute URLs (password-reset and verification links) from the
 **CWE:** [CWE-640](https://cwe.mitre.org/data/definitions/640.html)  
 **OWASP:** [A07:2021 – Identification and Authentication Failures](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/)
 
-Detects Host-header poisoning: absolute URLs — most critically password-reset and account-verification links — built from `req.headers.host`, `req.headers['x-forwarded-host']`, or `req.get('host')`. Both headers are attacker-controlled on any request that reaches the app directly, so a mailed link built from them can point the recovery token at an attacker-owned server. This rule is part of [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) and provides LLM-optimized error messages.
+Detects Host-header poisoning: absolute URLs — most critically password-reset and account-verification links — built from `req.headers.host`, `req.headers['x-forwarded-host']`, `req.get('host')`, or Express's `req.hostname` / `req.host` (both derived from the Host header). Both headers are attacker-controlled on any request that reaches the app directly, so a mailed link built from them can point the recovery token at an attacker-owned server. This rule is part of [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) and provides LLM-optimized error messages.
 
 **🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
 

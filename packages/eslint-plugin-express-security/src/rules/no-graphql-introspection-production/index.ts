@@ -15,10 +15,17 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
 import {
+  isPackageCallee,
+  packageBindings,
+  type PackageBindings,
+} from '../../utils/import-bindings';
+import { environmentOf, inDevelopmentBranch } from '../../utils/environment';
+import {
   formatLLMMessage,
   MessageIcons,
   createRule,
   isTestFilePath,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'graphqlIntrospection';
@@ -36,40 +43,38 @@ type RuleOptions = [Options?];
 /**
  * Check if introspection is explicitly enabled
  */
-function hasIntrospectionEnabled(
-  node: TSESTree.ObjectExpression,
-  sourceCode: TSESLint.SourceCode,
-): boolean {
-  const text = sourceCode.getText(node);
-
-  // Check for introspection: true
-  if (/\bintrospection\s*:\s*true\b/.test(text)) {
-    return true;
-  }
-
-  // Check for no introspection setting (defaults to true in many libraries)
-  // We only flag explicit true or missing with warning
-  return false;
-}
+/** Apollo packages whose `ApolloServer` export the rule recognises. */
+const APOLLO_PACKAGES = [
+  'apollo-server-express',
+  'apollo-server',
+  '@apollo/server',
+  'apollo-server-core',
+];
 
 /**
- * Check if there's a production guard for introspection
+ * Apollo's Express integration. A file importing it builds a GraphQL server
+ * for an Express app — the docs' own example imports nothing else.
  */
-function hasProductionGuard(
-  node: TSESTree.ObjectExpression,
-  sourceCode: TSESLint.SourceCode,
-): boolean {
-  const text = sourceCode.getText(node);
+const APOLLO_EXPRESS_PACKAGES = ['apollo-server-express'];
 
-  // Check for common production guards
-  const productionGuards = [
-    /introspection\s*:\s*process\.env\.NODE_ENV\s*[!=]==?\s*['"]production['"]/,
-    /introspection\s*:\s*!?\s*isProd/,
-    /introspection\s*:\s*!?\s*isProduction/,
-    /introspection\s*:\s*process\.env\.NODE_ENV\s*[!=]==?\s*['"]development['"]/,
-  ];
+const SERVER_NAMES = new Set(['ApolloServer', 'GraphQLServer']);
 
-  return productionGuards.some((guard) => guard.test(text));
+/** Does this `introspection:` value leave introspection on in production? */
+function enabledInProduction(value: TSESTree.Node): boolean {
+  if (value.type === 'Literal') return value.value === true;
+  return environmentOf(value) === 'prod';
+}
+
+/** The top-level `introspection:` value of a config object. */
+function introspectionValue(
+  config: TSESTree.ObjectExpression,
+): TSESTree.Node | null {
+  for (const prop of config.properties) {
+    if (prop.type === 'Property' && objectKeyName(prop) === 'introspection') {
+      return prop.value;
+    }
+  }
+  return null;
 }
 
 export const noGraphqlIntrospectionProduction = createRule<
@@ -128,18 +133,42 @@ export const noGraphqlIntrospectionProduction = createRule<
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     currentOptions,
   ) {
-    let sourceCode: Readonly<TSESLint.SourceCode>;
+    let allowInDevelopment: boolean;
+    let apollo: PackageBindings;
+
+    const isServerCallee = (callee: TSESTree.Node): boolean =>
+      (callee.type === 'Identifier' && SERVER_NAMES.has(callee.name)) ||
+      isPackageCallee(callee, apollo, 'ApolloServer');
+
+    function check(config: TSESTree.Node | undefined, site: TSESTree.Node) {
+      if (!config || config.type !== 'ObjectExpression') return;
+      const value = introspectionValue(config);
+      if (!value || !enabledInProduction(value)) return;
+      if (allowInDevelopment && inDevelopmentBranch(site)) return;
+      context.report({ node: config, messageId: 'graphqlIntrospection' });
+    }
 
     return {
       before() {
         const [options] = currentOptions();
+        const ast = context.sourceCode.ast;
+        apollo = packageBindings(ast, APOLLO_PACKAGES);
         // Every rule here is Express-specific, and none of them knew it: over
         // 107,382 files, 75% of this plugin's findings were in files with no
         // Express import. Registering no visitors is both the gate and the cheap
-        // path — a file with no Express in it does no work.
-        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+        // path — a file with no Express in it does no work. Apollo's Express
+        // integration counts: it exists to serve GraphQL from an Express app.
+        const apolloExpress = packageBindings(ast, APOLLO_EXPRESS_PACKAGES);
+        if (
+          !fileUsesExpress(ast) &&
+          apolloExpress.modules.size === 0 &&
+          apolloExpress.named.size === 0
+        ) {
+          return false;
+        }
 
         const { allowInTests = true } = options as Options;
+        ({ allowInDevelopment = true } = options as Options);
 
         const filename = context.filename;
         const isTestFile = allowInTests && isTestFilePath(filename);
@@ -147,77 +176,27 @@ export const noGraphqlIntrospectionProduction = createRule<
         if (isTestFile) {
           return false;
         }
-
-        sourceCode = context.sourceCode;
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
 
-        // Check for Apollo Server, Express-GraphQL, or similar
         const isGraphQLServer =
-          (callee.type === 'Identifier' &&
-            ['ApolloServer', 'GraphQLServer', 'createServer'].includes(
-              callee.name,
-            )) ||
-          (callee.type === 'NewExpression' &&
-            callee.callee.type === 'Identifier' &&
-            ['ApolloServer', 'GraphQLServer'].includes(callee.callee.name));
+          isServerCallee(callee) ||
+          (callee.type === 'Identifier' && callee.name === 'createServer');
 
-        // Also check for graphqlHTTP (express-graphql)
         const isExpressGraphQL =
           callee.type === 'Identifier' && callee.name === 'graphqlHTTP';
 
         if (!isGraphQLServer && !isExpressGraphQL) {
           return;
         }
-
-        // Get the options/config argument
-        const configArg = node.arguments[0];
-        if (!configArg || configArg.type !== 'ObjectExpression') {
-          return;
-        }
-
-        // Check if there's a production guard
-        if (hasProductionGuard(configArg, sourceCode)) {
-          return;
-        }
-
-        // Check if introspection is explicitly enabled
-        if (hasIntrospectionEnabled(configArg, sourceCode)) {
-          context.report({
-            node: configArg,
-            messageId: 'graphqlIntrospection',
-          });
-        }
+        check(node.arguments[0], node);
       },
 
-      // Also check NewExpression for new ApolloServer({...})
       NewExpression(node: TSESTree.NewExpression) {
-        const callee = node.callee;
-
-        if (
-          callee.type !== 'Identifier' ||
-          !['ApolloServer', 'GraphQLServer'].includes(callee.name)
-        ) {
-          return;
-        }
-
-        const configArg = node.arguments[0];
-        if (!configArg || configArg.type !== 'ObjectExpression') {
-          return;
-        }
-
-        if (hasProductionGuard(configArg, sourceCode)) {
-          return;
-        }
-
-        if (hasIntrospectionEnabled(configArg, sourceCode)) {
-          context.report({
-            node: configArg,
-            messageId: 'graphqlIntrospection',
-          });
-        }
+        if (!isServerCallee(node.callee)) return;
+        check(node.arguments[0], node);
       },
     };
   },

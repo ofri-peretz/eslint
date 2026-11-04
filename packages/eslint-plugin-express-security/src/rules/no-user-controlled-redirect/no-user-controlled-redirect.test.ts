@@ -21,14 +21,16 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const xp = <T,>(cases: T[]): T[] =>
+const xp = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asExpress(c) as T;
     const test = c as Case;
     return {
       ...c,
       code: asExpress(test.code),
-      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asExpress(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -47,7 +49,6 @@ const xp = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -121,6 +122,16 @@ describe('no-user-controlled-redirect', () => {
       { code: `res.json({ url: req.body.url });` },
       // Numeric status code + literal target
       { code: `response.redirect(302, '/logout');` },
+      // Status-first form with the documented origin guard
+      {
+        name: 'a guarded status-first redirect',
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.query.next).origin !== 'https://example.com') return res.sendStatus(400);
+            res.redirect(302, req.query.next);
+          });
+        `,
+      },
       // Guard at module top level: the enclosing scope walk terminates at Program.
       {
         code: `
@@ -140,6 +151,18 @@ describe('no-user-controlled-redirect', () => {
       },
     ]),
     invalid: xp([
+      // Express's `res.redirect([status,] path)`: the target is the second
+      // argument when a status comes first.
+      {
+        name: 'a user-controlled target after a status code',
+        code: `app.get('/go', (req, res) => { res.redirect(302, req.query.returnTo); });`,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      {
+        name: 'a user-controlled target before a status code (legacy order)',
+        code: `app.get('/go', (req, res) => { res.redirect(req.body.next, 301); });`,
+        errors: [{ messageId: 'openRedirect' }],
+      },
       // Computed access with DIFFERENT literal keys is a different source.
       {
         name: 'one query parameter validated, a different one redirected to',

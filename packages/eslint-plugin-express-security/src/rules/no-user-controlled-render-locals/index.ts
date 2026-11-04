@@ -43,6 +43,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   namesOneOf,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -371,6 +372,37 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
         }
       }
 
+      /**
+       * `const { body } = req` / `const { query: q } = request`: each whole
+       * request container pulled out of a request parameter is tracked as
+       * whole, exactly as its member-access spelling would be.
+       */
+      function trackContainerPattern(
+        node: TSESTree.VariableDeclarator,
+        pattern: TSESTree.ObjectPattern,
+        init: TSESTree.Expression,
+      ): void {
+        if (init.type !== AST_NODE_TYPES.Identifier || !isParameter(init)) {
+          return;
+        }
+        const declared = context.sourceCode.getDeclaredVariables(node);
+        for (const prop of pattern.properties) {
+          if (prop.type !== AST_NODE_TYPES.Property) continue;
+          const key = objectKeyName(prop);
+          if (key === null || !USER_SOURCE_PROPS.has(key)) continue;
+          const local =
+            prop.value.type === AST_NODE_TYPES.AssignmentPattern
+              ? prop.value.left
+              : prop.value;
+          if (local.type !== AST_NODE_TYPES.Identifier) continue;
+          for (const variable of declared.filter(
+            (v) => v.name === local.name,
+          )) {
+            trackedVars.set(variable, { source: `req.${key}`, whole: true });
+          }
+        }
+      }
+
       return {
         before() {
           const [options] = currentOptions();
@@ -392,10 +424,16 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
           return true;
         },
         VariableDeclarator(node: TSESTree.VariableDeclarator) {
-          // Destructuring (const { title } = req.body) IS field-picking — safe.
-          if (node.id.type !== AST_NODE_TYPES.Identifier) return;
           const init = node.init;
           if (!init) return;
+          // Destructuring (const { title } = req.body) IS field-picking — safe.
+          // Destructuring a whole container off the request
+          // (const { body } = req) is not: it is `const body = req.body`.
+          if (node.id.type === AST_NODE_TYPES.ObjectPattern) {
+            trackContainerPattern(node, node.id, init);
+            return;
+          }
+          if (node.id.type !== AST_NODE_TYPES.Identifier) return;
           // Exactly one variable for an Identifier id — the loop keeps the
           // lookup total, with no unreachable null-guard to cover.
           for (const declared of context.sourceCode.getDeclaredVariables(

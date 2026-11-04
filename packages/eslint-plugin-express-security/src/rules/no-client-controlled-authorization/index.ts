@@ -43,6 +43,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   propertyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'clientControlledAuthorization';
@@ -149,6 +150,28 @@ function clientContainerOf(node: TSESTree.MemberExpression): string | null {
  * Walks up at most a handful of levels: comparison, branch test, negation,
  * logical combination, or the receiver/argument of an `.includes()` check.
  */
+/** Express's header accessors: `req.get(name)` and its alias `req.header(name)`. */
+const HEADER_ACCESSORS = new Set(['get', 'header']);
+
+/**
+ * The header name a `req.get('x-user-role')` / `req.header(...)` call reads,
+ * or null. These read the same client-set header `req.headers[...]` does.
+ */
+function headerAccessorName(node: TSESTree.CallExpression): string | null {
+  const { callee } = node;
+  if (callee.type !== AST_NODE_TYPES.MemberExpression) return null;
+  const method = propertyName(callee);
+  if (method === null || !HEADER_ACCESSORS.has(method)) return null;
+  const receiver = callee.object;
+  const isRequest =
+    (receiver.type === AST_NODE_TYPES.Identifier &&
+      REQUEST_RECEIVER.test(receiver.name)) ||
+    (receiver.type === AST_NODE_TYPES.MemberExpression &&
+      REQUEST_RECEIVER.test(propertyName(receiver) as string));
+  if (!isRequest || node.arguments.length !== 1) return null;
+  return staticString(node.arguments[0]);
+}
+
 function isAuthorizationDecision(node: TSESTree.Node): boolean {
   let current: TSESTree.Node = node;
   let parent = node.parent;
@@ -273,6 +296,21 @@ export const noClientControlledAuthorization = createRule<
           (extraProperties ?? []).map((name) => name.toLowerCase()),
         );
         return true;
+      },
+      CallExpression(node: TSESTree.CallExpression) {
+        const header = headerAccessorName(node);
+        if (header === null) return;
+        if (!isAuthorizationAttribute(header, 'headers')) return;
+        if (!isAuthorizationDecision(node)) return;
+
+        context.report({
+          node,
+          messageId: 'clientControlledAuthorization',
+          data: {
+            expression: context.sourceCode.getText(node),
+            property: header,
+          },
+        });
       },
       MemberExpression(node: TSESTree.MemberExpression) {
         const property = staticPropertyName(node);

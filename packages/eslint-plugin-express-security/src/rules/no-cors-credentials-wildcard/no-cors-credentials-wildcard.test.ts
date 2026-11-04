@@ -20,14 +20,16 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const xp = <T,>(cases: T[]): T[] =>
+const xp = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asExpress(c) as T;
     const test = c as Case;
     return {
       ...c,
       code: asExpress(test.code),
-      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asExpress(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -46,7 +48,6 @@ const xp = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = vitest.afterAll;
 RuleTester.it = vitest.it;
@@ -115,6 +116,26 @@ ruleTester.run('no-cors-credentials-wildcard', noCorsCredentialsWildcard, {
     },
   ]),
   invalid: xp([
+    {
+      name: 'a renamed cors import is still cors (app.use and route-level)',
+      code: `
+        import corsMiddleware from 'cors';
+        app.use(corsMiddleware({ origin: '*', credentials: true }));
+        app.get('/x', corsMiddleware({ origin: true, credentials: true }), h);
+      `,
+      errors: [
+        { messageId: 'credentialsWildcard' },
+        { messageId: 'credentialsWildcard' },
+      ],
+    },
+    {
+      name: 'a required cors under another name, in a middleware array',
+      code: `
+        const allowCors = require('cors');
+        router.use([allowCors({ origin: '*', credentials: true })]);
+      `,
+      errors: [{ messageId: 'credentialsWildcard' }],
+    },
     // Critical: wildcard origin with credentials: true
     {
       name: "origin '*' with credentials — the browser refuses it, so the intent is wrong either way",

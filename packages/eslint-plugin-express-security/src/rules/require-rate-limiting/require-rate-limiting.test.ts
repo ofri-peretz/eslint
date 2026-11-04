@@ -66,6 +66,41 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-rate-limiting', requireRateLimiting, {
   valid: xp([
+    // The limiter is the package's export, whatever the file calls it.
+    {
+      name: 'a renamed express-rate-limit import',
+      code: `
+        import express from 'express';
+        import throttle from 'express-rate-limit';
+        const app = express();
+        app.use(throttle({ windowMs: 60000, max: 5 }));
+        app.post('/login', (req, res) => authenticate(req.body));
+        app.listen(3000);
+      `,
+    },
+    // A limiter instance built from a renamed import, then mounted by name
+    {
+      name: 'a limiter instance created from a renamed import',
+      code: `
+        import express from 'express';
+        import throttle from 'express-rate-limit';
+        const app = express();
+        const [first] = list, other = make(), loginLimiter = throttle({ windowMs: 60000, max: 5 });
+        app.use(loginLimiter);
+        app.post('/login', (req, res) => authenticate(req.body));
+        app.listen(3000);
+      `,
+    },
+    // Express flattens an array of middleware passed to app.use.
+    {
+      name: 'a limiter inside a middleware array',
+      code: `
+        const app = express();
+        app.use([express.json(), rateLimit({ windowMs: 60000, max: 5 })]);
+        app.post('/login', (req, res) => authenticate(req.body));
+        app.listen(3000);
+      `,
+    },
     {
       name: 'the default receiver list replaced away',
       code: `
@@ -283,6 +318,27 @@ ruleTester.run('require-rate-limiting', requireRateLimiting, {
     },
   ]),
   invalid: xp([
+    // The binding, not the name, makes the call Express's app factory.
+    {
+      name: 'an app created through a renamed express import',
+      code: `
+        import createApp from 'express';
+        const app = createApp();
+        app.post('/login', (req, res) => authenticate(req.body));
+        app.listen(3000);
+      `,
+      errors: [{ messageId: 'missingRateLimiting' }],
+    },
+    // `app.route(path).post(…)` registers the same credential endpoint.
+    {
+      name: 'a login route registered through app.route()',
+      code: `
+        const app = express();
+        app.route('/login').post((req, res) => authenticate(req.body));
+        app.listen(3000);
+      `,
+      errors: [{ messageId: 'missingRateLimiting' }],
+    },
     {
       name: 'a receiver the consumer named',
       code: `

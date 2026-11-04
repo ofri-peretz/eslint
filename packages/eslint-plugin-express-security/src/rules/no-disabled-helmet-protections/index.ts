@@ -37,6 +37,11 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
 import {
+  isPackageCallee,
+  packageBindings,
+  type PackageBindings,
+} from '../../utils/import-bindings';
+import {
   AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
@@ -73,11 +78,19 @@ const PROTECTIONS: Record<string, string> = {
   crossOriginOpenerPolicy: 'Cross-Origin-Opener-Policy',
 };
 
-/** Is this `helmet(...)` — the middleware factory, called directly? */
-function isHelmetCall(node: TSESTree.CallExpression): boolean {
+/**
+ * Is this `helmet(...)` — the middleware factory, called directly? By its
+ * conventional name, or by whatever local the file binds helmet to
+ * (`import securityHeaders from 'helmet'`).
+ */
+function isHelmetCall(
+  node: TSESTree.CallExpression,
+  helmet: PackageBindings,
+): boolean {
   return (
-    node.callee.type === AST_NODE_TYPES.Identifier &&
-    node.callee.name === 'helmet'
+    (node.callee.type === AST_NODE_TYPES.Identifier &&
+      node.callee.name === 'helmet') ||
+    isPackageCallee(node.callee, helmet)
   );
 }
 
@@ -142,6 +155,7 @@ export const noDisabledHelmetProtections = createRule<RuleOptions, MessageIds>({
     currentOptions,
   ) {
     let allowed: Set<string>;
+    let helmet: PackageBindings;
 
     /** Removes `option: false` along with whichever comma keeps the object valid. */
     function removeProperty(
@@ -171,10 +185,11 @@ export const noDisabledHelmetProtections = createRule<RuleOptions, MessageIds>({
 
         const { allowDisabled } = options as Options;
         allowed = new Set(allowDisabled ?? []);
+        helmet = packageBindings(context.sourceCode.ast, ['helmet']);
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        if (!isHelmetCall(node)) return;
+        if (!isHelmetCall(node, helmet)) return;
         const config = node.arguments[0];
         if (!config || config.type !== AST_NODE_TYPES.ObjectExpression) return;
 

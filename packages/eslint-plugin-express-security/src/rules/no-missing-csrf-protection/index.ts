@@ -18,9 +18,11 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
+import { flattenMiddleware, routeChainRoot } from '../../utils/route-shapes';
 
 type MessageIds = 'missingCsrfProtection' | 'addCsrfValidation';
 
@@ -182,30 +184,28 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
 
         // Only check if it's a route handler that requires CSRF (O(1) Set lookup)
         if (protectedMethodsSet.has(methodName.toLowerCase())) {
-          // Must have at least 2 arguments (path and handler)
-          if (node.arguments.length < 2) {
+          // In `app.route(path).get(…).post(…)` the path was spent by
+          // `.route(…)`, so every argument of the verb call is a handler.
+          const chained = routeChainRoot(callee) !== null;
+          const pathArg = chained ? null : node.arguments[0];
+
+          // Must have a handler (and, outside a route chain, a path)
+          if (node.arguments.length < (chained ? 1 : 2)) {
             return;
           }
 
-          // Check if CSRF middleware is in the route chain arguments
-          let hasCsrfInChain = false;
+          // Check if any handler argument (an array of middleware counts
+          // element by element) is a CSRF middleware
+          const hasCsrfInChain = flattenMiddleware(
+            node.arguments.slice(chained ? 0 : 1),
+          ).some((arg) => {
+            const argText = sourceCode.getText(arg).toLowerCase();
+            return csrfPatterns.some((pattern) =>
+              argText.includes(pattern.toLowerCase()),
+            );
+          });
 
-          // Check if any argument (after the first path argument) is a CSRF middleware
-          // Skip the first argument (path) and check the rest
-          for (let i = 1; i < node.arguments.length; i++) {
-            const arg = node.arguments[i];
-            const argText = sourceCode.getText(arg);
-            if (
-              csrfPatterns.some((pattern) =>
-                argText.toLowerCase().includes(pattern.toLowerCase()),
-              )
-            ) {
-              hasCsrfInChain = true;
-              break;
-            }
-          }
-
-          if (!hasCsrfInChain) {
+          if (!hasCsrfInChain && !hasGlobalCsrfMiddleware()) {
             context.report({
               node,
               messageId: 'missingCsrfProtection',
@@ -217,10 +217,11 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
                 {
                   messageId: 'addCsrfValidation',
                   fix(fixer: TSESLint.RuleFixer) {
-                    // Add CSRF middleware after the first argument (path).
-                    // arguments[0] always exists: the arguments.length < 2
-                    // guard above returns before reporting.
-                    return fixer.insertTextAfter(node.arguments[0], ', csrf()');
+                    // Middleware goes after the path, or first in the
+                    // handler list when `.route(…)` already took the path.
+                    return pathArg === null
+                      ? fixer.insertTextBefore(node.arguments[0], 'csrf(), ')
+                      : fixer.insertTextAfter(pathArg, ', csrf()');
                   },
                 },
               ],
@@ -230,8 +231,43 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
       }
     }
 
+    /**
+     * Was CSRF middleware mounted for the whole app — `app.use(csrf())`?
+     * The rule's own remediation offers this as the fix. Computed once per
+     * file over the top-level statements, where middleware is mounted.
+     */
+    let globalCsrf: boolean | undefined;
+    function hasGlobalCsrfMiddleware(): boolean {
+      if (globalCsrf !== undefined) return globalCsrf;
+      globalCsrf = sourceCode.ast.body.some((statement) => {
+        if (statement.type !== AST_NODE_TYPES.ExpressionStatement) return false;
+        const call = statement.expression;
+        if (
+          call.type !== AST_NODE_TYPES.CallExpression ||
+          call.callee.type !== AST_NODE_TYPES.MemberExpression ||
+          propertyName(call.callee) !== 'use'
+        ) {
+          return false;
+        }
+        return flattenMiddleware(call.arguments).some((arg) =>
+          // A call, not a reference: `app.use(csrf())` mounts the check.
+          arg.type === AST_NODE_TYPES.CallExpression ||
+          arg.type === AST_NODE_TYPES.Identifier
+            ? csrfPatterns.some((pattern) =>
+                sourceCode
+                  .getText(arg)
+                  .toLowerCase()
+                  .includes(pattern.toLowerCase()),
+              )
+            : false,
+        );
+      });
+      return globalCsrf;
+    }
+
     return {
       before() {
+        globalCsrf = undefined;
         const [options] = currentOptions();
         // Every rule here is Express-specific, and none of them knew it: over
         // 107,382 files, 75% of this plugin's findings were in files with no
