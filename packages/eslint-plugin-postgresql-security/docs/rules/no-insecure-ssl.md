@@ -91,6 +91,9 @@ The following patterns are **not detected** due to static analysis limitations:
   rejectUnauthorized: false } : false`, the widely copied Heroku snippet,
   disables verification in exactly the environment that matters.
 - postgres.js `postgres(url, { ssl })` and pg-promise `pgp({ ssl })`.
+- pg's DSN spelling of the same setting, `sslmode=no-verify`, in a string or
+  appended to a URL in a template
+  (`` `${process.env.DATABASE_URL}?sslmode=no-verify` ``).
 - A config returned from a function in the same file, and a config object
   declared with pg's `PoolConfig` / `ClientConfig` type (or `satisfies` it).
 

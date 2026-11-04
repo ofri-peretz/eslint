@@ -12,6 +12,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   objectKeyName,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { NoBatchInsertLoopOptions } from '../../types';
 import { usesPostgres } from '../../utils';
@@ -138,13 +139,9 @@ function callbackMethod(fn: TSESTree.Node): string | null {
   if (call === undefined || call.type !== AST_NODE_TYPES.CallExpression)
     return null;
   if (call.callee === fn) return 'iife';
-  if (
-    call.callee.type !== AST_NODE_TYPES.MemberExpression ||
-    call.callee.property.type !== AST_NODE_TYPES.Identifier
-  ) {
-    return null;
-  }
-  return call.callee.property.name;
+  // `xs.forEach` and `xs['forEach']` are the same method.
+  if (call.callee.type !== AST_NODE_TYPES.MemberExpression) return null;
+  return propertyName(call.callee);
 }
 
 /**
@@ -390,8 +387,7 @@ export const noBatchInsertLoop: TSESLint.RuleModule<
       CallExpression(node) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          node.callee.property.type !== AST_NODE_TYPES.Identifier ||
-          node.callee.property.name !== 'query'
+          propertyName(node.callee) !== 'query'
         ) {
           return;
         }

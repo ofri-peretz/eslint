@@ -40,6 +40,10 @@ await client.query('SELECT * FROM users WHERE id = $1 AND active = $2', [
 
 // Extra parameter
 await pool.query('SELECT * FROM users WHERE id = $1', [userId, name, email]);
+
+// Placeholders and no values at all: pg sends the statement unbound and the
+// server answers "there is no parameter $1"
+await pool.query('SELECT * FROM users WHERE id = $1');
 ```
 
 ### ✅ Correct
@@ -73,6 +77,14 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 | **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,HIPAA,ISO27001]` |
 | **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
 | **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |
+
+## Not reported
+
+- `PREPARE name AS … $1` with no values: it declares its parameters, and
+  `EXECUTE name(…)` binds them later.
+- Values sent to a statement with no `$n` at all. A file that uses pg can also
+  drive a `?`-placeholder client (a MySQL replica), and the text alone cannot
+  tell the two apart.
 
 ## Limitations
 

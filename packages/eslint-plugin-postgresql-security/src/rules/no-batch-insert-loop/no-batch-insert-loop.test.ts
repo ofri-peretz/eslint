@@ -80,7 +80,26 @@ describe('no-batch-insert-loop', () => {
           code: `for (const item of items) { client.query('INSERT INTO t(a) VALUES($1)', [item]); }`,
           errors: [{ messageId: 'noBatchInsertLoop' }],
         },
+        // FN (fidelity model): string subscripts name the same sink and the
+        // same iterator method.
+        {
+          name: 'a string-subscript query call in a loop',
+          code: `for (const item of items) { client['query']('INSERT INTO t(a) VALUES($1)', [item]); }`,
+          errors: [{ messageId: 'noBatchInsertLoop' }],
+        },
+        {
+          name: 'a string-subscript forEach',
+          code: `items['forEach']((item) => client.query('INSERT INTO t(a) VALUES($1)', [item]));`,
+          errors: [{ messageId: 'noBatchInsertLoop' }],
+        },
       ]),
+    });
+    ruleTester.run('dynamic members are not the sink', noBatchInsertLoop, {
+      valid: pg([
+        { name: 'a dynamic method in a loop is not the query sink', code: `for (const item of items) { client[op]('INSERT INTO t(a) VALUES($1)', [item]); }` },
+        { name: 'a dynamic iterator method is not forEach or map', code: `items[op]((item) => client.query('INSERT INTO t(a) VALUES($1)', [item]));` },
+      ]),
+      invalid: [],
     });
   });
 });
@@ -167,7 +186,7 @@ describe('no-batch-insert-loop — regression locks', () => {
       // the concurrency. `Promise.all(xs.map(...))` is the shape people write
       // to escape sequential round trips — reporting it fires on the fix — and
       // the carve-out must survive the indirection through a binding.
-      "async function f() { await Promise.all(ids.map(id => pool.query('SELECT id FROM t WHERE id = $1', [id]))); }",
+      { name: 'reads fanned out in Promise.all are the deliberate concurrency trade-off', code: "async function f() { await Promise.all(ids.map(id => pool.query('SELECT id FROM t WHERE id = $1', [id]))); }" },
       { name: 'a map of reads bound to a const and awaited by Promise.all is the concurrency fix', code: "async function f() { const pending = ids.map(id => pool.query('SELECT 1')); await Promise.all(pending); }" },
       // A lambda the loop STORES rather than invokes. `push` stores, `map`
       // invokes; "the parent is a call" cannot tell them apart.

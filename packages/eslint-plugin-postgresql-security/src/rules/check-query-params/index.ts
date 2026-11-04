@@ -16,7 +16,7 @@ import {
 } from '@interlace/eslint-devkit';
 import { CheckQueryParamsOptions } from '../../types';
 import { usesPostgres } from '../../utils';
-import { blankNonPlaceholderText } from '../../utils/sql-scan';
+import { blankNonPlaceholderText, stripComments } from '../../utils/sql-scan';
 
 /**
  * Methods that hand a statement plus its bound values to the server.
@@ -255,10 +255,13 @@ function knowableValueCount(
  * free.
  */
 
-/** The `text` / `values` pair of a `query({ text, values })` config object. */
+/**
+ * The `text` / `values` pair of a `query({ text, values })` config object.
+ * `values` is `null` when the object binds none.
+ */
 function configPair(
   node: TSESTree.ObjectExpression,
-): { text: TSESTree.Node; values: TSESTree.Node } | null {
+): { text: TSESTree.Node; values: TSESTree.Node | null } | null {
   let text: TSESTree.Node | null = null;
   let values: TSESTree.Node | null = null;
   for (const property of node.properties) {
@@ -267,7 +270,30 @@ function configPair(
     if (name === 'text') text = property.value;
     if (name === 'values') values = property.value;
   }
-  return text !== null && values !== null ? { text, values } : null;
+  return text !== null ? { text, values } : null;
+}
+
+/**
+ * `PREPARE name AS … $1` declares its parameters and binds none: the values
+ * arrive later, with `EXECUTE name(…)`.
+ */
+function isPrepare(text: string): boolean {
+  return /^\s*prepare\b/i.test(stripComments(text));
+}
+
+/**
+ * The second argument binds no values at all: it is absent, or it is the
+ * node-postgres result callback, `query(text, (err, res) => …)`.
+ */
+function bindsNothing(
+  node: TSESTree.Node | undefined,
+): node is
+  undefined | TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression {
+  return (
+    node === undefined ||
+    node.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+    node.type === AST_NODE_TYPES.FunctionExpression
+  );
 }
 
 export const checkQueryParams: TSESLint.RuleModule<
@@ -320,13 +346,17 @@ export const checkQueryParams: TSESLint.RuleModule<
      */
     const check = (
       textNode: TSESTree.Node,
-      valuesNode: TSESTree.Node,
+      valuesNode: TSESTree.Node | null,
       scope: TSESLint.Scope.Scope,
     ): void => {
       const text = knowableText(effectiveExpression(textNode, scope));
       if (text === null) return;
 
-      const provided = knowableValueCount(valuesNode, scope);
+      // No values at all: pg sends the statement unbound and the server
+      // answers "there is no parameter $1" — unless it is a PREPARE.
+      if (valuesNode === null && isPrepare(text)) return;
+      const provided =
+        valuesNode === null ? 0 : knowableValueCount(valuesNode, scope);
       if (provided === null) return;
 
       const highest = highestPlaceholder(text);
@@ -335,7 +365,7 @@ export const checkQueryParams: TSESLint.RuleModule<
       if (!mismatched) return;
 
       context.report({
-        node: valuesNode,
+        node: valuesNode ?? textNode,
         messageId: 'parameterCountMismatch',
         data: {
           expected: highest.toString(),
@@ -354,10 +384,11 @@ export const checkQueryParams: TSESLint.RuleModule<
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
+        // `client['query'](…)` is the same call: a string subscript is
+        // punctuation, not a dynamic method.
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          node.callee.property.type !== AST_NODE_TYPES.Identifier ||
-          !SQL_SINK_METHODS.has(node.callee.property.name)
+          !SQL_SINK_METHODS.has(propertyName(node.callee) as string)
         ) {
           return;
         }
@@ -378,11 +409,11 @@ export const checkQueryParams: TSESLint.RuleModule<
           return;
         }
 
-        if (
-          second === undefined ||
-          second.type === AST_NODE_TYPES.SpreadElement
-        )
+        if (bindsNothing(second)) {
+          check(first, null, scope);
           return;
+        }
+        if (second.type === AST_NODE_TYPES.SpreadElement) return;
         check(first, second, scope);
       },
     };

@@ -80,7 +80,20 @@ describe('prefer-pool-query', () => {
           code: `async function test() { const client = await pool.connect(); await client.query('SELECT 1'); client.release(); }`,
           errors: [{ messageId: 'preferPoolQuery' }],
         },
+        // FN (fidelity model): string subscripts name the same methods.
+        {
+          name: 'the same round trip through string subscripts',
+          code: `async function test() { const client = await pool['connect'](); try { return await client['query']('SELECT 1'); } finally { client['release'](); } }`,
+          errors: [{ messageId: 'preferPoolQuery' }],
+        },
       ]),
+    });
+    ruleTester.run('dynamic members are not the pg methods', preferPoolQuery, {
+      valid: pg([
+        { name: 'a dynamic checkout method is not pool.connect', code: `async function test() { const client = await pool[op](); await client.query('SELECT 1'); client.release(); }` },
+        { name: 'a dynamic client method is not query', code: `async function test() { const client = await pool.connect(); await client[op]('SELECT 1'); client.release(); }` },
+      ]),
+      invalid: [],
     });
   });
 });
@@ -103,7 +116,7 @@ describe('prefer-pool-query — regression locks', () => {
       // Reusing a checked-out client across a loop is the entire reason
       // `pool.connect()` exists. One `client.query` in the source, N at run
       // time; reporting it is advice to make the code worse.
-      "async function f(ids) { const c = await pool.connect(); try { for (const i of ids) { await c.query('UPDATE t SET a = 1 WHERE id = $1', [i]); } } finally { c.release(); } }",
+      { name: 'one query call site run once per loop pass', code: "async function f(ids) { const c = await pool.connect(); try { for (const i of ids) { await c.query('UPDATE t SET a = 1 WHERE id = $1', [i]); } } finally { c.release(); } }" },
       "async function f(ids) { const c = await pool.connect(); try { let i = 0; while (i < ids.length) { await c.query('UPDATE t SET a = 1'); i++; } } finally { c.release(); } }",
       // The same counting bug reached through a callback.
       "async function f(rows) { const c = await pool.connect(); try { await Promise.all(rows.map(r => c.query('UPDATE l SET n = $1 WHERE id = $2', [r.n, r.id]))); } finally { c.release(); } }",
