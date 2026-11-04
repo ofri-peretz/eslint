@@ -63,12 +63,12 @@ Fixed — wrong verdicts, each with a fixture that fails on the old code:
 | `postgresql-security/no-hardcoded-credentials` | DSN fixtures in `*.test.ts` / `*.spec.ts` (teable, bookorbit, immich, nhost); `placeholder="postgresql://user:password@host…"` on a JSX input (teable)                                                              |
 | `postgresql-security/*` (5 rules)              | TypeORM `repo.query()` / `queryRunner.release()` in files whose gate opened through an import graph reaching `pg` 2-3 hops away, or through a pg-owning service imported beside TypeORM (activepieces, laudspeaker) |
 | `typeorm-security/no-hardcoded-credentials`    | `bullRedis: { host, port, password }` beside a TypeORM block in a config owned only by its shape (meimei-admin, 2)                                                                                                  |
-| `prisma-security/no-unscoped-mutation`         | probe bug: `import { PrismaClient } from '.prisma/client'` read as a relative path (nestjs-jwts) — the finding is now on-SDK                                                                                       |
+| `prisma-security/no-unscoped-mutation`         | probe bug: `import { PrismaClient } from '.prisma/client'` read as a relative path (nestjs-jwts) — the finding is now on-SDK                                                                                        |
 
 Off-SDK, CI run → after the fixes:
 
 | Rule                                           |  CI | After |
-| ----------------------------------------------- | --: | ----: |
+| ---------------------------------------------- | --: | ----: |
 | `postgresql-security/no-unsafe-query`          | 107 |   103 |
 | `postgresql-security/no-hardcoded-credentials` |  78 |     1 |
 | `postgresql-security/no-batch-insert-loop`     |  55 |    55 |
@@ -84,7 +84,7 @@ Off-SDK, CI run → after the fixes:
 Ceilings raised — the file uses the SDK; the probe cannot see how:
 
 | Rule                                           | Ceiling | Files                                                                                                  | Evidence the gate reads                                                                                                                                                                                                                                                     |
-| ----------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ---------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `postgresql-security/no-unsafe-query`          | 0 → 103 | worklenz (86, 46 files), teable (17, one spec)                                                         | worklenz routes `import db from "../config/db"`, and `config/db.ts` imports `pg` and exports `pool.query` (the node-postgres layout #1192 made the gate follow). teable's spec queries through `createPGliteDb` from a relative helper that imports `@electric-sql/pglite`. |
 | `postgresql-security/no-batch-insert-loop`     | 0 → 55  | worklenz                                                                                               | same `../config/db` wrapper                                                                                                                                                                                                                                                 |
 | `postgresql-security/no-select-all`            | 0 → 14  | worklenz                                                                                               | same `../config/db` wrapper                                                                                                                                                                                                                                                 |
