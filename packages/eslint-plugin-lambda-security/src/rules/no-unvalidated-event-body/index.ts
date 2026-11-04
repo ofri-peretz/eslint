@@ -159,20 +159,39 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
     let fileImportsLambda: boolean;
     let validatorMiddleware: Set<string>;
 
-    /** The module a top-level `import` or `const x = require(…)` loads. */
-    function moduleLoadedBy(node: TSESTree.ProgramStatement): string | null {
+    /**
+     * Each module a top-level statement loads, with the local name bound to
+     * it: an `import` (every specifier), or each `const x = require(…)`
+     * declarator — not only the first.
+     */
+    function modulesLoadedBy(
+      node: TSESTree.ProgramStatement,
+    ): { source: string; locals: string[] }[] {
       if (node.type === AST_NODE_TYPES.ImportDeclaration) {
-        return node.source.value;
+        return [
+          {
+            source: node.source.value,
+            locals: node.specifiers.map((spec) => spec.local.name),
+          },
+        ];
       }
-      const init =
-        node.type === AST_NODE_TYPES.VariableDeclaration
-          ? node.declarations[0].init
-          : null;
-      return init?.type === AST_NODE_TYPES.CallExpression &&
-        init.callee.type === AST_NODE_TYPES.Identifier &&
-        init.callee.name === 'require'
-        ? staticString(init.arguments[0])
-        : null;
+      if (node.type !== AST_NODE_TYPES.VariableDeclaration) return [];
+      return node.declarations.flatMap((d) => {
+        const init = d.init;
+        const source =
+          init?.type === AST_NODE_TYPES.CallExpression &&
+          init.callee.type === AST_NODE_TYPES.Identifier &&
+          init.callee.name === 'require'
+            ? staticString(init.arguments[0])
+            : null;
+        if (source === null) return [];
+        return [
+          {
+            source,
+            locals: d.id.type === AST_NODE_TYPES.Identifier ? [d.id.name] : [],
+          },
+        ];
+      });
     }
 
     /**
@@ -382,28 +401,23 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
         const sourceCode = context.sourceCode;
         // `const { S3Client } = require('@aws-sdk/client-s3')` loads the same
         // module an `import` does; the probe used to see only the latter.
-        fileImportsLambda = sourceCode.ast.body.some((n) => {
-          const src = moduleLoadedBy(n);
-          return (
-            src !== null &&
-            (src === 'aws-lambda' ||
-              src.startsWith('@aws-sdk/') ||
-              src.startsWith('@middy/') ||
-              src === '@aws-cdk/aws-lambda')
-          );
-        });
-        validatorMiddleware = new Set(['validator', 'httpJsonBodyParser']);
-        for (const n of sourceCode.ast.body) {
-          // `import validateEvent from '@middy/validator'` under any name.
-          if (
-            n.type === AST_NODE_TYPES.ImportDeclaration &&
-            n.source.value === '@middy/validator'
-          ) {
-            for (const spec of n.specifiers) {
-              validatorMiddleware.add(spec.local.name);
-            }
-          }
-        }
+        const loads = sourceCode.ast.body.flatMap(modulesLoadedBy);
+        fileImportsLambda = loads.some(
+          ({ source: src }) =>
+            src === 'aws-lambda' ||
+            src.startsWith('@aws-sdk/') ||
+            src.startsWith('@middy/') ||
+            src === '@aws-cdk/aws-lambda',
+        );
+        // `import validateEvent from '@middy/validator'` or
+        // `const validateEvent = require('@middy/validator')`, under any name.
+        validatorMiddleware = new Set([
+          'validator',
+          'httpJsonBodyParser',
+          ...loads
+            .filter(({ source }) => source === '@middy/validator')
+            .flatMap(({ locals }) => locals),
+        ]);
         return true;
       },
       // Track arrow function/function parameters that match a Lambda

@@ -124,6 +124,17 @@ ruleTester.run('no-exposed-error-details', noExposedErrorDetails, {
       code: `export const handler = async (event) => ({ statusCode: 200, [field]: 1, body: JSON.stringify({ [name]: labels[key] }) });`,
     },
     {
+      name: 'a response-shaped object that is only logged',
+      code: `
+        export const handler = async (event) => {
+          try { await run(); } catch (error) {
+            console.error({ body: error.stack });
+            return { statusCode: 500, body: 'failed', after: () => console.error(error.stack) };
+          }
+        };
+      `,
+    },
+    {
       name: 'an object without a response shape',
       code: `const meta = { stack: error.stack };`,
     },
@@ -176,6 +187,21 @@ ruleTester.run('no-exposed-error-details', noExposedErrorDetails, {
         };
       `,
       errors: [{ messageId: 'exposedErrorDetails' }],
+    },
+    {
+      name: "a response helper's failure parameter, a nested response reported once",
+      code: `
+        function makeResponse(failure) {
+          return { statusCode: 500, body: failure.stack, inner: { statusCode: 500, body: failure.cause } };
+        }
+        let response;
+        response = { statusCode: 500, body: JSON.stringify(failure) };
+      `,
+      errors: [
+        { messageId: 'exposedErrorDetails' },
+        { messageId: 'exposedErrorDetails' },
+        { messageId: 'exposedErrorDetails' },
+      ],
     },
     {
       name: 'a caught error under a name that does not say error',

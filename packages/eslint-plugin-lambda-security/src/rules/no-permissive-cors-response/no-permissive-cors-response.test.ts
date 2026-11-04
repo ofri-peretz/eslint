@@ -68,6 +68,10 @@ describe('no-permissive-cors-response schema', () => {
 ruleTester.run('no-permissive-cors-response', noPermissiveCorsResponse, {
   valid: lambda([
     {
+      name: 'fetch options with a body are a request, not a response',
+      code: `await fetch(url, { method: 'POST', body: data, headers: { 'Access-Control-Allow-Origin': '*' } });`,
+    },
+    {
       name: 'fetch options are a request, not a response',
       code: `await fetch(url, { method: 'GET', headers: { 'Access-Control-Allow-Origin': '*' } });`,
     },

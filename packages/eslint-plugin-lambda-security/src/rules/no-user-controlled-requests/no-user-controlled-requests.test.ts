@@ -58,6 +58,16 @@ const ruleTester = new RuleTester();
 ruleTester.run('no-user-controlled-requests', noUserControlledRequests, {
   valid: lambda([
     {
+      name: 'a truthy literal on the left of || always wins',
+      code: `
+        export const handler = async (event) => {
+          const target = 'https://api.trusted.com' || event.queryStringParameters.url;
+          const fallback = '' || 'https://api.trusted.com';
+          return fetch(target + fallback);
+        };
+      `,
+    },
+    {
       name: 'the documented allowlist check before fetching',
       code: `
         export const handler = async (event) => {

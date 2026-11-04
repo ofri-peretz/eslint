@@ -38,7 +38,8 @@ Detects permissive CORS configurations in Middy middleware. This rule is part of
 **Risk:** Same as permissive CORS in responses - credential theft and unauthorized API access.
 
 The middleware is recognised by where it is imported from (`@middy/http-cors`),
-under whatever local name; a project's own `cors` helper is not checked.
+under whatever local name. A `cors` or `httpCors` with no visible declaration
+is matched by name. A `cors` helper imported from another module is not checked.
 
 ## Examples
 

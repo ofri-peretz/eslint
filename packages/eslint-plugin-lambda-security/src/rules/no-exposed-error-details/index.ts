@@ -14,6 +14,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
+import { inResponsePosition } from '../../utils/response-position';
 import {
   AST_NODE_TYPES,
   createRule,
@@ -53,7 +54,7 @@ const DEPLOYMENT_PATHS = new Set(['__dirname', '__filename']);
  * Names that hold an error when nothing binds them to a `catch`: a helper's
  * `(error)` parameter, a `.catch((err) => …)` callback.
  */
-const ERROR_NAME = /^(e|ex|err|error|exception)$|Error$/;
+const ERROR_NAME = /^(e|ex|err|error|exception|failure)$|Error$/;
 
 export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
   name: 'no-exposed-error-details',
@@ -174,6 +175,15 @@ export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
 
     /** Report every disclosure in a response's property values. */
     function scan(node: TSESTree.Node): void {
+      // A function's body is not serialized into the response. (A response
+      // nested in this one is not in response position, so it is scanned
+      // here, once, and never by its own visit.)
+      if (
+        node.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+        node.type === AST_NODE_TYPES.FunctionExpression
+      ) {
+        return;
+      }
       const property = disclosure(node);
       if (property !== null) {
         context.report({
@@ -221,7 +231,7 @@ export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
         return true;
       },
       ObjectExpression(node: TSESTree.ObjectExpression) {
-        if (!isApiResponse(node)) return;
+        if (!isApiResponse(node) || !inResponsePosition(node)) return;
         for (const prop of node.properties) scan(prop);
       },
     };

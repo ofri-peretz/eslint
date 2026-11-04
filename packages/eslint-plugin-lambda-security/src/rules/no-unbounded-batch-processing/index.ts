@@ -122,13 +122,17 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
     let batchAccessNodes: { node: TSESTree.Node; source: string }[];
     let eventParamName: string[];
     /** Locals destructured out of the event: `const { Records } = event`. */
-    let batchAliases: Set<string>;
+    let batchAliases: Set<TSESLint.Scope.Variable>;
     let maxBatchSize: number;
 
     /** `event.Records`, `event['Records']`, or a `Records` destructured from it. */
     function isBatch(node: TSESTree.Node): boolean {
       if (node.type === AST_NODE_TYPES.Identifier) {
-        return batchAliases.has(node.name);
+        // The binding the destructuring declared — not any local of that name.
+        const variable = context.sourceCode
+          .getScope(node)
+          .references.find((r) => r.identifier === node)?.resolved;
+        return variable != null && batchAliases.has(variable);
       }
       return (
         node.type === AST_NODE_TYPES.MemberExpression &&
@@ -144,10 +148,14 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
      * records through, which is the unbounded case with a check written on it.
      */
     function bounds(limit: TSESTree.Node | undefined): boolean {
-      return !(
-        limit?.type === AST_NODE_TYPES.Literal &&
-        typeof limit.value === 'number' &&
-        limit.value > maxBatchSize
+      // `slice(0)` / `splice(0)` with no end takes the whole batch.
+      return (
+        limit !== undefined &&
+        !(
+          limit.type === AST_NODE_TYPES.Literal &&
+          typeof limit.value === 'number' &&
+          limit.value > maxBatchSize
+        )
       );
     }
 
@@ -273,7 +281,12 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
             prop.value.type === AST_NODE_TYPES.Identifier &&
             namesOneOf(objectKeyName(prop), BATCH_SOURCE_PROPERTIES)
           ) {
-            batchAliases.add(prop.value.name);
+            const local = prop.value.name;
+            for (const variable of context.sourceCode.getDeclaredVariables(
+              node,
+            )) {
+              if (variable.name === local) batchAliases.add(variable);
+            }
             batchAccessNodes.push({
               node: prop,
               source: `${node.init.name}.${objectKeyName(prop)}`,

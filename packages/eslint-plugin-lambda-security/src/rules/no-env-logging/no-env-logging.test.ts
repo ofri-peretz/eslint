@@ -104,6 +104,14 @@ ruleTester.run('no-env-logging', noEnvLogging, {
       code: `logger.debug('Config', { region: process.env.AWS_REGION, tags: [process.env.STAGE] });`,
     },
     {
+      name: 'an object literal interpolated into a template prints [object Object]',
+      code: 'console.log(`env: ${{ env: process.env }}` + { env: process.env });',
+    },
+    {
+      name: 'a comparison logs a boolean, not the environment',
+      code: `console.log(JSON.stringify(process.env) === snapshot, saved += process.env);`,
+    },
+    {
       name: 'a computed console method that is not a logging method',
       code: `console['table'](process.env);`,
     },
@@ -190,6 +198,21 @@ ruleTester.run('no-env-logging', noEnvLogging, {
     {
       name: 'a cast does not change what is logged',
       code: `console.log(process.env as Record<string, string>);`,
+      errors: [{ messageId: 'envLogging' }],
+    },
+    {
+      name: 'the environment rebuilt by Object.fromEntries',
+      code: `console.log(Object.fromEntries(Object.entries(process.env)));`,
+      errors: [{ messageId: 'envLogging' }],
+    },
+    {
+      name: 'the environment logged through an assignment or a sequence',
+      code: `console.log(saved = process.env, (prepare(), process.env));`,
+      errors: [{ messageId: 'envLogging' }, { messageId: 'envLogging' }],
+    },
+    {
+      name: 'a serialized environment inside a nested template',
+      code: 'console.log(`outer ${`inner ${JSON.stringify(process.env)}`}`);',
       errors: [{ messageId: 'envLogging' }],
     },
     {

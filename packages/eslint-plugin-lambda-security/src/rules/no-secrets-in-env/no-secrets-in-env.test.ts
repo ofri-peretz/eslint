@@ -130,6 +130,11 @@ ruleTester.run('no-secrets-in-env', noSecretsInEnv, {
   ]),
   invalid: lambda([
     {
+      name: 'a base64 secret that happens to start with a slash',
+      code: `process.env.API_KEY = '/9xQ2mP7kL4v+Qw8=';`,
+      errors: [{ messageId: 'secretsInEnv' }],
+    },
+    {
       name: 'a CDK function environment',
       code: `new lambda.Function(this, 'Handler', { handler: 'index.handler', environment: { DB_PASSWORD: 'super-secret-password' } });`,
       errors: [{ messageId: 'secretsInEnv' }],

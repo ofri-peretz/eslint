@@ -194,6 +194,14 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
 
       // event.body ?? '{}', event.body as string
       if (node.type === AST_NODE_TYPES.LogicalExpression) {
+        // `'https://default' || event.x` always yields the truthy literal.
+        if (
+          node.left.type === AST_NODE_TYPES.Literal &&
+          node.operator === '||' &&
+          Boolean(node.left.value)
+        ) {
+          return null;
+        }
         return getTaintSource(node.left) ?? getTaintSource(node.right);
       }
       if (

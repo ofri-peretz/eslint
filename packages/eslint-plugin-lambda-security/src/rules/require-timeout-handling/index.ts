@@ -57,7 +57,10 @@ type RuleOptions = [Options?];
 
 // Event parameter names (to identify Lambda handlers)
 
-/** HTTP client modules whose every method is a network call. */
+/** HTTP client methods that configure a client and send nothing. */
+const CLIENT_CONFIGURATION = new Set(['create', 'extend', 'defaults']);
+
+/** HTTP client modules whose request methods are network calls. */
 const HTTP_CLIENTS = new Set(['axios', 'got', 'superagent', 'http', 'https']);
 
 // External call patterns that could timeout
@@ -273,7 +276,8 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
           if (
             namesOneOf(propertyName(node.callee), EXTERNAL_CALL_PATTERNS) ||
             (node.callee.object.type === AST_NODE_TYPES.Identifier &&
-              HTTP_CLIENTS.has(node.callee.object.name))
+              HTTP_CLIENTS.has(node.callee.object.name) &&
+              !namesOneOf(propertyName(node.callee), CLIENT_CONFIGURATION))
           ) {
             hasExternalCalls = true;
           }

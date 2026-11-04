@@ -35,6 +35,7 @@ type RuleOptions = [Options?];
 const SERIALIZERS = new Set([
   'JSON.stringify',
   'Object.entries',
+  'Object.fromEntries',
   'Object.values',
   'Object.assign',
 ]);
@@ -132,11 +133,18 @@ export const noEnvLogging = createRule<RuleOptions, MessageIds>({
           return leaksEnv(node.consequent) || leaksEnv(node.alternate);
         case AST_NODE_TYPES.LogicalExpression:
           return leaksEnv(node.left) || leaksEnv(node.right);
+        case AST_NODE_TYPES.AssignmentExpression:
+          // console.log(saved = process.env) logs the assigned value.
+          return node.operator === '=' && leaksEnv(node.right);
+        case AST_NODE_TYPES.SequenceExpression:
+          return leaksEnv(node.expressions[node.expressions.length - 1]);
         case AST_NODE_TYPES.TemplateLiteral:
-          return node.expressions.some((e) => !isProcessEnv(e) && leaksEnv(e));
+          return node.expressions.some(leaksWhenCoerced);
         case AST_NODE_TYPES.BinaryExpression:
-          return [node.left, node.right].some(
-            (e) => !isProcessEnv(e) && leaksEnv(e),
+          // Only `+` builds a string; `===` and friends log a boolean.
+          return (
+            node.operator === '+' &&
+            [node.left, node.right].some(leaksWhenCoerced)
           );
         case AST_NODE_TYPES.CallExpression:
           return (
@@ -150,6 +158,21 @@ export const noEnvLogging = createRule<RuleOptions, MessageIds>({
         default:
           return false;
       }
+    }
+
+    /**
+     * Inside a template literal or a `+`, an object is coerced to
+     * "[object Object]" — `${process.env}` and `${{ env: process.env }}` print
+     * nothing. Only an expression that is already a string carries the
+     * values: a serializer call, or a nested template / concatenation.
+     */
+    function leaksWhenCoerced(node: TSESTree.Node): boolean {
+      return (
+        (node.type === AST_NODE_TYPES.CallExpression ||
+          node.type === AST_NODE_TYPES.TemplateLiteral ||
+          node.type === AST_NODE_TYPES.BinaryExpression) &&
+        leaksEnv(node)
+      );
     }
 
     /**

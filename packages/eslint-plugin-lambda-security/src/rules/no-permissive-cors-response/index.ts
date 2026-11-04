@@ -24,6 +24,7 @@ import {
   staticString,
 } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
+import { inResponsePosition } from '../../utils/response-position';
 
 type MessageIds = 'permissiveCors' | 'useSpecificOrigin';
 
@@ -165,7 +166,9 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
         }
         return true;
       },
-      ObjectExpression: checkResponseObject,
+      ObjectExpression(node: TSESTree.ObjectExpression) {
+        if (inResponsePosition(node)) checkResponseObject(node);
+      },
     };
   },
 });

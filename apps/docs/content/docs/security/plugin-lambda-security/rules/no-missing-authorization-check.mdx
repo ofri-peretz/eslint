@@ -28,8 +28,9 @@ This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/pac
 
 A Lambda handler (a function taking the event) that performs a privileged
 operation — a database write or delete, an AWS SDK `send`, an SDK v2
-DocumentClient / S3 mutation, a Lambda invoke — is reported unless it first
-establishes who the caller is:
+DocumentClient / S3 mutation, a Lambda invoke — is reported unless the
+function contains an authorization check. The rule does not check whether
+that check runs before the operation. The check may be:
 
 - reading the authorizer's verdict off the event: Cognito
   `requestContext.authorizer.claims`, HTTP API JWT `requestContext.authorizer.jwt.claims`,
@@ -39,8 +40,9 @@ establishes who the caller is:
   than client input, or an early `401` / `403` return.
 
 A value the client sent is not identity, whatever it is called:
-`event.pathParameters.userId` or a `subject` field in the parsed body does not
-count as an authorization check. Work that reaches nothing outside the process
+`event.pathParameters.userId`, or a field of a local parsed from the body
+(`const payload = JSON.parse(event.body)`), does not count as an authorization
+check. Work that reaches nothing outside the process
 (arithmetic, a `new Map()` cache) needs no authorization.
 
 ## Examples

@@ -19,7 +19,7 @@ import {
   propertyName,
   staticString,
 } from '@interlace/eslint-devkit';
-import type { TSESTree } from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
 type MessageIds = 'violationDetected';
@@ -43,6 +43,18 @@ const DEFAULT_DEBUG_PATHS = [
 /** Where API Gateway puts the route: v1 `path`/`resource`, v2 `rawPath`/`routeKey`. */
 // @vocabulary AWS API Gateway v1/v2 event shape
 const ROUTE_PROPERTIES = new Set(['path', 'rawPath', 'resource', 'routeKey']);
+
+/** Event chains that carry the route, relative to `event`. */
+// @vocabulary AWS API Gateway v1/v2 event shape
+const ROUTE_CHAINS = new Set([
+  'path',
+  'rawPath',
+  'resource',
+  'routeKey',
+  'requestContext.path',
+  'requestContext.resourcePath',
+  'requestContext.http.path',
+]);
 
 /** String methods that test a route against a path. */
 const ROUTE_TESTS = new Set(['includes', 'startsWith', 'endsWith']);
@@ -120,7 +132,8 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
     function isDebugRoute(text: string): boolean {
       const path = routePath(text);
       return debugPaths.some((dp) => {
-        const debug = dp.toLowerCase();
+        // An `endpoints` entry written with a trailing slash names the same path.
+        const debug = dp.toLowerCase().replace(/\/+$/, '');
         return path === debug || path.startsWith(`${debug}/`);
       });
     }
@@ -132,22 +145,41 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
      */
     function readsRoute(node: TSESTree.Node): boolean {
       if (node.type === AST_NODE_TYPES.Identifier) {
-        if (!ROUTE_PROPERTIES.has(node.name)) return false;
         const variable = context.sourceCode
           .getScope(node)
           .references.find((r) => r.identifier === node)?.resolved;
-        return (
-          variable?.defs.some(
-            (d) => d.name.parent.type === AST_NODE_TYPES.Property,
-          ) ?? false
-        );
+        return variable?.defs.some(destructuresRoute) ?? false;
       }
       const path = memberPath(node);
       return (
         path !== null &&
-        path.length > 1 &&
         ['event', 'evt'].includes(path[0]) &&
-        ROUTE_PROPERTIES.has(path[path.length - 1])
+        ROUTE_CHAINS.has(path.slice(1).join('.'))
+      );
+    }
+
+    /**
+     * `const { rawPath } = event`, `const { rawPath: requested } = event`, or
+     * a handler's `({ rawPath }) =>` parameter. The KEY names the route; the
+     * local may be called anything, and a `path` destructured from some other
+     * object (`const { path } = options`) is not the request's.
+     */
+    function destructuresRoute(def: TSESLint.Scope.Definition): boolean {
+      const property = def.name.parent;
+      if (
+        property.type !== AST_NODE_TYPES.Property ||
+        !namesOneOf(objectKeyName(property), ROUTE_PROPERTIES)
+      ) {
+        return false;
+      }
+      if (def.type === 'Parameter') return true;
+      const init =
+        def.node.type === AST_NODE_TYPES.VariableDeclarator
+          ? def.node.init
+          : null;
+      return (
+        init?.type === AST_NODE_TYPES.Identifier &&
+        ['event', 'evt'].includes(init.name)
       );
     }
 
@@ -179,19 +211,18 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
         ) {
           return;
         }
-        for (
-          let p: TSESTree.Node | undefined = node.parent.parent;
-          p;
-          p = p.parent
+        // Only inside a Serverless event: `events: [{ http: { path } }]`.
+        const event = node.parent.parent;
+        const list = event.parent?.parent;
+        if (
+          event.type === AST_NODE_TYPES.Property &&
+          // @vocabulary Serverless Framework event keys
+          namesOneOf(objectKeyName(event), ['http', 'httpApi']) &&
+          list?.type === AST_NODE_TYPES.ArrayExpression &&
+          list.parent.type === AST_NODE_TYPES.Property &&
+          objectKeyName(list.parent) === 'events'
         ) {
-          if (
-            p.type === AST_NODE_TYPES.Property &&
-            // @vocabulary Serverless Framework event keys
-            namesOneOf(objectKeyName(p), ['http', 'httpApi'])
-          ) {
-            report(node.value);
-            return;
-          }
+          report(node.value);
         }
       },
 

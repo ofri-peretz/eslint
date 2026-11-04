@@ -233,7 +233,11 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
     function isAuthorizationAccess(node: TSESTree.MemberExpression): boolean {
       const path = memberPath(node);
       if (path === null) return false;
-      if (path.some((p) => AUTHORIZATION_SEGMENTS.has(p.toLowerCase()))) {
+      const clientInput = isClientInput(node, path);
+      if (
+        path.some((p) => AUTHORIZATION_SEGMENTS.has(p.toLowerCase())) &&
+        !clientInput
+      ) {
         return true;
       }
       // IAM authorization: `event.requestContext.identity.userArn`.
@@ -244,10 +248,40 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
       ) {
         return true;
       }
-      return (
-        IDENTITY_FIELDS.has(path[path.length - 1]) &&
-        !path.some((p) => CLIENT_INPUT.has(p))
-      );
+      return IDENTITY_FIELDS.has(path[path.length - 1]) && !clientInput;
+    }
+
+    /**
+     * Whether a member chain reads client input: through a client-written
+     * event field (`event.pathParameters.userId`), or off a local that was
+     * initialised from one (`const payload = JSON.parse(event.body)` then
+     * `payload.userId`). The local's NAME says nothing; its initialiser does.
+     */
+    function isClientInput(
+      node: TSESTree.MemberExpression,
+      path: string[],
+    ): boolean {
+      if (path.some((p) => CLIENT_INPUT.has(p))) return true;
+      let root: TSESTree.Node = node;
+      while (root.type === AST_NODE_TYPES.MemberExpression) root = root.object;
+      const variable = context.sourceCode
+        .getScope(root)
+        .references.find((r) => r.identifier === root)?.resolved;
+      const def = variable?.defs[0];
+      let init: TSESTree.Node | null | undefined =
+        def?.node.type === AST_NODE_TYPES.VariableDeclarator
+          ? def.node.init
+          : null;
+      // JSON.parse(event.body ?? '{}')
+      if (
+        init?.type === AST_NODE_TYPES.CallExpression &&
+        init.arguments.length > 0
+      ) {
+        init = init.arguments[0];
+      }
+      if (init?.type === AST_NODE_TYPES.LogicalExpression) init = init.left;
+      const source = init ? memberPath(init) : null;
+      return source !== null && source.some((p) => CLIENT_INPUT.has(p));
     }
 
     /**

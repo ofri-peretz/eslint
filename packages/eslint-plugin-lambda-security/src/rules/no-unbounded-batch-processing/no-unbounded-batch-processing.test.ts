@@ -215,6 +215,30 @@ ruleTester.run('no-unbounded-batch-processing', noUnboundedBatchProcessing, {
       ],
     },
     {
+      name: 'a nested local named Records does not bound the destructured batch',
+      code: `
+        export const handler = async (event) => {
+          const { Records } = event;
+          const check = (Records) => Records.length > 10;
+          for (const record of Records) await processRecord(record, check);
+        };
+      `,
+      errors: [{ messageId: 'unboundedBatch' }],
+    },
+    {
+      name: 'a slice with no end takes the whole batch',
+      code: `
+        export const handler = async (event) => {
+          for (const record of event.Records.slice(1)) await processRecord(record);
+          const rest = take(event.Records);
+        };
+      `,
+      errors: [
+        { messageId: 'unboundedBatch' },
+        { messageId: 'unboundedBatch' },
+      ],
+    },
+    {
       name: 'a batch destructured off the event',
       code: `
         export const handler = async (event) => {

@@ -88,6 +88,22 @@ ruleTester.run('no-exposed-debug-endpoints', noExposedDebugEndpoints, {
       code: "if (rawPath === '/debug/vars') {}",
     },
     {
+      name: 'a path destructured from something other than the event',
+      code: "const { path } = options; if (path === '/admin/users') {} const { 'rawPath': raw = '/' } = event; if (raw === '/admin/users') {} const { [key]: k } = event;"
+    },
+    {
+      name: 'a path destructured from a caught error',
+      code: "try { run(); } catch ({ path }) { if (path === '/admin/users') {} }"
+    },
+    {
+      name: 'a field named path that is not the route chain',
+      code: "if (event.queryStringParameters.path === '/admin/users') {}"
+    },
+    {
+      name: 'an http object outside a Serverless events list',
+      code: "const meta = { http: { path: '/admin/users' } }; const other = { list: [{ http: { path: '/admin/users' } }] }; const top = [{ http: { path: '/admin/users' } }];"
+    },
+    {
       name: 'a plain local named path is not destructured off the event',
       code: "const path = next(); if (path === '/debug/vars') {}",
     },
@@ -146,6 +162,17 @@ ruleTester.run('no-exposed-debug-endpoints', noExposedDebugEndpoints, {
       name: 'the route destructured off the event',
       code: "const { rawPath } = event; if (rawPath !== '/debug/vars') {}",
       errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'the route destructured under another name, and as a handler parameter',
+      code: "const { rawPath: requested } = evt; if (requested === '/admin/users') {} const h = async ({ routeKey }, context) => routeKey === 'GET /admin';",
+      errors: [{ messageId: 'violationDetected' }, { messageId: 'violationDetected' }]
+    },
+    {
+      name: 'an endpoints entry written with a trailing slash',
+      code: "if (event.rawPath === '/ops/metrics') {}",
+      options: [{ endpoints: ['/ops/'] }],
+      errors: [{ messageId: 'violationDetected' }]
     },
     {
       name: 'a switch dispatching on the route',

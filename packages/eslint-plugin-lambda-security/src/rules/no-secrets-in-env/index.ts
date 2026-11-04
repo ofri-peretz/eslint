@@ -143,7 +143,7 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
      * "secret" in its name.
      */
     function isReference(text: string): boolean {
-      return text.startsWith('arn:') || text.startsWith('/');
+      return text.startsWith('arn:') || /^\/[\w./-]+$/.test(text);
     }
 
     /**

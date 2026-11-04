@@ -151,6 +151,11 @@ ruleTester.run('no-overly-permissive-iam-policy', noOverlyPermissiveIamPolicy, {
   ]),
   invalid: lambda([
     {
+      name: 'a repeated Effect key keeps its last value',
+      code: `const policy = { Effect: 'Deny', Effect: 'Allow', Action: 's3:GetObject', Resource: '*' };`,
+      errors: [{ messageId: 'permissivePolicy' }],
+    },
+    {
       name: 'a principal of every AWS account',
       code: `const policy = { Effect: 'Allow', Principal: { AWS: '*' }, Action: 's3:GetObject', Resource: 'arn:aws:s3:::b/*' };`,
       errors: [{ messageId: 'permissivePolicy' }],

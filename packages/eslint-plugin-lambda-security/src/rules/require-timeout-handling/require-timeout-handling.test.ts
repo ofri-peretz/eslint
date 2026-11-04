@@ -68,6 +68,15 @@ ruleTester.run('require-timeout-handling', requireTimeoutHandling, {
       `,
     },
     {
+      name: 'creating an axios client sends no request',
+      code: `
+        export const handler = async (event, context) => {
+          const client = axios.create({ timeout: 3000 });
+          return { statusCode: 200, body: String(client) };
+        };
+      `,
+    },
+    {
       name: 'a method on a local object is not an HTTP client call',
       code: `
         export const handler = async (event, context) => {

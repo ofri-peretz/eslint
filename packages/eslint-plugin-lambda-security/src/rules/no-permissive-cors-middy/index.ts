@@ -76,7 +76,10 @@ export const noPermissiveCorsMidly = createRule<RuleOptions, MessageIds>({
     currentOptions,
   ) {
     /** Where a binding was imported or required from, if it was. */
-    function moduleOf(id: TSESTree.Identifier): string | null | undefined {
+    function moduleOf(
+      id: TSESTree.Identifier,
+      seen: Set<string> = new Set(),
+    ): string | null | undefined {
       for (
         let scope: TSESLint.Scope.Scope | null =
           context.sourceCode.getScope(id);
@@ -95,6 +98,12 @@ export const noPermissiveCorsMidly = createRule<RuleOptions, MessageIds>({
           def.node.type === AST_NODE_TYPES.VariableDeclarator
             ? def.node.init
             : null;
+        // `const cors = httpCors` is whatever `httpCors` is. `seen` stops a
+        // `const a = b, b = a` cycle.
+        if (init?.type === AST_NODE_TYPES.Identifier && !seen.has(init.name)) {
+          seen.add(id.name);
+          return moduleOf(init, seen);
+        }
         return init?.type === AST_NODE_TYPES.CallExpression &&
           init.callee.type === AST_NODE_TYPES.Identifier &&
           init.callee.name === 'require'

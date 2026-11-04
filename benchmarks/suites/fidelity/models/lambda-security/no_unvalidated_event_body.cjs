@@ -30,17 +30,14 @@ const USE = {
   MiddyValidator: (x) => [`const item = await db.find(${x});`],
   MiddyValidatorRenamed: (x) => [`const item = await db.find(${x});`],
 };
+// The middy cases wrap the generated handler itself, under the imported name.
 const MIDDY = {
-  MiddyValidator: [
-    "import middy from '@middy/core';",
-    "import validator from '@middy/validator';",
-    'export const validated = middy(run).use(validator({ eventSchema }));',
-  ],
-  MiddyValidatorRenamed: [
-    "import middy from '@middy/core';",
-    "import validateEvent from '@middy/validator';",
-    'export const validated = middy(run).use(validateEvent({ eventSchema }));',
-  ],
+  MiddyValidator: "import validator from '@middy/validator';",
+  MiddyValidatorRenamed: "import validateEvent from '@middy/validator';",
+};
+const MIDDY_USE = {
+  MiddyValidator: 'validator',
+  MiddyValidatorRenamed: 'validateEvent',
 };
 
 const base = {
@@ -63,16 +60,23 @@ const base = {
     const prop = tag(s.prop);
     const x =
       prop === 'RequestId' ? 'event.requestContext.requestId' : PROP[prop];
-    return lambdaProgram(
-      tag(s.gate),
+    const middy = MIDDY[use];
+    const program = lambdaProgram(
+      middy ? 'Middy' : tag(s.gate),
       [...USE[use](x), "return { statusCode: 200, body: 'ok' };"],
       {
         imports: [
-          "import { db, schema, joiSchema, check, eventSchema, run } from './deps';",
+          "import { db, schema, joiSchema, check, eventSchema } from './deps';",
+          ...(middy ? [middy] : []),
         ],
-        pre: MIDDY[use] ?? [],
       },
     );
+    return middy
+      ? program.replace(
+          'middy(baseHandler);',
+          `middy(baseHandler).use(${MIDDY_USE[use]}({ eventSchema }));`,
+        )
+      : program;
   },
 };
 

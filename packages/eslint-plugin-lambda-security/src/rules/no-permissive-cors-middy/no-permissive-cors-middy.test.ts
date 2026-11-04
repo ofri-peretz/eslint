@@ -188,6 +188,17 @@ ruleTester.run('no-permissive-cors-middy', noPermissiveCorsMidly, {
       errors: [{ messageId: 'permissiveCors' }],
     },
     {
+      name: 'the middleware aliased through another binding',
+      code: `
+        import httpCors from '@middy/http-cors';
+        const cors = httpCors;
+        const loopA = loopB, loopB = loopA;
+        loopA({ origin: '*' });
+        export const handler = middy(baseHandler).use(cors({ origin: '*' }));
+      `,
+      errors: [{ messageId: 'permissiveCors' }],
+    },
+    {
       name: 'the origin key spelled as a string subscript',
       code: `middy(handler).use(httpCors({ ['origin']: '*' }));`,
       errors: [{ messageId: 'permissiveCors' }],

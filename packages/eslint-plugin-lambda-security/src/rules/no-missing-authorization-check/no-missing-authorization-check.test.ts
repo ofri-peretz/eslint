@@ -285,6 +285,21 @@ ruleTester.run('no-missing-authorization-check', noMissingAuthorizationCheck, {
       errors: [{ messageId: 'missingAuthCheck' }],
     },
     {
+      name: 'identity fields read off a parsed body stored under any name',
+      code: `
+        export const handler = async (event) => {
+          const payload = JSON.parse(event.body ?? '{}');
+          const params = event.pathParameters;
+          const raw = JSON.parse();
+          const local = 1;
+          let later;
+          console.log(payload.userId, params.sub, payload.authorization, raw.x, local, later);
+          await db.query('DELETE FROM users');
+        };
+      `,
+      errors: [{ messageId: 'missingAuthCheck' }],
+    },
+    {
       name: 'handlerPatterns names the file',
       code: `
         export const handler = async (event) => {

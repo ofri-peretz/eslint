@@ -128,12 +128,12 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
      */
     function inDenyStatement(node: TSESTree.Property): boolean {
       const statement = node.parent as TSESTree.ObjectExpression;
-      return statement.properties.some(
-        (p) =>
-          p.type === AST_NODE_TYPES.Property &&
-          objectKeyName(p) === 'Effect' &&
-          staticString(p.value) === 'Deny',
+      // A repeated key keeps its last value, as in the object IAM receives.
+      const effects = statement.properties.filter(
+        (p): p is TSESTree.Property =>
+          p.type === AST_NODE_TYPES.Property && objectKeyName(p) === 'Effect',
       );
+      return staticString(effects.at(-1)?.value) === 'Deny';
     }
 
     /**
