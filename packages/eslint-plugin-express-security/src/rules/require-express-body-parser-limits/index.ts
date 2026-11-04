@@ -41,6 +41,7 @@ import {
 import {
   formatLLMMessage,
   MessageIcons,
+  objectKeyName,
   createRule,
   isTestFilePath,
   propertyName,
@@ -95,11 +96,9 @@ function getLimitOption(
   properties: TSESTree.ObjectLiteralElement[],
 ): TSESTree.Property | null {
   for (const prop of properties) {
-    if (
-      prop.type === 'Property' &&
-      prop.key.type === 'Identifier' &&
-      prop.key.name === 'limit'
-    ) {
+    // `limit:`, `'limit':` and `['limit']:` all name the option; a computed
+    // `[limit]:` names whatever the variable holds, so it does not.
+    if (prop.type === 'Property' && objectKeyName(prop) === 'limit') {
       return prop;
     }
   }
