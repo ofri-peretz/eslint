@@ -58,7 +58,7 @@ src/
 └── components/           # React components
 
 content/
-└── docs/                 # MDX documentation (272 rules across 11 plugins)
+└── docs/                 # MDX documentation (one page per rule, generated)
     ├── index.mdx         # Getting started
     ├── presets.mdx       # Flat config presets
     ├── benchmarks.mdx    # Performance benchmarks

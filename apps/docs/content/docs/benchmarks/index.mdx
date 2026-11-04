@@ -13,12 +13,15 @@ Every rule ships with a measurable quality claim. The numbers below come from th
 open-source repositories, hand-labeled ground-truth fixtures, and adversarial edge cases.
 
 <Callout type="info">
-  All results are generated from the benchmark infrastructure in this repository and
-  are reproducible. Raw JSON artifacts live in `benchmark-results/` at the repo root.
+  All results are generated from the benchmark infrastructure in this repository
+  and are reproducible. Raw JSON artifacts live in `benchmark-results/` at the
+  repo root.
 </Callout>
 
 <Callout type="info">
-  If the benchmark numbers are useful, [⭐ star the repo](https://github.com/ofri-peretz/eslint) — it's the signal that keeps this infrastructure maintained.
+  If the benchmark numbers are useful, [⭐ star the
+  repo](https://github.com/ofri-peretz/eslint) — it's the signal that keeps this
+  infrastructure maintained.
 </Callout>
 
 ## The words we use, in plain terms
@@ -29,10 +32,10 @@ assumed.
 **Severity — what ESLint does when a rule fires.** You set it per rule in your
 config; our presets set it for you.
 
-| Severity | In your config | What happens |
-| :--- | :--- | :--- |
-| **`error`** | `'error'` or `2` | Reported as an error and **`eslint` exits non-zero — your build fails.** |
-| **`warn`** | `'warn'` or `1` | Reported, but the exit code stays 0. Your build passes; you see it and decide. |
+| Severity         | In your config                     | What happens                                                                                  |
+| :--------------- | :--------------------------------- | :-------------------------------------------------------------------------------------------- |
+| **`error`**      | `'error'` or `2`                   | Reported as an error and **`eslint` exits non-zero — your build fails.**                      |
+| **`warn`**       | `'warn'` or `1`                    | Reported, but the exit code stays 0. Your build passes; you see it and decide.                |
 | **off / opt-in** | `'off'`, `0`, or not in the preset | The rule does not run. Ours are still shipped and documented — you turn them on deliberately. |
 
 That is why a severity is a promise: `error` interrupts you and `warn` does not.
@@ -44,13 +47,13 @@ That is why a severity is a promise: `error` interrupts you and `warn` does not.
 - **FN** (false negative) — the code was vulnerable and the rule stayed quiet. A miss.
 - **TN** — the code was fine and the rule stayed quiet. Correct silence.
 
-**Precision** = TP / (TP + FP) — *of the findings you are shown, what share are
-real?* This is the number that decides whether you keep the tool on. **Recall** =
-TP / (TP + FN) — *of the real problems, what share did we catch?* You cannot
+**Precision** = TP / (TP + FP) — _of the findings you are shown, what share are
+real?_ This is the number that decides whether you keep the tool on. **Recall** =
+TP / (TP + FN) — _of the real problems, what share did we catch?_ You cannot
 maximise both; see the tradeoffs below.
 
-**Sampled vs fixture precision.** *Fixture* precision is measured on test files
-we wrote — a regression gate that says nothing about your code. *Sampled*
+**Sampled vs fixture precision.** _Fixture_ precision is measured on test files
+we wrote — a regression gate that says nothing about your code. _Sampled_
 precision is measured on open-source repositories we did not write. Only the
 second predicts your afternoon, and it is the only one the bars use.
 
@@ -60,11 +63,11 @@ A severity is a **promise about your triage time**, and it is the part of a lint
 finding you actually plan around. Nobody in this space publishes a precision bar,
 so we set ours and publish where we sit against it.
 
-| Tier | Promise to you | Bar |
-| :--- | :--- | :--- |
-| **`error`** in `recommended` | Act on every one. Failing a build on this is reasonable. | **≥ 95%** sampled precision |
-| **`warn`** in `recommended` | Triage these. Most are real; some need your context. | **≥ 70%** sampled precision |
-| **Off by default** (opt-in) | A paranoid sweep. You asked for it; expect to triage. | No floor — but the rate is published |
+| Tier                         | Promise to you                                           | Bar                                  |
+| :--------------------------- | :------------------------------------------------------- | :----------------------------------- |
+| **`error`** in `recommended` | Act on every one. Failing a build on this is reasonable. | **≥ 95%** sampled precision          |
+| **`warn`** in `recommended`  | Triage these. Most are real; some need your context.     | **≥ 70%** sampled precision          |
+| **Off by default** (opt-in)  | A paranoid sweep. You asked for it; expect to triage.    | No floor — but the rate is published |
 
 Three rules follow, and they bind us more than they bind you:
 
@@ -89,12 +92,12 @@ unscoreable by a ratio.
 A rule whose entire output is smaller than the `n` its tier requires is scored by
 **census** instead — and it is stricter, not a waiver:
 
-| | ratio criterion | census criterion |
-| :--- | :--- | :--- |
-| Applies when | findings ≥ required `n` | findings < required `n` |
-| What is judged | a stratified sample | **every finding** |
-| Passing | the tier's percentage | **zero false positives** |
-| Published | the rate and its `n` | the finding count and the labels |
+|                | ratio criterion         | census criterion                 |
+| :------------- | :---------------------- | :------------------------------- |
+| Applies when   | findings ≥ required `n` | findings < required `n`          |
+| What is judged | a stratified sample     | **every finding**                |
+| Passing        | the tier's percentage   | **zero false positives**         |
+| Published      | the rate and its `n`    | the finding count and the labels |
 
 Sampling lets a rule hide its worst findings behind the ones you drew. A census
 cannot — one false positive anywhere fails it. A rule does not choose which
@@ -111,12 +114,12 @@ mostly luck: at `n = 4`, reclassifying one finding moves precision 25 points.
 A percentage from 20 findings is not evidence for a 95% claim: read 20 findings,
 find all 20 real, and the true rate could still be 85% on a good draw. So the
 bars carry a required `n`, derived from the **Wilson score interval** — the
-standard statistical answer to *"given what we saw, what is the worst the true
-rate plausibly is?"* at 95% confidence. That worst case is what we hold ourselves
+standard statistical answer to _"given what we saw, what is the worst the true
+rate plausibly is?"_ at 95% confidence. That worst case is what we hold ourselves
 to, not the raw percentage. With a **perfect** sample:
 
-| Sample size | n=20 | n=50 | **n=73** | n=100 |
-| :--- | ---: | ---: | ---: | ---: |
+| Sample size          |  n=20 |  n=50 |  **n=73** | n=100 |
+| :------------------- | ----: | ----: | --------: | ----: |
 | Defensible precision | 83.9% | 92.9% | **95.1%** | 96.3% |
 
 So the `error` bar needs **n ≥ 73 with zero false positives**, or n ≥ 150 with
@@ -156,20 +159,20 @@ recompute. It is not independent review and we do not call it that.
 ### Where we sit today — 2026-08-17
 
 <Callout type="warn">
-  This is the state of a programme, not a boast. **Four** rules have been through
-  per-rule measurement on code we did not write. **117 have not**, and are marked
-  unscored rather than assumed good.
+  This is the state of a programme, not a boast. **Four** rules have been
+  through per-rule measurement on code we did not write. **117 have not**, and
+  are marked unscored rather than assumed good.
 </Callout>
 
-| Rule | Ships at | Sampled precision | Meets bar |
-| :--- | :--- | :--- | :--- |
-| `no-redos-vulnerable-regex` | `error` | ≥4/22 TP, 18 unclassified | **unscored** |
-| `detect-non-literal-fs-filename` | `warn` | **1/1 — census, every finding labelled** | **yes** (census) |
-| `detect-object-injection` | opt-in | 0/13 | n/a (opt-in) |
-| `detect-non-literal-regexp` | opt-in | 3/10 | n/a (opt-in) |
-| the other 117 rules | various | not yet measured | **unscored** |
+| Rule                             | Ships at | Sampled precision                        | Meets bar        |
+| :------------------------------- | :------- | :--------------------------------------- | :--------------- |
+| `no-redos-vulnerable-regex`      | `error`  | ≥4/22 TP, 18 unclassified                | **unscored**     |
+| `detect-non-literal-fs-filename` | `warn`   | **1/1 — census, every finding labelled** | **yes** (census) |
+| `detect-object-injection`        | opt-in   | 0/13                                     | n/a (opt-in)     |
+| `detect-non-literal-regexp`      | opt-in   | 3/10                                     | n/a (opt-in)     |
+| the other 117 rules              | various  | not yet measured                         | **unscored**     |
 
-The ReDoS row reads *unscored* rather than a percentage on purpose. The timing
+The ReDoS row reads _unscored_ rather than a percentage on purpose. The timing
 sweep behind it can **confirm** that a pattern backtracks and cannot **prove**
 that one doesn't — two patterns it called flat ran 167 ms and 956 ms under a
 crafted input. A method that only errs in one direction does not get to report a
@@ -184,16 +187,16 @@ the incumbent by 2.2×, and that is the only claim it supports.
 
 <Cards>
   <Card title="57/57 edge cases pass" icon={<CheckCircle />}>
-    FP and FN stress tests across 16 security rules — 0 disagreements between expected
-    and actual behaviour.
+    FP and FN stress tests across 16 security rules — 0 disagreements between
+    expected and actual behaviour.
   </Card>
   <Card title="0 scope violations" icon={<ShieldCheck />}>
-    All 414 rules are classified. The plugin-scope audit finds 0 placement violations —
-    every rule lives in the right plugin.
+    Every rule is classified. The plugin-scope audit finds 0 placement
+    violations — every rule lives in the right plugin.
   </Card>
   <Card title="35/35 fixable rules verified" icon={<Wrench />}>
-    Every rule that ships a fixer has at least one test that asserts the corrected
-    output — 100% fixer-output test coverage.
+    Every rule that ships a fixer has at least one test that asserts the
+    corrected output — 100% fixer-output test coverage.
   </Card>
 </Cards>
 
@@ -204,11 +207,11 @@ TypeScript / JavaScript. Repos include Next.js (125K LOC), Vercel AI SDK (160K L
 Webpack (158K LOC), Twenty CRM (419K LOC), the Serverless Framework (129K LOC), and
 fifteen others — frameworks, CMSes, AI toolkits, and serverless tooling.
 
-| Metric | Value |
-| :--- | ---: |
-| Repos exercised | 21 / 22 |
-| Total LOC scanned | 1,556,266 |
-| Total findings | 5,437 |
+| Metric                  |       Value |
+| :---------------------- | ----------: |
+| Repos exercised         |     21 / 22 |
+| Total LOC scanned       |   1,556,266 |
+| Total findings          |       5,437 |
 | Average finding density | 3.49 / KLOC |
 
 Repos marked **FP corpus** (three.js, webpack, lodash, babel, react) are included
@@ -222,24 +225,24 @@ of three hypotheses: a confirmed true positive (TP), a false-positive guard that
 stay silent (FP), or a formerly-missed true positive recovered via audit (FN). All 57
 cases match expected behaviour.
 
-| Rule | TP cases | FP guards | FN recovered | All pass |
-| :--- | :---: | :---: | :---: | :---: |
-| `secure-coding/detect-object-injection` | 1 | 3 | 1 | ✓ |
-| `secure-coding/no-graphql-injection` | 1 | 2 | 1 | ✓ |
-| `secure-coding/no-hardcoded-credentials` | 1 | 2 | 1 | ✓ |
-| `secure-coding/no-redos-vulnerable-regex` | 1 | 2 | 1 | ✓ |
-| `secure-coding/no-unsafe-deserialization` | 1 | 2 | 1 | ✓ |
-| `secure-coding/no-unchecked-loop-condition` | 1 | 2 | — | ✓ |
-| `secure-coding/no-insecure-comparison` | 1 | 2 | — | ✓ |
-| `node-security/no-buffer-overread` | 1 | 2 | — | ✓ |
-| `node-security/detect-child-process` | 1 | 1 | 1 | ✓ |
-| `node-security/detect-non-literal-fs-filename` | 1 | 2 | — | ✓ |
-| `node-security/no-ssrf` | 3 | 3 | — | ✓ |
-| `jwt/no-algorithm-none` | 1 | 1 | 1 | ✓ |
-| `jwt/no-hardcoded-secret` | 1 | 1 | 1 | ✓ |
-| `browser-security/no-eval` | 2 | — | 1 | ✓ |
-| `browser-security/no-innerhtml` | 1 | 1 | 1 | ✓ |
-| `pg/no-unsafe-query` | 1 | 1 | 1 | ✓ |
+| Rule                                           | TP cases | FP guards | FN recovered | All pass |
+| :--------------------------------------------- | :------: | :-------: | :----------: | :------: |
+| `secure-coding/detect-object-injection`        |    1     |     3     |      1       |    ✓     |
+| `secure-coding/no-graphql-injection`           |    1     |     2     |      1       |    ✓     |
+| `secure-coding/no-hardcoded-credentials`       |    1     |     2     |      1       |    ✓     |
+| `secure-coding/no-redos-vulnerable-regex`      |    1     |     2     |      1       |    ✓     |
+| `secure-coding/no-unsafe-deserialization`      |    1     |     2     |      1       |    ✓     |
+| `secure-coding/no-unchecked-loop-condition`    |    1     |     2     |      —       |    ✓     |
+| `secure-coding/no-insecure-comparison`         |    1     |     2     |      —       |    ✓     |
+| `node-security/no-buffer-overread`             |    1     |     2     |      —       |    ✓     |
+| `node-security/detect-child-process`           |    1     |     1     |      1       |    ✓     |
+| `node-security/detect-non-literal-fs-filename` |    1     |     2     |      —       |    ✓     |
+| `node-security/no-ssrf`                        |    3     |     3     |      —       |    ✓     |
+| `jwt/no-algorithm-none`                        |    1     |     1     |      1       |    ✓     |
+| `jwt/no-hardcoded-secret`                      |    1     |     1     |      1       |    ✓     |
+| `browser-security/no-eval`                     |    2     |     —     |      1       |    ✓     |
+| `browser-security/no-innerhtml`                |    1     |     1     |      1       |    ✓     |
+| `pg/no-unsafe-query`                           |    1     |     1     |      1       |    ✓     |
 
 **FP guard** — a case the rule must stay silent on (e.g. bracket access on a typed
 array, a parameterized SQL query, a JWT secret loaded from `process.env`). These
@@ -254,10 +257,10 @@ rule.
 
 Ground-truthed P/R/F1 numbers from hand-labeled fixtures (`benchmarks/corpus/CWE-NNN/{vulnerable,safe}`):
 
-| Rule | CWE | Precision | Recall | F1 |
-| :--- | :--- | :---: | :---: | :---: |
-| `pg/no-unsafe-query` | CWE-089 | 100% | 100% | 1.00 |
-| `secure-coding/no-hardcoded-credentials` | CWE-798 | 100% | 100% | 1.00 |
+| Rule                                     | CWE     | Precision | Recall |  F1  |
+| :--------------------------------------- | :------ | :-------: | :----: | :--: |
+| `pg/no-unsafe-query`                     | CWE-089 |   100%    |  100%  | 1.00 |
+| `secure-coding/no-hardcoded-credentials` | CWE-798 |   100%    |  100%  | 1.00 |
 
 For comparison: the closest ecosystem peer on `secure-coding/no-hardcoded-credentials`
 scores Precision 100% / Recall 50% / F1 0.67 on the same labeled fixtures (it misses
@@ -271,20 +274,20 @@ Static analysis matters most where code volume is exploding fastest: AI codegen.
 Across **700 AI-generated functions** from five models, **63% shipped a security finding.**
 The per-model vulnerability rate (lower is better):
 
-| Model | Vulnerable rate |
-| :--- | ---: |
-| Claude Haiku 4.5 | 48.6% |
-| Claude Sonnet 4.5 | 62.1% |
-| Gemini 2.5 Flash | 63.6% |
-| Claude Opus 4.6 | 65.0% |
-| Gemini 2.5 Pro | 72.9% |
+| Model             | Vulnerable rate |
+| :---------------- | --------------: |
+| Claude Haiku 4.5  |           48.6% |
+| Claude Sonnet 4.5 |           62.1% |
+| Gemini 2.5 Flash  |           63.6% |
+| Claude Opus 4.6   |           65.0% |
+| Gemini 2.5 Pro    |           72.9% |
 
-On *realistic, structured* tasks the gap narrows sharply. Running the same prompt through
+On _realistic, structured_ tasks the gap narrows sharply. Running the same prompt through
 each vendor's CLI across four domains (NestJS, JWT, MongoDB, a general injection API) and
 linting both outputs is a near dead heat — 1 Gemini win, 2 ties, 1 split — and **both
 frontier models skip the same hardening** (algorithm allowlists, JWT `aud`/`iss`
 validation, query projections), because a feature prompt never names it. Frontier models
-avoid the *catastrophic* classes (injection, `eval`, hardcoded credentials) but
+avoid the _catastrophic_ classes (injection, `eval`, hardcoded credentials) but
 consistently miss the defense-in-depth layer — exactly the negative space deterministic
 linting closes.
 
@@ -298,12 +301,12 @@ Full write-ups, each with the reproducible config:
 
 `import-next/no-cycle` runs head-to-head against `eslint-plugin-import`'s cycle detection on the Next.js source (131K LoC):
 
-| Metric | import-next | eslint-plugin-import |
-|---|---|---|
-| Cold lint time | 20.6 s | 25.9 s |
-| Warm lint time | 470 ms | 410 ms |
-| Findings (unique cycles) | 914 | 0 |
-| Recall vs reference | 93% (14/15 flagged files) | 0% |
+| Metric                   | import-next               | eslint-plugin-import |
+| ------------------------ | ------------------------- | -------------------- |
+| Cold lint time           | 20.6 s                    | 25.9 s               |
+| Warm lint time           | 470 ms                    | 410 ms               |
+| Findings (unique cycles) | 914                       | 0                    |
+| Recall vs reference      | 93% (14/15 flagged files) | 0%                   |
 
 `eslint-plugin-import` finds zero cycles on the same codebase because it uses a fixed depth cap (default: 10) that misses deep dependency chains. `import-next/no-cycle` defaults to unlimited depth with a deduplication cache that keeps memory bounded.
 
