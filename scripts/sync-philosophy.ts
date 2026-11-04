@@ -5,7 +5,7 @@
  * This script ensures all plugin READMEs have a consistent Philosophy section
  * that reflects the Interlace ecosystem values.
  * 
- * Usage: npx ts-node scripts/sync-philosophy.ts
+ * Usage: npx tsx scripts/sync-philosophy.ts
  */
 
 import * as fs from 'fs';
