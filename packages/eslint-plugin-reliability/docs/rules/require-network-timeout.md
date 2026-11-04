@@ -27,59 +27,56 @@ Require timeout configuration for network requests. This rule is part of [`eslin
 
 ## Rule Details
 
-This rule ensures that all network requests include timeout configuration to prevent hanging connections and improve application reliability.
+A network request with no bound on how long it may wait can hang forever and
+hold its socket. The rule reports a request the file shows to be unbounded: its
+options carry neither a `timeout` nor an abort `signal`.
 
-### Why This Matters
+### Which calls are requests
 
-| Issue                   | Impact                        | Solution               |
-| ----------------------- | ----------------------------- | ---------------------- |
-| ⏱️ **Hanging Requests** | App freezes waiting forever   | Set explicit timeouts  |
-| 🔄 **Resource Leaks**   | Connections never released    | Abort after timeout    |
-| 👤 **User Experience**  | Users wait indefinitely       | Fail fast with timeout |
-| 📊 **Monitoring**       | Hard to detect slow endpoints | Timeout helps identify |
+| Client | Recognised as | Options read from |
+| ------ | ------------- | ----------------- |
+| `fetch` | the global (also `globalThis.fetch`, `window.fetch`, `self.fetch`); a local function named `fetch` is not it | 2nd argument |
+| axios | the binding imported or required from `'axios'` under any name, or the global `axios`; a local object named `axios` is not it | |
+| `axios.get` / `delete` / `head` / `options` | dotted or `axios['get']` | 2nd argument |
+| `axios.post` / `put` / `patch` (and `*Form`) | | 3rd argument — the 2nd is the request BODY, so a `timeout` field there bounds nothing |
+| `axios(config)` / `axios.request(config)` | | 1st argument (`axios(url, config)`: 2nd) |
+| `axios.create`, `axios.isCancel`, … | not requests | — |
+
+### What counts as bounded
+
+The options decide it only when the file can see them: an inline object literal,
+or one bound to a `const` (including through a spread of such a `const`). A
+`timeout` or `signal` key — however it is spelled (`timeout`, `'timeout'`,
+`['timeout']`) — bounds the request. Options the file cannot see — a parameter,
+a spread of one — prove nothing, and are not reported.
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```typescript
-// fetch without timeout
 const response = await fetch('/api/data');
-
-// axios without timeout
-const result = await axios.get('/api/users');
-
-// HTTP client without timeout config
-const data = await httpClient.request({ url: '/api' });
+const result = await axios.get('/api/users', { headers });
+await axios.post(url, { timeout: 30 }); // that is the request body
 ```
 
 ### ✅ Correct
 
 ```typescript
-fetch(url, { timeout: 5000 })
+await fetch(url, { signal: AbortSignal.timeout(5000) });
+await axios.get(url, { timeout: 5000 });
+await axios.post(url, payload, { timeout: 5000 });
+export const load = (url: string, init: RequestInit) => fetch(url, init); // options not visible here
 ```
 
-## Configuration Examples
+## Configuration
 
-### Basic Usage
+**No configuration options available.**
 
 ```javascript
 {
   rules: {
     'reliability/require-network-timeout': 'warn'
-  }
-}
-```
-
-### Custom Timeout Threshold
-
-```javascript
-{
-  rules: {
-    'reliability/require-network-timeout': ['warn', {
-      minTimeout: 3000,
-      maxTimeout: 30000
-    }]
   }
 }
 ```

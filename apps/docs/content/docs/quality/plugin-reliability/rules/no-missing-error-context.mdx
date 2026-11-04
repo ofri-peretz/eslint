@@ -1,6 +1,6 @@
 ---
 title: no-missing-error-context
-description: "ESLint Rule: no-missing-error-context with LLM-optimized suggestions and auto-fix capabilities."
+description: "Report a thrown value the code proves carries no message, or no stack trace when that is required."
 tags: ['quality', 'reliability', 'error-handling']
 category: quality
 autofix: suggestions
@@ -12,102 +12,106 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+Report a `throw` whose value the code proves carries no message (and, with `requireStackTrace`, one that is not an Error and so has no stack).
+
+This rule is part of [`eslint-plugin-reliability`](https://www.npmjs.com/package/eslint-plugin-reliability).
+
 ## Quick Summary
 
-| Aspect         | Details                                      |
-| -------------- | -------------------------------------------- |
-| **Severity**   | Error (code quality)                        |
-| **Auto-Fix**   | ❌ No                                        |
-| **Category**   | Error-handling |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration      |
-| **Best For**   | Production applications                      |
-| **Suggestions** | ✅ 4 available           |
+| Aspect          | Details                                    |
+| --------------- | ------------------------------------------ |
+| **Severity**    | Error (code quality)                       |
+| **Auto-Fix**    | ❌ No                                      |
+| **Category**    | Error-handling                             |
+| **Suggestions** | ✅ Add a message, throw an Error instance  |
 
 ## Rule Details
 
-```mermaid
-%%{init: {
-  'theme': 'base',
-  'themeVariables': {
-    'primaryColor': '#f8fafc',
-    'primaryTextColor': '#1e293b',
-    'primaryBorderColor': '#334155',
-    'lineColor': '#475569',
-    'c0': '#f8fafc',
-    'c1': '#f1f5f9',
-    'c2': '#e2e8f0',
-    'c3': '#cbd5e1'
-  }
-}}%%
-flowchart TD
-    A["🔍 Detect no missing error context"] --> B{"Valid pattern?"}
-    B -->|❌ No| C["🚨 Report violation"]
-    B -->|✅ Yes| D["✅ Pass"]
+Whoever catches an error needs to know what went wrong. The rule reports a
+`throw` when the code itself proves that context is missing.
 
-    classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
-    classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
+**`requireMessage`** (default `true`) reports a thrown value with no message:
 
-    class A startNode
-    class C errorNode
+- a built-in Error constructor (`Error`, `TypeError`, `RangeError`, …, with or
+  without `new`) given no argument or an empty string;
+- an empty string thrown as is, `null`, `undefined`;
+- an object literal with no `message` key.
 
-```
+A rethrown binding (`throw err`), a non-empty string or template, a `const`
+bound to one, an object literal with a `message`, a custom error class given an
+argument, and a subclass declared in the file whose constructor passes a message
+to `super` all carry one.
 
-
-### Why This Matters
-
-| Issue                | Impact                                | Solution                    |
-| -------------------- | ------------------------------------- | --------------------------- |
-| 🔒 **Security/Code Quality** | [Specific issue] | [Solution approach] |
-| 🐛 **Maintainability** | [Impact] | [Fix] |
-| ⚡ **Performance**   | [Impact] | [Optimization] |
+**`requireStackTrace`** (default `false`) also reports a thrown value the code
+proves is not an Error: a primitive, an object literal, `null` / `undefined`, or
+an instance of a class declared in the file that does not extend Error. Whether
+a file-declared class is an Error is read from its `extends` clause, never from
+whether its name ends in "Error".
 
 ## Configuration
 
-**No configuration options available.**
+| Option              | Type      | Default | Description                                   |
+| ------------------- | --------- | ------- | --------------------------------------------- |
+| `requireMessage`    | `boolean` | `true`  | Report thrown values with no message          |
+| `requireStackTrace` | `boolean` | `false` | Report thrown values that are not Errors      |
+| `ignoreInTests`     | `boolean` | `true`  | Skip `*.test.*` / `*.spec.*` files            |
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```typescript
-// Example of incorrect usage
+throw new Error();
+throw TypeError('');
+throw { code: 'E_CACHE' };
+
+// With { requireStackTrace: true }
+throw 'cache read failed';
+class CacheError {
+  constructor(readonly detail: string) {}
+}
+throw new CacheError('miss'); // not an Error: no stack
 ```
 
 ### ✅ Correct
 
 ```typescript
-// Example of correct usage
+throw new Error('cache read failed');
+throw new Error(`cache read failed for ${id}`);
+throw { message: 'cache read failed', code: 'E_CACHE' };
+
+class CacheMiss extends Error {
+  constructor() {
+    super('cache read failed');
+  }
+}
+throw new CacheMiss();
+
+try {
+  load();
+} catch (err) {
+  throw err; // the original error keeps its message and stack
+}
 ```
 
 ## Configuration Examples
-
-### Basic Usage
 
 ```javascript
 // eslint.config.mjs
 export default [
   {
     rules: {
-      'reliability/no-missing-error-context': 'error',
+      'reliability/no-missing-error-context': ['error', { requireStackTrace: true }],
     },
   },
 ];
 ```
 
-## LLM-Optimized Output
-
-```
-🚨 no missing error context | Description | MEDIUM
-   Fix: Suggestion | Reference
-```
-
 ## Related Rules
 
-- [`rule-name`](./rule-name) - Description
+- [`error-message`](./error-message) - Built-in Error constructors need a message
+- [`no-silent-errors`](./no-silent-errors) - Catch blocks must not swallow errors
 
-## Further Reading
-
-- **[Reference](https://example.com)** - Description
 <WhenNotToUse />
 
 <FalseNegativeCTA />
@@ -116,40 +120,17 @@ export default [
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Dynamic Variable References
+### Values the file cannot see
 
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = externalSource();
-processValue(value); // Variable origin not tracked
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Wrapped or Aliased Functions
-
-**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
+**Why**: a value that comes from another module, a parameter or an unresolved
+call carries no evidence in this file, and a rule that decides from structure
+stays silent rather than guess.
 
 ```typescript
-// ❌ NOT DETECTED - Custom wrapper
-function myWrapper(data) {
-  return internalApi(data); // Wrapper not analyzed
-}
-myWrapper(unsafeInput);
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
+// ❌ NOT DETECTED - origin in another module
 import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
+processValue(getValue());
 ```
 
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+**Mitigation**: apply the same contract inside the helper, where the evidence
+is visible.

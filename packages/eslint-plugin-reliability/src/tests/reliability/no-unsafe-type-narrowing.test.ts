@@ -428,4 +428,54 @@ const value = data as unknown as string;`,
       ],
     });
   });
+  describe('angle-bracket and mixed double assertions (fidelity)', () => {
+    ruleTester.run(
+      'every spelling of the double assertion',
+      noUnsafeTypeNarrowing,
+      {
+        valid: [
+          {
+            name: 'a single angle-bracket assertion',
+            code: 'const user = <User>raw;',
+          },
+          {
+            name: 'an angle-bracket widening to unknown',
+            code: 'const value = <unknown>raw;',
+          },
+          {
+            name: 'an angle-bracket assertion over a single as',
+            code: 'const user = <User>(raw as Partial<User>);',
+          },
+        ],
+        invalid: [
+          {
+            name: 'angle brackets through unknown',
+            code: 'const user = <User>(<unknown>raw);',
+            errors: [{ messageId: 'unsafeTypeNarrowing' }],
+          },
+          {
+            name: 'angle brackets through any',
+            code: 'const user = <User>(<any>raw);',
+            errors: [{ messageId: 'unsafeTypeNarrowing' }],
+          },
+          {
+            name: 'angle brackets around an as-unknown',
+            code: 'const user = <User>(raw as unknown);',
+            errors: [{ messageId: 'unsafeTypeNarrowing' }],
+          },
+          {
+            name: 'as around an angle-bracket unknown',
+            code: 'const user = (<unknown>raw) as User;',
+            errors: [{ messageId: 'unsafeTypeNarrowing' }],
+          },
+          {
+            name: 'an explanatory comment clears the angle-bracket form under allowWithComment',
+            code: '// validated by the schema above\nconst user = <User>(<unknown>raw);\nconst other = <User>(<unknown>raw);',
+            options: [{ allowWithComment: true }],
+            errors: [{ messageId: 'unsafeTypeNarrowing', line: 3 }],
+          },
+        ],
+      },
+    );
+  });
 });

@@ -407,10 +407,6 @@ describe('error-message', () => {
         {
           code: 'throw new Error(condition ? "Error A" : "Error B");',
         },
-        // Error with undefined (considered as having argument)
-        {
-          code: 'throw new Error(undefined);',
-        },
         // Error with object (considered as having argument)
         {
           code: 'throw new Error({ message: "test" });',
@@ -474,6 +470,123 @@ describe('error-message', () => {
                   messageId: 'addErrorMessage',
                   data: { constructor: 'Error' },
                   output: 'throw new Error("Error message");',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  describe('Built-in by binding, empty by proof (fidelity)', () => {
+    ruleTester.run('built-in by binding, empty by proof', errorMessage, {
+      valid: [
+        {
+          name: 'a local class named Error is not the built-in',
+          code: 'class Error { constructor(readonly detail?: unknown) {} }\nthrow new Error();',
+        },
+        {
+          name: 'a local `undefined` binding may hold a message',
+          code: 'const undefined = "boom";\nthrow new Error(undefined);',
+        },
+        {
+          name: 'a template with a substitution may carry a message',
+          code: 'throw new Error(`${reason}`);',
+        },
+        {
+          name: 'globalThis.Error with a message',
+          code: "throw new globalThis.Error('user not found');",
+        },
+        {
+          name: 'a runtime key on globalThis names no constructor',
+          code: 'throw new globalThis[kind]();',
+        },
+        {
+          name: 'globalThis.Map is not an Error constructor',
+          code: 'export const m = new globalThis.Map();',
+        },
+        {
+          name: 'a local globalThis is not the global object',
+          code: 'const globalThis = { Error: class {} };\nthrow new globalThis.Error();',
+        },
+      ],
+      invalid: [
+        {
+          name: '`undefined` as the message is no message',
+          code: 'throw new Error(undefined);',
+          errors: [
+            {
+              messageId: 'missingErrorMessage',
+              suggestions: [
+                {
+                  messageId: 'addErrorMessage',
+                  data: { constructor: 'Error' },
+                  output: 'throw new Error("Error message");',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'an empty template is an empty message',
+          code: 'throw new Error(``);',
+          errors: [
+            {
+              messageId: 'missingErrorMessage',
+              suggestions: [
+                {
+                  messageId: 'addErrorMessage',
+                  data: { constructor: 'Error' },
+                  output: 'throw new Error("Error message");',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'a blank template is an empty message',
+          code: 'throw new TypeError(`   `);',
+          errors: [
+            {
+              messageId: 'missingErrorMessage',
+              suggestions: [
+                {
+                  messageId: 'addErrorMessage',
+                  data: { constructor: 'TypeError' },
+                  output: 'throw new TypeError("Error message");',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'new globalThis.Error() reaches the built-in',
+          code: 'throw new globalThis.Error();',
+          errors: [
+            {
+              messageId: 'missingErrorMessage',
+              suggestions: [
+                {
+                  messageId: 'addErrorMessage',
+                  data: { constructor: 'Error' },
+                  output: 'throw new globalThis.Error("Error message");',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'globalThis.RangeError() reaches the built-in',
+          code: 'throw globalThis.RangeError();',
+          errors: [
+            {
+              messageId: 'missingErrorMessage',
+              suggestions: [
+                {
+                  messageId: 'addErrorMessage',
+                  data: { constructor: 'RangeError' },
+                  output: 'throw globalThis.RangeError("Error message");',
                 },
               ],
             },
@@ -558,13 +671,6 @@ describe('error-message', () => {
   // ---------------------------------------------------------------------
 
   describe('Layer 2: checkErrorCreation with non-constructor nodes', () => {
-    it('ignores a node that is neither NewExpression nor CallExpression', () => {
-      const { listeners, reports } = createWithMockContext(errorMessage, {});
-      const node = { type: 'Identifier', name: 'Error' } as unknown as TSESTree.CallExpression;
-      (listeners['CallExpression'] as (n: TSESTree.CallExpression) => void)(node);
-      expect(reports).toHaveLength(0);
-    });
-
     it('ignores a CallExpression whose callee is not an Identifier', () => {
       const { listeners, reports } = createWithMockContext(errorMessage, {});
       const node = {

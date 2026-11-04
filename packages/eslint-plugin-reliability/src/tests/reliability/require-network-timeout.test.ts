@@ -43,19 +43,133 @@ ruleTester.run('require-network-timeout — bound and unbound variants', require
       code: 'fetch(url, { method: "GET" })',
       errors: [{ messageId: 'violationDetected' }],
     },
-    // Spread element is not a timeout property
+  ],
+});
+
+ruleTester.run('require-network-timeout — which call, which slot (fidelity)', requireNetworkTimeout, {
+  valid: [
     {
-      code: 'fetch(url, { ...defaults })',
-      errors: [{ messageId: 'violationDetected' }],
+      name: 'options the file cannot see prove nothing: a parameter',
+      code: 'export const load = (url: string, options: RequestInit) => fetch(url, options);',
     },
-    // Computed key is not recognized as a bound
     {
+      name: 'options the file cannot see prove nothing: a spread of a parameter',
+      code: 'export const load = (url: string, defaults: RequestInit) => fetch(url, { ...defaults });',
+    },
+    {
+      name: 'a static computed key names `timeout` as surely as the bare key',
       code: 'fetch(url, { ["timeout"]: 1000 })',
+    },
+    {
+      name: 'a quoted key names `timeout` as surely as the bare key',
+      code: "fetch(url, { 'timeout': 1000 })",
+    },
+    {
+      name: 'a const-bound options literal with a timeout bounds the request',
+      code: 'const cfg = { timeout: 5000 }; fetch(url, cfg);',
+    },
+    {
+      name: 'axios.post takes its config third: a timeout there bounds it',
+      code: "import axios from 'axios'; axios.post(url, payload, { timeout: 5000 });",
+    },
+    {
+      name: 'axios.post with an AbortSignal in its config is bounded',
+      code: "import axios from 'axios'; axios.post(url, payload, { signal: AbortSignal.timeout(5000) });",
+    },
+    {
+      name: 'axios.create sends no request',
+      code: "import axios from 'axios'; export const api = axios.create();",
+    },
+    {
+      name: 'axios.isCancel sends no request',
+      code: "import axios from 'axios'; export const cancelled = (e: unknown) => axios.isCancel(e);",
+    },
+    {
+      name: 'axios(config) with an opaque config proves nothing',
+      code: "import axios from 'axios'; export const send = (config: object) => axios(config);",
+    },
+    {
+      name: 'a local function named fetch is not the network call',
+      code: 'function fetch(u: string) { return u; } fetch(url);',
+    },
+    {
+      name: 'a spread of a const-bound literal carries its timeout',
+      code: 'const base = { timeout: 5000 }; fetch(url, { ...base, method: "POST" });',
+    },
+    {
+      name: 'a key chosen at runtime might be `timeout`',
+      code: 'export const load = (k: string) => fetch(url, { [k]: 1000 });',
+    },
+    {
+      name: 'a cycle of spreads resolves to nothing provable',
+      code: 'const a: object = { ...b }; const b: object = { ...a }; fetch(url, a);',
+    },
+    {
+      name: 'axios(url, config) reads the config second',
+      code: "import axios from 'axios'; axios('/users', { timeout: 5000 });",
+    },
+    {
+      name: 'a method chosen at runtime names no known request',
+      code: "import axios from 'axios'; export const go = (m: string) => axios[m](url);",
+    },
+    {
+      name: 'a named export of axios is not the callable root',
+      code: "import { isAxiosError } from 'axios'; isAxiosError(url);",
+    },
+    {
+      name: 'a local object named axios is not the library',
+      code: 'const axios = { get: (u: string) => u }; axios.get(url);',
+    },
+  ],
+  invalid: [
+    {
+      name: 'axios.post with a timeout field in the BODY is still unbounded',
+      code: "import axios from 'axios'; axios.post(url, { timeout: 30 });",
       errors: [{ messageId: 'violationDetected' }],
     },
-    // Second argument that is not an object literal
     {
-      code: 'fetch(url, options)',
+      name: 'globalThis.fetch is the global fetch',
+      code: "globalThis.fetch(url, { method: 'POST' });",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'axios imported under another name',
+      code: "import http from 'axios'; http.get(url, { headers: {} });",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'axios(config) whose config has no bound',
+      code: "import axios from 'axios'; axios({ url, method: 'get' });",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a const-bound options literal with no bound',
+      code: "const cfg = { method: 'POST' }; fetch(url, cfg);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'axios(url) with a string URL and no config',
+      code: "import axios from 'axios'; axios('/users');",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'axios(url) with a template URL and no config',
+      code: "import axios from 'axios'; axios(`/users/${id}`);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'axios imported as `{ default as http }`',
+      code: "import { default as http } from 'axios'; http.get(url);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a spread of a const-bound literal with no bound',
+      code: 'const base = { method: "POST" }; fetch(url, { ...base });',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'axios bracket access reaches the same request',
+      code: "import axios from 'axios'; axios['get'](url);",
       errors: [{ messageId: 'violationDetected' }],
     },
   ],

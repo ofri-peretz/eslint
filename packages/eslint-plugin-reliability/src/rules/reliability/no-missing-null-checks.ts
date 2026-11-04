@@ -1177,9 +1177,62 @@ export const noMissingNullChecks = createRule<RuleOptions, MessageIds>({
       }
     }
 
+    /**
+     * `const { a } = v` and `const [a] = v` read through `v` as surely as
+     * `v.a` does, and throw the same TypeError when `v` is null. Judged as
+     * that read: the same evidence gate, the same guards.
+     */
+    function checkDestructuring(
+      pattern: TSESTree.Node,
+      value: TSESTree.Expression | null,
+      at: TSESTree.Node,
+    ) {
+      if (pattern.type !== 'ObjectPattern' && pattern.type !== 'ArrayPattern') {
+        return;
+      }
+      // A member value (`const { a } = el.dataset`) is already judged as the
+      // `el.dataset` read it contains; the pattern adds a read of the binding.
+      if (value?.type !== 'Identifier') return;
+      if (
+        !baseHasNullabilityEvidence(value, sourceCode.getScope(at)) ||
+        typeSaysNonNullable(value)
+      ) {
+        return;
+      }
+      // The read the pattern performs, positioned where the pattern is, so the
+      // guard search walks up from the destructuring statement.
+      const read = {
+        type: 'MemberExpression',
+        object: value,
+        property: value,
+        computed: false,
+        optional: false,
+        range: value.range,
+        loc: value.loc,
+        parent: at,
+      } as unknown as TSESTree.MemberExpression;
+      if (hasNullCheck(read, sourceCode)) return;
+      context.report({
+        node: value,
+        messageId: 'missingNullCheck',
+        suggest: [
+          { messageId: 'useOptionalChaining', fix: () => null },
+          { messageId: 'useNullishCoalescing', fix: () => null },
+          { messageId: 'addExplicitCheck', fix: () => null },
+        ],
+      });
+    }
+
     return {
       MemberExpression: checkMemberExpression,
       CallExpression: checkCallExpression,
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        checkDestructuring(node.id, node.init, node);
+      },
+      AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        if (node.operator === '=')
+          checkDestructuring(node.left, node.right, node);
+      },
     };
   },
 });

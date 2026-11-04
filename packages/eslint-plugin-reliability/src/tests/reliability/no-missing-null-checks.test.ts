@@ -1300,4 +1300,60 @@ describe('no-missing-null-checks', () => {
       ],
     });
   });
+  describe('destructuring reads through the value (fidelity)', () => {
+    ruleTester.run('destructuring', noMissingNullChecks, {
+      valid: [
+        {
+          name: 'destructuring inside a truthy guard',
+          code: 'const hit = users.find((u) => u.id === id);\nif (hit) { const { name } = hit; use(name); }',
+        },
+        {
+          name: 'destructuring after an early return on the same binding',
+          code: 'function f(users, id) { const hit = users.find((u) => u.id === id); if (!hit) return; const { name } = hit; return name; }',
+        },
+        {
+          name: 'destructuring a value with no evidence',
+          code: 'const hit = load(id);\nconst { name } = hit;',
+        },
+        {
+          name: 'destructuring through a fallback',
+          code: 'const hit = users.find((u) => u.id === id);\nconst { name } = hit ?? fallback;',
+        },
+        {
+          name: 'a destructuring assignment inside a guard',
+          code: 'let name;\nconst hit = users.find((u) => u.id === id);\nif (hit) ({ name } = hit);',
+        },
+        {
+          name: 'a plain declarator is not a destructuring read',
+          code: 'const hit = users.find((u) => u.id === id);\nconst copy = hit;',
+        },
+        {
+          name: 'a compound assignment is not a destructuring read',
+          code: 'let total = 0;\nconst hit = values.find((v) => v > 1);\ntotal += hit;',
+        },
+      ],
+      invalid: [
+        {
+          name: 'object destructuring of a find() miss',
+          code: 'const hit = users.find((u) => u.id === id);\nconst { name } = hit;',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'array destructuring of a match() miss',
+          code: 'const m = text.match(/(\\d+)/);\nconst [, digits] = m;',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'destructuring a member of a querySelector() miss reports the member read once',
+          code: "const el = document.querySelector('#a');\nconst { width } = el.dataset;",
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'a destructuring assignment from a find() miss',
+          code: 'let name;\nconst hit = users.find((u) => u.id === id);\n({ name } = hit);',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+      ],
+    });
+  });
 });
