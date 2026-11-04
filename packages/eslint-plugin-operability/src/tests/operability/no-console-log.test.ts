@@ -747,3 +747,29 @@ describe('no-console-log — non-production paths', () => {
     ],
   });
 });
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/operability).
+ruleTester.run(
+  'no-console-log — the global console, by binding',
+  noConsoleLog,
+  {
+    valid: [
+      {
+        name: 'a console the code declares is not the global console',
+        code: "const console = { log: (...a: unknown[]) => a };\nconsole.log('x');",
+      },
+      {
+        name: 'an injected console parameter is not the global console',
+        code: "export function run(console: { log(m: string): void }) { console.log('x'); }",
+      },
+    ],
+    invalid: [
+      {
+        name: 'the global console still reports',
+        code: "export function run() { console.log('x'); }",
+        output: 'export function run() {  }',
+        errors: [{ messageId: 'consoleLogFound' }],
+      },
+    ],
+  },
+);

@@ -89,3 +89,27 @@ ruleTester.run('no-debug-code-in-production — non-production paths', noDebugCo
     },
   ],
 });
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/operability).
+ruleTester.run('no-debug-code-in-production — the global console, by binding', noDebugCodeInProduction, {
+  valid: [
+    {
+      name: 'a console the code declares is not the global console',
+      code: "const console = { log: (...a: unknown[]) => a };\nconsole.log('x');",
+      filename: 'src/app.ts',
+    },
+    {
+      name: 'an injected console parameter is not the global console',
+      code: "export function run(console: { log(m: string): void }) { console.log('x'); }",
+      filename: 'src/app.ts',
+    },
+  ],
+  invalid: [
+    {
+      name: 'a const alias of the global console still logs',
+      code: "const c = console;\nc.log('x');",
+      filename: 'src/app.ts',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+  ],
+});

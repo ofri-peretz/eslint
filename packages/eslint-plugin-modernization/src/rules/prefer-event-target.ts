@@ -9,7 +9,13 @@
  * Prefer EventTarget over EventEmitter (unicorn-inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  isGlobalReference,
+  objectKeyName,
+  propertyName,
+  resolveModuleBinding,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'preferEventTarget';
@@ -82,13 +88,48 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{ allowEventEmitter: false }],
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    /**
+     * Does this expression hold Node's EventEmitter, by where its binding comes
+     * from? `events` exports the class as its default export AND as
+     * `EventEmitter`, so the module root counts too: `import E from 'events'`,
+     * `const E = require('node:events')`, `ev.EventEmitter` on a namespace.
+     */
+    function isNodeEmitter(node: TSESTree.Node): boolean {
+      const binding = resolveModuleBinding(
+        node,
+        context.sourceCode.getScope(node),
+      );
+      if (binding?.module !== 'events') return false;
+      return (
+        binding.path.length === 0 ||
+        (binding.path.length === 1 && binding.path[0] === 'EventEmitter')
+      );
+    }
+
+    /**
+     * The innermost identifier of `a.b.c` when nothing in the file declares it.
+     * A root the file declares (an import from another module, a parameter, a
+     * local class) is a known binding, and `isNodeEmitter` already answered
+     * for it.
+     */
+    function undeclaredRoot(node: TSESTree.Node): boolean {
+      let current = node;
+      while (current.type === 'MemberExpression') current = current.object;
+      return (
+        current.type === 'Identifier' &&
+        isGlobalReference(current, context.sourceCode)
+      );
+    }
+
     function checkClassExtends(
       node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
     ) {
       if (node.superClass) {
         if (
           node.superClass.type === 'Identifier' &&
-          node.superClass.name === 'EventEmitter'
+          (isNodeEmitter(node.superClass) ||
+            (node.superClass.name === 'EventEmitter' &&
+              undeclaredRoot(node.superClass)))
         ) {
           context.report({
             node: node.superClass,
@@ -101,7 +142,9 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
           });
         } else if (
           node.superClass.type === 'MemberExpression' &&
-          propertyName(node.superClass) === 'EventEmitter'
+          (isNodeEmitter(node.superClass) ||
+            (propertyName(node.superClass) === 'EventEmitter' &&
+              undeclaredRoot(node.superClass)))
         ) {
           context.report({
             node: node.superClass.property,
@@ -172,8 +215,8 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
                 const eventEmitterProp = varName.properties.find(
                   (prop: TSESTree.Property | TSESTree.RestElement) =>
                     prop.type === 'Property' &&
-                    prop.key.type === 'Identifier' &&
-                    prop.key.name === 'EventEmitter',
+                    // `{ 'EventEmitter': E }` binds the same export.
+                    objectKeyName(prop) === 'EventEmitter',
                 );
                 if (eventEmitterProp && eventEmitterProp.type === 'Property') {
                   context.report({
@@ -222,10 +265,15 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
               },
             });
           }
-          // Check if it's accessing from a specific variable name that we know contains events
+          // A namespace import or required module (`ev.EventEmitter`), by
+          // binding; an undeclared `events` / `nodeEvents` keeps the old
+          // name match. A parameter named `events` is an unknown value.
           else if (
             node.object.type === 'Identifier' &&
-            (node.object.name === 'events' || node.object.name === 'nodeEvents')
+            (isNodeEmitter(node.object) ||
+              ((node.object.name === 'events' ||
+                node.object.name === 'nodeEvents') &&
+                undeclaredRoot(node.object)))
           ) {
             context.report({
               node: node.property,
@@ -239,6 +287,25 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
         }
       },
 
+      // `new Emitter()` where `Emitter` is the module root - a default import
+      // or `require('events')` itself - which no import specifier named.
+      NewExpression(node: TSESTree.NewExpression) {
+        if (node.callee.type !== 'Identifier') return;
+        const binding = resolveModuleBinding(
+          node.callee,
+          context.sourceCode.getScope(node),
+        );
+        if (binding?.module === 'events' && binding.path.length === 0) {
+          context.report({
+            node: node.callee,
+            messageId: 'preferEventTarget',
+            data: {
+              usage: node.callee.name,
+              suggestion: 'Use EventTarget for cross-platform compatibility',
+            },
+          });
+        }
+      },
       // Check class extends EventEmitter
       ClassDeclaration(node: TSESTree.ClassDeclaration) {
         checkClassExtends(node);

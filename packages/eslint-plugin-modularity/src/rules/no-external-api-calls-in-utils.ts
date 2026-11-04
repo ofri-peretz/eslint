@@ -11,7 +11,13 @@
  * @see https://rules.sonarsource.com/javascript/RSPEC-1075/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  isGlobalReference,
+  MessageIcons,
+  propertyName,
+  variableOf,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -94,15 +100,18 @@ function isUtilityFile(filename: string, patterns: string[]): boolean {
   });
 }
 
+/** How many `const a = b.create()` links a client may be derived through. */
+const MAX_ALIAS_HOPS = 8;
+
 /**
- * Innermost object of a member chain: `a.b.c` -> `a`
+ * Innermost identifier of a member chain: `a.b.c` -> `a`
  */
-function rootName(node: TSESTree.Node): string | null {
+function rootIdentifier(node: TSESTree.Node): TSESTree.Identifier | null {
   let current: TSESTree.Node = node;
   while (current.type === 'MemberExpression') {
     current = current.object;
   }
-  return current.type === 'Identifier' ? current.name : null;
+  return current.type === 'Identifier' ? current : null;
 }
 
 /**
@@ -212,23 +221,44 @@ export const noExternalApiCallsInUtils = createRule<RuleOptions, MessageIds>({
     let modules: Set<string>;
     let methods: Set<string>;
     let explicitPairs: Set<string>;
-    let clients: Set<string>;
-    let aliases: [local: string, root: string][];
+    /** Module names usable as an undeclared global (`axios` from a CDN). */
+    let globalClients: Set<string>;
     let calls: TSESTree.CallExpression[];
 
-    function trackBinding(id: TSESTree.Node) {
-      if (id.type === 'Identifier') {
-        clients.add(id.name);
-      } else if (id.type === 'ObjectPattern') {
-        for (const property of id.properties) {
-          if (
-            property.type === 'Property' &&
-            property.value.type === 'Identifier'
-          ) {
-            clients.add(property.value.name);
-          }
-        }
+    /**
+     * Does this identifier hold an HTTP client, by its binding?
+     *
+     * A parameter is never one: a client passed in is the dependency injection
+     * this rule recommends, so `function load(axios) { axios.get(u) }` and a
+     * parameter named `fetch` are the fix, not the finding. An import or
+     * require of an HTTP module is one, and so is a const derived from one
+     * (`const api = axios.create()`). An undeclared name keeps the name match
+     * (the global `fetch`, a CDN `axios`).
+     */
+    function isClient(id: TSESTree.Identifier, hops = 0): boolean {
+      const variable = variableOf(id, context.sourceCode);
+      if (!variable || variable.defs.length === 0) {
+        return globalClients.has(id.name);
       }
+      const def = variable.defs[0];
+      if (def.type === 'ImportBinding') {
+        const declaration = def.parent as TSESTree.ImportDeclaration;
+        return (
+          declaration.importKind !== 'type' &&
+          modules.has(String(declaration.source.value))
+        );
+      }
+      if (def.type !== 'Variable' || def.node.init === null) return false;
+      const init = def.node.init;
+      const source = requiredModule(init);
+      if (source !== null) return modules.has(source);
+      // `const api = axios.create()` / `const send = axios.post`
+      if (def.node.id.type !== 'Identifier' || hops >= MAX_ALIAS_HOPS)
+        return false;
+      const root = rootIdentifier(
+        init.type === 'CallExpression' ? init.callee : init,
+      );
+      return root !== null && isClient(root, hops + 1);
     }
 
     /**
@@ -236,32 +266,30 @@ export const noExternalApiCallsInUtils = createRule<RuleOptions, MessageIds>({
      */
     function isNetworkCall(node: TSESTree.CallExpression): boolean {
       const callee = node.callee;
-
       if (callee.type === 'Identifier') {
-        return clients.has(callee.name);
+        return isClient(callee);
       }
-
-      if (
-        callee.type !== 'MemberExpression' ||
-        callee.computed ||
-        callee.property.type !== 'Identifier'
-      ) {
+      if (callee.type !== 'MemberExpression') {
         return false;
       }
-
-      const method = callee.property.name;
-      const root = rootName(callee.object);
-
-      if (root === null) {
+      // `axios['post'](url)` calls the same method `axios.post` does.
+      const method = propertyName(callee);
+      const root = rootIdentifier(callee.object);
+      if (method === null || root === null) {
         return false;
       }
-      if (explicitPairs.has(`${root}.${method}`)) {
+      // Explicit `object.method` pairs stay name-based: an escape hatch the
+      // project configures for an in-house client the rule cannot trace.
+      if (explicitPairs.has(`${root.name}.${method}`)) {
         return true;
       }
-      if (GLOBAL_CLIENT_HOSTS.has(root)) {
+      if (
+        GLOBAL_CLIENT_HOSTS.has(root.name) &&
+        isGlobalReference(root, context.sourceCode)
+      ) {
         return GLOBAL_CLIENTS.has(method);
       }
-      return clients.has(root) && methods.has(method);
+      return methods.has(method) && isClient(root);
     }
 
     return {
@@ -277,90 +305,36 @@ export const noExternalApiCallsInUtils = createRule<RuleOptions, MessageIds>({
         const filename = context.filename;
         const isTestFile =
           ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
-
         if (isTestFile) {
           return false;
         }
-
         const isUtility = isUtilityFile(filename, utilityPatterns);
-
         if (!isUtility) {
           return false;
         }
 
         modules = new Set(httpModules);
         methods = new Set(networkMethods);
-        // Explicit `object.method` pairs stay name-based — an escape hatch for
-        // in-house clients the import tracking can't know about.
         explicitPairs = new Set(
           networkMethods.filter((method) => method.includes('.')),
         );
-
-        /** Identifiers known to hold an HTTP client. */
-        clients = new Set<string>(GLOBAL_CLIENTS);
+        globalClients = new Set<string>(GLOBAL_CLIENTS);
         for (const source of modules) {
           const bare = source.replace(/^node:/, '');
           if (
             /^[A-Za-z_$][\w$]*$/.test(bare) &&
             !AMBIGUOUS_MODULE_NAMES.has(bare)
           ) {
-            clients.add(bare);
+            globalClients.add(bare);
           }
         }
-
-        // `const api = axios.create()` — resolved to a fixpoint on Program:exit so
-        // declaration order doesn't matter.
-        aliases = [];
         calls = [];
         return true;
-      },
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        if (node.importKind === 'type' || !modules.has(node.source.value)) {
-          return;
-        }
-        for (const specifier of node.specifiers) {
-          if (
-            specifier.type !== 'ImportSpecifier' ||
-            specifier.importKind !== 'type'
-          ) {
-            clients.add(specifier.local.name);
-          }
-        }
-      },
-      VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        if (!node.init) {
-          return;
-        }
-        const source = requiredModule(node.init);
-        if (source !== null) {
-          if (modules.has(source)) {
-            trackBinding(node.id);
-          }
-          return;
-        }
-        // `const api = axios.create()` / `const send = axios.post`
-        const root = rootName(
-          node.init.type === 'CallExpression' ? node.init.callee : node.init,
-        );
-        if (root !== null && node.id.type === 'Identifier') {
-          aliases.push([node.id.name, root]);
-        }
       },
       CallExpression(node: TSESTree.CallExpression) {
         calls.push(node);
       },
       'Program:exit'() {
-        let changed = true;
-        while (changed) {
-          changed = false;
-          for (const [local, root] of aliases) {
-            if (clients.has(root) && !clients.has(local)) {
-              clients.add(local);
-              changed = true;
-            }
-          }
-        }
-
         for (const node of calls) {
           if (!isNetworkCall(node)) {
             continue;

@@ -58,6 +58,9 @@ const PLUGINS = [
   'typeorm-security',
   'knex-security',
   'reliability',
+  'operability',
+  'modularity',
+  'modernization',
 ];
 
 const loadPlugin = (short) => {

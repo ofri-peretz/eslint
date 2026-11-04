@@ -172,4 +172,66 @@ describe('prefer-event-target', () => {
       ],
     });
   });
+
+  // Found by the fidelity model (benchmarks/suites/fidelity/models/modernization):
+  // the rule matched the NAMES `EventEmitter` and `events`, so a binding from
+  // another module reported and the default / root bindings of `events` did not.
+  describe('decides by where the binding comes from', () => {
+    ruleTester.run('binding', preferEventTarget, {
+      valid: [
+        {
+          name: "Angular's EventEmitter is not Node's",
+          code: "import { EventEmitter } from '@angular/core';\nclass Bus extends EventEmitter {}",
+        },
+        {
+          name: 'a class the file declares is not Node\'s EventEmitter',
+          code: 'class EventEmitter { on() {} }\nclass Bus extends EventEmitter {}',
+        },
+        {
+          name: 'a parameter named events is an unknown value',
+          code: 'function make(events: any) { return new events.EventEmitter(); }',
+        },
+        {
+          name: 'a member of a parameter in extends is an unknown value',
+          code: 'function make(lib: any) { return class extends lib.EventEmitter {}; }',
+        },
+        {
+          name: 'other exports of events are not EventEmitter',
+          code: "import { once } from 'events';\nvoid once;",
+        },
+      ],
+      invalid: [
+        {
+          name: 'the default import of events is EventEmitter',
+          code: "import Emitter from 'node:events';\nclass Bus extends Emitter {}",
+          errors: [{ messageId: 'preferEventTarget' }],
+        },
+        {
+          name: 'new on the default import',
+          code: "import Emitter from 'events';\nconst bus = new Emitter();",
+          errors: [{ messageId: 'preferEventTarget' }],
+        },
+        {
+          name: 'the required module itself is EventEmitter',
+          code: "const Emitter = require('node:events');\nconst bus = new Emitter();",
+          errors: [{ messageId: 'preferEventTarget' }],
+        },
+        {
+          name: 'a quoted key in a require destructure',
+          code: "const { 'EventEmitter': Bus } = require('events');",
+          errors: [{ messageId: 'preferEventTarget' }],
+        },
+        {
+          name: 'new on a named import reports once, at the import',
+          code: "import { EventEmitter } from 'events';\nconst bus = new EventEmitter();",
+          errors: [{ messageId: 'preferEventTarget' }],
+        },
+        {
+          name: 'a namespace member used with new',
+          code: "import * as ev from 'events';\nconst bus = new ev.EventEmitter();",
+          errors: [{ messageId: 'preferEventTarget' }],
+        },
+      ],
+    });
+  });
 });

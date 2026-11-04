@@ -1,6 +1,6 @@
 ---
 title: ddd-value-object-immutability
-description: "ESLint Rule: ddd-value-object-immutability with LLM-optimized suggestions and auto-fix capabilities."
+description: "Report value-object classes whose instance fields can be reassigned after construction."
 tags: ['architecture', 'modularity']
 category: modularity
 autofix: suggestions
@@ -12,130 +12,91 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+Report a value-object class whose instance fields can be reassigned. A value object is defined by its value; if it can change after construction, two holders of "the same" value drift apart.
+
+This rule is part of [`eslint-plugin-modularity`](https://www.npmjs.com/package/eslint-plugin-modularity).
+
 ## Quick Summary
 
-| Aspect         | Details                                      |
-| -------------- | -------------------------------------------- |
-| **Severity**   | Error (code quality)                        |
-| **Auto-Fix**   | ❌ No                                        |
-| **Category**   | Modularity |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration      |
-| **Best For**   | Production applications                      |
-| **Suggestions** | ✅ 4 available           |
+| Aspect          | Details                                              |
+| --------------- | ---------------------------------------------------- |
+| **Severity**    | Error (code quality)                                 |
+| **Auto-Fix**    | ❌ No                                                |
+| **Category**    | Modularity                                           |
+| **Suggestions** | ✅ Add `readonly`, freeze in the constructor         |
 
 ## Rule Details
 
-```mermaid
-%%{init: {
-  'theme': 'base',
-  'themeVariables': {
-    'primaryColor': '#f8fafc',
-    'primaryTextColor': '#1e293b',
-    'primaryBorderColor': '#334155',
-    'lineColor': '#475569',
-    'c0': '#f8fafc',
-    'c1': '#f1f5f9',
-    'c2': '#e2e8f0',
-    'c3': '#cbd5e1'
-  }
-}}%%
-flowchart TD
-    A["🔍 Detect ddd value object immutability"] --> B{"Valid pattern?"}
-    B -->|❌ No| C["🚨 Report violation"]
-    B -->|✅ Yes| D["✅ Pass"]
+A class is a value object when its name ends with one of `valueObjectPatterns`
+(default `Value`, `VO`, `ValueObject`). The rule reports such a class when it
+declares instance state without `readonly`:
 
-    classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
-    classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
+- a class field (`amount: number;`);
+- a constructor parameter property (`constructor(public amount: number)`),
+  which declares the same field.
 
-    class A startNode
-    class C errorNode
+It does not report a value object that:
 
-```
+- declares only `readonly` fields and `readonly` parameter properties;
+- calls `Object.freeze(this)` in its constructor (while `checkObjectFreeze` is
+  true). Freezing a nested value, `Object.freeze(this.items)`, leaves the
+  instance's own fields writable and does not count.
 
-
-### Why This Matters
-
-| Issue                | Impact                                | Solution                    |
-| -------------------- | ------------------------------------- | --------------------------- |
-| 🔒 **Security/Code Quality** | [Specific issue] | [Solution approach] |
-| 🐛 **Maintainability** | [Impact] | [Fix] |
-| ⚡ **Performance**   | [Impact] | [Optimization] |
+The check is shallow: a `readonly items: string[]` field passes, though the
+array itself stays mutable.
 
 ## Configuration
 
-**No configuration options available.**
+| Option                | Type       | Default                          | Description                                                 |
+| --------------------- | ---------- | -------------------------------- | ----------------------------------------------------------- |
+| `valueObjectPatterns` | `string[]` | `['Value', 'VO', 'ValueObject']` | Class-name suffixes that mark a value object                |
+| `requireReadonly`     | `boolean`  | `true`                           | Report fields without `readonly`. `false` turns the check off |
+| `checkObjectFreeze`   | `boolean`  | `true`                           | Accept `Object.freeze(this)` in the constructor             |
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```typescript
-// Example of incorrect usage
+class MoneyValueObject {
+  amount: number;
+  constructor(amount: number, public currency: string) {
+    this.amount = amount;
+  }
+}
 ```
 
 ### ✅ Correct
 
 ```typescript
-// Example of correct usage
+class MoneyValueObject {
+  readonly amount: number;
+  constructor(amount: number, private readonly currency: string) {
+    this.amount = amount;
+  }
+}
+
+class PriceVO {
+  amount = 0;
+  constructor() {
+    Object.freeze(this);
+  }
+}
 ```
 
 ## Configuration Examples
-
-### Basic Usage
 
 ```javascript
 // eslint.config.mjs
 export default [
   {
     rules: {
-      'modularity/ddd-value-object-immutability': 'error',
+      'modularity/ddd-value-object-immutability': ['error', { valueObjectPatterns: ['Money', 'VO'] }],
     },
   },
 ];
 ```
 
-## LLM-Optimized Output
-
-```
-🚨 ddd value object immutability | Description | MEDIUM
-   Fix: Suggestion | Reference
-```
-
 ## Related Rules
 
-- [`rule-name`](./rule-name) - Description
-
-## Further Reading
-
-- **[Reference](https://example.com)** - Description
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
-## Known False Negatives
-
-The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = externalSource();
-processValue(value); // Variable origin not tracked
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- [`ddd-anemic-domain-model`](./ddd-anemic-domain-model) - Entities should carry behaviour

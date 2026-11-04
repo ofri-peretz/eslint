@@ -154,7 +154,12 @@ export const requireDataMinimization = createRule<RuleOptions, MessageIds>({
         return true;
       },
       ObjectExpression(node: TSESTree.ObjectExpression) {
-        if (node.properties.length <= maxProperties) return;
+        // Count the properties the literal WRITES. A spread copies a set the
+        // code does not show - possibly empty - so it proves no breadth.
+        const written = node.properties.filter(
+          (p) => p.type === AST_NODE_TYPES.Property,
+        ).length;
+        if (written <= maxProperties) return;
         const carriesPersonalData = node.properties.some((p) => {
           if (p.type !== AST_NODE_TYPES.Property) return false;
           // `objectKeyName` and not `key.name`: `{ ['email']: e }` declares the

@@ -79,13 +79,37 @@ function isDto(className: string, dtoPatterns: string[]): boolean {
 }
 
 /**
+ * A method, written either way: `withdraw(n) { ... }` or the arrow-function
+ * class property `withdraw = (n) => { ... }`, which carries the same behaviour.
+ */
+type ClassMethod = {
+  key: TSESTree.PropertyName;
+  value: TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression;
+};
+
+/** A class member that is a method, in either spelling. */
+function asClassMethod(member: TSESTree.ClassElement): ClassMethod | null {
+  if (member.type === 'MethodDefinition') {
+    // A method's value is always a function expression (or, for a TS
+    // overload signature, an empty-bodied one, which counts as nothing).
+    return member.value.type === 'FunctionExpression'
+      ? { key: member.key, value: member.value }
+      : null;
+  }
+  if (
+    member.type === 'PropertyDefinition' &&
+    (member.value?.type === 'ArrowFunctionExpression' ||
+      member.value?.type === 'FunctionExpression')
+  ) {
+    return { key: member.key, value: member.value };
+  }
+  return null;
+}
+
+/**
  * Check if a method is a simple getter/setter in disguise
  */
-function isSimpleGetterSetter(member: TSESTree.MethodDefinition): boolean {
-  if (member.value.type !== 'FunctionExpression') {
-    return false;
-  }
-
+function isSimpleGetterSetter(member: ClassMethod): boolean {
   const methodName = member.key.type === 'Identifier' ? member.key.name : '';
   const body = member.value.body;
 
@@ -122,11 +146,7 @@ function isSimpleGetterSetter(member: TSESTree.MethodDefinition): boolean {
  * e.g., save() { return this.repository.save(this); }
  * Does NOT count calls to array methods, built-ins, or methods on this
  */
-function isPureDelegation(member: TSESTree.MethodDefinition): boolean {
-  if (member.value.type !== 'FunctionExpression') {
-    return false;
-  }
-
+function isPureDelegation(member: ClassMethod): boolean {
   const body = member.value.body;
 
   if (body.type !== 'BlockStatement' || body.body.length !== 1) {
@@ -263,42 +283,26 @@ function countBusinessMethods(
   let count = 0;
 
   for (const member of node.body.body) {
-    if (member.type === 'MethodDefinition') {
-      const methodName =
-        member.key.type === 'Identifier' ? member.key.name : '';
-
-      // Skip getters and setters
-      if (member.kind === 'get' || member.kind === 'set') {
-        continue;
-      }
-
-      // Skip constructor
-      if (methodName === 'constructor') {
-        continue;
-      }
-
-      // Skip simple getter/setter methods in disguise
-      if (isSimpleGetterSetter(member)) {
-        continue;
-      }
-
-      // Skip pure delegation methods (just calls external service)
-      if (isPureDelegation(member)) {
-        continue;
-      }
-
-      // Count methods (any method that's not a getter/setter/constructor/delegation is business logic)
-      const valueType = member.value.type as string;
-      if (
-        valueType === 'FunctionExpression' ||
-        valueType === 'ArrowFunctionExpression'
-      ) {
-        count++;
-      }
-    } else if (member.type === 'PropertyDefinition') {
-      // Property definitions are not business logic
+    // Skip accessors (`get x()` / `set x(v)`) and the constructor.
+    if (
+      member.type === 'MethodDefinition' &&
+      (member.kind === 'get' ||
+        member.kind === 'set' ||
+        member.kind === 'constructor')
+    ) {
       continue;
     }
+    // Plain fields are data, not behaviour.
+    const method = asClassMethod(member);
+    if (method === null) {
+      continue;
+    }
+    // Skip simple getter/setter methods in disguise, and pure delegation
+    // (a method that just calls an external service).
+    if (isSimpleGetterSetter(method) || isPureDelegation(method)) {
+      continue;
+    }
+    count++;
   }
 
   return count;

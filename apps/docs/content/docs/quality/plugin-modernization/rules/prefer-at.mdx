@@ -28,6 +28,20 @@ Prefer using `Array.at()` for accessing elements, especially with negative indic
 
 `Array.at()` provides a cleaner way to access array elements, especially the last element or elements from the end.
 
+The rule reports a computed read whose index is the **same** receiver's `.length` minus a positive literal or a variable (`xs[xs.length - 1]`, `xs[xs.length - n]`), and `xs[-n]`. The receiver may be an identifier, `this`, or a static member path (`this.rows`, `c['path']` matched with `c.path['length']`), also behind a TypeScript non-null assertion (`xs![xs!.length - 1]`).
+
+It does not report:
+
+- a write target (`xs[xs.length - 1] = v`, `++`, `delete`, destructuring targets): `.at()` returns a value, not a reference;
+- the implicit `arguments` object, which has no `.at()` method;
+- another receiver's length (`a[b.length - 1]`) or a zero offset.
+
+## Configuration
+
+| Option             | Type      | Default | Description                                                                         |
+| ------------------ | --------- | ------- | ----------------------------------------------------------------------------------- |
+| `checkLastElement` | `boolean` | `true`  | Report the last-element form `xs[xs.length - 1]`. With `false` other offsets still report |
+
 ### Why This Matters
 
 | Issue                     | Impact                          | Solution                  |

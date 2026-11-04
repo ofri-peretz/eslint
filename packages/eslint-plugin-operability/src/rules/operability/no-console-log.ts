@@ -24,6 +24,7 @@ import { normalizePath, getRelativePath } from '@interlace/eslint-devkit';
  * notation a bundler emits.
  */
 import { isNonProductionPath } from '../../lib/non-production-paths';
+import { isGlobalObject } from '../../lib/global-binding';
 
 /**
  * Strategy for handling console.log
@@ -407,6 +408,17 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
 
         /** Check if this source object is in our patterns to match */
         if (!sourcePatterns.includes(sourceObject)) {
+          return;
+        }
+
+        // `console` is the global, decided by binding: a `console` the code
+        // declares (a parameter, an injected logger) is not console output.
+        // Other source patterns are names the project configured, matched as
+        // configured.
+        if (
+          sourceObject === 'console' &&
+          !isGlobalObject(node.callee.object, 'console', sourceCode)
+        ) {
           return;
         }
 

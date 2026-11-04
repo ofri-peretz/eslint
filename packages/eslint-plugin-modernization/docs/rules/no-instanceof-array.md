@@ -53,7 +53,9 @@ The rule provides **LLM-optimized error messages** with actionable technical gui
 
 ## Rule Details
 
-This rule flags any binary expression using the `instanceof` operator where the right-hand side is the `Array` identifier.
+This rule flags an `instanceof` whose right-hand side is the built-in `Array` constructor, written `Array` or `globalThis.Array`. It is decided by binding: an `Array` the file declares itself (an import such as effect's `Array` module, a parameter, a local class) is not the built-in and is not reported. `Array` on the left of `instanceof` tests the constructor, not a value, and is not reported.
+
+The `allow` option silences a file when one of its entries appears anywhere in the source text.
 
 ```mermaid
 %%{init: {

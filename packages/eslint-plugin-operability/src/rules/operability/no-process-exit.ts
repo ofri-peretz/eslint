@@ -9,7 +9,8 @@
  * Prevent usage of process.exit()
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+import { isProcessExit } from '../../lib/global-binding';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noProcessExit';
@@ -70,21 +71,10 @@ export const noProcessExit = createRule<RuleOptions, MessageIds>({
     }
 
     function isProcessExitCall(node: TSESTree.CallExpression): boolean {
-      // Check if this is a call to process.exit
-      // oxlint-disable-next-line consistent-function-scoping
-      function isProcessExitMember(callee: TSESTree.Expression): boolean {
-        if (
-          callee.type === 'MemberExpression' &&
-          callee.object.type === 'Identifier' &&
-          callee.object.name === 'process' &&
-          propertyName(callee) === 'exit'
-        ) {
-          return true;
-        }
-        return false;
-      }
-
-      return isProcessExitMember(node.callee);
+      // By binding, not by the name `process`: a `process` the code declares
+      // is not Node's, and `globalThis.process.exit`, an import from
+      // `node:process` and `const { exit } = process` all are.
+      return isProcessExit(node.callee, context.sourceCode);
     }
 
     return {

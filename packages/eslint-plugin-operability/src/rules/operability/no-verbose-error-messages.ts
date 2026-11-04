@@ -13,12 +13,78 @@
 import {
   AST_NODE_TYPES,
   createRule,
+  followConst,
   formatLLMMessage,
   MessageIcons,
   namesOneOf,
+  objectKeyName,
   propertyName,
+  variableOf,
 } from '@interlace/eslint-devkit';
-import type { TSESTree } from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+
+/** How deep into nested object literals a stack is looked for. */
+const MAX_DEPTH = 4;
+
+/**
+ * Does this value carry an error's `.stack`? Decided by where the value comes
+ * from, never by a property NAME: `{ stack: 'hidden' }` names a key `stack`
+ * but leaks nothing, while `{ trace: err.stack }` and
+ * `` `Failed: ${err.stack}` `` leak the trace under any name.
+ */
+function carriesStack(
+  node: TSESTree.Node,
+  sourceCode: Readonly<TSESLint.SourceCode>,
+  depth = 0,
+): boolean {
+  if (depth > MAX_DEPTH) return false;
+  const value = followConst(node, sourceCode);
+  switch (value.type) {
+    case AST_NODE_TYPES.MemberExpression:
+      return propertyName(value) === 'stack';
+    case AST_NODE_TYPES.Identifier:
+      return isDestructuredStack(value, sourceCode);
+    case AST_NODE_TYPES.ObjectExpression:
+      // A spread copies own ENUMERABLE properties, and an Error's `stack` is
+      // not one, so only written properties count.
+      return value.properties.some(
+        (p) =>
+          p.type === AST_NODE_TYPES.Property &&
+          carriesStack(p.value, sourceCode, depth + 1),
+      );
+    case AST_NODE_TYPES.TemplateLiteral:
+      return value.expressions.some((e) =>
+        carriesStack(e, sourceCode, depth + 1),
+      );
+    case AST_NODE_TYPES.BinaryExpression:
+      return (
+        value.operator === '+' &&
+        (carriesStack(value.left, sourceCode, depth + 1) ||
+          carriesStack(value.right, sourceCode, depth + 1))
+      );
+    default:
+      return false;
+  }
+}
+
+/** `const { stack } = err` / `const { stack: s } = err`. */
+function isDestructuredStack(
+  id: TSESTree.Identifier,
+  sourceCode: Readonly<TSESLint.SourceCode>,
+): boolean {
+  const variable = variableOf(id, sourceCode);
+  const def = variable?.defs[0];
+  if (def?.type !== 'Variable' || def.node.id.type !== 'ObjectPattern')
+    return false;
+  return def.node.id.properties.some(
+    (p) =>
+      p.type === AST_NODE_TYPES.Property &&
+      (p.value.type === AST_NODE_TYPES.AssignmentPattern
+        ? p.value.left
+        : p.value) === variable?.identifiers[0] &&
+      objectKeyName(p) === 'stack',
+  );
+}
 
 type MessageIds = 'violationDetected';
 
@@ -72,28 +138,8 @@ export const noVerboseErrorMessages = createRule<RuleOptions, MessageIds>({
           namesOneOf(propertyName(node.callee), ['send', 'json'])
         ) {
           const arg = node.arguments[0];
-
-          // Check for error.stack or err.stack
-          if (
-            arg?.type === AST_NODE_TYPES.MemberExpression &&
-            propertyName(arg) === 'stack'
-          ) {
+          if (arg !== undefined && carriesStack(arg, context.sourceCode)) {
             report(node);
-          }
-
-          // Check for { stack: error.stack } in object
-          if (arg?.type === AST_NODE_TYPES.ObjectExpression) {
-            const stackProp = arg.properties.find(
-              (p) =>
-                p.type === AST_NODE_TYPES.Property &&
-                p.key.type === AST_NODE_TYPES.Identifier &&
-                (p.key.name === 'stack' ||
-                  (p.value.type === AST_NODE_TYPES.MemberExpression &&
-                    propertyName(p.value) === 'stack')),
-            );
-            if (stackProp) {
-              report(node);
-            }
           }
         }
       },

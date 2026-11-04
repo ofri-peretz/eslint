@@ -9,15 +9,23 @@
  * Prefer .at() method over array[index] for accessing elements from end (unicorn-inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { createRule, propertyName, variableOf } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
   'preferAtMethod' | 'useAtForLastElement' | 'useAtForNegativeIndex';
 
 export interface Options {
-  /** Check for last element access patterns */
+  /**
+   * Report the last-element form `xs[xs.length - 1]`. Default: true. With
+   * `false` only the other from-the-end offsets report.
+   */
   checkLastElement?: boolean;
+}
+
+/** `xs!` erases at runtime: the receiver is still `xs`. */
+function unwrapNonNull(node: TSESTree.Node): TSESTree.Node {
+  return node.type === 'TSNonNullExpression' ? node.expression : node;
 }
 
 type RuleOptions = [Options?];
@@ -160,21 +168,42 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ checkLastElement: true }],
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    let checkLastElement: boolean;
+
+    /**
+     * Is this the implicit `arguments` object of a function? It has no `.at`
+     * method, so `arguments.at(-1)` throws where the bracket read works.
+     * Decided by binding: a variable the code declares as `arguments` is not it.
+     */
+    const isImplicitArguments = (node: TSESTree.Node): boolean => {
+      if (node.type !== 'Identifier' || node.name !== 'arguments') return false;
+      const variable = variableOf(node, context.sourceCode);
+      return variable !== undefined && variable.defs.length === 0;
+    };
+
     return {
+      before() {
+        const [options] = context.options;
+        ({ checkLastElement = true } = options ?? {});
+      },
       MemberExpression(node: TSESTree.MemberExpression) {
         if (!node.computed) {
           return;
         }
+        const target = unwrapNonNull(node.object);
         // The receiver used to have to be a bare Identifier, which made
         // `c.path[c.path.length - 1]` and `this.rows[this.rows.length - 1]`
         // invisible — the common shape in class-based and node-tree code. The
         // `.length` half of this expression was already generalised to read
         // `o['length']`; this is the receiver half of the same generalisation.
         if (
-          node.object.type !== 'Identifier' &&
-          node.object.type !== 'MemberExpression' &&
-          node.object.type !== 'ThisExpression'
+          target.type !== 'Identifier' &&
+          target.type !== 'MemberExpression' &&
+          target.type !== 'ThisExpression'
         ) {
+          return;
+        }
+        if (isImplicitArguments(target)) {
           return;
         }
 
@@ -202,7 +231,8 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
          * `propertyName()` reads `o.k` and `o['k']` identically, which is what
          * the receiver comparison needs.
          */
-        const receiverPath = (receiver: TSESTree.Node): string | null => {
+        const receiverPath = (node: TSESTree.Node): string | null => {
+          const receiver = unwrapNonNull(node);
           if (receiver.type === 'Identifier') return receiver.name;
           if (receiver.type === 'ThisExpression') return 'this';
           if (receiver.type !== 'MemberExpression') return null;
@@ -237,6 +267,9 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           node.property.right.value > 0
         ) {
           const offset = node.property.right.value;
+          if (offset === 1 && !checkLastElement) {
+            return;
+          }
           const messageId =
             offset === 1 ? 'useAtForLastElement' : 'preferAtMethod';
 

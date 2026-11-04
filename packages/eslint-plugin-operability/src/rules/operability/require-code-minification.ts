@@ -12,8 +12,11 @@
 
 import {
   createRule,
+  followConst,
   formatLLMMessage,
   MessageIcons,
+  objectKeyName,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
@@ -84,6 +87,15 @@ export const requireCodeMinification = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{ minificationKeys: [...DEFAULT_MINIFICATION_KEYS] }],
   createOnce(context, currentOptions) {
     let keys: Set<string>;
+    /**
+     * Only an explicit `false` turns minification off - the literal, or a
+     * const bound to it. `true`, a tool name and a value the code does not
+     * prove (a parameter) are not findings.
+     */
+    const isFalse = (node: TSESTree.Node): boolean => {
+      const value = followConst(node, context.sourceCode);
+      return value.type === 'Literal' && value.value === false;
+    };
     return {
       before() {
         const [options = {}] = currentOptions();
@@ -91,13 +103,20 @@ export const requireCodeMinification = createRule<RuleOptions, MessageIds>({
           options as Options;
         keys = new Set(minificationKeys);
       },
+      // `{ minify: false }`, `{ 'minify': false }`, `{ ['minify']: false }`.
       Property(node: TSESTree.Property) {
-        if (
-          node.key.type === 'Identifier' &&
-          keys.has(node.key.name) &&
-          node.value.type === 'Literal' &&
-          node.value.value === false
-        ) {
+        if (node.parent.type !== 'ObjectExpression') return;
+        const key = objectKeyName(node);
+        if (key !== null && keys.has(key) && isFalse(node.value)) {
+          context.report({ node, messageId: 'violationDetected' });
+        }
+      },
+      // `config.build.minify = false`, `config.build['minify'] = false`.
+      AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        if (node.operator !== '=' || node.left.type !== 'MemberExpression')
+          return;
+        const key = propertyName(node.left);
+        if (key !== null && keys.has(key) && isFalse(node.right)) {
           context.report({ node, messageId: 'violationDetected' });
         }
       },
