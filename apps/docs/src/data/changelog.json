@@ -1,7 +1,7 @@
 {
-  "releaseCount": 918,
+  "releaseCount": 920,
   "packageCount": 66,
-  "entryCount": 2512,
+  "entryCount": 2514,
   "oldestYear": 2024,
   "releases": [
     {
@@ -21602,6 +21602,21 @@
     {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
+      "version": "2.7.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "false negatives found by the Quint fidelity models.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
       "date": null,
       "isApp": false,
@@ -21740,6 +21755,21 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-postgresql-security",
+      "short": "oxlint-plugin-postgresql-security",
+      "version": "2.7.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-postgresql-security@2.7.1`",
           "pr": null
         }
       ]
