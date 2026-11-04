@@ -20,7 +20,7 @@ on:
       - 'benchmarks/suites/fidelity/**'
       - '.github/workflows/fidelity.yml'
   schedule:
-    - cron: '17 3 * * 0' # 03:17 UTC Sunday
+    - cron: '41 4 * * 0' # 04:41 UTC Sunday
   workflow_dispatch:
 
 concurrency:
@@ -68,10 +68,6 @@ jobs:
     if: needs.plan.outputs.plugins != '[]'
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    permissions:
-      contents: read
-      # Required so the failure step can open / update the tracking issue.
-      issues: write
     strategy:
       fail-fast: false
       matrix:
@@ -89,11 +85,24 @@ jobs:
 
       - run: npm run fidelity -- "${{ matrix.plugin }}"
 
-      # A red cron notifies nobody by default. See .github/actions/report-failure.
+  # A red cron notifies nobody by default. See .github/actions/report-failure.
+  report:
+    name: Report a scheduled failure
+    needs: [plan, fidelity]
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      # Required to open / update the tracking issue.
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: 🚨 Report a scheduled failure
-        if: failure() && github.event_name == 'schedule'
         uses: ./.github/actions/report-failure
         with:
           title: 'Weekly model fidelity is failing'
-          body: 'A rule disagreed with its Quint model on a sampled input, a model stopped covering its domain, or a rule has no model. The job log prints the input and both verdicts.'
+          body: 'A rule disagreed with its Quint model on a sampled input, a model stopped covering its domain, or a rule has no model. The failing job log prints the input and both verdicts.'
           token: ${{ github.token }}
