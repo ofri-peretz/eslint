@@ -21,14 +21,16 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const xp = <T,>(cases: T[]): T[] =>
+const xp = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asExpress(c) as T;
     const test = c as Case;
     return {
       ...c,
       code: asExpress(test.code),
-      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asExpress(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -47,7 +49,6 @@ const xp = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -119,6 +120,27 @@ describe('require-strict-transport-security', () => {
         { code: `const mw = helmet();` },
       ]),
       invalid: xp([
+        {
+          name: 'a renamed helmet import is still helmet',
+          code: `import securityHeaders from 'helmet';
+app.use(securityHeaders({ hsts: false }));
+app.use(securityHeaders.hsts({ maxAge: 31536000, includeSubDomains: false }));`,
+          errors: [
+            { messageId: 'hstsDisabled' as const },
+            { messageId: 'subdomainsExcluded' as const },
+          ],
+        },
+        {
+          name: "helmet's named strictTransportSecurity export, imported or required",
+          code: `import { strictTransportSecurity } from 'helmet';
+const { hsts } = require('helmet');
+app.use(strictTransportSecurity({ maxAge: 31536000, includeSubDomains: false }));
+app.use(hsts({ maxAge: 31536000, includeSubDomains: false }));`,
+          errors: [
+            { messageId: 'subdomainsExcluded' as const },
+            { messageId: 'subdomainsExcluded' as const },
+          ],
+        },
         // HSTS switched off entirely (helmet ≤6 spelling)
         {
           name: 'hsts switched off',

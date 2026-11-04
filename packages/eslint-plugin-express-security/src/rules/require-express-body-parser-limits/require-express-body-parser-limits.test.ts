@@ -119,6 +119,23 @@ ruleTester.run(
       },
     ]),
     invalid: xp([
+      {
+        name: "express's named parser export, imported or required",
+        code: `import { json } from 'express';
+const { urlencoded: form } = require('express');
+app.use(json({ limit: '50mb' }));
+app.use(form({ limit: '50mb', extended: true }));`,
+        errors: [
+          { messageId: 'excessiveLimit' },
+          { messageId: 'excessiveLimit' },
+        ],
+      },
+      {
+        name: 'a renamed body-parser import is still body-parser',
+        code: `import parsers from 'body-parser';
+app.use(parsers.json({ limit: '50mb' }));`,
+        errors: [{ messageId: 'excessiveLimit' }],
+      },
       // Excessive limits
       {
         name: 'a 100mb body limit',

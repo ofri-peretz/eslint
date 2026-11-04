@@ -25,14 +25,16 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const xp = <T,>(cases: T[]): T[] =>
+const xp = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asExpress(c) as T;
     const test = c as Case;
     return {
       ...c,
       code: asExpress(test.code),
-      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asExpress(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -51,7 +53,6 @@ const xp = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -79,6 +80,26 @@ describe('no-missing-security-headers', () => {
             res.setHeader('X-Content-Type-Options', 'nosniff');
           `,
         },
+        // HTTP header names are case-insensitive (RFC 9110 §5.1)
+        {
+          name: 'the security headers are set with lower-case names',
+          code: `
+            res.setHeader('content-security-policy', 'default-src self');
+            res.header('x-frame-options', 'DENY');
+            res.set('X-CONTENT-TYPE-OPTIONS', 'nosniff');
+          `,
+        },
+        // Express's object form sets every header in one call
+        {
+          name: 'the security headers are set through res.set({ ... })',
+          code: `
+            res.set({
+              'Content-Security-Policy': 'default-src self',
+              'X-Frame-Options': 'DENY',
+              'X-Content-Type-Options': 'nosniff',
+            });
+          `,
+        },
         // Test files (if ignoreInTests is true)
         {
           code: 'res.setHeader("X-Custom", "value");',
@@ -102,6 +123,11 @@ describe('no-missing-security-headers', () => {
         {
           code: 'res.setHeader("Content-Security-Policy", "default-src self");',
           errors: [{ messageId: 'missingSecurityHeader' }], // Missing other headers
+        },
+        {
+          name: 'an object form missing a header is still reported',
+          code: `res.set({ 'content-security-policy': 'default-src self', [dynamic]: 'x', ...extra, 'X-Frame-Options': 'DENY' });`,
+          errors: [{ messageId: 'missingSecurityHeader' }],
         },
       ]),
     });

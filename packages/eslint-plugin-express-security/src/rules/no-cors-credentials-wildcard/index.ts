@@ -16,6 +16,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
+import { packageBindings } from '../../utils/import-bindings';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -72,11 +73,12 @@ function hasCredentialsTrue(
  */
 function getCorsConfigNode(
   node: TSESTree.CallExpression,
+  corsNames: ReadonlySet<string>,
 ): TSESTree.ObjectExpression | null {
   const callee = node.callee;
 
   // Standalone cors({...}) call - but skip if parent is app.use()
-  if (callee.type === 'Identifier' && callee.name === 'cors') {
+  if (callee.type === 'Identifier' && corsNames.has(callee.name)) {
     // Check if this cors() is inside app.use() - if so, let app.use() handle it
     const parent = node.parent;
     if (
@@ -101,7 +103,7 @@ function getCorsConfigNode(
     if (
       firstArg?.type === 'CallExpression' &&
       firstArg.callee.type === 'Identifier' &&
-      firstArg.callee.name === 'cors' &&
+      corsNames.has(firstArg.callee.name) &&
       firstArg.arguments[0]?.type === 'ObjectExpression'
     ) {
       return firstArg.arguments[0];
@@ -160,6 +162,9 @@ export const noCorsCredentialsWildcard = createRule<RuleOptions, MessageIds>({
     currentOptions,
   ) {
     let sourceCode: Readonly<TSESLint.SourceCode>;
+    // `cors`, plus whatever local the file binds the cors package to
+    // (`import corsMiddleware from 'cors'`).
+    let corsNames: Set<string>;
 
     return {
       before() {
@@ -180,10 +185,14 @@ export const noCorsCredentialsWildcard = createRule<RuleOptions, MessageIds>({
         }
 
         sourceCode = context.sourceCode;
+        corsNames = new Set([
+          'cors',
+          ...packageBindings(sourceCode.ast, ['cors']).modules,
+        ]);
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        const corsConfigNode = getCorsConfigNode(node);
+        const corsConfigNode = getCorsConfigNode(node, corsNames);
 
         if (corsConfigNode) {
           const hasWildcard = hasWildcardOrigin(corsConfigNode, sourceCode);

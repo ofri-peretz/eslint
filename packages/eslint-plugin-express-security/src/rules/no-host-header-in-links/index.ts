@@ -72,6 +72,9 @@ const HOST_HEADER_NAMES = new Set(['host', 'x-forwarded-host']);
 /** Express request methods that read a header by name. */
 const HOST_GETTER_METHODS = new Set(['get', 'header']);
 
+/** Request properties Express computes from the Host header. */
+const REQUEST_HOST_PROPERTIES = new Set(['hostname', 'host']);
+
 export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
   name: 'no-host-header-in-links',
   meta: {
@@ -187,6 +190,17 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
 
       if (node.type === AST_NODE_TYPES.MemberExpression) {
         const obj = node.object;
+        // req.hostname / req.host — Express derives both from the Host header
+        // (X-Forwarded-Host once trust proxy is on), so they are the same read.
+        const own = propertyName(node);
+        if (
+          obj.type === AST_NODE_TYPES.Identifier &&
+          isRequestIdent(obj.name) &&
+          own !== null &&
+          REQUEST_HOST_PROPERTIES.has(own)
+        ) {
+          return `req.${own}`;
+        }
         if (
           obj.type === AST_NODE_TYPES.MemberExpression &&
           propertyName(obj) === 'headers' &&

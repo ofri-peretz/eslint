@@ -38,6 +38,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
 import { fileHasAmbientCredentials } from '../../utils/app-composition';
 import { routeIsAuthenticated } from '../../utils/auth-evidence';
+import { flattenMiddleware, routeChainRoot } from '../../utils/route-shapes';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -315,7 +316,7 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
           callee.type === 'MemberExpression' &&
           propertyName(callee) === 'use'
         ) {
-          for (const arg of node.arguments) {
+          for (const arg of flattenMiddleware(node.arguments)) {
             // app.use(csrf())
             if (arg.type === 'CallExpression' && isCsrfMiddleware(arg)) {
               hasGlobalCsrf = true;
@@ -353,27 +354,40 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
             return;
           }
 
+          // `app.route(path).get(…).post(…)`: the path went to `.route(…)`,
+          // so every argument of this verb call is middleware or handler.
+          const chainRoot = routeChainRoot(callee);
+          const registrar =
+            chainRoot !== null && chainRoot.callee.type === 'MemberExpression'
+              ? chainRoot.callee
+              : callee;
+
           // Only flag if this looks like an Express app/router
           // This prevents FPs on non-Express objects like server.post(), customApi.post()
-          if (!isLikelyExpressObject(callee)) {
+          if (!isLikelyExpressObject(registrar)) {
             return;
           }
 
           // Check if route should be ignored
-          const [routeArg, ...rest] = node.arguments;
+          const routeArg =
+            chainRoot !== null ? chainRoot.arguments[0] : node.arguments[0];
           if (routeArg && shouldIgnoreRoute(routeArg)) {
             return;
           }
+          const rest =
+            chainRoot !== null ? node.arguments : node.arguments.slice(1);
+          // An array of middleware is flattened into the chain by Express.
+          const chain = flattenMiddleware(rest.slice(0, -1));
 
           // Check if CSRF middleware is in the route's own chain
-          if (hasCsrfInMiddlewareChain(rest.slice(0, -1))) {
+          if (hasCsrfInMiddlewareChain(chain)) {
             return;
           }
 
           candidates.push({
             node,
             method: method.toUpperCase(),
-            chain: rest.slice(0, -1),
+            chain,
             handler: rest[rest.length - 1],
           });
         }

@@ -25,14 +25,16 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const xp = <T,>(cases: T[]): T[] =>
+const xp = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asExpress(c) as T;
     const test = c as Case;
     return {
       ...c,
       code: asExpress(test.code),
-      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asExpress(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -51,7 +53,6 @@ const xp = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -89,6 +90,23 @@ describe('no-missing-csrf-protection', () => {
         // CSRF middleware globally
         {
           code: 'app.use(csrf());',
+        },
+        // Mounted globally, csrf() protects every route registered after it.
+        {
+          name: 'a global app.use(csrf()) covers the routes',
+          code: 'app.use(csrf());\napp.post("/api/users", handler);',
+        },
+        // A path-scoped mount reads past the path string, and a referenced
+        // middleware instance counts; one scan serves every route in the file.
+        {
+          name: 'a path-scoped global csrf instance covers several routes',
+          code: 'app.use("/api", csrfProtection);\napp.post("/api/users", handler);\napp.put("/api/users/1", handler);',
+        },
+        // In a `.route(path)` chain the path is spent, so csrf() is the
+        // first handler argument, not a path.
+        {
+          name: 'a route-chain verb carrying csrf()',
+          code: 'app.route("/api/users").get(listUsers).post(csrf(), handler);',
         },
         {
           code: 'app.get("/api/users", handler);', // GET doesn't require CSRF
@@ -323,6 +341,22 @@ ruleTester.run(
               {
                 messageId: 'addCsrfValidation',
                 output: `app.post('/b', csrf(), handler);`,
+              },
+            ],
+          },
+        ],
+      },
+      // A `.route(path)` chain registers an unprotected POST.
+      {
+        name: 'an unprotected POST in an app.route() chain',
+        code: `app.route('/api/users').get(listUsers).post(handler);`,
+        errors: [
+          {
+            messageId: 'missingCsrfProtection',
+            suggestions: [
+              {
+                messageId: 'addCsrfValidation',
+                output: `app.route('/api/users').get(listUsers).post(csrf(), handler);`,
               },
             ],
           },

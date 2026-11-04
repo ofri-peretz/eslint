@@ -320,6 +320,16 @@ ruleTester.run('require-csrf-protection', requireCsrfProtection, {
     {
       code: `${SESSION}app.post('/pay', requireAuth, csrfProtection, (req, res) => res.render('x'));`,
     },
+    // Express flattens an array of middleware into the chain, so the token
+    // check inside it runs before the handler.
+    {
+      name: 'CSRF middleware inside a middleware array',
+      code: `${SESSION}app.post('/transfer', requireAuth, [csrfProtection], handler);`,
+    },
+    {
+      name: 'CSRF middleware inside a route-chain middleware array',
+      code: `${SESSION}app.route('/transfer').get(showForm).post([csrfProtection], requireAuth, handler);`,
+    },
   ]),
 
   invalid: xp([
@@ -329,6 +339,13 @@ ruleTester.run('require-csrf-protection', requireCsrfProtection, {
     // A session cookie, an authenticated route, a state-changing method and
     // no token: the shape the rule exists for.
     // ============================================
+    // `app.route(path).post(…)` registers the same route `app.post(path, …)`
+    // does; the verb call's arguments are all middleware and handler.
+    {
+      name: 'an authenticated POST registered through an app.route() chain',
+      code: `${SESSION}app.route('/transfer').get(showForm).post(requireAuth, handler);`,
+      errors: [{ messageId: 'missingCsrf' }],
+    },
     {
       name: 'a session-bearing POST with authentication but no CSRF token',
       code: `${SESSION}app.post('/login', requireAuth, handler);`,

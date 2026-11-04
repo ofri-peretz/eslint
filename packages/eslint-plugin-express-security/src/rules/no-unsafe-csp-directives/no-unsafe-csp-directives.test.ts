@@ -21,14 +21,16 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const xp = <T,>(cases: T[]): T[] =>
+const xp = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asExpress(c) as T;
     const test = c as Case;
     return {
       ...c,
       code: asExpress(test.code),
-      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asExpress(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -47,7 +49,6 @@ const xp = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -160,6 +161,23 @@ describe('no-unsafe-csp-directives', () => {
       },
     ]),
     invalid: xp([
+      {
+        name: 'a renamed helmet import is still helmet',
+        code: `import securityHeaders from 'helmet';
+app.use(securityHeaders({ contentSecurityPolicy: { directives: { frameAncestors: ['*'] } } }));`,
+        errors: [{ messageId: 'permissiveFrameAncestors' as const }],
+      },
+      {
+        name: "helmet's named contentSecurityPolicy export, imported or required",
+        code: `import { contentSecurityPolicy } from 'helmet';
+const { contentSecurityPolicy: csp } = require('helmet');
+app.use(contentSecurityPolicy({ directives: { frameAncestors: ['*'] } }));
+app.use(csp({ directives: { frameAncestors: ['*'] } }));`,
+        errors: [
+          { messageId: 'permissiveFrameAncestors' as const },
+          { messageId: 'permissiveFrameAncestors' as const },
+        ],
+      },
       // 'unsafe-inline' in script-src — the SonarJS S5728 case
       {
         name: "'unsafe-inline' in scriptSrc",

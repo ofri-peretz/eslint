@@ -50,6 +50,7 @@ import {
   routeIsAuthenticated,
 } from '../../utils/auth-evidence';
 import { fileUsesExpress } from '../../utils/express-evidence';
+import { flattenMiddleware, routeChainRoot } from '../../utils/route-shapes';
 
 type MessageIds = 'missingAuthentication';
 
@@ -307,8 +308,15 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
       // `app['post']('/x', h)` registers the same route.
       const method = propertyName(callee);
       if (method === null) return null;
-      if (callee.object.type !== AST_NODE_TYPES.Identifier) return null;
-      if (!isAppReceiver(callee.object.name, appReceiverNames)) return null;
+      // `app.route(path).get(…).post(…)`: the receiver is the app the chain
+      // was opened on.
+      const chainRoot = routeChainRoot(callee);
+      const registrar =
+        chainRoot?.callee.type === AST_NODE_TYPES.MemberExpression
+          ? chainRoot.callee
+          : callee;
+      if (registrar.object.type !== AST_NODE_TYPES.Identifier) return null;
+      if (!isAppReceiver(registrar.object.name, appReceiverNames)) return null;
       return method;
     }
 
@@ -368,7 +376,7 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
             first?.type === AST_NODE_TYPES.Literal &&
             typeof first.value === 'string';
           if (!pathScoped) {
-            for (const arg of node.arguments) {
+            for (const arg of flattenMiddleware(node.arguments)) {
               if (
                 arg.type !== AST_NODE_TYPES.Literal &&
                 isAuthMiddlewareArg(arg, extraAuth)
@@ -382,7 +390,13 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
 
         if (!ROUTE_METHODS.has(method)) return;
 
-        const [pathArg, ...rest] = node.arguments;
+        // In a `.route(path)` chain the path was spent by `.route(…)`, so
+        // every argument of the verb call is middleware or handler.
+        const chainRoot = routeChainRoot(node.callee);
+        const [pathArg, ...rest] =
+          chainRoot !== null
+            ? [chainRoot.arguments[0], ...node.arguments]
+            : node.arguments;
         if (
           !pathArg ||
           pathArg.type !== AST_NODE_TYPES.Literal ||
@@ -403,7 +417,14 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
         // `require-csrf-protection` reports the exact complement of this test,
         // so the two rules never land on one site.
         const handler = rest[rest.length - 1];
-        if (routeIsAuthenticated(rest.slice(0, -1), handler, extraAuth)) {
+        // An array of middleware is flattened into the chain by Express.
+        if (
+          routeIsAuthenticated(
+            flattenMiddleware(rest.slice(0, -1)),
+            handler,
+            extraAuth,
+          )
+        ) {
           return;
         }
 

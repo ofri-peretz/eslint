@@ -131,6 +131,29 @@ describe('no-user-controlled-render-locals', () => {
         `,
           options: [{ allowSanitizers: ['sanitizeLocals'] }],
         },
+        // Destructuring a non-container field off the request, a container off
+        // a non-parameter, or a nested pattern is not the whole object
+        {
+          name: 'a non-container field destructured off the request',
+          code: `app.post('/p', (req, res) => { const { user } = req; res.render('post', user); });`,
+        },
+        {
+          name: 'a body destructured off something that is not the request',
+          code: `const { body } = payload; app.post('/p', (req, res) => res.render('post', body));`,
+        },
+        {
+          name: 'a nested pattern picks a field, not the whole body',
+          code: `app.post('/p', (req, res) => { const { body: { title } } = req; res.render('post', { title }); });`,
+        },
+        {
+          name: 'a computed key is not the body container',
+          code: `app.post('/p', (req, res) => { const { [key]: body, ...rest } = req; res.render('post', { body }); });`,
+        },
+        // An array pattern is not tracked
+        {
+          name: 'an array pattern is not tracked',
+          code: `app.post('/p', (req, res) => { const [body] = req.list; res.render('post', body); });`,
+        },
         // Not a render call
         { code: `res.json(req.body);` },
         { code: `res.send(req.query);` },
@@ -146,6 +169,18 @@ describe('no-user-controlled-render-locals', () => {
         { code: 'res.render(`pages/${page}`);' },
       ]),
       invalid: xp([
+        // Destructuring the WHOLE container off the request is the same single
+        // assignment as \`const body = req.body\`.
+        {
+          name: 'the whole body destructured off the request',
+          code: `app.post('/preview', (req, res) => { const { body } = req; res.render('post', body); });`,
+          errors: [{ messageId: 'unsafeRenderLocals' }],
+        },
+        {
+          name: 'the whole query destructured under a new name',
+          code: `app.get('/p', (request, response) => { const { query: q = {} } = request; response.render('page', q); });`,
+          errors: [{ messageId: 'unsafeRenderLocals' }],
+        },
         {
           // FN: the shape the NAME LIST could never catch. A handler written
           // `(inbound, outbound)` is ordinary code and matched none of

@@ -396,21 +396,24 @@ export const noUserControlledRedirect = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         if (!isRedirectCall(node)) return;
 
-        const firstArg = node.arguments[0];
-        if (!firstArg) return;
+        // `res.redirect([status,] path)`: the target follows a status code,
+        // and Express 4 still accepts the legacy `(path, status)` order — so
+        // either of the first two arguments can be the target.
+        for (const target of node.arguments.slice(0, 2)) {
+          const source = getUserSourceDescription(target);
+          if (!source) continue;
 
-        const source = getUserSourceDescription(firstArg);
-        if (!source) return;
+          // Validated against an origin allowlist upstream — the documented
+          // safe pattern, not a finding.
+          if (hasOriginGuard(target, node)) return;
 
-        // Validated against an origin allowlist upstream — the documented
-        // safe pattern, not a finding.
-        if (hasOriginGuard(firstArg, node)) return;
-
-        context.report({
-          node: firstArg,
-          messageId: 'openRedirect',
-          data: { source },
-        });
+          context.report({
+            node: target,
+            messageId: 'openRedirect',
+            data: { source },
+          });
+          return;
+        }
       },
     };
   },

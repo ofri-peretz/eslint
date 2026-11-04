@@ -23,14 +23,16 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const xp = <T,>(cases: T[]): T[] =>
+const xp = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asExpress(c) as T;
     const test = c as Case;
     return {
       ...c,
       code: asExpress(test.code),
-      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asExpress(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -49,7 +51,6 @@ const xp = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = vitest.afterAll;
 RuleTester.it = vitest.it;
@@ -212,5 +213,138 @@ ruleTester.run(
         errors: [{ messageId: 'graphqlIntrospection' }],
       },
     ]),
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Fidelity divergences: spellings and guards the model found the rule missing
+// ---------------------------------------------------------------------------
+ruleTester.run(
+  'no-graphql-introspection-production (fidelity)',
+  noGraphqlIntrospectionProduction,
+  {
+    valid: [
+      {
+        name: 'a server built only in a development branch (allowInDevelopment default)',
+        code: `
+          import 'express';
+          if (process.env.NODE_ENV === 'development') {
+            const server = new ApolloServer({ introspection: true });
+          }
+        `,
+      },
+      {
+        name: 'the else of a production check is development too',
+        code: `
+          import 'express';
+          if (process.env.NODE_ENV === 'production') {
+            start();
+          } else {
+            new ApolloServer({ introspection: true });
+          }
+        `,
+      },
+      {
+        name: 'isDev && …, a dev ternary, and unreadable conditions',
+        code: `
+          import 'express';
+          isDev && new ApolloServer({ introspection: true });
+          const s = !isProduction ? new ApolloServer({ introspection: true }) : null;
+          new ApolloServer({ introspection: 'development' === process.env.NODE_ENV });
+          new ApolloServer({ introspection: process.env.NODE_ENV === 'test' });
+          new ApolloServer({ introspection: process.env.NODE_ENV > 'a' });
+          new ApolloServer({ introspection: other === 'production' });
+          new ApolloServer({ introspection: enable });
+          new ApolloServer({ introspection: !enable });
+          new ApolloServer({ introspection: -1 });
+          new ApolloServer({ introspection: 'yes' });
+          new ApolloServer({ ...base });
+        `,
+      },
+      {
+        name: 'a standalone apollo-server file is not an Express app',
+        code: `
+          import { ApolloServer } from 'apollo-server';
+          new ApolloServer({ introspection: true });
+        `,
+      },
+    ],
+    invalid: [
+      {
+        name: 'allowInDevelopment: false reports the development branch too',
+        code: `
+          import 'express';
+          if (process.env.NODE_ENV === 'development') {
+            const server = new ApolloServer({ introspection: true });
+          }
+        `,
+        options: [{ allowInDevelopment: false }],
+        errors: [{ messageId: 'graphqlIntrospection' }],
+      },
+      {
+        name: 'unreadable or production-side branches are not development',
+        code: `
+          import 'express';
+          if (flag) { new ApolloServer({ introspection: true }); }
+          isProd && new ApolloServer({ introspection: true });
+          ready || new ApolloServer({ introspection: true });
+          if (NODE_ENV !== 'development') { new ApolloServer({ introspection: true }); }
+        `,
+        errors: [
+          { messageId: 'graphqlIntrospection' },
+          { messageId: 'graphqlIntrospection' },
+          { messageId: 'graphqlIntrospection' },
+          { messageId: 'graphqlIntrospection' },
+        ],
+      },
+      {
+        name: 'a production branch is not a development guard',
+        code: `
+          import 'express';
+          if (process.env.NODE_ENV === 'production') {
+            new ApolloServer({ introspection: true });
+          }
+        `,
+        errors: [{ messageId: 'graphqlIntrospection' }],
+      },
+      {
+        name: "=== 'production' turns introspection on exactly in production",
+        code: `
+          import 'express';
+          new ApolloServer({ introspection: process.env.NODE_ENV === 'production' });
+          new ApolloServer({ introspection: process.env.NODE_ENV !== 'development' });
+          new ApolloServer({ introspection: isProd });
+          new ApolloServer({ introspection: !isDev });
+        `,
+        errors: [
+          { messageId: 'graphqlIntrospection' },
+          { messageId: 'graphqlIntrospection' },
+          { messageId: 'graphqlIntrospection' },
+          { messageId: 'graphqlIntrospection' },
+        ],
+      },
+      {
+        name: "apollo-server-express is Apollo's Express integration — the doc's own example",
+        code: `
+          import { ApolloServer } from 'apollo-server-express';
+          const server = new ApolloServer({ typeDefs, resolvers, introspection: true });
+        `,
+        errors: [{ messageId: 'graphqlIntrospection' }],
+      },
+      {
+        name: 'a renamed or required ApolloServer is still ApolloServer',
+        code: `
+          import express from 'express';
+          import { ApolloServer as GraphServer } from 'apollo-server-express';
+          const { ApolloServer: Server4 } = require('@apollo/server');
+          new GraphServer({ introspection: true });
+          new Server4({ introspection: true });
+        `,
+        errors: [
+          { messageId: 'graphqlIntrospection' },
+          { messageId: 'graphqlIntrospection' },
+        ],
+      },
+    ],
   },
 );

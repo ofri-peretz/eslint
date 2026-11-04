@@ -14,6 +14,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
+import { packageBindings } from '../../utils/import-bindings';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -80,7 +81,7 @@ function isPermissiveCorsConfig(
   node: TSESTree.ObjectExpression,
   sourceCode: TSESLint.SourceCode,
   options: Options,
-): { isPermissive: boolean; reason: string } {
+): { isPermissive: boolean; reason: string; wildcard?: boolean } {
   const text = sourceCode.getText(node);
 
   // RULE PARTITION: `origin` permissive AND `credentials: true` is the specific
@@ -98,6 +99,7 @@ function isPermissiveCorsConfig(
   if (/\borigin\s*:\s*['"`]\*['"`]/.test(text)) {
     return {
       isPermissive: true,
+      wildcard: true,
       reason: "origin: '*' allows any domain to access your API",
     };
   }
@@ -120,11 +122,14 @@ function isPermissiveCorsConfig(
 /**
  * Check if this is a standalone cors() call (not inside app.use)
  */
-function isStandaloneCorsCall(node: TSESTree.CallExpression): boolean {
+function isStandaloneCorsCall(
+  node: TSESTree.CallExpression,
+  corsNames: ReadonlySet<string>,
+): boolean {
   const callee = node.callee;
 
   // cors() or cors({...})
-  if (callee.type === 'Identifier' && callee.name === 'cors') {
+  if (callee.type === 'Identifier' && corsNames.has(callee.name)) {
     // Check if parent is app.use() - if so, skip (handled by isAppUseCors)
     const parent = node.parent;
     if (
@@ -144,7 +149,10 @@ function isStandaloneCorsCall(node: TSESTree.CallExpression): boolean {
 /**
  * Check if this is app.use(cors(...))
  */
-function isAppUseCors(node: TSESTree.CallExpression): boolean {
+function isAppUseCors(
+  node: TSESTree.CallExpression,
+  corsNames: ReadonlySet<string>,
+): boolean {
   const callee = node.callee;
 
   if (callee.type === 'MemberExpression' && propertyName(callee) === 'use') {
@@ -154,7 +162,7 @@ function isAppUseCors(node: TSESTree.CallExpression): boolean {
       firstArg &&
       firstArg.type === 'CallExpression' &&
       firstArg.callee.type === 'Identifier' &&
-      firstArg.callee.name === 'cors'
+      corsNames.has(firstArg.callee.name)
     ) {
       return true;
     }
@@ -226,6 +234,11 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     let allowInTests: boolean;
     let allowOriginTrue: boolean;
     let sourceCode: Readonly<TSESLint.SourceCode>;
+    // `cors`, plus whatever local the file binds the cors package to.
+    let corsNames: Set<string>;
+    // `allowedOrigins` listing '*' accepts the wildcard — explicit, and the
+    // one cors() applies when given no origin.
+    let wildcardAllowed: boolean;
 
     return {
       before() {
@@ -236,8 +249,13 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
         // path — a file with no Express in it does no work.
         if (!fileUsesExpress(context.sourceCode.ast)) return false;
 
-        ({ allowInTests = false, allowOriginTrue = false } =
-          options as Options);
+        let allowedOrigins: string[];
+        ({
+          allowInTests = false,
+          allowOriginTrue = false,
+          allowedOrigins = [],
+        } = options as Options);
+        wildcardAllowed = allowedOrigins.includes('*');
 
         const filename = context.filename;
         const isTestFile = allowInTests && isTestFilePath(filename);
@@ -247,20 +265,27 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
         }
 
         sourceCode = context.sourceCode;
+        corsNames = new Set([
+          'cors',
+          ...packageBindings(sourceCode.ast, ['cors']).modules,
+        ]);
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
         // Check for cors({...}) call
-        if (isStandaloneCorsCall(node) || isAppUseCors(node)) {
+        if (
+          isStandaloneCorsCall(node, corsNames) ||
+          isAppUseCors(node, corsNames)
+        ) {
           let corsConfigNode: TSESTree.ObjectExpression | null = null;
 
           // Get the config object
           if (
-            isStandaloneCorsCall(node) &&
+            isStandaloneCorsCall(node, corsNames) &&
             node.arguments[0]?.type === 'ObjectExpression'
           ) {
             corsConfigNode = node.arguments[0];
-          } else if (isAppUseCors(node)) {
+          } else if (isAppUseCors(node, corsNames)) {
             const corsCall = node.arguments[0] as TSESTree.CallExpression;
             if (corsCall.arguments[0]?.type === 'ObjectExpression') {
               corsConfigNode = corsCall.arguments[0];
@@ -271,7 +296,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
           // Handle both standalone cors() and app.use(cors())
           let corsCallNode: TSESTree.CallExpression | null = null;
 
-          if (isStandaloneCorsCall(node)) {
+          if (isStandaloneCorsCall(node, corsNames)) {
             corsCallNode = node;
           } else {
             // Guaranteed app.use(cors(...)) by the isAppUseCors guard above
@@ -279,6 +304,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
           }
 
           if (corsCallNode && corsCallNode.arguments.length === 0) {
+            if (wildcardAllowed) return;
             context.report({
               node: corsCallNode,
               messageId: 'permissiveCors',
@@ -290,13 +316,13 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
           }
 
           if (corsConfigNode) {
-            const { isPermissive, reason } = isPermissiveCorsConfig(
+            const { isPermissive, reason, wildcard } = isPermissiveCorsConfig(
               corsConfigNode,
               sourceCode,
               { allowOriginTrue } as Options,
             );
 
-            if (isPermissive) {
+            if (isPermissive && !(wildcardAllowed && wildcard)) {
               context.report({
                 node: corsConfigNode,
                 messageId: 'permissiveCors',
