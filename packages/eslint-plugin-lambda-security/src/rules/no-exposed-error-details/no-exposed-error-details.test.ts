@@ -93,6 +93,40 @@ ruleTester.run('no-exposed-error-details', noExposedErrorDetails, {
         }
       `,
     },
+    {
+      name: 'a CloudFormation stack name is the application data, not a trace',
+      code: `
+        export const handler = async (event) => {
+          const deployment = await describe();
+          return { statusCode: 200, body: JSON.stringify({ stack: deployment.stack }) };
+        };
+      `,
+    },
+    {
+      name: 'serializing a domain object is not serializing the error',
+      code: `
+        export const handler = async (event) => {
+          const order = await load(event);
+          return { statusCode: 200, body: JSON.stringify(order) };
+        };
+      `,
+    },
+    {
+      name: 'serializing an undeclared payload',
+      code: `export const handler = async () => ({ statusCode: 200, body: JSON.stringify(payload) });`,
+    },
+    {
+      name: 'an empty JSON.stringify call',
+      code: `export const handler = async () => ({ statusCode: 200, body: JSON.stringify() });`,
+    },
+    {
+      name: 'a computed lookup and a computed key in the body',
+      code: `export const handler = async (event) => ({ statusCode: 200, [field]: 1, body: JSON.stringify({ [name]: labels[key] }) });`,
+    },
+    {
+      name: 'an object without a response shape',
+      code: `const meta = { stack: error.stack };`,
+    },
     // Test file (allowed)
     {
       code: `
@@ -104,6 +138,58 @@ ruleTester.run('no-exposed-error-details', noExposedErrorDetails, {
     },
   ]),
   invalid: lambda([
+    {
+      name: 'the deployment directory in the response body',
+      code: `
+        export const handler = async (event) => {
+          return { statusCode: 500, body: JSON.stringify({ path: __dirname, file: __filename }) };
+        };
+      `,
+      errors: [
+        { messageId: 'exposedErrorDetails' },
+        { messageId: 'exposedErrorDetails' },
+      ],
+    },
+    {
+      name: 'a response built in a variable before it is returned',
+      code: `
+        export const handler = async (event) => {
+          try {
+            await riskyOperation();
+          } catch (error) {
+            const response = { statusCode: 500, body: JSON.stringify({ stack: error.stack }) };
+            return response;
+          }
+        };
+      `,
+      errors: [{ messageId: 'exposedErrorDetails' }],
+    },
+    {
+      name: 'a response handed to the Lambda callback',
+      code: `
+        export const handler = (event, context, callback) => {
+          try {
+            riskyOperation();
+          } catch (error) {
+            callback(null, { statusCode: 500, body: JSON.stringify(error) });
+          }
+        };
+      `,
+      errors: [{ messageId: 'exposedErrorDetails' }],
+    },
+    {
+      name: 'a caught error under a name that does not say error',
+      code: `
+        export const handler = async (event) => {
+          try {
+            await riskyOperation();
+          } catch (failure) {
+            return { 'statusCode': 500, body: failure['stack'] };
+          }
+        };
+      `,
+      errors: [{ messageId: 'exposedErrorDetails' }],
+    },
     // Exposed stack trace
     {
       name: 'the stack trace goes back to the caller in the response body',

@@ -25,6 +25,7 @@ import {
   MessageIcons,
   isTestFilePath,
   namesOneOf,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -120,6 +121,35 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
     let hasBatchSizeCheck: boolean;
     let batchAccessNodes: { node: TSESTree.Node; source: string }[];
     let eventParamName: string[];
+    /** Locals destructured out of the event: `const { Records } = event`. */
+    let batchAliases: Set<string>;
+    let maxBatchSize: number;
+
+    /** `event.Records`, `event['Records']`, or a `Records` destructured from it. */
+    function isBatch(node: TSESTree.Node): boolean {
+      if (node.type === AST_NODE_TYPES.Identifier) {
+        return batchAliases.has(node.name);
+      }
+      return (
+        node.type === AST_NODE_TYPES.MemberExpression &&
+        node.object.type === AST_NODE_TYPES.Identifier &&
+        eventParamName.includes(node.object.name) &&
+        namesOneOf(propertyName(node), BATCH_SOURCE_PROPERTIES)
+      );
+    }
+
+    /**
+     * Whether `limit` bounds the batch: anything but a literal above
+     * `maxBatchSize`. `if (event.Records.length > 10000)` lets ten thousand
+     * records through, which is the unbounded case with a check written on it.
+     */
+    function bounds(limit: TSESTree.Node | undefined): boolean {
+      return !(
+        limit?.type === AST_NODE_TYPES.Literal &&
+        typeof limit.value === 'number' &&
+        limit.value > maxBatchSize
+      );
+    }
 
     function enterFunction(
       node:
@@ -181,6 +211,7 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
         );
 
         const { allowInTests = true } = options as Options;
+        ({ maxBatchSize } = { maxBatchSize: 100, ...options });
         const filename = context.filename;
         const isTestFile = isTestFilePath(filename);
 
@@ -193,6 +224,7 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
         hasBatchSizeCheck = false;
         batchAccessNodes = [];
         eventParamName = [];
+        batchAliases = new Set();
         return true;
       },
       'ArrowFunctionExpression, FunctionExpression, FunctionDeclaration'(
@@ -217,67 +249,81 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
       // Detect event.Records access
       MemberExpression(node: TSESTree.MemberExpression) {
         if (!currentHandlerNode) return;
-
-        // event.Records — resolved once, so the recorded source string is
-        // built from the name the membership test already accepted.
-        const batchProperty = propertyName(node);
-        if (
-          node.object.type === AST_NODE_TYPES.Identifier &&
-          eventParamName.includes(node.object.name) &&
-          batchProperty !== null &&
-          BATCH_SOURCE_PROPERTIES.has(batchProperty)
-        ) {
+        if (isBatch(node)) {
           batchAccessNodes.push({
             node,
-            source: `${node.object.name}.${batchProperty}`,
+            source: `${(node.object as TSESTree.Identifier).name}.${propertyName(node)}`,
           });
         }
+      },
 
-        // Check for .length access (indicates size check)
-        if (propertyName(node) === 'length') {
-          // Check if this is Records.length
+      // const { Records } = event
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        if (
+          !currentHandlerNode ||
+          node.id.type !== AST_NODE_TYPES.ObjectPattern ||
+          node.init?.type !== AST_NODE_TYPES.Identifier ||
+          !eventParamName.includes(node.init.name)
+        ) {
+          return;
+        }
+        for (const prop of node.id.properties) {
           if (
-            node.object.type === AST_NODE_TYPES.MemberExpression &&
-            namesOneOf(propertyName(node.object), BATCH_SOURCE_PROPERTIES)
+            prop.type === AST_NODE_TYPES.Property &&
+            prop.value.type === AST_NODE_TYPES.Identifier &&
+            namesOneOf(objectKeyName(prop), BATCH_SOURCE_PROPERTIES)
           ) {
-            hasBatchSizeCheck = true;
+            batchAliases.add(prop.value.name);
+            batchAccessNodes.push({
+              node: prop,
+              source: `${node.init.name}.${objectKeyName(prop)}`,
+            });
           }
         }
       },
 
-      // Detect slice/splice (limiting)
+      // Detect slice/splice/take/chunk limiting THE BATCH — `id.slice(0, 8)`
+      // on a message id bounds nothing.
       CallExpression(node: TSESTree.CallExpression) {
         if (!currentHandlerNode) return;
-
+        const callee = node.callee;
+        // event.Records.slice(0, n), .splice(0, n), .take(n)
         if (
-          node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          ['slice', 'splice', 'take', 'chunk'].includes(
-            node.callee.property.name,
-          )
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          isBatch(callee.object)
         ) {
-          hasBatchSizeCheck = true;
+          const method = propertyName(callee);
+          if (method === 'slice' || method === 'splice') {
+            hasBatchSizeCheck ||= bounds(node.arguments[1]);
+          } else if (method === 'take') {
+            hasBatchSizeCheck ||= bounds(node.arguments[0]);
+          }
         }
-
-        // Also detect top-level function calls: chunk(arr, n), take(arr, n)
+        // chunk(event.Records, n), take(event.Records, n)
         if (
-          node.callee.type === AST_NODE_TYPES.Identifier &&
-          ['slice', 'splice', 'take', 'chunk'].includes(node.callee.name)
+          callee.type === AST_NODE_TYPES.Identifier &&
+          ['take', 'chunk'].includes(callee.name) &&
+          node.arguments.length > 0 &&
+          isBatch(node.arguments[0])
         ) {
-          hasBatchSizeCheck = true;
+          hasBatchSizeCheck ||= bounds(node.arguments[1]);
         }
       },
 
-      // Detect size comparisons
+      // Detect size comparisons on the batch's own length
       BinaryExpression(node: TSESTree.BinaryExpression) {
         if (!currentHandlerNode) return;
-
-        if (['<', '<=', '>', '>='].includes(node.operator)) {
-          const sourceCode = context.sourceCode;
-          const text = sourceCode.getText(node);
-
-          if (/\.length|Records|records/.test(text)) {
-            hasBatchSizeCheck = true;
+        if (!['<', '<=', '>', '>='].includes(node.operator)) return;
+        for (const [side, other] of [
+          [node.left, node.right],
+          [node.right, node.left],
+        ]) {
+          if (
+            side.type === AST_NODE_TYPES.MemberExpression &&
+            propertyName(side) === 'length' &&
+            isBatch(side.object)
+          ) {
+            hasBatchSizeCheck ||= bounds(other);
           }
         }
       },

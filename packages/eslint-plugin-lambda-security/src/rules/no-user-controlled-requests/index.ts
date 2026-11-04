@@ -21,6 +21,7 @@ import {
   MessageIcons,
   isTestFilePath,
   namesOneOf,
+  memberPath,
   memberPropertyName,
   propertyName,
 } from '@interlace/eslint-devkit';
@@ -175,10 +176,31 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
      * Get taint source from an expression
      */
     function getTaintSource(node: TSESTree.Node): string | null {
-      // Direct event property access
+      // Direct event property access, or a field of a tainted value:
+      // `body.webhookUrl` after `const body = JSON.parse(event.body)`.
       if (node.type === AST_NODE_TYPES.MemberExpression) {
-        const source = getEventInputSource(node);
-        if (source) return source;
+        return getEventInputSource(node) ?? getTaintSource(node.object);
+      }
+
+      // JSON.parse(event.body) — the docs' own first example. Parsing changes
+      // the representation, not who chose the content.
+      if (
+        node.type === AST_NODE_TYPES.CallExpression &&
+        memberPath(node.callee)?.join('.') === 'JSON.parse' &&
+        node.arguments.length > 0
+      ) {
+        return getTaintSource(node.arguments[0]);
+      }
+
+      // event.body ?? '{}', event.body as string
+      if (node.type === AST_NODE_TYPES.LogicalExpression) {
+        return getTaintSource(node.left) ?? getTaintSource(node.right);
+      }
+      if (
+        node.type === AST_NODE_TYPES.TSAsExpression ||
+        node.type === AST_NODE_TYPES.TSNonNullExpression
+      ) {
+        return getTaintSource(node.expression);
       }
 
       // Variable that was previously tainted
@@ -321,10 +343,20 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
 
       // Track variable assignments that contain user input
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        if (node.id.type === AST_NODE_TYPES.Identifier && node.init) {
-          const source = getTaintSource(node.init);
-          if (source) {
-            taintedVariables.set(node.id.name, source);
+        const source = node.init ? getTaintSource(node.init) : null;
+        if (!source) return;
+        if (node.id.type === AST_NODE_TYPES.Identifier) {
+          taintedVariables.set(node.id.name, source);
+        }
+        // const { url } = event.queryStringParameters
+        if (node.id.type === AST_NODE_TYPES.ObjectPattern) {
+          for (const prop of node.id.properties) {
+            if (
+              prop.type === AST_NODE_TYPES.Property &&
+              prop.value.type === AST_NODE_TYPES.Identifier
+            ) {
+              taintedVariables.set(prop.value.name, source);
+            }
           }
         }
       },

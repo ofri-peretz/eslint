@@ -127,6 +127,10 @@ ruleTester.run('no-error-swallowing', noErrorSwallowing, {
       `,
     },
     {
+      name: 'returning the Lambda callback with the error propagates it',
+      code: `try { risky(); } catch (error) { return callback(error); }`,
+    },
+    {
       name: 'node-style callback is propagation',
       code: `try { risky(); } catch (error) { callback(error); }`,
     },
@@ -396,6 +400,19 @@ ruleTester.run('no-error-swallowing', noErrorSwallowing, {
     {
       name: 'forwarding something other than the caught error',
       code: `try { risky(); } catch (err) { next(previousFailure); }`,
+      errors: [{ messageId: 'emptyCatchBlock' }],
+    },
+    // `return callback(...)` is a call, not a fallback value: whether it
+    // handles the error is the forwarding question, not the return one. The
+    // Lambda callback with a null error is the runtime's success path.
+    {
+      name: 'returning the Lambda callback with success swallows the error',
+      code: `try { risky(); } catch (error) { return callback(null, { statusCode: 200 }); }`,
+      errors: [{ messageId: 'emptyCatchBlock' }],
+    },
+    {
+      name: 'returning next() with no argument discards the error',
+      code: `try { risky(); } catch (err) { return next(); }`,
       errors: [{ messageId: 'emptyCatchBlock' }],
     },
     // An omitted catch binding has nothing to forward.

@@ -26,6 +26,7 @@ import {
   MessageIcons,
   isTestFilePath,
   namesOneOf,
+  memberPath,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -55,6 +56,9 @@ type RuleOptions = [Options?];
 // Lambda context parameter names
 
 // Event parameter names (to identify Lambda handlers)
+
+/** HTTP client modules whose every method is a network call. */
+const HTTP_CLIENTS = new Set(['axios', 'got', 'superagent', 'http', 'https']);
 
 // External call patterns that could timeout
 const EXTERNAL_CALL_PATTERNS = new Set([
@@ -264,9 +268,18 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
         }
 
         if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
-          // `client['send'](cmd)` is the same external call.
-          if (namesOneOf(propertyName(node.callee), EXTERNAL_CALL_PATTERNS)) {
+          // `client['send'](cmd)` is the same external call — and so is any
+          // method of an HTTP client: `axios.get(url)`, `got.post(url)`.
+          if (
+            namesOneOf(propertyName(node.callee), EXTERNAL_CALL_PATTERNS) ||
+            (node.callee.object.type === AST_NODE_TYPES.Identifier &&
+              HTTP_CLIENTS.has(node.callee.object.name))
+          ) {
             hasExternalCalls = true;
+          }
+          // `AbortSignal.timeout(ms)`: the built-in timed abort signal.
+          if (memberPath(node.callee)?.join('.') === 'AbortSignal.timeout') {
+            hasTimeoutCheck = true;
           }
         }
 

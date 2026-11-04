@@ -118,6 +118,58 @@ ruleTester.run('no-hardcoded-credentials-sdk', noHardcodedCredentialsSdk, {
         });
       `,
     },
+    {
+      name: 'SDK v2 with LocalStack placeholder keys at the top level',
+      code: `
+        import AWS from 'aws-sdk';
+        const s3 = new AWS.S3({ endpoint: 'http://localhost:4566', accessKeyId: 'test', secretAccessKey: 'test' });
+      `,
+    },
+    {
+      name: 'SDK v2 credentials from the environment',
+      code: `
+        import AWS from 'aws-sdk';
+        AWS.config.update({ accessKeyId: process.env.KEY, secretAccessKey: process.env.SECRET });
+        AWS.config.credentials = new AWS.Credentials(process.env.KEY, process.env.SECRET);
+      `,
+    },
+    {
+      name: 'a config.update on something that is not the SDK',
+      code: `
+        import settings from './settings';
+        settings.config.update({ accessKeyId: 'AKIAIOSFODNN7EXAMPLE' });
+        other.config.update({ accessKeyId: 'AKIAIOSFODNN7EXAMPLE' });
+        AWS.config.update({ accessKeyId: 'AKIAIOSFODNN7EXAMPLE' });
+      `,
+    },
+    {
+      name: 'SDK v2 config.update with no options object',
+      code: `
+        import AWS from 'aws-sdk';
+        AWS.config.update(loadConfig());
+        AWS.config.set('region', 'us-east-1');
+      `,
+    },
+    {
+      name: 'a non-SDK class constructed off a member',
+      code: `
+        import * as http from './http';
+        const vendors = require('./vendors');
+        const fromCall = makeFactory();
+        const client = new http.ApiClient({ credentials: { accessKeyId: 'AKIAIOSFODNN7EXAMPLE', secretAccessKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' } });
+        const v = new vendors.Credentials('AKIAIOSFODNN7EXAMPLE', 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY');
+        const w = new fromCall.Credentials('AKIAIOSFODNN7EXAMPLE', 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY');
+        const x = new (getClass())({ accessKeyId: 'AKIAIOSFODNN7EXAMPLE' });
+        const y = new (getFactory()).Credentials('AKIAIOSFODNN7EXAMPLE', 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY');
+      `,
+    },
+    {
+      name: 'a class required from a computed specifier',
+      code: `
+        const { Credentials } = require(sdkName);
+        const c = new Credentials('AKIAIOSFODNN7EXAMPLE', 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY');
+      `,
+    },
     // ========== VALID: Non-AWS client (HttpClient) ==========
     {
       code: `
@@ -136,6 +188,85 @@ ruleTester.run('no-hardcoded-credentials-sdk', noHardcodedCredentialsSdk, {
     },
   ]),
   invalid: lambda([
+    {
+      name: 'credential keys spelled as quoted and computed keys',
+      code: `
+        const client = new S3Client({ credentials: { 'accessKeyId': 'AKIAIOSFODNN7EXAMPLE', ['secretAccessKey']: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY', [dynamic]: 'x' } });
+      `,
+      errors: [
+        { messageId: 'hardcodedCredentials' },
+        { messageId: 'hardcodedCredentials' },
+      ],
+    },
+    {
+      name: 'SDK v2 service client with the keys at the top level',
+      code: `
+        import AWS from 'aws-sdk';
+        const s3 = new AWS.S3({ accessKeyId: 'AKIAIOSFODNN7EXAMPLE', secretAccessKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' });
+      `,
+      errors: [
+        { messageId: 'hardcodedCredentials' },
+        { messageId: 'hardcodedCredentials' },
+      ],
+    },
+    {
+      name: 'SDK v2 DocumentClient required from aws-sdk',
+      code: `
+        const AWS = require('aws-sdk');
+        const db = new AWS.DynamoDB.DocumentClient({ credentials: { accessKeyId: 'AKIAIOSFODNN7EXAMPLE' } });
+      `,
+      errors: [{ messageId: 'hardcodedCredentials' }],
+    },
+    {
+      name: 'SDK v2 service picked by a computed name',
+      code: `
+        import AWS from 'aws-sdk';
+        const c = new AWS[service]({ accessKeyId: 'AKIAIOSFODNN7EXAMPLE' });
+      `,
+      errors: [{ messageId: 'hardcodedCredentials' }],
+    },
+    {
+      name: 'SDK v2 global config.update',
+      code: `
+        import AWS from 'aws-sdk';
+        AWS.config.update({ region: 'us-east-1', accessKeyId: 'AKIAIOSFODNN7EXAMPLE', secretAccessKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' });
+      `,
+      errors: [
+        { messageId: 'hardcodedCredentials' },
+        { messageId: 'hardcodedCredentials' },
+      ],
+    },
+    {
+      name: 'SDK v2 Credentials constructor takes the keys positionally',
+      code: `
+        import AWS from 'aws-sdk';
+        AWS.config.credentials = new AWS.Credentials('AKIAIOSFODNN7EXAMPLE', 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY', 'EXAMPLE-SESSION-TOKEN');
+      `,
+      errors: [
+        { messageId: 'hardcodedCredentials' },
+        { messageId: 'hardcodedCredentials' },
+        { messageId: 'hardcodedCredentials' },
+      ],
+    },
+    {
+      name: 'a renamed v3 client import',
+      code: `
+        import { S3Client as Storage } from '@aws-sdk/client-s3';
+        const client = new Storage({ credentials: { accessKeyId: 'AKIAIOSFODNN7EXAMPLE', awsSecretAccessKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' } });
+      `,
+      errors: [
+        { messageId: 'hardcodedCredentials' },
+        { messageId: 'hardcodedCredentials' },
+      ],
+    },
+    {
+      name: 'a v3 client through a namespace import',
+      code: `
+        import * as s3 from '@aws-sdk/client-s3';
+        const client = new s3.S3Client({ credentials: { awsAccessKeyId: 'AKIAIOSFODNN7EXAMPLE' } });
+      `,
+      errors: [{ messageId: 'hardcodedCredentials' }],
+    },
     // ========== INVALID: Real AWS access key pattern ==========
     {
       name: 'an access key pair written into the client construction',

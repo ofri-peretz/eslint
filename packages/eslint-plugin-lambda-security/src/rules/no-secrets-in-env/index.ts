@@ -19,6 +19,8 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  namesOneOf,
+  objectKeyName,
   staticString,
   propertyName,
 } from '@interlace/eslint-devkit';
@@ -52,6 +54,13 @@ const SECRET_PATTERNS = [
   /client[_-]?secret/i,
   /aws[_-]?secret/i,
 ];
+
+/**
+ * Keys an environment-variable map is declared under: CDK and Serverless
+ * `environment`, the Lambda API's `Environment.Variables`.
+ */
+// @vocabulary AWS Lambda / CDK / Serverless Framework environment keys
+const ENVIRONMENT_KEYS = ['environment', 'Environment', 'Variables'];
 
 export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
   name: 'no-secrets-in-env',
@@ -115,13 +124,47 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
       // Literal strings with reasonable length could be secrets
       const staticText = staticString(node);
       if (staticText !== null) {
-        return staticText.length > 5;
+        return staticText.length > 5 && !isReference(staticText);
       }
       // Template literals with string parts
       if (node.type === AST_NODE_TYPES.TemplateLiteral) {
-        return node.quasis.some((quasi) => quasi.value.raw.length > 5);
+        return (
+          !isReference(node.quasis[0].value.raw) &&
+          node.quasis.some((quasi) => quasi.value.raw.length > 5)
+        );
       }
       return false;
+    }
+
+    /**
+     * Whether a value points AT the secret rather than being it — the fix the
+     * docs prescribe: a Secrets Manager / SSM ARN, or an SSM parameter path.
+     * `DB_SECRET_ARN: 'arn:aws:secretsmanager:…'` was reported for having
+     * "secret" in its name.
+     */
+    function isReference(text: string): boolean {
+      return text.startsWith('arn:') || text.startsWith('/');
+    }
+
+    /**
+     * Whether an object property defines a Lambda environment variable:
+     * CDK / Serverless `environment: {…}`, the SDK's
+     * `Environment: { Variables: {…} }`, or a `const env = {…}` /
+     * `config` / `settings` object.
+     */
+    function inEnvironment(node: TSESTree.Property): boolean {
+      const holder = node.parent.parent;
+      if (
+        holder.type === AST_NODE_TYPES.Property &&
+        namesOneOf(objectKeyName(holder), ENVIRONMENT_KEYS)
+      ) {
+        return true;
+      }
+      return (
+        holder.type === AST_NODE_TYPES.VariableDeclarator &&
+        holder.id.type === AST_NODE_TYPES.Identifier &&
+        /env|config|settings/i.test(holder.id.name)
+      );
     }
 
     return {
@@ -183,28 +226,16 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
           propName = staticString(node.key) ?? '';
         }
 
-        if (isSecretName(propName) && isHardcodedSecretValue(node.value)) {
-          // Check if this is in an environment/config context
-          let parent: TSESTree.Node | undefined = node.parent;
-          while (parent) {
-            if (parent.type === AST_NODE_TYPES.ObjectExpression) {
-              parent = parent.parent;
-              continue;
-            }
-            if (
-              parent.type === AST_NODE_TYPES.VariableDeclarator &&
-              parent.id.type === AST_NODE_TYPES.Identifier &&
-              /env|config|settings/i.test(parent.id.name)
-            ) {
-              context.report({
-                node,
-                messageId: 'secretsInEnv',
-                data: { varName: propName },
-              });
-              break;
-            }
-            break;
-          }
+        if (
+          isSecretName(propName) &&
+          isHardcodedSecretValue(node.value) &&
+          inEnvironment(node)
+        ) {
+          context.report({
+            node,
+            messageId: 'secretsInEnv',
+            data: { varName: propName },
+          });
         }
       },
     };

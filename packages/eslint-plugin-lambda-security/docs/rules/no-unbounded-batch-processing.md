@@ -43,7 +43,9 @@ Detects Lambda handlers processing batch records (SQS, SNS, DynamoDB Streams) wi
 
 ## Rule Details
 
-This rule detects access to `event.Records` (and similar batch properties) without accompanying size validation like `.length` checks or `.slice()` limiting.
+This rule detects access to `event.Records` (and similar batch properties, read directly, by subscript or destructured) without size validation of **the batch itself**: a `Records.length` check against a limit, or `Records.slice(0, n)` limiting. A `.length` check or `.slice()` on anything else — a message id, a tenant string — bounds nothing.
+
+A literal limit above `maxBatchSize` does not bound the batch either: with the default of 100, `if (event.Records.length > 10000)` lets ten thousand records through.
 
 ## Why This Matters
 

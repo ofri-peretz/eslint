@@ -44,7 +44,8 @@ This rule detects Lambda handlers that:
 
 1. Have a `context` parameter (Lambda context object)
 2. Make external calls (fetch, axios, SDK operations, database queries)
-3. Do NOT use `context.getRemainingTimeInMillis()` or `AbortController`
+3. Do NOT use `context.getRemainingTimeInMillis()`, an `AbortController`,
+   `AbortSignal.timeout(ms)` or `Promise.race`
 
 ## Configuration
 

@@ -44,6 +44,7 @@ const PLUGINS = [
   'mongodb-security',
   'express-security',
   'mcp-sdk-security',
+  'lambda-security',
 ];
 
 const loadPlugin = (short) => {

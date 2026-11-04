@@ -48,8 +48,13 @@ Detects logging of `process.env` which may expose API keys, passwords, and token
 This rule detects:
 
 - `console.log(process.env)` - logging entire env object
-- `JSON.stringify(process.env)` - serializing all env vars
-- Template literals containing `process.env`
+- `JSON.stringify(process.env)` / `Object.entries(process.env)` - serializing all env vars
+- `{ env: process.env }` / `{ ...process.env }` - the whole object inside a structured log payload
+
+Logging one named variable (`process.env.AWS_REGION`) or only the names
+(`Object.keys(process.env)`) is allowed. A bare `process.env` in a template literal
+or string concatenation is coerced to `"[object Object]"` and prints nothing, so it is
+not reported; serializing it there (`${JSON.stringify(process.env)}`) is.
 
 ## Why This Matters
 
@@ -86,7 +91,7 @@ export const handler = async (event) => {
 
   console.log('Config:', JSON.stringify(process.env)); // ❌ Same issue
 
-  console.log(`Starting with env: ${process.env}`); // ❌ Template literal
+  console.log(`Starting with env: ${JSON.stringify(process.env)}`); // ❌ Serialized into the message
 
   // Debugging that exposes secrets
   logger.debug({ env: process.env }); // ❌ Structured log with secrets

@@ -20,6 +20,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  memberPath,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -34,15 +35,19 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
-// Property accesses that indicate authorization checks
-const AUTHORIZATION_CHECK_PATTERNS = [
-  // API Gateway authorizer
-  'requestContext.authorizer',
-  'requestContext.identity',
-  // JWT/Token validation
-  'Authorization',
-  'authorization',
-  // Common auth checks
+/**
+ * Where an authorizer's verdict lives on the event, or the credential a
+ * handler verifies itself: `requestContext.authorizer` (Cognito, JWT, Lambda
+ * authorizers), the `Authorization` header.
+ */
+const AUTHORIZATION_SEGMENTS = new Set(['authorizer', 'authorization']);
+
+/**
+ * Identity fields, read off whatever established the caller (`claims.sub`,
+ * `user.isAdmin`). Matched as the WHOLE property name: the previous
+ * substring test took `body.subject` for `sub` and `submit` for an auth check.
+ */
+const IDENTITY_FIELDS = new Set([
   'claims',
   'principalId',
   'isAdmin',
@@ -51,7 +56,20 @@ const AUTHORIZATION_CHECK_PATTERNS = [
   'sub',
   'scope',
   'permissions',
-];
+]);
+
+/**
+ * Event properties the CLIENT writes. An identity field read out of these —
+ * `event.pathParameters.userId`, `body.userId` — is the caller's claim about
+ * itself, the very thing authorization exists to check.
+ */
+// @vocabulary AWS API Gateway proxy event: client-supplied fields
+const CLIENT_INPUT = new Set([
+  'body',
+  'pathParameters',
+  'queryStringParameters',
+  'multiValueQueryStringParameters',
+]);
 
 // Sensitive operations that require authorization
 const SENSITIVE_OPERATIONS = new Set([
@@ -213,13 +231,22 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
      * Check if a member expression chain indicates auth check
      */
     function isAuthorizationAccess(node: TSESTree.MemberExpression): boolean {
-      const sourceCode = context.sourceCode;
-      const text = sourceCode.getText(node);
-
-      return AUTHORIZATION_CHECK_PATTERNS.some(
-        (pattern) =>
-          text.includes(pattern) ||
-          text.toLowerCase().includes(pattern.toLowerCase()),
+      const path = memberPath(node);
+      if (path === null) return false;
+      if (path.some((p) => AUTHORIZATION_SEGMENTS.has(p.toLowerCase()))) {
+        return true;
+      }
+      // IAM authorization: `event.requestContext.identity.userArn`.
+      if (
+        path.some(
+          (p, i) => p === 'requestContext' && path[i + 1] === 'identity',
+        )
+      ) {
+        return true;
+      }
+      return (
+        IDENTITY_FIELDS.has(path[path.length - 1]) &&
+        !path.some((p) => CLIENT_INPUT.has(p))
       );
     }
 
@@ -282,11 +309,19 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
         // Registering no visitors is both the gate and the cheap path.
         if (!fileIsLambda(context.sourceCode.ast)) return false;
 
-        const { allowInTests = true } = options as Options;
+        const { allowInTests = true, handlerPatterns = [] } =
+          options as Options;
         const filename = context.filename;
         const isTestFile = isTestFilePath(filename);
 
         if (allowInTests && isTestFile) {
+          return false;
+        }
+        // Set, the option limits the rule to the handler files it names.
+        if (
+          handlerPatterns.length > 0 &&
+          !handlerPatterns.some((pattern) => filename.includes(pattern))
+        ) {
           return false;
         }
 

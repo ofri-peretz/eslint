@@ -20,6 +20,8 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  namesOneOf,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -38,13 +40,20 @@ const SENSITIVE_ERROR_PROPERTIES = new Set([
   'stackTrace',
   'trace',
   'cause',
-  '__dirname',
-  '__filename',
   'path',
   'hostname',
   'config',
   'env',
 ]);
+
+/** Node's module-scope paths: where the function is deployed. */
+const DEPLOYMENT_PATHS = new Set(['__dirname', '__filename']);
+
+/**
+ * Names that hold an error when nothing binds them to a `catch`: a helper's
+ * `(error)` parameter, a `.catch((err) => …)` callback.
+ */
+const ERROR_NAME = /^(e|ex|err|error|exception)$|Error$/;
 
 export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
   name: 'no-exposed-error-details',
@@ -89,33 +98,108 @@ export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     currentOptions,
   ) {
-    let insideApiResponse: boolean;
-
     /**
-     * Check if this return looks like an API Gateway response
+     * Whether an object literal is a Lambda proxy-integration response.
+     *
+     * Wherever it is written — returned, built in a variable first, or handed
+     * to the Lambda `callback` — it is what API Gateway sends to the caller.
+     * The rule previously looked only inside a `return` statement.
      */
     function isApiResponse(node: TSESTree.ObjectExpression): boolean {
       return node.properties.some(
         (prop) =>
           prop.type === AST_NODE_TYPES.Property &&
-          prop.key.type === AST_NODE_TYPES.Identifier &&
           // @vocabulary AWS Lambda proxy-integration response shape
-          ['statusCode', 'body', 'headers'].includes(prop.key.name),
+          namesOneOf(objectKeyName(prop), ['statusCode', 'body', 'headers']),
       );
     }
 
+    function resolve(id: TSESTree.Identifier) {
+      for (
+        let scope: TSESLint.Scope.Scope | null =
+          context.sourceCode.getScope(id);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.set.get(id.name);
+        if (variable) return variable;
+      }
+      return undefined;
+    }
+
     /**
-     * Check if member expression accesses sensitive property
+     * Whether an expression is the caught error — bound by a `catch` clause,
+     * or named as one. A `deployment.stack` or `JSON.stringify(order)` is the
+     * application's own data: the previous name test, `/error|err|e|exception/i`,
+     * matched any identifier containing an `e`.
      */
-    function getSensitiveProperty(
-      node: TSESTree.MemberExpression,
-    ): string | null {
-      // `error['stack']` exposes the same trace `error.stack` exposes.
-      const field = propertyName(node);
-      if (field !== null && SENSITIVE_ERROR_PROPERTIES.has(field)) {
-        return field;
+    function isError(node: TSESTree.Node): boolean {
+      if (node.type !== AST_NODE_TYPES.Identifier) return false;
+      const variable = resolve(node);
+      return (
+        ERROR_NAME.test(node.name) ||
+        (variable?.defs.some((d) => d.type === 'CatchClause') ?? false)
+      );
+    }
+
+    /** What, if anything, this node discloses: a property name or a label. */
+    function disclosure(node: TSESTree.Node): string | null {
+      if (node.type === AST_NODE_TYPES.MemberExpression) {
+        // `error['stack']` exposes the same trace `error.stack` exposes.
+        const field = propertyName(node);
+        return field !== null &&
+          SENSITIVE_ERROR_PROPERTIES.has(field) &&
+          isError(node.object)
+          ? field
+          : null;
+      }
+      if (node.type === AST_NODE_TYPES.Identifier) {
+        // `__dirname` is the module's own location on disk — and so is the
+        // ESM `const __dirname = dirname(fileURLToPath(import.meta.url))`.
+        return DEPLOYMENT_PATHS.has(node.name) ? node.name : null;
+      }
+      if (
+        node.type === AST_NODE_TYPES.CallExpression &&
+        node.callee.type === AST_NODE_TYPES.MemberExpression &&
+        node.callee.object.type === AST_NODE_TYPES.Identifier &&
+        node.callee.object.name === 'JSON' &&
+        propertyName(node.callee) === 'stringify' &&
+        node.arguments.length > 0 &&
+        isError(node.arguments[0])
+      ) {
+        return 'error object';
       }
       return null;
+    }
+
+    /** Report every disclosure in a response's property values. */
+    function scan(node: TSESTree.Node): void {
+      const property = disclosure(node);
+      if (property !== null) {
+        context.report({
+          node,
+          messageId: 'exposedErrorDetails',
+          data: { property },
+        });
+        return;
+      }
+      for (const key of Object.keys(node)) {
+        if (key === 'parent') continue;
+        // A non-computed key or member property names something; it is not
+        // a value that reaches the response.
+        if (
+          (key === 'key' || key === 'property') &&
+          !(node as { computed?: boolean }).computed
+        ) {
+          continue;
+        }
+        const value = (node as unknown as Record<string, unknown>)[key];
+        for (const child of Array.isArray(value) ? value : [value]) {
+          if (child && typeof (child as TSESTree.Node).type === 'string') {
+            scan(child as TSESTree.Node);
+          }
+        }
+      }
     }
 
     return {
@@ -134,71 +218,11 @@ export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
           return false;
         }
 
-        // Track if we're inside a return statement that looks like API response
-        insideApiResponse = false;
         return true;
       },
-      ReturnStatement(node: TSESTree.ReturnStatement) {
-        if (
-          node.argument?.type === AST_NODE_TYPES.ObjectExpression &&
-          isApiResponse(node.argument)
-        ) {
-          insideApiResponse = true;
-        }
-      },
-
-      'ReturnStatement:exit'() {
-        insideApiResponse = false;
-      },
-
-      MemberExpression(node: TSESTree.MemberExpression) {
-        if (!insideApiResponse) return;
-
-        const sensitiveProperty = getSensitiveProperty(node);
-        if (sensitiveProperty) {
-          // Check if this is in a body property or response
-          const parent = node.parent;
-
-          // error.stack in response
-          if (
-            parent?.type === AST_NODE_TYPES.Property ||
-            parent?.type === AST_NODE_TYPES.CallExpression
-          ) {
-            context.report({
-              node,
-              messageId: 'exposedErrorDetails',
-              data: {
-                property: sensitiveProperty,
-              },
-            });
-          }
-        }
-      },
-
-      // JSON.stringify(error) - stringifying entire error object
-      CallExpression(node: TSESTree.CallExpression) {
-        if (!insideApiResponse) return;
-
-        if (
-          node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.object.type === AST_NODE_TYPES.Identifier &&
-          node.callee.object.name === 'JSON' &&
-          propertyName(node.callee) === 'stringify'
-        ) {
-          const arg = node.arguments[0];
-          if (arg?.type === AST_NODE_TYPES.Identifier) {
-            // Check if it looks like an error variable
-            if (/error|err|e|exception/i.test(arg.name)) {
-              context.report({
-                node,
-                messageId: 'exposedErrorDetails',
-                data: {
-                  property: 'error object',
-                },
-              });
-            }
-          }
-        }
+      ObjectExpression(node: TSESTree.ObjectExpression) {
+        if (!isApiResponse(node)) return;
+        for (const prop of node.properties) scan(prop);
       },
     };
   },

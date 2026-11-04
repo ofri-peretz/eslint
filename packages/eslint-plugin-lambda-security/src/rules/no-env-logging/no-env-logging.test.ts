@@ -16,7 +16,7 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const lambda = <T,>(cases: T[]): T[] =>
+const lambda = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asLambda(c) as T;
     const test = c as Case;
@@ -26,7 +26,9 @@ const lambda = <T,>(cases: T[]): T[] =>
       // Autofix and suggestion fixtures assert the WHOLE file back, so every
       // `output` needs the same prefix or each fixable rule fails on the header
       // alone — including the ones nested under errors[].suggestions[].
-      ...(typeof test.output === 'string' ? { output: asLambda(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asLambda(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -45,7 +47,6 @@ const lambda = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester();
 
@@ -85,6 +86,31 @@ ruleTester.run('no-env-logging', noEnvLogging, {
     {
       code: `console.log(JSON.stringify({ config }));`,
     },
+    // ========== VALID: What reaches the log holds no value ==========
+    {
+      name: 'the list of variable names carries no secret values',
+      code: `console.log('Environment:', Object.keys(process.env));`,
+    },
+    {
+      name: 'a template literal coerces the object to "[object Object]"',
+      code: 'console.log(`Starting with env: ${process.env}`);',
+    },
+    {
+      name: 'string concatenation coerces the object the same way',
+      code: `console.log('env: ' + process.env);`,
+    },
+    {
+      name: 'a named variable inside a structured payload',
+      code: `logger.debug('Config', { region: process.env.AWS_REGION, tags: [process.env.STAGE] });`,
+    },
+    {
+      name: 'a computed console method that is not a logging method',
+      code: `console['table'](process.env);`,
+    },
+    {
+      name: 'a non-logging call nested in a payload',
+      code: `console.log('Config', loadConfig(process.env));`,
+    },
   ]),
   invalid: lambda([
     // ========== INVALID: Direct process.env logging ==========
@@ -113,6 +139,67 @@ ruleTester.run('no-env-logging', noEnvLogging, {
     },
     {
       code: `log.debug(process.env);`,
+      errors: [{ messageId: 'envLogging' }],
+    },
+    // ========== INVALID: The whole object nested in what is logged ==========
+    {
+      name: 'the environment as a property of a structured log payload',
+      code: `logger.debug('Environment', { env: process.env });`,
+      errors: [{ messageId: 'envLogging' }],
+    },
+    {
+      name: 'the environment spread into a structured log payload',
+      code: `console.log('Environment:', { ...process.env });`,
+      errors: [{ messageId: 'envLogging' }],
+    },
+    {
+      name: 'the environment inside an array argument',
+      code: `console.log(['env', process.env]);`,
+      errors: [{ messageId: 'envLogging' }],
+    },
+    {
+      name: 'every entry of the environment',
+      code: `console.log(Object.entries(process.env));`,
+      errors: [{ messageId: 'envLogging' }],
+    },
+    {
+      name: 'a serialized environment concatenated into the message',
+      code: `console.log('env: ' + JSON.stringify(process.env, null, 2));`,
+      errors: [{ messageId: 'envLogging' }],
+    },
+    {
+      name: 'a serialized environment interpolated into the message',
+      code: 'console.log(`env: ${JSON.stringify(process.env)}`);',
+      errors: [{ messageId: 'envLogging' }],
+    },
+    {
+      name: 'a fallback that may log the whole environment',
+      code: `console.log(debug ? process.env : {});`,
+      errors: [{ messageId: 'envLogging' }],
+    },
+    {
+      name: 'the environment on the else branch of a fallback',
+      code: `console.log(redact ? {} : process.env);`,
+      errors: [{ messageId: 'envLogging' }],
+    },
+    {
+      name: 'a default that may log the whole environment',
+      code: `console.log(overrides ?? process.env);`,
+      errors: [{ messageId: 'envLogging' }],
+    },
+    {
+      name: 'a cast does not change what is logged',
+      code: `console.log(process.env as Record<string, string>);`,
+      errors: [{ messageId: 'envLogging' }],
+    },
+    {
+      name: 'console method spelled as a string subscript',
+      code: `console['log']('Environment:', process.env);`,
+      errors: [{ messageId: 'envLogging' }],
+    },
+    {
+      name: 'process.env spelled as a string subscript',
+      code: `console.log(process['env']);`,
       errors: [{ messageId: 'envLogging' }],
     },
     // ========== INVALID: Test file with allowInTests: false ==========

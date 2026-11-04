@@ -26,7 +26,22 @@ This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/pac
 
 ## Rule Details
 
-This rule helps enforce secure coding practices for lambda-security applications.
+A Lambda handler (a function taking the event) that performs a privileged
+operation — a database write or delete, an AWS SDK `send`, an SDK v2
+DocumentClient / S3 mutation, a Lambda invoke — is reported unless it first
+establishes who the caller is:
+
+- reading the authorizer's verdict off the event: Cognito
+  `requestContext.authorizer.claims`, HTTP API JWT `requestContext.authorizer.jwt.claims`,
+  a Lambda authorizer's context, IAM `requestContext.identity`;
+- reading the `Authorization` header to verify it;
+- an identity field (`sub`, `userId`, `isAdmin`, …) read off something other
+  than client input, or an early `401` / `403` return.
+
+A value the client sent is not identity, whatever it is called:
+`event.pathParameters.userId` or a `subject` field in the parsed body does not
+count as an authorization check. Work that reaches nothing outside the process
+(arithmetic, a `new Map()` cache) needs no authorization.
 
 ## Examples
 
@@ -67,4 +82,4 @@ export const handler = async (event) => {
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowInTests` | `boolean` | `true` | Allow missing auth in test files |
-| `handlerPatterns` | `string[]` | `[]` | Handler file patterns to check |
+| `handlerPatterns` | `string[]` | `[]` | Handler file patterns to check. When set, only files whose path contains one of the patterns are checked |

@@ -58,6 +58,25 @@ const ruleTester = new RuleTester();
 
 ruleTester.run('require-timeout-handling', requireTimeoutHandling, {
   valid: lambda([
+    {
+      name: 'AbortSignal.timeout bounds the request',
+      code: `
+        export const handler = async (event, context) => {
+          const res = await fetch('https://api.example.com/data', { signal: AbortSignal.timeout(3000) });
+          return res.json();
+        };
+      `,
+    },
+    {
+      name: 'a method on a local object is not an HTTP client call',
+      code: `
+        export const handler = async (event, context) => {
+          const value = settings.get('region');
+          const other = getClient()['region'];
+          return { statusCode: 200, body: value + other };
+        };
+      `,
+    },
     // Test file (allowed by default)
     {
       name: 'a test file is exempt',
@@ -134,6 +153,16 @@ ruleTester.run('require-timeout-handling', requireTimeoutHandling, {
   ]),
 
   invalid: lambda([
+    {
+      name: 'an axios method call with no timeout',
+      code: `
+        export const handler = async (event, context) => {
+          const res = await axios.get('https://api.example.com/data');
+          return res.data;
+        };
+      `,
+      errors: [{ messageId: 'missingTimeoutHandling' }],
+    },
     // Lambda handler with fetch but no timeout handling (classic FN)
     {
       name: 'an outbound call with no timeout can burn the whole invocation',
