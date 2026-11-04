@@ -11,8 +11,8 @@
       "readable_publish_date": "Nov 3",
       "reading_time_minutes": 4,
       "page_views_count": 0,
-      "public_reactions_count": 3,
-      "positive_reactions_count": 3,
+      "public_reactions_count": 4,
+      "positive_reactions_count": 4,
       "comments_count": 1,
       "tag_list": [
         "javascript",
@@ -2028,6 +2028,6 @@
     }
   ],
   "total": 99,
-  "lastUpdated": "2026-11-04T15:49:39.606Z",
+  "lastUpdated": "2026-11-04T17:43:30.424Z",
   "source": "public"
 }
