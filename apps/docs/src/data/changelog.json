@@ -5,6 +5,36 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "oxlint-plugin-mongodb-security",
+      "short": "oxlint-plugin-mongodb-security",
+      "version": "9.2.2",
+      "date": "2026-11-04T22:05:29Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-mongodb-security@9.2.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mongodb-security",
+      "short": "eslint-plugin-mongodb-security",
+      "version": "9.2.2",
+      "date": "2026-11-04T22:03:48Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "a `user` / `username` / `auth` literal in a query filter, update document or aggregation stage is no longer reported.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "oxlint-plugin-knex-security",
       "short": "oxlint-plugin-knex-security",
       "version": "1.1.2",
@@ -22145,21 +22175,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-mongodb-security",
-      "short": "eslint-plugin-mongodb-security",
-      "version": "9.2.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "a `user` / `username` / `auth` literal in a query filter, update document or aggregation stage is no longer reported.",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
@@ -22300,21 +22315,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-mongodb-security",
-      "short": "oxlint-plugin-mongodb-security",
-      "version": "9.2.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-mongodb-security@9.2.2`",
           "pr": null
         }
       ]
