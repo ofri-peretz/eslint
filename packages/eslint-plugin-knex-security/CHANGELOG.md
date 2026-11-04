@@ -5,6 +5,22 @@ All notable changes to `eslint-plugin-knex-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.1.2
+
+### Patch Changes
+
+- **🐛 Fix** — false negatives and false positives found by the ORM Quint fidelity models.
+
+  - `no-mass-assignment` (all five ORM plugins) and `no-unscoped-mutation` (drizzle, prisma, knex) read a string-subscript method (`repo['save'](req.body)`, `db('users')['del']()`, `prisma.user['deleteMany']()`, `db.insert(t)['values'](…)`) as the same call. Each used to skip it.
+  - drizzle `no-unscoped-mutation` no longer reports a builder held in a `const` and scoped later (`const q = db.delete(users); return q.where(…)`).
+  - A receiver annotated `any` / `unknown` (`async (tx: any) => tx.$queryRawUnsafe(…)`, `declare const prisma: any`) is judged like an unannotated one instead of as another library's object.
+  - sequelize `no-unsafe-query` checks the named `literal` import (`import { literal } from 'sequelize'`).
+  - typeorm `no-unsafe-query` reports request data returned whole from `Raw(() => req.query.filter)`; typeorm `no-mass-assignment` covers the QueryBuilder's `insert().values(…)` / `update().set(…)`.
+  - `require-tls` (sequelize, typeorm, knex) reports `sslmode=no-verify` in a connection URL as disabled certificate validation, follows a URL bound to a `const` before it reaches the driver, and no longer reports another library's URL (`new Pool({ connectionString })`) in a driver file.
+  - sequelize `require-tls` and `no-hardcoded-credentials` recognise a sequelize-cli config that gives the connection as `url`.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.21.4`
+
 ## 1.1.1
 
 ### Patch Changes
