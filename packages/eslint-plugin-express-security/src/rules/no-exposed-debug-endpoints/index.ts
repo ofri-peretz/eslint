@@ -51,6 +51,34 @@ const HTTP_METHODS = new Set([
   'route',
 ]);
 
+/**
+ * Does `filename` match an `ignoreFiles` entry?
+ *
+ * An entry with glob syntax (`**\/test/**`, `src/dev/*.ts`) is a glob matched
+ * against whole path segments at any depth: `**` spans directories, `*` and
+ * `?` stay within one. An entry without it keeps its original meaning, a
+ * substring of the path.
+ */
+function fileMatches(filename: string, pattern: string): boolean {
+  const path = filename.replace(/\\/g, '/');
+  if (!/[*?]/.test(pattern)) return path.includes(pattern);
+  const body = pattern
+    .split(/(\*\*\/|\*\*|\*|\?)/)
+    .map((part) =>
+      part === '**/'
+        ? '(?:.*/)?'
+        : part === '**'
+          ? '.*'
+          : part === '*'
+            ? '[^/]*'
+            : part === '?'
+              ? '[^/]'
+              : part.replace(/[.+^${}()|[\]\\]/g, '\\$&'),
+    )
+    .join('');
+  return new RegExp(`(?:^|/)${body}$`).test(path);
+}
+
 export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
   name: 'no-exposed-debug-endpoints',
   /** A debug route mounted by a test application is the fixture, not an exposure — it never ships. */
@@ -123,7 +151,7 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
         const filename = context.filename;
 
         // Check if current file should be ignored
-        if (ignoreFiles.some((pattern) => filename.includes(pattern))) {
+        if (ignoreFiles.some((pattern) => fileMatches(filename, pattern))) {
           return false;
         }
         return true;

@@ -36,6 +36,11 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
 import {
+  isPackageCallee,
+  packageBindings,
+  type PackageBindings,
+} from '../../utils/import-bindings';
+import {
   AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
@@ -82,9 +87,18 @@ function propertyKeyName(prop: TSESTree.Property): string | null {
   return null;
 }
 
-/** `helmet.hsts(...)` / `helmet.strictTransportSecurity(...)` */
-function isHelmetHstsFactory(node: TSESTree.CallExpression): boolean {
+/**
+ * `helmet.hsts(...)` / `helmet.strictTransportSecurity(...)`, or either named
+ * export called directly or off a renamed helmet binding.
+ */
+function isHelmetHstsFactory(
+  node: TSESTree.CallExpression,
+  helmet: PackageBindings,
+): boolean {
   const callee = node.callee;
+  for (const name of HSTS_NAMES) {
+    if (isPackageCallee(callee, helmet, name)) return true;
+  }
   if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
   if (callee.property.type !== AST_NODE_TYPES.Identifier) return false;
   if (callee.computed) return false;
@@ -94,11 +108,15 @@ function isHelmetHstsFactory(node: TSESTree.CallExpression): boolean {
   );
 }
 
-/** `helmet(...)` — the top-level middleware factory. */
-function isHelmetCall(node: TSESTree.CallExpression): boolean {
+/** `helmet(...)` — the top-level middleware factory, by name or binding. */
+function isHelmetCall(
+  node: TSESTree.CallExpression,
+  helmet: PackageBindings,
+): boolean {
   return (
-    node.callee.type === AST_NODE_TYPES.Identifier &&
-    node.callee.name === 'helmet'
+    (node.callee.type === AST_NODE_TYPES.Identifier &&
+      node.callee.name === 'helmet') ||
+    isPackageCallee(node.callee, helmet)
   );
 }
 
@@ -180,6 +198,7 @@ export const requireStrictTransportSecurity = createRule<
   ) {
     let minimum: number;
     let wantSubDomains: boolean;
+    let helmet: PackageBindings;
 
     /** Inspect the object form: { maxAge, includeSubDomains }. */
     function checkHstsOptions(config: TSESTree.ObjectExpression): void {
@@ -254,11 +273,12 @@ export const requireStrictTransportSecurity = createRule<
         const { minMaxAge, requireSubDomains } = options as Options;
         minimum = minMaxAge ?? DEFAULT_MIN_MAX_AGE;
         wantSubDomains = requireSubDomains ?? true;
+        helmet = packageBindings(context.sourceCode.ast, ['helmet']);
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
         // helmet.hsts({ ... }) — dedicated middleware factory
-        if (isHelmetHstsFactory(node)) {
+        if (isHelmetHstsFactory(node, helmet)) {
           const config = node.arguments[0];
           if (config && config.type === AST_NODE_TYPES.ObjectExpression) {
             checkHstsOptions(config);
@@ -266,7 +286,7 @@ export const requireStrictTransportSecurity = createRule<
           return;
         }
 
-        if (!isHelmetCall(node)) return;
+        if (!isHelmetCall(node, helmet)) return;
         const config = node.arguments[0];
         if (!config || config.type !== AST_NODE_TYPES.ObjectExpression) return;
 

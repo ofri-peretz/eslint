@@ -19,14 +19,16 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const xp = <T,>(cases: T[]): T[] =>
+const xp = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asExpress(c) as T;
     const test = c as Case;
     return {
       ...c,
       code: asExpress(test.code),
-      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asExpress(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -45,7 +47,6 @@ const xp = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester();
 
@@ -84,6 +85,24 @@ ruleTester.run('no-express-unsafe-regex-route', noExpressUnsafeRegexRoute, {
     },
   ]),
   invalid: xp([
+    // `app.route(path)` registers the same path the verb methods do.
+    {
+      name: 'an unsafe regex path registered through app.route()',
+      code: `app.route(/^\\/files\\/(a+)+$/).get(handler)`,
+      errors: [{ messageId: 'unsafeRegexRoute' }],
+    },
+    // Express accepts an array of paths; each element is a route.
+    {
+      name: 'an unsafe regex inside an array of route paths',
+      code: `app.get(['/home', /^\\/files\\/(a+)+$/], handler)`,
+      errors: [{ messageId: 'unsafeRegexRoute' }],
+    },
+    // Holes and spreads in a path array are skipped; the regex is still read
+    {
+      name: 'an unsafe regex beside a hole and a spread in a path array',
+      code: `app.get([, ...extraPaths, /^\\/files\\/(a+)+$/], handler)`,
+      errors: [{ messageId: 'unsafeRegexRoute' }],
+    },
     // Vulnerable regex: nested quantifiers - simpler pattern
     {
       name: 'a route pattern with a nested quantifier',

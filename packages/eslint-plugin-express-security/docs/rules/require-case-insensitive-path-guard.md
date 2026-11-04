@@ -48,6 +48,7 @@ if (req.url.includes('/internal')) requireAuth(req);
 
 // Regex guard without the i flag
 if (req.path.match(/^\/admin/)) requireAuth(req);
+if (/^\/admin/.test(req.path)) requireAuth(req);
 ```
 
 ### ✅ Correct

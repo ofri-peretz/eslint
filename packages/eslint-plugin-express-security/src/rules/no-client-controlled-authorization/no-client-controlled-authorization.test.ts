@@ -21,14 +21,16 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const xp = <T,>(cases: T[]): T[] =>
+const xp = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asExpress(c) as T;
     const test = c as Case;
     return {
       ...c,
       code: asExpress(test.code),
-      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asExpress(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -48,7 +50,6 @@ const xp = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -65,7 +66,10 @@ describe('no-client-controlled-authorization', () => {
     {
       valid: xp([
         // THE safe pattern — the attribute comes from the verified principal
-        { name: 'the role comes from the authenticated session', code: `if (req.user.role === 'admin') { grant(); }` },
+        {
+          name: 'the role comes from the authenticated session',
+          code: `if (req.user.role === 'admin') { grant(); }`,
+        },
         {
           code: `if (req.auth.permissions.includes('billing:write')) { grant(); }`,
         },
@@ -87,6 +91,38 @@ describe('no-client-controlled-authorization', () => {
         { code: `if (req.body.email === admin.email) { notify(); }` },
         { code: `if (req.query.page === '1') { first(); }` },
         { code: `if (req.headers['x-request-id']) { trace(); }` },
+        {
+          name: 'a non-authorization header read via req.get()',
+          code: `if (req.get('x-request-id')) { trace(); }`,
+        },
+        {
+          name: 'a .get() on something that is not the request',
+          code: `if (cache.get('x-user-role') === 'admin') { hit(); }`,
+        },
+        {
+          name: 'a header name the rule cannot read statically',
+          code: `if (req.get(name) === 'admin') { hit(); }`,
+        },
+        {
+          name: 'a .get() with extra arguments is not the header accessor',
+          code: `if (req.get('x-user-role', 2) === 'admin') { hit(); }`,
+        },
+        {
+          name: 'a client header only logged, not used to authorize',
+          code: `log(req.get('x-user-role'));`,
+        },
+        {
+          name: 'a .get() on a call result is not the request',
+          code: `if (getReq().get('x-user-role') === 'admin') { hit(); }`,
+        },
+        {
+          name: 'a bare call is not a header accessor',
+          code: `if (load()('x-user-role') === 'admin') { hit(); }`,
+        },
+        {
+          name: 'a .get() on req.query is not a header read',
+          code: `if (req.query.get('x-user-role') === 'admin') { hit(); }`,
+        },
         {
           code: `if (req.headers['content-type'] === 'application/json') { parse(); }`,
         },
@@ -129,6 +165,18 @@ describe('no-client-controlled-authorization', () => {
         {
           code: `const ok = grants.some(req.query.scope);`,
           errors: [{ messageId: 'clientControlledAuthorization' as const }],
+        },
+        // Express's own header accessors read the same client header
+        {
+          name: 'req.get() / req.header() read the same client-set header',
+          code: `if (req.get('x-user-role') === 'admin') { grant(); }
+if (request.header('X-Tenant-Id') !== tenant) { deny(); }
+if (ctx.req.get('x-user-role') === 'admin') { grant(); }`,
+          errors: [
+            { messageId: 'clientControlledAuthorization' as const },
+            { messageId: 'clientControlledAuthorization' as const },
+            { messageId: 'clientControlledAuthorization' as const },
+          ],
         },
         // Identity forwarded in a header the client can set
         {

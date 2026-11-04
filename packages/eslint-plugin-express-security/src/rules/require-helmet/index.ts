@@ -16,6 +16,10 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
 import {
+  packageBindings,
+  type PackageBindings,
+} from '../../utils/import-bindings';
+import {
   nodeReleasesBinding,
   RELEASE_SELECTOR,
   servesBrowserDocuments,
@@ -53,7 +57,22 @@ type RuleOptions = [Options?];
 /**
  * Check if a node is an app.use() call with helmet
  */
-function isHelmetMiddleware(node: TSESTree.CallExpression): boolean {
+/**
+ * The middleware an `app.use(...)` mounts: its arguments, with
+ * `app.use([a(), b()])` arrays flattened — Express accepts both.
+ */
+function mountedMiddleware(node: TSESTree.CallExpression): TSESTree.Node[] {
+  return node.arguments.flatMap((arg): TSESTree.Node[] =>
+    arg.type === 'ArrayExpression'
+      ? arg.elements.filter((e) => e !== null)
+      : [arg],
+  );
+}
+
+function isHelmetMiddleware(
+  node: TSESTree.CallExpression,
+  helmetNames: ReadonlySet<string>,
+): boolean {
   const callee = node.callee;
 
   // Check for app.use(helmet()) or app.use(helmet.contentSecurityPolicy())
@@ -67,12 +86,12 @@ function isHelmetMiddleware(node: TSESTree.CallExpression): boolean {
   }
 
   // Check arguments for helmet usage
-  for (const arg of node.arguments) {
+  for (const arg of mountedMiddleware(node)) {
     if (arg.type === 'CallExpression') {
       const argCallee = arg.callee;
 
       // helmet()
-      if (argCallee.type === 'Identifier' && argCallee.name === 'helmet') {
+      if (argCallee.type === 'Identifier' && helmetNames.has(argCallee.name)) {
         return true;
       }
 
@@ -80,14 +99,14 @@ function isHelmetMiddleware(node: TSESTree.CallExpression): boolean {
       if (
         argCallee.type === 'MemberExpression' &&
         argCallee.object.type === 'Identifier' &&
-        argCallee.object.name === 'helmet'
+        helmetNames.has(argCallee.object.name)
       ) {
         return true;
       }
     }
 
     // app.use(helmet) without call (unlikely but possible)
-    if (arg.type === 'Identifier' && arg.name === 'helmet') {
+    if (arg.type === 'Identifier' && helmetNames.has(arg.name)) {
       return true;
     }
   }
@@ -102,7 +121,7 @@ function isAlternativeMiddleware(
   node: TSESTree.CallExpression,
   alternatives: string[],
 ): boolean {
-  for (const arg of node.arguments) {
+  for (const arg of mountedMiddleware(node)) {
     if (arg.type === 'CallExpression' && arg.callee.type === 'Identifier') {
       if (alternatives.includes(arg.callee.name)) {
         return true;
@@ -186,6 +205,10 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
     let expressAppNode: TSESTree.CallExpression | null;
     let appBinding: string | null;
     let appEscapes: boolean;
+    /** `helmet` plus any local the file binds the helmet package to. */
+    let helmetNames: Set<string>;
+    /** Locals bound to the express module (`import createApp from 'express'`). */
+    let expressBindings: PackageBindings;
 
     return {
       before() {
@@ -252,6 +275,12 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
          * the file, "no helmet here" says nothing about the application.
          */
         appEscapes = false;
+        const ast = context.sourceCode.ast;
+        helmetNames = new Set([
+          'helmet',
+          ...packageBindings(ast, ['helmet']).modules,
+        ]);
+        expressBindings = packageBindings(ast, ['express']);
         return true;
       },
       // `module.exports = app`, `export default app`, `return app` — the three
@@ -273,7 +302,11 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for express() call
-        if (callee.type === 'Identifier' && callee.name === 'express') {
+        if (
+          callee.type === 'Identifier' &&
+          (callee.name === 'express' ||
+            expressBindings.modules.has(callee.name))
+        ) {
           hasExpressApp = true;
           expressAppNode = node;
           if (
@@ -304,7 +337,7 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for helmet middleware usage
-        if (isHelmetMiddleware(node)) {
+        if (isHelmetMiddleware(node, helmetNames)) {
           hasHelmet = true;
           return;
         }

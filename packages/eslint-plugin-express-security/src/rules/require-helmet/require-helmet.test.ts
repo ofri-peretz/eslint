@@ -66,6 +66,28 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-helmet', requireHelmet, {
   valid: xp([
+    {
+      name: 'a renamed helmet import mounts helmet',
+      code: `
+        import express from 'express';
+        import securityHeaders from 'helmet';
+        const app = express();
+        app.use(securityHeaders());
+        app.get('/', (req, res) => res.render('home'));
+        app.listen(3000);
+      `,
+    },
+    {
+      name: 'helmet inside a middleware array is mounted',
+      code: `
+        import express from 'express';
+        import helmet from 'helmet';
+        const app = express();
+        app.use([compression(), helmet()]);
+        app.get('/', (req, res) => res.render('home'));
+        app.listen(3000);
+      `,
+    },
     // A method named at RUNTIME configures nothing this rule can recognise,
     // so the app is not proven to serve documents and helmet is not required.
     {
@@ -275,6 +297,16 @@ ruleTester.run('require-helmet', requireHelmet, {
     },
   ]),
   invalid: xp([
+    {
+      name: 'an app from a renamed express import still needs helmet',
+      code: `
+        import createApp from 'express';
+        const app = createApp();
+        app.get('/', (req, res) => res.render('home'));
+        app.listen(3000);
+      `,
+      errors: [{ messageId: 'missingHelmet' }],
+    },
     // Was pinned as valid because "the property is a Literal, not an
     // Identifier". `app['render']` serves the same document `app.render`
     // serves, so this app still needs helmet.

@@ -34,10 +34,16 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
 import {
+  isPackageCallee,
+  packageBindings,
+  type PackageBindings,
+} from '../../utils/import-bindings';
+import {
   formatLLMMessage,
   MessageIcons,
   createRule,
   isTestFilePath,
+  propertyName,
   staticString,
 } from '@interlace/eslint-devkit';
 
@@ -213,6 +219,8 @@ export const requireExpressBodyParserLimits = createRule<
     let allowInTests: boolean;
     let maxLimit: number;
     let excessiveLimits: string[];
+    /** What the file binds `express` and `body-parser` to. */
+    let parsers: PackageBindings;
 
     return {
       before() {
@@ -235,36 +243,28 @@ export const requireExpressBodyParserLimits = createRule<
         if (isTestFile) {
           return false;
         }
+        parsers = packageBindings(context.sourceCode.ast, [
+          'express',
+          'body-parser',
+        ]);
         return true;
       },
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
 
-        // Check for express.json(), express.urlencoded(), etc.
-        // or bodyParser.json(), bodyParser.urlencoded(), etc.
-        if (callee.type !== 'MemberExpression') {
-          return;
-        }
-
-        const object = callee.object;
-        const property = callee.property;
-
-        // Check if it's express.* or bodyParser.*
-        if (object.type !== 'Identifier') {
-          return;
-        }
-
-        if (object.name !== 'express' && object.name !== 'bodyParser') {
-          return;
-        }
-
-        if (property.type !== 'Identifier') {
-          return;
-        }
-
-        if (!BODY_PARSER_METHODS.has(property.name)) {
-          return;
-        }
+        // express.json(), bodyParser.urlencoded(), … by their conventional
+        // names, or through whatever the file binds the packages to:
+        // `import { json } from 'express'`, `import parsers from 'body-parser'`.
+        const isParser = [...BODY_PARSER_METHODS].some(
+          (method) =>
+            isPackageCallee(callee, parsers, method) ||
+            (callee.type === 'MemberExpression' &&
+              callee.object.type === 'Identifier' &&
+              (callee.object.name === 'express' ||
+                callee.object.name === 'bodyParser') &&
+              propertyName(callee) === method),
+        );
+        if (!isParser) return;
 
         // An absent options object, or options without `limit`, leaves the
         // parser on Express's documented 100kb default. There is nothing to

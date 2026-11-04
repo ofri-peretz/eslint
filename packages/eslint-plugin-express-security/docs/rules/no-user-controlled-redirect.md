@@ -37,6 +37,7 @@ redirected value are different sources.
 ```js
 app.get('/go', (req, res) => {
   res.redirect(req.query.returnTo);
+  res.redirect(302, req.query.returnTo); // status-first form: same sink
 });
 ```
 

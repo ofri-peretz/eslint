@@ -327,6 +327,26 @@ ruleTester.run(
         `,
         options: [{ allowInDev: true }],
       },
+      // allowInDev: the else of a production check runs in development
+      {
+        name: 'allowInDev exempts the else of a production check',
+        code: `
+          try { work(); } catch (err) {
+            if (process.env.NODE_ENV === 'production') { res.sendStatus(500); } else { res.send(err.stack); }
+          }
+        `,
+        options: [{ allowInDev: true }],
+      },
+      // A template literal with only a safe expression
+      {
+        name: 'a template literal embedding only a request id',
+        code: 'try { work(); } catch (err) { res.send(`Failed: ${requestId}`); }',
+      },
+      // A concatenation with no error in it
+      {
+        name: 'a concatenation with no error in it',
+        code: `try { work(); } catch (err) { res.send('Failed: ' + id); }`,
+      },
     ]),
     invalid: xp([
       // Nested frames: catch inside an error-first function — both bindings
@@ -352,6 +372,45 @@ ruleTester.run(
       {
         code: `try { work(); } catch (err) { if (debug) { res.send(err.stack); } }`,
         options: [{ allowInDev: true }],
+        errors: [{ messageId: 'errorDetailsExposed' }],
+      },
+      // allowInDev exempts development-only branches, not every branch whose
+      // test mentions NODE_ENV: this one runs in production.
+      {
+        name: 'allowInDev does not exempt a production branch',
+        code: `
+          try { work(); } catch (err) {
+            if (process.env.NODE_ENV === 'production') { res.status(500).json(err.stack); }
+          }
+        `,
+        options: [{ allowInDev: true }],
+        errors: [{ messageId: 'errorDetailsExposed' }],
+      },
+      {
+        name: 'allowInDev does not exempt the else of a development branch',
+        code: `
+          try { work(); } catch (err) {
+            if (process.env.NODE_ENV === 'development') { log(err); } else { res.send(err.stack); }
+          }
+        `,
+        options: [{ allowInDev: true }],
+        errors: [{ messageId: 'errorDetailsExposed' }],
+      },
+      // An error embedded in a template literal or a concatenation is sent
+      // just the same.
+      {
+        name: 'a stack trace embedded in a template literal',
+        code: 'try { work(); } catch (err) { res.status(500).json(`Failed: ${err.stack}`); }',
+        errors: [{ messageId: 'errorDetailsExposed' }],
+      },
+      {
+        name: 'the raw error concatenated into a string',
+        code: `try { work(); } catch (err) { res.send('Failed: ' + err); }`,
+        errors: [{ messageId: 'errorDetailsExposed' }],
+      },
+      {
+        name: 'an embedded error inside an object value',
+        code: 'try { work(); } catch (err) { res.json({ error: `boom ${err.stack}` }); }',
         errors: [{ messageId: 'errorDetailsExposed' }],
       },
       // allowInDev default (false): a NODE_ENV guard does not suppress

@@ -82,6 +82,9 @@ const GUARD_METHODS = new Set([
   'match',
 ]);
 
+/** `RegExp` methods used as path guards: `/^\/admin/.test(req.path)`. */
+const REGEX_GUARD_METHODS = new Set(['test', 'exec']);
+
 /** Equality operators used as path guards. */
 const EQUALITY_OPS = new Set(['===', '==', '!==', '!=']);
 
@@ -221,6 +224,30 @@ export const requireCaseInsensitivePathGuard = createRule<
       });
     }
 
+    /** Report a regex guard on a path unless it already carries `i`. */
+    function reportRegexGuard(
+      node: TSESTree.CallExpression,
+      pathNode: TSESTree.MemberExpression,
+      regex: TSESTree.RegExpLiteral,
+    ): void {
+      if (regex.regex.flags.includes('i')) return;
+      if (!isProtectedValue(regex.regex.pattern)) return;
+      context.report({
+        node,
+        messageId: 'caseSensitivePathGuard',
+        data: {
+          pathExpr: sourceCode.getText(pathNode),
+          value: regex.regex.pattern,
+        },
+        suggest: [
+          {
+            messageId: 'addIgnoreCaseFlag',
+            fix: (fixer) => fixer.insertTextAfter(regex, 'i'),
+          },
+        ],
+      });
+    }
+
     return {
       before() {
         const [options] = currentOptions();
@@ -242,6 +269,22 @@ export const requireCaseInsensitivePathGuard = createRule<
         const callee = node.callee;
         if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
         if (callee.property.type !== AST_NODE_TYPES.Identifier) return;
+        // /^\/admin/.test(req.path) — the same regex guard, read from the
+        // regex side.
+        if (
+          callee.object.type === AST_NODE_TYPES.Literal &&
+          'regex' in callee.object
+        ) {
+          const [subject] = node.arguments;
+          if (
+            REGEX_GUARD_METHODS.has(propertyName(callee) ?? '') &&
+            subject !== undefined &&
+            isPathAccess(subject)
+          ) {
+            reportRegexGuard(node, subject, callee.object);
+          }
+          return;
+        }
         if (!GUARD_METHODS.has(callee.property.name)) return;
         // Route registrations (app.get('/admin', ...)) never match here:
         // the object must be a req.path-style access, not an app/router object.
@@ -253,22 +296,7 @@ export const requireCaseInsensitivePathGuard = createRule<
 
         // req.path.match(/^\/admin/) — regex literal guard
         if ('regex' in arg) {
-          if (arg.regex.flags.includes('i')) return;
-          if (!isProtectedValue(arg.regex.pattern)) return;
-          context.report({
-            node,
-            messageId: 'caseSensitivePathGuard',
-            data: {
-              pathExpr: sourceCode.getText(callee.object),
-              value: arg.regex.pattern,
-            },
-            suggest: [
-              {
-                messageId: 'addIgnoreCaseFlag',
-                fix: (fixer) => fixer.insertTextAfter(arg, 'i'),
-              },
-            ],
-          });
+          reportRegexGuard(node, callee.object, arg);
           return;
         }
 

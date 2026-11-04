@@ -17,6 +17,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
@@ -79,13 +80,22 @@ function isResponseHeaderCall(node: TSESTree.CallExpression): boolean {
 }
 
 /**
- * Extract header name from setHeader call
+ * The header names one setter call writes, lower-cased: HTTP header names are
+ * case-insensitive (RFC 9110 §5.1). `res.set('X-Frame-Options', …)` writes
+ * one; Express's object form `res.set({ 'X-Frame-Options': …, … })` writes
+ * every static key.
  */
-function extractHeaderName(node: TSESTree.CallExpression): string | null {
-  if (node.arguments.length > 0 && node.arguments[0].type === 'Literal') {
-    return String(node.arguments[0].value);
+function extractHeaderNames(node: TSESTree.CallExpression): string[] {
+  const [first] = node.arguments;
+  if (first?.type === 'Literal') return [String(first.value).toLowerCase()];
+  if (first?.type !== 'ObjectExpression') return [];
+  const names: string[] = [];
+  for (const prop of first.properties) {
+    if (prop.type !== 'Property') continue;
+    const name = objectKeyName(prop);
+    if (name !== null) names.push(name.toLowerCase());
   }
-  return null;
+  return names;
 }
 
 /**
@@ -123,10 +133,7 @@ function checkFunctionForSecurityHeaders(
   // Collect all setHeader calls in this scope
   function collectHeaders(astNode: TSESTree.Node): void {
     if (astNode.type === 'CallExpression' && isResponseHeaderCall(astNode)) {
-      const headerName = extractHeaderName(astNode);
-      if (headerName) {
-        setHeaders.add(headerName);
-      }
+      for (const name of extractHeaderNames(astNode)) setHeaders.add(name);
     }
 
     // Recursively check children - only traverse standard AST properties
@@ -150,7 +157,9 @@ function checkFunctionForSecurityHeaders(
   collectHeaders(scopeNode);
 
   // Return missing headers
-  return requiredHeaders.filter((header) => !setHeaders.has(header));
+  return requiredHeaders.filter(
+    (header) => !setHeaders.has(header.toLowerCase()),
+  );
 }
 
 export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({

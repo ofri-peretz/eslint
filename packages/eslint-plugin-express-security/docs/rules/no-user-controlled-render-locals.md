@@ -118,6 +118,7 @@ flowchart TD
 | `res.render(view, req.body)`              | 🔴 Critical | Whole request object as locals             |
 | `res.render(view, { ...req.query })`      | 🔴 Critical | Spread forwards every request key          |
 | `const l = req.body; res.render(view, l)` | 🔴 High     | Whole object via single assignment         |
+| `const { body } = req; res.render(view, body)` | 🔴 High | Whole object destructured off the request |
 | `res.render(view, transform(req.body))`   | 🟡 High     | Unknown call forwarding the whole object   |
 | `res.render(req.params.page)`             | 🔴 High     | User-controlled view name (path traversal) |
 | `res.render('pages/' + req.query.p)`      | 🔴 High     | View path built from request input         |

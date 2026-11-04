@@ -24,14 +24,16 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const xp = <T,>(cases: T[]): T[] =>
+const xp = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asExpress(c) as T;
     const test = c as Case;
     return {
       ...c,
       code: asExpress(test.code),
-      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asExpress(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -51,7 +53,6 @@ const xp = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -68,6 +69,15 @@ describe('no-permissive-cors', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - restricted origins', noPermissiveCors, {
       valid: xp([
+        {
+          name: "allowedOrigins: ['*'] accepts the wildcard and cors()'s wildcard default",
+          code: `
+            import cors from 'cors';
+            app.use(cors({ origin: '*' }));
+            app.use(cors());
+          `,
+          options: [{ allowedOrigins: ['*'] }],
+        },
         // CORS with specific origin whitelist
         {
           name: 'an explicit origin list',
@@ -135,6 +145,27 @@ describe('no-permissive-cors', () => {
     ruleTester.run('invalid - permissive origins', noPermissiveCors, {
       valid: [],
       invalid: xp([
+        {
+          name: 'a renamed cors import is still cors',
+          code: `
+            import corsMiddleware from 'cors';
+            app.use(corsMiddleware({ origin: '*' }));
+            app.use(corsMiddleware());
+          `,
+          errors: [
+            { messageId: 'permissiveCors' },
+            { messageId: 'permissiveCors' },
+          ],
+        },
+        {
+          name: 'allowedOrigins listing another origin does not accept the wildcard',
+          code: `
+            import cors from 'cors';
+            app.use(cors({ origin: '*' }));
+          `,
+          options: [{ allowedOrigins: ['https://app.example.com'] }],
+          errors: [{ messageId: 'permissiveCors' }],
+        },
         // Wildcard origin
         {
           name: "origin '*'",
@@ -203,7 +234,9 @@ ruleTester.run('no-permissive-cors (partition)', noPermissiveCors, {
   valid: xp([
     // Owned by no-cors-credentials-wildcard. Both corpus shapes.
     { code: `app.use(cors({ origin: true, credentials: true }));` },
-    { code: `app.options(config.path, cors({ origin: true, credentials: true }));` },
+    {
+      code: `app.options(config.path, cors({ origin: true, credentials: true }));`,
+    },
     { code: `cors({ origin: '*', credentials: true });` },
     // Quoted keys are the same properties.
     { code: `cors({ 'origin': true, 'credentials': true });` },

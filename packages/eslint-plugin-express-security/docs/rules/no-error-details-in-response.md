@@ -61,9 +61,9 @@ The rule tracks error identifiers introduced by `catch (err)` clauses (within th
 flowchart TD
     A["📝 res.send / res.json / res.end"] --> B{Active error binding in scope?}
     B -->|No| C[✅ Safe - Skip]
-    B -->|Yes| D{"Arg is err / err.stack / { ...err } / embedded?"}
+    B -->|Yes| D{"Arg is err / err.stack / { ...err } / embedded in a string?"}
     D -->|No| C
-    D -->|Yes| E{allowInDev + NODE_ENV guard?}
+    D -->|Yes| E{allowInDev + development-only branch?}
     E -->|Yes| C
     E -->|No| F[🚨 Report with LLM guidance]
 ```
@@ -80,10 +80,10 @@ The rule provides **LLM-optimized error messages** with actionable security guid
 
 ## Configuration
 
-| Option         | Type      | Default | Description                                                      |
-| :------------- | :-------- | :------ | :--------------------------------------------------------------- |
-| `allowMessage` | `boolean` | `true`  | Allow `err.message` in responses (set `false` for strict policy) |
-| `allowInDev`   | `boolean` | `false` | Allow error details inside an if-guard that checks `NODE_ENV`    |
+| Option         | Type      | Default | Description                                                                                                                                                           |
+| :------------- | :-------- | :------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `allowMessage` | `boolean` | `true`  | Allow `err.message` in responses (set `false` for strict policy)                                                                                                      |
+| `allowInDev`   | `boolean` | `false` | Allow error details in a development-only branch (`NODE_ENV === 'development'`, the `else` of a production check, `isDev && …`). A production branch is never exempt. |
 
 ### Example Configuration
 
@@ -225,7 +225,7 @@ res.send(failure.stack);
 
 ## ⚙️ Options
 
-| Option         | Type      | Default | Description                                              |
-| -------------- | --------- | ------- | -------------------------------------------------------- |
-| `allowMessage` | `boolean` | `true`  | Allow err.message in responses                           |
-| `allowInDev`   | `boolean` | `false` | Allow error details inside an if-guard checking NODE_ENV |
+| Option         | Type      | Default | Description                                      |
+| -------------- | --------- | ------- | ------------------------------------------------ |
+| `allowMessage` | `boolean` | `true`  | Allow err.message in responses                   |
+| `allowInDev`   | `boolean` | `false` | Allow error details in a development-only branch |

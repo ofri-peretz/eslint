@@ -21,14 +21,16 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const xp = <T,>(cases: T[]): T[] =>
+const xp = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asExpress(c) as T;
     const test = c as Case;
     return {
       ...c,
       code: asExpress(test.code),
-      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asExpress(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -48,7 +50,6 @@ const xp = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -65,10 +66,38 @@ describe('require-case-insensitive-path-guard', () => {
     {
       valid: xp([
         // Normalized before comparing — the canonical safe pattern
-        { name: 'the path is lowercased first', code: `if (req.path.toLowerCase().startsWith('/admin')) deny();` },
+        {
+          name: 'the path is lowercased first',
+          code: `if (req.path.toLowerCase().startsWith('/admin')) deny();`,
+        },
         { code: `if (req.url.toUpperCase() === '/ADMIN') deny();` },
         // Regex guard already case-insensitive
         { code: `if (req.path.match(/^\\/admin/i)) deny();` },
+        // RegExp#test with the i flag, on a non-path value, or on a variable
+        {
+          name: 'a RegExp#test guard with the i flag',
+          code: `if (/^\\/admin/i.test(req.path)) deny();`,
+        },
+        {
+          name: 'a RegExp#test on a value that is not the path',
+          code: `if (/^\\/admin/.test(req.body.next)) deny();`,
+        },
+        {
+          name: 'a RegExp#test on an unprotected path',
+          code: `if (/^\\/health/.test(req.path)) skip();`,
+        },
+        {
+          name: 'a regex held in a variable',
+          code: `if (ADMIN_RE.test(req.path)) deny();`,
+        },
+        {
+          name: 'a RegExp#test with no argument',
+          code: `if (/^\\/admin/.test()) deny();`,
+        },
+        {
+          name: 'a RegExp method that is not a guard',
+          code: `if (/^\\/admin/.compile(req.path)) deny();`,
+        },
         // Route REGISTRATION is routing, not guarding — never flagged
         { code: `app.get('/admin', handler);` },
         { code: `app.use('/admin/users', adminRouter);` },
@@ -297,6 +326,24 @@ module.exports = app;
             },
           ],
         },
+        // RegExp#test / #exec is the same case-sensitive regex guard
+        ...['req.path', 'req.url', 'request.originalUrl'].flatMap((p) =>
+          ['test', 'exec'].map((m) => ({
+            name: `a case-sensitive /^\\/admin/.${m}(${p}) guard`,
+            code: `if (/^\\/admin/.${m}(${p})) deny();`,
+            errors: [
+              {
+                messageId: 'caseSensitivePathGuard' as const,
+                suggestions: [
+                  {
+                    messageId: 'addIgnoreCaseFlag' as const,
+                    output: `if (/^\\/admin/i.${m}(${p})) deny();`,
+                  },
+                ],
+              },
+            ],
+          })),
+        ),
         // Multi-segment protected path, literal already lower-case → untouched
         {
           code: `if (req.path.startsWith('/api/internal')) deny();`,

@@ -62,13 +62,22 @@ const ruleTester = new RuleTester({
 describe('require-route-authentication', () => {
   ruleTester.run('require-route-authentication', requireRouteAuthentication, {
     valid: xp([
-    // Was pinned as INVALID on the grounds that `registry['auth']` "names the
-    // map, not the middleware inside it". It names `auth` exactly as
-    // `registry.auth` does, so this route IS authenticated and the finding
-    // was a false positive.
-    {
-      code: `app.post('/account/password', registry['auth'], changePassword);`,
-    },
+      // Express flattens an array of middleware into the route's chain.
+      {
+        name: 'auth middleware inside a middleware array',
+        code: `app.post('/users', [requireAuth], (req, res) => res.json(save(req.body)));`,
+      },
+      {
+        name: 'a global auth guard mounted inside an array',
+        code: `app.use([requireAuth]);\napp.post('/users', (req, res) => res.json(save(req.body)));`,
+      },
+      // Was pinned as INVALID on the grounds that `registry['auth']` "names the
+      // map, not the middleware inside it". It names `auth` exactly as
+      // `registry.auth` does, so this route IS authenticated and the finding
+      // was a false positive.
+      {
+        code: `app.post('/account/password', registry['auth'], changePassword);`,
+      },
       // Replacing the list drops the default `app`, so nothing is a route.
       {
         name: 'the default receiver list replaced away',
@@ -76,7 +85,10 @@ describe('require-route-authentication', () => {
         options: [{ appReceiverNames: ['v1'] }],
       },
       // THE safe pattern — auth middleware in the chain
-      { name: 'the route carries requireAuth', code: `app.post('/account/password', requireAuth, changePassword);` },
+      {
+        name: 'the route carries requireAuth',
+        code: `app.post('/account/password', requireAuth, changePassword);`,
+      },
       { code: `router.delete('/users/:id', authenticate, removeUser);` },
       {
         code: `app.put('/billing/card', passport.authenticate('jwt'), saveCard);`,
@@ -194,21 +206,31 @@ describe('require-route-authentication', () => {
       },
     ]),
     invalid: xp([
-    // Was pinned as valid next to `app[method]`, as though the two were the
-    // same refusal. `app['post']` names the verb; the runtime key does not,
-    // and that one stays valid above.
-    {
-      name: 'a subscripted route registration with no auth middleware',
-      code: `app['post']('/users', createUser);`,
-      errors: [{ messageId: 'missingAuthentication' as const }],
-    },
-    // A middleware named at RUNTIME contributes no name to match against the
-    // auth vocabulary, so this route is still unauthenticated.
-    {
-      name: 'a runtime-keyed middleware is not auth evidence',
-      code: `app.post('/account/password', registry[which], changePassword);`,
-      errors: [{ messageId: 'missingAuthentication' as const }],
-    },
+      // `app.route(path).post(…)` registers the same critical route.
+      {
+        name: 'an unauthenticated route registered through app.route()',
+        code: `app.route('/users').get(listUsers).post((req, res) => res.json(save(req.body)));`,
+        // GET and POST /users, as two `app.<verb>('/users', …)` calls would be.
+        errors: [
+          { messageId: 'missingAuthentication' as const },
+          { messageId: 'missingAuthentication' as const },
+        ],
+      },
+      // Was pinned as valid next to `app[method]`, as though the two were the
+      // same refusal. `app['post']` names the verb; the runtime key does not,
+      // and that one stays valid above.
+      {
+        name: 'a subscripted route registration with no auth middleware',
+        code: `app['post']('/users', createUser);`,
+        errors: [{ messageId: 'missingAuthentication' as const }],
+      },
+      // A middleware named at RUNTIME contributes no name to match against the
+      // auth vocabulary, so this route is still unauthenticated.
+      {
+        name: 'a runtime-keyed middleware is not auth evidence',
+        code: `app.post('/account/password', registry[which], changePassword);`,
+        errors: [{ messageId: 'missingAuthentication' as const }],
+      },
       // LOCK COMPLEMENT: the new public vocabulary is whole-word anchored, so
       // a route that merely *contains* one of its words is still judged.
       // `unlocked` is not `unlock`; this route stays reported.
