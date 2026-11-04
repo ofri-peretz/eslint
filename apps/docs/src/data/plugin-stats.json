@@ -45,7 +45,7 @@
       "rules": 15,
       "description": "ESLint plugin for Model Context Protocol (MCP) SDK security — follows tool arguments into shells, file paths, URLs, SQL and eval; catches credential leaks, untrusted text in model-facing descriptions and prompts, unhardened HTTP transports, shared stateless servers, predictable session ids, untrusted stdio commands and schema/handler drift",
       "category": "security",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "published": true
     },
     {
@@ -157,7 +157,7 @@
       "rules": 28,
       "description": "ESLint plugin for Express.js security — detects permissive CORS, missing CSRF protection, missing helmet headers, insecure cookies, and GraphQL introspection in production",
       "category": "framework",
-      "version": "3.3.0",
+      "version": "3.3.2",
       "published": true
     },
     {

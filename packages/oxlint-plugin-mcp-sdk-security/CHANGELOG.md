@@ -5,6 +5,12 @@ All notable changes to `oxlint-plugin-mcp-sdk-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.1.1
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-mcp-sdk-security@1.1.1`
+
 ## 1.1.0
 
 ### Minor Changes

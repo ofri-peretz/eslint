@@ -31,14 +31,14 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-browser-security` | 2.2.3 | `browser-security/` | — | `plugin-browser-security` | security | `chromium` | ✅ | ✅ | ✅ |
 | `eslint-plugin-conventions` | 6.1.0 | `conventions/` | — | `plugin-conventions` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-drizzle-security` | 1.1.0 | `drizzle-security/` | — | `plugin-drizzle-security` | security | `drizzle` | ✅ | ✅ | ✅ |
-| `eslint-plugin-express-security` | 3.3.1 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
+| `eslint-plugin-express-security` | 3.3.2 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
 | `eslint-plugin-gemini-security` | 1.1.0 | `gemini-security/` | — | `plugin-gemini-security` | security | `gemini` | ✅ | ✅ | ✅ |
 | `eslint-plugin-import-next` | 2.9.1 | `import-next/` | — | `plugin-import-next` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-jwt-security` | 3.6.1 | `jwt-security/` | `jwt/` | `plugin-jwt-security` | security | `jwt` | ✅ | ✅ | ✅ |
 | `eslint-plugin-knex-security` | 1.1.0 | `knex-security/` | — | `plugin-knex-security` | security | `knex` | ✅ | ✅ | ✅ |
 | `eslint-plugin-lambda-security` | 2.2.1 | `lambda-security/` | — | `plugin-lambda-security` | security | `lambda` | ✅ | ✅ | ✅ |
 | `eslint-plugin-maintainability` | 3.3.0 | `maintainability/` | — | `plugin-maintainability` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-mcp-sdk-security` | 1.1.0 | `mcp-sdk-security/` | — | `plugin-mcp-sdk-security` | security | `mcp` | ✅ | ✅ | ✅ |
+| `eslint-plugin-mcp-sdk-security` | 1.1.1 | `mcp-sdk-security/` | — | `plugin-mcp-sdk-security` | security | `mcp` | ✅ | ✅ | ✅ |
 | `eslint-plugin-modernization` | 3.2.0 | `modernization/` | — | `plugin-modernization` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-modularity` | 2.6.0 | `modularity/` | — | `plugin-modularity` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mongodb-security` | 9.2.1 | `mongodb-security/` | — | `plugin-mongodb-security` | security | `mongodb` | ✅ | ✅ | ✅ |

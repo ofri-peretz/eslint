@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-express-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.3.2
+
+### Patch Changes
+
+- **🐛 Fix** — `require-express-body-parser-limits` reads a quoted or string-subscript `limit` key (`{ 'limit': '50mb' }`, `{ ['limit']: '50mb' }`), which it used to skip, and no longer treats a computed `[limit]` variable key as the option.
+
 ## 3.3.1
 
 ### Patch Changes
