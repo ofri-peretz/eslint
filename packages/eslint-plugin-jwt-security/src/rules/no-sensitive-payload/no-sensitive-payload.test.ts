@@ -313,6 +313,18 @@ jwt.sign({ customSecret: 'value' }, secret);`,
           options: [{ additionalSensitiveFields: ['customsecret'] }],
           errors: [{ messageId: 'sensitivePayloadField' }],
         },
+        {
+          // The documented config spells the field as it is written in code;
+          // keys are compared lowercased, so the option must be too. Found by
+          // the fidelity model.
+          name: 'an additional field configured in camelCase',
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign({ sub: user.id, internalId: user.internalId }, secret);`,
+          options: [
+            { additionalSensitiveFields: ['customSecret', 'internalId'] },
+          ],
+          errors: [{ messageId: 'sensitivePayloadField' }],
+        },
       ],
     });
   });

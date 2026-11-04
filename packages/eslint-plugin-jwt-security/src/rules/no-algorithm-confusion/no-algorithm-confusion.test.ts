@@ -308,6 +308,16 @@ import { readFileSync } from 'node:fs';
 jwt.verify(token, readFileSync('/etc/keys/jwt.key.pub'), { algorithms: ['HS256'] });`,
         errors: [{ messageId: 'algorithmConfusion' }],
       },
+      {
+        // A verifier takes the certificate's KeyObject, not the certificate:
+        // found by the fidelity model.
+        name: "HS256 against an X509Certificate's publicKey",
+        code: `import jwt from 'jsonwebtoken';
+import { X509Certificate } from 'node:crypto';
+const cert = new X509Certificate(pem);
+jwt.verify(token, cert.publicKey, { algorithms: ['HS256'] });`,
+        errors: [{ messageId: 'algorithmConfusion' }],
+      },
     ],
   });
 });

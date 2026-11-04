@@ -155,9 +155,11 @@ export const noSensitivePayload = createRule<RuleOptions, MessageIds>({
       before() {
         const options = context.options[0] ?? {};
         const additionalFields = options.additionalSensitiveFields ?? [];
+        // Keys are compared lowercased, so the configured names must be too:
+        // `['internalId']` matched nothing while `['internalid']` worked.
         allSensitiveFields = new Set([
           ...SENSITIVE_PAYLOAD_FIELDS,
-          ...additionalFields,
+          ...additionalFields.map((field) => field.toLowerCase()),
         ]);
 
         sourceCode = context.sourceCode;
