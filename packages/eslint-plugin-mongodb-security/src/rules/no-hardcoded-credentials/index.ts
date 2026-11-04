@@ -16,6 +16,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  propertyName,
   staticString,
 } from '@interlace/eslint-devkit';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
@@ -33,6 +34,57 @@ const CREDENTIAL_KEYS = new Set([
   'password',
   'auth',
 ]);
+
+/**
+ * Credential keys that only IDENTIFY an account. In connection options they
+ * are half of a login; in a query filter or an update they are the value
+ * being looked up or written (`User.findOne({ username: 'admin' })`), not a
+ * secret. `pass` / `password` are secrets wherever they are written.
+ */
+const IDENTITY_KEYS = new Set(['user', 'username', 'auth']);
+
+/**
+ * The MongoDB / Mongoose operations whose object arguments are query
+ * filters, update documents or aggregation pipelines: data, never the
+ * options a connection authenticates with.
+ */
+const DATA_OPERATIONS = new Set([
+  'find',
+  'findOne',
+  'findById',
+  'findOneAndUpdate',
+  'findOneAndDelete',
+  'findOneAndReplace',
+  'findByIdAndUpdate',
+  'findByIdAndDelete',
+  'updateOne',
+  'updateMany',
+  'deleteOne',
+  'deleteMany',
+  'replaceOne',
+  'countDocuments',
+  'distinct',
+  'exists',
+  'aggregate',
+]);
+
+/** Is `call` a data operation (`x.findOne(…)`, `x['aggregate'](…)`)? */
+function isDataOperation(call: TSESTree.CallExpression): boolean {
+  const callee = call.callee;
+  if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+  const name = propertyName(callee);
+  return name !== null && DATA_OPERATIONS.has(name);
+}
+
+/** Is `node` an argument of a data operation? */
+function isDataArgument(node: TSESTree.Node): boolean {
+  const parent = node.parent;
+  return (
+    parent?.type === AST_NODE_TYPES.CallExpression &&
+    parent.arguments.some((argument) => argument === node) &&
+    isDataOperation(parent)
+  );
+}
 
 export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
   name: 'no-hardcoded-credentials',
@@ -67,6 +119,37 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allowInTests: true }],
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    /**
+     * Does this property sit in a query filter, update document or pipeline
+     * stage: written inline in a data operation's arguments (through nested
+     * objects and arrays), or bound to a `const` that is passed to one?
+     */
+    const inDataDocument = (property: TSESTree.Property): boolean => {
+      let top: TSESTree.Node = property.parent;
+      for (;;) {
+        const up: TSESTree.Node | undefined = top.parent;
+        if (up?.type === AST_NODE_TYPES.ArrayExpression) top = up;
+        else if (up?.type === AST_NODE_TYPES.Property && up.value === top)
+          top = up.parent;
+        else break;
+      }
+      if (isDataArgument(top)) return true;
+      const declarator = top.parent;
+      if (
+        declarator?.type !== AST_NODE_TYPES.VariableDeclarator ||
+        declarator.init !== top
+      ) {
+        return false;
+      }
+      return context.sourceCode
+        .getDeclaredVariables(declarator)
+        .some((variable) =>
+          variable.references.some((reference) =>
+            isDataArgument(reference.identifier),
+          ),
+        );
+    };
+
     return {
       before() {
         // Every rule here is MongoDB-specific, and none of them could ask the
@@ -96,6 +179,9 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
               : null;
 
         if (!keyName || !CREDENTIAL_KEYS.has(keyName.toLowerCase())) {
+          return;
+        }
+        if (IDENTITY_KEYS.has(keyName.toLowerCase()) && inDataDocument(node)) {
           return;
         }
 
