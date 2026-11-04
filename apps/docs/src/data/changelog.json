@@ -5,6 +5,36 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "oxlint-plugin-jwt-security",
+      "short": "oxlint-plugin-jwt-security",
+      "version": "3.6.1",
+      "date": "2026-11-04T14:26:08Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-jwt-security@3.6.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
+      "version": "3.6.1",
+      "date": "2026-11-04T14:23:49Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Fix three false negatives found by the Quint fidelity models:",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-browser-security",
       "short": "eslint-plugin-browser-security",
       "version": "2.2.3",
@@ -21332,21 +21362,6 @@
     {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
-      "version": "3.6.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Fix three false negatives found by the Quint fidelity models:",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-jwt-security",
-      "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
       "date": null,
       "isApp": false,
@@ -21605,21 +21620,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-jwt-security",
-      "short": "oxlint-plugin-jwt-security",
-      "version": "3.6.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-jwt-security@3.6.1`",
           "pr": null
         }
       ]
