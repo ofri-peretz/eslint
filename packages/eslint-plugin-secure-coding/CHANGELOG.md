@@ -5,6 +5,13 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.6.3
+
+### Patch Changes
+
+- **🧹 Chore** — `recheck` ^4.6.2 is an optional peer dependency; when installed, the ReDoS regex rules use it to retract findings
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.21.2`
+
 ## 5.6.2
 
 ### Patch Changes
