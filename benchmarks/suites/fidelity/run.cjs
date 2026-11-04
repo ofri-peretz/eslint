@@ -42,6 +42,7 @@ const PLUGINS = [
   'vercel-ai-security',
   'jwt-security',
   'mongodb-security',
+  'mcp-sdk-security',
 ];
 
 const loadPlugin = (short) => {

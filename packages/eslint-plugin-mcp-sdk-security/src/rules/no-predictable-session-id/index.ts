@@ -52,6 +52,7 @@ import {
   memberPath,
   propertyName,
   resolveModuleBinding,
+  unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
 import { mcpExport } from '../../utils/tool-handlers';
@@ -288,7 +289,9 @@ export const noPredictableSessionId = createRule<[], MessageIds>({
       );
     }
 
-    function check(value: TSESTree.Node): void {
+    function check(written: TSESTree.Node): void {
+      // `Date.now as unknown as () => string` is still `Date.now`.
+      const value = unwrapTypeSyntax(written);
       const scope = sourceCode.getScope(value);
       // `sessionIdGenerator: Date.now` — a predictable function by reference.
       if (value.type === 'MemberExpression') {
@@ -320,7 +323,7 @@ export const noPredictableSessionId = createRule<[], MessageIds>({
         const transport = mcpExport(node.callee, sourceCode.getScope(node));
         if (transport === undefined || !STREAMABLE_TRANSPORTS.has(transport))
           return;
-        const options = node.arguments[0];
+        const options = unwrapTypeSyntax(node.arguments[0]);
         if (options?.type !== 'ObjectExpression') return;
         let generator: TSESTree.Node | undefined;
         for (const prop of options.properties) {

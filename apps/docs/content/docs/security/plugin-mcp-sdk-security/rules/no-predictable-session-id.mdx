@@ -73,7 +73,8 @@ new StreamableHTTPServerTransport({ sessionIdGenerator: () => ID });
 - **Transports are resolved to the SDK**: `StreamableHTTPServerTransport`
   (v1), `NodeStreamableHTTPServerTransport` (`@modelcontextprotocol/node`) and
   `WebStandardStreamableHTTPServerTransport` (`@modelcontextprotocol/server`),
-  with their options written inline.
+  with their options written inline (a TypeScript `as` / `satisfies` on the
+  options or the generator is looked through).
 - **The generator** is an inline function, a method shorthand, or a same-file
   function passed by name. Every value it returns is classified, and so is the
   return value of a same-file helper it calls. `sessionIdGenerator: Date.now`

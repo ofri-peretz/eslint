@@ -307,3 +307,101 @@ describe('1.0 independent review (2026-10-12)', () => {
     ],
   });
 });
+
+describe('fidelity model (2026-11-04): process.env bound to a plain name', () => {
+  ruleTester.run('fidelity', noCredentialLeakInTool, {
+    valid: [
+      {
+        name: 'one named variable read off a destructured env',
+        code:
+          SDK +
+          "import { env } from 'node:process';\n" +
+          'server.registerTool("t", schema, async ({ q }) => ({ content: [{ type: "text", text: String(env.NODE_ENV) }] }));',
+      },
+      {
+        name: 'Object.keys of the imported env lists names',
+        code:
+          SDK +
+          "import { env } from 'node:process';\n" +
+          'server.registerTool("t", schema, async ({ q }) => ({ content: [{ type: "text", text: Object.keys(env).join(", ") }] }));',
+      },
+      {
+        name: 'a local env destructured from a local process',
+        code:
+          SDK +
+          'server.registerTool("t", schema, async ({ q }) => { const process = { env: {} }; const { env } = process; return { content: [{ type: "text", text: JSON.stringify(env) }] }; });',
+      },
+      {
+        name: 'some other key destructured from process',
+        code:
+          SDK +
+          'server.registerTool("t", schema, async ({ q }) => { const { argv } = process; return { content: [{ type: "text", text: JSON.stringify(argv) }] }; });',
+      },
+      {
+        name: 'another node:process export',
+        code:
+          SDK +
+          "import { argv } from 'node:process';\n" +
+          'server.registerTool("t", schema, async ({ q }) => ({ content: [{ type: "text", text: JSON.stringify(argv) }] }));',
+      },
+      {
+        name: 'a sibling key destructured next to env, and the rest',
+        code:
+          SDK +
+          'server.registerTool("t", schema, async ({ q }) => { const { env, argv, ...others } = process; return { content: [{ type: "text", text: JSON.stringify([argv, others]) }] }; });',
+      },
+      {
+        name: 'an env parameter is not process.env',
+        code:
+          SDK +
+          'function render(env: Record<string, string>) { return { content: [{ type: "text", text: JSON.stringify(env) }] }; }\n' +
+          'server.registerTool("t", schema, async ({ q }) => render({ q }));',
+      },
+    ],
+    invalid: [
+      {
+        // @found fidelity model no_credential_leak_in_tool 2026-11-04
+        name: "FN: node:process's named env export",
+        code:
+          SDK +
+          "import { env } from 'node:process';\n" +
+          'server.registerTool("t", schema, async ({ q }) => ({ content: [{ type: "text", text: JSON.stringify(env) }] }));',
+        errors: [env('env')],
+      },
+      {
+        // @found fidelity model no_credential_leak_in_tool 2026-11-04
+        name: 'FN: env destructured from require(node:process), renamed',
+        code:
+          SDK +
+          "const { env: environment } = require('node:process');\n" +
+          'server.registerTool("t", schema, async ({ q }) => ({ content: [{ type: "text", text: JSON.stringify(environment) }] }));',
+        errors: [env('environment')],
+      },
+      {
+        // @found fidelity model no_credential_leak_in_tool 2026-11-04
+        name: 'FN: env destructured from the global process',
+        code:
+          SDK +
+          'server.registerTool("t", schema, async ({ q }) => { const { env } = process; return { content: [{ type: "text", text: JSON.stringify(env) }] }; });',
+        errors: [env('env')],
+      },
+      {
+        // @found fidelity model no_credential_leak_in_tool 2026-11-04
+        name: 'FN: env destructured from process under a quoted key',
+        code:
+          SDK +
+          'server.registerTool("t", schema, async ({ q }) => { const { "env": vars } = process; return { content: [{ type: "text", text: JSON.stringify(vars) }] }; });',
+        errors: [env('vars')],
+      },
+      {
+        // @found fidelity model no_credential_leak_in_tool 2026-11-04
+        name: 'FN: a tool-chosen key of the imported env',
+        code:
+          SDK +
+          "import { env } from 'node:process';\n" +
+          'server.registerTool("t", schema, async ({ q }) => ({ content: [{ type: "text", text: String(env[q]) }] }));',
+        errors: [env('env[q]')],
+      },
+    ],
+  });
+});

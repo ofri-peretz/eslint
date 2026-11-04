@@ -46,6 +46,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   propertyName,
+  unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 import { createInstanceResolver } from '../../utils/instances';
 import { fileUsesMcpSdk, isMcpModule } from '../../utils/mcp-evidence';
@@ -147,7 +148,8 @@ export const noSharedStatelessTransport = createRule<[], MessageIds>({
 
     /** Inline options that omit `sessionIdGenerator` or set it to `undefined`. */
     function isStateless(node: TSESTree.NewExpression): boolean {
-      const options = node.arguments[0];
+      // A cast or `satisfies` on the options changes nothing at runtime.
+      const options = unwrapTypeSyntax(node.arguments[0]);
       if (options === undefined) return true;
       if (options.type !== 'ObjectExpression') return false;
       let generator: TSESTree.Node | undefined;

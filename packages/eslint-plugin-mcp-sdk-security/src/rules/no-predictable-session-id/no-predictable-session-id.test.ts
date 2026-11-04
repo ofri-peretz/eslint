@@ -413,3 +413,45 @@ describe('no-predictable-session-id', () => {
     ],
   });
 });
+
+describe('fidelity model (2026-11-04): TypeScript type-only wrappers', () => {
+  ruleTester.run('fidelity', noPredictableSessionId, {
+    valid: [
+      {
+        name: 'a cast CSPRNG generator',
+        code: SDK + transport('randomUUID as () => string'),
+      },
+      {
+        name: 'a cast options object with a CSPRNG generator',
+        code:
+          SDK +
+          'new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID() } as const);',
+      },
+    ],
+    invalid: [
+      {
+        // @found fidelity model no_predictable_session_id 2026-11-04
+        name: 'FN: Date.now by reference, cast to the option type',
+        code: SDK + transport('Date.now as unknown as () => string'),
+        errors: [predictable],
+      },
+      {
+        // @found fidelity model no_predictable_session_id 2026-11-04
+        name: 'FN: a counter generator under satisfies',
+        code:
+          SDK +
+          'let n = 0;\n' +
+          transport('(() => String(n++)) satisfies () => string'),
+        errors: [predictable],
+      },
+      {
+        // @found fidelity model no_predictable_session_id 2026-11-04
+        name: 'FN: a cast options object',
+        code:
+          SDK +
+          "new StreamableHTTPServerTransport({ sessionIdGenerator: () => 'session' } as StreamableHTTPServerTransportOptions);",
+        errors: [constant],
+      },
+    ],
+  });
+});

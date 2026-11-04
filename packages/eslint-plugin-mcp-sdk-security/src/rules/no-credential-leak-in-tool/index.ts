@@ -47,6 +47,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  objectKeyName,
   propertyName,
   resolveModuleBinding,
 } from '@interlace/eslint-devkit';
@@ -162,20 +163,45 @@ export const noCredentialLeakInTool = createRule<[], MessageIds>({
     let contextRoots: ReturnType<typeof createHandlerCollector>;
     let outbound: { node: TSESTree.Node; client: string }[];
 
+    /** Is this the global `process`, not a local of that name? */
+    function isGlobalProcess(node: TSESTree.Node | null): boolean {
+      return (
+        node?.type === 'Identifier' &&
+        node.name === 'process' &&
+        !lookupVariable('process', sourceCode.getScope(node))?.defs.length
+      );
+    }
+
+    /**
+     * Is this name `process.env` itself: `node:process`'s `env` export
+     * (imported or required), or `const { env } = process`?
+     */
+    function isEnvBinding(node: TSESTree.Identifier): boolean {
+      const scope = sourceCode.getScope(node);
+      const binding = resolveModuleBinding(node, scope);
+      if (binding)
+        return binding.module === 'process' && binding.path.join('.') === 'env';
+      const def = lookupVariable(node.name, scope)?.defs[0];
+      return (
+        def?.type === 'Variable' &&
+        def.node.id.type === 'ObjectPattern' &&
+        isGlobalProcess(def.node.init) &&
+        def.node.id.properties.some(
+          (p) =>
+            p.type === 'Property' &&
+            p.value === def.name &&
+            objectKeyName(p) === 'env',
+        )
+      );
+    }
+
     /** Is this `process.env` — the global, or `node:process`'s? */
-    function isProcessEnv(
-      node: TSESTree.Node,
-    ): node is TSESTree.MemberExpression {
+    function isProcessEnv(node: TSESTree.Node): boolean {
+      if (node.type === 'Identifier') return isEnvBinding(node);
       if (node.type !== 'MemberExpression' || propertyName(node) !== 'env')
         return false;
-      const scope = sourceCode.getScope(node);
-      if (
-        node.object.type === 'Identifier' &&
-        node.object.name === 'process' &&
-        !lookupVariable('process', scope)?.defs.length
-      )
-        return true;
-      const binding = resolveModuleBinding(node, scope);
+      if (isGlobalProcess(node.object)) return true;
+      const binding = resolveModuleBinding(node, sourceCode.getScope(node));
       return binding?.module === 'process' && binding.path.join('.') === 'env';
     }
 
@@ -293,8 +319,8 @@ export const noCredentialLeakInTool = createRule<[], MessageIds>({
         };
 
         /** Every `process.env` a result reaches, following local bindings. */
-        const envIn = (root: TSESTree.Node): TSESTree.MemberExpression[] => {
-          const found: TSESTree.MemberExpression[] = [];
+        const envIn = (root: TSESTree.Node): TSESTree.Node[] => {
+          const found: TSESTree.Node[] = [];
           const seen = new Set<TSESLint.Scope.Variable>();
           const visit = (node: TSESTree.Node): void => {
             if (isFunctionNode(node)) return;

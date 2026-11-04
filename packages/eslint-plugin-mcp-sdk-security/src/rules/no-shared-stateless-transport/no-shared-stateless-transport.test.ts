@@ -330,3 +330,38 @@ describe('no-shared-stateless-transport', () => {
     ],
   });
 });
+
+describe('fidelity model (2026-11-04): TypeScript type-only wrappers', () => {
+  ruleTester.run('fidelity', noSharedStatelessTransport, {
+    valid: [
+      {
+        name: 'cast stateful options at module level',
+        code:
+          SDK +
+          'const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID() } as StreamableHTTPServerTransportOptions);',
+      },
+    ],
+    invalid: [
+      {
+        // @found fidelity model no_shared_stateless_transport 2026-11-04
+        name: 'FN: cast stateless options at module level',
+        code:
+          SDK +
+          'const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined } as StreamableHTTPServerTransportOptions);',
+        errors: [moduleLevel('StreamableHTTPServerTransport')],
+      },
+      {
+        // @found fidelity model no_shared_stateless_transport 2026-11-04
+        name: 'FN: satisfies-checked stateless options per request, shared server',
+        code:
+          SDK +
+          SHARED_SERVER +
+          'export async function handle(req, res) {\n' +
+          '  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined } satisfies object);\n' +
+          '  await server.connect(transport);\n' +
+          '}',
+        errors: [sharedServer('McpServer')],
+      },
+    ],
+  });
+});

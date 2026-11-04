@@ -268,11 +268,30 @@ export const noUntrustedToolMetadataInPrompt = createRule<[], MessageIds>({
                 element,
               ) as Taint | null;
             }
+            // `tools.length` is a count: it holds none of the listing's text.
+            if (
+              node.type === 'MemberExpression' &&
+              propertyName(node) === 'length'
+            )
+              return null;
             if (node.type !== 'CallExpression') return undefined;
             const callee = node.callee;
             if (callee.type !== 'MemberExpression') return undefined;
             const method = propertyName(callee);
             if (method === null) return undefined;
+            // `JSON.stringify(tools)` is every description the listing holds.
+            if (
+              method === 'stringify' &&
+              callee.object.type === 'Identifier' &&
+              callee.object.name === 'JSON' &&
+              !lookupVariable('JSON', sourceCode.getScope(node))?.defs.length
+            ) {
+              const arg = node.arguments[0];
+              const listed = arg === undefined ? null : follow(arg);
+              return (
+                listed && { kind: 'value', text: listed.text, key: undefined }
+              );
+            }
             // The source: `client.listTools()` on the SDK's Client.
             if (LISTINGS.has(method)) {
               const client = builtBy(callee.object);

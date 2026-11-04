@@ -221,3 +221,60 @@ describe('no-untrusted-tool-metadata-in-prompt', () => {
     },
   );
 });
+
+describe('fidelity model (2026-11-04): counts and serialised listings', () => {
+  ruleTester.run('fidelity', noUntrustedToolMetadataInPrompt, {
+    valid: [
+      {
+        // @found fidelity model no_untrusted_tool_metadata_in_prompt 2026-11-04
+        name: 'FP: the number of tools interpolated into the prompt',
+        code:
+          CLIENT +
+          'const { tools } = await client.listTools();\n' +
+          'await anthropic.messages.create({ system: `You have ${tools.length} tools.`, messages });',
+      },
+      {
+        name: 'the length of one description',
+        code:
+          CLIENT +
+          'const { tools } = await client.listTools();\n' +
+          'await anthropic.messages.create({ system: String(tools[0].description.length), messages });',
+      },
+      {
+        name: 'a JSON.stringify of something else, and a shadowed JSON',
+        code:
+          CLIENT +
+          'const { tools } = await client.listTools();\n' +
+          'function run(JSON: { stringify(v: unknown): string }) {\n' +
+          '  return anthropic.messages.create({ system: JSON.stringify(tools), messages: [{ role: "user", content: globalThis.JSON.stringify(question) }] });\n' +
+          '}',
+      },
+      {
+        name: 'a JSON.stringify with nothing to serialise',
+        code:
+          CLIENT +
+          'await anthropic.messages.create({ system: JSON.stringify(), messages });',
+      },
+    ],
+    invalid: [
+      {
+        // @found fidelity model no_untrusted_tool_metadata_in_prompt 2026-11-04
+        name: 'FN: the listing serialised with JSON.stringify',
+        code:
+          CLIENT +
+          'const { tools } = await client.listTools();\n' +
+          'await anthropic.messages.create({ system: JSON.stringify(tools), messages });',
+        errors: [err('client.listTools().tools', 'system', ANTHROPIC)],
+      },
+      {
+        // @found fidelity model no_untrusted_tool_metadata_in_prompt 2026-11-04
+        name: 'FN: the whole listing result serialised into a message',
+        code:
+          CLIENT +
+          'const listing = await client.listPrompts();\n' +
+          'await anthropic.messages.create({ messages: [{ role: "user", content: `Prompts: ${JSON.stringify(listing, null, 2)}` }] });',
+        errors: [err('listing', 'messages', ANTHROPIC)],
+      },
+    ],
+  });
+});

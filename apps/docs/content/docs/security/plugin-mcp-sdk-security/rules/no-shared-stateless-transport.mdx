@@ -73,9 +73,9 @@ app.post('/mcp', async (req, res) => {
   (v1), `NodeStreamableHTTPServerTransport` (`@modelcontextprotocol/node`) and
   `WebStandardStreamableHTTPServerTransport` (`@modelcontextprotocol/server`).
   `SSEServerTransport` has no stateless mode and is not considered.
-- **Stateless** means the options, written inline, set `sessionIdGenerator`
-  to the global `undefined` (not a shadowing binding) or omit it, or there are
-  no options at all.
+- **Stateless** means the options, written inline (through any `as` /
+  `satisfies`), set `sessionIdGenerator` to the global `undefined` (not a
+  shadowing binding) or omit it, or there are no options at all.
 - **The server** is followed from the `connect()` receiver to the `new` that
   built it, through `const` bindings, `await` and relative imports, and must
   be the SDK's `McpServer` or `Server`. It is shared when its construction does
