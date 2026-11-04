@@ -1,6 +1,6 @@
 {
   "command": "npm run mutation -- --plugin <name> --update-baseline",
-  "$comment": "Per-rule Stryker mutation scores (killed+timeout over killed+timeout+survived+no-coverage, floored to 1 decimal). A plugin listed here is opted in to .github/workflows/mutation.yml. Ratchet: a rule may not drop below its banked score, and --update-baseline refuses to lower one without --allow-regression. See docs/MUTATION_TESTING.md.",
+  "$comment": "Per-rule mutation scores (oxmutate, Stryker-compatible) (killed+timeout over killed+timeout+survived+no-coverage, floored to 1 decimal). A plugin listed here is opted in to .github/workflows/mutation.yml. Ratchet: a rule may not drop below its banked score, and --update-baseline refuses to lower one without --allow-regression. See docs/MUTATION_TESTING.md.",
   "plugins": {
     "jwt-security": {
       "rules": {

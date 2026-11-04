@@ -6,7 +6,7 @@
  */
 
 /**
- * mutation — run Stryker over a plugin's rule sources and grade each rule
+ * mutation — run oxmutate over a plugin's rule sources and grade each rule
  * against the banked baseline in .agent/mutation-baseline.json.
  *
  *   npm run mutation -- --plugin postgresql-security
@@ -20,10 +20,10 @@
  *   --since <ref>        mutate only rule files changed since merge-base(ref, HEAD)
  *   --rules <a,b,…>      mutate only these rules (how a batch-opted plugin banks
  *                        its next batch; see `pending` below)
- *   --concurrency <n>    Stryker workers (default 2 — see stryker.config.mjs)
+ *   --concurrency <n>    oxmutate workers (default 2 — see oxmutate.config.mjs)
  *   --update-baseline    bank this run's per-rule scores (never lowers one)
  *   --allow-regression   with --update-baseline: lower a banked score anyway
- *   --grade-only         skip Stryker; grade benchmark-results/stryker/<plugin>/mutation.json
+ *   --grade-only         skip oxmutate; grade benchmark-results/mutation/<plugin>/mutation.json
  *   --force              ignore the incremental cache and re-test every mutant
  *
  * `--update-baseline` always implies `--force`. Incremental mode reuses a
@@ -42,11 +42,11 @@
  *   npm run mutation -- --plugin node-security --rules no-zip-slip,no-ssrf --update-baseline
  *
  * Exit codes: 0 pass, 1 a rule regressed or is unbaselined,
- * 2 usage / Stryker itself failed.
+ * 2 usage / oxmutate itself failed.
  *
  * How this differs from `npm run check:lock-proofs` (scripts/prove-locks.mts):
  * a lock proof is ONE hand-written mutation of the thing a lock test claims
- * to guard, run to show that lock is not vacuous. Stryker is the inverse
+ * to guard, run to show that lock is not vacuous. Mutation testing is the inverse
  * direction: it generates every mutation of the rule source it can, and asks
  * whether ANY test notices. The first proves a given test means something;
  * the second finds the code no test means anything about.
@@ -57,6 +57,7 @@ import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { readFlag } from './lib/prover-args.js';
+import { ignoreRuleMeta } from './mutation/ignore-rule-meta.js';
 import {
   bank,
   failing,
@@ -74,8 +75,8 @@ import {
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
 const BASELINE = path.join(ROOT, '.agent', 'mutation-baseline.json');
-const CONFIG = path.join(HERE, 'mutation', 'stryker.config.mjs');
-const SUMMARY = path.join(ROOT, 'benchmark-results', 'stryker', 'summary.md');
+const CONFIG = path.join(HERE, 'mutation', 'oxmutate.config.mjs');
+const SUMMARY = path.join(ROOT, 'benchmark-results', 'mutation', 'summary.md');
 
 const argv = process.argv.slice(2);
 const has = (f: string) => argv.includes(f);
@@ -115,8 +116,7 @@ if (ALLOW_REGRESSION && !UPDATE)
   usage('--allow-regression only means something with --update-baseline');
 
 /**
- * Stryker `--mutate` globs for a rule list. Stryker splits the flag on `,`,
- * so no `{a,b}` brace sets here.
+ * `mutate` globs for a rule list.
  */
 function ruleGlobs(pluginDir: string, rules: string[]): string[] {
   return [
@@ -157,25 +157,22 @@ function changedRuleFiles(pluginDir: string, ref: string): string[] {
     .map((f) => path.relative(rel, f));
 }
 
-function runStryker(
+function runOxmutate(
   plugin: string,
   pluginDir: string,
   mutate: string[] | undefined,
 ): boolean {
-  // `--no`: never let npx fetch a package on a miss. The npm name `stryker` is an
-  // unrelated legacy package; without the flag, a checkout missing
-  // @stryker-mutator/core would silently download and run it instead.
-  const args = ['--no', 'stryker', 'run', CONFIG];
-  if (mutate) args.push('--mutate', mutate.join(','));
+  // `--no`: never let npx fetch a package on a miss.
+  const args = ['--no', 'oxmutate', 'run', '--config', CONFIG];
   if (concurrency) args.push('--concurrency', concurrency);
-  if (FORCE) args.push('--force');
   const r = spawnSync('npx', args, {
     cwd: pluginDir,
     stdio: 'inherit',
     env: {
       ...process.env,
       MUTATION_PLUGIN: plugin,
-      MUTATION_PLUGIN_DIR: pluginDir,
+      ...(mutate && { MUTATION_MUTATE: mutate.join('\n') }),
+      ...(FORCE && { MUTATION_FORCE: '1' }),
     },
   });
   return r.status === 0;
@@ -188,7 +185,7 @@ const ICON: Record<Verdict['kind'], string> = {
   unbaselined: 'UNBASELINED',
 };
 
-const md: string[] = ['## Mutation testing (Stryker)', ''];
+const md: string[] = ['## Mutation testing (oxmutate)', ''];
 let failed = false;
 let next = baseline;
 
@@ -199,7 +196,7 @@ for (const plugin of plugins) {
   const report = path.join(
     ROOT,
     'benchmark-results',
-    'stryker',
+    'mutation',
     plugin,
     'mutation.json',
   );
@@ -243,9 +240,9 @@ for (const plugin of plugins) {
 
   if (!GRADE_ONLY) {
     fs.rmSync(report, { force: true });
-    if (!runStryker(plugin, pluginDir, mutate)) {
-      console.error(`  ⛔ Stryker failed for ${plugin} (see output above)`);
-      md.push(`**${plugin}** — Stryker itself failed; no score.`, '');
+    if (!runOxmutate(plugin, pluginDir, mutate)) {
+      console.error(`  ⛔ oxmutate failed for ${plugin} (see output above)`);
+      md.push(`**${plugin}** — oxmutate itself failed; no score.`, '');
       failed = true;
       continue;
     }
@@ -259,7 +256,9 @@ for (const plugin of plugins) {
   // rule's last incremental result (see scoreReport).
   const ran = since ? (mutate ?? []).map((f) => ruleOf(f) ?? '') : selected;
   const scores: Record<string, RuleScore> = scoreReport(
-    JSON.parse(fs.readFileSync(report, 'utf8')) as MutationReport,
+    ignoreRuleMeta(
+      JSON.parse(fs.readFileSync(report, 'utf8')),
+    ) as MutationReport,
     ran,
   );
   const verdicts = grade(scores, baseline.plugins[plugin]?.rules);
