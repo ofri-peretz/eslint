@@ -11,12 +11,19 @@
 // `createClient({ password: '...' })`) are left out of the domain: the rule
 // deliberately reports any credential-keyed literal in a Mongo file, config
 // objects included, and that one is a real hardcoded secret.
+// The same objects written as a query filter, an update document or an
+// aggregation stage (`User.findOne({ username: 'admin' })`, `updateMany`,
+// `aggregate([{ $match }])`, a const filter passed to `countDocuments`) are
+// data, not connection options: a `user` / `username` there is the account
+// being looked up, so only a literal `pass` / `password` is still reported.
 module no_hardcoded_credentials {
   type TestCtx = Prod | TestDefault | TestFlip
   pure def exempt(t: TestCtx): bool = t == TestDefault
   var testCtx: TestCtx
 
-  type Site = MongooseConnect | RequireConnect | CreateConnection | NewMongoClient | StaticClientConnect | NoImport
+  type Site =
+    | MongooseConnect | RequireConnect | CreateConnection | NewMongoClient | StaticClientConnect | NoImport
+    | ModelFindOne | CollectionUpdate | AggregateMatch | BoundFilter
   type Opts =
     | UserPassLiteral | PassOnly | UserOnly | PasswordKey | AuthSourceOnly | AuthNested
     | TemplatePass | EnvUserLiteralPass
@@ -37,16 +44,38 @@ module no_hardcoded_credentials {
     | NoCredentials => false
   }
 
-  pure def mongoSite(s: Site): bool = s != NoImport
+  // A literal secret (`pass` / `password`), as opposed to an account name.
+  pure def hardcodedSecret(o: Opts): bool = match o {
+    | UserPassLiteral => true
+    | PassOnly => true
+    | UserOnly => false
+    | PasswordKey => true
+    | AuthSourceOnly => false
+    | AuthNested => true
+    | TemplatePass => true
+    | EnvUserLiteralPass => true
+    | FromEnv => false
+    | FromConfig => false
+    | AuthNestedEnv => false
+    | NoCredentials => false
+  }
 
-  pure def reports(s: Site, o: Opts): bool = mongoSite(s) and hardcoded(o)
+  pure def mongoSite(s: Site): bool = s != NoImport
+  pure def dataDocument(s: Site): bool =
+    Set(ModelFindOne, CollectionUpdate, AggregateMatch, BoundFilter).contains(s)
+
+  pure def reports(s: Site, o: Opts): bool =
+    mongoSite(s) and (if (dataDocument(s)) hardcodedSecret(o) else hardcoded(o))
 
   var site: Site
   var opts: Opts
   var verdict: bool
 
   action step = {
-    nondet s = Set(MongooseConnect, RequireConnect, CreateConnection, NewMongoClient, StaticClientConnect, NoImport).oneOf()
+    nondet s = Set(
+      MongooseConnect, RequireConnect, CreateConnection, NewMongoClient, StaticClientConnect, NoImport,
+      ModelFindOne, CollectionUpdate, AggregateMatch, BoundFilter,
+    ).oneOf()
     nondet o = Set(
       UserPassLiteral, PassOnly, UserOnly, PasswordKey, AuthSourceOnly, AuthNested,
       TemplatePass, EnvUserLiteralPass, FromEnv, FromConfig, AuthNestedEnv, NoCredentials,

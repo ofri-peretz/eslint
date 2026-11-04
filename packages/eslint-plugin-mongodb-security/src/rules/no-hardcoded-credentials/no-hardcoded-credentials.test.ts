@@ -111,7 +111,125 @@ describe('no-hardcoded-credentials', () => {
           code: `const opts = { username: "admin", password: "secret123" };`,
           errors: [{ messageId: 'hardcodedCredentials' }, { messageId: 'hardcodedCredentials' }],
         },
+        {
+          name: 'a literal password in a query filter is still a hardcoded secret',
+          code: `User.findOne({ username: 'admin', password: 'hunter2' });`,
+          errors: [{ messageId: 'hardcodedCredentials' }],
+        },
+        {
+          name: 'a literal password written by an update is still a hardcoded secret',
+          code: `User.updateOne({ username: 'admin' }, { $set: { password: 'hunter2' } });`,
+          errors: [{ messageId: 'hardcodedCredentials' }],
+        },
+        {
+          name: 'a username in connection options passed to connect is still reported',
+          code: `mongoose.connect(uri, { user: 'admin', pass: process.env.MONGO_PASS });`,
+          errors: [{ messageId: 'hardcodedCredentials' }],
+        },
+        {
+          name: 'auth credentials in MongoClient options are still reported',
+          code: `import { MongoClient } from 'mongodb';\nconst client = new MongoClient(uri, { auth: { username: 'admin', password: process.env.P } });`,
+          errors: [{ messageId: 'hardcodedCredentials' }],
+        },
+        {
+          name: 'a const-bound object that never reaches a data operation is still reported',
+          code: `const filter = { username: 'admin' };\nexport default filter;`,
+          errors: [{ messageId: 'hardcodedCredentials' }],
+        },
+        {
+          name: 'a const-bound object passed to create() is still reported',
+          code: `const f = { username: 'admin' };\nUser.create(f);`,
+          errors: [{ messageId: 'hardcodedCredentials' }],
+        },
+        {
+          name: 'a const-bound object used as a filter AND passed to create() is still reported',
+          code: `const f = { username: 'admin' };\nUser.findOne(f);\nUser.create(f);`,
+          errors: [{ messageId: 'hardcodedCredentials' }],
+        },
+        {
+          name: 'a username passed to a plain function call (no receiver) is still reported',
+          code: `findOne({ username: 'admin' });`,
+          errors: [{ messageId: 'hardcodedCredentials' }],
+        },
+        {
+          name: 'a string-literal credential key is read like an identifier key',
+          code: `mongoose.connect(uri, { 'pass': 'hunter2' });`,
+          errors: [{ messageId: 'hardcodedCredentials' }],
+        },
+        {
+          name: 'a username passed to a call that is not a data operation is still reported',
+          code: `User.create({ username: 'admin' });`,
+          errors: [{ messageId: 'hardcodedCredentials' }],
+        },
       ]),
+    });
+  });
+
+  describe('Query filters, updates and pipelines: a username is a lookup value', () => {
+    ruleTester.run('valid - identity keys in data documents', noHardcodedCredentials, {
+      valid: xmo([
+        {
+          name: 'username in a findOne filter',
+          code: `User.findOne({ username: 'admin' });`,
+        },
+        {
+          name: 'user in a find filter on a native collection',
+          code: `db.collection('users').find({ user: 'admin' });`,
+        },
+        {
+          name: 'username in an updateOne filter and its $set',
+          code: `User.updateOne({ username: 'old' }, { $set: { username: 'admin' } });`,
+        },
+        {
+          name: 'username in a deleteMany filter',
+          code: `User.deleteMany({ username: 'guest' });`,
+        },
+        {
+          name: 'username in a countDocuments filter',
+          code: `User.countDocuments({ username: 'admin' });`,
+        },
+        {
+          name: 'username inside an aggregate $match stage',
+          code: `User.aggregate([{ $match: { username: 'admin' } }]);`,
+        },
+        {
+          name: 'username inside an $or array of a filter',
+          code: `User.find({ $or: [{ username: 'admin' }, { username: 'root' }] });`,
+        },
+        {
+          name: 'auth field in a findOneAndUpdate filter',
+          code: `User.findOneAndUpdate({ auth: 'local' }, { active: true });`,
+        },
+        {
+          name: 'computed method name aggregate',
+          code: `User['aggregate']([{ $match: { username: 'admin' } }]);`,
+        },
+        {
+          name: 'a const-bound filter passed to findOne',
+          code: `const filter = { username: 'admin' };\nUser.findOne(filter);`,
+        },
+        {
+          name: 'a computed credential key cannot be read and is not reported',
+          code: `mongoose.connect(uri, { [key]: 'hunter2' });`,
+        },
+        {
+          name: 'a computed expression key cannot be read and is not reported',
+          code: `mongoose.connect(uri, { [prefix + 'pass']: 'hunter2' });`,
+        },
+      ]),
+      invalid: [],
+    });
+  });
+
+  describe('Files with no MongoDB are not judged', () => {
+    ruleTester.run('valid - no mongo in the file', noHardcodedCredentials, {
+      valid: [
+        {
+          name: 'a Redis client password in a file with no Mongo',
+          code: `const redis = createClient({ password: 'hunter2' });`,
+        },
+      ],
+      invalid: [],
     });
   });
 });
