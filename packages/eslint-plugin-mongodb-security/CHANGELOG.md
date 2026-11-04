@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-mongodb-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 9.2.2
+
+### Patch Changes
+
+- **🐛 Fix** — a `user` / `username` / `auth` literal in a query filter, update document or aggregation stage is no longer reported.
+
+  `User.findOne({ username: 'admin' })`, `User.aggregate([{ $match: { username: 'admin' } }])` and `updateOne({ username }, { $set: { username } })` look up or write an account name. They do not authenticate a connection. The decision follows code structure: the object is an argument to a Mongo data operation (`find*`, `update*`, `delete*`, `replaceOne`, `countDocuments`, `distinct`, `exists`, `aggregate`), either inline or through a `const` passed to one. A literal `pass` / `password` is still reported wherever it is written, and connection options (`mongoose.connect`, `new MongoClient`, `auth: { username, password }`) are judged as before.
+
 ## 9.2.1
 
 ### Patch Changes
