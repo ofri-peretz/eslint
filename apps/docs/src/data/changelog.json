@@ -1,7 +1,7 @@
 {
-  "releaseCount": 908,
+  "releaseCount": 910,
   "packageCount": 66,
-  "entryCount": 2502,
+  "entryCount": 2504,
   "oldestYear": 2024,
   "releases": [
     {
@@ -21332,6 +21332,21 @@
     {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
+      "version": "3.6.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Fix three false negatives found by the Quint fidelity models:",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
       "date": null,
       "isApp": false,
@@ -21590,6 +21605,21 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-jwt-security",
+      "short": "oxlint-plugin-jwt-security",
+      "version": "3.6.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-jwt-security@3.6.1`",
           "pr": null
         }
       ]
