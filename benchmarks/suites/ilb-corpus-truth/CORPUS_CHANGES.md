@@ -92,7 +92,7 @@ Ceilings raised — the file uses the SDK; the probe cannot see how:
 | `mongodb-security/require-schema-validation`   | 6 → 15  | geekyants-express `src/models/User.ts`                                                                 | `import mongoose from '../providers/Database'` then `new mongoose.Schema<IUserModel>({...})` — Mongoose through a local wrapper; checked since #1221 taught the rule the `new mongoose.Schema` form. The 6 the old ceiling held were the dynamoose file, now fixed.         |
 | `typeorm-security/no-hardcoded-credentials`    | 0 → 3   | meimei-admin `config.{development,production}.ts` (2), project-structure `src/config/envs/test.ts` (1) | TypeORM config shape `{ type: 'mysql', …, synchronize }` (#1208). meimei-admin commits a real password behind an env fallback for a public IP.                                                                                                                              |
 | `sequelize-security/no-hardcoded-credentials`  | 0 → 1   | node-best-practices `example-application/data-access/config/config.js`                                 | sequelize-cli config shape `{ username, password, dialect: 'postgres' }` (#1208)                                                                                                                                                                                            |
-| `knex-security/no-hardcoded-credentials`       | 0 → 1   | squareboat-nestjs-boilerplate `knexfile.js`                                                            | knexfile shape `{ client: 'mysql2', connection: { password } }` (#1208)                                                                                                                                                                                                     |
+| `knex-security/no-hardcoded-credentials`       | 0 → 1   | squareboat-nestjs-boilerplate `knexfile.js`                                                            | knexfile shape `{ client: 'mysql2', connection: { password } }` (#1208)                                                                                                                                                                                                      |
 
 Re-measured after the fixes on every repository that produced a regressed
 finding (and every repository with a PostgreSQL import or DSN): each of the
@@ -105,3 +105,52 @@ Eleven `mcp-sdk-security` rules added since the baseline was recorded (151 →
 when it has off-SDK findings, so they passed silently; all eleven measured 0
 off-SDK in this run and are now recorded at 0, so a first off-SDK finding reads
 as a regression against a recorded number rather than as an unbaselined rule.
+
+## 2026-11-03 — off-SDK ceiling raise (no corpus change)
+
+Not a `repos.json` change: `filesScanned` in the failing run matches this
+baseline's recorded `106002` exactly, and the run printed no corpus-drift
+warning, so the corpus is the same 106 pins this baseline was last recorded
+against.
+
+Run [41677813913](https://github.com/ofri-peretz/eslint/actions/runs/41677813913)
+(`main` at `d8e08c58f`, scheduled, issue #1358) failed on two rules:
+
+| Rule                                        | Ceiling | Measured |
+| -------------------------------------------- | ------: | -------: |
+| `nestjs-security/no-exposed-private-fields` |      39 |      103 |
+| `nestjs-security/no-unsafe-multer-filename` |       0 |        3 |
+
+Both trace to detection fixes that landed on `main` between this baseline's
+last recording and the run above — not to a new false positive:
+
+- **`no-exposed-private-fields`** — [#1349](https://github.com/ofri-peretz/eslint/pull/1349)
+  (`afb3c414`) taught `memberName` to resolve a computed string key
+  (`['password']: string`) as the same field as `password: string`, closing a
+  false-negative the computed-key probe found. The rule's file gate
+  (`fileDefinesSerializedModel` in `utils/nestjs-evidence.ts`) already fires on
+  `class-transformer`, `typeorm`, `mongoose` and `sequelize-typescript` with no
+  `@nestjs/*` import present — deliberately, per that file's own comment, since
+  gating on `@nestjs` alone silenced the rule on exactly the entity files it
+  exists for. `sdk-map.ts`'s `nestjs-security` entry only recognises
+  `@nestjs/*` as "has SDK", so every finding in one of those framework-free
+  entity files already counted as off-SDK before this fix; the fix simply
+  means more of them are now caught.
+- **`no-unsafe-multer-filename`** — [#1335](https://github.com/ofri-peretz/eslint/pull/1335)
+  rewrote the rule (182 lines) as part of resolving its Quint-model
+  divergences, with its own new fixtures and tests. Its gate
+  (`fileUsesNestjsOrMulter`) fires on a bare `multer` import with no
+  `@nestjs/*` present by design — the rule's own ❌ example is a
+  `diskStorage` module that imports only `multer` — and the same
+  `@nestjs/*`-only `sdk-map.ts` entry counts that as off-SDK.
+
+Both PRs shipped with their own tests, a changeset, and (for #1349) a
+`.agent/computed-key-baseline.json` update; neither touched `sdk-map.ts` or
+`baseline.json`, which is the gap this entry closes. The ceilings above are
+taken directly from run 41677813913's own output against the pinned,
+undrifted corpus, rather than re-derived in this environment: the sandbox this
+fix shipped from has no outbound access to the hosts the full 106-repo clone
+needs and ships Node 22, one major below this repo's pinned Node 24, so
+re-running `ilb:corpus-truth` here was not practical. A human or a later CI
+run can re-verify by re-running `npm run ilb:corpus-truth` and checking the
+new counts do not exceed these.
