@@ -41,7 +41,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-mcp-sdk-security` | 1.1.1 | `mcp-sdk-security/` | — | `plugin-mcp-sdk-security` | security | `mcp` | ✅ | ✅ | ✅ |
 | `eslint-plugin-modernization` | 3.2.0 | `modernization/` | — | `plugin-modernization` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-modularity` | 2.6.0 | `modularity/` | — | `plugin-modularity` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-mongodb-security` | 9.2.1 | `mongodb-security/` | — | `plugin-mongodb-security` | security | `mongodb` | ✅ | ✅ | ✅ |
+| `eslint-plugin-mongodb-security` | 9.2.2 | `mongodb-security/` | — | `plugin-mongodb-security` | security | `mongodb` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mysql-security` | 1.1.1 | `mysql-security/` | — | `plugin-mysql-security` | security | `mysql` | ✅ | ✅ | ✅ |
 | `eslint-plugin-nestjs-security` | 3.2.2 | `nestjs-security/` | — | `plugin-nestjs-security` | security | `nestjs` | ✅ | ✅ | ✅ |
 | `eslint-plugin-node-security` | 5.8.4 | `node-security/` | — | `plugin-node-security` | security | `node` | ✅ | ✅ | ✅ |
