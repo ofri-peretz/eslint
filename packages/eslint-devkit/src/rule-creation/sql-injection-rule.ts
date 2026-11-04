@@ -381,7 +381,6 @@ export function createSqlInjectionRule(
       let wrapperFns: Map<TSESTree.FunctionLike, string>;
       let pending: { name: string; index: number; arg: TSESTree.Node }[];
       let ownsFile: boolean;
-      let requestTextSink: boolean;
 
       /**
        * Is `node` — a sink's SQL argument — an unproven value spliced into
@@ -532,7 +531,7 @@ export function createSqlInjectionRule(
           report(text, kind);
           return;
         }
-        if (requestTextSink && isRequestText(text)) report(text, 'concat');
+        if (isRequestText(text)) report(text, 'concat');
       };
 
       /** The name a callee identifier is imported under from the plugin's modules. */
@@ -608,13 +607,6 @@ export function createSqlInjectionRule(
            */
           ownsFile = false;
 
-          /**
-           * Whether the sink being judged is called on the handle itself
-           * (`pool.query(…)`), not on a builder or prepared statement one call
-           * further down (`db.prepare(sql).get(id)`, `db.insert(t).values(row)`),
-           * whose arguments are bound values rather than SQL text.
-           */
-          requestTextSink = true;
           return true;
         },
         Program(program: TSESTree.Program) {
@@ -648,7 +640,6 @@ export function createSqlInjectionRule(
           if (!isMember && ownsFile) {
             const imported = importedName(callee as TSESTree.Identifier);
             if (imported !== null && fragmentFunctions.has(imported)) {
-              requestTextSink = true;
               if (node.arguments[0]) check(node.arguments[0], false);
               return;
             }
@@ -695,6 +686,11 @@ export function createSqlInjectionRule(
           const queryArg = node.arguments[fragment?.arg ?? 0];
           if (!queryArg || queryArg.type === AST_NODE_TYPES.SpreadElement)
             return;
+          // A prepared statement's or a query builder's method — one call
+          // further down, `db.prepare(sql).get(id)`, `db.insert(t).values(row)`
+          // — takes bound values, never SQL text.
+          if (isStatementObject((callee as TSESTree.MemberExpression).object))
+            return;
 
           // A sink fed straight from a parameter is the wrapper shape:
           // `(sql, params) => pool.query(sql, params)`. Record which argument
@@ -718,9 +714,6 @@ export function createSqlInjectionRule(
             fragment === undefined &&
             config.requireSqlKeywords &&
             receiver !== 'ours';
-          requestTextSink = !isStatementObject(
-            (callee as TSESTree.MemberExpression).object,
-          );
           check(queryArg, gate);
         },
 

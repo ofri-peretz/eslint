@@ -166,6 +166,13 @@ describe('no-unsafe-query — fp/fn review 2026-10', () => {
           "export const h = (bar) => { const baz = foo.prepare('SELECT * FROM t WHERE a = ?'); return baz.get(bar.query.a); };",
       },
       {
+        // @found fidelity sqlite-security/no_unsafe_query: Shapes|BetterSqlite|StatementBound
+        name: "FP: a template handed to a prepared statement's all() is a bound value, not SQL",
+        code:
+          B +
+          "export const h = (bar) => foo.prepare('SELECT * FROM t WHERE a = ?').all(`${bar.query.first} ${bar.query.last}`);",
+      },
+      {
         // @found sqlite-security FP/FN review 2026-10-12, synthetic probe (allowlist map)
         name: 'FP: a lookup through a fixed map is an allowlist',
         code:
@@ -180,6 +187,14 @@ describe('no-unsafe-query — fp/fn review 2026-10', () => {
         name: 'FN: the database handle comes from a relative module',
         filename: ROUTE,
         code: "const foo = require('./db');\nmodule.exports = (bar) => foo.prepare(`SELECT * FROM users WHERE id = ${bar.params.id}`).get();",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        // @found fidelity sqlite-security/no_unsafe_query: Drivers|AnyTyped|TemplateReq
+        name: 'FN: a handle annotated `: any` is still the driver',
+        code:
+          "import Database from 'better-sqlite3';\nconst foo: any = new Database(':memory:');\n" +
+          'export const h = (bar) => foo.prepare(`SELECT * FROM t WHERE id = ${bar.query.id}`).all();',
         errors: [{ messageId: 'unsafeTemplateLiteral' }],
       },
       {

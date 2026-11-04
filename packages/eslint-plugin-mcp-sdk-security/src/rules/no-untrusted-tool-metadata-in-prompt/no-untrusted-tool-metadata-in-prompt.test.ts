@@ -250,7 +250,7 @@ describe('fidelity model (2026-11-04): counts and serialised listings', () => {
           '}',
       },
       {
-        // review #1389: a replacer function decides what survives; not followed
+        // @found review #1389: a replacer function decides what survives; not followed
         name: 'a JSON.stringify whose replacer function the rule cannot see into',
         code:
           CLIENT +
@@ -284,7 +284,7 @@ describe('fidelity model (2026-11-04): counts and serialised listings', () => {
         errors: [err('listing', 'messages', ANTHROPIC)],
       },
       {
-        // review #1389
+        // @found review #1389
         name: 'FN: the listing wrapped in an object before JSON.stringify',
         code:
           CLIENT +
@@ -293,7 +293,7 @@ describe('fidelity model (2026-11-04): counts and serialised listings', () => {
         errors: [err('client.listTools().tools', 'system', ANTHROPIC)],
       },
       {
-        // review #1389
+        // @found review #1389
         name: 'FN: the listing in an array, through globalThis.JSON, with a null replacer',
         code:
           CLIENT +
@@ -302,7 +302,7 @@ describe('fidelity model (2026-11-04): counts and serialised listings', () => {
         errors: [err('client.listTools().tools', 'system', ANTHROPIC)],
       },
       {
-        // review #1389: .length of a const object literal is that field, not a count
+        // @found review #1389: .length of a const object literal is that field, not a count
         name: 'FN: a length field holding a description',
         code:
           CLIENT +

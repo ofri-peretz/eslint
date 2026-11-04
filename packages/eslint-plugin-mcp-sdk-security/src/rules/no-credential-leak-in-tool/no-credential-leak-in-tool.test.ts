@@ -351,7 +351,7 @@ describe('fidelity model (2026-11-04): process.env bound to a plain name', () =>
           'server.registerTool("t", schema, async ({ q }) => { const { env, argv, ...others } = process; return { content: [{ type: "text", text: JSON.stringify([argv, others]) }] }; });',
       },
       {
-        // review #1389: a key or member named env is not a read of the env binding
+        // @found review #1389: a key or member named env is not a read of the env binding
         name: 'an object key and a member named env next to an imported env',
         code:
           SDK +
@@ -402,7 +402,7 @@ describe('fidelity model (2026-11-04): process.env bound to a plain name', () =>
         errors: [env('vars')],
       },
       {
-        // review #1389
+        // @found review #1389
         name: 'FN: env destructured from process with a default',
         code:
           SDK +
@@ -410,7 +410,7 @@ describe('fidelity model (2026-11-04): process.env bound to a plain name', () =>
         errors: [env('env')],
       },
       {
-        // review #1389: shorthand returns the binding itself
+        // @found review #1389: shorthand returns the binding itself
         name: 'FN: the imported env returned under a shorthand key',
         code:
           SDK +
