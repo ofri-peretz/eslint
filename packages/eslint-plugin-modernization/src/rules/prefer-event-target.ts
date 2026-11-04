@@ -107,6 +107,20 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
     }
 
     /**
+     * An identifier bound to the `events` module root (`import E from 'events'`,
+     * `const E = require('events')`). A named binding (`import { EventEmitter }`,
+     * `const { EventEmitter } = require(...)`) is reported once, where it is
+     * bound, so its uses are not reported again.
+     */
+    function isEmitterRoot(node: TSESTree.Identifier): boolean {
+      const binding = resolveModuleBinding(
+        node,
+        context.sourceCode.getScope(node),
+      );
+      return binding?.module === 'events' && binding.path.length === 0;
+    }
+
+    /**
      * The innermost identifier of `a.b.c` when nothing in the file declares it.
      * A root the file declares (an import from another module, a parameter, a
      * local class) is a known binding, and `isNodeEmitter` already answered
@@ -127,7 +141,7 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
       if (node.superClass) {
         if (
           node.superClass.type === 'Identifier' &&
-          (isNodeEmitter(node.superClass) ||
+          (isEmitterRoot(node.superClass) ||
             (node.superClass.name === 'EventEmitter' &&
               undeclaredRoot(node.superClass)))
         ) {
@@ -290,12 +304,7 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
       // `new Emitter()` where `Emitter` is the module root - a default import
       // or `require('events')` itself - which no import specifier named.
       NewExpression(node: TSESTree.NewExpression) {
-        if (node.callee.type !== 'Identifier') return;
-        const binding = resolveModuleBinding(
-          node.callee,
-          context.sourceCode.getScope(node),
-        );
-        if (binding?.module === 'events' && binding.path.length === 0) {
+        if (node.callee.type === 'Identifier' && isEmitterRoot(node.callee)) {
           context.report({
             node: node.callee,
             messageId: 'preferEventTarget',

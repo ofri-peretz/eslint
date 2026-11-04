@@ -196,6 +196,14 @@ describe('prefer-event-target', () => {
           code: 'function make(lib: any) { return class extends lib.EventEmitter {}; }',
         },
         {
+          name: 'another member of the events namespace is not EventEmitter',
+          code: "import * as ev from 'events';\nclass Bus extends ev.once {}",
+        },
+        {
+          name: 'a deeper member of the events namespace is not EventEmitter',
+          code: "import * as ev from 'events';\nclass Bus extends ev.a.b {}",
+        },
+        {
           name: 'other exports of events are not EventEmitter',
           code: "import { once } from 'events';\nvoid once;",
         },
@@ -220,6 +228,16 @@ describe('prefer-event-target', () => {
           name: 'a quoted key in a require destructure',
           code: "const { 'EventEmitter': Bus } = require('events');",
           errors: [{ messageId: 'preferEventTarget' }],
+        },
+        {
+          name: 'extends on a named import reports once, at the import',
+          code: "import { EventEmitter } from 'events';\nclass Bus extends EventEmitter {}",
+          errors: [{ messageId: 'preferEventTarget', line: 1 }],
+        },
+        {
+          name: 'extends on a destructured require reports once, at the require',
+          code: "const { EventEmitter } = require('events');\nclass Bus extends EventEmitter {}",
+          errors: [{ messageId: 'preferEventTarget', line: 1 }],
         },
         {
           name: 'new on a named import reports once, at the import',
