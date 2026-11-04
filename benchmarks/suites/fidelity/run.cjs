@@ -44,6 +44,7 @@ const PLUGINS = [
   'mongodb-security',
   'express-security',
   'mcp-sdk-security',
+  'postgresql-security',
   'lambda-security',
 ];
 

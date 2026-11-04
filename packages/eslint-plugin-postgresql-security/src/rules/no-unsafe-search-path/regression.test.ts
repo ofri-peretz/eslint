@@ -137,7 +137,7 @@ describe('no-unsafe-search-path — regression locks', () => {
         code: 'client.query(sql`SET search_path TO ${schema}`);',
       },
       // Shapes the sink never reaches.
-      { name: 'lock: computed sink property', code: "client['query'](`SET search_path TO ${s}`);" },
+      { name: 'lock: a dynamic sink property', code: 'client[method](`SET search_path TO ${s}`);' },
       { name: 'lock: bare callee', code: 'query(`SET search_path TO ${s}`);' },
       { name: 'lock: unrelated method', code: 'client.log(`SET search_path TO ${s}`);' },
       { name: 'lock: no arguments', code: 'client.query();' },
@@ -206,6 +206,13 @@ describe('no-unsafe-search-path — regression locks', () => {
       },
     ]),
     invalid: pg([
+      // FN (fidelity model): a string subscript is punctuation, not a
+      // dynamic method — the same sink as `client.query`.
+      {
+        name: 'lock: computed sink property',
+        code: "client['query'](`SET search_path TO ${s}`);",
+        errors: error,
+      },
       // FN: whitespace and the LOCAL/SESSION qualifiers defeated the substring.
       {
         name: 'lock: irregular whitespace still sets the search path',

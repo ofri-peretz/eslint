@@ -11,6 +11,7 @@ import {
   TSESTree,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { NoFloatingQueryOptions } from '../../types';
 import { usesPostgres } from '../../utils';
@@ -65,11 +66,14 @@ function promiseChain(node: TSESTree.Node): Chain {
     if (
       member === undefined ||
       member.type !== AST_NODE_TYPES.MemberExpression ||
-      member.object !== current ||
-      member.property.type !== AST_NODE_TYPES.Identifier
+      member.object !== current
     ) {
       break;
     }
+    // `.catch` and `['catch']` are the same method; a dynamic `[m]` is not
+    // known to be one.
+    const method = propertyName(member);
+    if (method === null) break;
     const call = member.parent;
     if (
       call === undefined ||
@@ -78,7 +82,6 @@ function promiseChain(node: TSESTree.Node): Chain {
     ) {
       break;
     }
-    const method = member.property.name;
     if (
       method === 'catch' ||
       (method === 'then' && call.arguments.length >= 2)
@@ -164,8 +167,7 @@ export const noFloatingQuery: TSESLint.RuleModule<
       CallExpression(node) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          node.callee.property.type !== AST_NODE_TYPES.Identifier ||
-          node.callee.property.name !== 'query'
+          propertyName(node.callee) !== 'query'
         ) {
           return;
         }

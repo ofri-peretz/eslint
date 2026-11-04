@@ -150,22 +150,32 @@ describe('check-query-params — regression locks', () => {
         code: "legacy.query('UPDATE u SET email = ? WHERE id = ?', [email, id]);",
       },
       // Shapes the sink never reaches.
-      { name: 'lock: computed sink property', code: "client['query']('SELECT $1, $2', [a]);" },
       { name: 'lock: bare callee', code: "query('SELECT $1, $2', [a]);" },
       { name: 'lock: unrelated method', code: "client.log('SELECT $1, $2', [a]);" },
       { name: 'lock: no arguments', code: 'client.query();' },
       { name: 'lock: spread first argument', code: 'client.query(...args);' },
       { name: 'lock: a spread second argument', code: "client.query('SELECT $1, $2', ...rest);" },
-      { name: 'lock: no second argument', code: "client.query('SELECT $1, $2');" },
+      // No values, and nothing to bind: not judged.
+      { name: 'lock: no placeholders and no values argument', code: "client.query('SELECT 1');" },
       {
-        name: 'lock: a callback as the second argument',
-        code: "client.query('SELECT $1', (e, r) => r);",
+        name: 'lock: no placeholders and a callback',
+        code: "client.query('SELECT 1', (e, r) => r);",
       },
+      // A PREPARE declares its parameters; EXECUTE binds them later.
+      {
+        name: 'lock: PREPARE with no values',
+        code: "client.query('PREPARE ins AS INSERT INTO t VALUES ($1, $2)');",
+      },
+      {
+        name: 'lock: PREPARE after a leading comment',
+        code: "client.query('/* seed */ prepare ins AS SELECT $1');",
+      },
+      {
+        name: 'lock: an unbound statement that is not knowable',
+        code: 'client.query(buildText());',
+      },
+      { name: 'lock: a dynamic sink property', code: "client[method]('SELECT $1, $2', [a]);" },
       { name: 'lock: a numeric statement argument', code: 'client.query(123, [a]);' },
-      {
-        name: 'lock: a config object with no values property',
-        code: "client.query({ name: 'h', text: 'SELECT $1' });",
-      },
       {
         name: 'lock: a config object with a spread property',
         code: "client.query({ ...base, values: [a] });",
@@ -252,6 +262,34 @@ describe('check-query-params — regression locks', () => {
       {
         name: 'lock: the config-object form',
         code: "client.query({ text: 'UPDATE u SET n = $1 WHERE id = $2', values: [n] });",
+        errors: error,
+      },
+      // FN (fidelity model): a string subscript is the same sink.
+      {
+        name: 'lock: computed sink property',
+        code: "client['query']('SELECT $1, $2', [a]);",
+        errors: error,
+      },
+      // FN (fidelity model): placeholders and no values at all. pg sends the
+      // statement unbound and the server answers "there is no parameter $1".
+      {
+        name: 'lock: no second argument',
+        code: "client.query('SELECT $1, $2');",
+        errors: error,
+      },
+      {
+        name: 'lock: a callback as the second argument',
+        code: "client.query('SELECT $1', (e, r) => r);",
+        errors: error,
+      },
+      {
+        name: 'lock: a function-expression callback',
+        code: "client.query('SELECT $1', function (e, r) { return r; });",
+        errors: error,
+      },
+      {
+        name: 'lock: a config object with no values property',
+        code: "client.query({ name: 'h', text: 'SELECT $1' });",
         errors: error,
       },
       {

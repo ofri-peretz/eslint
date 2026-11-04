@@ -80,6 +80,12 @@ describe('no-select-all', () => {
           code: `client.query('SELECT * FROM users')`,
           errors: [{ messageId: 'noSelectAll' }],
         },
+        // FN (fidelity model): a string subscript is the same sink.
+        {
+          name: 'a string-subscript query call is the same sink',
+          code: `pool['query']('SELECT * FROM users WHERE id = $1', [id])`,
+          errors: [{ messageId: 'noSelectAll' }],
+        },
       ]),
     });
   });

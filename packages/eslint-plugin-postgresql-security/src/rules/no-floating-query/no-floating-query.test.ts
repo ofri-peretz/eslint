@@ -80,6 +80,17 @@ describe('no-floating-query', () => {
           code: `client.query('SELECT 1')`,
           errors: [{ messageId: 'noFloatingQuery' }],
         },
+        // FN (fidelity model): a string subscript is the same sink.
+        {
+          name: 'a string-subscript query call floats just the same',
+          code: `pool['query']('INSERT INTO audit_log (actor) VALUES ($1)', [id]);`,
+          errors: [{ messageId: 'noFloatingQuery' }],
+        },
+        {
+          name: 'a string-subscript one-argument then still floats the rejection',
+          code: `pool['query']('SELECT 1')['then'](r => cache.set(r));`,
+          errors: [{ messageId: 'noFloatingQuery' }],
+        },
       ]),
     });
   });
@@ -103,10 +114,13 @@ describe('no-floating-query', () => {
 describe('no-floating-query — regression locks', () => {
   ruleTester.run('a chain is handled only by a rejection handler', noFloatingQuery, {
     valid: pg([
-      "pool.query('SELECT 1').catch(e => console.error(e));",
+      { name: 'a catch chain handles the rejection', code: "pool.query('SELECT 1').catch(e => console.error(e));" },
       "pool.query('SELECT 1').then(r => cache.set(r), e => console.warn(e));",
       "pool.query('SELECT 1').then(r => r.rows[0]).then(r => cache.set(r)).catch(e => log(e));",
       "pool.query('SELECT 1').catch(e => log(e)).finally(done);",
+      // The same handlers through string subscripts.
+      { name: 'a string-subscript catch handles the rejection', code: "pool['query']('SELECT 1')['catch'](e => log(e));" },
+      { name: 'a dynamic member on the query promise is not judged', code: "pool.query('SELECT 1')[method](e => log(e));" },
     ]),
     invalid: [],
   });
