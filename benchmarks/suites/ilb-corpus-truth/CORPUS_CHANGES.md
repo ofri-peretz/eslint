@@ -92,7 +92,7 @@ Ceilings raised — the file uses the SDK; the probe cannot see how:
 | `mongodb-security/require-schema-validation`   | 6 → 15  | geekyants-express `src/models/User.ts`                                                                 | `import mongoose from '../providers/Database'` then `new mongoose.Schema<IUserModel>({...})` — Mongoose through a local wrapper; checked since #1221 taught the rule the `new mongoose.Schema` form. The 6 the old ceiling held were the dynamoose file, now fixed.         |
 | `typeorm-security/no-hardcoded-credentials`    | 0 → 3   | meimei-admin `config.{development,production}.ts` (2), project-structure `src/config/envs/test.ts` (1) | TypeORM config shape `{ type: 'mysql', …, synchronize }` (#1208). meimei-admin commits a real password behind an env fallback for a public IP.                                                                                                                              |
 | `sequelize-security/no-hardcoded-credentials`  | 0 → 1   | node-best-practices `example-application/data-access/config/config.js`                                 | sequelize-cli config shape `{ username, password, dialect: 'postgres' }` (#1208)                                                                                                                                                                                            |
-| `knex-security/no-hardcoded-credentials`       | 0 → 1   | squareboat-nestjs-boilerplate `knexfile.js`                                                            | knexfile shape `{ client: 'mysql2', connection: { password } }` (#1208)                                                                                                                                                                                                      |
+| `knex-security/no-hardcoded-credentials`       | 0 → 1   | squareboat-nestjs-boilerplate `knexfile.js`                                                            | knexfile shape `{ client: 'mysql2', connection: { password } }` (#1208)                                                                                                                                                                                                     |
 
 Re-measured after the fixes on every repository that produced a regressed
 finding (and every repository with a PostgreSQL import or DSN): each of the
@@ -117,7 +117,7 @@ Run [41677813913](https://github.com/ofri-peretz/eslint/actions/runs/41677813913
 (`main` at `d8e08c58f`, scheduled, issue #1358) failed on two rules:
 
 | Rule                                        | Ceiling | Measured |
-| -------------------------------------------- | ------: | -------: |
+| ------------------------------------------- | ------: | -------: |
 | `nestjs-security/no-exposed-private-fields` |      39 |      103 |
 | `nestjs-security/no-unsafe-multer-filename` |       0 |        3 |
 
