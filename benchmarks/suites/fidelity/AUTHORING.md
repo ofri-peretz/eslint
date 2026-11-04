@@ -12,6 +12,11 @@ in the five plugins has no model.
 
 ## The model is the spec, not a copy of the code
 
+The spec follows AGENTS.md "Flag only clear problems": a model reports only
+what the code proves is a real problem, and decides by structure, never by
+matching specific string values such as hostnames, IP ranges or value lists.
+Where the docs leave a case to judgment, model it as silent.
+
 Write the `.qnt` from the rule's contract: `docs/rules/<rule>.md`, the CWE it
 cites, its options schema, and what a correct implementation must do. Do not
 transcribe `index.ts` branch by branch: a model copied from the code agrees with
