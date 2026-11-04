@@ -51,7 +51,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-prisma-security` | 1.1.2 | `prisma-security/` | — | `plugin-prisma-security` | security | `prisma` | ✅ | ✅ | ✅ |
 | `eslint-plugin-react-a11y` | 2.6.0 | `react-a11y/` | — | `plugin-react-a11y` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-react-features` | 1.8.0 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
-| `eslint-plugin-reliability` | 4.2.0 | `reliability/` | — | `plugin-reliability` | quality | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-reliability` | 4.2.1 | `reliability/` | — | `plugin-reliability` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-secure-coding` | 5.6.4 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sequelize-security` | 1.1.2 | `sequelize-security/` | — | `plugin-sequelize-security` | security | `sequelize` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sqlite-security` | 1.1.1 | `sqlite-security/` | — | `plugin-sqlite-security` | security | `sqlite` | ✅ | ✅ | ✅ |
