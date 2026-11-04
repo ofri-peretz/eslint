@@ -5,7 +5,8 @@
   "note": "Per-rule off-SDK ceiling. Regenerate with --update-baseline only when the increase is understood and explained in the PR body.",
   "amendments": [
     "2026-10-19: autobe (wrtnlabs/autobe@f5de992) removed, upstream repository deleted. Its off-SDK contribution was 0 for every rule under both the baseline-commit rules (d4cbc1846) and current rules, so the per-rule ceilings are unchanged; corpusHash re-derived for the 106 remaining pins and filesScanned 107384 - 1382 = 106002. See CORPUS_CHANGES.md.",
-    "2026-10-19: off-SDK regression triage (ILB-Corpus-Truth run 39338296858). Wrong verdicts fixed at the root, not absorbed; the ceilings raised here hold only findings in files that DO use the SDK through evidence the import probe cannot see (a relative wrapper module, a driver config-file shape, a DSN). Eight ceilings changed and eleven mcp-sdk-security rules added at their measured 0; per-rule evidence in CORPUS_CHANGES.md."
+    "2026-10-19: off-SDK regression triage (ILB-Corpus-Truth run 39338296858). Wrong verdicts fixed at the root, not absorbed; the ceilings raised here hold only findings in files that DO use the SDK through evidence the import probe cannot see (a relative wrapper module, a driver config-file shape, a DSN). Eight ceilings changed and eleven mcp-sdk-security rules added at their measured 0; per-rule evidence in CORPUS_CHANGES.md.",
+    "2026-11-03: off-SDK ceiling raise, no corpus change (ILB-Corpus-Truth run 41677813913, issue #1358). Two ceilings raised to the counts that run measured against the pinned, undrifted 106-repo corpus (filesScanned 106002, matching this baseline exactly); both are traced to already-merged, already-tested detection fixes, not to a new false positive. Per-rule evidence in CORPUS_CHANGES.md."
   ],
   "rules": {
     "express-security/require-helmet": 0,
@@ -41,11 +42,11 @@
     "nestjs-security/require-throttler": 0,
     "nestjs-security/require-validation-pipe-whitelist": 0,
     "nestjs-security/no-permissive-cors": 0,
-    "nestjs-security/no-exposed-private-fields": 39,
+    "nestjs-security/no-exposed-private-fields": 103,
     "nestjs-security/no-res-bypass-serialization": 0,
     "nestjs-security/no-unguarded-swagger": 0,
     "nestjs-security/no-hybrid-app-config-loss": 0,
-    "nestjs-security/no-unsafe-multer-filename": 0,
+    "nestjs-security/no-unsafe-multer-filename": 3,
     "jwt-security/no-algorithm-none": 5,
     "jwt-security/no-algorithm-confusion": 0,
     "jwt-security/require-algorithm-whitelist": 0,
