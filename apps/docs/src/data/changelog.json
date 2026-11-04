@@ -5,6 +5,196 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "oxlint-plugin-knex-security",
+      "short": "oxlint-plugin-knex-security",
+      "version": "1.1.2",
+      "date": "2026-11-04T21:11:35Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-knex-security@1.1.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-drizzle-security",
+      "short": "oxlint-plugin-drizzle-security",
+      "version": "1.1.2",
+      "date": "2026-11-04T21:11:22Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-drizzle-security@1.1.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-sequelize-security",
+      "short": "oxlint-plugin-sequelize-security",
+      "version": "1.1.2",
+      "date": "2026-11-04T21:11:21Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-sequelize-security@1.1.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-prisma-security",
+      "short": "oxlint-plugin-prisma-security",
+      "version": "1.1.2",
+      "date": "2026-11-04T21:11:20Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-prisma-security@1.1.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-typeorm-security",
+      "short": "oxlint-plugin-typeorm-security",
+      "version": "1.1.2",
+      "date": "2026-11-04T21:11:17Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-typeorm-security@1.1.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.21.4",
+      "date": "2026-11-04T21:10:21Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "false negatives and false positives found by the ORM Quint fidelity models.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-drizzle-security",
+      "short": "eslint-plugin-drizzle-security",
+      "version": "1.1.2",
+      "date": "2026-11-04T21:10:11Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "false negatives and false positives found by the ORM Quint fidelity models.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.4`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-sequelize-security",
+      "short": "eslint-plugin-sequelize-security",
+      "version": "1.1.2",
+      "date": "2026-11-04T21:10:10Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "false negatives and false positives found by the ORM Quint fidelity models.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.4`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-typeorm-security",
+      "short": "eslint-plugin-typeorm-security",
+      "version": "1.1.2",
+      "date": "2026-11-04T21:10:09Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "false negatives and false positives found by the ORM Quint fidelity models.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.4`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-knex-security",
+      "short": "eslint-plugin-knex-security",
+      "version": "1.1.2",
+      "date": "2026-11-04T21:10:08Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "false negatives and false positives found by the ORM Quint fidelity models.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.4`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-prisma-security",
+      "short": "eslint-plugin-prisma-security",
+      "version": "1.1.2",
+      "date": "2026-11-04T21:10:08Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "false negatives and false positives found by the ORM Quint fidelity models.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.4`",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "oxlint-plugin-drizzle-security",
       "short": "oxlint-plugin-drizzle-security",
       "version": "1.1.1",
@@ -21820,21 +22010,6 @@
       ]
     },
     {
-      "package": "@interlace/eslint-devkit",
-      "short": "eslint-devkit",
-      "version": "1.21.4",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "false negatives and false positives found by the ORM Quint fidelity models.",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.2.0",
@@ -21845,26 +22020,6 @@
         {
           "kind": "feature",
           "title": "the formatter is published. `eslint -f @interlace/eslint-formatter` emits ~408 tokens where `stylish` emits ~104,483, at the same measured signal score.",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-drizzle-security",
-      "short": "eslint-plugin-drizzle-security",
-      "version": "1.1.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "false negatives and false positives found by the ORM Quint fidelity models.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.4`",
           "pr": null
         }
       ]
@@ -21985,26 +22140,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-knex-security",
-      "short": "eslint-plugin-knex-security",
-      "version": "1.1.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "false negatives and false positives found by the ORM Quint fidelity models.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.4`",
           "pr": null
         }
       ]
@@ -22135,46 +22270,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-prisma-security",
-      "short": "eslint-plugin-prisma-security",
-      "version": "1.1.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "false negatives and false positives found by the ORM Quint fidelity models.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.4`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-sequelize-security",
-      "short": "eslint-plugin-sequelize-security",
-      "version": "1.1.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "false negatives and false positives found by the ORM Quint fidelity models.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.4`",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-supabase-security",
       "short": "eslint-plugin-supabase-security",
       "version": "1.0.0",
@@ -22190,101 +22285,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-typeorm-security",
-      "short": "eslint-plugin-typeorm-security",
-      "version": "1.1.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "false negatives and false positives found by the ORM Quint fidelity models.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.4`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-drizzle-security",
-      "short": "oxlint-plugin-drizzle-security",
-      "version": "1.1.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-drizzle-security@1.1.2`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-knex-security",
-      "short": "oxlint-plugin-knex-security",
-      "version": "1.1.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-knex-security@1.1.2`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-prisma-security",
-      "short": "oxlint-plugin-prisma-security",
-      "version": "1.1.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-prisma-security@1.1.2`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-sequelize-security",
-      "short": "oxlint-plugin-sequelize-security",
-      "version": "1.1.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-sequelize-security@1.1.2`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-typeorm-security",
-      "short": "oxlint-plugin-typeorm-security",
-      "version": "1.1.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-typeorm-security@1.1.2`",
           "pr": null
         }
       ]
