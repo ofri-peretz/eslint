@@ -5,6 +5,36 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "oxlint-plugin-mongodb-security",
+      "short": "oxlint-plugin-mongodb-security",
+      "version": "9.2.1",
+      "date": "2026-11-04T15:26:37Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-mongodb-security@9.2.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mongodb-security",
+      "short": "eslint-plugin-mongodb-security",
+      "version": "9.2.1",
+      "date": "2026-11-04T15:25:05Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Fix false negatives and false positives found by the Quint fidelity models:",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "oxlint-plugin-jwt-security",
       "short": "oxlint-plugin-jwt-security",
       "version": "3.6.1",
@@ -21480,21 +21510,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-mongodb-security",
-      "short": "eslint-plugin-mongodb-security",
-      "version": "9.2.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Fix false negatives and false positives found by the Quint fidelity models:",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
@@ -21635,21 +21650,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-mongodb-security",
-      "short": "oxlint-plugin-mongodb-security",
-      "version": "9.2.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-mongodb-security@9.2.1`",
           "pr": null
         }
       ]
