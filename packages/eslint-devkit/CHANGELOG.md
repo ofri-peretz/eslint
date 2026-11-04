@@ -5,6 +5,15 @@ All notable changes to `@interlace/eslint-devkit` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.21.3
+
+### Patch Changes
+
+- **🐛 Fix** — two driver-tracing fixes found by the Quint fidelity models.
+
+  - A handle annotated `: any` or `: unknown` (`const pool: any = mysql.createPool(…)`) is traced through its initialiser again. The annotation used to mark it as another library's object, so `no-unsafe-query` stayed silent on every query it ran.
+  - A prepared statement's or query builder's method (`db.prepare(sql).all(value)`, `db.insert(t).values(row)`) takes bound values, never SQL text, and is no longer judged: a template handed to it as a value (``.all(`${first} ${last}`)``) was reported as SQL injection.
+
 ## 1.21.2
 
 ### Patch Changes
