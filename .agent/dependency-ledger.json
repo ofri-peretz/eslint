@@ -68,7 +68,10 @@
     "recharts": "docs charts (.interlace/components/charts)",
     "recheck": "ReDoS automata: a real algorithm, not glue",
     "refa": "ReDoS automata: a real algorithm, not glue",
+    "remark-gfm": "the remark pipeline the docs site renders through; validate-doc-tables asserts on its AST on purpose",
+    "remark-parse": "the remark pipeline the docs site renders through; validate-doc-tables asserts on its AST on purpose",
     "scslre": "ReDoS automata: a real algorithm, not glue",
+    "semver": "npm range semantics; lockfile and peer-range checks must agree with npm exactly",
     "shiki": "docs framework (apps/docs)",
     "storybook": "ui package build and component tests",
     "tailwind-merge": "Tailwind class-conflict resolution: needs the whole utility map, not a few lines",
@@ -80,10 +83,12 @@
     "twoslash": "docs framework (apps/docs)",
     "typescript": "language toolchain; typescript-eslint lints this repo itself",
     "typescript-eslint": "language toolchain; typescript-eslint lints this repo itself",
+    "unified": "the remark pipeline the docs site renders through; validate-doc-tables asserts on its AST on purpose",
     "verdaccio": "publish rehearsal registry",
     "vite": "ui package build and component tests",
     "vite-plugin-dts": "ui package build and component tests",
-    "vitest": "the only test runner"
+    "vitest": "the only test runner",
+    "yaml": "the one YAML parser (workflow lint and workflow lock tests)"
   },
   "subject": {
     "@ai-sdk/openai": "AI SDK API our rules lint",
@@ -164,9 +169,6 @@
     "@typescript-eslint/types": "phase 1: devkit owns its AST and rule types",
     "@typescript-eslint/utils": "phase 1: devkit owns its AST and rule types",
     "class-variance-authority": "own cn()/variants() — waits on the docs baseline in the agents repo (apps/interlace-docs-baseline), which the docs app is generated from",
-    "clsx": "own cn()/variants() — waits on the docs baseline in the agents repo (apps/interlace-docs-baseline), which the docs app is generated from",
-    "remark-gfm": "a small GFM table reader in scripts/lib",
-    "remark-parse": "a small GFM table reader in scripts/lib",
-    "unified": "a small GFM table reader in scripts/lib"
+    "clsx": "own cn()/variants() — waits on the docs baseline in the agents repo (apps/interlace-docs-baseline), which the docs app is generated from"
   }
 }

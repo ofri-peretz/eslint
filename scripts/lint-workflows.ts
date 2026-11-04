@@ -29,7 +29,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
 import process from 'node:process';
-import yaml from 'js-yaml';
+import { parse as parseYaml } from 'yaml';
 
 interface Step {
   name?: string;
@@ -84,15 +84,18 @@ const parsed = new Map<string, Workflow>();
 for (const file of files) {
   const full = path.join(WORKFLOWS_DIR, file);
   try {
-    parsed.set(file, yaml.load(fs.readFileSync(full, 'utf8')) as Workflow);
+    parsed.set(file, parseYaml(fs.readFileSync(full, 'utf8')) as Workflow);
   } catch (e) {
-    errors.push(`[yaml] ${file}: ${(e instanceof Error ? e.message : String(e)).split('\n')[0]}`);
+    errors.push(
+      `[yaml] ${file}: ${(e instanceof Error ? e.message : String(e)).split('\n')[0]}`,
+    );
   }
 }
 
 const FIRST_PARTY_PREFIXES = ['actions/', 'github/'];
 const isLocalAction = (uses: string) => uses.startsWith('./');
-const isFirstParty = (uses: string) => FIRST_PARTY_PREFIXES.some((p) => uses.startsWith(p));
+const isFirstParty = (uses: string) =>
+  FIRST_PARTY_PREFIXES.some((p) => uses.startsWith(p));
 const isShaPinned = (uses: string) => {
   const at = uses.indexOf('@');
   if (at === -1) return false;
@@ -111,19 +114,25 @@ for (const [file, wf] of parsed) {
   if (!wf || typeof wf !== 'object') continue;
 
   if (!('permissions' in wf) || wf.permissions == null) {
-    errors.push(`[permissions] ${file}: missing top-level \`permissions:\` block (least-privilege).`);
+    errors.push(
+      `[permissions] ${file}: missing top-level \`permissions:\` block (least-privilege).`,
+    );
   }
 
   const t = triggers(wf.on);
   if ((t.includes('push') || t.includes('pull_request')) && !wf.concurrency) {
-    errors.push(`[concurrency] ${file}: triggered by push/pull_request but has no \`concurrency:\` block — duplicate runs of the same ref will not cancel.`);
+    errors.push(
+      `[concurrency] ${file}: triggered by push/pull_request but has no \`concurrency:\` block — duplicate runs of the same ref will not cancel.`,
+    );
   }
 
   for (const [jobName, job] of Object.entries(wf.jobs ?? {})) {
     if (!job || typeof job !== 'object') continue;
 
     if (job['timeout-minutes'] == null && job.uses == null) {
-      errors.push(`[timeout] ${file} → ${jobName}: no \`timeout-minutes\` — runaway jobs can drain quota.`);
+      errors.push(
+        `[timeout] ${file} → ${jobName}: no \`timeout-minutes\` — runaway jobs can drain quota.`,
+      );
     }
 
     const steps = job.steps ?? [];
@@ -145,7 +154,11 @@ for (const [file, wf] of parsed) {
         }
       }
 
-      if (!isLocalAction(step.uses) && !isFirstParty(step.uses) && !isShaPinned(step.uses)) {
+      if (
+        !isLocalAction(step.uses) &&
+        !isFirstParty(step.uses) &&
+        !isShaPinned(step.uses)
+      ) {
         const tag = step.uses.split('@')[1] ?? '(no @ref)';
         warnings.push(
           `[sha-pin] ${file} → ${jobName} → step ${i + 1}: \`${step.uses}\` is pinned to a tag "${tag}", not a SHA. Pin to a 40-char commit SHA for supply-chain hardening.`,
@@ -184,8 +197,13 @@ if (inCI) {
 }
 
 if (errors.length === 0 && warnings.length === 0) {
-  if (!QUIET) console.log(`✅ ${files.length} workflow file(s) pass conventions.`);
-  appendSummary([`# ✅ Workflow conventions clean`, ``, `${files.length} workflow file(s) pass all checks.`]);
+  if (!QUIET)
+    console.log(`✅ ${files.length} workflow file(s) pass conventions.`);
+  appendSummary([
+    `# ✅ Workflow conventions clean`,
+    ``,
+    `${files.length} workflow file(s) pass all checks.`,
+  ]);
   process.exit(0);
 }
 
@@ -196,7 +214,9 @@ if (warnings.length > 0) {
 }
 
 if (errors.length === 0) {
-  console.log(`✅ ${files.length} workflow file(s) pass hard checks (warnings only).`);
+  console.log(
+    `✅ ${files.length} workflow file(s) pass hard checks (warnings only).`,
+  );
   appendSummary([
     `# ✅ Hard checks pass · ${warnings.length} soft warning(s)`,
     ``,
@@ -219,6 +239,8 @@ appendSummary([
   ``,
   ...errors.map((e) => `- ${e}`),
   ``,
-  warnings.length > 0 ? `Plus ${warnings.length} soft warning(s) — see annotations.` : ``,
+  warnings.length > 0
+    ? `Plus ${warnings.length} soft warning(s) — see annotations.`
+    : ``,
 ]);
 process.exit(1);
