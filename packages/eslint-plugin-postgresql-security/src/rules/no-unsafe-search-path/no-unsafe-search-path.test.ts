@@ -81,6 +81,12 @@ describe('no-unsafe-search-path', () => {
           code: `client.query(\`SET search_path TO \${schema}\`)`,
           errors: [{ messageId: 'noUnsafeSearchPath' }],
         },
+        // FN (fidelity model): a string subscript is the same sink.
+        {
+          name: 'a string-subscript query call is the same sink',
+          code: `pool['query']('SET search_path = ' + req.body.schema)`,
+          errors: [{ messageId: 'noUnsafeSearchPath' }],
+        },
       ]),
     });
   });

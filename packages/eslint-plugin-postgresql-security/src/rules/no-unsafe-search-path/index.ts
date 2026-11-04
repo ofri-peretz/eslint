@@ -456,8 +456,7 @@ export const noUnsafeSearchPath: TSESLint.RuleModule<
       CallExpression(node: TSESTree.CallExpression) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          node.callee.property.type !== AST_NODE_TYPES.Identifier ||
-          !SQL_SINK_METHODS.has(node.callee.property.name)
+          !SQL_SINK_METHODS.has(propertyName(node.callee) as string)
         ) {
           return;
         }

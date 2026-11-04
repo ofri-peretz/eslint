@@ -11,6 +11,7 @@ import {
   TSESTree,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { PreferPoolQueryOptions } from '../../types';
 import { usesPostgres } from '../../utils';
@@ -215,9 +216,7 @@ export const preferPoolQuery: TSESLint.RuleModule<
           node.init.type !== AST_NODE_TYPES.AwaitExpression ||
           node.init.argument.type !== AST_NODE_TYPES.CallExpression ||
           node.init.argument.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          node.init.argument.callee.property.type !==
-            AST_NODE_TYPES.Identifier ||
-          node.init.argument.callee.property.name !== 'connect'
+          propertyName(node.init.argument.callee) !== 'connect'
         ) {
           return;
         }
@@ -234,23 +233,24 @@ export const preferPoolQuery: TSESLint.RuleModule<
 
           const id = ref.identifier;
           const access = id.parent;
-          if (
-            access === undefined ||
-            access.type !== AST_NODE_TYPES.MemberExpression ||
-            access.object !== id ||
-            access.property.type !== AST_NODE_TYPES.Identifier
-          ) {
+          // `client.query` and `client['query']` are the same member.
+          const member =
+            access?.type === AST_NODE_TYPES.MemberExpression &&
+            access.object === id
+              ? propertyName(access)
+              : null;
+          if (member === null) {
             // The handle itself escapes — passed to a helper, returned, stored.
             // What happens to it is not knowable here.
             otherUsageCount += 1;
             continue;
           }
 
-          if (access.property.name === 'release') {
+          if (member === 'release') {
             releaseCallCount += 1;
             continue;
           }
-          if (access.property.name !== 'query') {
+          if (member !== 'query') {
             otherUsageCount += 1;
             continue;
           }

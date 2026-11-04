@@ -238,12 +238,15 @@ describe('no-insecure-ssl', () => {
 
     ruleTester.run('the DSN spelling of the same defect', noInsecureSsl, {
       valid: withClient([
-        "new Client({ connectionString: 'postgres://app@h:5432/db?sslmode=verify-full' });",
+        { name: 'a literal DSN with sslmode=verify-full', code: "new Client({ connectionString: 'postgres://app@h:5432/db?sslmode=verify-full' });" },
         "new Client({ connectionString: 'postgres://app@h:5432/db' });",
         "new Client('postgres://app@h:5432/db');",
         { name: 'a connection string from the environment carries no sslmode', code: 'new Client({ connectionString: process.env.DATABASE_URL });' },
         // A non-string first argument that is not an object either.
         'new Client(42);',
+        // A template DSN whose static text verifies, or sets no mode at all.
+        { name: 'a template DSN that appends sslmode=verify-full', code: 'new Client({ connectionString: `${process.env.DATABASE_URL}?sslmode=verify-full` });' },
+        { name: 'a template DSN with no sslmode at all', code: 'new Client(`postgres://app@${process.env.DB_HOST}:5432/db`);' },
       ]),
       invalid: withClient([
         // FN — libpq's spelling of rejectUnauthorized:false, and the one that
@@ -264,6 +267,24 @@ describe('no-insecure-ssl', () => {
         // Case-insensitively, as libpq reads it.
         {
           code: "new Client({ connectionString: 'postgres://h/db?sslmode=NO-VERIFY' });",
+          errors: [{ messageId: 'noInsecureSsl' }],
+        },
+        // FN (fidelity model) — the Heroku spelling: the env URL with the
+        // mode appended in a template. The static text still sets the mode.
+        {
+          name: 'sslmode=no-verify appended to the env URL in a template',
+          code: 'new Client({ connectionString: `${process.env.DATABASE_URL}?sslmode=no-verify` });',
+          errors: [{ messageId: 'noInsecureSsl' }],
+        },
+        {
+          name: 'a bare template DSN that appends sslmode=no-verify',
+          code: 'new Client(`${process.env.DATABASE_URL}?sslmode=no-verify`);',
+          errors: [{ messageId: 'noInsecureSsl' }],
+        },
+        // Appended to a URL that already carries a query string.
+        {
+          name: 'sslmode=no-verify appended with & to a URL that already has a query',
+          code: 'new Client({ connectionString: `${process.env.DATABASE_URL}&sslmode=no-verify` });',
           errors: [{ messageId: 'noInsecureSsl' }],
         },
         // A DSN that skips verification AND an ssl block: the DSN is reported

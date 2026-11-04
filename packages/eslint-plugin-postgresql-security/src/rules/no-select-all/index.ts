@@ -11,6 +11,7 @@ import {
   TSESTree,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { NoSelectAllOptions } from '../../types';
 import { usesPostgres } from '../../utils';
@@ -299,8 +300,7 @@ export const noSelectAll: TSESLint.RuleModule<
       CallExpression(node) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          node.callee.property.type !== AST_NODE_TYPES.Identifier ||
-          node.callee.property.name !== 'query'
+          propertyName(node.callee) !== 'query'
         ) {
           return;
         }

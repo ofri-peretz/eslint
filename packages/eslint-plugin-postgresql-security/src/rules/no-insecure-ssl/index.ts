@@ -87,11 +87,26 @@ function disablesVerification(start: Value): boolean {
  * than code. Matched on the parsed parameter, not by searching the string for a
  * word.
  */
-function dsnSkipsVerification(dsn: string): boolean {
+function dsnSkipsVerification(dsn: string, opaqueUrl = false): boolean {
   const separator = dsn.indexOf('?');
-  if (separator === -1) return false;
+  // An interpolated URL may carry the `?` itself, so `&sslmode=…` appended
+  // after it still sets the mode.
+  if (separator === -1 && !opaqueUrl) return false;
   const sslmode = new URLSearchParams(dsn.slice(separator + 1)).get('sslmode');
   return sslmode !== null && sslmode.toLowerCase() === 'no-verify';
+}
+
+/**
+ * `${process.env.DATABASE_URL}?sslmode=no-verify` — the Heroku spelling: the
+ * mode appended to a URL from the environment. Judged on the template's
+ * static text.
+ */
+function templateSkipsVerification(node: TSESTree.Node): boolean {
+  if (node.type !== AST_NODE_TYPES.TemplateLiteral) return false;
+  return dsnSkipsVerification(
+    node.quasis.map((q) => q.value.raw).join(''),
+    node.expressions.length > 0,
+  );
 }
 
 export const noInsecureSsl: TSESLint.RuleModule<
@@ -188,6 +203,10 @@ export const noInsecureSsl: TSESLint.RuleModule<
         if (dsnSkipsVerification(dsnText)) report(argument);
         return;
       }
+      if (templateSkipsVerification(config.node)) {
+        report(argument);
+        return;
+      }
 
       if (config.node.type !== AST_NODE_TYPES.ObjectExpression) return;
 
@@ -196,9 +215,10 @@ export const noInsecureSsl: TSESLint.RuleModule<
       if (connectionString !== undefined) {
         const dsn = follow(at(connectionString.value)).node;
         if (
-          dsn.type === AST_NODE_TYPES.Literal &&
-          typeof dsn.value === 'string' &&
-          dsnSkipsVerification(dsn.value)
+          (dsn.type === AST_NODE_TYPES.Literal &&
+            typeof dsn.value === 'string' &&
+            dsnSkipsVerification(dsn.value)) ||
+          templateSkipsVerification(dsn)
         ) {
           reportAt(at(connectionString.value), argument);
           return;

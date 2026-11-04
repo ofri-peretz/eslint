@@ -118,7 +118,7 @@ describe('no-unsafe-copy-from — regression locks', () => {
         code: 'client.query(sql`COPY t FROM ${p}`);',
       },
       // Shapes the sink never reaches.
-      { name: 'lock: computed sink property', code: "client['query']('COPY t FROM /x');" },
+      { name: 'lock: a dynamic sink property', code: "client[method]('COPY t FROM /x');" },
       { name: 'lock: bare callee', code: "query(\"COPY t FROM '/x.csv'\");" },
       { name: 'lock: unrelated method', code: "audit.push(\"COPY t FROM '/x.csv'\");" },
       { name: 'lock: no arguments', code: 'client.query();' },
@@ -180,6 +180,18 @@ describe('no-unsafe-copy-from — regression locks', () => {
       },
     ]),
     invalid: pg([
+      // FN (fidelity model): a string subscript is punctuation, not a
+      // dynamic method — the same sink as `client.query`.
+      {
+        name: 'lock: computed sink property, dynamic path',
+        code: "client['query'](`COPY t FROM '${p}'`);",
+        errors: dynamic,
+      },
+      {
+        name: 'lock: computed sink property, constant path',
+        code: "client['query'](\"COPY t FROM '/srv/seed.csv'\");",
+        errors: hardcoded,
+      },
       // FN: `.` never crossed a newline, so every multi-line COPY was invisible.
       {
         name: 'lock: a multi-line COPY with a constant path',
