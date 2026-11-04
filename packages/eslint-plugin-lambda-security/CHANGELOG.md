@@ -5,6 +5,13 @@ All notable changes to `eslint-plugin-lambda-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.2.1
+
+### Patch Changes
+
+- **📚 Docs** — README rule counts match the shipped rules (browser-security 46, node-security 43, lambda-security 14). Republishes so the npm page stops showing the old numbers. No rule or config changes.
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.21.2`
+
 ## 2.2.0
 
 ### Minor Changes

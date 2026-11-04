@@ -5,6 +5,12 @@ All notable changes to `@interlace/eslint-devkit` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.21.2
+
+### Patch Changes
+
+- **🧹 Refactor** — cross-file value following parses with ESLint's own espree when the linting parser has no `parseForESLint`, instead of whichever `@typescript-eslint/parser` happens to be installed. Results no longer depend on what else is in `node_modules`; a TypeScript sibling is still read by the configured parser.
+
 ## 1.21.1
 
 ### Patch Changes
