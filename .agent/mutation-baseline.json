@@ -26,9 +26,9 @@
           "timeout": 1
         },
         "no-hardcoded-secret": {
-          "score": 77.7,
-          "killed": 28,
-          "survived": 8,
+          "score": 94.7,
+          "killed": 36,
+          "survived": 2,
           "noCoverage": 0,
           "timeout": 0
         },
@@ -89,9 +89,9 @@
           "timeout": 0
         },
         "require-max-age": {
-          "score": 84.3,
-          "killed": 27,
-          "survived": 5,
+          "score": 100,
+          "killed": 34,
+          "survived": 0,
           "noCoverage": 0,
           "timeout": 0
         }
