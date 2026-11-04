@@ -232,6 +232,7 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
     let appBinding: string | null;
     let appEscapes: boolean;
     let limiterBindings: Set<string>;
+    let expressFactories: Set<string>;
 
     return {
       before() {
@@ -295,6 +296,11 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
           context.sourceCode.ast,
           RATE_LIMIT_MODULES,
         );
+        // `import createApp from 'express'`: the binding makes it the factory.
+        expressFactories = new Set([
+          'express',
+          ...packageBindings(context.sourceCode.ast, ['express']).modules,
+        ]);
         limiterBindings = new Set([
           ...bindings.modules,
           ...bindings.named.keys(),
@@ -330,7 +336,7 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for express() app creation
-        if (callee.type === 'Identifier' && callee.name === 'express') {
+        if (callee.type === 'Identifier' && expressFactories.has(callee.name)) {
           hasExpressApp = true;
           if (
             node.parent?.type === 'VariableDeclarator' &&

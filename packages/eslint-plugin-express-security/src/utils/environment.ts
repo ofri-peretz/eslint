@@ -16,6 +16,10 @@
 import type { TSESTree } from '@interlace/eslint-devkit';
 import { propertyName, staticString } from '@interlace/eslint-devkit';
 
+/** Boolean flags conventionally named for the environment they select. */
+const PROD_FLAGS: ReadonlySet<string> = new Set(['isProd', 'isProduction']);
+const DEV_FLAGS: ReadonlySet<string> = new Set(['isDev', 'isDevelopment']);
+
 function isNodeEnv(node: TSESTree.Node): boolean {
   return (
     (node.type === 'MemberExpression' && propertyName(node) === 'NODE_ENV') ||
@@ -35,8 +39,8 @@ export function environmentOf(node: TSESTree.Node): 'dev' | 'prod' | null {
     return inner === null ? null : inner === 'dev' ? 'prod' : 'dev';
   }
   if (node.type === 'Identifier') {
-    if (/^is(Prod|Production)$/.test(node.name)) return 'prod';
-    if (/^is(Dev|Development)$/.test(node.name)) return 'dev';
+    if (PROD_FLAGS.has(node.name)) return 'prod';
+    if (DEV_FLAGS.has(node.name)) return 'dev';
     return null;
   }
   if (node.type !== 'BinaryExpression') return null;

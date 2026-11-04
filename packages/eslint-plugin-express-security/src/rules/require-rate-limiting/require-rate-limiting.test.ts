@@ -318,6 +318,17 @@ ruleTester.run('require-rate-limiting', requireRateLimiting, {
     },
   ]),
   invalid: xp([
+    // The binding, not the name, makes the call Express's app factory.
+    {
+      name: 'an app created through a renamed express import',
+      code: `
+        import createApp from 'express';
+        const app = createApp();
+        app.post('/login', (req, res) => authenticate(req.body));
+        app.listen(3000);
+      `,
+      errors: [{ messageId: 'missingRateLimiting' }],
+    },
     // `app.route(path).post(…)` registers the same credential endpoint.
     {
       name: 'a login route registered through app.route()',
