@@ -1,7 +1,7 @@
 {
-  "releaseCount": 950,
+  "releaseCount": 952,
   "packageCount": 66,
-  "entryCount": 2557,
+  "entryCount": 2559,
   "oldestYear": 2024,
   "releases": [
     {
@@ -22145,6 +22145,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-mongodb-security",
+      "short": "eslint-plugin-mongodb-security",
+      "version": "9.2.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "a `user` / `username` / `auth` literal in a query filter, update document or aggregation stage is no longer reported.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
@@ -22285,6 +22300,21 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-mongodb-security",
+      "short": "oxlint-plugin-mongodb-security",
+      "version": "9.2.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-mongodb-security@9.2.2`",
           "pr": null
         }
       ]
