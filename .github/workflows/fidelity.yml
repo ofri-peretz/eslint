@@ -85,6 +85,23 @@ jobs:
         with:
           deps: lean
 
+      # Quint fetches its Rust evaluator from the GitHub API on first use,
+      # unauthenticated, and parallel matrix jobs hit the 60/hour rate limit
+      # ("Release v0.7.1 not found: rate limit exceeded", #1388). Fetch it here
+      # with the job token; Quint finds it in ~/.quint and skips the download.
+      # ponytail: pinned to the evaluator quint@0.33.1 (run.cjs) ships with. On a
+      # Quint bump, update it; a stale pin only brings the flaky download back.
+      - name: Fetch the Quint evaluator
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVALUATOR: v0.7.1
+        run: |
+          dir="$HOME/.quint/rust-evaluator-$EVALUATOR"
+          mkdir -p "$dir"
+          gh release download "evaluator/$EVALUATOR" -R quint-co/quint \
+            -p 'quint_evaluator-x86_64-unknown-linux-gnu.tar.gz' -O - | tar -xz -C "$dir"
+          test -x "$dir/quint_evaluator"
+
       - run: npx turbo run build --filter="eslint-plugin-$PLUGIN"
         env:
           PLUGIN: ${{ matrix.plugin }}

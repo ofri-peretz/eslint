@@ -113,6 +113,10 @@ ruleTester.run(
       },
       // Test file with allowInTests
       {
+        name: 'a computed `[limit]` key names the variable, not the option',
+        code: `const limit = 'inflate'; app.use(express.json({ [limit]: '50mb' }));`,
+      },
+      {
         code: `express.json()`,
         filename: 'test.spec.ts',
         options: [{ allowInTests: true }],
@@ -125,6 +129,16 @@ ruleTester.run(
 const { urlencoded: form } = require('express');
 app.use(json({ limit: '50mb' }));
 app.use(form({ limit: '50mb', extended: true }));`,
+        errors: [
+          { messageId: 'excessiveLimit' },
+          { messageId: 'excessiveLimit' },
+        ],
+      },
+      {
+        name: 'a quoted or string-subscript `limit` key is still the option',
+        code: `const { ['urlencoded']: form } = require('express');
+app.use(form({ ['limit']: '50mb', extended: true }));
+app.use(express.json({ 'limit': '50mb' }));`,
         errors: [
           { messageId: 'excessiveLimit' },
           { messageId: 'excessiveLimit' },
@@ -220,12 +234,15 @@ ruleTester.run(
       { code: `express.json({ limit: 'huge' });` },
       // spread element in the options object — no `limit` key found
       { code: `express.json({ ...defaults });` },
-      // a non-limit property whose key is not an identifier
-      { code: `express.json({ ['limit']: '900mb' });` },
       // reasonable string limit
       { code: `express.json({ limit: '100kb' });` },
     ]),
     invalid: xp([
+      // a string-subscript key still names `limit`
+      {
+        code: `express.json({ ['limit']: '900mb' });`,
+        errors: [{ messageId: 'excessiveLimit' }],
+      },
       // custom excessiveLimits matched case-insensitively
       {
         code: `express.json({ limit: '5GB' });`,
