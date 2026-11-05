@@ -17,8 +17,13 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
-  staticString,
 } from '@interlace/eslint-devkit';
+import type { StringPiece } from '../../utils/class-strings';
+import {
+  classStrings,
+  isClassNameBuilder,
+  valueStrings,
+} from '../../utils/class-strings';
 
 type MessageIds = 'arbitraryClass';
 type RuleOptions = [];
@@ -58,7 +63,8 @@ const TOKENIZABLE_PROPS = new Set([
 // Captures e.g. `rounded-[12px]`, `px-[18px]`, `gap-[4rem]`, but NOT
 // `w-[calc(...)]`, `rounded-[var(--x)]`, `min-h-[60vh]`, `data-[state=open]:...`.
 const ARBITRARY_CLASS_PATTERN = /([\w-]+)-\[([^\]]+)\]/g;
-const TOKENIZABLE_VALUE = /^\d+(?:\.\d+)?(?:px|rem|em)$/;
+/** A plain length: `18px`, `1.5rem`, `.5rem`, `2em`. */
+const TOKENIZABLE_VALUE = /^(?:\d+(?:\.\d+)?|\.\d+)(?:px|rem|em)$/;
 
 export const noArbitraryTokenClass = createRule<RuleOptions, MessageIds>({
   name: 'no-arbitrary-token-class',
@@ -89,7 +95,9 @@ export const noArbitraryTokenClass = createRule<RuleOptions, MessageIds>({
     const scanString = (node: TSESTree.Node, raw: string): void => {
       for (const match of raw.matchAll(ARBITRARY_CLASS_PATTERN)) {
         const [whole, prop, value] = match;
-        if (!TOKENIZABLE_PROPS.has(prop)) continue;
+        // `-mx-[4px]` is the negative of `mx`: the same spacing scale.
+        const utility = prop.startsWith('-') ? prop.slice(1) : prop;
+        if (!TOKENIZABLE_PROPS.has(utility)) continue;
         if (!TOKENIZABLE_VALUE.test(value)) continue;
         context.report({
           node,
@@ -98,39 +106,26 @@ export const noArbitraryTokenClass = createRule<RuleOptions, MessageIds>({
         });
       }
     };
+    const scan = (pieces: StringPiece[]): void => {
+      for (const piece of pieces) scanString(piece.node, piece.text);
+    };
 
     return {
-      // className="..." string literal
-      'JSXAttribute[name.name="className"] > Literal'(node: TSESTree.Literal) {
-        if (typeof node.value === 'string') scanString(node, node.value);
+      // `className="…"`, `{"…"}`, a template, a conditional, `flag && "…"`.
+      'JSXAttribute[name.name="className"]'(node: TSESTree.JSXAttribute) {
+        if (!node.value) return;
+        scan(
+          node.value.type === 'JSXExpressionContainer'
+            ? valueStrings(node.value.expression)
+            : valueStrings(node.value),
+        );
       },
-      // className={`...`} template literal (static parts only)
-      'JSXAttribute[name.name="className"] TemplateElement'(
-        node: TSESTree.TemplateElement,
-      ) {
-        // `cooked` is null for an invalid escape as of @typescript-eslint
-        // 8.68.0; 8.54.0 handed back the raw text. This selector reaches the
-        // quasis of TAGGED templates, and the raw source is still the text an
-        // author reads as class names.
-        scanString(node, node.value.cooked ?? node.value.raw);
-      },
-      // cn("...", "...") / clsx(...) string args
+      // cn() / clsx() / classnames / twMerge, by name or import binding:
+      // plain, conditional and template arguments, array elements, object keys.
       CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type !== 'Identifier') return;
-        const name = node.callee.name;
-        if (
-          name !== 'cn' &&
-          name !== 'clsx' &&
-          name !== 'twMerge' &&
-          name !== 'classNames'
-        )
+        if (!isClassNameBuilder(node.callee, context.sourceCode.getScope(node)))
           return;
-        for (const arg of node.arguments) {
-          const staticText = staticString(arg);
-          if (staticText !== null) {
-            scanString(arg, staticText);
-          }
-        }
+        for (const arg of node.arguments) scan(classStrings(arg));
       },
     };
   },

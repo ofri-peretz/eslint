@@ -112,8 +112,34 @@ ruleTester.run('checked-requires-onchange-or-readonly', checkedRequiresOnchangeO
       name: 'input with spread attributes',
       code: `<input {...props} />`,
     },
+    {
+      name: 'disabled controlled input is not editable, React does not warn',
+      code: `<input value={name} disabled />`,
+    },
+    {
+      name: 'value on a checkbox is its submitted value, not controlled',
+      code: `<input type="checkbox" value="yes" />`,
+    },
+    {
+      name: 'value on a hidden input written as a braced type',
+      code: `<input type={"hidden"} value={token} />`,
+    },
+    {
+      name: 'value={undefined} leaves the field uncontrolled',
+      code: `<textarea value={undefined} />`,
+    },
   ],
   invalid: [
+    {
+      name: 'readOnly={false} does not make the field read-only',
+      code: `<input value={name} readOnly={false} />`,
+      errors: [{ messageId: 'checkedRequiresOnChangeOrReadOnly' }],
+    },
+    {
+      name: 'disabled={false} does not disable the field',
+      code: `<select value={choice} disabled={false} />`,
+      errors: [{ messageId: 'checkedRequiresOnChangeOrReadOnly' }],
+    },
     // Invalid - checkbox with checked but no onChange/readOnly
     {
       name: 'checkbox with checked but no onChange or readOnly',

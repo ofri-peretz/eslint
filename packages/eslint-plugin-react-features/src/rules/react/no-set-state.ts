@@ -9,7 +9,8 @@
  * Disallow usage of setState (encourage functional components with hooks)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+import { componentSetState } from '../../utils/component-set-state';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noSetState';
@@ -42,21 +43,18 @@ export const noSetState = createRule<[], MessageIds>({
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
+      // A React class component calling its own `this.setState`; another
+      // object's `setState` (a store) is not class-component state.
       CallExpression(node: TSESTree.CallExpression) {
-        // Check if this is a setState call
-        if (
-          node.callee.type === 'MemberExpression' &&
-          propertyName(node.callee) === 'setState'
-        ) {
-          context.report({
-            node: node.callee.property,
-            messageId: 'noSetState',
-            data: {
-              methodName: 'setState',
-              suggestion: 'Use useState hook in functional component',
-            },
-          });
-        }
+        if (!componentSetState(node, context.sourceCode)) return;
+        context.report({
+          node: (node.callee as TSESTree.MemberExpression).property,
+          messageId: 'noSetState',
+          data: {
+            methodName: 'setState',
+            suggestion: 'Use useState hook in functional component',
+          },
+        });
       },
     };
   },

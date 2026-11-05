@@ -29,8 +29,11 @@ Implements rule **R12** of the [portable component-modeling floor](https://githu
 ## Rule Details
 
 Detects function components whose body is a pure passthrough — a single JSX
-element whose only attribute is `{...props}` (or `{...rest}`) and zero
-children. These wrappers add no structural behavior and force consumers
+component element whose only attribute spreads the props the wrapper was given
+(`(props) => <X {...props} />` or `({ ...rest }) => <X {...rest} />`) and zero
+children. Declarations, `export default function`, arrows, function
+expressions and `memo(...)`-wrapped components are all read. Spreading
+something other than the props (`{...defaults}`) is not a passthrough. These wrappers add no structural behavior and force consumers
 through an indirection layer for no benefit.
 
 [MUI List controls](https://mui.com/material-ui/react-list/#list-controls) is
@@ -68,8 +71,11 @@ function SubmitButton(props) {
 
 ## Known False Negatives
 
-- Wrappers that destructure and re-spread (`function MyBtn({ ...rest }) { return <Button {...rest} />; }`) are not detected unless the spread target is the single attribute.
-- Wrappers with renamed props (`function MyBtn({ label, ...rest }) { return <Button {...rest}>{label}</Button>; }`) are correctly not flagged — destructuring is structural behavior.
+- `forwardRef` wrappers (`<Button {...props} ref={ref} />`) carry a second attribute and are not detected.
+
+Not a finding: a wrapper that destructures a named prop
+(`function MyBtn({ label, ...rest }) { return <Button {...rest} />; }`) filters
+the props it passes on, which is behaviour.
 
 ## Related
 

@@ -73,6 +73,15 @@ export const jsxNoLiterals = createRule<RuleOptions, MessageIds>({
     let allowedStrings: string[];
     let ignoreProps: boolean;
 
+    /** Report a literal string, unless allowed or blank. `noStrings: false` turns the rule off. */
+    const check = (node: TSESTree.Node, value: string | null) => {
+      if (!noStrings || value === null) return;
+      const text = value.trim();
+      if (text && !allowedStrings.includes(text)) {
+        context.report({ node, messageId: 'jsxNoLiterals' });
+      }
+    };
+
     return {
       before() {
         const [options] = context.options;
@@ -81,31 +90,28 @@ export const jsxNoLiterals = createRule<RuleOptions, MessageIds>({
         ignoreProps = options?.ignoreProps ?? true;
       },
       JSXText(node: TSESTree.JSXText) {
-        if (!noStrings) return;
+        check(node, node.value);
+      },
 
-        const text = node.value.trim();
-        if (text && !allowedStrings.includes(text)) {
-          context.report({
-            node,
-            messageId: 'jsxNoLiterals',
-          });
+      // `{'Hello'}` / `` {`Hello`} `` as a child is the same literal text.
+      JSXExpressionContainer(node: TSESTree.JSXExpressionContainer) {
+        if (
+          node.parent.type !== 'JSXElement' &&
+          node.parent.type !== 'JSXFragment'
+        ) {
+          return;
         }
+        check(node, staticString(node.expression));
       },
 
       JSXAttribute(node: TSESTree.JSXAttribute) {
-        if (ignoreProps) return;
-
-        const attributeText =
-          node.value === null ? null : staticString(node.value);
-        if (node.value && attributeText !== null) {
-          const text = attributeText.trim();
-          if (text && !allowedStrings.includes(text)) {
-            context.report({
-              node: node.value,
-              messageId: 'jsxNoLiterals',
-            });
-          }
-        }
+        if (ignoreProps || node.value === null) return;
+        // `title="x"`, `title={'x'}` and `` title={`x`} `` are one literal.
+        const value =
+          node.value.type === 'JSXExpressionContainer'
+            ? node.value.expression
+            : node.value;
+        check(node.value, staticString(value));
       },
     };
   },

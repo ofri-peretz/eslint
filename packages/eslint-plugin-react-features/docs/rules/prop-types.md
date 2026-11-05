@@ -29,7 +29,11 @@ Enforce prop types validation for React components. This rule is part of [`eslin
 
 ## Rule Details
 
-Components should have PropTypes defined to provide runtime type checking. This helps catch bugs during development and serves as documentation.
+A class component (extending React's `Component` or `PureComponent`, by
+binding, declared or as a class expression) must declare its props. Any of
+these declares them: a `static propTypes` (any key spelling), a
+`Card.propTypes = …` assignment, or TypeScript props on the base class
+(`React.Component<Props>`).
 
 ### Why This Matters
 
@@ -112,7 +116,7 @@ function UserCard({ name, email, age = 0, role = 'user' }: UserCardProps) {
 | Option             | Type     | Default | Description                              |
 | ------------------ | -------- | ------- | ---------------------------------------- |
 | `ignore`           | string[] | `[]`    | Component names to ignore                |
-| `customValidators` | string[] | `[]`    | Custom validator function names          |
+| `customValidators` | string[] | `[]`    | Accepted for compatibility; it has no effect |
 | `skipUndeclared`   | boolean  | `false` | Skip if no props are accessed            |
 
 ### Configuration with Options
@@ -122,7 +126,6 @@ function UserCard({ name, email, age = 0, role = 'user' }: UserCardProps) {
   rules: {
     'react-features/prop-types': ['warn', {
       ignore: ['Link', 'Router'],           // Third-party components
-      customValidators: ['customPropType'], // Custom validators
       skipUndeclared: true                  // Skip components not using props
     }]
   }
@@ -162,28 +165,6 @@ function UserCard({ name, email, age = 0, role = 'user' }: UserCardProps) {
 - **[TypeScript with React](https://react.dev/learn/typescript)** - Modern alternative
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Prop from variable
-const propValue = computedValue;
-<Component prop={propValue} /> // Computation not analyzed
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- Function components are not checked; the rule reads class components only.
+- A component that never reads `this.props` is still reported under the
+  default `skipUndeclared: false`.

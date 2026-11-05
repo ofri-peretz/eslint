@@ -9,7 +9,8 @@
  * Prevent setState in componentDidUpdate
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+import { componentSetState } from '../../utils/component-set-state';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noDidUpdateSetState';
@@ -59,52 +60,25 @@ export const noDidUpdateSetState = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allowInCallback: false }],
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    let options: Options | undefined;
-    let inComponentDidUpdate: boolean;
-    let hasConditionalCheck: boolean;
+    let allowInCallback: boolean;
 
     return {
       before() {
-        [options] = context.options;
-        inComponentDidUpdate = false;
-        hasConditionalCheck = false;
+        allowInCallback = context.options[0]?.allowInCallback ?? false;
       },
-      'MethodDefinition[key.name="componentDidUpdate"]'(
-        _node: TSESTree.MethodDefinition,
-      ) {
-        inComponentDidUpdate = true;
-        hasConditionalCheck = false;
-      },
-
-      'MethodDefinition[key.name="componentDidUpdate"]:exit'(
-        _node: TSESTree.MethodDefinition,
-      ) {
-        inComponentDidUpdate = false;
-      },
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      IfStatement(node: TSESTree.IfStatement) {
-        if (inComponentDidUpdate) {
-          hasConditionalCheck = true;
-        }
-      },
-
+      // The component's own `this.setState` in `componentDidUpdate` with
+      // nothing guarding it updates again on every update. A call under a
+      // condition (`if`, `?:`, `&&`) is the documented guard; a call in a
+      // callback the method starts unconditionally loops one update later,
+      // unless `allowInCallback` says otherwise.
       CallExpression(node: TSESTree.CallExpression) {
-        if (!inComponentDidUpdate) return;
-
-        // Check if this is a setState call
-        if (
-          node.callee.type === 'MemberExpression' &&
-          propertyName(node.callee) === 'setState'
-        ) {
-          // Allow if there's a conditional check or callback is allowed
-          if (!hasConditionalCheck && !options?.allowInCallback) {
-            context.report({
-              node: node.callee.property,
-              messageId: 'noDidUpdateSetState',
-            });
-          }
-        }
+        const site = componentSetState(node, context.sourceCode);
+        if (site?.method !== 'componentDidUpdate' || site.conditional) return;
+        if (site.inCallback && allowInCallback) return;
+        context.report({
+          node: (node.callee as TSESTree.MemberExpression).property,
+          messageId: 'noDidUpdateSetState',
+        });
       },
     };
   },

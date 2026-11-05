@@ -91,44 +91,11 @@ function Counter() {
 
 - **[State and Lifecycle](https://react.dev/learn/state-a-components-memory)** - React docs
 - **[Using setState Correctly](https://react.dev/reference/react/Component#setstate)** - setState reference
+
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
+- **Aliases**: `const { items } = this.state; items.push(x)` or `const s = this.state; s.count = 1` mutate state through a local name and are not seen.
+- **Mutation through a helper**: passing `this.state.items` to a function that mutates it is not followed.
+- **Mutating calls are recognised by method name** (`push`, `splice`, `sort`, …) on a value read from `this.state`.
 
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Prop from variable
-const propValue = computedValue;
-<Component prop={propValue} /> // Computation not analyzed
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Wrapped or Aliased Functions
-
-**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-function myWrapper(data) {
-  return internalApi(data); // Wrapper not analyzed
-}
-myWrapper(unsafeInput);
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+Not reported by design: any write in the constructor (where the initial state is set), and writes in a class that is not a React component.

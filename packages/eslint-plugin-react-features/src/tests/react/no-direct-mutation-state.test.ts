@@ -733,6 +733,19 @@ describe('no-direct-mutation-state', () => {
   describe('Component types', () => {
     ruleTester.run('different component types', noDirectMutationState, {
       valid: [
+        {
+          name: 'writing state in the constructor sets the initial state',
+          code: 'class A extends React.Component { constructor() { super(); this.state = { count: 0 }; this.state.count = 5; } }',
+        },
+        {
+          name: 'a class that is not a React component keeps its own state',
+          code: 'import { Component } from "./store"; class A extends Component { m() { this.state.count = 5; } }',
+        },
+        {
+          name: 'allowInLifecycleMethods allows a write in componentDidMount',
+          code: 'class A extends Component { componentDidMount() { this.state.count = 5; } }',
+          options: [{ allowInLifecycleMethods: true }],
+        },
         // Functional component
         {
           code: `
@@ -755,13 +768,74 @@ describe('no-direct-mutation-state', () => {
         },
       ],
       invalid: [
+        {
+          name: 'replacing this.state outside the constructor',
+          code: 'class A extends React.Component { reset() { this.state = { count: 0 }; } }',
+          errors: [
+            {
+              messageId: 'noDirectMutationState',
+              suggestions: [
+                {
+                  messageId: 'suggestSetState',
+                  output:
+                    'class A extends React.Component { reset() { // TODO: Use setState instead of direct mutation\nthis.state = { count: 0 }; } }',
+                },
+                {
+                  messageId: 'suggestFunctionalUpdate',
+                  output:
+                    'class A extends React.Component { reset() { // TODO: Use functional setState for immutable updates\nthis.state = { count: 0 }; } }',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'a write through this["state"] on a renamed import',
+          code: 'import { Component as Base } from "react"; class A extends Base { m = () => { this["state"].count = 1; }; }',
+          errors: [
+            {
+              messageId: 'noDirectMutationState',
+              suggestions: [
+                {
+                  messageId: 'suggestSetState',
+                  output:
+                    'import { Component as Base } from "react"; class A extends Base { m = () => { // TODO: Use setState instead of direct mutation\nthis["state"].count = 1; }; }',
+                },
+                {
+                  messageId: 'suggestFunctionalUpdate',
+                  output:
+                    'import { Component as Base } from "react"; class A extends Base { m = () => { // TODO: Use functional setState for immutable updates\nthis["state"].count = 1; }; }',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'a write in a callback the constructor schedules runs after mount',
+          code: 'class A extends Component { constructor() { super(); setTimeout(() => { this.state.count = 1; }); } }',
+          errors: [
+            {
+              messageId: 'noDirectMutationState',
+              suggestions: [
+                {
+                  messageId: 'suggestSetState',
+                  output:
+                    'class A extends Component { constructor() { super(); setTimeout(() => { // TODO: Use setState instead of direct mutation\nthis.state.count = 1; }); } }',
+                },
+                {
+                  messageId: 'suggestFunctionalUpdate',
+                  output:
+                    'class A extends Component { constructor() { super(); setTimeout(() => { // TODO: Use functional setState for immutable updates\nthis.state.count = 1; }); } }',
+                },
+              ],
+            },
+          ],
+        },
         // React.Component extension
         {
           code: `
             class Component extends React.Component {
-              constructor() {
-                super();
-                this.state = { count: 0 };
+              increment() {
                 this.state.count = 5; // Direct mutation
               }
             }
@@ -778,9 +852,7 @@ describe('no-direct-mutation-state', () => {
                   messageId: 'suggestSetState',
                   output: `
             class Component extends React.Component {
-              constructor() {
-                super();
-                this.state = { count: 0 };
+              increment() {
                 // TODO: Use setState instead of direct mutation
                 this.state.count = 5; // Direct mutation
               }
@@ -791,9 +863,7 @@ describe('no-direct-mutation-state', () => {
                   messageId: 'suggestFunctionalUpdate',
                   output: `
             class Component extends React.Component {
-              constructor() {
-                super();
-                this.state = { count: 0 };
+              increment() {
                 // TODO: Use functional setState for immutable updates
                 this.state.count = 5; // Direct mutation
               }

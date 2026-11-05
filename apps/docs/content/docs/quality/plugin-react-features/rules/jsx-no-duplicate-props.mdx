@@ -46,6 +46,15 @@ Duplicate JSX props cause one value to override another, which is almost always 
 <Input name="email" />
 ```
 
+A namespaced prop (`xlink:href`) written twice is a duplicate too, and a spread between
+the two copies does not change that: the last one written still wins.
+
+## Options
+
+| Option       | Type      | Default | Description                                                                 |
+| ------------ | --------- | ------- | --------------------------------------------------------------------------- |
+| `ignoreCase` | `boolean` | `false` | Treat names that differ only in case (`onClick` / `onclick`) as duplicates |
+
 ## Related Rules
 
 - [`jsx-key`](./jsx-key.mdx) - Require key prop in iterators

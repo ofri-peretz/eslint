@@ -98,8 +98,35 @@ describe('no-did-mount-set-state', () => {
 
   describe('Invalid cases - setState in componentDidMount', () => {
     ruleTester.run('setState in componentDidMount triggers error', noDidMountSetState, {
-      valid: [],
+      valid: [
+        {
+          name: 'setState in a promise callback runs after mount',
+          code: 'class A extends Component { componentDidMount() { fetchData().then(data => this.setState({ data })); } }',
+        },
+        {
+          name: 'componentDidMount on a class that is not a React component',
+          code: 'import { Component } from "./lib"; class A extends Component { componentDidMount() { this.setState({ a: 1 }); } }',
+        },
+        {
+          name: 'another object\'s setState is not the component\'s',
+          code: 'class A extends Component { componentDidMount() { store.setState({ a: 1 }); } }',
+        },
+        {
+          name: 'this in an unbound function is not the component',
+          code: 'class A extends Component { componentDidMount() { setTimeout(function () { this.setState({ a: 1 }); }); } }',
+        },
+      ],
       invalid: [
+        {
+          name: 'setState in an arrow-property componentDidMount',
+          code: 'import React from "react"; class A extends React.Component { componentDidMount = () => { this.setState({ a: 1 }); }; }',
+          errors: [{ messageId: 'noDidMountSetState' }],
+        },
+        {
+          name: 'setState in a quoted componentDidMount on a renamed import',
+          code: 'import { Component as Base } from "react"; class A extends Base { "componentDidMount"() { this["setState"]({ a: 1 }); } }',
+          errors: [{ messageId: 'noDidMountSetState' }],
+        },
         // Direct setState
         {
           name: 'setState in componentDidMount forces a second render before paint',
@@ -125,8 +152,9 @@ describe('no-did-mount-set-state', () => {
           `,
           errors: [{ messageId: 'noDidMountSetState' }],
         },
-        // Multiple setStates
+        // Multiple setStates: only the synchronous one runs before paint
         {
+          name: 'the synchronous setState is reported, the one in a promise callback is not',
           code: `
             class MyComponent extends Component {
               componentDidMount() {
@@ -137,10 +165,7 @@ describe('no-did-mount-set-state', () => {
               }
             }
           `,
-          errors: [
-            { messageId: 'noDidMountSetState' },
-            { messageId: 'noDidMountSetState' },
-          ],
+          errors: [{ messageId: 'noDidMountSetState', line: 4 }],
         },
         // setState after condition
         {
@@ -193,17 +218,6 @@ describe('no-did-mount-set-state', () => {
               async componentDidMount() {
                 const data = await fetchData();
                 this.setState({ data });
-              }
-            }
-          `,
-          errors: [{ messageId: 'noDidMountSetState' }],
-        },
-        // setState in promise callback within componentDidMount
-        {
-          code: `
-            class MyComponent extends Component {
-              componentDidMount() {
-                fetchData().then(data => this.setState({ data }));
               }
             }
           `,

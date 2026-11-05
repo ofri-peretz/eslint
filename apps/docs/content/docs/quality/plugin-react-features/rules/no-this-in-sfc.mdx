@@ -136,48 +136,13 @@ class UserCard extends React.Component {
 
 - **[Your First Component](https://react.dev/learn/your-first-component)** - React docs
 - **[useState Hook](https://react.dev/reference/react/useState)** - State in functions
+
 <WhenNotToUse />
 
 <FalseNegativeCTA />
 
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
+- **Components the rule does not recognise**: a function wrapped by a higher-order function other than React's `memo` / `forwardRef`, a lowercase function, or one that returns JSX only through a helper call.
 
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Prop from variable
-const propValue = computedValue;
-<Component prop={propValue} /> // Computation not analyzed
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Wrapped or Aliased Functions
-
-**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-function myWrapper(data) {
-  return internalApi(data); // Wrapper not analyzed
-}
-myWrapper(unsafeInput);
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+Not reported by design: `this` in a nested `function` or an object method inside a component (they have their own `this`), and in a PascalCase constructor function that does not return JSX.

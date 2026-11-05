@@ -15,6 +15,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { freshValue, propReceiver } from '../../utils/prop-receiver';
 
 type MessageIds =
   'unnecessaryRerender' | 'useMemo' | 'useCallback' | 'extractToVariable';
@@ -101,32 +102,15 @@ function isInReactRenderContext(node: TSESTree.Node): boolean {
 }
 
 /**
- * Check if expression should be memoized
+ * Is `node` a value created in render that is big enough to report?
+ *
+ * An object or array literal counts from `minSize` entries; an inline function
+ * (or a choice between two) at any size.
  */
-function shouldBeMemoized(node: TSESTree.Node, minSize = 5): boolean {
-  // Check for object literals - only if they have at least minSize properties
-  if (node.type === 'ObjectExpression') {
-    const properties = node.properties.length;
-    return properties >= minSize;
-  }
-
-  // Check for array literals - only if they have at least minSize elements
-  if (node.type === 'ArrayExpression') {
-    const elements = node.elements.filter(
-      (el: TSESTree.Expression | TSESTree.SpreadElement | null) => el !== null,
-    ).length;
-    return elements >= minSize;
-  }
-
-  // Check for function expressions in JSX props (always report, size doesn't matter)
-  if (
-    node.type === 'ArrowFunctionExpression' ||
-    node.type === 'FunctionExpression'
-  ) {
-    return true;
-  }
-
-  return false;
+function shouldBeMemoized(node: TSESTree.Node, minSize: number): boolean {
+  const fresh = freshValue(node);
+  if (!fresh) return false;
+  return fresh.kind === 'function' || fresh.size >= minSize;
 }
 
 export const noUnnecessaryRerenders = createRule<RuleOptions, MessageIds>({
@@ -228,6 +212,17 @@ export const noUnnecessaryRerenders = createRule<RuleOptions, MessageIds>({
           return;
         }
 
+        // A new identity costs a re-render only where props are compared by
+        // identity: a host element has no render to save, and a component
+        // defined without memo re-renders with its parent anyway.
+        const receiver = propReceiver(
+          node.parent as TSESTree.JSXOpeningElement,
+          sourceCode.getScope(node),
+        );
+        if (receiver === 'dom' || receiver === 'plain') {
+          return;
+        }
+
         // Check if it's an object/array literal or function that should be memoized
         if (shouldBeMemoized(value, minSize)) {
           let expressionText = '';
@@ -248,9 +243,7 @@ export const noUnnecessaryRerenders = createRule<RuleOptions, MessageIds>({
           }
 
           // Determine which suggestion to use based on node type
-          const isFunction =
-            value.type === 'ArrowFunctionExpression' ||
-            value.type === 'FunctionExpression';
+          const isFunction = freshValue(value)?.kind === 'function';
           const firstSuggestionMessageId = isFunction
             ? 'useCallback'
             : 'useMemo';

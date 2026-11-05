@@ -30,12 +30,24 @@ Suggest migrating React class components to hooks with detailed migration path. 
 
 Identifies React class components that can be migrated to functional components with hooks, providing complexity analysis and migration guidance.
 
+A React class component is a class that extends React's `Component` or
+`PureComponent`, however the file names it (`Component`, a renamed import,
+`React.Component`, a namespace import), declared, written as a class
+expression, or as an anonymous `export default class`. A class extending a
+`Component` the file declares itself or imports from another library is not
+one.
+
+An **error boundary** (a class with `componentDidCatch` or a static
+`getDerivedStateFromError`) is never reported: React has no hooks equivalent,
+and documents that an error boundary cannot be written as a function
+component.
+
 ## Configuration
 
 | Option                       | Type      | Default | Description                                        |
 | ---------------------------- | --------- | ------- | -------------------------------------------------- |
-| `ignorePureRenderComponents` | `boolean` | `false` | Ignore PureComponent classes                       |
-| `allowComplexLifecycle`      | `boolean` | `false` | Allow complex lifecycle methods without warnings   |
+| `ignorePureRenderComponents` | `boolean` | `false` | Skip classes that extend `PureComponent`           |
+| `allowComplexLifecycle`      | `boolean` | `false` | Skip classes using `getDerivedStateFromProps` or `getSnapshotBeforeUpdate` (no simple hook mapping) |
 
 ## Examples
 
@@ -138,28 +150,5 @@ function UserProfile({ userId }: Props) {
 
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Prop from variable
-const propValue = computedValue;
-<Component prop={propValue} /> // Computation not analyzed
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- `createReactClass({...})` components are not covered; only classes.
+- A superclass the file reaches through a helper (`class A extends withRouter(Component)`) is not followed.

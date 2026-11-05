@@ -38,6 +38,11 @@ describe('static-property-placement — it reports', () => {
   ruleTester.run('a group broken by another group', staticPropertyPlacement, {
     valid: [
       {
+        name: 'a Component from another library is not React',
+        code: `import { Component } from 'lit';
+        class El extends Component { static propTypes = {}; static getDerivedStateFromProps() {} static defaultProps = {}; }`,
+      },
+      {
         name: 'one group, contiguous',
         code: 'class A extends Component { static propTypes = {}; static defaultProps = {}; render() { return null; } }',
       },
@@ -59,6 +64,17 @@ describe('static-property-placement — it reports', () => {
       },
     ],
     invalid: [
+      {
+        name: 'a computed static name breaks its group the same way',
+        code: `import { Component as Base } from 'react';
+        class C extends Base { static propTypes = {}; static getDerivedStateFromProps() {} static ['defaultProps'] = {}; }`,
+        errors: [{ messageId: 'staticPropertyPlacement' }],
+      },
+      {
+        name: 'a class expression component',
+        code: `const C = class extends React.Component { static propTypes = {}; static getDerivedStateFromError() {} static contextType = Ctx; };`,
+        errors: [{ messageId: 'staticPropertyPlacement' }],
+      },
       {
         name: 'propTypes group resumes after the lifecycle group',
         code: 'class A extends Component { static propTypes = {}; static getDerivedStateFromProps() {} static defaultProps = {}; render() { return null; } }',

@@ -11,6 +11,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isReactApi } from '../../utils/react-api';
 
 type MessageIds =
   | 'considerMemo'
@@ -148,16 +149,42 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
       }
     >;
 
+    /**
+     * Is the component's binding handed to React's `memo` anywhere in the
+     * file — `export default memo(Card)`, `React.memo(Card)`, a renamed
+     * import? Then it is already memoized.
+     */
+    function isPassedToMemo(declaration: TSESTree.Node, name: string): boolean {
+      return context.sourceCode
+        .getDeclaredVariables(declaration)
+        .filter((variable) => variable.name === name)
+        .some((variable) =>
+          variable.references.some(({ identifier }) => {
+            const call = identifier.parent;
+            return (
+              call.type === 'CallExpression' &&
+              call.arguments[0] === identifier &&
+              isReactApi(call.callee, context.sourceCode.getScope(call), 'memo')
+            );
+          }),
+        );
+    }
+
     function analyzeFunctionComponent(
       node:
         | TSESTree.FunctionDeclaration
         | TSESTree.ArrowFunctionExpression
         | TSESTree.FunctionExpression,
     ) {
+      // A declaration's own name, or the PascalCase variable an arrow or
+      // function expression is bound to (the only ones analyzed).
       const componentName =
         node.type === 'FunctionDeclaration'
           ? node.id?.name
-          : 'AnonymousComponent';
+          : (
+              (node.parent as TSESTree.VariableDeclarator)
+                .id as TSESTree.Identifier
+            ).name;
       if (!componentName) return;
 
       const linesOfCode = node.loc
@@ -538,7 +565,15 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
       } = component;
 
       // Suggest React.memo for function components
-      if (suggestMemo && type !== 'class' && propsCount >= minPropsForMemo) {
+      if (
+        suggestMemo &&
+        type !== 'class' &&
+        propsCount >= minPropsForMemo &&
+        !isPassedToMemo(
+          node.type === 'FunctionDeclaration' ? node : node.parent!,
+          componentName,
+        )
+      ) {
         context.report({
           node,
           messageId: 'considerMemo',
@@ -590,6 +625,19 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
       }
     }
 
+    function analyzeBoundFunction(
+      node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression,
+    ): void {
+      const parent = node.parent;
+      if (
+        parent.type === 'VariableDeclarator' &&
+        parent.id.type === 'Identifier' &&
+        /^[A-Z]/.test(parent.id.name)
+      ) {
+        analyzeFunctionComponent(node);
+      }
+    }
+
     return {
       before() {
         const [options] = context.options;
@@ -610,18 +658,9 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
         }
       },
 
-      ArrowFunctionExpression(node: TSESTree.ArrowFunctionExpression) {
-        // Check if it's assigned to a capitalized variable (React component)
-        const parent = (node as TSESTree.Node & { parent?: TSESTree.Node })
-          .parent;
-        if (
-          parent?.type === 'VariableDeclarator' &&
-          parent.id?.type === 'Identifier' &&
-          /^[A-Z]/.test(parent.id.name)
-        ) {
-          analyzeFunctionComponent(node);
-        }
-      },
+      // `const Card = (…) => …` and `const Card = function (…) {…}`.
+      ArrowFunctionExpression: analyzeBoundFunction,
+      FunctionExpression: analyzeBoundFunction,
 
       ClassDeclaration(node: TSESTree.ClassDeclaration) {
         analyzeClassComponent(node);

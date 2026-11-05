@@ -74,9 +74,13 @@ export const jsxNoDuplicateProps = createRule<RuleOptions, MessageIds>({
 
         for (const attr of node.attributes) {
           if (attr.type !== 'JSXAttribute') continue;
-          if (attr.name.type !== 'JSXIdentifier') continue;
 
-          let propName = attr.name.name;
+          // `xlink:href` is one prop name, written with a namespace.
+          const written =
+            attr.name.type === 'JSXIdentifier'
+              ? attr.name.name
+              : `${attr.name.namespace.name}:${attr.name.name.name}`;
+          let propName = written;
           if (ignoreCase) {
             propName = propName.toLowerCase();
           }
@@ -87,7 +91,7 @@ export const jsxNoDuplicateProps = createRule<RuleOptions, MessageIds>({
               node: attr,
               messageId: 'duplicateProp',
               data: {
-                name: attr.name.name,
+                name: written,
               },
             });
           } else {

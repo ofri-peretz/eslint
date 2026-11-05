@@ -325,3 +325,109 @@ describe('react-class-to-hooks', () => {
     });
   });
 });
+
+describe('react-class-to-hooks: React class components by binding', () => {
+  ruleTester.run('bindings, error boundaries and options', reactClassToHooks, {
+    valid: [
+      {
+        name: 'a Component the file declares itself is not React',
+        code: 'class Component {} class A extends Component { render() { return null; } }',
+      },
+      {
+        name: 'Component imported from another library is not React',
+        code: "import { Component } from 'lit'; class A extends Component { render() { return null; } }",
+      },
+      {
+        name: 'an error boundary (componentDidCatch) has no hooks equivalent',
+        code: "import { Component } from 'react'; class Boundary extends Component { componentDidCatch(e) { log(e); } render() { return this.props.children; } }",
+      },
+      {
+        name: 'an error boundary (static getDerivedStateFromError) has no hooks equivalent',
+        code: "import React from 'react'; const Boundary = class extends React.Component { static getDerivedStateFromError() { return { failed: true }; } render() { return null; } };",
+      },
+      {
+        name: 'ignorePureRenderComponents skips a PureComponent class',
+        code: "import { PureComponent } from 'react'; class A extends PureComponent { render() { return null; } }",
+        options: [{ ignorePureRenderComponents: true }],
+      },
+      {
+        name: 'allowComplexLifecycle skips a quoted getSnapshotBeforeUpdate',
+        code: "import { Component } from 'react'; class A extends Component { 'getSnapshotBeforeUpdate'() { return null; } render() { return null; } }",
+        options: [{ allowComplexLifecycle: true }],
+      },
+    ],
+    invalid: [
+      {
+        name: 'a renamed Component import',
+        code: "import { Component as Base } from 'react'; class A extends Base { render() { return null; } }",
+        errors: [
+          {
+            messageId: 'migrateToHooks',
+            data: { componentName: 'A', complexity: 'simple' },
+          },
+        ],
+      },
+      {
+        name: 'a namespace import',
+        code: "import * as R from 'react'; class A extends R.Component { render() { return null; } }",
+        errors: [{ messageId: 'migrateToHooks' }],
+      },
+      {
+        name: 'a class expression takes its variable name',
+        code: "import { Component } from 'react'; const Profile = class extends Component { render() { return null; } };",
+        errors: [
+          {
+            messageId: 'migrateToHooks',
+            data: { componentName: 'Profile', complexity: 'simple' },
+          },
+        ],
+      },
+      {
+        name: 'an anonymous default-exported class',
+        code: "import { Component } from 'react'; export default class extends Component { render() { return null; } }",
+        errors: [
+          {
+            messageId: 'migrateToHooks',
+            data: { componentName: 'default', complexity: 'simple' },
+          },
+        ],
+      },
+      {
+        name: 'a class expression passed as an argument',
+        code: "import { Component } from 'react'; wrap(class extends Component { render() { return null; } });",
+        errors: [
+          {
+            messageId: 'migrateToHooks',
+            data: { componentName: 'default', complexity: 'simple' },
+          },
+        ],
+      },
+      {
+        name: 'ignorePureRenderComponents keeps a Component class',
+        code: "import { Component } from 'react'; class A extends Component { render() { return null; } }",
+        options: [{ ignorePureRenderComponents: true }],
+        errors: [{ messageId: 'migrateToHooks' }],
+      },
+      {
+        name: 'a quoted getSnapshotBeforeUpdate is a complex lifecycle',
+        code: "import { Component } from 'react'; class A extends Component { 'getSnapshotBeforeUpdate'() { return null; } render() { return null; } }",
+        errors: [
+          {
+            messageId: 'migrateToHooks',
+            data: { componentName: 'A', complexity: 'complex' },
+          },
+        ],
+      },
+      {
+        name: 'a static componentDidCatch is not an error boundary',
+        code: "import { Component } from 'react'; class A extends Component { static componentDidCatch() {} render() { return null; } }",
+        errors: [{ messageId: 'migrateToHooks' }],
+      },
+      {
+        name: 'an instance getDerivedStateFromError is not an error boundary',
+        code: "import { Component } from 'react'; class A extends Component { getDerivedStateFromError() {} render() { return null; } }",
+        errors: [{ messageId: 'migrateToHooks' }],
+      },
+    ],
+  });
+});

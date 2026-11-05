@@ -90,6 +90,20 @@ ruleTester.run('prefer-es6-class', preferEs6Class, {
         const method = React.createClass;
       `,
     },
+    {
+      name: 'a local createReactClass function is not the factory',
+      code: `
+        function createReactClass(spec) { return spec; }
+        const App = createReactClass({ render() { return null; } });
+      `,
+    },
+    {
+      name: 'a local object named React is not React',
+      code: `
+        const React = { createClass: (spec) => spec };
+        const App = React.createClass({ render() { return null; } });
+      `,
+    },
     // Valid - non-React code
     {
       name: 'plain JavaScript class',
@@ -196,6 +210,30 @@ ruleTester.run('prefer-es6-class', preferEs6Class, {
         { messageId: 'preferEs6Class' },
         { messageId: 'preferEs6Class' },
       ],
+    },
+    {
+      name: 'the create-react-class package under any local name',
+      code: `
+        import makeClass from 'create-react-class';
+        const App = makeClass({ render() { return null; } });
+      `,
+      errors: [{ messageId: 'preferEs6Class' }],
+    },
+    {
+      name: 'create-react-class from a require',
+      code: `
+        const createReactClass = require('create-react-class');
+        const App = createReactClass({ render() { return null; } });
+      `,
+      errors: [{ messageId: 'preferEs6Class' }],
+    },
+    {
+      name: 'createClass on a React namespace import, computed',
+      code: `
+        import * as R from 'react';
+        const App = R['createClass']({ render() { return null; } });
+      `,
+      errors: [{ messageId: 'preferEs6Class' }],
     },
   ],
 });

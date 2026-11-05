@@ -105,8 +105,48 @@ describe('no-did-update-set-state', () => {
 
   describe('Invalid cases - setState without condition', () => {
     ruleTester.run('setState without condition triggers error', noDidUpdateSetState, {
-      valid: [],
+      valid: [
+        {
+          name: 'setState behind && is guarded',
+          code: 'class A extends Component { componentDidUpdate(prev) { prev.id !== this.props.id && this.setState({ a: 1 }); } }',
+        },
+        {
+          name: 'allowInCallback allows a call in a callback',
+          code: 'class A extends Component { componentDidUpdate() { load().then(() => this.setState({ a: 1 })); } }',
+          options: [{ allowInCallback: true }],
+        },
+        {
+          name: 'componentDidUpdate on a class that is not a React component',
+          code: 'import { Component } from "./lib"; class A extends Component { componentDidUpdate() { this.setState({ a: 1 }); } }',
+        },
+      ],
       invalid: [
+        {
+          name: 'an unrelated if earlier in the method does not guard the call',
+          code: 'class A extends Component { componentDidUpdate() { if (x) { log(); } this.setState({ a: 1 }); } }',
+          errors: [{ messageId: 'noDidUpdateSetState' }],
+        },
+        {
+          name: 'allowInCallback does not allow an unguarded direct call',
+          code: 'class A extends Component { componentDidUpdate() { this.setState({ a: 1 }); } }',
+          options: [{ allowInCallback: true }],
+          errors: [{ messageId: 'noDidUpdateSetState' }],
+        },
+        {
+          name: 'setState in a callback the method starts unconditionally loops',
+          code: 'class A extends Component { componentDidUpdate() { load().then(() => this.setState({ a: 1 })); } }',
+          errors: [{ messageId: 'noDidUpdateSetState' }],
+        },
+        {
+          name: 'setState in an arrow-property componentDidUpdate',
+          code: 'import * as R from "react"; class A extends R.PureComponent { componentDidUpdate = () => { this.setState({ a: 1 }); }; }',
+          errors: [{ messageId: 'noDidUpdateSetState' }],
+        },
+        {
+          name: 'setState in a bound function the method starts',
+          code: 'class A extends Component { componentDidUpdate() { setTimeout(function () { this.setState({ a: 1 }); }.bind(this)); } }',
+          errors: [{ messageId: 'noDidUpdateSetState' }],
+        },
         // Direct setState without condition
         {
           name: 'setState in componentDidUpdate with no guard — it loops',

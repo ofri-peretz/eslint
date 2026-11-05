@@ -9,12 +9,9 @@
  * Require render methods to return
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import {
-  createRule,
-  objectKeyName,
-  propertyName,
-} from '@interlace/eslint-devkit';
+import { createRule, objectKeyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { extendsReactComponent } from '../../utils/react-api';
 
 type MessageIds = 'requireRenderReturn';
 
@@ -48,36 +45,18 @@ export const requireRenderReturn = createRule<[], MessageIds>({
      * `render` is not a React word. Matching the method name alone made every
      * class with a `render` method a React component — a terminal painter, a
      * canvas, a template engine — and handed each one a CRITICAL "must return
-     * a value" for a method whose contract is to return nothing.
-     *
-     * The superclass check is the one every sibling in this plugin already
-     * uses (sort-comp, state-in-constructor, prefer-stateless-function,
-     * no-direct-mutation-state). It costs the aliased and HOC base cases,
-     * which those rules already accept and KNOWN-LIMITATIONS now records.
+     * a value" for a method whose contract is to return nothing. The class
+     * must extend React's `Component` / `PureComponent`, decided by binding
+     * (a renamed or namespace import counts; another library's `Component`
+     * does not).
      */
-    function isInReactComponent(node: TSESTree.MethodDefinition): boolean {
-      // A MethodDefinition's parent is always a ClassBody, whose parent is
-      // always the class — TSESTree types it that way, so there is nothing to
-      // guard against here.
-      const superClass = node.parent.parent.superClass;
-      if (!superClass) return false;
-
-      if (superClass.type === 'Identifier') {
-        return (
-          superClass.name === 'Component' || superClass.name === 'PureComponent'
-        );
-      }
-
-      if (superClass.type === 'MemberExpression') {
-        const base = propertyName(superClass);
-        return (
-          superClass.object.type === 'Identifier' &&
-          superClass.object.name === 'React' &&
-          (base === 'Component' || base === 'PureComponent')
-        );
-      }
-
-      return false;
+    function isInReactComponent(
+      node: TSESTree.MethodDefinition | TSESTree.PropertyDefinition,
+    ): boolean {
+      // A class member's parent is always a ClassBody, whose parent is the class.
+      const owner = node.parent.parent as
+        TSESTree.ClassDeclaration | TSESTree.ClassExpression;
+      return extendsReactComponent(owner, context.sourceCode.getScope(owner));
     }
 
     function hasReturnStatement(
@@ -97,9 +76,29 @@ export const requireRenderReturn = createRule<[], MessageIds>({
       return checkStatement(node);
     }
 
+    /**
+     * Does every path through `statement` leave render without falling off
+     * the end — by returning, or by throwing (a path that throws never
+     * completes, so it has nothing to return)?
+     */
     function checkStatement(statement: TSESTree.Statement): boolean {
-      if (statement.type === 'ReturnStatement') {
+      if (
+        statement.type === 'ReturnStatement' ||
+        statement.type === 'ThrowStatement'
+      ) {
         return true;
+      }
+
+      // `try { return a } catch { return b }`: both the block and the handler
+      // must exit; a `finally` that exits covers both.
+      if (statement.type === 'TryStatement') {
+        return (
+          (hasReturnStatement(statement.block) &&
+            (statement.handler === null ||
+              hasReturnStatement(statement.handler.body))) ||
+          (statement.finalizer !== null &&
+            hasReturnStatement(statement.finalizer))
+        );
       }
 
       // An `if` only guarantees a return when EVERY path through it returns:
@@ -164,23 +163,35 @@ export const requireRenderReturn = createRule<[], MessageIds>({
 
       return false;
     }
+    function check(
+      node: TSESTree.MethodDefinition | TSESTree.PropertyDefinition,
+      fn: TSESTree.Node | null,
+    ): void {
+      // `render() {}` and `render = () => {}` are the same method; an arrow
+      // with an expression body always returns it.
+      if (
+        node.static ||
+        objectKeyName(node) !== 'render' ||
+        (fn?.type !== 'FunctionExpression' &&
+          fn?.type !== 'ArrowFunctionExpression') ||
+        fn.body.type !== 'BlockStatement' ||
+        !isInReactComponent(node)
+      )
+        return;
+      if (!hasReturnStatement(fn.body)) {
+        context.report({
+          node: node.key,
+          messageId: 'requireRenderReturn',
+        });
+      }
+    }
+
     return {
       MethodDefinition(node: TSESTree.MethodDefinition) {
-        if (
-          objectKeyName(node) === 'render' &&
-          node.value.type === 'FunctionExpression' &&
-          isInReactComponent(node)
-        ) {
-          const body = node.value.body;
-
-          // Check if render method has a return statement
-          if (!hasReturnStatement(body)) {
-            context.report({
-              node: node.key,
-              messageId: 'requireRenderReturn',
-            });
-          }
-        }
+        check(node, node.value);
+      },
+      PropertyDefinition(node: TSESTree.PropertyDefinition) {
+        check(node, node.value);
       },
     };
   },

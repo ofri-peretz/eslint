@@ -15,6 +15,49 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-object-type-as-default-prop', noObjectTypeAsDefaultProp, {
   valid: [
+    {
+      name: 'a helper that is not a component may default to an object',
+      code: 'function request({ headers = {} }) { return fetch(headers); }',
+    },
+    {
+      name: 'a PascalCase function that returns no JSX',
+      code: 'function Merge({ style = {} }) { return style; }',
+    },
+    {
+      name: 'a default in the second parameter is not a prop',
+      code: 'function Card(props, { style = {} }) { return <div style={style} />; }',
+    },
+    {
+      name: 'static defaultProps is evaluated once, not per render',
+      code: `
+        class MyComponent extends Component {
+          static defaultProps = {
+            config: {}
+          };
+        }
+      `,
+    },
+    {
+      name: 'a static defaultProps style object is created once',
+      code: `
+        class MyComponent extends Component {
+          static defaultProps = {
+            style: { color: 'red' }
+          };
+        }
+      `,
+    },
+    {
+      name: 'several static defaultProps objects are created once',
+      code: `
+        class MyComponent extends Component {
+          static defaultProps = {
+            config: {},
+            style: {}
+          };
+        }
+      `,
+    },
     // Valid - primitive defaults
     {
       name: 'string default prop',
@@ -173,44 +216,17 @@ ruleTester.run('no-object-type-as-default-prop', noObjectTypeAsDefaultProp, {
   ],
 
   invalid: [
+    {
+      name: 'an array literal default on a memo component',
+      code: 'import { memo } from "react"; const Card = memo(({ items = [] }) => <ul>{items}</ul>);',
+      errors: [{ messageId: 'noObjectTypeAsDefaultProp' }],
+    },
+    {
+      name: 'an inline function default on an arrow component',
+      code: 'const Card = ({ onClick = () => {} }) => <button onClick={onClick} />;',
+      errors: [{ messageId: 'noObjectTypeAsDefaultProp' }],
+    },
     // Invalid - object literal in defaultProps
-    {
-      name: 'object literal as default prop',
-      code: `
-        class MyComponent extends Component {
-          static defaultProps = {
-            config: {}
-          };
-        }
-      `,
-      errors: [{ messageId: 'noObjectTypeAsDefaultProp' }],
-    },
-    {
-      name: 'object with properties as default prop',
-      code: `
-        class MyComponent extends Component {
-          static defaultProps = {
-            style: { color: 'red' }
-          };
-        }
-      `,
-      errors: [{ messageId: 'noObjectTypeAsDefaultProp' }],
-    },
-    {
-      name: 'multiple object defaults',
-      code: `
-        class MyComponent extends Component {
-          static defaultProps = {
-            config: {},
-            style: {}
-          };
-        }
-      `,
-      errors: [
-        { messageId: 'noObjectTypeAsDefaultProp' },
-        { messageId: 'noObjectTypeAsDefaultProp' },
-      ],
-    },
     // Invalid - object in function parameter default
     {
       name: 'object default in destructured parameter',

@@ -22,20 +22,15 @@
  *   - `memo(() => <div />)` / `forwardRef(...)` not bound to a variable
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import {
-  AST_NODE_TYPES,
-  createRule,
-  namesOneOf,
-  propertyName,
-} from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
+import { extendsReactComponent, isReactApi } from '../../utils/react-api';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'displayName';
 
 type RuleOptions = [];
 
-/** Functions React wraps without giving the inner component a name of its own. */
-const REACT_WRAPPERS = new Set(['memo', 'forwardRef']);
+type Scope = TSESLint.Scope.Scope;
 
 type FunctionNode =
   | TSESTree.FunctionDeclaration
@@ -73,6 +68,11 @@ export const displayName = createRule<RuleOptions, MessageIds>({
     const report = (node: TSESTree.Node): void => {
       context.report({ node, messageId: 'displayName' });
     };
+    const scopeOf = (node: TSESTree.Node): Scope =>
+      context.sourceCode.getScope(node);
+    /** Does this subtree render: JSX, or React's `createElement`? */
+    const renders = (node: TSESTree.Node): boolean =>
+      containsRender(node, scopeOf);
 
     return {
       /**
@@ -83,7 +83,7 @@ export const displayName = createRule<RuleOptions, MessageIds>({
       ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration) {
         const declaration = node.declaration;
         if (!isFunctionNode(declaration) || declaration.id) return;
-        if (containsJSX(declaration.body)) report(declaration);
+        if (renders(declaration.body)) report(declaration);
       },
 
       /**
@@ -92,13 +92,17 @@ export const displayName = createRule<RuleOptions, MessageIds>({
        * off the binding, so nothing is reported.
        */
       CallExpression(node: TSESTree.CallExpression) {
-        if (!isReactWrapperCall(node) || hasInferableName(node)) return;
+        if (
+          !isReactWrapperCall(node, scopeOf) ||
+          hasInferableName(node, scopeOf)
+        )
+          return;
         const inner = node.arguments[0];
         if (
           inner &&
           isFunctionNode(inner) &&
           !inner.id &&
-          containsJSX(inner.body)
+          renders(inner.body)
         ) {
           report(inner);
         }
@@ -111,8 +115,9 @@ export const displayName = createRule<RuleOptions, MessageIds>({
       'ClassDeclaration, ClassExpression'(
         node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
       ) {
-        if (node.id || !isReactComponent(node)) return;
-        if (hasDisplayNameProperty(node) || hasInferableName(node)) return;
+        if (node.id || !extendsReactComponent(node, scopeOf(node))) return;
+        if (hasDisplayNameProperty(node) || hasInferableName(node, scopeOf))
+          return;
         report(node);
       },
     };
@@ -126,9 +131,12 @@ export const displayName = createRule<RuleOptions, MessageIds>({
  * component via `Row`, so the walk steps out through them before looking for
  * a binding.
  */
-function hasInferableName(node: TSESTree.Node): boolean {
+function hasInferableName(
+  node: TSESTree.Node,
+  scopeOf: (node: TSESTree.Node) => Scope,
+): boolean {
   let current: TSESTree.Node | undefined = node.parent;
-  while (current && isReactWrapperCall(current)) {
+  while (current && isReactWrapperCall(current, scopeOf)) {
     current = current.parent;
   }
   switch (current?.type) {
@@ -144,18 +152,19 @@ function hasInferableName(node: TSESTree.Node): boolean {
   }
 }
 
-/** `memo(...)`, `React.memo(...)`, `forwardRef(...)`, `React.forwardRef(...)`. */
+/**
+ * React's `memo(...)` / `forwardRef(...)`, by binding: a named, renamed,
+ * default or namespace import. A local `memo` is not React's.
+ */
 function isReactWrapperCall(
   node: TSESTree.Node,
+  scopeOf: (node: TSESTree.Node) => Scope,
 ): node is TSESTree.CallExpression {
   if (node.type !== AST_NODE_TYPES.CallExpression) return false;
-  const callee = node.callee;
-  if (callee.type === AST_NODE_TYPES.Identifier) {
-    return REACT_WRAPPERS.has(callee.name);
-  }
+  const scope = scopeOf(node);
   return (
-    callee.type === AST_NODE_TYPES.MemberExpression &&
-    namesOneOf(propertyName(callee), REACT_WRAPPERS)
+    isReactApi(node.callee, scope, 'memo') ||
+    isReactApi(node.callee, scope, 'forwardRef')
   );
 }
 
@@ -165,33 +174,6 @@ function isFunctionNode(node: TSESTree.Node): node is FunctionNode {
     node.type === AST_NODE_TYPES.FunctionExpression ||
     node.type === AST_NODE_TYPES.ArrowFunctionExpression
   );
-}
-
-/**
- * Check if a class extends a React component base
- */
-function isReactComponent(
-  node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
-): boolean {
-  if (!node.superClass) return false;
-
-  if (node.superClass.type === AST_NODE_TYPES.Identifier) {
-    return (
-      node.superClass.name === 'Component' ||
-      node.superClass.name === 'PureComponent'
-    );
-  }
-
-  if (node.superClass.type === AST_NODE_TYPES.MemberExpression) {
-    return (
-      node.superClass.object.type === AST_NODE_TYPES.Identifier &&
-      node.superClass.object.name === 'React' &&
-      (propertyName(node.superClass) === 'Component' ||
-        propertyName(node.superClass) === 'PureComponent')
-    );
-  }
-
-  return false;
 }
 
 /**
@@ -214,17 +196,23 @@ function hasDisplayNameProperty(
 }
 
 /**
- * Does this subtree render JSX anywhere?
+ * Does this subtree render anywhere: JSX, a fragment, or React's
+ * `createElement` (by binding)?
  *
  * No `visited` set and no null guard: an AST minus its `parent` back-reference
  * is a finite tree, so the walk terminates on its own. Both were defensive
  * cruft that no real parse could reach, and the only way to keep them at 100%
  * coverage was a hand-built fake node.
  */
-function containsJSX(node: TSESTree.Node): boolean {
+function containsRender(
+  node: TSESTree.Node,
+  scopeOf: (node: TSESTree.Node) => Scope,
+): boolean {
   if (
     node.type === AST_NODE_TYPES.JSXElement ||
-    node.type === AST_NODE_TYPES.JSXFragment
+    node.type === AST_NODE_TYPES.JSXFragment ||
+    (node.type === AST_NODE_TYPES.CallExpression &&
+      isReactApi(node.callee, scopeOf(node), 'createElement'))
   ) {
     return true;
   }
@@ -240,11 +228,11 @@ function containsJSX(node: TSESTree.Node): boolean {
       for (const item of child) {
         // Array holes are null, and `range` is a pair of numbers.
         if (item && typeof item === 'object' && 'type' in item) {
-          if (containsJSX(item as TSESTree.Node)) return true;
+          if (containsRender(item as TSESTree.Node, scopeOf)) return true;
         }
       }
     } else if ('type' in child) {
-      if (containsJSX(child as TSESTree.Node)) return true;
+      if (containsRender(child as TSESTree.Node, scopeOf)) return true;
     }
   }
 

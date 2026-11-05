@@ -29,8 +29,10 @@ Implements rule **R11** of the [portable component-modeling floor](https://githu
 
 ## Rule Details
 
-The rule flags TypeScript properties named `type` or `kind` whose type is a
-string-literal union of 2+ members. `variant` is **deliberately allow-listed**
+The rule flags TypeScript properties named `type` or `kind` (key written as an
+identifier or quoted) whose type is a union of 2+ string literals, optionally
+widened with `undefined` / `null`, written inline or through a type alias
+declared in the file (`type RowKind = 'checkbox' | 'radio'`). `variant` is **deliberately allow-listed**
 because it's the dominant CVA shape and usually only switches `role` / class
 contracts (not the element tree).
 

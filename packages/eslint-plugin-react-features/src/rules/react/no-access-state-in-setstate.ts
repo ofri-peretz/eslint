@@ -40,16 +40,21 @@ export const noAccessStateInSetState = createRule<[], MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        // Check if this is a setState call
+        // The component's own `this.setState(...)`; `store.setState` is not
         if (
           node.callee.type === 'MemberExpression' &&
+          node.callee.object.type === 'ThisExpression' &&
           propertyName(node.callee) === 'setState' &&
           node.arguments.length > 0
         ) {
           const [firstArg] = node.arguments;
 
-          // Check if the first argument accesses this.state
-          if (firstArg && containsThisStateAccess(firstArg)) {
+          // Check if the first argument accesses this.state, directly or
+          // through a local read from it (`const { count } = this.state`)
+          if (
+            containsThisStateAccess(firstArg) ||
+            readsLocalFromState(firstArg, context)
+          ) {
             context.report({
               node: node.callee.property,
               messageId: 'noAccessStateInSetState',
@@ -60,6 +65,67 @@ export const noAccessStateInSetState = createRule<[], MessageIds>({
     };
   },
 });
+
+/** Is `name`, seen from `node`, a local initialised from `this.state`? */
+function isLocalFromState(
+  id: TSESTree.Identifier,
+  context: TSESLint.RuleContext<MessageIds, []>,
+): boolean {
+  for (
+    let scope: TSESLint.Scope.Scope | null = context.sourceCode.getScope(id);
+    scope;
+    scope = scope.upper
+  ) {
+    const variable = scope.set.get(id.name);
+    if (!variable) continue;
+    const def = variable.defs[0];
+    return (
+      def?.type === 'Variable' &&
+      def.node.init !== null &&
+      containsThisStateAccess(def.node.init)
+    );
+  }
+  return false;
+}
+
+/**
+ * Does `node` read, as a value, a local initialised from `this.state`?
+ * Property names (`{ count: … }`, `x.count`) are names, not reads.
+ */
+function readsLocalFromState(
+  node: TSESTree.Node,
+  context: TSESLint.RuleContext<MessageIds, []>,
+): boolean {
+  if (node.type === 'Identifier') return isLocalFromState(node, context);
+  if (node.type === 'MemberExpression') {
+    return (
+      readsLocalFromState(node.object, context) ||
+      (node.computed && readsLocalFromState(node.property, context))
+    );
+  }
+  if (node.type === 'Property') {
+    return (
+      (node.computed && readsLocalFromState(node.key, context)) ||
+      readsLocalFromState(node.value, context)
+    );
+  }
+  for (const key in node) {
+    if (key === 'parent') continue;
+    const child = (node as unknown as Record<string, unknown>)[key];
+    const items = Array.isArray(child) ? child : [child];
+    for (const item of items) {
+      if (
+        item &&
+        typeof item === 'object' &&
+        'type' in item &&
+        readsLocalFromState(item as TSESTree.Node, context)
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
 /**
  * Check if a node contains access to this.state

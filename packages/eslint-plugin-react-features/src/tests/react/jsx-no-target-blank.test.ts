@@ -105,4 +105,41 @@ describe('jsx-no-target-blank', () => {
       },
     ],
   });
+
+  ruleTester.run('jsx-no-target-blank value spellings', jsxNoTargetBlank, {
+    valid: [
+      {
+        name: 'a braced rel with noopener',
+        code: '<a href="https://example.com" target="_blank" rel={"noopener"}>Link</a>',
+      },
+      {
+        name: 'a braced same-site href is not external',
+        code: '<a href={"/home"} target="_blank">Link</a>',
+      },
+    ],
+    invalid: [
+      {
+        name: 'an upper-case _BLANK target',
+        code: '<a href="https://example.com" target="_BLANK">Link</a>',
+        output:
+          '<a href="https://example.com" target="_BLANK" rel="noopener noreferrer">Link</a>',
+        errors: [{ messageId: 'noTargetBlank' }],
+      },
+      {
+        name: 'an upper-case URL scheme is external',
+        code: '<a href="HTTPS://example.com" target="_blank">Link</a>',
+        output:
+          '<a href="HTTPS://example.com" target="_blank" rel="noopener noreferrer">Link</a>',
+        errors: [{ messageId: 'noTargetBlank' }],
+      },
+      {
+        name: 'a braced external href with enforceDynamicLinks: never',
+        code: '<a href={"https://example.com"} target="_blank">Link</a>',
+        options: [{ enforceDynamicLinks: 'never' }],
+        output:
+          '<a href={"https://example.com"} target="_blank" rel="noopener noreferrer">Link</a>',
+        errors: [{ messageId: 'noTargetBlank' }],
+      },
+    ],
+  });
 });

@@ -302,6 +302,64 @@ ruleTester.run('default-props-match-prop-types', defaultPropsMatchPropTypes, {
         }
       `,
     },
+    {
+      name: 'null is a valid default for any non-required validator',
+      code: `
+        class C extends Component {
+          static propTypes = { label: PropTypes.string };
+          static defaultProps = { label: null };
+        }
+      `,
+    },
+    {
+      name: 'a PropTypes object the file declares itself is not prop-types',
+      code: `
+        const PropTypes = { number: 'string' };
+        class C extends Component {
+          static propTypes = { count: PropTypes.number };
+          static defaultProps = { count: 'x' };
+        }
+      `,
+    },
+    {
+      name: 'defaults that are not literals of a known kind are not judged',
+      code: `
+        import PropTypes from 'prop-types';
+        import Other from './validators';
+        class C extends Component {
+          static propTypes = {
+            a: PropTypes.string, b: PropTypes.string, c: PropTypes.string,
+            d: PropTypes.number, e: PropTypes.string, f: PropTypes, g: Other.number,
+          };
+          static defaultProps = {
+            a: \`n\${x}\`, b: -x, c: !1, d: null, e: /re/, f: 1, g: 'x',
+          };
+        }
+      `,
+    },
+    {
+      name: 'instance fields, computed keys and other assignments are not propTypes',
+      code: `
+        import PropTypes from 'prop-types';
+        export default class extends Component {
+          propTypes = { n: PropTypes.number };
+          static [key] = { n: PropTypes.number };
+          static 'other' = { n: PropTypes.number };
+          static propTypes = { n: PropTypes.number };
+          static defaultProps = { n: 1 };
+          init() { this.defaultProps = { n: 'x' }; defaults = { n: 'x' }; }
+        }
+        C.state = { n: 'x' };
+      `,
+    },
+    {
+      name: 'defaults of one component are not checked against another',
+      code: `
+        import PropTypes from 'prop-types';
+        A.propTypes = { size: PropTypes.number };
+        B.defaultProps = { size: 'large' };
+      `,
+    },
   ],
   invalid: [
     // Invalid - string default for number prop
@@ -380,6 +438,38 @@ ruleTester.run('default-props-match-prop-types', defaultPropsMatchPropTypes, {
         { messageId: 'defaultPropsMatchPropTypes' },
         { messageId: 'defaultPropsMatchPropTypes' },
       ],
+    },
+    {
+      name: 'a function component with assigned propTypes and defaultProps',
+      code: `
+        import PropTypes from 'prop-types';
+        function Card({ title }) { return <h2>{title}</h2>; }
+        Card.propTypes = { title: PropTypes.string };
+        Card.defaultProps = { title: 0 };
+      `,
+      errors: [{ messageId: 'defaultPropsMatchPropTypes' }],
+    },
+    {
+      name: 'an isRequired validator from a renamed prop-types import',
+      code: `
+        import PT from 'prop-types';
+        class C extends Component {
+          static propTypes = { 'count': PT.number.isRequired };
+          static defaultProps = { 'count': \`zero\` };
+        }
+      `,
+      errors: [{ messageId: 'defaultPropsMatchPropTypes' }],
+    },
+    {
+      name: 'a negative number default for a named-import bool validator',
+      code: `
+        import { bool } from 'prop-types';
+        class C extends Component {
+          static propTypes = { open: bool };
+          static defaultProps = { open: -1 };
+        }
+      `,
+      errors: [{ messageId: 'defaultPropsMatchPropTypes' }],
     },
   ],
 });

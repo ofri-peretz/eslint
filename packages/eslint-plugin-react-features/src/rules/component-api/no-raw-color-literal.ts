@@ -8,8 +8,9 @@
  * ESLint Rule: no-raw-color-literal
  * Enforces R19: no raw color literals (hex, rgb/rgba, hsl/hsla, oklch/oklab)
  * in source. Colors must come from design tokens via CSS custom properties
- * or Tailwind classes wired to them. Scoped to JSX `style` / `className`
- * object values and `cn()`/`clsx()` arguments to minimize false positives.
+ * or Tailwind classes wired to them. Scoped to the places component source
+ * styles things: JSX attribute values, objects in JSX (`style={{…}}`), and
+ * class-name builder arguments (`cn()` / clsx / classnames / tailwind-merge).
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
@@ -17,24 +18,49 @@ import {
   formatLLMMessage,
   MessageIcons,
 } from '@interlace/eslint-devkit';
+import type { StringPiece } from '../../utils/class-strings';
+import {
+  classStrings,
+  isClassNameBuilder,
+  valueStrings,
+} from '../../utils/class-strings';
 
 type MessageIds = 'rawColor';
 type RuleOptions = [];
 
+/** A CSS colour anywhere in a CSS value or class string (`bg-[#fff]`, `1px solid rgb(…)`). */
 const COLOR_PATTERN =
   /(#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab)\s*\()/;
 
-const isColorString = (s: string): boolean => COLOR_PATTERN.test(s);
+/**
+ * A string that IS one CSS colour (`#fff`, `#ff0000`, `rgb(…)`): what an
+ * attribute that is not a class or style list must hold to be a colour.
+ * `title="Issue #123"` only contains one.
+ */
+const WHOLE_COLOR =
+  /^\s*(?:#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|(?:rgba?|hsla?|oklch|oklab)\s*\(.*\))\s*$/;
 
-const reportIfColorLiteral = (
-  context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-  node: TSESTree.Node,
-  value: unknown,
-): void => {
-  if (typeof value === 'string' && isColorString(value)) {
-    context.report({ node, messageId: 'rawColor' });
-  }
-};
+/**
+ * @vocabulary HTML's and SVG's URL-valued attributes, as React spells them:
+ * `href="#add"` is an in-page link, never a colour.
+ */
+const URL_ATTRIBUTES = new Set([
+  'href',
+  'src',
+  'action',
+  'formAction',
+  'poster',
+  'xlinkHref',
+  'xlink:href',
+]);
+
+/** @vocabulary The attributes whose value is a class list. */
+const CLASS_ATTRIBUTES = new Set(['className', 'class']);
+
+const attributeName = (attr: TSESTree.JSXAttribute): string =>
+  attr.name.type === 'JSXNamespacedName'
+    ? `${attr.name.namespace.name}:${attr.name.name.name}`
+    : attr.name.name;
 
 export const noRawColorLiteral = createRule<RuleOptions, MessageIds>({
   name: 'no-raw-color-literal',
@@ -61,33 +87,49 @@ export const noRawColorLiteral = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    /** Report each piece that holds a colour: anywhere in it, or as its whole value. */
+    const check = (pieces: StringPiece[], anywhere: boolean): void => {
+      for (const piece of pieces) {
+        const found = anywhere
+          ? COLOR_PATTERN.test(piece.text)
+          : piece.whole && WHOLE_COLOR.test(piece.text);
+        if (found) context.report({ node: piece.node, messageId: 'rawColor' });
+      }
+    };
+
     return {
-      // Color inside JSX attribute string values (className="text-[#fff]", style="...")
-      'JSXAttribute > Literal'(node: TSESTree.Literal) {
-        reportIfColorLiteral(context, node, node.value);
+      // `fill="#fff"`, `fill={"#fff"}`, `className="bg-[#fff]"`, a template,
+      // a conditional. A class list is read anywhere; another attribute only
+      // when its value is a colour; a URL attribute never.
+      JSXAttribute(node: TSESTree.JSXAttribute) {
+        const name = attributeName(node);
+        if (URL_ATTRIBUTES.has(name) || !node.value) return;
+        const pieces =
+          node.value.type === 'JSXExpressionContainer'
+            ? valueStrings(node.value.expression)
+            : valueStrings(node.value);
+        check(pieces, CLASS_ATTRIBUTES.has(name));
       },
-      // Color inside `style={{ color: "#fff" }}` and similar
-      'JSXExpressionContainer ObjectExpression > Property > Literal'(
-        node: TSESTree.Literal,
+      // An object in a JSX expression: a `style={{ … }}` value is CSS, read
+      // anywhere (`border: "1px solid #fff"`); another object's value only
+      // when it is a colour (`{ label: "Issue #123" }` is text).
+      'JSXExpressionContainer ObjectExpression > Property'(
+        node: TSESTree.Property,
       ) {
-        reportIfColorLiteral(context, node, node.value);
+        const object = node.parent as TSESTree.ObjectExpression;
+        const container = object.parent;
+        const isStyle =
+          container.type === 'JSXExpressionContainer' &&
+          container.parent.type === 'JSXAttribute' &&
+          attributeName(container.parent) === 'style';
+        check(valueStrings(node.value), isStyle);
       },
-      // Color inside cn()/clsx()/twMerge() args: cn("text-[#fff]")
+      // Class strings passed to cn() / clsx() / classnames / twMerge: plain,
+      // conditional, templates, array elements and object keys.
       CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type !== 'Identifier') return;
-        const name = node.callee.name;
-        if (
-          name !== 'cn' &&
-          name !== 'clsx' &&
-          name !== 'twMerge' &&
-          name !== 'classNames'
-        )
+        if (!isClassNameBuilder(node.callee, context.sourceCode.getScope(node)))
           return;
-        for (const arg of node.arguments) {
-          if (arg.type === 'Literal') {
-            reportIfColorLiteral(context, arg, arg.value);
-          }
-        }
+        for (const arg of node.arguments) check(classStrings(arg), true);
       },
     };
   },

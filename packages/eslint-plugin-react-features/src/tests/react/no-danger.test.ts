@@ -31,6 +31,14 @@ describe('no-danger', () => {
   describe('Basic Functionality', () => {
     ruleTester.run('no-danger validation', noDanger, {
       valid: [
+        {
+          name: 'a local createElement is not React',
+          code: 'function createElement(...a) { return a; } createElement("div", { dangerouslySetInnerHTML: { __html: html } });',
+        },
+        {
+          name: 'React.createElement without the prop',
+          code: 'import React from "react"; React.createElement("div", { className: "x" }, React.createElement("b"));',
+        },
         // Regular JSX content
         {
           name: 'ordinary text',
@@ -52,6 +60,16 @@ describe('no-danger', () => {
         },
       ],
       invalid: [
+        {
+          name: 'dangerouslySetInnerHTML in a React.createElement prop object',
+          code: 'import React from "react"; React.createElement("div", { dangerouslySetInnerHTML: { __html: html } });',
+          errors: [{ messageId: 'noDanger' }],
+        },
+        {
+          name: 'a quoted dangerouslySetInnerHTML key on a named createElement import',
+          code: 'import { createElement } from "react"; createElement("div", { "dangerouslySetInnerHTML": { __html: html } });',
+          errors: [{ messageId: 'noDanger' }],
+        },
         // dangerouslySetInnerHTML usage
         {
           name: 'dangerouslySetInnerHTML',

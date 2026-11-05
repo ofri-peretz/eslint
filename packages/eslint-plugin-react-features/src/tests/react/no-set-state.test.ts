@@ -57,7 +57,7 @@ describe('no-set-state', () => {
         // Direct setState calls
         {
           name: 'setState where the configuration wants hooks',
-          code: 'this.setState({ count: 1 })',
+          code: 'class A extends React.Component { m() { this.setState({ count: 1 }) } }',
           errors: [
             {
               messageId: 'noSetState',
@@ -84,7 +84,7 @@ describe('no-set-state', () => {
         },
         {
           code: `
-            class Component {
+            class Loader extends Component {
               componentDidMount() {
                 this.setState({ loaded: true });
               }
@@ -98,7 +98,8 @@ describe('no-set-state', () => {
         },
         // setState with callback
         {
-          code: 'this.setState({ data }, callback)',
+          name: 'setState with a callback',
+          code: 'import React from "react"; class A extends React.PureComponent { m = () => { this.setState({ data }, callback) } }',
           errors: [
             {
               messageId: 'noSetState',
@@ -119,16 +120,28 @@ describe('no-set-state', () => {
         {
           code: 'function setState() {}; setState()',
         },
+        {
+          name: 'module-level this is not a component',
+          code: 'const component = this; component.setState({}); this.setState({});',
+        },
+        {
+          name: 'a class named Component with no base is not a React component',
+          code: 'class Component { componentDidMount() { this.setState({ loaded: true }); } }',
+        },
+        {
+          name: 'a store setState is not class-component state',
+          code: 'class A extends React.Component { m() { store.setState({ a: 1 }); } }',
+        },
+        {
+          name: 'a Component from another library is not React',
+          code: 'import { Component } from "lit"; class A extends Component { m() { this.setState({}); } }',
+        },
       ],
       invalid: [
-        // Even with different variable names, member access to setState is flagged
         {
-          code: 'const component = this; component.setState({})',
-          errors: [
-            {
-              messageId: 'noSetState',
-            },
-          ],
+          name: 'a computed setState key in a bound callback',
+          code: 'import { Component as Base } from "react"; class A extends Base { m() { setTimeout(function () { this["setState"]({}); }.bind(this)); } }',
+          errors: [{ messageId: 'noSetState' }],
         },
       ],
     });

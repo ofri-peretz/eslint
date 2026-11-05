@@ -9,7 +9,8 @@
  * Prevent setState in componentDidMount
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+import { componentSetState } from '../../utils/component-set-state';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noDidMountSetState';
@@ -41,33 +42,17 @@ export const noDidMountSetState = createRule<[], MessageIds>({
   },
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
-    let inComponentDidMount: boolean;
-
     return {
-      before() {
-        inComponentDidMount = false;
-      },
-      'MethodDefinition[key.name="componentDidMount"]'() {
-        inComponentDidMount = true;
-      },
-
-      'MethodDefinition[key.name="componentDidMount"]:exit'() {
-        inComponentDidMount = false;
-      },
-
+      // The component's own `this.setState` in `componentDidMount` (a
+      // method, an arrow property or a quoted key) runs before the browser
+      // paints. One inside a callback runs later and is how data loads.
       CallExpression(node: TSESTree.CallExpression) {
-        if (!inComponentDidMount) return;
-
-        // Check if this is a setState call
-        if (
-          node.callee.type === 'MemberExpression' &&
-          propertyName(node.callee) === 'setState'
-        ) {
-          context.report({
-            node: node.callee.property,
-            messageId: 'noDidMountSetState',
-          });
-        }
+        const site = componentSetState(node, context.sourceCode);
+        if (site?.method !== 'componentDidMount' || site.inCallback) return;
+        context.report({
+          node: (node.callee as TSESTree.MemberExpression).property,
+          messageId: 'noDidMountSetState',
+        });
       },
     };
   },

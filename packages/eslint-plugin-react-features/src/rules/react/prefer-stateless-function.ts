@@ -9,13 +9,68 @@
  * Prefer stateless functions
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { reactExport } from '../../utils/react-api';
 
 type MessageIds = 'preferStatelessFunction';
 
 export interface Options {
   ignorePureComponents?: boolean;
+}
+
+type ClassNode = TSESTree.ClassDeclaration | TSESTree.ClassExpression;
+
+/**
+ * @vocabulary React's class-component API: the statics React reads off a
+ * component, each of which a function component can carry as well.
+ */
+const FUNCTION_STATICS = new Set([
+  'propTypes',
+  'defaultProps',
+  'contextTypes',
+  'contextType',
+  'displayName',
+]);
+
+/** `this.props` / `this.context`: what a function receives as arguments. */
+const FUNCTION_THIS = new Set(['props', 'context']);
+
+/** `constructor(props) { super(props); }`: says nothing a function cannot. */
+function isUselessConstructor(member: TSESTree.MethodDefinition): boolean {
+  const body = member.value.body?.body ?? [];
+  return body.every(
+    (statement) =>
+      statement.type === 'ExpressionStatement' &&
+      statement.expression.type === 'CallExpression' &&
+      statement.expression.callee.type === 'Super',
+  );
+}
+
+/**
+ * Could a function component declare everything this class body does? Only
+ * `render`, the statics in FUNCTION_STATICS and a useless constructor
+ * qualify; state, lifecycles, handlers, fields and error-boundary statics do
+ * not. A type-only member (an index signature) declares nothing.
+ */
+function hasOnlyFunctionMembers(node: ClassNode): boolean {
+  return node.body.body.every((member) => {
+    if (member.type === 'TSIndexSignature') return true;
+    if (member.type === 'MethodDefinition' && member.kind === 'constructor')
+      return isUselessConstructor(member);
+    if (
+      member.type !== 'MethodDefinition' &&
+      member.type !== 'PropertyDefinition'
+    )
+      return false;
+    const name = objectKeyName(member);
+    if (member.static) return name !== null && FUNCTION_STATICS.has(name);
+    return member.type === 'MethodDefinition' && name === 'render';
+  });
 }
 
 export const preferStatelessFunction = createRule<[Options], MessageIds>({
@@ -53,130 +108,68 @@ export const preferStatelessFunction = createRule<[Options], MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, [Options]>) {
     let ignorePureComponents: boolean;
 
-    // oxlint-disable-next-line consistent-function-scoping
-    function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
-      if (!node.superClass) return false;
-
-      if (node.superClass.type === 'Identifier') {
-        return (
-          node.superClass.name === 'Component' ||
-          node.superClass.name === 'PureComponent'
-        );
-      }
-
-      if (node.superClass.type === 'MemberExpression') {
-        return (
-          node.superClass.object.type === 'Identifier' &&
-          node.superClass.object.name === 'React' &&
-          (propertyName(node.superClass) === 'Component' ||
-            propertyName(node.superClass) === 'PureComponent')
-        );
-      }
-
-      return false;
+    /** The React base class `node` extends, by binding, or null. */
+    function reactBase(node: ClassNode): string | null {
+      if (!node.superClass) return null;
+      const found = reactExport(
+        node.superClass,
+        context.sourceCode.getScope(node),
+      );
+      if (
+        found === null ||
+        (found.module !== null && found.module !== 'react') ||
+        (found.name !== 'Component' && found.name !== 'PureComponent')
+      )
+        return null;
+      return found.name;
     }
 
-    // oxlint-disable-next-line consistent-function-scoping
-    function isPureComponent(node: TSESTree.ClassDeclaration): boolean {
-      if (!node.superClass) return false;
+    /**
+     * Each class being walked, and whether its body reads `this` as anything
+     * but `this.props` / `this.context` (state, refs, its own methods).
+     */
+    const classes: { node: ClassNode; usesInstance: boolean }[] = [];
 
-      if (node.superClass.type === 'Identifier') {
-        return node.superClass.name === 'PureComponent';
-      }
-
-      if (node.superClass.type === 'MemberExpression') {
-        return (
-          node.superClass.object.type === 'Identifier' &&
-          node.superClass.object.name === 'React' &&
-          propertyName(node.superClass) === 'PureComponent'
-        );
-      }
-
-      return false;
+    function enter(node: ClassNode): void {
+      classes.push({ node, usesInstance: false });
     }
 
-    // oxlint-disable-next-line consistent-function-scoping
-    function hasState(node: TSESTree.ClassDeclaration): boolean {
-      for (const member of node.body.body) {
-        // PropertyDefinition is used by TypeScript parser for class properties
-        if (
-          member.type === 'PropertyDefinition' &&
-          member.key.type === 'Identifier' &&
-          member.key.name === 'state'
-        ) {
-          return true;
-        }
-
-        if (
-          member.type === 'MethodDefinition' &&
-          member.key.type === 'Identifier' &&
-          member.key.name === 'constructor'
-        ) {
-          // Check if constructor sets this.state
-          const body = member.value.body;
-          if (!body) continue;
-          for (const statement of body.body) {
-            if (
-              statement.type === 'ExpressionStatement' &&
-              statement.expression.type === 'AssignmentExpression' &&
-              statement.expression.left.type === 'MemberExpression' &&
-              statement.expression.left.object.type === 'ThisExpression' &&
-              propertyName(statement.expression.left) === 'state'
-            ) {
-              return true;
-            }
-          }
-        }
+    function exit(): void {
+      const { node, usesInstance } = classes.pop()!;
+      const base = reactBase(node);
+      if (base === null) return;
+      if (ignorePureComponents && base === 'PureComponent') return;
+      if (!usesInstance && hasOnlyFunctionMembers(node)) {
+        context.report({
+          node: node.id ?? node,
+          messageId: 'preferStatelessFunction',
+        });
       }
-      return false;
-    }
-
-    // oxlint-disable-next-line consistent-function-scoping
-    function hasLifecycleMethods(node: TSESTree.ClassDeclaration): boolean {
-      const lifecycleMethods = new Set([
-        'componentDidMount',
-        'componentDidUpdate',
-        'componentWillUnmount',
-        'componentWillMount',
-        'componentWillReceiveProps',
-        'componentWillUpdate',
-        'shouldComponentUpdate',
-        'getDerivedStateFromProps',
-        'getSnapshotBeforeUpdate',
-        'UNSAFE_componentWillMount',
-        'UNSAFE_componentWillReceiveProps',
-        'UNSAFE_componentWillUpdate',
-      ]);
-
-      for (const member of node.body.body) {
-        if (
-          member.type === 'MethodDefinition' &&
-          member.key.type === 'Identifier' &&
-          lifecycleMethods.has(member.key.name)
-        ) {
-          return true;
-        }
-      }
-      return false;
     }
 
     return {
       before() {
         const [options] = context.options;
         ignorePureComponents = options?.ignorePureComponents ?? false;
+        classes.length = 0;
       },
-      ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        if (!isReactComponent(node)) return;
-
-        // Skip if it's a PureComponent and we're ignoring them
-        if (ignorePureComponents && isPureComponent(node)) return;
-
-        // Check if class has state or lifecycle methods
-        if (!hasState(node) && !hasLifecycleMethods(node)) {
-          context.report({
-            node: node.id || node,
-            messageId: 'preferStatelessFunction',
-          });
+      ClassDeclaration: enter,
+      ClassExpression: enter,
+      'ClassDeclaration:exit': exit,
+      'ClassExpression:exit': exit,
+      ThisExpression(node: TSESTree.ThisExpression) {
+        const current = classes.at(-1);
+        if (!current) return;
+        // `(this as Props).props` reads the same object as `this.props`.
+        let inner: TSESTree.Node = node;
+        while (inner.parent?.type === 'TSAsExpression') inner = inner.parent;
+        const parent = inner.parent!;
+        const name =
+          parent.type === 'MemberExpression' && parent.object === inner
+            ? propertyName(parent)
+            : null;
+        if (name === null || !FUNCTION_THIS.has(name)) {
+          current.usesInstance = true;
         }
       },
     };

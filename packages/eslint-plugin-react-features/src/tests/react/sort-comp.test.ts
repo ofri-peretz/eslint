@@ -15,6 +15,29 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('sort-comp', sortComp, {
   valid: [
+    {
+      name: 'a Component from another library is not React',
+      code: `import { Component } from 'lit';
+      class El extends Component { render() { return null; } static styles = []; }`,
+    },
+    {
+      name: 'a group the order leaves out falls to everything-else',
+      code: `class C extends React.Component { handle() {} static make() {} render() { return null; } }`,
+      options: [{ order: ['everything-else', 'render'] }],
+    },
+    {
+      name: 'members of groups placed nowhere are unconstrained',
+      code: `class C extends React.Component { render() { return null; } static make() {} }`,
+      options: [{ order: ['render', 'lifecycle'] }],
+    },
+    {
+      name: 'a static block is not a member to place',
+      code: `class C extends React.Component { static label = 'x'; static { init(); } render() { return null; } }`,
+    },
+    {
+      name: 'a private field has no name to place',
+      code: `class C extends React.Component { render() { return null; } #count = 0; }`,
+    },
     // Valid - correct order
     {
       name: 'correct default order - static, lifecycle, custom, render',
@@ -191,6 +214,17 @@ ruleTester.run('sort-comp', sortComp, {
     },
   ],
   invalid: [
+    {
+      name: 'a renamed Component import',
+      code: `import { Component as Base } from 'react';
+      class C extends Base { render() { return null; } componentDidMount() {} }`,
+      errors: [{ messageId: 'sortComp' }],
+    },
+    {
+      name: 'a class expression, with a computed render key',
+      code: `const C = class extends React.Component { ['render']() { return null; } static label = 'x'; };`,
+      errors: [{ messageId: 'sortComp' }],
+    },
     // Invalid - render before lifecycle
     {
       name: 'render before lifecycle method',

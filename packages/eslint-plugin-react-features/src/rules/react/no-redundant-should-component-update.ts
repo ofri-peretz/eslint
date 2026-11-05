@@ -9,8 +9,9 @@
  * Prevent redundant shouldComponentUpdate
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, objectKeyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { extendsReactComponent } from '../../utils/react-api';
 
 type MessageIds = 'noRedundantShouldComponentUpdate';
 
@@ -41,31 +42,44 @@ export const noRedundantShouldComponentUpdate = createRule<[], MessageIds>({
   },
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
+    /** `() => true`, or a body whose only statement is `return true;`. */
+    function alwaysTrue(fn: TSESTree.Node | null): boolean {
+      if (
+        fn?.type !== 'FunctionExpression' &&
+        fn?.type !== 'ArrowFunctionExpression'
+      )
+        return false;
+      const body = fn.body;
+      const value =
+        body.type !== 'BlockStatement'
+          ? body
+          : body.body.length === 1 && body.body[0].type === 'ReturnStatement'
+            ? body.body[0].argument
+            : null;
+      return value?.type === 'Literal' && value.value === true;
+    }
+
+    function check(
+      node: TSESTree.MethodDefinition | TSESTree.PropertyDefinition,
+    ): void {
+      if (
+        node.static ||
+        (node.type === 'MethodDefinition' && node.kind !== 'method') ||
+        objectKeyName(node) !== 'shouldComponentUpdate' ||
+        !alwaysTrue(node.value)
+      )
+        return;
+      const cls = node.parent.parent;
+      if (!extendsReactComponent(cls, context.sourceCode.getScope(cls))) return;
+      context.report({
+        node: node.key,
+        messageId: 'noRedundantShouldComponentUpdate',
+      });
+    }
+
     return {
-      MethodDefinition(node: TSESTree.MethodDefinition) {
-        if (
-          node.key.type === 'Identifier' &&
-          node.key.name === 'shouldComponentUpdate' &&
-          node.value.type === 'FunctionExpression'
-        ) {
-          // Check if the method just returns true
-          const body = node.value.body;
-          if (body.type === 'BlockStatement' && body.body.length === 1) {
-            const statement = body.body[0];
-            if (
-              statement.type === 'ReturnStatement' &&
-              statement.argument &&
-              statement.argument.type === 'Literal' &&
-              statement.argument.value === true
-            ) {
-              context.report({
-                node: node.key,
-                messageId: 'noRedundantShouldComponentUpdate',
-              });
-            }
-          }
-        }
-      },
+      MethodDefinition: check,
+      PropertyDefinition: check,
     };
   },
 });

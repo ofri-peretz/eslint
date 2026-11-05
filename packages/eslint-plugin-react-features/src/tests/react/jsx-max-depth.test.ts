@@ -309,5 +309,36 @@ describe('jsx-max-depth', () => {
       invalid: [],
     });
   });
-});
 
+  describe('fragments and conditional children are levels', () => {
+    ruleTester.run('nesting spellings', jsxMaxDepth, {
+      valid: [
+        {
+          name: 'a list rendered by a callback is not followed into',
+          code: 'const a = <div><ul>{items.map((i) => <li><b><i>x</i></b></li>)}</ul></div>;',
+          options: [{ max: 2 }],
+        },
+      ],
+      invalid: [
+        {
+          name: 'a fragment root nested too deep',
+          code: 'const a = <><div><span><b>x</b></span></div></>;',
+          options: [{ max: 2 }],
+          errors: [{ messageId: 'jsxMaxDepth' }],
+        },
+        {
+          name: 'an element under && counts at the level it is written',
+          code: 'const a = <div>{flag && <section><p><b>x</b></p></section>}</div>;',
+          options: [{ max: 2 }],
+          errors: [{ messageId: 'jsxMaxDepth' }],
+        },
+        {
+          name: 'either branch of a conditional child',
+          code: 'const a = <div>{flag ? null : <section><p><b>x</b></p></section>}</div>;',
+          options: [{ max: 2 }],
+          errors: [{ messageId: 'jsxMaxDepth' }],
+        },
+      ],
+    });
+  });
+});

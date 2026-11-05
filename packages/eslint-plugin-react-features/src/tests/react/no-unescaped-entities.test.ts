@@ -15,6 +15,14 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-unescaped-entities', noUnescapedEntities, {
   valid: [
+    {
+      name: 'an escaped quote entity is what it should be',
+      code: `<div>Use &quot;quotes&quot; and &#34;these&#34;</div>`,
+    },
+    {
+      name: 'an escaped greater-than entity',
+      code: `<div>5 &gt; 3</div>`,
+    },
     // Valid - normal text
     {
       name: 'plain text',

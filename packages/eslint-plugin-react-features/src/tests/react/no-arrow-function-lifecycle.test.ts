@@ -363,3 +363,31 @@ ruleTester.run('no-arrow-function-lifecycle', noArrowFunctionLifecycle, {
   ],
 });
 
+ruleTester.run('no-arrow-function-lifecycle by binding and key spelling', noArrowFunctionLifecycle, {
+  valid: [
+    {
+      name: 'a class that is not a React component',
+      code: 'class Store { componentDidMount = () => {}; }',
+    },
+    {
+      name: 'a Component class from another library',
+      code: "import { Component } from 'lit'; class A extends Component { componentDidMount = () => {}; }",
+    },
+    {
+      name: 'a lifecycle-named key that is not static text',
+      code: 'class A extends React.Component { [hook] = () => {}; }',
+    },
+  ],
+  invalid: [
+    {
+      name: 'a quoted lifecycle key on a renamed Component import',
+      code: "import { Component as Base } from 'react'; class A extends Base { 'componentDidMount' = () => {}; }",
+      errors: [{ messageId: 'noArrowFunctionLifecycle' }],
+    },
+    {
+      name: 'a computed lifecycle key on a namespace import',
+      code: "import * as R from 'react'; const A = class extends R.PureComponent { ['componentWillUnmount'] = () => {}; };",
+      errors: [{ messageId: 'noArrowFunctionLifecycle' }],
+    },
+  ],
+});

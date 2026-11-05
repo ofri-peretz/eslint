@@ -77,7 +77,7 @@ flowchart TD
 
 | Option             | Type      | Default | Description                              |
 | ------------------ | --------- | ------- | ---------------------------------------- |
-| `warnUnstableKeys` | `boolean` | `true`  | Warn about potentially unstable keys     |
+| `warnUnstableKeys` | `boolean` | `true`  | Report a key that is the iteration callback's index parameter (`(item, i) => <li key={i} />`), found by binding whatever it is named |
 
 ## Examples
 
@@ -134,6 +134,19 @@ function ItemList({ items }) {
   );
 }
 ```
+
+### What counts as a list item
+
+- The element an iteration callback returns from `items.map`, `items['map']`,
+  `flatMap` or `Array.from(items, fn)`: a JSX element, a `<Fragment>`, a fragment
+  shorthand `<>` (which cannot carry a key, so it is always reported), or
+  `React.createElement(type, props)` whose props are `null`, absent, or an object
+  literal with no `key` and no spread.
+- Arrow, block-bodied and `function` callbacks, and either branch of a conditional.
+- `React.Children.map` / `Children.map` are not judged: React keys every element
+  their callback returns from the original child.
+- `createElement` props held in a variable may carry the key and are not judged. A
+  spread on a JSX element is not read: `<li {...props} />` is reported as missing a key.
 
 ## Configuration Examples
 

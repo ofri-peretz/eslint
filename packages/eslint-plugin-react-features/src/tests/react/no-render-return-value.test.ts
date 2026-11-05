@@ -15,6 +15,18 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-render-return-value', noRenderReturnValue, {
   valid: [
+    {
+      name: 'a local object named ReactDOM is not react-dom',
+      code: 'const ReactDOM = { render: (a, b) => a }; const x = ReactDOM.render(<App />, el);',
+    },
+    {
+      name: 'a render result used as a computed key on the left of an assignment',
+      code: 'import { render } from "react-dom"; let r; r = 1; obj[render(<App />, el)] = r;',
+    },
+    {
+      name: 'a render result used as a callee or a test, not an argument',
+      code: 'import ReactDOM from "react-dom"; new (ReactDOM.render(<App />, el))(); f()(ReactDOM.render(<App />, el) ? 1 : 0);',
+    },
     // Valid - ReactDOM.render without storing return value
     {
       name: 'ReactDOM.render without assignment',
@@ -94,6 +106,16 @@ ruleTester.run('no-render-return-value', noRenderReturnValue, {
     },
   ],
   invalid: [
+    {
+      name: 'a renamed render import whose result is returned',
+      code: 'import { render as mount } from "react-dom"; function f() { return mount(<App />, el); }',
+      errors: [{ messageId: 'noRenderReturnValue' }],
+    },
+    {
+      name: 'render on a react-dom namespace import passed as an argument',
+      code: 'import * as Dom from "react-dom"; track(Dom.render(<App />, el));',
+      errors: [{ messageId: 'noRenderReturnValue' }],
+    },
     // Invalid - storing ReactDOM.render return value in variable
     {
       name: 'storing ReactDOM.render in const',

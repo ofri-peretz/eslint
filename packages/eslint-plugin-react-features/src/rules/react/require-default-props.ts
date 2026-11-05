@@ -9,8 +9,13 @@
  * Require default props
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { extendsReactComponent } from '../../utils/react-api';
 
 type MessageIds = 'requireDefaultProps';
 
@@ -52,185 +57,136 @@ export const requireDefaultProps = createRule<[Options], MessageIds>({
   },
   defaultOptions: [{}],
   createOnce(context: TSESLint.RuleContext<MessageIds, [Options]>) {
+    type ClassNode = TSESTree.ClassDeclaration | TSESTree.ClassExpression;
+    type Statics = {
+      propTypes?: TSESTree.ObjectExpression;
+      defaultProps?: TSESTree.ObjectExpression;
+    };
+    type StaticName = keyof Statics;
+
     let forbidDefaultForRequired: boolean;
-    let propTypes: Map<string, Map<string, TSESTree.Property>>;
-    let defaultProps: Map<string, Map<string, TSESTree.Property>>;
-    let reactComponents: Set<string>;
+    /** Each React class component, with the statics declared for it. */
+    let components: Map<ClassNode, Statics>;
+    /** `X.propTypes = {…}` / `X.defaultProps = {…}`, resolved at the end. */
+    let assignments: {
+      target: TSESTree.Identifier;
+      name: StaticName;
+      value: TSESTree.ObjectExpression;
+    }[];
 
+    const isStaticName = (name: string | null): name is StaticName =>
+      name === 'propTypes' || name === 'defaultProps';
+
+    /** `{ variant: …, 'aria-label': … }`: each key in any spelling. */
     // oxlint-disable-next-line consistent-function-scoping
-    function getComponentName(node: TSESTree.PropertyDefinition): string {
-      /*
-       * A `PropertyDefinition` exists only as a class member, so its parent is
-       * always a `ClassBody` and that body's parent is always a class —
-       * declaration or expression, an abstract class being a declaration with
-       * `abstract: true`. Neither guard can be reached by any input, and the
-       * house rule is to delete such a branch rather than cover it. Before the
-       * anonymous-class fix `getComponentName` could genuinely return null,
-       * because it keyed on `id.name`; now `componentKey` always produces one.
-       */
-      /*
-       * A `ClassBody`'s parent is always a class — declaration or expression,
-       * and an abstract class is a declaration with `abstract: true`. There is
-       * no third shape, so a guard here would be a branch no input can reach.
-       * The house rule is to delete such a branch rather than cover it; the
-       * cast states the invariant TypeScript cannot see.
-       */
-      const cls = node.parent.parent as
-        TSESTree.ClassDeclaration | TSESTree.ClassExpression;
-      return componentKey(cls);
-    }
-
-    /**
-     * A stable key for a component class, named or not.
-     *
-     * The source position is used when there is no identifier. It is unique per
-     * class within one lint pass, which is all this rule needs — it only has to
-     * match the class that declared `propTypes` with the one that declared
-     * `defaultProps`, and those are the same node.
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    function componentKey(
-      node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
-    ): string {
-      return node.id?.name ?? `anonymous@${node.range[0]}`;
-    }
-
-    // oxlint-disable-next-line consistent-function-scoping
-    function isReactComponent(
-      node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
-    ): boolean {
-      if (!node.superClass) return false;
-
-      if (node.superClass.type === 'Identifier') {
-        return (
-          node.superClass.name === 'Component' ||
-          node.superClass.name === 'PureComponent'
-        );
+    function entries(
+      object: TSESTree.ObjectExpression | undefined,
+    ): Map<string, TSESTree.Property> {
+      const map = new Map<string, TSESTree.Property>();
+      for (const prop of object?.properties ?? []) {
+        if (prop.type !== 'Property') continue;
+        const key = objectKeyName(prop);
+        if (key !== null) map.set(key, prop);
       }
-
-      if (node.superClass.type === 'MemberExpression') {
-        return (
-          node.superClass.object.type === 'Identifier' &&
-          node.superClass.object.name === 'React' &&
-          (propertyName(node.superClass) === 'Component' ||
-            propertyName(node.superClass) === 'PureComponent')
-        );
-      }
-
-      return false;
+      return map;
     }
 
     // oxlint-disable-next-line consistent-function-scoping
     function isRequiredProp(propType: TSESTree.Property): boolean {
-      // Check if prop type ends with .isRequired
-      if (
+      // `PropTypes.string.isRequired`, in either member spelling.
+      return (
         propType.value.type === 'MemberExpression' &&
         propertyName(propType.value) === 'isRequired'
+      );
+    }
+
+    /** The class a name is bound to in this file, if any. */
+    function classBoundTo(id: TSESTree.Identifier): ClassNode | undefined {
+      for (
+        let scope: TSESLint.Scope.Scope | null =
+          context.sourceCode.getScope(id);
+        scope;
+        scope = scope.upper
       ) {
-        return true;
+        const def = scope.set.get(id.name)?.defs[0];
+        if (!def) continue;
+        if (def.type === 'ClassName') return def.node as ClassNode;
+        const init = def.type === 'Variable' ? def.node.init : null;
+        return init?.type === 'ClassExpression' ? init : undefined;
       }
-      return false;
+      return undefined;
+    }
+
+    function enterClass(node: ClassNode): void {
+      if (!extendsReactComponent(node, context.sourceCode.getScope(node)))
+        return;
+      const statics: Statics = {};
+      for (const member of node.body.body) {
+        if (
+          member.type !== 'PropertyDefinition' ||
+          !member.static ||
+          member.value?.type !== 'ObjectExpression'
+        )
+          continue;
+        const name = objectKeyName(member);
+        if (isStaticName(name)) statics[name] = member.value;
+      }
+      components.set(node, statics);
     }
 
     return {
       before() {
         const [options] = context.options;
         forbidDefaultForRequired = options?.forbidDefaultForRequired ?? false;
-
-        propTypes = new Map<string, Map<string, TSESTree.Property>>();
-        defaultProps = new Map<string, Map<string, TSESTree.Property>>();
-        reactComponents = new Set<string>();
+        components = new Map();
+        assignments = [];
       },
-      // Track React component classes
-      ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        if (isReactComponent(node)) reactComponents.add(componentKey(node));
-      },
+      ClassDeclaration: enterClass,
+      ClassExpression: enterClass,
 
-      /*
-       * An ANONYMOUS component is still a component.
-       *
-       * Keying by `node.id.name` meant `export default class extends Component`
-       * — one of the most common shapes in React — was never tracked, so a
-       * missing default on it reported nothing. Two test cases appeared to
-       * cover this and did not: both supplied COMPLETE defaults, so they passed
-       * because nothing was missing, while their names attributed the pass to
-       * an anonymous-class arm. A reader would have concluded the omission was
-       * deliberate.
-       */
-      ClassExpression(node: TSESTree.ClassExpression) {
-        if (isReactComponent(node)) reactComponents.add(componentKey(node));
-      },
-
-      // Collect propTypes (PropertyDefinition is used by TypeScript parser)
-      'PropertyDefinition[key.name="propTypes"]'(
-        node: TSESTree.PropertyDefinition,
-      ) {
-        if (node.value && node.value.type === 'ObjectExpression') {
-          const componentName = getComponentName(node);
-          {
-            const propsMap = new Map<string, TSESTree.Property>();
-            for (const prop of node.value.properties) {
-              if (prop.type === 'Property' && prop.key.type === 'Identifier') {
-                propsMap.set(prop.key.name, prop);
-              }
-            }
-            propTypes.set(componentName, propsMap);
-          }
+      // `App.propTypes = {…}` declares the same static as `static propTypes`.
+      AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        const target = node.left;
+        if (
+          target.type !== 'MemberExpression' ||
+          node.right.type !== 'ObjectExpression'
+        )
+          return;
+        // `(App as any).propTypes`: a cast changes the type, not the object.
+        let object: TSESTree.Node = target.object;
+        while (object.type === 'TSAsExpression') object = object.expression;
+        const name = propertyName(target);
+        if (object.type === 'Identifier' && isStaticName(name)) {
+          assignments.push({ target: object, name, value: node.right });
         }
       },
 
-      // Collect defaultProps (PropertyDefinition is used by TypeScript parser)
-      'PropertyDefinition[key.name="defaultProps"]'(
-        node: TSESTree.PropertyDefinition,
-      ) {
-        if (node.value && node.value.type === 'ObjectExpression') {
-          const componentName = getComponentName(node);
-          {
-            const propsMap = new Map<string, TSESTree.Property>();
-            for (const prop of node.value.properties) {
-              if (prop.type === 'Property' && prop.key.type === 'Identifier') {
-                propsMap.set(prop.key.name, prop);
-              }
-            }
-            defaultProps.set(componentName, propsMap);
-          }
-        }
-      },
-
-      // Check at the end
       'Program:exit'() {
-        for (const [componentName, propTypesMap] of propTypes) {
-          // Only check React components
-          if (!reactComponents.has(componentName)) {
-            continue;
-          }
+        for (const { target, name, value } of assignments) {
+          const statics = components.get(classBoundTo(target)!);
+          if (statics) statics[name] = value;
+        }
 
-          const defaultsMap = defaultProps.get(componentName);
+        for (const statics of components.values()) {
+          if (!statics.propTypes) continue;
+          const defaultsMap = entries(statics.defaultProps);
 
-          for (const [propName, propType] of propTypesMap) {
-            const hasDefault = defaultsMap?.has(propName);
+          for (const [propName, propType] of entries(statics.propTypes)) {
+            const defaultProp = defaultsMap.get(propName);
             const isRequired = isRequiredProp(propType);
 
-            if (!isRequired && !hasDefault) {
-              // Find the component node to report on
-              // This is a simplified version - in practice, we'd need to track component nodes
+            if (!isRequired && !defaultProp) {
               context.report({
                 node: propType.key,
                 messageId: 'requireDefaultProps',
               });
             }
 
-            // `hasDefault` is intentionally not re-checked here: `get()`
-            // returning a value is the same condition, and this keeps the
-            // no-default arm of the lookup reachable.
-            if (forbidDefaultForRequired && isRequired && defaultsMap) {
-              const defaultProp = defaultsMap.get(propName);
-              if (defaultProp) {
-                context.report({
-                  node: defaultProp.key,
-                  messageId: 'requireDefaultProps',
-                });
-              }
+            if (forbidDefaultForRequired && isRequired && defaultProp) {
+              context.report({
+                node: defaultProp.key,
+                messageId: 'requireDefaultProps',
+              });
             }
           }
         }

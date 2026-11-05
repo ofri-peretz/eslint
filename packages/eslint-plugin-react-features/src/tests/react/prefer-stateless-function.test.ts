@@ -210,8 +210,99 @@ describe('prefer-stateless-function', () => {
 
   describe('Invalid cases - stateless classes', () => {
     ruleTester.run('stateless classes trigger errors', preferStatelessFunction, {
-      valid: [],
+      valid: [
+        {
+          name: 'a class with its own methods is not only a render function',
+          code: `
+            class MyComponent extends Component {
+              handleClick() {
+                console.log('clicked');
+              }
+              render() {
+                return <div onClick={this.handleClick}>Click me</div>;
+              }
+            }
+          `,
+        },
+        {
+          name: 'a constructor that sets an instance field',
+          code: `
+            class MyComponent extends Component {
+              constructor(props) {
+                super(props);
+                this.value = 'test';
+              }
+              render() {
+                return <div>{this.value}</div>;
+              }
+            }
+          `,
+        },
+        {
+          name: 'setState from render',
+          code: `class C extends Component { render() { return <b onClick={() => this.setState({})} />; } }`,
+        },
+        {
+          name: 'a lifecycle as an arrow field',
+          code: `class C extends Component { componentDidMount = () => {}; render() { return null; } }`,
+        },
+        {
+          name: 'an error boundary has no function form',
+          code: `class C extends Component { static getDerivedStateFromError() { return null; } render() { return null; } }`,
+        },
+        {
+          name: 'a Component from another library is not React',
+          code: `import { Component } from 'lit';
+          class C extends Component { render() { return null; } }`,
+        },
+        {
+          name: 'a static block is not a function member',
+          code: `class C extends Component { static { init(); } render() { return null; } }`,
+        },
+        {
+          name: 'this outside any class is not read',
+          code: `function f() { return this; } class C extends Component { state = {}; render() { return null; } }`,
+        },
+        {
+          name: 'a bare this escapes the props',
+          code: `class C extends Component { render() { return <Row owner={this} />; } }`,
+        },
+        {
+          name: 'a computed this key',
+          code: `class C extends Component { render() { return <b>{this[key]}</b>; } }`,
+        },
+      ],
       invalid: [
+        {
+          name: 'props read through a cast of this',
+          code: `class C extends Component { render() { return <b>{(this as any).props.x}</b>; } }`,
+          errors: [{ messageId: 'preferStatelessFunction' }],
+        },
+        {
+          name: 'a renamed Component import',
+          code: `import { Component as Base } from 'react';
+          class C extends Base { static propTypes = {}; render() { return <b>{this.props.x}</b>; } }`,
+          errors: [{ messageId: 'preferStatelessFunction' }],
+        },
+        {
+          name: 'a class expression reading context, with a useless constructor',
+          code: `import * as R from 'react';
+          const C = class extends R.PureComponent {
+            [k: string]: any;
+            constructor(props) { super(props); }
+            render() { return <b>{this.context.x}</b>; }
+          };`,
+          errors: [{ messageId: 'preferStatelessFunction' }],
+        },
+        {
+          name: 'a constructor overload signature declares nothing',
+          code: `class C extends Component {
+            constructor(props: any);
+            constructor(props: any) { super(props); }
+            render() { return null; }
+          }`,
+          errors: [{ messageId: 'preferStatelessFunction' }],
+        },
         // Simple class without state or lifecycle
         {
           name: 'a class with only render and no state',
@@ -252,35 +343,6 @@ describe('prefer-stateless-function', () => {
             class MyComponent extends React.PureComponent {
               render() {
                 return <div>Hello</div>;
-              }
-            }
-          `,
-          errors: [{ messageId: 'preferStatelessFunction' }],
-        },
-        // Class with only helper methods (no state or lifecycle)
-        {
-          code: `
-            class MyComponent extends Component {
-              handleClick() {
-                console.log('clicked');
-              }
-              render() {
-                return <div onClick={this.handleClick}>Click me</div>;
-              }
-            }
-          `,
-          errors: [{ messageId: 'preferStatelessFunction' }],
-        },
-        // Class with constructor but no state
-        {
-          code: `
-            class MyComponent extends Component {
-              constructor(props) {
-                super(props);
-                this.value = 'test';
-              }
-              render() {
-                return <div>{this.value}</div>;
               }
             }
           `,

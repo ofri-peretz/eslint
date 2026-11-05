@@ -9,7 +9,8 @@
  * Disallow string refs (deprecated pattern)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { componentThis } from '../../utils/component-set-state';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noStringRefs';
@@ -40,44 +41,40 @@ export const noStringRefs = createRule<[], MessageIds>({
   },
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
+    /** Is this expression a string whatever it evaluates to? */
+    function isString(node: TSESTree.Node): boolean {
+      if (node.type === 'Literal') return typeof node.value === 'string';
+      // A template literal is a string, placeholders or not.
+      if (node.type === 'TemplateLiteral') return true;
+      if (node.type === 'ConditionalExpression')
+        return isString(node.consequent) && isString(node.alternate);
+      return false;
+    }
+
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
-        if (node.name.type === 'JSXIdentifier' && node.name.name === 'ref') {
-          // Check for direct string literals
-          if (
-            node.value &&
-            node.value.type === 'Literal' &&
-            typeof node.value.value === 'string'
-          ) {
-            context.report({
-              node: node.name,
-              messageId: 'noStringRefs',
-            });
-          }
-          // Check for string literals inside JSX expressions
-          else if (
-            node.value &&
-            node.value.type === 'JSXExpressionContainer' &&
-            node.value.expression.type === 'Literal' &&
-            typeof node.value.expression.value === 'string'
-          ) {
-            context.report({
-              node: node.name,
-              messageId: 'noStringRefs',
-            });
-          }
-          // Check for template literals
-          else if (
-            node.value &&
-            node.value.type === 'JSXExpressionContainer' &&
-            node.value.expression.type === 'TemplateLiteral'
-          ) {
-            context.report({
-              node: node.name,
-              messageId: 'noStringRefs',
-            });
-          }
+        if (node.name.type !== 'JSXIdentifier' || node.name.name !== 'ref')
+          return;
+        const value =
+          node.value?.type === 'JSXExpressionContainer'
+            ? node.value.expression
+            : node.value;
+        if (value && isString(value)) {
+          context.report({
+            node: node.name,
+            messageId: 'noStringRefs',
+          });
         }
+      },
+      // `this.refs` is where string refs are read, in a React class component.
+      MemberExpression(node: TSESTree.MemberExpression) {
+        if (
+          node.object.type !== 'ThisExpression' ||
+          propertyName(node) !== 'refs' ||
+          !componentThis(node.object, context.sourceCode)
+        )
+          return;
+        context.report({ node, messageId: 'noStringRefs' });
       },
     };
   },

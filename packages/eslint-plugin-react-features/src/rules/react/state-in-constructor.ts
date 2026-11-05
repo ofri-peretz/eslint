@@ -9,8 +9,13 @@
  * Enforce state initialization in constructor
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { extendsReactComponent } from '../../utils/react-api';
 
 type MessageIds = 'stateInConstructor';
 
@@ -41,98 +46,56 @@ export const stateInConstructor = createRule<[], MessageIds>({
   },
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
-    // oxlint-disable-next-line consistent-function-scoping
-    function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
-      if (!node.superClass) return false;
-
-      if (node.superClass.type === 'Identifier') {
-        return (
-          node.superClass.name === 'Component' ||
-          node.superClass.name === 'PureComponent'
-        );
-      }
-
-      if (node.superClass.type === 'MemberExpression') {
-        return (
-          node.superClass.object.type === 'Identifier' &&
-          node.superClass.object.name === 'React' &&
-          (propertyName(node.superClass) === 'Component' ||
-            propertyName(node.superClass) === 'PureComponent')
-        );
-      }
-
-      return false;
+    /** `state = …`: an instance field that initializes state. */
+    function isStateField(
+      member: TSESTree.ClassElement,
+    ): member is TSESTree.PropertyDefinition {
+      return (
+        member.type === 'PropertyDefinition' &&
+        !member.static &&
+        // `declare state: S` / `state!: S` declare a type and set nothing.
+        member.value !== null &&
+        objectKeyName(member) === 'state'
+      );
     }
 
-    function checkStateInitialization(node: TSESTree.ClassDeclaration) {
-      let hasConstructorWithState = false;
-      let hasStateProperty = false;
-
-      for (const member of node.body.body) {
-        // Check for state property (PropertyDefinition is used by TypeScript parser)
-        if (
-          member.type === 'PropertyDefinition' &&
-          member.key.type === 'Identifier' &&
-          member.key.name === 'state'
-        ) {
-          hasStateProperty = true;
-        }
-
-        // Check for constructor with state initialization
-        if (
-          member.type === 'MethodDefinition' &&
-          member.key.type === 'Identifier' &&
-          member.key.name === 'constructor'
-        ) {
-          hasConstructorWithState = hasStateInitializationInConstructor(member);
-        }
-      }
-
-      // Report if state is initialized as property instead of in constructor
-      if (hasStateProperty && !hasConstructorWithState) {
-        // Find the state property to report on
-        for (const member of node.body.body) {
-          if (
-            member.type === 'PropertyDefinition' &&
-            member.key.type === 'Identifier' &&
-            member.key.name === 'state'
-          ) {
-            context.report({
-              node: member.key,
-              messageId: 'stateInConstructor',
-            });
-            break;
-          }
-        }
-      }
-    }
-
-    // oxlint-disable-next-line consistent-function-scoping
-    function hasStateInitializationInConstructor(
-      constructor: TSESTree.MethodDefinition,
+    /** Does the constructor assign `this.state`? */
+    function constructorAssignsState(
+      members: TSESTree.ClassElement[],
     ): boolean {
-      if (constructor.value.type === 'FunctionExpression') {
-        const body = constructor.value.body;
-        for (const statement of body.body) {
-          if (
-            statement.type === 'ExpressionStatement' &&
-            statement.expression.type === 'AssignmentExpression' &&
-            statement.expression.left.type === 'MemberExpression' &&
-            statement.expression.left.object.type === 'ThisExpression' &&
-            propertyName(statement.expression.left) === 'state'
-          ) {
-            return true;
-          }
-        }
-      }
-      return false;
+      return members.some(
+        (member) =>
+          member.type === 'MethodDefinition' &&
+          member.kind === 'constructor' &&
+          member.value.body?.body.some(
+            (statement) =>
+              statement.type === 'ExpressionStatement' &&
+              statement.expression.type === 'AssignmentExpression' &&
+              statement.expression.left.type === 'MemberExpression' &&
+              statement.expression.left.object.type === 'ThisExpression' &&
+              propertyName(statement.expression.left) === 'state',
+          ),
+      );
     }
+
+    function check(
+      node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
+    ): void {
+      if (!extendsReactComponent(node, context.sourceCode.getScope(node)))
+        return;
+      const members = node.body.body;
+      const field = members.find(isStateField);
+      if (field && !constructorAssignsState(members)) {
+        context.report({
+          node: field.key,
+          messageId: 'stateInConstructor',
+        });
+      }
+    }
+
     return {
-      ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        if (isReactComponent(node)) {
-          checkStateInitialization(node);
-        }
-      },
+      ClassDeclaration: check,
+      ClassExpression: check,
     };
   },
 });

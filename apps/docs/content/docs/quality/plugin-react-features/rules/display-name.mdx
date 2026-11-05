@@ -82,34 +82,59 @@ This rule has no configuration options.
 ### ❌ Incorrect
 
 ```tsx
-// Anonymous arrow function
-const MyComponent = () => {
-  return <div>Hello</div>;
-};
+import React, { Component, memo, forwardRef } from 'react';
 
-// Anonymous function expression
-const AnotherComponent = function() {
-  return <div>World</div>;
-};
+// Anonymous default export: no identifier anywhere
+export default () => <div>Hello</div>;
 
-// Class without displayName
-class UserCard extends React.Component {
+// Anonymous class component, not bound to a name
+export default class extends Component {
   render() {
     return <div>{this.props.name}</div>;
   }
 }
 
-// HOC without displayName
-const withAuth = (WrappedComponent) => {
-  return (props) => <WrappedComponent {...props} />;  // ❌ No name
-};
+// memo / forwardRef around an anonymous function, with no binding
+export default memo(() => <div>Row</div>);
+export default memo(forwardRef((props, ref) => <input ref={ref} />));
+
+// Rendering through React.createElement counts the same as JSX
+export default (props) => React.createElement('div', null, props.label);
 ```
 
 ### ✅ Correct
 
 ```tsx
-MyComponent
+import { Component, memo } from 'react';
+
+export default function Profile() {
+  return <div>Hello</div>;
+}
+
+const MyComponent = () => <div>Hello</div>; // named by the binding
+
+class UserCard extends Component {
+  render() {
+    return <div>{this.props.name}</div>;
+  }
+}
+
+export default class extends Component {
+  static displayName = 'UserCard';
+  render() {
+    return <div />;
+  }
+}
+
+export default memo(function Row() {
+  return <div>Row</div>;
+});
 ```
+
+React's `memo`, `forwardRef`, `createElement`, `Component` and `PureComponent` are
+recognised by binding: a named, renamed, default (`React.memo`) or namespace
+import. A local function called `memo`, or a `Component` class imported from
+another library, is not React's and is not judged.
 
 ## Configuration Examples
 

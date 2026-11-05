@@ -403,7 +403,7 @@ describe('no-typos: computed keys and literal member access', () => {
     invalid: [
       {
         name: 'a misspelling written as a string subscript is still a typo',
-        code: 'const v = obj["defaulProps"];',
+        code: 'class C extends React.Component {} C["defaulProps"] = {};',
         errors: 1,
       },
     ],
@@ -438,10 +438,6 @@ describe('no-unsafe: superclass shapes and alias options', () => {
         code: 'class C extends Component { render() { return null; } }',
       },
       {
-        name: 'computed key inside component class (L72 return)',
-        code: 'class D extends Component { ["UNSAFE_componentWillMount"]() {} }',
-      },
-      {
         name: 'plain identifier superclass that is neither Component nor PureComponent (L119 false arm)',
         code: 'class G extends Base { UNSAFE_componentWillMount() {} }',
       },
@@ -452,6 +448,11 @@ describe('no-unsafe: superclass shapes and alias options', () => {
       },
     ],
     invalid: [
+      {
+        name: 'computed key inside component class is the same lifecycle',
+        code: 'class D extends Component { ["UNSAFE_componentWillMount"]() {} }',
+        errors: [{ messageId: 'noUnsafe' }],
+      },
       {
         name: 'React.PureComponent superclass hits second alternatives (L115 operand)',
         code: 'class E extends React.PureComponent { UNSAFE_componentWillUpdate() {} }',

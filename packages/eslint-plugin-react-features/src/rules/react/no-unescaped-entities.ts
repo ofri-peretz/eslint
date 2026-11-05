@@ -45,7 +45,9 @@ export const noUnescapedEntities = createRule<[], MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       JSXText(node: TSESTree.JSXText) {
-        const text = node.value;
+        // The source as written: `value` is the decoded text, in which
+        // `&quot;` and `&gt;` have already become the characters they escape.
+        const text = node.raw;
 
         // Skip whitespace-only text
         if (!text.trim()) {

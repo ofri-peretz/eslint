@@ -255,6 +255,39 @@ ruleTester.run('require-render-return', requireRenderReturn, {
         }
       `,
     },
+    {
+      name: 'a render that only throws never falls off the end',
+      code: `class A extends React.Component { render() { throw new Error('x'); } }`,
+    },
+    {
+      name: 'try and catch both return',
+      code: `class A extends React.Component { render() { try { return make(); } catch { return null; } } }`,
+    },
+    {
+      name: 'try without catch, returning in the block',
+      code: `class A extends React.Component { render() { try { return make(); } finally { log(); } } }`,
+    },
+    {
+      name: 'a finally that returns covers the try',
+      code: `class A extends React.Component { render() { try { make(); } catch { log(); } finally { return null; } } }`,
+    },
+    {
+      name: 'render as an arrow class field with an expression body',
+      code: `class A extends React.Component { render = () => <div />; }`,
+    },
+    {
+      name: 'a declared render field with no value',
+      code: `class A extends React.Component { declare render: () => null; }`,
+    },
+    {
+      name: 'a static render is not the lifecycle',
+      code: `class A extends React.Component { static render() { log(); } }`,
+    },
+    {
+      name: 'a Component from another library is not React',
+      code: `import { Component } from 'lit';
+        class A extends Component { render() { this.paint(); } }`,
+    },
   ],
   invalid: [
     // PureComponent is a React base in both spellings, so a render that
@@ -417,6 +450,23 @@ ruleTester.run('require-render-return', requireRenderReturn, {
           }
         }
       `,
+      errors: [{ messageId: 'requireRenderReturn' }],
+    },
+    {
+      name: 'a renamed Component import is React',
+      code: `import { Component as Base } from 'react';
+        class A extends Base { render() { <div />; } }`,
+      errors: [{ messageId: 'requireRenderReturn' }],
+    },
+    {
+      name: 'a class expression on a namespace import',
+      code: `import * as R from 'react';
+        const A = class extends R.Component { render() { if (x) { return null; } } };`,
+      errors: [{ messageId: 'requireRenderReturn' }],
+    },
+    {
+      name: 'render as an arrow class field with a block body and no return',
+      code: `class A extends React.Component { render = () => { <div />; }; }`,
       errors: [{ messageId: 'requireRenderReturn' }],
     },
   ],

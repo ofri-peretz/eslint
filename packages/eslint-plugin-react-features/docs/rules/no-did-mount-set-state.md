@@ -62,8 +62,18 @@ class UserProfile extends React.Component {
 ### ✅ Correct
 
 ```tsx
-mounted
+class UserProfile extends React.Component {
+  // GOOD: initial state is set up front, not in a second render
+  state = { user: null, windowWidth: window.innerWidth };
+
+  componentDidMount() {
+    // GOOD: setState in a callback runs after the data arrives
+    fetchUser(this.props.id).then((user) => this.setState({ user }));
+  }
+}
 ```
+
+The rule reports a component's own `this.setState(…)` (also `this['setState']`) that runs synchronously in `componentDidMount` — declared as a method, an arrow property or a quoted key — on a class that extends React's `Component` / `PureComponent`, however it is imported. A call inside a callback (a promise handler, a timer) runs later and is not reported; neither is another object's `setState` (`store.setState(…)`).
 
 ## Configuration Examples
 
@@ -86,44 +96,11 @@ mounted
 
 - **[componentDidMount](https://react.dev/reference/react/Component#componentdidmount)** - React docs
 - **[State Initialization](https://react.dev/reference/react/Component#constructor)** - Constructor patterns
+
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
+- **`setState` reached through another method**: `componentDidMount() { this.load(); }` where `load` calls `this.setState` synchronously is not followed.
+- **An alias of `this`**: `const self = this; self.setState(...)` is not read as the component's `setState`.
+- **`createReactClass` components** are not covered; only classes that extend React's `Component` / `PureComponent`.
 
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Prop from variable
-const propValue = computedValue;
-<Component prop={propValue} /> // Computation not analyzed
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Wrapped or Aliased Functions
-
-**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-function myWrapper(data) {
-  return internalApi(data); // Wrapper not analyzed
-}
-myWrapper(unsafeInput);
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+Not reported by design: `setState` inside a callback (`fetchData().then(...)`, a timer), which runs after mount.

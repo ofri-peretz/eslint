@@ -9,7 +9,8 @@
  * Prevent arrow functions in lifecycle methods
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, objectKeyName } from '@interlace/eslint-devkit';
+import { extendsReactComponent } from '../../utils/react-api';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noArrowFunctionLifecycle';
@@ -58,11 +59,18 @@ export const noArrowFunctionLifecycle = createRule<[], MessageIds>({
       // PropertyDefinition is used by TypeScript parser for class properties
       // Only report on arrow function properties, NOT regular method definitions
       PropertyDefinition(node: TSESTree.PropertyDefinition) {
+        // `componentDidMount`, `'componentDidMount'` and
+        // `['componentDidMount']` name the same member.
+        const name = objectKeyName(node);
+        // Only a React class component's lifecycle: by binding, the class
+        // extends React's `Component` / `PureComponent`.
+        const cls = node.parent.parent as
+          TSESTree.ClassDeclaration | TSESTree.ClassExpression;
         if (
-          node.key.type === 'Identifier' &&
-          LIFECYCLE_METHODS.has(node.key.name) &&
-          node.value &&
-          node.value.type === 'ArrowFunctionExpression'
+          name !== null &&
+          LIFECYCLE_METHODS.has(name) &&
+          node.value?.type === 'ArrowFunctionExpression' &&
+          extendsReactComponent(cls, context.sourceCode.getScope(cls))
         ) {
           context.report({
             node: node.key,

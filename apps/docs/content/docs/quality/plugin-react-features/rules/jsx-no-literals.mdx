@@ -73,6 +73,11 @@ flowchart TD
 | `allowedStrings` | `string[]` | `[]`    | Strings that are allowed (e.g., symbols) |
 | `ignoreProps`    | `boolean`  | `true`  | Allow strings in prop values             |
 
+A literal is text (`<p>Hello</p>`), a braced string (`{'Hello'}`) or a template with no
+placeholders (`` {`Hello`} ``); in a prop value (`ignoreProps: false`) the same three
+spellings count. `allowedStrings` is compared with the trimmed text. `noStrings: false`
+turns the rule off, props included.
+
 ## Examples
 
 ### ❌ Incorrect

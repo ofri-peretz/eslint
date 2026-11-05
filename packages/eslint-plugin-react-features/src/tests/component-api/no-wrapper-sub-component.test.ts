@@ -23,6 +23,22 @@ const ruleTester = new RuleTester({
 describe('no-wrapper-sub-component', () => {
   ruleTester.run('no-wrapper-sub-component', noWrapperSubComponent, {
     valid: [
+      {
+        name: 'a component with no props spreads something else',
+        code: 'const defaults = { size: 2 }; function MyTrigger() { return <Trigger {...defaults} />; }',
+      },
+      {
+        name: 'a single destructured prop is not the props whole',
+        code: 'function MyTrigger({ a }) { return <Trigger {...a} />; }',
+      },
+      {
+        name: 'spreading something other than the props is not a passthrough',
+        code: 'const defaults = { size: 2 }; function MyTrigger(props) { return <Trigger {...defaults} />; }',
+      },
+      {
+        name: 'a wrapper that drops a named prop filters the props',
+        code: 'function MyTrigger({ label, ...rest }) { return <Trigger {...rest} />; }',
+      },
       // Adds className — structural behavior
       {
         name: 'a wrapper that adds a class',
@@ -50,6 +66,16 @@ describe('no-wrapper-sub-component', () => {
       },
     ],
     invalid: [
+      {
+        name: 'a rest-only parameter is the props whole',
+        code: 'function MyTrigger({ ...rest }) { return <Trigger {...rest} />; }',
+        errors: [{ messageId: 'wrapperSubComponent' }],
+      },
+      {
+        name: 'a passthrough wrapped in memo',
+        code: "import { memo } from 'react'; const MyTrigger = memo((props) => <Trigger {...props} />);",
+        errors: [{ messageId: 'wrapperSubComponent' }],
+      },
       // Pure passthrough wrapper — function declaration
       {
         name: 'a wrapper that adds nothing but a spread',

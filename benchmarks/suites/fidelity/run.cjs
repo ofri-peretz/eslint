@@ -64,6 +64,7 @@ const PLUGINS = [
   'react-a11y',
   'maintainability',
   'conventions',
+  'react-features',
 ];
 
 const loadPlugin = (short) => {

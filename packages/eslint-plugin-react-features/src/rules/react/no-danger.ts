@@ -10,7 +10,12 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  objectKeyName,
+} from '@interlace/eslint-devkit';
+import { reactExport } from '../../utils/react-api';
 
 type MessageIds = 'noDanger';
 
@@ -54,6 +59,23 @@ export const noDanger = createRule<[], MessageIds>({
             node: node.name,
             messageId: 'noDanger',
           });
+        }
+      },
+      // `React.createElement('div', { dangerouslySetInnerHTML })` is the same
+      // prop, however React's createElement is named. A bare `createElement`
+      // the file never imports names no module.
+      CallExpression(node: TSESTree.CallExpression) {
+        const api = reactExport(node.callee, context.sourceCode.getScope(node));
+        if (api?.module !== 'react' || api.name !== 'createElement') return;
+        const props = node.arguments[1];
+        if (props?.type !== 'ObjectExpression') return;
+        for (const prop of props.properties) {
+          if (
+            prop.type === 'Property' &&
+            objectKeyName(prop) === 'dangerouslySetInnerHTML'
+          ) {
+            context.report({ node: prop.key, messageId: 'noDanger' });
+          }
         }
       },
     };

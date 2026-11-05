@@ -131,3 +131,42 @@ describe('react-render-optimization', () => {
   });
 });
 
+
+const MEMO_ROW =
+  "import { memo } from 'react'; const Row = memo((p) => <i>{p.x}</i>);";
+
+describe('react-render-optimization: only receivers that compare props by identity', () => {
+  ruleTester.run('receivers', reactRenderOptimization, {
+    valid: [
+      {
+        name: 'an inline object on a host element',
+        code: 'function App() { return <div style={{ color: c }} />; }',
+      },
+      {
+        name: 'an inline function on a component defined without memo',
+        code: 'function Row(p) { return <i />; } function App() { return <Row onSelect={() => go()} />; }',
+      },
+      {
+        name: 'an inline array on a forwardRef component without memo',
+        code: "import { forwardRef } from 'react'; const Row = forwardRef((p, r) => <i ref={r} />); function App() { return <Row items={[a]} />; }",
+      },
+      {
+        name: 'an inline function with detectInlineFunctions off is not an expensive computation',
+        code: `${MEMO_ROW} function App() { return <Row onSelect={() => go()} />; }`,
+        options: [{ detectInlineFunctions: false }],
+      },
+    ],
+    invalid: [
+      {
+        name: 'an inline object on a memo component',
+        code: `${MEMO_ROW} function App() { return <Row opts={{ a }} />; }`,
+        errors: [{ messageId: 'unnecessaryRerender' }],
+      },
+      {
+        name: 'a choice between two inline functions on a renamed memo',
+        code: "import { memo as pure } from 'react'; const Row = pure(() => <i />); function App() { return <Row onSelect={flag ? () => a() : () => b()} />; }",
+        errors: [{ messageId: 'unnecessaryRerender' }],
+      },
+    ],
+  });
+});

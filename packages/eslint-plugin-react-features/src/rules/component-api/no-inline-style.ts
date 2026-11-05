@@ -15,32 +15,42 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
-  staticString,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'inlineStyle';
 type RuleOptions = [];
 
-const isCssVariableKey = (
-  prop: TSESTree.Property | TSESTree.SpreadElement,
-): boolean => {
-  if (prop.type !== 'Property') return false;
-  const staticText = staticString(prop.key);
-  if (staticText !== null) {
-    return staticText.startsWith('--');
-  }
+/**
+ * Is the value a static string or number however it is written: `'10px'`,
+ * `100`, `-1`, a template with no placeholder? A value that varies at runtime
+ * (an identifier, a placeholder, a conditional) is not static styling.
+ */
+const isStaticValue = (v: TSESTree.Node): boolean => {
+  if (v.type === 'Literal')
+    return typeof v.value === 'string' || typeof v.value === 'number';
+  if (v.type === 'TemplateLiteral') return v.expressions.length === 0;
+  if (
+    v.type === 'UnaryExpression' &&
+    (v.operator === '-' || v.operator === '+')
+  )
+    return (
+      v.argument.type === 'Literal' && typeof v.argument.value === 'number'
+    );
   return false;
 };
 
-const isStaticLiteralValue = (
+/**
+ * A property that sets a CSS property (not a `--custom-property`) to a static
+ * value. `padding`, `'padding'` and `['padding']` name the same property; a
+ * key chosen at runtime (`[key]`) names none the rule can judge.
+ */
+const isStaticStyle = (
   prop: TSESTree.Property | TSESTree.SpreadElement,
 ): boolean => {
   if (prop.type !== 'Property') return false;
-  const v = prop.value;
-  return (
-    v.type === 'Literal' &&
-    (typeof v.value === 'string' || typeof v.value === 'number')
-  );
+  const key = objectKeyName(prop);
+  return key !== null && !key.startsWith('--') && isStaticValue(prop.value);
 };
 
 export const noInlineStyle = createRule<RuleOptions, MessageIds>({
@@ -77,9 +87,7 @@ export const noInlineStyle = createRule<RuleOptions, MessageIds>({
         const expr = node.value.expression;
         if (expr.type !== 'ObjectExpression') return;
         // Report only when at least one property is a static literal AND not a CSS variable assignment.
-        const hasStaticNonVarProp = expr.properties.some(
-          (p) => !isCssVariableKey(p) && isStaticLiteralValue(p),
-        );
+        const hasStaticNonVarProp = expr.properties.some(isStaticStyle);
         if (hasStaticNonVarProp) {
           context.report({ node, messageId: 'inlineStyle' });
         }

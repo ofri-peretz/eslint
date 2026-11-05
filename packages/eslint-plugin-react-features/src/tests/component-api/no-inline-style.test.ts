@@ -23,6 +23,22 @@ const ruleTester = new RuleTester({
 describe('no-inline-style', () => {
   ruleTester.run('no-inline-style', noInlineStyle, {
     valid: [
+      {
+        name: "a negated variable varies at runtime",
+        code: "<div style={{ zIndex: -x }} />",
+      },
+      {
+        name: "a logical not is not a CSS length",
+        code: "<div style={{ opacity: !0 }} />",
+      },
+      {
+        name: "a key chosen at runtime may be a custom property",
+        code: "<div style={{ [key]: '10px' }} />",
+      },
+      {
+        name: "a choice between two static values is left to judgment",
+        code: "<div style={{ padding: flag ? '1px' : '2px' }} />",
+      },
       // CSS variable override — allowed
       { name: 'a custom property, which classes cannot express', code: `<div style={{ "--snp-x": x }} />` },
       // Computed dynamic values — allowed
@@ -35,6 +51,21 @@ describe('no-inline-style', () => {
       { code: `<div style={{ "--snp-x": x, left: y }} />` },
     ],
     invalid: [
+      {
+        name: "a static template value",
+        code: "<div style={{ padding: `10px` }} />",
+        errors: [{ messageId: 'inlineStyle' }],
+      },
+      {
+        name: "a negative number",
+        code: "<div style={{ zIndex: -1 }} />",
+        errors: [{ messageId: 'inlineStyle' }],
+      },
+      {
+        name: "a static computed key",
+        code: "<div style={{ ['padding']: '10px' }} />",
+        errors: [{ messageId: 'inlineStyle' }],
+      },
       // Static literal value
       {
         name: 'a style value that belongs in a class',

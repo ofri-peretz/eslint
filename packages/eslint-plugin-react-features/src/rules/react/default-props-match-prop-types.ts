@@ -9,7 +9,13 @@
  * Validate default props match prop types
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  memberPath,
+  objectKeyName,
+  propertyName,
+  resolveModuleBinding,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'defaultPropsMatchPropTypes';
@@ -38,122 +44,173 @@ export const defaultPropsMatchPropTypes = createRule<[], MessageIds>({
   },
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
-    let propTypes: Map<string, TSESTree.Property>;
-    let defaultProps: Map<string, TSESTree.Property>;
+    /** propTypes / defaultProps object literals, per component. */
+    let owners: Map<unknown, Declared>;
+
+    const declared = (owner: unknown): Declared => {
+      let d = owners.get(owner);
+      if (!d) {
+        d = { propTypes: [], defaultProps: [] };
+        owners.set(owner, d);
+      }
+      return d;
+    };
+
+    const collect = (
+      owner: unknown,
+      which: string | null,
+      value: TSESTree.Node | null,
+      scope: TSESLint.Scope.Scope,
+    ) => {
+      if (value?.type !== 'ObjectExpression') return;
+      if (which === 'propTypes')
+        declared(owner).propTypes.push({ value, scope });
+      else if (which === 'defaultProps')
+        declared(owner).defaultProps.push({ value, scope });
+    };
 
     return {
       before() {
-        propTypes = new Map<string, TSESTree.Property>();
-        defaultProps = new Map<string, TSESTree.Property>();
+        owners = new Map();
       },
-      // Collect propTypes (PropertyDefinition is used by TypeScript parser)
-      'PropertyDefinition[key.name="propTypes"]'(
-        node: TSESTree.PropertyDefinition,
-      ) {
-        if (node.value && node.value.type === 'ObjectExpression') {
-          for (const prop of node.value.properties) {
-            if (prop.type === 'Property' && prop.key.type === 'Identifier') {
-              propTypes.set(prop.key.name, prop);
+      // `static propTypes = {...}` / `static defaultProps = {...}`
+      PropertyDefinition(node: TSESTree.PropertyDefinition) {
+        // A class body's parent is always its class.
+        const cls = node.parent.parent as
+          TSESTree.ClassDeclaration | TSESTree.ClassExpression;
+        if (!node.static) return;
+        const owner = cls.id ? cls.id.name : cls;
+        // `static propTypes`, `static 'propTypes'`, `static ['propTypes']`
+        collect(
+          owner,
+          objectKeyName(node),
+          node.value,
+          context.sourceCode.getScope(node),
+        );
+      },
+      // `Comp.propTypes = {...}` / `Comp.defaultProps = {...}`
+      AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        const { left } = node;
+        if (
+          left.type !== 'MemberExpression' ||
+          left.object.type !== 'Identifier'
+        )
+          return;
+        collect(
+          left.object.name,
+          propertyName(left),
+          node.right,
+          context.sourceCode.getScope(node),
+        );
+      },
+      'Program:exit'() {
+        for (const { propTypes, defaultProps } of owners.values()) {
+          const validators = new Map<string, string>();
+          for (const { value, scope } of propTypes) {
+            for (const prop of value.properties) {
+              const key = prop.type === 'Property' ? objectKeyName(prop) : null;
+              if (key === null || prop.type !== 'Property') continue;
+              const kind = validatorKind(prop.value, scope);
+              if (kind) validators.set(key, kind);
+            }
+          }
+          for (const { value } of defaultProps) {
+            for (const prop of value.properties) {
+              const key = prop.type === 'Property' ? objectKeyName(prop) : null;
+              if (key === null || prop.type !== 'Property') continue;
+              const expected = validators.get(key);
+              const actual = literalKind(prop.value);
+              if (expected && actual && expected !== actual) {
+                context.report({
+                  node: prop.key,
+                  messageId: 'defaultPropsMatchPropTypes',
+                });
+              }
             }
           }
         }
-      },
-
-      // Collect defaultProps (PropertyDefinition is used by TypeScript parser)
-      'PropertyDefinition[key.name="defaultProps"]'(
-        node: TSESTree.PropertyDefinition,
-      ) {
-        if (node.value && node.value.type === 'ObjectExpression') {
-          for (const prop of node.value.properties) {
-            if (prop.type === 'Property' && prop.key.type === 'Identifier') {
-              defaultProps.set(prop.key.name, prop);
-            }
-          }
-        }
-      },
-
-      // Check after collecting both
-      'ClassDeclaration:exit'() {
-        for (const [propName, defaultProp] of defaultProps) {
-          const propType = propTypes.get(propName);
-          // Only check if both values are expressions (not patterns or TSEmptyBodyFunctionExpression)
-          if (
-            propType &&
-            defaultProp.value &&
-            propType.value &&
-            defaultProp.value.type !== 'TSEmptyBodyFunctionExpression' &&
-            propType.value.type !== 'TSEmptyBodyFunctionExpression' &&
-            !isPattern(defaultProp.value) &&
-            !isPattern(propType.value) &&
-            !isCompatibleDefaultValue(
-              defaultProp.value as TSESTree.Expression,
-              propType.value as TSESTree.Expression,
-            )
-          ) {
-            context.report({
-              node: defaultProp.key,
-              messageId: 'defaultPropsMatchPropTypes',
-            });
-          }
-        }
-
-        // Clear maps for next class
-        propTypes.clear();
-        defaultProps.clear();
       },
     };
   },
 });
 
-/**
- * Check if default value is compatible with prop type
- */
-function isCompatibleDefaultValue(
-  defaultValue: TSESTree.Expression,
-  propType: TSESTree.Expression,
-): boolean {
-  // This is a simplified check - in practice, you'd want more comprehensive validation
-  // For now, just check if both are literals of the same type
-  if (defaultValue.type === 'Literal' && propType.type === 'MemberExpression') {
-    const propTypeName = getPropTypeName(propType);
-    const defaultType = typeof defaultValue.value;
-
-    switch (propTypeName) {
-      case 'string':
-        return defaultType === 'string';
-      case 'number':
-        return defaultType === 'number';
-      case 'bool':
-        return defaultType === 'boolean';
-      default:
-        return true; // Allow other types for now
-    }
-  }
-
-  return true; // Allow complex types for now
+interface Declared {
+  propTypes: {
+    value: TSESTree.ObjectExpression;
+    scope: TSESLint.Scope.Scope;
+  }[];
+  defaultProps: {
+    value: TSESTree.ObjectExpression;
+    scope: TSESLint.Scope.Scope;
+  }[];
 }
 
 /**
- * Extract prop type name from PropTypes expression
+ * @vocabulary The `prop-types` validators whose accepted values a literal
+ * can contradict, mapped to the literal kind each accepts.
  */
-function getPropTypeName(node: TSESTree.MemberExpression): string {
-  if (node.object.type === 'Identifier' && node.object.name === 'PropTypes') {
-    // `PropTypes['number']` names the same validator `PropTypes.number` names.
-    return propertyName(node) ?? '';
-  }
-  return '';
-}
+const VALIDATOR_KIND: Readonly<Record<string, string>> = {
+  string: 'string',
+  number: 'number',
+  bool: 'boolean',
+};
 
 /**
- * Check if a node is a pattern (not an expression)
+ * The literal kind a `prop-types` validator accepts, read by binding:
+ * `PropTypes.string`, `PropTypes['string']`, a renamed default import, a named
+ * import, each with or without `.isRequired`. `undefined` for any other
+ * validator or a value not from `prop-types`.
  */
-function isPattern(
+function validatorKind(
   node: TSESTree.Node,
-): node is
-  TSESTree.AssignmentPattern | TSESTree.ArrayPattern | TSESTree.ObjectPattern {
-  return (
-    node.type === 'AssignmentPattern' ||
-    node.type === 'ArrayPattern' ||
-    node.type === 'ObjectPattern'
-  );
+  scope: TSESLint.Scope.Scope,
+): string | undefined {
+  const binding = resolveModuleBinding(node, scope);
+  // The UMD build defines the global `PropTypes`: an undeclared `PropTypes.x`.
+  const chain = memberPath(node);
+  const full =
+    binding?.module === 'prop-types'
+      ? binding.path
+      : !binding &&
+          chain?.[0] === 'PropTypes' &&
+          !isDeclared('PropTypes', scope)
+        ? chain.slice(1)
+        : undefined;
+  if (!full) return undefined;
+  const path = full.at(-1) === 'isRequired' ? full.slice(0, -1) : full;
+  // `import PropTypes from 'prop-types'` resolves `PropTypes.x` to ['x'].
+  return path.length === 1 ? VALIDATOR_KIND[path[0]] : undefined;
+}
+
+/** Is `name` declared anywhere from `scope` up? */
+function isDeclared(name: string, scope: TSESLint.Scope.Scope): boolean {
+  for (let s: TSESLint.Scope.Scope | null = scope; s; s = s.upper) {
+    if ((s.set.get(name)?.defs.length ?? 0) > 0) return true;
+  }
+  return false;
+}
+
+/**
+ * The kind of a literal default (`'x'`, `` `x` ``, `0`, `-1`, `true`), or
+ * `undefined` for anything else. `null` is accepted by every non-required
+ * validator, so it is not a kind that can mismatch.
+ */
+function literalKind(node: TSESTree.Node): string | undefined {
+  if (node.type === 'TemplateLiteral') {
+    return node.expressions.length === 0 ? 'string' : undefined;
+  }
+  if (
+    node.type === 'UnaryExpression' &&
+    (node.operator === '-' || node.operator === '+')
+  ) {
+    return node.argument.type === 'Literal' &&
+      typeof node.argument.value === 'number'
+      ? 'number'
+      : undefined;
+  }
+  if (node.type !== 'Literal' || node.value === null) return undefined;
+  const kind = typeof node.value;
+  return kind === 'string' || kind === 'number' || kind === 'boolean'
+    ? kind
+    : undefined;
 }

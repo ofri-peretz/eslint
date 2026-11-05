@@ -15,6 +15,7 @@ import {
   propertyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { componentThis } from '../../utils/component-set-state';
 
 type MessageIds =
   'noDirectMutationState' | 'suggestSetState' | 'suggestFunctionalUpdate';
@@ -86,49 +87,56 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let allowInLifecycleMethods: boolean;
-    let inClassComponent: boolean;
-    let inLifecycleMethod: boolean;
-    let classStack: boolean[];
 
-    // oxlint-disable-next-line consistent-function-scoping
-    function isLifecycleMethod(methodName: string): boolean {
-      const lifecycleMethods = [
-        'componentDidMount',
-        'componentDidUpdate',
-        'componentWillUnmount',
-        'componentWillMount',
-        'componentWillReceiveProps',
-        'componentWillUpdate',
-        'shouldComponentUpdate',
-        'getSnapshotBeforeUpdate',
-        'getDerivedStateFromProps',
-        'getDerivedStateFromError',
-        'componentDidCatch',
-      ];
-      return lifecycleMethods.includes(methodName);
+    // @vocabulary React API: the class-component lifecycle methods.
+    const LIFECYCLE_METHODS = new Set([
+      'componentDidMount',
+      'componentDidUpdate',
+      'componentWillUnmount',
+      'componentWillMount',
+      'componentWillReceiveProps',
+      'componentWillUpdate',
+      'shouldComponentUpdate',
+      'getSnapshotBeforeUpdate',
+      'getDerivedStateFromProps',
+      'getDerivedStateFromError',
+      'componentDidCatch',
+    ]);
+
+    /**
+     * Is a write through this `this` a mutation of a React class component's
+     * state? Not in the constructor (where initial state is set), not on a
+     * class that is not a React component, and not in a lifecycle method
+     * when `allowInLifecycleMethods` is on.
+     */
+    function isComponentStateWrite(self: TSESTree.ThisExpression): boolean {
+      const site = componentThis(self, context.sourceCode);
+      if (!site) return false;
+      if (site.method === 'constructor' && !site.inCallback) return false;
+      return !(
+        allowInLifecycleMethods &&
+        site.method !== null &&
+        LIFECYCLE_METHODS.has(site.method)
+      );
     }
 
-    function isInReactClassComponent(): boolean {
-      // Simple heuristic: check if we're in a class that extends Component
-      // In a real implementation, this would be more sophisticated
-      return inClassComponent;
-    }
-
-    function reportStateMutation(node: TSESTree.Node, mutationType: string) {
-      if (!isInReactClassComponent()) {
-        return; // Only applies to class components
-      }
-
-      if (allowInLifecycleMethods && inLifecycleMethod) {
-        return; // Allowed in lifecycle methods if configured
-      }
+    function reportStateMutation(
+      node: TSESTree.Node,
+      mutationType: string,
+      self: TSESTree.ThisExpression,
+    ) {
+      if (!isComponentStateWrite(self)) return;
+      const method = componentThis(self, context.sourceCode)?.method;
 
       context.report({
         node,
         messageId: 'noDirectMutationState',
         data: {
           mutationType,
-          context: inLifecycleMethod ? 'lifecycle method' : 'regular method',
+          context:
+            method && LIFECYCLE_METHODS.has(method)
+              ? 'lifecycle method'
+              : 'regular method',
         },
         suggest: [
           {
@@ -181,109 +189,59 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
       });
     }
 
-    // Shared helper — uses `target` to avoid shadowing visitor `node` params
+    /**
+     * The `this` of the `this.state` that `target` reads into, and how deep:
+     * 0 for `this.state` itself (also `this['state']`), 1+ for a key in it.
+     */
     // oxlint-disable-next-line consistent-function-scoping
-    function isStatePropertyAccess(target: TSESTree.Node): boolean {
-      if (
-        target.type === 'MemberExpression' &&
-        target.object.type === 'MemberExpression' &&
-        target.object.object.type === 'ThisExpression' &&
-        propertyName(target.object) === 'state'
-      ) {
-        return true; // this.state.xxx
-      }
-      // Handle deeper nesting
+    function stateAccess(
+      target: TSESTree.Node,
+      depth = 0,
+    ): { self: TSESTree.ThisExpression; depth: number } | null {
       if (target.type === 'MemberExpression') {
-        return isStatePropertyAccess(target.object);
+        if (
+          target.object.type === 'ThisExpression' &&
+          propertyName(target) === 'state'
+        )
+          return { self: target.object, depth };
+        return stateAccess(target.object, depth + 1);
       }
       // Handle logical expressions like (this.state.items || [])
       if (target.type === 'LogicalExpression') {
-        return isStatePropertyAccess(target.left);
+        return stateAccess(target.left, depth);
       }
-      return false;
+      return null;
+    }
+
+    /** A key inside `this.state` (`this.state.a`, `this.state.a.b`). */
+    function stateKey(target: TSESTree.Node): TSESTree.ThisExpression | null {
+      const access = stateAccess(target);
+      return access && access.depth > 0 ? access.self : null;
     }
 
     return {
       before() {
         const [options] = context.options;
         ({ allowInLifecycleMethods = false } = options || {});
-
-        // Track if we're in a class component
-        inClassComponent = false;
-        inLifecycleMethod = false;
-        classStack = [];
-      },
-      ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        // Check if this is a React component class
-        if (node.superClass) {
-          if (
-            node.superClass.type === 'Identifier' &&
-            // @vocabulary React API
-            ['Component', 'PureComponent'].includes(node.superClass.name)
-          ) {
-            inClassComponent = true;
-            classStack.push(true);
-          } else if (
-            node.superClass.type === 'MemberExpression' &&
-            node.superClass.object.type === 'Identifier' &&
-            node.superClass.object.name === 'React' &&
-            // `React['Component']` names the same base class. A key chosen at
-            // runtime names no base to match against the React vocabulary.
-            // @vocabulary React API
-            ['Component', 'PureComponent'].includes(
-              propertyName(node.superClass) ?? '',
-            )
-          ) {
-            inClassComponent = true;
-            classStack.push(true);
-          }
-        }
       },
 
-      'ClassDeclaration:exit'() {
-        classStack.pop();
-        inClassComponent =
-          classStack.length > 0 && classStack[classStack.length - 1];
-      },
-
-      MethodDefinition(node: TSESTree.MethodDefinition) {
-        if (node.key.type === 'Identifier') {
-          inLifecycleMethod = isLifecycleMethod(node.key.name);
-        }
-      },
-
-      'MethodDefinition:exit'() {
-        inLifecycleMethod = false;
-      },
-
-      // Assignment to this.state properties
+      // Assignment to a state key, or replacing `this.state` outside the
+      // constructor.
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        if (node.left.type === 'MemberExpression') {
-          if (isStatePropertyAccess(node.left)) {
-            reportStateMutation(node, 'assignment');
-          }
-        }
+        const access = stateAccess(node.left);
+        if (access) reportStateMutation(node, 'assignment', access.self);
       },
 
       // Update expressions on this.state properties (++state.count, state.count--)
       UpdateExpression(node: TSESTree.UpdateExpression) {
-        if (node.argument.type === 'MemberExpression') {
-          if (isStatePropertyAccess(node.argument)) {
-            reportStateMutation(node, 'update');
-          }
-        }
+        const self = stateKey(node.argument);
+        if (self) reportStateMutation(node, 'update', self);
       },
 
       // Delete operator on this.state properties
       UnaryExpression(node: TSESTree.UnaryExpression) {
-        if (
-          node.operator === 'delete' &&
-          node.argument.type === 'MemberExpression'
-        ) {
-          if (isStatePropertyAccess(node.argument)) {
-            reportStateMutation(node, 'delete operator');
-          }
-        }
+        const self = node.operator === 'delete' && stateKey(node.argument);
+        if (self) reportStateMutation(node, 'delete operator', self);
       },
 
       // Array/object methods that mutate this.state
@@ -293,7 +251,8 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
         // body reads rather than casting a second call past the same question.
         const methodName = memberPropertyName(node.callee);
         if (node.callee.type === 'MemberExpression' && methodName !== null) {
-          if (isStatePropertyAccess(node.callee.object)) {
+          const self = stateKey(node.callee.object);
+          if (self) {
             // Methods that mutate arrays/objects
             const mutatingMethods = [
               'push',
@@ -312,7 +271,11 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
             ];
 
             if (mutatingMethods.includes(methodName)) {
-              reportStateMutation(node, `mutating method (${methodName})`);
+              reportStateMutation(
+                node,
+                `mutating method (${methodName})`,
+                self,
+              );
             }
           }
         }

@@ -9,6 +9,12 @@
  * Ensure controlled inputs have onChange or readOnly
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import {
+  attributeValue,
+  findAttribute,
+  isPassed,
+  isSetTruthy,
+} from '../../utils/jsx-value';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
@@ -18,6 +24,20 @@ type MessageIds = 'checkedRequiresOnChangeOrReadOnly';
 export interface Options {}
 
 export type RuleOptions = [Options?];
+
+/**
+ * @vocabulary React DOM's `hasReadOnlyValue`: input types whose `value` the
+ * user never edits, so React does not ask for `onChange`.
+ */
+const READ_ONLY_VALUE_TYPES = new Set([
+  'button',
+  'checkbox',
+  'image',
+  'hidden',
+  'radio',
+  'reset',
+  'submit',
+]);
 
 export const checkedRequiresOnchangeOrReadonly = createRule<
   RuleOptions,
@@ -57,33 +77,35 @@ export const checkedRequiresOnchangeOrReadonly = createRule<
 
         const tagName = node.openingElement.name.name;
 
-        // Only check input and textarea elements
+        // Only the host form fields React controls
         if (!['input', 'textarea', 'select'].includes(tagName)) {
           return;
         }
 
-        const attributes = node.openingElement.attributes;
-        let hasChecked = false;
-        let hasValue = false;
-        let hasOnChange = false;
-        let hasReadOnly = false;
-
-        for (const attr of attributes) {
-          if (attr.type !== 'JSXAttribute') continue;
-
-          const attrName =
-            attr.name.type === 'JSXIdentifier' ? attr.name.name : '';
-
-          if (attrName === 'checked') {
-            hasChecked = true;
-          } else if (attrName === 'value') {
-            hasValue = true;
-          } else if (attrName === 'onChange' || attrName === 'onInput') {
-            hasOnChange = true;
-          } else if (attrName === 'readOnly') {
-            hasReadOnly = true;
-          }
-        }
+        const opening = node.openingElement;
+        // React's checkControlledValueProps: a field is controlled by a
+        // `value` (or an input's `checked`) that is passed, i.e. not
+        // `undefined` / `null`.
+        const hasChecked =
+          tagName === 'input' && isPassed(findAttribute(opening, 'checked'));
+        const typeAttr = findAttribute(opening, 'type');
+        const type = typeAttr ? attributeValue(typeAttr) : undefined;
+        // `value` on an input whose type never edits it is not a controlled
+        // field: React's hasReadOnlyValue table.
+        const hasValue =
+          isPassed(findAttribute(opening, 'value')) &&
+          !(
+            tagName === 'input' &&
+            typeof type === 'string' &&
+            READ_ONLY_VALUE_TYPES.has(type.toLowerCase())
+          );
+        const hasOnChange =
+          findAttribute(opening, 'onChange') !== undefined ||
+          findAttribute(opening, 'onInput') !== undefined;
+        // `readOnly={false}` / `disabled={false}` are not set.
+        const hasReadOnly =
+          isSetTruthy(findAttribute(opening, 'readOnly')) ||
+          isSetTruthy(findAttribute(opening, 'disabled'));
 
         // Report if checked/value is present but no onChange/readOnly
         if ((hasChecked || hasValue) && !hasOnChange && !hasReadOnly) {

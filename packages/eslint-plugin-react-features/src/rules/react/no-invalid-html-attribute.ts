@@ -81,6 +81,7 @@ export const noInvalidHtmlAttribute = createRule<RuleOptions, MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
+        if (isCustomElement(node.parent)) return;
         if (node.name.type === 'JSXIdentifier') {
           const attrName = node.name.name;
           if (INVALID_HTML_ATTRIBUTES.has(attrName)) {
@@ -94,3 +95,21 @@ export const noInvalidHtmlAttribute = createRule<RuleOptions, MessageIds>({
     };
   },
 });
+
+/**
+ * A custom element: React sets its attributes as written, so the HTML
+ * spelling is the right one there. The HTML spec defines a custom element
+ * name as one containing a hyphen; `is="…"` customizes a built-in element.
+ */
+function isCustomElement(opening: TSESTree.JSXOpeningElement): boolean {
+  return (
+    (opening.name.type === 'JSXIdentifier' &&
+      opening.name.name.includes('-')) ||
+    opening.attributes.some(
+      (attr) =>
+        attr.type === 'JSXAttribute' &&
+        attr.name.type === 'JSXIdentifier' &&
+        attr.name.name === 'is',
+    )
+  );
+}

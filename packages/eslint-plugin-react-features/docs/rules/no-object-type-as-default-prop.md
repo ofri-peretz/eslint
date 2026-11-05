@@ -53,15 +53,9 @@ function UserCard({
 }) {
   return <Card style={style} options={options} items={items} />;
 }
-
-// Class component version
-class UserCard extends React.Component {
-  static defaultProps = {
-    style: { padding: 10 },          // Still problematic
-    items: []
-  };
-}
 ```
+
+The rule reports an object, array or function literal used as the default of a destructured prop of a function component (a PascalCase function that returns JSX, or a function passed to React's `memo` / `forwardRef`). A class's `static defaultProps` is evaluated once, when the class is defined, so it is not reported; neither is a default in a function that is not a component.
 
 ### ✅ Correct
 
@@ -112,44 +106,10 @@ function UserCard({ user, style, options }) {
 
 - **[Default Props](https://react.dev/learn/passing-props-to-a-component#specifying-default-values-for-props)** - React docs
 - **[Reference Equality](https://react.dev/reference/react/memo#minimizing-props-changes)** - Memoization patterns
+
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
+- **Other fresh values**: `new Map()`, a regular expression literal or a class expression as a default also create a new value per render and are not reported.
+- **Components the rule does not recognise**: a function wrapped by a higher-order function other than React's `memo` / `forwardRef`, or one that returns JSX only through a helper call.
 
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Prop from variable
-const propValue = computedValue;
-<Component prop={propValue} /> // Computation not analyzed
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Wrapped or Aliased Functions
-
-**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-function myWrapper(data) {
-  return internalApi(data); // Wrapper not analyzed
-}
-myWrapper(unsafeInput);
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+Not reported by design: a class's `static defaultProps` (evaluated once, when the class is defined) and defaults in functions that are not components.

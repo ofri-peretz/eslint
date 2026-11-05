@@ -9,7 +9,8 @@
  * Disallow passing children as props (dangerous pattern)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, objectKeyName } from '@interlace/eslint-devkit';
+import { isReactApi } from '../../utils/react-api';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noChildrenProp';
@@ -41,6 +42,18 @@ export const noChildrenProp = createRule<[], MessageIds>({
   },
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
+    /** A `children` key in a props object: plain, quoted or computed. */
+    const reportChildrenKey = (props: TSESTree.ObjectExpression) => {
+      for (const prop of props.properties) {
+        if (prop.type === 'Property' && objectKeyName(prop) === 'children') {
+          context.report({
+            node: prop.key,
+            messageId: 'noChildrenProp',
+          });
+        }
+      }
+    };
+
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (
@@ -57,19 +70,22 @@ export const noChildrenProp = createRule<[], MessageIds>({
       // Check for children in spread attributes
       JSXSpreadAttribute(node: TSESTree.JSXSpreadAttribute) {
         if (node.argument.type === 'ObjectExpression') {
-          // Check if the spread contains a children property
-          for (const prop of node.argument.properties) {
-            if (
-              prop.type === 'Property' &&
-              prop.key.type === 'Identifier' &&
-              prop.key.name === 'children'
-            ) {
-              context.report({
-                node: prop.key,
-                messageId: 'noChildrenProp',
-              });
-            }
-          }
+          reportChildrenKey(node.argument);
+        }
+      },
+
+      // `React.createElement(type, { children })`, by binding
+      CallExpression(node: TSESTree.CallExpression) {
+        const props = node.arguments[1];
+        if (
+          props?.type === 'ObjectExpression' &&
+          isReactApi(
+            node.callee,
+            context.sourceCode.getScope(node),
+            'createElement',
+          )
+        ) {
+          reportChildrenKey(props);
         }
       },
     };

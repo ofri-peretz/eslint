@@ -31,6 +31,17 @@ type Options = {
 
 type RuleOptions = [Options?];
 
+/**
+ * The static text of an attribute value: `"x"`, `{"x"}` and `` {`x`} `` all
+ * name `x`. `null` when the value is not statically known.
+ */
+function attributeText(value: TSESTree.JSXAttribute['value']): string | null {
+  if (!value) return null;
+  return staticString(
+    value.type === 'JSXExpressionContainer' ? value.expression : value,
+  );
+}
+
 export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
   name: 'jsx-no-target-blank',
   meta: {
@@ -117,13 +128,10 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
        * same path. Only a target that is still not statically known after
        * that is "dynamic" and falls through to the fail-closed branch below.
        */
-      const targetValue =
-        targetAttr.value.type === 'JSXExpressionContainer'
-          ? targetAttr.value.expression
-          : targetAttr.value;
-      const staticTarget = staticString(targetValue);
+      const staticTarget = attributeText(targetAttr.value);
       if (staticTarget !== null) {
-        return staticTarget === '_blank';
+        // Browsing-context keywords are ASCII case-insensitive (HTML).
+        return staticTarget.toLowerCase() === '_blank';
       }
 
       // Dynamic value - check enforceDynamicLinks option
@@ -144,11 +152,11 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
 
       if (!hrefAttr || !hrefAttr.value) return false;
 
-      const staticText1 = staticString(hrefAttr.value);
-      if (staticText1 !== null) {
-        const href = staticText1;
-        // External if starts with http:// or https:// or //
-        return /^(https?:)?\/\//.test(href) || href.startsWith('//');
+      const href = attributeText(hrefAttr.value);
+      if (href !== null) {
+        // External if it starts with http:// or https:// (a URL scheme is
+        // case-insensitive) or is protocol-relative //
+        return /^(https?:)?\/\//i.test(href);
       }
 
       // Dynamic href - assume external
@@ -168,9 +176,7 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
 
     // oxlint-disable-next-line consistent-function-scoping
     function hasNoopener(relAttr: TSESTree.JSXAttribute): boolean {
-      if (!relAttr.value) return false;
-
-      const staticText2 = staticString(relAttr.value);
+      const staticText2 = attributeText(relAttr.value);
       if (staticText2 !== null) {
         const relValues = staticText2.toLowerCase().split(/\s+/);
         return relValues.includes('noopener');
@@ -181,9 +187,7 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
 
     // oxlint-disable-next-line consistent-function-scoping
     function hasNoreferrer(relAttr: TSESTree.JSXAttribute): boolean {
-      if (!relAttr.value) return false;
-
-      const staticText3 = staticString(relAttr.value);
+      const staticText3 = attributeText(relAttr.value);
       if (staticText3 !== null) {
         const relValues = staticText3.toLowerCase().split(/\s+/);
         return relValues.includes('noreferrer');

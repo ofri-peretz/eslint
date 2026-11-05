@@ -15,6 +15,14 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-invalid-html-attribute', noInvalidHtmlAttribute, {
   valid: [
+    {
+      name: 'the HTML spelling on a custom element is set as written',
+      code: '<my-widget class="x" for="y" />',
+    },
+    {
+      name: 'the HTML spelling on a customized built-in element',
+      code: '<button is="fancy-button" class="x" />',
+    },
     // Valid - correct React attribute names
     {
       name: 'className instead of class',

@@ -11,6 +11,7 @@
  * `data-testid` is a named part and must also carry `data-slot`.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { findAttribute, isPassed } from '../../utils/jsx-value';
 import {
   createRule,
   formatLLMMessage,
@@ -19,17 +20,6 @@ import {
 
 type MessageIds = 'missingDataSlot';
 type RuleOptions = [];
-
-const hasNamedAttribute = (
-  node: TSESTree.JSXOpeningElement,
-  name: string,
-): boolean =>
-  node.attributes.some(
-    (attr) =>
-      attr.type === 'JSXAttribute' &&
-      attr.name.type === 'JSXIdentifier' &&
-      attr.name.name === name,
-  );
 
 export const requireDataSlot = createRule<RuleOptions, MessageIds>({
   name: 'require-data-slot',
@@ -57,8 +47,11 @@ export const requireDataSlot = createRule<RuleOptions, MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
-        if (!hasNamedAttribute(node, 'data-testid')) return;
-        if (hasNamedAttribute(node, 'data-slot')) return;
+        // `data-testid={undefined}` renders nothing, so the element is not a
+        // named part; `data-slot={undefined}` renders nothing, so the slot is
+        // still missing.
+        if (!isPassed(findAttribute(node, 'data-testid'))) return;
+        if (isPassed(findAttribute(node, 'data-slot'))) return;
         context.report({ node, messageId: 'missingDataSlot' });
       },
     };

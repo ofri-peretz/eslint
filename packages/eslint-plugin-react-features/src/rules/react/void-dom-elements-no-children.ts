@@ -11,8 +11,14 @@
  * @see https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/void-dom-elements-no-children.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  objectKeyName,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { isReactApi } from '../../utils/react-api';
 
 type MessageIds = 'voidNoChildren';
 
@@ -98,7 +104,40 @@ export const voidDomElementsNoChildren = createRule<RuleOptions, MessageIds>({
       });
     }
 
+    /** Does a `createElement` props argument give the element content? */
+    function propsGiveContent(props: TSESTree.Node | undefined): boolean {
+      return (
+        props?.type === 'ObjectExpression' &&
+        props.properties.some((p) => {
+          if (p.type !== 'Property') return false;
+          const key = objectKeyName(p);
+          return key === 'children' || key === 'dangerouslySetInnerHTML';
+        })
+      );
+    }
+
     return {
+      // `createElement('br', props, ...children)`, however React is imported.
+      CallExpression(node: TSESTree.CallExpression) {
+        const [type, props, ...children] = node.arguments;
+        const elementName = staticString(type);
+        if (elementName === null || !VOID_ELEMENTS.has(elementName)) return;
+        if (
+          !isReactApi(
+            node.callee,
+            context.sourceCode.getScope(node),
+            'createElement',
+          )
+        )
+          return;
+        if (children.length > 0 || propsGiveContent(props)) {
+          context.report({
+            node,
+            messageId: 'voidNoChildren',
+            data: { element: elementName },
+          });
+        }
+      },
       JSXElement(node: TSESTree.JSXElement) {
         const openingElement = node.openingElement;
 

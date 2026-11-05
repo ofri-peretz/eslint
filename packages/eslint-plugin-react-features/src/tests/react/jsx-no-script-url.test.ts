@@ -88,4 +88,59 @@ describe('jsx-no-script-url', () => {
       },
     ],
   });
+
+  ruleTester.run('jsx-no-script-url spellings and settings', jsxNoScriptUrl, {
+    invalid: [
+      {
+        name: 'xlink:href is a URL prop',
+        code: '<svg><a xlink:href="javascript:alert(1)" /></svg>',
+        errors: [{ messageId: 'noScriptUrl' }],
+      },
+      {
+        name: 'a javascript: URL in one branch of a conditional',
+        code: "<a href={flag ? 'javascript:void(0)' : '/home'}>Link</a>",
+        errors: [{ messageId: 'noScriptUrl' }],
+      },
+      {
+        name: 'a template without placeholders is reported once',
+        code: '<a href={`javascript:void(0)`}>Link</a>',
+        errors: [{ messageId: 'noScriptUrl' }],
+      },
+      {
+        name: 'includeFromSettings reads a link component named in settings',
+        code: '<Hyperlink href="javascript:void(0)" />',
+        options: [[], { includeFromSettings: true }],
+        settings: { linkComponents: ['Hyperlink'] },
+        errors: [{ messageId: 'noScriptUrl' }],
+      },
+      {
+        name: 'includeFromSettings reads linkAttribute, one or a list',
+        code: '<><Link to="javascript:void(0)" /><Nav go="javascript:x" /></>',
+        options: [[{ name: 'Nav', props: ['href'] }], { includeFromSettings: true }],
+        settings: {
+          linkComponents: [
+            { name: 'Link', linkAttribute: 'to' },
+            { name: 'Nav', linkAttribute: ['go'] },
+          ],
+        },
+        errors: [{ messageId: 'noScriptUrl' }, { messageId: 'noScriptUrl' }],
+      },
+    ],
+    valid: [
+      {
+        name: 'settings link components are read only with includeFromSettings',
+        code: '<Link to="javascript:void(0)" />',
+        settings: { linkComponents: [{ name: 'Link', linkAttribute: 'to' }] },
+      },
+      {
+        name: 'includeFromSettings with no settings declared',
+        code: '<Link to="javascript:void(0)" />',
+        options: [[], { includeFromSettings: true }],
+      },
+      {
+        name: 'a conditional of safe URLs',
+        code: "<a href={flag ? '/a' : '/b'}>Link</a>",
+      },
+    ],
+  });
 });

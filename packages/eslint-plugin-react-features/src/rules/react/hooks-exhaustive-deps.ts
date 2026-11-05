@@ -12,7 +12,8 @@
  * useEffect, useCallback, useMemo, and useLayoutEffect.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, namesOneOf, propertyName } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+import { reactExport } from '../../utils/react-api';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -176,52 +177,26 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
     let additionalHooksPattern: RegExp | null;
 
     /**
-     * Check if a call expression is a React hook with dependencies
+     * The hook a call invokes, when it is one this rule checks: React's
+     * useEffect / useLayoutEffect / useCallback / useMemo /
+     * useImperativeHandle by binding (named, renamed, `React.x`,
+     * `React['x']`, a namespace import), or a hook `additionalHooks` names.
+     * A local function or an import from another module that happens to be
+     * called `useEffect` is not React's. `null` otherwise.
      */
-    function isHookWithDeps(node: TSESTree.CallExpression): boolean {
+    function checkedHookName(node: TSESTree.CallExpression): string | null {
       const callee = node.callee;
-
-      // Direct hook call: useEffect(...)
-      if (callee.type === 'Identifier') {
-        if (HOOKS_WITH_DEPS.has(callee.name)) {
-          return true;
-        }
-        if (additionalHooksPattern?.test(callee.name)) {
-          return true;
-        }
-      }
-
-      // Namespaced hook call: React.useEffect(...)
+      const found = reactExport(callee, context.sourceCode.getScope(node));
+      if (found && HOOKS_WITH_DEPS.has(found.name)) return found.name;
+      // `additionalHooks` is the user's own list of hook names: a name test is
+      // its documented contract.
       if (
-        callee.type === 'MemberExpression' &&
-        callee.object.type === 'Identifier' &&
-        callee.object.name === 'React' &&
-        namesOneOf(propertyName(callee), HOOKS_WITH_DEPS)
+        callee.type === 'Identifier' &&
+        additionalHooksPattern?.test(callee.name)
       ) {
-        return true;
-      }
-
-      return false;
-    }
-
-    /**
-     * Get the hook name from a call expression
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    function getHookName(node: TSESTree.CallExpression): string | null {
-      const callee = node.callee;
-      if (callee.type === 'Identifier') {
         return callee.name;
       }
-      // `React['useEffect']` names the same hook `React.useEffect` does.
-      // The `'unknown'` fallback that stood here is gone rather than covered:
-      // `isHookWithDeps` gates every call to this function, and it already
-      // required a `React.<hook>` whose name `propertyName` could resolve.
-      //
-      // `string | null` is `propertyName`'s own result, carried through rather
-      // than cast: the sole caller passes it to report `data`, which takes
-      // `unknown`, so nothing here ever needed the narrower type.
-      return propertyName(callee as TSESTree.MemberExpression);
+      return null;
     }
 
     /**
@@ -377,6 +352,16 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
           return;
         }
 
+        // A type annotation, a type argument or an `interface` names types,
+        // never runtime values: `x as T` reads `x`, not `T`.
+        if (
+          n.type === 'TSTypeAnnotation' ||
+          n.type === 'TSTypeParameterInstantiation' ||
+          n.type === 'TSTypeReference'
+        ) {
+          return;
+        }
+
         // Only add identifiers that aren't property keys
         if (n.type === 'Identifier' && !isPropertyKey) {
           used.add(n.name);
@@ -498,18 +483,12 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
       const init = declarator.init;
       if (!init || init.type !== 'CallExpression') return false;
 
-      const callee = init.callee;
-      // `propertyName` and not `callee.property.name`: `React['useRef']` and
-      // `` React[`useRef`] `` reach the same hook as `React.useRef`, and a
-      // dependency rule that sees only the dotted spelling treats the other
-      // two as unknown calls — so every ref and setter reached that way is
-      // reported as a missing dependency.
+      // By binding: `React['useRef']`, a namespace import and a renamed
+      // `import { useState as useS }` reach the same hook as `useRef`, and a
+      // local function called `useState` is not React's.
       const hookName =
-        callee.type === 'Identifier'
-          ? callee.name
-          : callee.type === 'MemberExpression'
-            ? (propertyName(callee) ?? '')
-            : '';
+        reactExport(init.callee, context.sourceCode.getScope(declarator))
+          ?.name ?? '';
 
       // `const ref = useRef(...)` — the ref OBJECT is stable. (Its `.current`
       // is not, which is exactly why React tells you not to list it.)
@@ -592,12 +571,15 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
           : null;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        if (!isHookWithDeps(node)) {
+        const hookName = checkedHookName(node);
+        if (hookName === null) {
           return;
         }
 
-        const hookName = getHookName(node);
-        const args = node.arguments;
+        // useImperativeHandle(ref, create, deps): its callback and deps sit
+        // one argument later than every other hook's.
+        const offset = hookName === 'useImperativeHandle' ? 1 : 0;
+        const args = node.arguments.slice(offset);
 
         // Check if hook has a callback argument
         if (args.length === 0) {
@@ -666,10 +648,8 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
           }
         }
 
-        const reactiveDeps = filterReactiveDeps(
-          externalUsed,
-          context.sourceCode.getScope(callback),
-        );
+        const callbackScope = context.sourceCode.getScope(callback);
+        const reactiveDeps = filterReactiveDeps(externalUsed, callbackScope);
 
         // Extract declared dependencies
         const declaredDeps = extractDependencies(depsArrayNode);
@@ -677,17 +657,30 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         // Find missing dependencies
         const missingDeps: string[] = [];
         for (const dep of reactiveDeps) {
-          // Simple check - skip if it looks like a local variable or function
-          // This is a simplified heuristic
-          if (!declaredDeps.has(dep) && /^[a-z]/.test(dep)) {
+          // `[props.label]` lists a path under `props`: the callback's read of
+          // `props.label` is covered by it.
+          const listed =
+            declaredDeps.has(dep) ||
+            [...declaredDeps].some((d) => d.startsWith(`${dep}.`));
+          if (!listed) {
             missingDeps.push(dep);
           }
         }
 
         // Find extra/unnecessary dependencies
+        // An effect lists a reactive value it does not read to re-run when
+        // that value changes — React's documented pattern, so only a
+        // non-reactive one (a module constant, a ref, a setter) is an
+        // unnecessary dependency there. useCallback / useMemo only ever
+        // recompute, so any unused dependency is unnecessary.
+        const isEffect = hookName !== 'useCallback' && hookName !== 'useMemo';
         const extraDeps: string[] = [];
         for (const dep of declaredDeps) {
-          if (!usedInCallback.has(dep) && !dep.includes('.')) {
+          if (
+            !usedInCallback.has(dep) &&
+            !dep.includes('.') &&
+            (!isEffect || isStableReference(dep, callbackScope))
+          ) {
             extraDeps.push(dep);
           }
         }

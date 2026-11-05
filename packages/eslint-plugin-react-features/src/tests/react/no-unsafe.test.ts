@@ -42,6 +42,23 @@ describe('no-unsafe', () => {
       'function MyComponent() { useEffect(() => {}, []); return <div />; }',
       // Not a React component
       'class MyClass { UNSAFE_componentWillMount() {} }',
+      {
+        name: 'a Component from another library is not React',
+        code: `import { Component } from 'lit';
+        class MyElement extends Component { UNSAFE_componentWillMount() {} }`,
+      },
+      {
+        name: 'a private member is not a lifecycle',
+        code: `class MyComponent extends React.Component {
+          #UNSAFE_componentWillMount() {}
+        }`,
+      },
+      {
+        name: 'a static member is not a lifecycle',
+        code: `class MyComponent extends React.Component {
+          static UNSAFE_componentWillMount() {}
+        }`,
+      },
     ],
     invalid: [
       {
@@ -95,6 +112,18 @@ describe('no-unsafe', () => {
           componentWillUpdate(nextProps, nextState) {}
         }`,
         options: [{ checkAliases: true }],
+        errors: [{ messageId: 'noUnsafe' }],
+      },
+      {
+        name: 'a renamed Component import',
+        code: `import { Component as Base } from 'react';
+        class MyComponent extends Base { UNSAFE_componentWillReceiveProps() {} }`,
+        errors: [{ messageId: 'noUnsafe' }],
+      },
+      {
+        name: 'a class expression on a namespace import',
+        code: `import * as R from 'react';
+        const MyComponent = class extends R.PureComponent { UNSAFE_componentWillUpdate = () => {}; };`,
         errors: [{ messageId: 'noUnsafe' }],
       },
     ],

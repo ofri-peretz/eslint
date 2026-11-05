@@ -28,17 +28,23 @@ Detect common typos in React component properties and lifecycle methods. This ru
 
 ## Rule Details
 
-Detects misspellings in React lifecycle methods and static properties.
+Detects misspellings of React's class-component API in a class component (a
+class extending React's `Component` or `PureComponent`, by binding). React
+calls lifecycles and reads statics by exact name, so a misspelt one silently
+never runs.
 
-### Common Typos Detected
+Reported:
 
-| Typo                  | Correct                    |
-| --------------------- | -------------------------- |
-| `componentDidUpate`   | `componentDidUpdate`       |
-| `componentWillUnmout` | `componentWillUnmount`     |
-| `getDerivedStateFromProp` | `getDerivedStateFromProps` |
-| `propTypes` (wrong case) | `propTypes`             |
-| `defaultProps` (wrong) | `defaultProps`            |
+| Code                                         | Why                                          |
+| -------------------------------------------- | -------------------------------------------- |
+| `ComponentDidMount()`, `static PropTypes`    | React's name in another letter case          |
+| `componenDidMount()`, `static defaulProps`   | a documented dropped-letter misspelling      |
+| `Card.DefaultProps = {}` (Card is the class) | the same, assigned after the class           |
+| `static componentDidMount()`                 | React calls lifecycles on the instance       |
+| `getDerivedStateFromProps()` (not static)    | React calls it only as a static              |
+
+Reading a static (`Card.propTypes`, `PropTypes.string`) is never reported, and
+neither is any class that is not a React component.
 
 ## Examples
 
@@ -58,7 +64,14 @@ class MyComponent extends React.Component {
 ### ✅ Correct
 
 ```tsx
-this.someProperty
+class MyComponent extends React.Component {
+  static propTypes = {};
+  static getDerivedStateFromProps() {
+    return null;
+  }
+  componentDidUpdate() {}
+  componentWillUnmount() {}
+}
 ```
 
 ## Configuration Examples
@@ -87,42 +100,11 @@ this.someProperty
 
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
+The rule reads class components only (a class extending React's `Component`
+or `PureComponent`, by binding). Not detected:
 
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Prop from variable
-const propValue = computedValue;
-<Component prop={propValue} /> // Computation not analyzed
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Wrapped or Aliased Functions
-
-**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-function myWrapper(data) {
-  return internalApi(data); // Wrapper not analyzed
-}
-myWrapper(unsafeInput);
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- statics assigned to a function component (`Card.PropTypes = …`): whether a
+  function is a component is not decided here;
+- misspellings other than a different letter case and the listed dropped
+  letters (`componentDidMoun`);
+- a class extending a `Component` the file never imports or declares.

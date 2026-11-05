@@ -12,7 +12,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
-Validate HTML attribute values in JSX. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
+Use React's camelCase name for HTML attributes React renames. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -26,16 +26,9 @@ Validate HTML attribute values in JSX. This rule is part of [`eslint-plugin-reac
 
 ## Rule Details
 
-Validates that HTML attribute values are valid according to HTML spec.
+On a DOM element React expects the camelCase prop name and warns for the HTML spelling ("Invalid DOM property `class`. Did you mean `className`?"). The rule reports an attribute written with the HTML spelling of a name React renames — `class`, `for`, `tabindex`, `readonly`, `maxlength`, `colspan`, `http-equiv`, `accept-charset`, `crossorigin`, `srcset` and the rest of React's list.
 
-### Validated Attributes
-
-| Attribute     | Valid Values                                    |
-| ------------- | ----------------------------------------------- |
-| `rel`         | `noopener`, `noreferrer`, `nofollow`, etc.     |
-| `target`      | `_blank`, `_self`, `_parent`, `_top`           |
-| `type` (input)| `text`, `email`, `password`, etc.              |
-| `autocomplete`| `on`, `off`, `name`, `email`, etc.             |
+A custom element (a tag name with a hyphen, `<my-widget>`, or an element with `is="…"`) is not checked: React sets its attributes as written, so the HTML spelling is the right one there. Attribute values are not validated.
 
 ## Examples
 
@@ -43,15 +36,17 @@ Validates that HTML attribute values are valid according to HTML spec.
 
 ```tsx
 <label for="input-id">Label</label>
+<div class="card" tabindex="0" />
+<meta http-equiv="refresh" content="5" />
 ```
 
 ### ✅ Correct
 
 ```tsx
-<a rel="noopener noreferrer">Link</a>
-<a target="_blank">Link</a>
-<input type="email" />
-<input autoComplete="email" />
+<label htmlFor="input-id">Label</label>
+<div className="card" tabIndex={0} />
+<meta httpEquiv="refresh" content="5" />
+<my-widget class="card" />
 ```
 
 ## Configuration Examples
@@ -74,48 +69,14 @@ Validates that HTML attribute values are valid according to HTML spec.
 ## Further Reading
 
 - **[HTML Attributes - MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes)** - Reference
+
 <WhenNotToUse />
 
 <FalseNegativeCTA />
 
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
+- **Spread attributes**: `<label {...{ for: id }} />` is not read.
+- **Names outside the list**: only the HTML spellings React renames (`class`, `for`, `tabindex`, `readonly`, `maxlength`, `http-equiv`, …) are checked; attribute values are not validated.
 
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Prop from variable
-const propValue = computedValue;
-<Component prop={propValue} /> // Computation not analyzed
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Wrapped or Aliased Functions
-
-**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-function myWrapper(data) {
-  return internalApi(data); // Wrapper not analyzed
-}
-myWrapper(unsafeInput);
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+Not reported by design: any attribute on a custom element (`<my-widget class="x">`, `<button is="fancy-button">`), where React sets attributes as written. The rule does report the same names on a component (`<Label for="x">`), whose props may never reach the DOM.

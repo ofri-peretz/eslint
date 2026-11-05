@@ -23,6 +23,14 @@ const ruleTester = new RuleTester({
 describe('no-is-prefix-prop', () => {
   ruleTester.run('no-is-prefix-prop', noIsPrefixProp, {
     valid: [
+      {
+        name: "a union of boolean and string is not a boolean prop",
+        code: "interface Props { isLooped: boolean | string; }",
+      },
+      {
+        name: "an is-prefixed prop that is not boolean",
+        code: "interface Props { isLooped: string | undefined; }",
+      },
       // Boolean without `is` prefix
       { name: 'the same prop without the prefix', code: `interface Props { looped: boolean; }` },
       // Non-boolean type — even with `is` prefix, not flagged
@@ -37,6 +45,30 @@ describe('no-is-prefix-prop', () => {
       { code: `interface Props { isOpen: () => boolean; }` },
     ],
     invalid: [
+      {
+        name: "a quoted is-prefixed boolean key",
+        code: "interface Props { 'isLooped': boolean; }",
+        errors: [
+          {
+            messageId: 'isPrefix',
+            suggestions: [
+              { messageId: 'renameSuggestion', output: "interface Props { looped: boolean; }" },
+            ],
+          },
+        ],
+      },
+      {
+        name: "an is-prefixed prop typed boolean | undefined",
+        code: "type Props = { isLooped?: boolean | undefined };",
+        errors: [
+          {
+            messageId: 'isPrefix',
+            suggestions: [
+              { messageId: 'renameSuggestion', output: "type Props = { looped?: boolean | undefined };" },
+            ],
+          },
+        ],
+      },
       {
         name: 'an is-prefixed boolean prop',
         code: `interface Props { isLooped: boolean; }`,

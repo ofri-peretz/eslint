@@ -348,6 +348,24 @@ const REGISTERED: RegistryEntry[] = [
       'A lowercase first letter IS the JSX specification for an intrinsic element: `<div>` compiles to the string "div", `<Div>` to a reference to the component `Div`. The spelling decides what is rendered, so it decides whether a rule can see the DOM element; components stay silent.',
   },
   {
+    file: 'eslint-plugin-react-features/src/utils/function-component.ts',
+    direction: 'report',
+    reason:
+      'A capital first letter IS React\'s definition of a component: JSX renders `<Card />` as the component `Card` and `<card />` as the DOM tag "card", and the Rules of Hooks name components the same way. It is combined with the structural test that the function returns JSX; a `memo` / `forwardRef` argument is decided by binding.',
+  },
+  {
+    file: 'eslint-plugin-react-features/src/rules/component-api/no-inline-style.ts',
+    direction: 'suppress',
+    reason:
+      'A leading `--` IS the CSS Custom Properties specification for a custom property name (`--snp-x`). Setting one inline is the documented way to pass a dynamic value to a class, so a style key that starts with `--` is not static styling and the rule stays silent.',
+  },
+  {
+    file: 'eslint-plugin-react-features/src/rules/react/no-invalid-html-attribute.ts',
+    direction: 'suppress',
+    reason:
+      "A hyphen in the tag name IS the HTML specification for a custom element name (`<my-widget>`), and React sets a custom element's attributes as written, so the HTML spelling (`class`, `for`) is correct there and the rule stays silent.",
+  },
+  {
     file: 'eslint-plugin-react-a11y/src/rules/aria-unsupported-elements.ts',
     direction: 'report',
     reason:
@@ -366,10 +384,10 @@ const REGISTERED: RegistryEntry[] = [
       'A naming-convention rule. The name is the subject, not evidence for something else, so inferring from it is the entire point.',
   },
   {
-    file: 'eslint-plugin-react-features/src/rules/performance/react-no-inline-functions.ts',
+    file: 'eslint-plugin-react-features/src/utils/prop-receiver.ts',
     direction: 'suppress',
     reason:
-      'startsWith("on") identifies a JSX event prop, which is the React convention for exactly that. Renaming makes it not an event prop.',
+      'A lowercase first letter or a hyphen IS the JSX specification for a host element: `<div>` and `<my-widget>` compile to tag strings, `<Row>` to a reference to the value `Row`. A host element has no render to save, so the performance rules stay silent on it; a component is resolved by binding.',
   },
   {
     file: 'eslint-plugin-postgresql-security/src/rules/no-unsafe-query/index.ts',

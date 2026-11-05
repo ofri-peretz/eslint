@@ -14,6 +14,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { freshValue, propReceiver } from '../../utils/prop-receiver';
 
 type MessageIds =
   | 'unnecessaryRerender'
@@ -41,34 +42,6 @@ export interface Options {
 }
 
 type RuleOptions = [Options?];
-
-/**
- * Check if a node is an inline object literal
- */
-function isInlineObject(node: TSESTree.Node): boolean {
-  return node.type === 'ObjectExpression';
-}
-
-/**
- * Check if a node is an inline array literal
- */
-function isInlineArray(node: TSESTree.Node): boolean {
-  return node.type === 'ArrayExpression';
-}
-
-/**
- * Check if a node is an inline arrow function
- */
-function isInlineArrowFunction(node: TSESTree.Node): boolean {
-  return node.type === 'ArrowFunctionExpression';
-}
-
-/**
- * Check if a node is an inline function expression
- */
-function isInlineFunctionExpression(node: TSESTree.Node): boolean {
-  return node.type === 'FunctionExpression';
-}
 
 /**
  * Estimate computation complexity
@@ -280,63 +253,37 @@ export const reactRenderOptimization = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for inline objects
-        if (detectInlineProps && isInlineObject(value)) {
-          context.report({
-            node,
-            messageId: 'unnecessaryRerender',
-            data: {
-              type: 'object',
-            },
-            suggest: [
-              {
-                messageId: 'useMemo',
-                fix: () => null,
+        // An inline object, array or function has a new identity every
+        // render. That costs a re-render only where props are compared by
+        // identity: a host element has no render to save, and a component
+        // defined without memo re-renders with its parent anyway. Either way
+        // an inline value is not an "expensive computation".
+        const fresh = freshValue(value);
+        if (fresh) {
+          const receiver = propReceiver(
+            node.parent as TSESTree.JSXOpeningElement,
+            context.sourceCode.getScope(node),
+          );
+          if (receiver === 'dom' || receiver === 'plain') return;
+          const isFunction = fresh.kind === 'function';
+          if (isFunction ? detectInlineFunctions : detectInlineProps) {
+            context.report({
+              node,
+              messageId: 'unnecessaryRerender',
+              data: {
+                type: fresh.kind,
               },
-            ],
-          });
+              suggest: [
+                {
+                  messageId: isFunction ? 'useCallback' : 'useMemo',
+                  fix: () => null,
+                },
+              ],
+            });
+          }
           return;
         }
 
-        // Check for inline arrays
-        if (detectInlineProps && isInlineArray(value)) {
-          context.report({
-            node,
-            messageId: 'unnecessaryRerender',
-            data: {
-              type: 'array',
-            },
-            suggest: [
-              {
-                messageId: 'useMemo',
-                fix: () => null,
-              },
-            ],
-          });
-          return;
-        }
-
-        // Check for inline functions
-        if (
-          detectInlineFunctions &&
-          (isInlineArrowFunction(value) || isInlineFunctionExpression(value))
-        ) {
-          context.report({
-            node,
-            messageId: 'unnecessaryRerender',
-            data: {
-              type: 'function',
-            },
-            suggest: [
-              {
-                messageId: 'useCallback',
-                fix: () => null,
-              },
-            ],
-          });
-          return;
-        }
-
-        // Check for expensive computations
         if (
           detectExpensiveComputations &&
           isExpensiveComputation(value, minComputationComplexity)
