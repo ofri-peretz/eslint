@@ -2347,6 +2347,17 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * judgement, and on its own enough to make the rule unusable on ordinary
      * application code.
      */
+    /**
+     * @protocol-constant Array and TypedArray methods whose result is a subset
+     * of the receiver's own elements, in the receiver's values. The set is a
+     * property of the ECMAScript built-ins: each name returns the same values it
+     * was given, so keys drawn from `Object.keys` remain own keys. `map`/`flatMap`
+     * are excluded because they can produce new key strings.
+     */
+    const PROVENANCE_PRESERVING_NARROWERS: ReadonlySet<string | null> = new Set<
+      string | null
+    >(['filter', 'slice', 'toSorted', 'toReversed']);
+
     const isObjectKeysCallbackKey = (
       fn: TSESTree.Node,
       name: string,
@@ -2378,7 +2389,18 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return false;
       }
 
-      const source = call.callee.object;
+      // Step back through provenance-preserving narrowing (`.filter`, `.slice`,
+      // `.toSorted`, `.toReversed`): they change which keys are visited, not
+      // where the keys come from. `.map`/`.flatMap` are deliberately absent —
+      // they can rewrite the key into something else, e.g. `'__pro' + 'to__'`.
+      let source: TSESTree.Node = call.callee.object;
+      while (
+        source.type === AST_NODE_TYPES.CallExpression &&
+        source.callee.type === AST_NODE_TYPES.MemberExpression &&
+        PROVENANCE_PRESERVING_NARROWERS.has(propertyName(source.callee))
+      ) {
+        source = source.callee.object;
+      }
       return (
         source.type === AST_NODE_TYPES.CallExpression &&
         source.callee.type === AST_NODE_TYPES.MemberExpression &&
