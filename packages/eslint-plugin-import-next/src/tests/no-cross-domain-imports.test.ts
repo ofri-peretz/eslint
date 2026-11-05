@@ -84,13 +84,6 @@ describe('no-cross-domain-imports', () => {
   describe('Options', () => {
     ruleTester.run('options - custom domain patterns', noCrossDomainImports, {
       valid: [
-        {
-          code: `
-            import { helper } from '../other/helper';
-          `,
-          filename: 'modules/user/user-module.ts',
-          options: [{ domainPatterns: ['modules'] }],
-        },
         // Dynamic import with non-literal (should be skipped)
         {
             code: `import(someVar);`,
@@ -110,6 +103,15 @@ describe('no-cross-domain-imports', () => {
         }
       ],
       invalid: [
+        {
+          name: 'a sibling folder under a domain directory is another domain',
+          code: `
+            import { helper } from '../other/helper';
+          `,
+          filename: 'modules/user/user-module.ts',
+          options: [{ domainPatterns: ['modules'] }],
+          errors: [{ messageId: 'crossDomainImport' }],
+        },
         {
           code: `
             import { helper } from '../../modules/other/helper';
@@ -133,4 +135,78 @@ describe('no-cross-domain-imports', () => {
       ],
     });
   });
+
+  // Found by the fidelity model (benchmarks/suites/fidelity/models/import-next).
+  describe('fidelity: the target domain is the path the import resolves to', () => {
+    ruleTester.run('no-cross-domain-imports fidelity', noCrossDomainImports, {
+      valid: [
+        {
+          name: 'the same domain, reached through its parent directory',
+          code: "import { repo } from '../user/repo';",
+          filename: 'src/domains/user/handler.ts',
+        },
+        {
+          name: 'a shared directory inside another domain',
+          code: "import { x } from '../billing/shared/x';",
+          filename: 'src/domains/user/handler.ts',
+        },
+        {
+          name: 'a custom rule allows the resolved target',
+          code: "import { api } from '../billing/api/x';",
+          filename: 'src/domains/user/handler.ts',
+          options: [
+            {
+              customRules: [
+                {
+                  from: 'domains/user',
+                  to: ['domains/billing'],
+                  allowed: ['domains/billing/api'],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      invalid: [
+        {
+          name: 'a sibling domain whose name is not special',
+          code: "import { invoice } from '../billing/service';",
+          filename: 'src/domains/user/handler.ts',
+          errors: [{ messageId: 'crossDomainImport' }],
+        },
+        {
+          name: 'export * from another domain',
+          code: "export * from '../billing/service';",
+          filename: 'src/domains/user/handler.ts',
+          errors: [{ messageId: 'crossDomainImport' }],
+        },
+        {
+          name: 'require() of another domain',
+          code: "const billing = require('../billing/service');",
+          filename: 'src/domains/user/handler.ts',
+          errors: [{ messageId: 'crossDomainImport' }],
+        },
+        {
+          name: 'import x = require() of another domain',
+          code: "import billing = require('../billing/service');",
+          filename: 'src/domains/user/handler.ts',
+          errors: [{ messageId: 'crossDomainImport' }],
+        },
+      ],
+    });
+  });
+});
+
+// Spellings that load no module, or load one the rule does not judge.
+ruleTester.run('no-cross-domain-imports fidelity (other spellings)', noCrossDomainImports, {
+  valid: [
+    {
+      name: "a call that is not require, and an import alias, load nothing",
+      code: "load('../billing/service');\nnamespace NS { export const b = 1; }\nimport A = NS.b;\nexport const v = A;\nexport { A };",
+      filename: "src/domains/user/handler.ts",
+    },
+  ],
+  invalid: [
+
+  ],
 });

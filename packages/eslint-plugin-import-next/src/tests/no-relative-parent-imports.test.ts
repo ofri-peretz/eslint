@@ -145,4 +145,42 @@ describe('no-relative-parent-imports', () => {
       ],
     });
   });
+
+  // Found by the fidelity model (benchmarks/suites/fidelity/models/import-next).
+  describe('fidelity: normalised paths and re-exports', () => {
+    ruleTester.run(
+      'no-relative-parent-imports fidelity',
+      noRelativeParentImports,
+      {
+        valid: [
+          {
+            name: 'a path that dips into a folder and back stays inside',
+            code: "import x from './a/../b';",
+          },
+        ],
+        invalid: [
+          {
+            name: './../x climbs out like ../x',
+            code: "import x from './../x';",
+            errors: [{ messageId: 'preferAbsoluteImport' }],
+          },
+          {
+            name: './a/../../x climbs out once normalised',
+            code: "const x = require('./a/../../x');",
+            errors: [{ messageId: 'preferAbsoluteImport' }],
+          },
+          {
+            name: 'export { x } from a parent',
+            code: "export { x } from '../x';",
+            errors: [{ messageId: 'preferAbsoluteImport' }],
+          },
+          {
+            name: 'export * from the parent directory',
+            code: "export * from '..';",
+            errors: [{ messageId: 'preferAbsoluteImport' }],
+          },
+        ],
+      },
+    );
+  });
 });

@@ -583,4 +583,55 @@ describe('max-dependencies', () => {
       ],
     });
   });
+
+  // Found by the fidelity model (benchmarks/suites/fidelity/models/import-next).
+  describe('fidelity: what counts as an external package', () => {
+    ruleTester.run('max-dependencies fidelity', maxDependencies, {
+      valid: [
+        {
+          name: 'builtin subpaths, uncommon builtins, # imports and absolute paths are not packages',
+          code: [
+            "import a from 'pkg-a';",
+            "import p from 'fs/promises';",
+            "import { Worker } from 'worker_threads';",
+            "import i from '#internal/x';",
+            "import abs from '/abs/x';",
+          ].join('\n'),
+          options: [{ max: 1 }],
+        },
+      ],
+      invalid: [
+        {
+          name: 'export * from a package is a dependency',
+          code: "import a from 'pkg-a';\nexport * from 'pkg-b';",
+          options: [{ max: 1 }],
+          errors: [{ messageId: 'maxDependencies' }],
+        },
+        {
+          name: 'export { x } from a package is a dependency',
+          code: "import a from 'pkg-a';\nexport { x } from 'pkg-b';",
+          options: [{ max: 1 }],
+          errors: [{ messageId: 'maxDependencies' }],
+        },
+        {
+          name: 'import x = require() of a package is a dependency',
+          code: "import a from 'pkg-a';\nimport b = require('pkg-b');",
+          options: [{ max: 1 }],
+          errors: [{ messageId: 'maxDependencies' }],
+        },
+      ],
+    });
+  });
+});
+
+// Spellings that load no module, or load one the rule does not judge.
+ruleTester.run('max-dependencies fidelity (other spellings)', maxDependencies, {
+  valid: [
+    {
+      name: 'a local export and an import alias load nothing',
+      code: "import a from 'pkg-a';\nnamespace NS { export const b = 1; }\nimport A = NS.b;\nexport const v = A;\nexport { A };",
+      options: [{ max: 1 }],
+    },
+  ],
+  invalid: [],
 });

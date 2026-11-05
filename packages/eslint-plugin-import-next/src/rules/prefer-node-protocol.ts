@@ -8,6 +8,8 @@
  * ESLint Rule: prefer-node-protocol
  * Enforce using the node: protocol for Node.js built-in modules (unicorn-inspired)
  */
+import { builtinModules } from 'node:module';
+
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
@@ -21,51 +23,10 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
-// Node.js built-in modules that should use node: protocol
-const NODE_BUILT_INS = new Set([
-  'assert',
-  'async_hooks',
-  'buffer',
-  'child_process',
-  'cluster',
-  'console',
-  'constants',
-  'crypto',
-  'dgram',
-  'diagnostics_channel',
-  'dns',
-  'domain',
-  'events',
-  'fs',
-  'http',
-  'http2',
-  'https',
-  'inspector',
-  'module',
-  'net',
-  'os',
-  'path',
-  'perf_hooks',
-  'process',
-  'punycode',
-  'querystring',
-  'readline',
-  'repl',
-  'stream',
-  'string_decoder',
-  'sys',
-  'timers',
-  'tls',
-  'trace_events',
-  'tty',
-  'url',
-  'util',
-  'v8',
-  'vm',
-  'wasi',
-  'worker_threads',
-  'zlib',
-]);
+// Node's own list of builtin modules, subpaths included (`fs/promises`). A
+// scheme-only builtin appears here already prefixed (`node:test`), so its bare
+// name is never mistaken for one.
+const NODE_BUILT_INS = new Set(builtinModules);
 
 export const preferNodeProtocol = createRule<RuleOptions, MessageIds>({
   name: 'prefer-node-protocol',
@@ -112,126 +73,69 @@ export const preferNodeProtocol = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     currentOptions,
   ) {
-    let allModulesToCheck: Set<string>;
+    let additional: string[];
 
-    // oxlint-disable-next-line consistent-function-scoping
-    function isBuiltInModule(
-      moduleName: string,
-      modulesToCheck: Set<string>,
-    ): boolean {
-      // Skip if already using node: protocol
-      if (moduleName.startsWith('node:')) {
-        return false;
-      }
+    /**
+     * A builtin written without the scheme. Builtin names are exact and
+     * case-sensitive: `FS` is not `fs`, `events/foo` is not a builtin subpath
+     * (it resolves to the npm package `events`), and `punycode/` is Node's
+     * documented way to load the npm package instead of the builtin.
+     */
+    function isBuiltInModule(moduleName: string): boolean {
+      if (moduleName.startsWith('node:')) return false;
+      if (NODE_BUILT_INS.has(moduleName)) return true;
+      return additional.some(
+        (name) => moduleName === name || moduleName.startsWith(`${name}/`),
+      );
+    }
 
-      // Check exact match first
-      if (modulesToCheck.has(moduleName)) {
-        return true;
-      }
-
-      // Check case-insensitive match
-      const lowerCaseModule = moduleName.toLowerCase();
-      if (modulesToCheck.has(lowerCaseModule)) {
-        return true;
-      }
-
-      // Check for sub-path imports like 'fs/promises', 'path/posix', etc.
-      const baseModule = moduleName.split('/')[0];
-      if (modulesToCheck.has(baseModule)) {
-        return true;
-      }
-
-      // Check case-insensitive for base module
-      const lowerCaseBaseModule = baseModule.toLowerCase();
-      return modulesToCheck.has(lowerCaseBaseModule);
+    function check(source: TSESTree.Node) {
+      const moduleName = staticString(source);
+      if (moduleName === null || !isBuiltInModule(moduleName)) return;
+      const fixedModuleName = `node:${moduleName}`;
+      context.report({
+        node: source,
+        messageId: 'preferNodeProtocol',
+        data: {
+          moduleName,
+          fix: `Change "${moduleName}" to "${fixedModuleName}"`,
+        },
+        fix(fixer: TSESLint.RuleFixer) {
+          return fixer.replaceText(source, `"${fixedModuleName}"`);
+        },
+      });
     }
 
     return {
       before() {
         const [options = {} as Options] = currentOptions();
-        const { additionalModules = [] } = options || ({} as Options);
-        allModulesToCheck = new Set([...NODE_BUILT_INS, ...additionalModules]);
+        ({ additionalModules: additional = [] } = options || ({} as Options));
       },
-      // Check import declarations
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        const moduleName = node.source.value;
-
-        if (
-          typeof moduleName === 'string' &&
-          isBuiltInModule(moduleName, allModulesToCheck)
-        ) {
-          const fixedModuleName = `node:${moduleName}`;
-
-          context.report({
-            node: node.source,
-            messageId: 'preferNodeProtocol',
-            data: {
-              moduleName,
-              fix: `Change "${moduleName}" to "${fixedModuleName}"`,
-            },
-            fix(fixer: TSESLint.RuleFixer) {
-              return fixer.replaceText(node.source, `"${fixedModuleName}"`);
-            },
-          });
-        }
+        check(node.source);
       },
-
-      // Check require() calls
+      // `export { x } from 'fs'`, `export * from 'fs'`
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        if (node.source) check(node.source);
+      },
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        check(node.source);
+      },
       CallExpression(node: TSESTree.CallExpression) {
         if (
           node.callee.type === 'Identifier' &&
           node.callee.name === 'require' &&
           node.arguments.length === 1
         ) {
-          const arg = node.arguments[0];
-
-          const staticText = staticString(arg);
-          if (staticText !== null) {
-            const moduleName = staticText;
-
-            if (isBuiltInModule(moduleName, allModulesToCheck)) {
-              const fixedModuleName = `node:${moduleName}`;
-
-              context.report({
-                node: arg,
-                messageId: 'preferNodeProtocol',
-                data: {
-                  moduleName,
-                  fix: `Change "${moduleName}" to "${fixedModuleName}"`,
-                },
-                fix(fixer: TSESLint.RuleFixer) {
-                  return fixer.replaceText(arg, `"${fixedModuleName}"`);
-                },
-              });
-            }
-          }
+          check(node.arguments[0]);
         }
       },
-
-      // Check dynamic import() calls
       ImportExpression(node: TSESTree.ImportExpression) {
-        if (
-          node.source.type === 'Literal' &&
-          typeof node.source.value === 'string'
-        ) {
-          const moduleName = node.source.value;
-
-          if (isBuiltInModule(moduleName, allModulesToCheck)) {
-            const fixedModuleName = `node:${moduleName}`;
-
-            context.report({
-              node: node.source,
-              messageId: 'preferNodeProtocol',
-              data: {
-                moduleName,
-                fix: `Change "${moduleName}" to "${fixedModuleName}"`,
-              },
-              fix(fixer: TSESLint.RuleFixer) {
-                return fixer.replaceText(node.source, `"${fixedModuleName}"`);
-              },
-            });
-          }
-        }
+        check(node.source);
+      },
+      // `import fs = require('fs')`
+      TSExternalModuleReference(node: TSESTree.TSExternalModuleReference) {
+        check(node.expression);
       },
     };
   },

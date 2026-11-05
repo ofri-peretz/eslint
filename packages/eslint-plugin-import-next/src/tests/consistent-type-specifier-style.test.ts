@@ -38,15 +38,15 @@ ruleTester.run(
         code: `import type { Foo, Bar } from 'foo';`,
         options: ['prefer-top-level'],
       },
-
-      // Mixed type and value with prefer-top-level (can't change this)
-      {
-        code: `import { type Foo, bar } from 'foo';`,
-        options: ['prefer-top-level'],
-      },
     ],
 
     invalid: [
+      {
+        name: 'prefer-top-level: an inline type next to a value is reported, without a fix',
+        code: `import { type Foo, bar } from 'foo';`,
+        options: ['prefer-top-level'],
+        errors: [{ messageId: 'preferTopLevel' }],
+      },
       // prefer-inline (default): top-level type should be inline
       {
         name: 'a top-level `import type` where the configured style is inline',

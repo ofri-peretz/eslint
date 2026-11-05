@@ -13,7 +13,28 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## Rule Details
 
-This rule aims to prevent issues related to default.
+A default import of a module that has no default export is reported. Every spelling of taking the default counts: `import x from './m'`, `import x, { a } from './m'`, `import { default as x } from './m'`, and `export { default } from './m'`.
+
+The module has a default when TypeScript sees one: `export default`, `export { v as default }`, a re-exported default (`export { default } from './inner'`), or a CommonJS `module.exports =` / `export =` module (default interop). `export * from` does not re-export a default, so a module that only star-exports has none.
+
+The rule needs type information (`parserOptions.project` or `projectService`); without it, it is silent. It is also silent when the module does not resolve (that is `no-unresolved`'s finding, not a missing default), for a namespace import (`import * as x`), and for `import type x` (TypeScript checks it).
+
+### ❌ Incorrect
+
+```ts
+// ./math.ts: export const add = (a: number, b: number) => a + b;
+import math from './math';
+import { default as m } from './math';
+export { default } from './math';
+```
+
+### ✅ Correct
+
+```ts
+import { add } from './math';
+import * as math from './math';
+import React from 'react'; // `export =` module: default interop
+```
 
 ## Options
 

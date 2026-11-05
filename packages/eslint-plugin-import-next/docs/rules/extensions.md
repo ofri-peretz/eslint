@@ -9,7 +9,42 @@ Ensure consistent use of file extensions in imports
 
 ## Rule Details
 
-This rule aims to prevent issues related to extensions.
+Enforces a configured convention for writing file extensions on relative
+specifiers. Package specifiers are not checked.
+
+The policy for an extension is, most specific first: your `pattern[ext]`,
+your `default`, the rule's own pattern (`js`, `jsx`, `ts`, `tsx`: `never`;
+`json`, `css`, `scss`, `svg`, `png`, `jpg`: `always`), then `never`.
+
+- **A written extension** under `never` is reported (and fixed) when removing
+  it resolves to the same file. It is not reported when it is load-bearing:
+  `./width.js` naming `width.ts` is the spelling `moduleResolution: NodeNext`
+  requires, and `./only.mjs` cannot be written without its extension. A
+  specifier that does not resolve proves nothing and is not reported.
+- **A missing extension** is judged by the file the specifier resolves to:
+  `./dep` naming `dep.ts` is reported when the policy for `ts` is `always`. A
+  specifier that does not resolve, or that only resolves as a directory
+  (`./lib` naming `lib/index.ts`), is not reported.
+- A dot in a file name is not an extension: `./source.config` naming
+  `source.config.ts` is a specifier with no extension written. Only
+  extensions the rule ships defaults for, or that you name in `pattern`,
+  count.
+
+Every spelling is checked: `import`, side-effect imports, `export { a } from`,
+`export * from`, `import()`, `require()` and TS `import x = require()`.
+
+```ts
+// { default: 'always', pattern: { ts: 'never' } }
+
+// ❌ Incorrect
+import { real } from './real'; // real.js: js is `always`
+import { dep } from './dep.ts'; // ts is `never`
+
+// ✅ Correct
+import { real } from './real.js';
+import { dep } from './dep';
+import { width } from './width.js'; // names width.ts: load-bearing
+```
 
 ## Options
 

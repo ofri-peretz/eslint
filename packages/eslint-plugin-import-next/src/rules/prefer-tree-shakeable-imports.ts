@@ -186,6 +186,8 @@ export const preferTreeShakeableImports = createRule<RuleOptions, MessageIds>({
         } = options || {});
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        // `import type` is erased: it bundles nothing.
+        if (node.importKind === 'type') return;
         const importPath = node.source.value;
         if (typeof importPath !== 'string') return;
 

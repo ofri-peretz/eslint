@@ -64,3 +64,47 @@ ruleTester.run('namespace', namespace, {
     }
   ],
 });
+
+/**
+ * Fidelity (benchmarks/suites/fidelity/models/import-next/namespace.qnt):
+ * every static read of a namespace member is checked; a runtime key and an
+ * unresolved module are not findings.
+ */
+ruleTester.run('namespace — fidelity', namespace, {
+  valid: [
+    {
+      name: 'a runtime key names nothing',
+      code: `import * as ns from './files/foo.ts';\nexport const f = (k: 'bar') => ns[k];`,
+      filename: 'src/valid_namespace.ts',
+    },
+    {
+      name: 'a module that does not resolve is unknown',
+      code: `import * as ns from './files/missing.ts';\nexport const v = ns.anything;`,
+      filename: 'src/valid_namespace.ts',
+    },
+    {
+      name: 'destructuring names the module exports, a rest element, a runtime key',
+      code: `import * as ns from './files/foo.ts';\nexport const f = (k: 'bar') => {\n  const { bar, [k]: b2, ...rest } = ns;\n  return [bar, b2, rest];\n};`,
+      filename: 'src/valid_namespace.ts',
+    },
+    {
+      name: 'destructuring a plain object is not a namespace read',
+      code: `const o = { a: 1 };\nexport const { a } = o;`,
+      filename: 'src/valid_namespace.ts',
+    },
+  ],
+  invalid: [
+    {
+      name: "ns['baz'] reads a name the module does not export",
+      code: `import * as ns from './files/foo.ts';\nexport const v = ns['baz'];`,
+      filename: 'src/invalid_namespace.ts',
+      errors: [{ messageId: 'namespace', data: { name: 'baz' } }],
+    },
+    {
+      name: 'const { baz } = ns reads a name the module does not export',
+      code: `import * as ns from './files/foo.ts';\nexport const { baz } = ns;`,
+      filename: 'src/invalid_namespace.ts',
+      errors: [{ messageId: 'namespace', data: { name: 'baz' } }],
+    },
+  ],
+});

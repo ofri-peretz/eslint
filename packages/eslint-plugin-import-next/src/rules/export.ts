@@ -22,6 +22,104 @@ type MessageIds = 'duplicateExport' | 'duplicateDefault';
 
 type RuleOptions = [];
 
+/**
+ * What an export of a name declares, as TypeScript's declaration-merging
+ * table sees it. `specifier` is `export { v as N }` of a local, `reexport` is
+ * `export { x as N } from 'm'`, `starAs` is `export * as N from 'm'`.
+ */
+type ExportKind =
+  | 'variable'
+  | 'function'
+  | 'class'
+  | 'interface'
+  | 'type'
+  | 'enum'
+  | 'enumBare'
+  | 'namespace'
+  | 'typeNamespace'
+  | 'specifier'
+  | 'typeSpecifier'
+  | 'reexport'
+  | 'starAs';
+
+/** Exports that occupy only the value space. */
+const VALUE_ONLY = new Set<ExportKind>([
+  'variable',
+  'function',
+  'specifier',
+  'reexport',
+  'starAs',
+]);
+/** Exports that occupy only the type space. */
+const TYPE_ONLY = new Set<ExportKind>(['interface', 'type']);
+/** Declarations TypeScript merges into one export. */
+const MERGES: ReadonlyArray<readonly [ExportKind, ExportKind]> = [
+  ['interface', 'interface'],
+  ['class', 'interface'],
+  ['enum', 'enum'],
+  ['enum', 'enumBare'],
+  ['namespace', 'namespace'],
+  ['namespace', 'function'],
+  ['namespace', 'class'],
+  ['namespace', 'enum'],
+  ['namespace', 'enumBare'],
+  ['namespace', 'interface'],
+  ['namespace', 'type'],
+  ['namespace', 'typeSpecifier'],
+];
+
+/**
+ * May two exports of one name coexist? A value and a pure type live in
+ * different declaration spaces (`export type Twilio` beside
+ * `export const Twilio` is legal and common); the MERGES pairs are
+ * declaration merging. Everything else is a duplicate TypeScript rejects:
+ * `export enum E` twice merges, `export class C` beside `export type C` does
+ * not (a class is a type too), two enums merge only when at most one omits
+ * its first member's initializer (`enumBare`), and an export specifier is an alias that
+ * clashes with any value, even when written `export type { T as N }`.
+ * A re-export beside a pure type is legal when its target is a value, which
+ * this file cannot see, so it is treated as one: silent.
+ */
+function canShareName(a: ExportKind, b: ExportKind): boolean {
+  // A namespace of types only declares no value: it merges with everything
+  // except `export * as N`, which TypeScript rejects beside it.
+  if (a === 'typeNamespace' || b === 'typeNamespace') {
+    return a !== 'starAs' && b !== 'starAs';
+  }
+  if (VALUE_ONLY.has(a) && TYPE_ONLY.has(b)) return true;
+  if (VALUE_ONLY.has(b) && TYPE_ONLY.has(a)) return true;
+  return MERGES.some(([x, y]) => (a === x && b === y) || (a === y && b === x));
+}
+
+/**
+ * Does a namespace declare a value (TypeScript's "instantiated" namespace)?
+ * One holding only interfaces, type aliases, `const enum`s and namespaces of
+ * the same kind declares none: `export const Status = ...` beside
+ * `export namespace Status { export type Code = ... }` is legal and common.
+ */
+function isInstantiated(namespace: TSESTree.TSModuleDeclaration): boolean {
+  // An exported `namespace N {}` always has a block body.
+  const body = namespace.body as TSESTree.TSModuleBlock;
+  return body.body.some((statement) => {
+    const declaration =
+      statement.type === AST_NODE_TYPES.ExportNamedDeclaration
+        ? statement.declaration
+        : statement;
+    switch (declaration?.type) {
+      case AST_NODE_TYPES.TSInterfaceDeclaration:
+      case AST_NODE_TYPES.TSTypeAliasDeclaration:
+        return false;
+      case AST_NODE_TYPES.TSEnumDeclaration:
+        return !declaration.const;
+      case AST_NODE_TYPES.TSModuleDeclaration:
+        return isInstantiated(declaration);
+      default:
+        // A value declaration, a statement, or `export { v }`.
+        return true;
+    }
+  });
+}
+
 export const exportRule = createRule<RuleOptions, MessageIds>({
   name: 'export',
   meta: {
@@ -64,12 +162,8 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
   defaultOptions: [],
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    let valueNames: Map<string, TSESTree.Node>;
-    let typeNames: Map<string, TSESTree.Node>;
-    let mergeableInterfaces: Set<string>;
+    let exportsByName: Map<string, ExportKind[]>;
     let hasDefaultExport: TSESTree.Node | null;
-
-    type Space = 'value' | 'type' | 'interface';
 
     /**
      * The namespace path a declaration sits inside, as a key prefix.
@@ -116,28 +210,15 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
     function checkAndAddExport(
       rawName: string,
       node: TSESTree.Node,
-      space: Space = 'value',
+      kind: ExportKind,
     ) {
       const name = `${scopeKey(node)}${rawName}`;
-      // `interface X` merges with an earlier `interface X`, so a repeat is only
-      // a conflict when the earlier declaration was NOT an interface.
-      if (space === 'interface') {
-        const clash = typeNames.get(name);
-        if (clash && !mergeableInterfaces.has(name)) {
-          context.report({
-            node,
-            messageId: 'duplicateExport',
-            data: { name: rawName },
-          });
-          return;
-        }
-        mergeableInterfaces.add(name);
-        typeNames.set(name, node);
+      const previous = exportsByName.get(name);
+      if (!previous) {
+        exportsByName.set(name, [kind]);
         return;
       }
-
-      const bucket = space === 'type' ? typeNames : valueNames;
-      if (bucket.has(name)) {
+      if (previous.some((other) => !canShareName(other, kind))) {
         context.report({
           node,
           messageId: 'duplicateExport',
@@ -145,10 +226,7 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
         });
         return;
       }
-      // No separate `interface` check is needed here: the interface branch
-      // above writes into `typeNames`, which IS `bucket` for type space, so
-      // `type X` after `interface X` is already caught by the test above.
-      bucket.set(name, node);
+      previous.push(kind);
     }
 
     function checkDefaultExport(node: TSESTree.Node) {
@@ -164,24 +242,7 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
 
     return {
       before() {
-        /**
-         * TypeScript has TWO declaration spaces, and a name may occupy both.
-         *
-         *   export type Twilio = ITwilio
-         *   export const Twilio = ITwilio    // legal, and extremely common
-         *
-         * A single name-keyed map called that a duplicate export. On the pinned
-         * corpus it produced 758 findings in twilio-node alone — every one of them
-         * this shape, in a generated SDK where the pattern is deliberate.
-         *
-         * Interfaces are tracked apart from other type declarations because
-         * `interface X {}` twice in one file is declaration MERGING, which is also
-         * legal. `type X` twice is not, and neither is `interface X` beside
-         * `type X`.
-         */
-        valueNames = new Map<string, TSESTree.Node>();
-        typeNames = new Map<string, TSESTree.Node>();
-        mergeableInterfaces = new Set<string>();
+        exportsByName = new Map<string, ExportKind[]>();
         hasDefaultExport = null;
       },
       ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration) {
@@ -189,67 +250,65 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
       },
 
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
-        // Export with declaration: export const foo = 1;
-        if (node.declaration) {
-          if (node.declaration.type === AST_NODE_TYPES.VariableDeclaration) {
-            node.declaration.declarations.forEach(
-              (decl: TSESTree.VariableDeclarator) => {
-                if (decl.id.type === AST_NODE_TYPES.Identifier) {
-                  checkAndAddExport(decl.id.name, node);
-                }
-              },
-            );
-          } else if (
-            node.declaration.type === AST_NODE_TYPES.FunctionDeclaration ||
-            node.declaration.type === AST_NODE_TYPES.ClassDeclaration
-          ) {
-            if (node.declaration.id) {
-              checkAndAddExport(node.declaration.id.name, node);
-            }
-          } else if (
-            node.declaration.type === AST_NODE_TYPES.TSInterfaceDeclaration
-          ) {
-            // `id` is required on an interface and on a type alias — neither
-            // parses without a name — so no presence check here. Guarding
-            // anyway would add a branch no input can take.
-            checkAndAddExport(node.declaration.id.name, node, 'interface');
-          } else if (
-            node.declaration.type === AST_NODE_TYPES.TSTypeAliasDeclaration
-          ) {
-            checkAndAddExport(node.declaration.id.name, node, 'type');
-          } else if (
-            node.declaration.type === AST_NODE_TYPES.TSEnumDeclaration
-          ) {
-            // An enum creates a type AND a value, so it collides with either —
-            // but it is ONE declaration and must produce ONE report. Routing it
-            // through two `checkAndAddExport` calls made `export enum Foo {}`
-            // twice report the same node twice, because both buckets were
-            // already populated by the first enum. `id` is required here for
-            // the same reason it is on interfaces and type aliases.
-            //
-            // Scoped like every other branch. This one wrote to the maps
-            // directly rather than through `checkAndAddExport`, so it was the
-            // one place the namespace prefix did not reach: two enums of the
-            // same name in different namespaces collided, and an enum beside a
-            // same-named type INSIDE one namespace was missed. The diagnostic
-            // still names the bare enum.
-            const enumName = node.declaration.id.name;
-            const scopedEnum = `${scopeKey(node)}${enumName}`;
-            if (valueNames.has(scopedEnum) || typeNames.has(scopedEnum)) {
-              context.report({
+        const declaration = node.declaration;
+        if (declaration) {
+          switch (declaration.type) {
+            case AST_NODE_TYPES.VariableDeclaration:
+              // `export const { a, b: [c] } = o` exports every bound name.
+              for (const variable of context.sourceCode.getDeclaredVariables(
+                declaration,
+              )) {
+                checkAndAddExport(variable.name, node, 'variable');
+              }
+              break;
+            // An overload signature is a TSDeclareFunction, not a second
+            // declaration, so `function f(a: string): void; function f(a) {}`
+            // registers once.
+            case AST_NODE_TYPES.FunctionDeclaration:
+            case AST_NODE_TYPES.ClassDeclaration:
+              if (declaration.id) {
+                checkAndAddExport(
+                  declaration.id.name,
+                  node,
+                  declaration.type === AST_NODE_TYPES.ClassDeclaration
+                    ? 'class'
+                    : 'function',
+                );
+              }
+              break;
+            case AST_NODE_TYPES.TSInterfaceDeclaration:
+              checkAndAddExport(declaration.id.name, node, 'interface');
+              break;
+            case AST_NODE_TYPES.TSTypeAliasDeclaration:
+              checkAndAddExport(declaration.id.name, node, 'type');
+              break;
+            case AST_NODE_TYPES.TSEnumDeclaration:
+              checkAndAddExport(
+                declaration.id.name,
                 node,
-                messageId: 'duplicateExport',
-                data: { name: enumName },
-              });
-            } else {
-              valueNames.set(scopedEnum, node);
-              typeNames.set(scopedEnum, node);
-            }
+                declaration.body.members[0] &&
+                  !declaration.body.members[0].initializer
+                  ? 'enumBare'
+                  : 'enum',
+              );
+              break;
+            case AST_NODE_TYPES.TSModuleDeclaration:
+              // `export namespace N {}` (an Identifier id); a string-named
+              // `declare module 'x'` is not an export of this module.
+              if (declaration.id.type === AST_NODE_TYPES.Identifier) {
+                checkAndAddExport(
+                  declaration.id.name,
+                  node,
+                  isInstantiated(declaration) ? 'namespace' : 'typeNamespace',
+                );
+              }
+              break;
+            default:
+              break;
           }
         }
 
-        // Export specifiers: export { foo, bar };
-        node.specifiers.forEach((spec: TSESTree.ExportSpecifier) => {
+        for (const spec of node.specifiers) {
           const exportedName =
             spec.exported.type === AST_NODE_TYPES.Identifier
               ? spec.exported.name
@@ -257,26 +316,26 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
 
           if (exportedName === 'default') {
             checkDefaultExport(spec);
-          } else {
-            // `export type { X }` and `export { type X }` are type-space.
-            const isTypeOnly =
-              node.exportKind === 'type' ||
-              (spec as TSESTree.ExportSpecifier & { exportKind?: string })
-                .exportKind === 'type';
-            checkAndAddExport(
-              exportedName,
-              spec,
-              isTypeOnly ? 'type' : 'value',
-            );
+            continue;
           }
-        });
+          const isTypeOnly =
+            node.exportKind === 'type' || spec.exportKind === 'type';
+          checkAndAddExport(
+            exportedName,
+            spec,
+            isTypeOnly
+              ? 'typeSpecifier'
+              : node.source
+                ? 'reexport'
+                : 'specifier',
+          );
+        }
       },
 
       ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
         // export * as name from '...'
         if (node.exported) {
-          const exportedName = node.exported.name;
-          checkAndAddExport(exportedName, node);
+          checkAndAddExport(node.exported.name, node, 'starAs');
         }
         // Regular export * doesn't create named conflicts we can statically detect
       },

@@ -14,7 +14,28 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## Rule Details
 
-This rule aims to prevent issues related to prefer-node-protocol.
+A Node.js builtin is imported with the `node:` scheme, so a same-named package in `node_modules` can never shadow it. Every way a module is loaded or re-exported is checked: `import`, side-effect `import`, `export … from`, `export * from`, `require()`, `import()` and TypeScript's `import x = require()`. The fix adds the scheme.
+
+A specifier is a builtin when Node's own builtin module list names it exactly: `fs`, `worker_threads`, `fs/promises`. `additionalModules` adds names (and their subpaths) to treat the same way.
+
+Not reported: a specifier that already has the scheme, and anything Node does not load as a builtin - names are case-sensitive (`FS` is not `fs`), `events/foo` is not a builtin subpath (it resolves to the npm package `events`), and a trailing slash (`punycode/`) is Node's documented way to load the npm package instead of the builtin.
+
+### ❌ Incorrect
+
+```ts
+import fs from 'fs';
+import { readFile } from 'fs/promises';
+export { join } from 'path';
+import os = require('os');
+```
+
+### ✅ Correct
+
+```ts
+import fs from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import punycode from 'punycode/';
+```
 
 ## Options
 

@@ -15,6 +15,33 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-named-export', noNamedExport, {
   valid: [
+    {
+      name: 'export type * publishes only types',
+      code: `export type * from './types';`,
+    },
+    {
+      name: 'a namespace declaration is not a value export this rule checks',
+      code: `export namespace NS { export type T = string; }`,
+    },
+    {
+      name: 'allowNames covers every name a destructured export declares',
+      code: `const obj = { a: 1, b: 2 }; export const { a, b } = obj;`,
+      options: [{ allowNames: ['a', 'b'] }],
+    },
+    {
+      name: 'a binding exported as the string name "default" is the default export',
+      code: `const v = 1; export { v as "default" };`,
+    },
+    {
+      name: 'export * as default is the default export',
+      code: `export * as default from './m';`,
+    },
+    {
+      name: 'allowInFiles: a ** glob matches an absolute filename',
+      code: `export const foo = 1;`,
+      filename: '/repo/packages/web/src/utils.test.ts',
+      options: [{ allowInFiles: ['src/*.test.ts'] }],
+    },
     { name: 'a default export', code: `export default 42;` },
     { code: `const x = 1;` },
     { code: `export type Foo = string;` },
@@ -64,6 +91,38 @@ ruleTester.run('no-named-export', noNamedExport, {
   ],
 
   invalid: [
+    {
+      name: 'array, default and rest bindings each publish a name',
+      code: `const arr = [1, 2, 3]; export const [a, b = 1, ...rest] = arr;`,
+      options: [{ allowNames: ['a', 'b'] }],
+      errors: [{ messageId: 'namedExport' }],
+    },
+    {
+      name: 'an exported enum is a named value export',
+      code: `export enum Color { Red }`,
+      errors: [{ messageId: 'namedExport' }],
+    },
+    {
+      name: 'a string-named export is a named export',
+      code: `const v = 1; export { v as "a" };`,
+      errors: [{ messageId: 'namedExport' }],
+    },
+    {
+      name: 'export * from re-exports every named export of the module',
+      code: `export * from './m';`,
+      errors: [{ messageId: 'namedExport' }],
+    },
+    {
+      name: 'export * as ns from publishes the name ns',
+      code: `export * as ns from './m';`,
+      errors: [{ messageId: 'namedExport' }],
+    },
+    {
+      name: 'allowNames does not cover export * from (its names are unknown)',
+      code: `export * from './m';`,
+      options: [{ allowNames: ['a'] }],
+      errors: [{ messageId: 'namedExport' }],
+    },
     // Variable Declaration
     {
       name: 'a named export',

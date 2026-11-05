@@ -5,6 +5,65 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.9.3
+
+### Patch Changes
+
+- **🐛 Fix** — `no-empty-named-blocks` autofix no longer deletes `import {} from 'm'` / `export {} from 'm'`, which silently dropped the module's side effects. It rewrites them to `import 'm'` (import attributes kept); type-only statements are still removed, and removing a value statement entirely remains a suggestion.
+
+## 2.9.2
+
+### Patch Changes
+
+- **🐛 Fix** — module-syntax and export-style rules decide by binding and structure, read every import spelling, and honour their documented options, found by fidelity models.
+
+  - Bindings, not names: `no-amd` skips a `define` / `require` the file imports or declares; `no-commonjs` skips a `require` from `createRequire(import.meta.url)` or a parameter, a local `exports` object, the ESM `__dirname` shim and a property named `__dirname`; `no-import-module-exports` skips a wrapper's `module` / `exports` parameters.
+  - CommonJS files are CommonJS: `no-commonjs` and `unambiguous` no longer report `.cjs` / `.cts` files or files the config parses as CommonJS. `no-import-module-exports` ignores type-only imports (they are erased).
+  - Every spelling: `no-absolute-path` checks `export ... from`, `export * from`, static template literals and TS `import x = require()`, and reads the AMD dependency array instead of every literal argument; `first` reports every import after a statement (not only the next one), treats any prologue directive as a directive and checks `import x = require()`; `newline-after-import` checks `import x = require()`; `no-empty-named-blocks` reads tokens, so `import { /* none */ } from 'm'` is empty and `import a /* {} */ from 'm'` is not; `no-amd` reports `require([...], arrow)`.
+  - Exports: `no-default-export` no longer reports `export { default as Foo } from 'm'` (a named export) and reports `export { x as "default" }` and `export * as default from 'm'`; `no-named-export` reports `export enum`, string-named specifiers, `export * from` and `export * as ns`, and `allowNames` covers destructured names; `prefer-default-export` counts re-exports, enums and destructured names, treats `export { x as default }` as a default, stays silent with `export * from`, and `as-needed` now behaves as `single` (it disabled the rule); `no-anonymous-default-export` reports only anonymous functions and classes (a named function expression, a member reference, `new`, a template or an interface is not anonymous) and sees an arrow through `as`; `group-exports` groups type-only lists separately from value lists.
+  - `unambiguous`: `import.meta` and `import x = require()` make a file a module; a dynamic `import()` does not (it is legal in a script).
+  - Options that did nothing now work: `no-import-module-exports` `exceptions`, `dynamic-import-chunkname` `importFunctions`; its default format accepts webpack's `[request]` / `[index]` placeholders, and `webpackMode: "eager"` needs no chunk name. `consistent-type-specifier-style` `prefer-top-level` reports an inline `type` next to value specifiers (without a fix). `no-dynamic-require` treats a concatenation of string literals as static.
+  - File-pattern options (`allow`, `allowInFiles`, `allowPatterns`, `ignoreFiles`, `exceptions`) share one matcher: a glob matches any run of whole path segments, so `**/legacy/**` and `src/**` match absolute filenames (globs never matched there in `no-amd`, `no-mutable-exports` and `prefer-default-export`).
+  - Every one of these 20 rule docs states its real contract instead of a template line.
+
+- **🐛 Fix** — module-graph rules read every spelling and decide by binding, found by fidelity models for export, default, named, namespace, no-duplicates, no-self-import, no-unused-modules, no-named-as-default, no-named-as-default-member and no-deprecated.
+
+  - export: decides by TypeScript's declaration-merging table. Reports a destructured export (`export const { a } = o`), an `export namespace`, a class or enum beside a same-named type alias, and an export specifier (`export type { T as N }`, `export { v }` beside `export type { v } from`) beside a same-named value; no longer reports two enums that merge (`enum E { A = 0 }` + `enum E { B }`). A namespace of types only merges with any same-named export except `export * as`.
+  - default: checks `import { default as x }` and `export { default } from` too.
+  - named: checks `export { a } from` and `export { a as b } from`; leaves `import { default as x }` to `default` (one finding, not two).
+  - namespace: checks `ns['missing']` and `const { missing } = ns`; no longer reports a runtime key `ns[k]` or a namespace of a module that does not resolve.
+  - no-duplicates: one module is the file the resolver sees (`./m` and `./m.js` / `./m.ts`); a namespace import beside a named import is not a duplicate (they cannot be one statement); imports in two `declare module` blocks are not duplicates. The fix no longer splices a default into another import's braces.
+  - no-self-import: `.`, `./` and `../lib` from `lib/index.ts`, and `import x = require()` are self-imports; `./app.tsx` from `app.ts` (or `./helpers.ts` from `helpers.js`) is another file; an all-inline-`type` import and a locally declared `require` are not loads; a relative filename resolves like the specifier.
+  - no-unused-modules: `module.exports.a =`, `Object.defineProperty(exports, …)` and `Object.assign(module.exports, …)` are exports; a parameter named `exports` is not; `allowImportOnly` counts `require()` and `import x = require()` as imports.
+  - no-named-as-default / no-named-as-default-member: the evidence of a named export is any import or re-export of that name from the same module in the file, and the default may be spelled `import { default as x }`; member reads are followed by binding (a shadowing parameter is not the import) and include `const { bar } = foo`; a type of the same name is not evidence.
+  - no-deprecated: reports imports of deprecated exports (and `ns.old` reads) with type information, as the rule's description always said; same-file uses are followed by binding, so a parameter or object key sharing the name is not reported; `deprecationMarkers` adds to `@deprecated` instead of replacing it.
+
+  Docs for all ten rules state the real contract instead of a template line.
+
+- **🐛 Fix** — module-graph rules read every import spelling, judge what a specifier resolves to, and stay silent on what they cannot know, found by fidelity models for no-unresolved, no-cycle, extensions, no-useless-path-segments, no-relative-packages, no-extraneous-dependencies, no-barrel-file, no-barrel-import and prefer-direct-import.
+
+  - Missing spellings: `export { a } from`, `export * from`, `require()` and TS `import x = require()` are now read by no-useless-path-segments, no-relative-packages, no-extraneous-dependencies, extensions (require / import =), no-barrel-import (plus `import()`) and prefer-direct-import (`export { X } from`).
+  - no-cycle: `export * from`, `export * as ns from`, a top-level `require()` and `import x = require()` close a cycle on either side; an import that takes only interfaces or type aliases is erased like an inline-type one (unless `verbatimModuleSyntax`), also when the names arrive through a barrel (`export * from`, `export { A } from`, `export { A }` lists carry each name's kind from the module that declares it); a `require()` inside a function does not; `maxDepth` now bounds the search (it did nothing). The import graph (`@interlace/eslint-devkit` `getFileImports`) reads the same edges, and exports `exportKindsOf`.
+  - no-unresolved: a URL-scheme specifier (`virtual:routes`, `bun:test`) is not reported; a file resolver cannot judge it.
+  - extensions: a missing extension is judged by the policy for the resolved file's extension (`pattern: { ts: 'always' }` now reports `./dep`; `{ default: 'always', pattern: { ts: 'never' } }` no longer does); a specifier that does not resolve or only resolves as a directory is not reported; a dotted file name (`./source.config`) is judged as extensionless.
+  - no-useless-path-segments: `../src/dep` from `src/` is `./dep`; `noUselessIndex` only strips `/index` when the shorter path resolves to the same file (`./both/index` beside `both.ts` is kept); a trailing slash and `./.config/x` are left alone.
+  - no-relative-packages: a nameless package.json (a `{"type":"module"}` scope marker) is not a package boundary, a folder with one is not a target, and a package root itself (`../../other`) is fixed to `other`.
+  - no-extraneous-dependencies: `bundleDependencies` (npm's other spelling), the package's own name and a scope-marker package.json no longer produce false positives; `export type ... from` is ignored.
+  - no-barrel-file: type-only re-exports are not counted; `import x from './x'; export default x` counts as a re-export.
+  - no-barrel-import: type-only imports and re-exports are not reported; `ignoredPackages` works with `ignoreNodeModules: false`.
+  - prefer-direct-import: inline `type` specifiers are not reported, and an import mixing them is not auto-fixed.
+  - Docs: real contracts for all nine rules, replacing template text.
+
+- **🐛 Fix** — architecture and ecosystem rules read every import spelling and decide by the path an import resolves to, found by fidelity models.
+
+  - Every way a module is loaded is checked: `export … from` / `export * from` (no-nodejs-modules, prefer-node-protocol, no-relative-parent-imports, max-dependencies, no-restricted-paths, no-legacy-imports, require-import-approval, prefer-modern-api, no-cross-domain-imports, enforce-dependency-direction, enforce-team-boundaries), `import x = require()` (the same rules, plus no-internal-modules and no-full-package-import), and `require()` / `import()` where a rule skipped them (no-restricted-paths, no-cross-domain-imports, enforce-dependency-direction, no-full-package-import).
+  - Type-only imports load nothing: no-nodejs-modules, no-full-package-import and prefer-tree-shakeable-imports no longer report `import type`.
+  - Node's own builtin list replaces short hand-written lists: prefer-node-protocol (no longer reports `FS`, `events/foo` or `punycode/`, which are not builtins), max-dependencies (no longer counts `fs/promises`, `worker_threads`, `#` imports or absolute paths as packages), enforce-import-order (`crypto`, `zlib`, `fs/promises` are builtins), require-import-approval (builtins, `#` imports and `@/` / `~/` aliases are not packages).
+  - no-cross-domain-imports, enforce-dependency-direction and enforce-team-boundaries resolve a relative import against the importing file: `../billing/service` from `src/domains/user/` is another domain whatever it is named, and `../../auth/x` from `src/platform/` is the auth team's code. enforce-dependency-direction's `allowSameLayer: false` now works.
+  - no-relative-parent-imports normalises the path (`./../x` climbs out, `./a/../b` does not); no-restricted-paths matches whole path segments (`server` no longer matches `./observer`); no-internal-modules counts `./utils/` as `./utils`; prefer-modern-api matches a deprecated subpath exactly; enforce-import-order puts `..`, `./` and `./index.js` in the right groups, honours a `type` group and `caseInsensitive: false`.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.21.6`
+
 ## 2.9.1
 
 ### Patch Changes

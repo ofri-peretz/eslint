@@ -43,32 +43,33 @@ export const first = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    /** A module load: `import ... from` or TS `import x = require(...)`. */
     // oxlint-disable-next-line consistent-function-scoping
-    function isDirective(node: TSESTree.Node) {
+    function isImport(node: TSESTree.ProgramStatement): boolean {
       return (
-        node.type === 'ExpressionStatement' &&
-        node.expression.type === 'Literal' &&
-        typeof node.expression.value === 'string' &&
-        node.expression.value.startsWith('use ')
+        node.type === 'ImportDeclaration' ||
+        (node.type === 'TSImportEqualsDeclaration' &&
+          node.moduleReference.type === 'TSExternalModuleReference')
       );
     }
     return {
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        const sourceCode = context.sourceCode;
-        const body = sourceCode.ast.body;
-        const index = body.indexOf(node);
-
-        if (index > 0) {
-          const prevNode = body[index - 1];
-          if (
-            prevNode.type !== 'ImportDeclaration' &&
-            prevNode.type !== 'TSImportEqualsDeclaration' &&
-            !isDirective(prevNode)
+      Program(program: TSESTree.Program) {
+        // Every import after the first non-import statement is out of place,
+        // not only the one right below it. The directive prologue ('use
+        // client', 'use strict', any string directive) is not a statement of
+        // the module body: the parser marks it with `directive`, and only
+        // strings at the very top are directives.
+        let seenStatement = false;
+        for (const node of program.body) {
+          if (isImport(node)) {
+            if (seenStatement) context.report({ node, messageId: 'first' });
+          } else if (
+            !(node.type === 'ExpressionStatement' && node.directive) &&
+            // `import x = N.y` aliases a namespace; it loads no module and is
+            // neither an import to move nor a statement that pushes one down.
+            node.type !== 'TSImportEqualsDeclaration'
           ) {
-            context.report({
-              node,
-              messageId: 'first',
-            });
+            seenStatement = true;
           }
         }
       },

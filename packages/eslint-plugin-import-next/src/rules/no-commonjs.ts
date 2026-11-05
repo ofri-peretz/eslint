@@ -11,6 +11,8 @@
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isLocallyBound } from '../utils/bindings';
+import { matchesAnyFilePattern } from '../utils/file-patterns';
 
 type MessageIds =
   'commonjsRequire' | 'commonjsExport' | 'commonjsModule' | 'preferES6';
@@ -139,16 +141,20 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
       if (!filename) {
         return false;
       }
-
-      // Check if file is in allowed list
-      return allowInFiles.some((pattern: string) => {
-        if (pattern.includes('*')) {
-          const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-          return regex.test(filename);
-        }
-        return filename.includes(pattern);
-      });
+      // A `.cjs` / `.cts` file, or one the config parses as CommonJS, is
+      // CommonJS on purpose: it cannot use ES module syntax.
+      if (
+        /\.c[jt]s$/.test(filename) ||
+        context.languageOptions?.sourceType === 'commonjs'
+      ) {
+        return true;
+      }
+      return matchesAnyFilePattern(filename, allowInFiles);
     }
+
+    /** `name` here is the CommonJS global, not a binding of this file. */
+    const isGlobal = (node: TSESTree.Node, name: string) =>
+      !isLocallyBound(context.sourceCode, node, name);
 
     function generateES6Suggestion(node: TSESTree.Node): string {
       // Try to generate ES6 equivalent based on the CommonJS pattern
@@ -223,7 +229,8 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
         // Check for require() calls
         if (
           node.callee.type === 'Identifier' &&
-          node.callee.name === 'require'
+          node.callee.name === 'require' &&
+          isGlobal(node, 'require')
         ) {
           context.report({
             node: node.callee,
@@ -261,7 +268,8 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
           left.object.type === 'Identifier' &&
           left.object.name === 'module' &&
           propertyName(left) === 'exports' &&
-          !allowModuleExports
+          !allowModuleExports &&
+          isGlobal(left, 'module')
         ) {
           context.report({
             node: left,
@@ -292,7 +300,8 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
           left.object.object.type === 'Identifier' &&
           left.object.object.name === 'module' &&
           propertyName(left.object) === 'exports' &&
-          !allowModuleExports
+          !allowModuleExports &&
+          isGlobal(left, 'module')
         ) {
           context.report({
             node: left,
@@ -323,7 +332,8 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
           left.type === 'MemberExpression' &&
           left.object.type === 'Identifier' &&
           left.object.name === 'exports' &&
-          !allowExports
+          !allowExports &&
+          isGlobal(left, 'exports')
         ) {
           context.report({
             node: left,
@@ -410,14 +420,28 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
         }
       },
 
-      // Also check for __dirname, __filename which are CommonJS-specific
-      Identifier(node: TSESTree.Identifier) {
+      // Also check for __dirname, __filename which are CommonJS-specific.
+      // Only reads of the GLOBAL count: the scope manager resolves every
+      // reference, so a property (`config.__dirname`), a type member and the
+      // ESM shim the file declares itself (`const __dirname = ...`) are not.
+      'Program:exit'(program: TSESTree.Program) {
         if (shouldAllow()) {
           return;
         }
-
-        if (node.name === '__dirname' || node.name === '__filename') {
-          // These are CommonJS globals that don't work in ES modules
+        const globalScope = context.sourceCode.getScope(program);
+        const references = [
+          ...globalScope.through,
+          // A configured global (`globals.node`) is a variable with no
+          // definition: its references resolve to it instead of passing through.
+          ...['__dirname', '__filename'].flatMap((name) => {
+            const variable = globalScope.set.get(name);
+            return variable && variable.defs.length === 0
+              ? variable.references
+              : [];
+          }),
+        ];
+        for (const { identifier: node } of references) {
+          if (node.name !== '__dirname' && node.name !== '__filename') continue;
           context.report({
             node,
             messageId: 'preferES6',

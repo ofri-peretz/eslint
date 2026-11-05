@@ -11,6 +11,8 @@
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { boundNames } from '../utils/bindings';
+import { matchesAnyFilePattern } from '../utils/file-patterns';
 
 type MessageIds =
   'preferDefaultExport' | 'singleNamedExport' | 'multipleNamedToDefault';
@@ -78,12 +80,12 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
             enum: ['always', 'single', 'as-needed'],
             default: 'single',
             description:
-              'When to enforce default exports: always (all), single (single export), as-needed (when beneficial)',
+              'When to enforce default exports: always (any named export and no default), single (exactly one exported name), as-needed (same as single)',
           },
           ignoreFiles: {
             type: 'array',
             items: { type: 'string' },
-            description: 'File patterns to ignore',
+            description: 'File globs (or path substrings) to ignore',
           },
           allowNamedExports: {
             type: 'boolean',
@@ -109,21 +111,29 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
     let allowNamedExports: boolean;
     let filename: string;
     let namedExports: Map<string, TSESTree.Node>;
-    let defaultExportNode: TSESTree.ExportDefaultDeclaration | null;
+    let defaultExportNode: TSESTree.Node | null;
+    /** `export * from 'm'` publishes names this file cannot see. */
+    let hasStarExport: boolean;
 
     function shouldIgnoreFile(): boolean {
-      return ignoreFiles.some((pattern: string) => filename.includes(pattern));
+      return matchesAnyFilePattern(filename, ignoreFiles);
     }
 
     function addNamedExport(name: string, exportNode: TSESTree.Node) {
       namedExports.set(name, exportNode);
     }
 
+    const nameOf = (n: TSESTree.Identifier | TSESTree.StringLiteral) =>
+      n.type === 'Identifier' ? n.name : n.value;
+
     function checkSingleExport() {
+      // `as-needed` is `single`: a default export is needed exactly when the
+      // module publishes one name.
       if (
-        target === 'single' &&
+        (target === 'single' || target === 'as-needed') &&
         namedExports.size === 1 &&
-        !defaultExportNode
+        !defaultExportNode &&
+        !hasStarExport
       ) {
         // Find the export node to report on
         const [exportName, exportNode] = Array.from(namedExports.entries())[0];
@@ -175,80 +185,60 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
         // Track exports in this module with their nodes
         namedExports = new Map<string, TSESTree.Node>();
         defaultExportNode = null;
+        hasStarExport = false;
         return true;
       },
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
-        // Check if this is a re-export of 'default' (export { default } from "./other")
-        if (node.source && node.specifiers) {
-          const hasDefaultReExport = node.specifiers.some(
-            (specifier: TSESTree.ExportSpecifier) =>
-              specifier.exported.type === 'Identifier' &&
-              specifier.exported.name === 'default',
-          );
-          if (hasDefaultReExport) {
-            // Treat re-export of default as a default export
-            defaultExportNode =
-              node as unknown as TSESTree.ExportDefaultDeclaration;
-          }
-          // Skip all other re-exports
-          return;
-        }
-
-        // Skip re-exports (exports from another module)
-        if (node.source) {
-          return;
-        }
-
         // Skip TypeScript type-only exports
         if (node.exportKind === 'type') {
           return;
         }
 
-        // Track named exports
-        if (node.declaration) {
-          // Skip TypeScript interface and type declarations
-          if (
-            node.declaration.type === 'TSInterfaceDeclaration' ||
-            node.declaration.type === 'TSTypeAliasDeclaration'
-          ) {
-            return;
-          }
-
-          if (node.declaration.type === 'VariableDeclaration') {
-            node.declaration.declarations.forEach(
-              (decl: TSESTree.VariableDeclarator) => {
-                if (decl.id.type === 'Identifier') {
-                  addNamedExport(decl.id.name, node);
-                }
-              },
-            );
-          } else if (
-            node.declaration.type === 'FunctionDeclaration' &&
-            node.declaration.id
-          ) {
-            addNamedExport(node.declaration.id.name, node);
-          } else if (
-            node.declaration.type === 'ClassDeclaration' &&
-            node.declaration.id
-          ) {
-            addNamedExport(node.declaration.id.name, node);
-          }
+        // Every name the module publishes counts, re-exports included
+        // (`export { b } from './m'` is a name of this module too). A name
+        // published AS `default` is the default export.
+        for (const specifier of node.specifiers) {
+          if (specifier.exportKind === 'type') continue;
+          const exported = nameOf(specifier.exported);
+          if (exported === 'default') defaultExportNode = node;
+          else addNamedExport(exported, node);
         }
 
-        // Handle export specifiers (but not type specifiers)
-        if (node.specifiers) {
-          node.specifiers.forEach((specifier: TSESTree.ExportSpecifier) => {
-            // Skip type-only export specifiers
-            if (specifier.exportKind === 'type') {
-              return;
+        const declaration = node.declaration;
+        if (!declaration) return;
+        switch (declaration.type) {
+          case 'VariableDeclaration':
+            for (const decl of declaration.declarations) {
+              for (const name of boundNames(decl.id))
+                addNamedExport(name, node);
             }
-            if (specifier.exported.type === 'Identifier') {
-              addNamedExport(specifier.exported.name, node);
-            }
-          });
+            break;
+          case 'FunctionDeclaration':
+          case 'ClassDeclaration':
+            // (An overload signature is a TSDeclareFunction; the
+            // implementation below it is the export.)
+            // A function or class in a named export always has a name.
+            addNamedExport((declaration.id as TSESTree.Identifier).name, node);
+            break;
+          case 'TSEnumDeclaration':
+            // A `const enum` is erased like a type; a plain enum is a value.
+            if (!declaration.const) addNamedExport(declaration.id.name, node);
+            break;
+          default:
+            // Interfaces, type aliases, namespaces: not values.
+            break;
         }
       },
-
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        if (node.exportKind === 'type') return;
+        if (!node.exported) {
+          hasStarExport = true;
+          return;
+        }
+        const exported = nameOf(node.exported);
+        if (exported === 'default') defaultExportNode = node;
+        else addNamedExport(exported, node);
+      },
       ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration) {
         defaultExportNode = node;
       },

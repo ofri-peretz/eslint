@@ -8,7 +8,30 @@ Prevents AMD require/define calls
 
 ## Rule Details
 
-This rule aims to prevent issues related to amd.
+AMD (`define` / `require` with a dependency array) predates ES modules; bundlers and type checkers understand `import` / `export` far better. This rule reports an AMD module:
+
+- a call to the global `define`, in any form: dependency array and factory, a bare factory, a named module, an object;
+- a call to the global `require` with a dependency array and a callback (`require(['a'], (a) => ...)`).
+
+The rule decides by binding: a `define` or `require` that the file imports or declares is another function that shares the name, and is not AMD. A member call (`customElements.define(...)`) is not AMD, and `require('m')` with a string is CommonJS (see `no-commonjs`).
+
+### ❌ Incorrect
+
+```js
+define(['./dep'], function (dep) {
+  return dep;
+});
+require(['./dep'], (dep) => dep.start());
+```
+
+### ✅ Correct
+
+```ts
+import dep from './dep';
+import { define } from './registry';
+define('widget', Widget);
+customElements.define('x-app', App);
+```
 
 ## Options
 
@@ -22,12 +45,12 @@ This rule aims to prevent issues related to amd.
         "items": {
           "type": "string"
         },
-        "description": "AMD patterns to allow."
+        "description": "File globs (or path substrings) where AMD is allowed."
       },
       "suggestES6": {
         "type": "boolean",
         "default": true,
-        "description": "Suggest ES6 imports instead."
+        "description": "Has no effect; accepted so existing configs keep validating."
       }
     },
     "additionalProperties": false
@@ -35,11 +58,9 @@ This rule aims to prevent issues related to amd.
 ]
 ```
 
-## Implementation
+- `allow` (default `[]`): file globs (or path substrings) where AMD is accepted, e.g. `["**/legacy/**"]`. A glob matches any run of whole path segments, so `vendor/**` matches an absolute filename.
+- `suggestES6`: has no effect; accepted so existing configs keep validating.
 
-- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-amd.ts)
-- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-amd.test.ts)
+## When Not To Use It
 
-## OWASP Foundation
-
-- **Category**: A00:2021 - General Security
+In a codebase that ships AMD modules on purpose, e.g. for a RequireJS loader.

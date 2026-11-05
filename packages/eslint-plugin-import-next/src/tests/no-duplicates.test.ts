@@ -2,6 +2,7 @@ import { RuleTester } from '@typescript-eslint/rule-tester';
 import { RuleTester as ESLintRuleTester } from 'eslint';
 import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
+import * as path from 'node:path';
 import { noDuplicates } from '../rules/no-duplicates';
 
 RuleTester.afterAll = afterAll;
@@ -97,6 +98,75 @@ describe('no-duplicates — plain JavaScript, no importKind', () => {
         code: "import { a } from './m';\nimport { b } from './m';",
         errors: [{ messageId: 'noDuplicates' }],
         output: "import { a, b } from './m';\n",
+      },
+    ],
+  });
+});
+
+/**
+ * Fidelity (benchmarks/suites/fidelity/models/import-next/no_duplicates.qnt):
+ * one module is the file the resolver sees, a namespace import cannot merge
+ * with a named one, and two ambient `declare module` blocks are two scopes.
+ * `src/app.ts` resolves `./files/foo` to src/files/foo.ts; absolute, so both
+ * engines resolve it the same way.
+ */
+const APP = path.resolve(__dirname, '../app.ts');
+
+describe('no-duplicates — fidelity', () => {
+  ruleTester.run('module identity, namespace and scope', noDuplicates, {
+    valid: [
+      {
+        name: 'a namespace import beside a named import cannot be one statement',
+        code: "import * as ns from './m';\nimport { a } from './m';",
+      },
+      {
+        name: 'a namespace import beside an inline type import cannot be one statement',
+        code: "import * as ns from './m';\nimport { type A } from './m';",
+      },
+      {
+        name: 'imports in two declare module blocks belong to two modules',
+        code: "declare module 'a' {\n  import { A } from './m';\n}\ndeclare module 'b' {\n  import { B } from './m';\n}",
+        filename: 'src/types.d.ts',
+      },
+      {
+        name: 'a query suffix names a different module',
+        code: "import { bar } from './files/foo';\nimport raw from './files/foo?raw';",
+        filename: APP,
+      },
+    ],
+    invalid: [
+      {
+        name: "'./files/foo' and './files/foo.js' resolve to one file",
+        code: "import { bar } from './files/foo';\nimport { baz } from './files/foo.js';",
+        filename: APP,
+        errors: [{ messageId: 'noDuplicates' }],
+        output: "import { bar, baz } from './files/foo';\n",
+      },
+      {
+        name: "'./files/foo' and './files/foo.ts' resolve to one file",
+        code: "import { bar } from './files/foo';\nimport './files/foo.ts';",
+        filename: APP,
+        errors: [{ messageId: 'noDuplicates' }],
+        output: "import { bar } from './files/foo';\n",
+      },
+      {
+        name: 'two imports in one declare module block are duplicates',
+        code: "declare module 'a' {\n  import { A } from './m';\n  import { B } from './m';\n}",
+        filename: 'src/types.d.ts',
+        errors: [{ messageId: 'noDuplicates' }],
+        output: "declare module 'a' {\n  import { A, B } from './m';\n  \n}",
+      },
+      {
+        name: 'a default in the duplicate is not spliced into braces (no fix)',
+        code: "import { a } from './m';\nimport d from './m';",
+        errors: [{ messageId: 'noDuplicates' }],
+        output: null,
+      },
+      {
+        name: 'named specifiers after a default-only import get their own braces',
+        code: "import d from './m';\nimport { a } from './m';",
+        errors: [{ messageId: 'noDuplicates' }],
+        output: "import d, { a } from './m';\n",
       },
     ],
   });

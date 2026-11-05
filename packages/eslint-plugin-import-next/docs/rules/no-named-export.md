@@ -8,7 +8,32 @@ Prevents named exports
 
 ## Rule Details
 
-This rule aims to prevent issues related to named-export.
+A convention: every module publishes one default export and nothing else. This rule reports every value named export:
+
+- `export const` / `let` / `var` (also destructured, one per bound name), `export function`, `export class`, `export enum`;
+- an export list, also renamed or under a string name (`export { b as "a" }`);
+- `export { a } from 'm'`, `export * from 'm'` (it publishes every name of `m`) and `export * as ns from 'm'`.
+
+Not reported: anything exported as `default` (`export { x as default }`, `export * as default from 'm'`); type-only exports (`export type`, `export interface`, `export type { T }`, `export { type T }`, `export const enum`); a bare `export {}`.
+
+### ❌ Incorrect
+
+```ts
+export const a = 1;
+export enum Color {
+  Red,
+}
+export * from './utils';
+```
+
+### ✅ Correct
+
+```ts
+export default function load() {}
+export type Options = { retries: number };
+const a = 1;
+export { a as default };
+```
 
 ## Options
 
@@ -22,26 +47,26 @@ This rule aims to prevent issues related to named-export.
         "items": {
           "type": "string"
         },
-        "description": "Allow named exports in specific files."
+        "description": "File globs (or path substrings) where named exports are allowed."
       },
       "allowNames": {
         "type": "array",
         "items": {
           "type": "string"
         },
-        "description": "Allow specific named exports."
+        "description": "Exported names that are allowed."
       },
       "allowPatterns": {
         "type": "array",
         "items": {
           "type": "string"
         },
-        "description": "Allow named exports for specific patterns."
+        "description": "More file globs (or path substrings) where named exports are allowed."
       },
       "suggestDefault": {
         "type": "boolean",
         "default": true,
-        "description": "Suggest default export alternative."
+        "description": "Has no effect; accepted so existing configs keep validating."
       }
     },
     "additionalProperties": false
@@ -49,11 +74,13 @@ This rule aims to prevent issues related to named-export.
 ]
 ```
 
-## Implementation
+- `allowNames` (default `[]`): exported names that are accepted. `export * from 'm'` publishes names the file cannot see and is never covered by this list.
+- `allowInFiles` (default `[]`): file globs (or path substrings) where named exports are accepted.
+- `allowPatterns` (default `[]`): more file globs (or path substrings), same meaning as `allowInFiles`.
+- `suggestDefault`: has no effect; accepted so existing configs keep validating.
 
-- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-named-export.ts)
-- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-named-export.test.ts)
+A glob matches any run of whole path segments, so `src/*.test.ts` matches an absolute filename.
 
-## OWASP Foundation
+## When Not To Use It
 
-- **Category**: A00:2021 - General Security
+In most codebases: named exports are the common convention. Use it only where a framework requires a single default export per file.

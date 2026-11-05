@@ -14,7 +14,35 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## Rule Details
 
-This rule aims to prevent issues related to prefer-default-export.
+A convention: a module that publishes a single value should make it the default export. Which modules qualify depends on `target`.
+
+- `single` (default) and `as-needed`: report a module whose exports are exactly one value name and no default.
+- `always`: report a module with any value named export and no default.
+
+Every value name the module publishes counts: inline declarations (also `enum`, and each name a destructuring declares), export lists (also string names), and `export { x } from 'm'` re-exports. A default in any spelling (`export default`, `export { x as default }`, `export { default } from 'm'`, `export * as default from 'm'`) satisfies the rule. `export * from 'm'` publishes names the file cannot see, so the count is unknown and `single` stays silent. Type-only exports and `const enum` do not count.
+
+### ❌ Incorrect
+
+```ts
+// target: single (default)
+export const config = { retries: 3 };
+
+export { api } from './api';
+```
+
+### ✅ Correct
+
+```ts
+// target: single (default)
+const config = { retries: 3 };
+export default config;
+
+export const a = 1;
+export const b = 2;
+
+export const c = 1;
+export * from './more';
+```
 
 ## Options
 
@@ -31,14 +59,14 @@ This rule aims to prevent issues related to prefer-default-export.
           "as-needed"
         ],
         "default": "single",
-        "description": "When to enforce default exports: always (all), single (single export), as-needed (when beneficial)"
+        "description": "When to enforce default exports: always (any named export and no default), single (exactly one exported name), as-needed (same as single)"
       },
       "ignoreFiles": {
         "type": "array",
         "items": {
           "type": "string"
         },
-        "description": "File patterns to ignore"
+        "description": "File globs (or path substrings) to ignore"
       },
       "allowNamedExports": {
         "type": "boolean",
@@ -51,11 +79,10 @@ This rule aims to prevent issues related to prefer-default-export.
 ]
 ```
 
-## Implementation
+- `target` (default `single`): `single` or `as-needed` (the same: one exported name), or `always`.
+- `ignoreFiles` (default `[]`): file globs (or path substrings) to skip. A glob matches any run of whole path segments.
+- `allowNamedExports` (default `false`): turn the rule off for every file.
 
-- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/prefer-default-export.ts)
-- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/prefer-default-export.test.ts)
+## When Not To Use It
 
-## OWASP Foundation
-
-- **Category**: A00:2021 - General Security
+When your codebase prefers named exports (see `no-default-export`).

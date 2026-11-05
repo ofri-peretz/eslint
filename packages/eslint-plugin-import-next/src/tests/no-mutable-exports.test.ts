@@ -13,6 +13,12 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-mutable-exports', noMutableExports, {
   valid: [
+    {
+      name: 'allowInFiles: a glob exempts a matching file',
+      code: `export let count = 0;`,
+      filename: '/repo/src/state/store.ts',
+      options: [{ allowInFiles: ['**/state/*.ts'] }],
+    },
     // const exports are allowed
     { name: 'a const export', code: `export const foo = 1;` },
     { code: `export const bar = { a: 1 };` },
@@ -72,6 +78,13 @@ ruleTester.run('no-mutable-exports', noMutableExports, {
   ],
 
   invalid: [
+    {
+      name: 'allowInFiles: a glob that does not match the file',
+      code: `export let count = 0;`,
+      filename: '/repo/src/app.ts',
+      options: [{ allowInFiles: ['**/state/*.ts'] }],
+      errors: [{ messageId: 'letExport' }],
+    },
     // FN: the old text-grep only matched a lone specifier in braces, so a
     // list and a rename both read as "not exported" and went unreported.
     {

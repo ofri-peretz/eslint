@@ -31,6 +31,13 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+/**
+ * webpack's chunk name characters, plus its `[request]` and `[index]`
+ * placeholders (`webpackChunkName: "[request]"` names each chunk after the
+ * module it loads).
+ */
+const DEFAULT_FORMAT = '([0-9a-zA-Z-_/.]|\\[(request|index)\\])+';
+
 export const dynamicImportChunkname = createRule<RuleOptions, MessageIds>({
   name: 'dynamic-import-chunkname',
   meta: {
@@ -86,19 +93,29 @@ export const dynamicImportChunkname = createRule<RuleOptions, MessageIds>({
     {
       importFunctions: [],
       allowEmpty: false,
-      webpackChunknameFormat: '[a-zA-Z0-9-_/.]+',
+      webpackChunknameFormat: DEFAULT_FORMAT,
     },
   ],
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let allowEmpty: boolean;
+    let importFunctions: string[];
     let webpackChunknameFormat: string;
     let chunkNamePattern: RegExp;
     let sourceCode: Readonly<TSESLint.SourceCode>;
 
-    function checkChunkName(node: TSESTree.ImportExpression) {
-      // Get leading comments
-      const comments = sourceCode.getCommentsBefore(node.source);
+    function checkChunkName(
+      node: TSESTree.ImportExpression | TSESTree.CallExpression,
+      source: TSESTree.Node,
+    ) {
+      // The magic comments sit inside the call, before the module argument.
+      const comments = sourceCode.getCommentsBefore(source);
+
+      // `webpackMode: "eager"` keeps the module in the parent chunk: there
+      // is no chunk to name.
+      if (comments.some((c) => /webpackMode:\s*["']eager["']/.test(c.value))) {
+        return;
+      }
 
       // Look for webpackChunkName in comments
       let foundChunkName: string | null = null;
@@ -124,7 +141,6 @@ export const dynamicImportChunkname = createRule<RuleOptions, MessageIds>({
                 messageId: 'suggestChunkName',
                 fix(fixer: TSESLint.RuleFixer) {
                   // Generate a chunk name from the import path
-                  const source = node.source;
                   const staticText = staticString(source);
                   if (staticText !== null) {
                     const chunkName =
@@ -155,13 +171,26 @@ export const dynamicImportChunkname = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const options = context.options[0] || {};
-        ({ allowEmpty = false, webpackChunknameFormat = '[a-zA-Z0-9-_/.]+' } =
-          options);
+        ({
+          allowEmpty = false,
+          importFunctions = [],
+          webpackChunknameFormat = DEFAULT_FORMAT,
+        } = options);
         chunkNamePattern = new RegExp(`^${webpackChunknameFormat}$`);
         sourceCode = context.sourceCode;
       },
       ImportExpression(node: TSESTree.ImportExpression) {
-        checkChunkName(node);
+        checkChunkName(node, node.source);
+      },
+      // `importFunctions`: calls the user declares to be dynamic imports.
+      CallExpression(node: TSESTree.CallExpression) {
+        if (
+          node.callee.type === 'Identifier' &&
+          importFunctions.includes(node.callee.name) &&
+          node.arguments.length > 0
+        ) {
+          checkChunkName(node, node.arguments[0]);
+        }
       },
     };
   },

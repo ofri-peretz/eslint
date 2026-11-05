@@ -13,6 +13,10 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-empty-named-blocks', noEmptyNamedBlocks, {
   valid: [
+    {
+      name: 'a {} inside a comment is no named block',
+      code: `import a /* {} */ from 'foo';`,
+    },
     // Non-empty imports
     { name: 'a named import', code: `import { foo } from 'bar';` },
     { code: `import { foo, bar } from 'baz';` },
@@ -37,6 +41,30 @@ ruleTester.run('no-empty-named-blocks', noEmptyNamedBlocks, {
   ],
 
   invalid: [
+    {
+      name: 'a comment inside the braces leaves the block empty',
+      code: `import { /* nothing yet */ } from 'foo';`,
+      errors: [
+        {
+          messageId: 'emptyNamedBlock',
+          suggestions: [{ messageId: 'suggestRemove', output: `` }],
+        },
+      ],
+      output: `import 'foo';`,
+    },
+    {
+      name: 'a default import with a commented empty block',
+      code: `import a, { /* nothing yet */ } from 'foo';`,
+      errors: [
+        {
+          messageId: 'emptyNamedBlock',
+          suggestions: [
+            { messageId: 'suggestRemove', output: `import a from 'foo';` },
+          ],
+        },
+      ],
+      output: `import a from 'foo';`,
+    },
     // Empty named import only - fixable (removes entire import)
     {
       name: 'an import with an empty named block',
@@ -47,7 +75,7 @@ ruleTester.run('no-empty-named-blocks', noEmptyNamedBlocks, {
           suggestions: [{ messageId: 'suggestRemove', output: `` }],
         },
       ],
-      output: ``,
+      output: `import 'foo';`,
     },
 
     // Default import with empty braces - fixable (removes empty braces)
@@ -73,9 +101,42 @@ ruleTester.run('no-empty-named-blocks', noEmptyNamedBlocks, {
           suggestions: [{ messageId: 'suggestRemove', output: `` }],
         },
       ],
-      output: ``,
+      output: `import 'foo';`,
     },
 
+    {
+      name: 'the fix keeps import attributes when it keeps the load',
+      code: `import {} from './data.json' with { type: 'json' };`,
+      errors: [
+        {
+          messageId: 'emptyNamedBlock',
+          suggestions: [{ messageId: 'suggestRemove', output: `` }],
+        },
+      ],
+      output: `import './data.json' with { type: 'json' };`,
+    },
+    {
+      name: 'a type-only empty import loads nothing, so the fix removes it',
+      code: `import type {} from 'foo';`,
+      errors: [
+        {
+          messageId: 'emptyNamedBlock',
+          suggestions: [{ messageId: 'suggestRemove', output: `` }],
+        },
+      ],
+      output: ``,
+    },
+    {
+      name: 'a type-only empty re-export loads nothing, so the fix removes it',
+      code: `export type {} from 'foo';`,
+      errors: [
+        {
+          messageId: 'emptyNamedBlock',
+          suggestions: [{ messageId: 'suggestRemove', output: `` }],
+        },
+      ],
+      output: ``,
+    },
     // Empty braces with whitespace
     {
       code: `import {   } from 'foo';`,
@@ -85,7 +146,7 @@ ruleTester.run('no-empty-named-blocks', noEmptyNamedBlocks, {
           suggestions: [{ messageId: 'suggestRemove', output: `` }],
         },
       ],
-      output: ``,
+      output: `import 'foo';`,
     },
   ],
 });

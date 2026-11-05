@@ -139,3 +139,90 @@ ruleTester.run('no-barrel-import', noBarrelImport, {
     },
   ],
 });
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/import-next/
+// no_barrel_import): type-only imports were reported though they load
+// nothing, `import()` / `require()` / `import x = require()` were not read,
+// and `ignoredPackages` stopped working under `ignoreNodeModules: false`.
+const known = [{ knownBarrels: ['components$', '^ui-kit$'] }];
+ruleTester.run('no-barrel-import - fidelity', noBarrelImport, {
+  valid: [
+    {
+      name: 'import type from a barrel',
+      code: "import type { P } from './components';",
+      options: known,
+    },
+    {
+      name: 'inline type imports only',
+      code: "import { type P } from './components';",
+      options: known,
+    },
+    {
+      name: 'export type from a barrel',
+      code: "export type { P } from './components';",
+      options: known,
+    },
+    {
+      name: 'export type * from a barrel',
+      code: "export type * from './components';",
+      options: known,
+    },
+    {
+      name: 'import type x = require() of a barrel',
+      code: "import type x = require('./components');",
+      options: known,
+    },
+    {
+      name: 'import x = Namespace.member',
+      code: 'namespace N { export const v = 1; }\nimport x = N.v;',
+      options: known,
+    },
+    {
+      name: 'a computed import()',
+      code: 'const load = (p: string) => import(p);',
+      options: known,
+    },
+    {
+      name: 'a call that is not require()',
+      code: "load('./components');",
+      options: known,
+    },
+    {
+      name: 'ignoredPackages applies with ignoreNodeModules: false',
+      code: "import { Button } from 'ui-kit';",
+      options: [
+        {
+          knownBarrels: ['^ui-kit$'],
+          ignoredPackages: ['^ui-kit'],
+          ignoreNodeModules: false,
+        },
+      ],
+    },
+  ],
+  invalid: [
+    {
+      name: 'import() of a barrel',
+      code: "const load = () => import('./components');",
+      options: known,
+      errors: [{ messageId: 'barrelImportDetected' }],
+    },
+    {
+      name: 'require() of a barrel',
+      code: "const c = require('./components');",
+      options: known,
+      errors: [{ messageId: 'barrelImportDetected' }],
+    },
+    {
+      name: 'TS import x = require() of a barrel',
+      code: "import c = require('./components');",
+      options: known,
+      errors: [{ messageId: 'barrelImportDetected' }],
+    },
+    {
+      name: 'a value import beside an inline type one still loads the barrel',
+      code: "import { type P, Button } from './components';",
+      options: known,
+      errors: [{ messageId: 'barrelImportDetected' }],
+    },
+  ],
+});

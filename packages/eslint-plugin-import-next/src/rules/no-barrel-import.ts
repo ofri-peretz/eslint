@@ -158,16 +158,9 @@ export const noBarrelImport = createRule<RuleOptions, MessageIds>({
     let ignoreNodeModules: boolean;
     let ignoredPackages: string[];
 
-    function checkImportPath(
-      node:
-        | TSESTree.ImportDeclaration
-        | TSESTree.ExportAllDeclaration
-        | TSESTree.ExportNamedDeclaration,
-      importPath: string,
-    ) {
-      // Skip node_modules if configured
-      if (ignoreNodeModules && isNodeModulesImport(importPath)) {
-        // Check if it's an ignored package
+    function checkImportPath(node: TSESTree.Node, importPath: string) {
+      if (isNodeModulesImport(importPath)) {
+        // An ignored package is ignored whatever `ignoreNodeModules` says.
         if (
           ignoredPackages.length > 0 &&
           matchesPattern(importPath, ignoredPackages)
@@ -175,8 +168,9 @@ export const noBarrelImport = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // For node_modules, only flag if explicitly in knownBarrels
-        if (knownBarrels.length === 0) {
+        // Skip node_modules if configured: only flag one explicitly in
+        // knownBarrels
+        if (ignoreNodeModules && knownBarrels.length === 0) {
           return;
         }
       }
@@ -215,28 +209,72 @@ export const noBarrelImport = createRule<RuleOptions, MessageIds>({
           ignoredPackages = [],
         } = options || {});
       },
+      // A type-only import or re-export is erased at compile time: it loads
+      // nothing, barrel or not.
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        const importPath = node.source.value;
-        if (typeof importPath === 'string') {
-          checkImportPath(node, importPath);
+        if (
+          node.importKind === 'type' ||
+          (node.specifiers.length > 0 &&
+            node.specifiers.every(
+              (s) => s.type === 'ImportSpecifier' && s.importKind === 'type',
+            ))
+        ) {
+          return;
         }
+        checkImportPath(node, node.source.value);
       },
 
       // Also check re-exports that import from barrels
       ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
-        const importPath = node.source.value;
-        if (typeof importPath === 'string') {
-          checkImportPath(node, importPath);
-        }
+        if (node.exportKind === 'type') return;
+        checkImportPath(node, node.source.value);
       },
 
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
-        if (node.source) {
-          const importPath = node.source.value;
-          if (typeof importPath === 'string') {
-            checkImportPath(node, importPath);
-          }
+        if (
+          !node.source ||
+          node.exportKind === 'type' ||
+          (node.specifiers.length > 0 &&
+            node.specifiers.every((s) => s.exportKind === 'type'))
+        ) {
+          return;
         }
+        checkImportPath(node, node.source.value);
+      },
+
+      // `import('./x')`, `require('./x')` and TS `import x = require('./x')`
+      // load the barrel at runtime like a static import.
+      ImportExpression(node: TSESTree.ImportExpression) {
+        if (
+          node.source.type === 'Literal' &&
+          typeof node.source.value === 'string'
+        ) {
+          checkImportPath(node, node.source.value);
+        }
+      },
+
+      CallExpression(node: TSESTree.CallExpression) {
+        const arg = node.arguments[0];
+        if (
+          node.callee.type === 'Identifier' &&
+          node.callee.name === 'require' &&
+          node.arguments.length === 1 &&
+          arg.type === 'Literal' &&
+          typeof arg.value === 'string'
+        ) {
+          checkImportPath(node, arg.value);
+        }
+      },
+
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        if (
+          node.importKind === 'type' ||
+          node.moduleReference.type !== 'TSExternalModuleReference'
+        ) {
+          return;
+        }
+        const arg = node.moduleReference.expression as TSESTree.StringLiteral;
+        checkImportPath(node, arg.value);
       },
     };
   },

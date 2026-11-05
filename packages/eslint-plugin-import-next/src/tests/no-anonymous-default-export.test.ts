@@ -22,6 +22,34 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-anonymous-default-export', noAnonymousDefaultExport, {
   valid: [
+    {
+      name: 'a named function expression is not anonymous',
+      code: `export default (function load() {});`,
+    },
+    {
+      name: 'a named class expression is not anonymous',
+      code: `export default (class Store {});`,
+    },
+    {
+      name: 'a member reference is not an anonymous function or class',
+      code: `import { config } from './config'; export default config.handler;`,
+    },
+    {
+      name: 'an instance is not an anonymous function or class',
+      code: `export default new Map();`,
+    },
+    {
+      name: 'a template literal is not an anonymous function or class',
+      code: 'export default `value`;',
+    },
+    {
+      name: 'an object checked with satisfies is still an object',
+      code: `export default { a: 1 } satisfies Record<string, number>;`,
+    },
+    {
+      name: 'a default-exported interface has a name',
+      code: `export default interface Shape { a: string }`,
+    },
     // Named default exports
     { name: 'a named function', code: `export default function foo() {}` },
     { code: `export default class MyClass {}` },
@@ -70,6 +98,11 @@ ruleTester.run('no-anonymous-default-export', noAnonymousDefaultExport, {
     // Arrow function
     {
       code: `export default () => {};`,
+      errors: [{ messageId: 'anonymousDefaultExport' }],
+    },
+    {
+      name: 'an anonymous arrow wrapped in a TS as-expression',
+      code: `type Handler = () => number; export default (() => 1) as Handler;`,
       errors: [{ messageId: 'anonymousDefaultExport' }],
     },
   ],

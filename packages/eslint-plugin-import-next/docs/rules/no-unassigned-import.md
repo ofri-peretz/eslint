@@ -8,7 +8,26 @@ Prevents unassigned imports
 
 ## Rule Details
 
-This rule aims to prevent issues related to unassigned-import.
+An import that binds nothing is loaded only for its side effects, which a reader cannot see. Reported: `import 'm'`, `import {} from 'm'`, and a `require('m')` whose result is discarded (an expression statement, or a non-final item of a sequence).
+
+Not reported: any form that binds or re-exports a name (default, namespace, named, type-only, `export … from`, a `require` whose result is used, `import x = require()`), and specifiers listed in `allowModules` (exact match).
+
+### ❌ Incorrect
+
+```ts
+import './polyfill';
+import {} from './setup';
+require('./register');
+```
+
+### ✅ Correct
+
+```ts
+import { install } from './polyfill';
+const register = require('./register');
+// with { allowModules: ['./polyfill'] }
+import './polyfill';
+```
 
 ## Options
 

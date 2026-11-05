@@ -46,6 +46,9 @@ vi.mock('@interlace/eslint-devkit', async () => {
     }),
     clearCache: () => {}, // eslint-disable-line @typescript-eslint/no-empty-function
     resolveImportPath: mocks.resolveImportPath,
+    // A mocked target is not on disk: it exports nothing known.
+    exportKindsOf: () => new Map(),
+    clearExportKindCache: () => {}, // eslint-disable-line @typescript-eslint/no-empty-function
     hasOnlyTypeImports: () => false,
     detectCycleFromImport: mocks.detectCycleFromImport,
     // PR #180 replaced detectCycleFromImport with SCC-based detection

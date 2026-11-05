@@ -54,39 +54,46 @@ export const groupExports = createRule<RuleOptions, MessageIds>({
   defaultOptions: [],
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    let separateExports: TSESTree.ExportNamedDeclaration[];
+    let separateExports: Record<
+      'type' | 'value',
+      TSESTree.ExportNamedDeclaration[]
+    >;
     let reExportSources: Map<string, TSESTree.ExportNamedDeclaration[]>;
 
     return {
       before() {
         // Track separate export statements (not counting inline exports)
-        separateExports = [];
+        separateExports = { type: [], value: [] };
         reExportSources = new Map<string, TSESTree.ExportNamedDeclaration[]>();
       },
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
         // Only track export specifier lists, not inline declarations
         if (!node.declaration && node.specifiers.length > 0) {
+          // A type-only list (`export type { T }`) groups with other type-only
+          // lists, a value list with value lists: merging the two takes inline
+          // `type` modifiers, a style choice this rule does not make.
+          const kind = node.exportKind === 'type' ? 'type' : 'value';
           if (node.source) {
             // Re-export from another module
-            const source = node.source.value as string;
+            const source = `${kind}:${node.source.value}`;
             if (!reExportSources.has(source)) {
               reExportSources.set(source, []);
             }
             reExportSources.get(source)?.push(node);
           } else {
             // Local export
-            separateExports.push(node);
+            separateExports[kind].push(node);
           }
         }
       },
 
       'Program:exit'() {
         // Report if there are multiple separate local exports that could be combined
-        if (separateExports.length > 1) {
+        for (const lists of [separateExports.value, separateExports.type]) {
           // Report all but the first one
-          for (let i = 1; i < separateExports.length; i++) {
+          for (let i = 1; i < lists.length; i++) {
             context.report({
-              node: separateExports[i],
+              node: lists[i],
               messageId: 'groupExports',
             });
           }

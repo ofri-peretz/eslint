@@ -63,11 +63,43 @@ export interface Options {
 type RuleOptions = [Options?];
 
 interface PackageJson {
+  name?: string;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
   optionalDependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
-  bundledDependencies?: string[];
+  bundledDependencies?: string[] | boolean;
+  /** npm accepts both spellings. */
+  bundleDependencies?: string[] | boolean;
+}
+
+const DEPENDENCY_FIELDS = [
+  'dependencies',
+  'devDependencies',
+  'optionalDependencies',
+  'peerDependencies',
+  'bundledDependencies',
+  'bundleDependencies',
+] as const;
+
+/** The statements a suggestion's TODO comment goes above. */
+const STATEMENT_TYPES = new Set<string>([
+  'ImportDeclaration',
+  'ExportNamedDeclaration',
+  'ExportAllDeclaration',
+  'TSImportEqualsDeclaration',
+  'VariableDeclaration',
+  'ExpressionStatement',
+]);
+
+/**
+ * Does this package.json declare a package? A nameless file with no
+ * dependency field (a `{"type":"module"}` scope marker in a sub-folder) only
+ * scopes how Node reads the files below it; dependencies still come from the
+ * package around it.
+ */
+function declaresPackage(json: PackageJson): boolean {
+  return json.name !== undefined || DEPENDENCY_FIELDS.some((f) => f in json);
 }
 
 /**
@@ -91,7 +123,15 @@ const manifestByPath = new Map<
 function findManifest(dir: string): string | null {
   let hit = manifestPathByDir.get(dir);
   if (hit === undefined) {
+    // Settle `dir` first: at the filesystem root a marker's parent is the
+    // root again, and the recursive call below then reads this `null`.
+    manifestPathByDir.set(dir, null);
     hit = findFileUpward('package.json', dir);
+    const json = hit ? readManifest(hit) : null;
+    // Walk past scope markers to the manifest that declares the package.
+    if (json && !declaresPackage(json)) {
+      hit = findManifest(getDirname(getDirname(hit as string)));
+    }
     manifestPathByDir.set(dir, hit);
   }
   return hit;
@@ -414,9 +454,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
                   let parentStatement = node;
                   while (
                     parentStatement &&
-                    parentStatement.type !== 'ImportDeclaration' &&
-                    parentStatement.type !== 'VariableDeclaration' &&
-                    parentStatement.type !== 'ExpressionStatement'
+                    !STATEMENT_TYPES.has(parentStatement.type)
                   ) {
                     parentStatement = parentStatement.parent as TSESTree.Node;
                   }
@@ -455,9 +493,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
                   let parentStatement = node;
                   while (
                     parentStatement &&
-                    parentStatement.type !== 'ImportDeclaration' &&
-                    parentStatement.type !== 'VariableDeclaration' &&
-                    parentStatement.type !== 'ExpressionStatement'
+                    !STATEMENT_TYPES.has(parentStatement.type)
                   ) {
                     parentStatement = parentStatement.parent as TSESTree.Node;
                   }
@@ -480,9 +516,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
                   let parentStatement = node;
                   while (
                     parentStatement &&
-                    parentStatement.type !== 'ImportDeclaration' &&
-                    parentStatement.type !== 'VariableDeclaration' &&
-                    parentStatement.type !== 'ExpressionStatement'
+                    !STATEMENT_TYPES.has(parentStatement.type)
                   ) {
                     parentStatement = parentStatement.parent as TSESTree.Node;
                   }
@@ -585,11 +619,22 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
           );
         }
 
-        // Add bundled dependencies if allowed
-        if (bundledDependencies && resolvedPackageJson?.bundledDependencies) {
-          resolvedPackageJson.bundledDependencies.forEach((pkg) =>
-            allowedPackages.add(pkg),
-          );
+        // Add bundled dependencies if allowed (either npm spelling; `true`
+        // bundles every dependency, which are already allowed above).
+        if (bundledDependencies) {
+          for (const list of [
+            resolvedPackageJson?.bundledDependencies,
+            resolvedPackageJson?.bundleDependencies,
+          ]) {
+            if (Array.isArray(list))
+              list.forEach((pkg) => allowedPackages.add(pkg));
+          }
+        }
+
+        // The package's own name: Node resolves it to the package itself
+        // (self-reference through `exports`, or a workspace link).
+        if (resolvedPackageJson?.name) {
+          allowedPackages.add(resolvedPackageJson.name);
         }
         return true;
       },
@@ -612,6 +657,37 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
         if (node.source.value && typeof node.source.value === 'string') {
           checkImport(node.source.value, node.source);
         }
+      },
+
+      // A re-export loads the package at runtime like an import does; a
+      // type-only one is erased.
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        if (!node.source || node.exportKind === 'type') return;
+        if (
+          !verbatimModuleSyntax &&
+          node.specifiers.length > 0 &&
+          node.specifiers.every((s) => s.exportKind === 'type')
+        ) {
+          return;
+        }
+        checkImport(node.source.value, node.source);
+      },
+
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        if (node.exportKind === 'type') return;
+        checkImport(node.source.value, node.source);
+      },
+
+      // TS `import x = require('pkg')` compiles to `require('pkg')`.
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        if (
+          node.importKind === 'type' ||
+          node.moduleReference.type !== 'TSExternalModuleReference'
+        ) {
+          return;
+        }
+        const arg = node.moduleReference.expression;
+        checkImport((arg as TSESTree.StringLiteral).value, arg);
       },
 
       CallExpression(node: TSESTree.CallExpression) {

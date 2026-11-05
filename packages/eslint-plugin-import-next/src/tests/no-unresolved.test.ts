@@ -98,3 +98,31 @@ ruleTester.run('no-unresolved', noUnresolved, {
      }
   ],
 });
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/import-next/
+// no_unresolved): a URL scheme names a module a bundler or runtime provides,
+// which the file resolver cannot judge.
+ruleTester.run('no-unresolved - fidelity', noUnresolved, {
+  valid: [
+    {
+      name: 'a bundler virtual module is not a file to resolve',
+      code: `import routes from 'virtual:routes';`,
+    },
+    {
+      name: 'a runtime-provided scheme is not a file to resolve',
+      code: `const t = require('bun:test');`,
+    },
+  ],
+  invalid: [
+    {
+      name: 'a node: builtin is still skipped, a missing package still reported',
+      code: `import x from 'nope-pkg';`,
+      errors: [
+        {
+          messageId: 'moduleNotFound',
+          suggestions: [createSuggestion(`import x from 'nope-pkg';`)],
+        },
+      ],
+    },
+  ],
+});

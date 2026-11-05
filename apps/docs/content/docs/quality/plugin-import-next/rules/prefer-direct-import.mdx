@@ -15,7 +15,37 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## Rule Details
 
-This rule aims to prevent issues related to prefer-direct-import.
+Reports a named import from a barrel that `mappings` describes, and rewrites
+it to the direct module. Each mapping names a barrel specifier (`barrel`, a
+regular expression) and the direct path of one export (`directPath`, where
+`{name}` is the imported name).
+
+Reported: `import { Button } from '@/ui'`, a renamed specifier, several
+specifiers (one report each; fixed only when there is one), the value
+specifiers of an import that mixes in inline `type` ones, and
+`export { Button } from '@/ui'`. With `autoFix: true` (the default) a single
+specifier is fixed; with `false` the rewrite is offered as a suggestion.
+
+Not reported: a specifier no mapping names, a path already direct, default,
+namespace and side-effect imports and `export *` (no export name to map),
+type-only imports (`import type`, all-inline `type`: erased), `require()` and
+`import()`.
+
+Without `mappings`, the rule applies built-in mappings for `@/components`,
+`@/hooks`, `@/utils`, `@/lib`, `~/components` and `~/hooks` to
+`<barrel>/<name>`. Configure `mappings` to match your layout: the rewrite
+does not check that the direct module exists.
+
+```ts
+// { mappings: [{ barrel: '^@/ui$', directPath: '@/ui/{name}' }] }
+
+// ❌ Incorrect
+import { Button } from '@/ui';
+
+// ✅ Correct
+import { Button } from '@/ui/Button';
+import type { Props } from '@/ui';
+```
 
 ## Options
 

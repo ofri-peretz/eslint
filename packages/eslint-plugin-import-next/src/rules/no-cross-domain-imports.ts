@@ -11,9 +11,11 @@
  *
  * @see https://martinfowler.com/bliki/BoundedContext.html
  */
+import path from 'node:path';
+
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, staticString } from '@interlace/eslint-devkit';
 import { normalizePath } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -43,7 +45,10 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
- * Extract domain/feature from file path
+ * The domain a path lies in: the directory right after a `domainPatterns`
+ * directory, when something lies below it (`domains/user/a.ts` -> `user`).
+ * `domains/helper` with nothing below could be the file `domains/helper.ts`,
+ * which is in no domain, so it is not decided.
  */
 function extractDomain(
   filePath: string,
@@ -52,8 +57,7 @@ function extractDomain(
   const normalizedPath = normalizePath(filePath);
 
   for (const pattern of domainPatterns) {
-    // Match pattern like /domains/user/ or /features/user/ or domains/user/ at start
-    const regex = new RegExp(`(?:^|[/\\\\])${pattern}[/\\\\]([^/\\\\]+)`, 'i');
+    const regex = new RegExp(`(?:^|/)${pattern}/([^/]+)/[^/]`, 'i');
     const match = normalizedPath.match(regex);
     if (match && match[1]) {
       return match[1];
@@ -64,28 +68,25 @@ function extractDomain(
 }
 
 /**
- * Check if path is in shared modules
+ * Does the path pass through a shared directory (a whole path segment)?
  */
 function isSharedModule(
   filePath: string,
   allowedSharedModules: string[],
 ): boolean {
-  const normalizedPath = normalizePath(filePath);
-
-  for (const shared of allowedSharedModules) {
-    if (
-      normalizedPath.includes(`/${shared}/`) ||
-      normalizedPath.includes(`\\${shared}\\`)
-    ) {
-      return true;
-    }
-  }
-
-  return false;
+  const normalizedPath = `/${normalizePath(filePath)}/`;
+  return allowedSharedModules.some((shared) =>
+    normalizedPath.includes(`/${shared}/`),
+  );
 }
 
 /**
- * Check if import violates domain boundaries
+ * Check if import violates domain boundaries.
+ *
+ * A relative `importPath` is resolved against `sourceFile`, and the target's
+ * domain is read from the path it resolves to - not guessed from the
+ * specifier's text. A package specifier never resolves into a domain
+ * directory, so it never violates.
  */
 export function violatesDomainBoundary(
   sourceFile: string,
@@ -99,104 +100,36 @@ export function violatesDomainBoundary(
   const {
     domainPatterns = ['domains', 'features', 'modules'],
     allowedSharedModules = ['shared', 'common', 'utils'],
-    // ignoreNodeModules = true, // Not used
     customRules = [],
   }: Options = options || {};
 
-  // Ignore external modules
   if (!importPath.startsWith('.')) {
     return { violates: false, sourceDomain: null, targetDomain: null };
   }
 
-  const sourceDomain = extractDomain(sourceFile, domainPatterns);
+  const source = normalizePath(sourceFile);
+  const target = path.posix.join(path.posix.dirname(source), importPath);
+  const sourceDomain = extractDomain(source, domainPatterns);
+  const targetDomain = extractDomain(target, domainPatterns);
 
-  // For relative imports, we need to resolve the path to get the actual target file
-  // In tests, we can extract from the import path string directly
-  // The early return above guarantees importPath starts with '.' here.
-  let targetDomain: string | null = null;
-
-  {
-    // Check if import path contains domain patterns
-    // e.g., '../../domains/order/service' -> extract 'order'
-    // Try multiple patterns to find the domain
-    for (const pattern of domainPatterns) {
-      // Match pattern like /domains/order/ or /features/user/
-      const regex = new RegExp(`[/\\\\]${pattern}[/\\\\]([^/\\\\]+)`, 'i');
-      const match = importPath.match(regex);
-      if (match && match[1]) {
-        targetDomain = match[1];
-        break;
-      }
-    }
-
-    // If still not found, try to extract from relative imports that clearly cross domain boundaries
-    // This is mainly for test compatibility with cases like ../product/helper
-    // In real usage, domain boundaries would be more clearly defined
-    if (!targetDomain) {
-      const segments = importPath.split(/[/\\]/);
-      // Only treat imports that go to sibling directories as domain crossings
-      // Pattern: ../domainName/... (exactly 3+ segments, single .., then domain name)
-      if (
-        segments.length >= 3 &&
-        segments[0] === '..' &&
-        segments[1] !== '.' &&
-        segments[1] !== '..' &&
-        segments[1] !== '' &&
-        segments[2] !== '' &&
-        segments.filter((s) => s === '..').length === 1
-      ) {
-        // Additional check: don't treat this as domain crossing if it doesn't look like a domain name
-        // For the test case ../other/helper, this should be considered valid (not a domain crossing)
-        // Only flag clear domain-like names or patterns that match known domains
-        const potentialDomain = segments[1];
-        if (
-          domainPatterns.some(
-            (p) =>
-              p.toLowerCase().includes(potentialDomain.toLowerCase()) ||
-              potentialDomain.toLowerCase().includes(p),
-          )
-        ) {
-          targetDomain = potentialDomain;
-        }
-        // For test compatibility, allow specific test cases
-        else if (['product', 'order'].includes(potentialDomain)) {
-          targetDomain = potentialDomain;
-        }
-      }
-    }
-  }
-
-  // If no domain detected, allow
-  if (!sourceDomain || !targetDomain) {
+  if (
+    !sourceDomain ||
+    !targetDomain ||
+    sourceDomain === targetDomain ||
+    isSharedModule(target, allowedSharedModules)
+  ) {
     return { violates: false, sourceDomain, targetDomain };
   }
 
-  // Same domain, allow
-  if (sourceDomain === targetDomain) {
-    return { violates: false, sourceDomain, targetDomain };
-  }
-
-  // Check if target is shared module
-  if (isSharedModule(importPath, allowedSharedModules)) {
-    return { violates: false, sourceDomain, targetDomain };
-  }
-
-  // Check custom rules
   for (const rule of customRules) {
-    if (sourceFile.includes(rule.from)) {
-      const isAllowed = rule.allowed?.some((allowed) =>
-        importPath.includes(allowed),
-      );
-      if (isAllowed) {
-        return { violates: false, sourceDomain, targetDomain };
-      }
-      if (rule.to.some((to) => importPath.includes(to))) {
-        return { violates: true, sourceDomain, targetDomain };
-      }
+    if (
+      source.includes(rule.from) &&
+      rule.allowed?.some((allowed) => target.includes(allowed))
+    ) {
+      return { violates: false, sourceDomain, targetDomain };
     }
   }
 
-  // Cross-domain import detected
   return { violates: true, sourceDomain, targetDomain };
 }
 
@@ -306,77 +239,71 @@ export const noCrossDomainImports = createRule<RuleOptions, MessageIds>({
     let filename: string;
     let options: Options;
 
-    /**
-     * Check import declarations
-     */
-    function checkImport(
-      node: TSESTree.ImportDeclaration | TSESTree.ImportExpression,
+    /** Every way a module is loaded or re-exported, by its specifier. */
+    function check(
+      source: TSESTree.Node | null | undefined,
+      node: TSESTree.Node,
     ) {
-      let importPath = '';
+      if (!source) return;
+      const importPath = staticString(source);
+      if (importPath === null || !importPath.startsWith('.')) return;
 
-      if (node.type === 'ImportDeclaration') {
-        importPath = node.source.value as string;
-      } else if (node.type === 'ImportExpression') {
-        if (node.source.type === 'Literal') {
-          /*
-           * A Literal source is not necessarily a string: `import(42)` and
-           * `import(null)` are both syntactically valid and parse to a Literal
-           * whose `value` is a number or null. The `as string` this replaced
-           * asserted otherwise, and the next line called `.startsWith` on it —
-           * a TypeError that crashed ESLint for the whole file, not a lint
-           * error. The cast is the reason the compiler could not see it.
-           */
-          if (typeof node.source.value !== 'string') return;
-          importPath = node.source.value;
-        } else {
-          return; // Dynamic import, skip
-        }
-      }
-
-      // Resolve relative paths
-      if (importPath.startsWith('.')) {
-        // For test files, use the import path directly since we can't resolve actual file system
-        // In real usage, this would resolve to actual paths
-        const violation = violatesDomainBoundary(filename, importPath, options);
-
-        if (
-          violation.violates &&
-          violation.sourceDomain &&
-          violation.targetDomain
-        ) {
-          context.report({
-            node,
-            messageId: 'crossDomainImport',
-            data: {
-              sourceDomain: violation.sourceDomain,
-              targetDomain: violation.targetDomain,
-            },
-            suggest: [
-              {
-                messageId: 'useSharedModule',
-                fix: () => null,
-              },
-              {
-                messageId: 'useEvents',
-                fix: () => null,
-              },
-              {
-                messageId: 'useApplicationService',
-                fix: () => null,
-              },
-            ],
-          });
-        }
-      }
+      const violation = violatesDomainBoundary(filename, importPath, options);
+      if (!violation.violates) return;
+      context.report({
+        node,
+        messageId: 'crossDomainImport',
+        data: {
+          sourceDomain: violation.sourceDomain as string,
+          targetDomain: violation.targetDomain as string,
+        },
+        suggest: [
+          { messageId: 'useSharedModule', fix: () => null },
+          { messageId: 'useEvents', fix: () => null },
+          { messageId: 'useApplicationService', fix: () => null },
+        ],
+      });
     }
 
     return {
       before() {
         [options = {}] = currentOptions();
-        filename = context.filename;
+        // Domains are read from the path inside the project, so a directory
+        // above the project root named like a domain pattern never counts.
+        const relative = path.relative(context.cwd, context.filename);
+        filename =
+          path.isAbsolute(context.filename) &&
+          !relative.startsWith('..') &&
+          !path.isAbsolute(relative)
+            ? relative
+            : context.filename;
       },
-      ImportDeclaration: checkImport,
-      ImportExpression: checkImport,
+      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        check(node.source, node);
+      },
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        check(node.source, node);
+      },
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        check(node.source, node);
+      },
+      ImportExpression(node: TSESTree.ImportExpression) {
+        check(node.source, node);
+      },
+      CallExpression(node: TSESTree.CallExpression) {
+        if (
+          node.callee.type === 'Identifier' &&
+          node.callee.name === 'require' &&
+          node.arguments.length === 1
+        ) {
+          check(node.arguments[0], node);
+        }
+      },
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        if (node.moduleReference.type === 'TSExternalModuleReference') {
+          check(node.moduleReference.expression, node);
+        }
+      },
     };
   },
 });

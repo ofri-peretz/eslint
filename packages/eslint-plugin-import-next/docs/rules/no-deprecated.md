@@ -9,7 +9,40 @@ Forbid imported names marked with @deprecated documentation tag
 
 ## Rule Details
 
-This rule aims to prevent issues related to deprecated.
+Using an API whose declaration marks it deprecated is reported. The mark is a JSDoc `@deprecated` tag, a marker listed in `deprecationMarkers` (which adds to `@deprecated`, it does not replace it), or a `@deprecated` decorator.
+
+- **Imported**: `import { old } from './api'` (also renamed, or the default) depends on a deprecated export and is reported at the import. Through a namespace import, each read of `ns.old` / `ns['old']` is reported. The other module is read through TypeScript, so imports are only judged with type information (`parserOptions.project` or `projectService`); without it, the other module is unknown and the rule is silent about imports.
+- **Declared in the same file**: each use of the deprecated binding is reported (`old()`, `new Old()`, `Old.member`, `const v = old`). The rule decides by binding: a parameter or an object key that shares the name is not the deprecated item, and a deprecated declaration nobody uses is not a finding.
+
+`allow` lists names that are never reported (for a migration period). `checkJSDoc: false` ignores JSDoc marks and `checkDecorators: false` ignores decorator marks.
+
+### ❌ Incorrect
+
+```ts
+// ./api.ts
+/** @deprecated Use fetchUser instead. */
+export function getUser() {}
+
+// app.ts
+import { getUser } from './api';
+```
+
+```ts
+/** @deprecated Use NewClient instead. */
+class OldClient {}
+new OldClient();
+```
+
+### ✅ Correct
+
+```ts
+import { fetchUser } from './api';
+
+/** @deprecated Use NewClient instead. */
+class OldClient {}
+const config = { OldClient: true };
+const build = (OldClient: () => void) => OldClient();
+```
 
 ## Options
 

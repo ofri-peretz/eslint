@@ -18,11 +18,13 @@ import {
   MessageIcons,
   propertyName,
 } from '@interlace/eslint-devkit';
+import { isLocallyBound } from '../utils/bindings';
+import { matchesAnyFilePattern } from '../utils/file-patterns';
 
 type MessageIds = 'importModuleExports';
 
 export interface Options {
-  /** Glob patterns for files to ignore */
+  /** File globs (or path substrings) where mixing is accepted */
   exceptions?: string[];
 }
 
@@ -69,42 +71,45 @@ export const noImportModuleExports = createRule<RuleOptions, MessageIds>({
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let hasImport: boolean;
-    let importNodes: TSESTree.ImportDeclaration[];
+    let exceptions: string[];
     let moduleExportsNodes: TSESTree.Node[];
 
     return {
       before() {
         hasImport = false;
-        importNodes = [];
         moduleExportsNodes = [];
+        exceptions = context.options[0]?.exceptions ?? [];
+        // `exceptions` lists file globs where mixing is accepted.
+        return !matchesAnyFilePattern(context.filename, exceptions);
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        hasImport = true;
-        importNodes.push(node);
+        // `import type` is erased at compile time: it loads nothing, so it
+        // mixes nothing with CommonJS.
+        if (node.importKind !== 'type') hasImport = true;
       },
-
       MemberExpression(node: TSESTree.MemberExpression) {
-        // Check for module.exports
+        // `module.exports`, read or written. `module` must be the CommonJS
+        // global, not a wrapper's parameter.
         if (
           node.object.type === AST_NODE_TYPES.Identifier &&
           node.object.name === 'module' &&
-          propertyName(node) === 'exports'
+          propertyName(node) === 'exports' &&
+          !isLocallyBound(context.sourceCode, node, 'module')
         ) {
           moduleExportsNodes.push(node);
         }
       },
-
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        // Check for exports.xxx = ...
+        // `exports.xxx = ...` on the CommonJS global.
         if (
           node.left.type === AST_NODE_TYPES.MemberExpression &&
           node.left.object.type === AST_NODE_TYPES.Identifier &&
-          node.left.object.name === 'exports'
+          node.left.object.name === 'exports' &&
+          !isLocallyBound(context.sourceCode, node, 'exports')
         ) {
           moduleExportsNodes.push(node.left);
         }
       },
-
       'Program:exit'() {
         // If we have both imports and module.exports, report on module.exports
         if (hasImport && moduleExportsNodes.length > 0) {

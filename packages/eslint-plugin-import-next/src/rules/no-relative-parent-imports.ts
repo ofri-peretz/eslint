@@ -8,6 +8,8 @@
  * ESLint Rule: no-relative-parent-imports
  * Prevents ../ imports (eslint-plugin-import inspired)
  */
+import { posix } from 'node:path';
+
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
@@ -97,8 +99,12 @@ export const noRelativeParentImports = createRule<RuleOptions, MessageIds>({
     let amd: boolean;
 
     function checkImport(importPath: string, node: TSESTree.Node) {
-      // Check if the import path starts with .. (parent directory)
-      if (importPath.startsWith('..')) {
+      // A relative path climbs out of the file's directory when, once
+      // normalised, it starts at `..`: `../x`, `..`, `./../x`, `./a/../../x`.
+      // `./a/../b` stays inside.
+      if (!importPath.startsWith('.')) return;
+      const normalized = posix.normalize(importPath);
+      if (normalized === '..' || normalized.startsWith('../')) {
         context.report({
           node,
           messageId: 'preferAbsoluteImport',
@@ -117,6 +123,14 @@ export const noRelativeParentImports = createRule<RuleOptions, MessageIds>({
         if (typeof importPath === 'string') {
           checkImport(importPath, node.source);
         }
+      },
+
+      // `export { x } from '../x'`, `export * from '../x'`
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        if (node.source) checkImport(node.source.value, node.source);
+      },
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        checkImport(node.source.value, node.source);
       },
 
       CallExpression(node: TSESTree.CallExpression) {

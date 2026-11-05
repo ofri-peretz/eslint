@@ -14,7 +14,27 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## Rule Details
 
-This rule aims to prevent issues related to enforce-dependency-direction.
+Dependencies point inward: a layer may depend on the layers listed before it in `layers` (default `domain`, `application`, `infrastructure`, `presentation`), never on a later one. Every way a module is loaded or re-exported is checked: `import`, side-effect `import`, `export … from`, `export * from`, `require()`, `import()` and TypeScript's `import x = require()`.
+
+A file's layer is the `layerPatterns` directory on its path (default: the four layers plus `ui` and `api`; when only `layers` is set, the layers themselves). A relative specifier is resolved against the importing file and takes the layer of the path it resolves to. An import from a later layer is reported; with `allowSameLayer: false`, an import from the file's own layer is reported too.
+
+Not reported: a file or target outside every layer directory, or in one not listed in `layers`; packages (their layer is unknown without resolver configuration).
+
+### ❌ Incorrect
+
+```ts
+// src/domain/user.ts
+import { db } from '../infrastructure/db';
+export * from '../application/service';
+```
+
+### ✅ Correct
+
+```ts
+// src/application/service.ts
+import { User } from '../domain/user';
+import { helper } from './helper';
+```
 
 ## Options
 

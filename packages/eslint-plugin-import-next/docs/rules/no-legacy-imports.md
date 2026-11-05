@@ -9,7 +9,24 @@ Detect imports from deprecated internal paths and suggest alternatives
 
 ## Rule Details
 
-This rule aims to prevent issues related to legacy-imports.
+The user maps deprecated import paths to their replacements; an import of a deprecated path is reported, with a fix that writes the replacement. Every way a module is loaded or re-exported is checked: `import`, side-effect `import`, `export … from`, `export * from`, `require()`, `import()` and TypeScript's `import x = require()`. Type-only imports count: the deprecated path is going away, and its types with it.
+
+Each `mappings` entry has `deprecated` - a regular expression tested against the specifier (anchor it with `^` / `$` to match a whole path) - and `replacement`, plus optional `reason`, `since` and `deadline`, which appear in the message. With no mappings nothing is reported. `severity` is informational: the ESLint severity in your config decides warn vs error.
+
+### ❌ Incorrect
+
+```ts
+// { mappings: [{ deprecated: '^@old/lib', replacement: '@new/lib' }] }
+import { format } from '@old/lib';
+export * from '@old/lib/x';
+```
+
+### ✅ Correct
+
+```ts
+import { format } from '@new/lib';
+import vendored from './vendor/@old/lib';
+```
 
 ## Options
 

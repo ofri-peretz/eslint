@@ -261,6 +261,16 @@ export const noNodejsModules = createRule<RuleOptions, MessageIds>({
       });
     }
 
+    function checkReexport(
+      node: TSESTree.ExportNamedDeclaration | TSESTree.ExportAllDeclaration,
+    ) {
+      if (!node.source || node.exportKind === 'type') return;
+      const moduleName = node.source.value;
+      if (isNodejsBuiltin(moduleName)) {
+        reportBuiltin(node.source, moduleName, 'static');
+      }
+    }
+
     return {
       before() {
         const [options] = context.options;
@@ -291,12 +301,19 @@ export const noNodejsModules = createRule<RuleOptions, MessageIds>({
         allowedBuiltins = new Set(allow);
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        // `import type` is erased at compile time: it loads nothing at runtime.
+        if (node.importKind === 'type') return;
         const moduleName = staticString(node.source);
 
         if (typeof moduleName === 'string' && isNodejsBuiltin(moduleName)) {
           reportBuiltin(node.source, moduleName, 'static');
         }
       },
+
+      // `export { x } from 'fs'` and `export * from 'fs'` load the module just
+      // as an import does.
+      ExportNamedDeclaration: checkReexport,
+      ExportAllDeclaration: checkReexport,
 
       CallExpression(node: TSESTree.CallExpression) {
         // Check require() calls

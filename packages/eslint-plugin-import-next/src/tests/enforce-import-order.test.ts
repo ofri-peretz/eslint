@@ -270,4 +270,74 @@ import { helper } from './helper';
       },
     ],
   });
+
+  // Found by the fidelity model (benchmarks/suites/fidelity/models/import-next).
+  ruleTester.run('enforce-import-order fidelity', enforceImportOrder, {
+    valid: [
+      {
+        name: 'crypto and fs are both builtins: alphabetized, no blank line',
+        code: "import crypto from 'crypto';\nimport fs from 'fs';",
+      },
+      {
+        name: '.. is the parent group, before a sibling',
+        code: "import up from '..';\n\nimport sib from './sib';",
+      },
+      {
+        name: './ and ./index.js are the index group, after a sibling',
+        code: "import sib from './sib';\n\nimport dir from './';\nimport idx from './index.js';",
+      },
+    ],
+    invalid: [
+      {
+        name: 'a builtin outside the common few goes before external packages',
+        code: "import react from 'react';\n\nimport crypto from 'crypto';",
+        output: "import crypto from 'crypto';\n\nimport react from 'react';",
+        errors: [{ messageId: 'importOrder' }],
+      },
+      {
+        name: 'case-sensitive order is code-unit order',
+        code: "import react from 'react';\nimport Zed from 'Zed';",
+        output: "import Zed from 'Zed';\nimport react from 'react';",
+        options: [{ alphabetize: { order: 'asc', caseInsensitive: false } }],
+        errors: [{ messageId: 'importOrder' }],
+      },
+      {
+        name: "import type has its own group when groups list 'type'",
+        code: "import type { T } from 'ext-types';\n\nimport react from 'react';",
+        output:
+          "import react from 'react';\n\nimport type { T } from 'ext-types';",
+        options: [
+          {
+            groups: [
+              'builtin',
+              'external',
+              'type',
+              'internal',
+              'parent',
+              'sibling',
+              'index',
+              'side-effect',
+            ],
+          },
+        ],
+        errors: [{ messageId: 'importOrder' }],
+      },
+    ],
+  });
 });
+
+// Spellings that load no module, or load one the rule does not judge.
+ruleTester.run(
+  'enforce-import-order fidelity (other spellings)',
+  enforceImportOrder,
+  {
+    valid: [
+      {
+        name: 'two imports of one specifier compare equal case-sensitively',
+        code: "import a from 'x';\nimport { b } from 'x';",
+        options: [{ alphabetize: { order: 'asc', caseInsensitive: false } }],
+      },
+    ],
+    invalid: [],
+  },
+);

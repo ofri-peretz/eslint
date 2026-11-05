@@ -20,6 +20,14 @@ describe('newline-after-import', () => {
   ruleTester.run('newline-after-import', newlineAfterImport, {
     valid: [
       {
+        name: 'a namespace alias is not an import statement',
+        code: 'import Alias = NS.Inner;\nconst x = Alias;',
+      },
+      {
+        name: 'import-equals requires form one block with imports',
+        code: "import foo from 'foo';\nimport bar = require('bar');\n\nconst baz = 1;",
+      },
+      {
         name: 'a blank line separates the imports from the code',
         code: "import foo from 'foo';\n\nconst a = 1;",
       },
@@ -28,6 +36,12 @@ describe('newline-after-import', () => {
       "import foo from 'foo';",
     ],
     invalid: [
+      {
+        name: 'a TS import-equals require followed by code on the next line',
+        code: "import foo = require('foo');\nconst bar = 1;",
+        output: "import foo = require('foo');\n\nconst bar = 1;",
+        errors: 1,
+      },
       {
         name: 'a require call on the line straight after the imports',
         code: "import foo from 'foo';\nconst bar = require('bar');",

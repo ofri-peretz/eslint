@@ -13,6 +13,15 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-dynamic-require', noDynamicRequire, {
   valid: [
+    {
+      name: 'a concatenation of string literals is a static name',
+      code: `require('./plugins/' + 'a');`,
+    },
+    {
+      name: 'esmodule: a concatenation of string literals in import() is static',
+      code: `import('./plugins/' + 'a');`,
+      options: [{ esmodule: true }],
+    },
     // Static require is allowed
     { name: 'require of a literal', code: `require('./module');` },
     { code: `require('lodash');` },

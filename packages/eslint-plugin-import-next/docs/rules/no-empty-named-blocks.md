@@ -10,7 +10,31 @@ Forbid empty named import blocks
 
 ## Rule Details
 
-This rule aims to prevent issues related to empty-named-blocks.
+An empty named block imports or re-exports nothing; it is usually left over after the last specifier was removed. This rule reports:
+
+- `import {} from 'm'` and `import type {} from 'm'`;
+- `import a, {} from 'm'` (the fix drops `, {}`);
+- `export {} from 'm'` and `export type {} from 'm'`.
+
+The braces are read as tokens, not text: a comment inside them (`import { /* none */ } from 'm'`) leaves them empty, and a `{}` inside a comment is no block. A local `export {}` marks a file as a module and is not reported; a side-effect `import 'm'` has no block.
+
+`import {} from 'm'` and `export {} from 'm'` still load and run `m`, so the autofix keeps that: it rewrites them to `import 'm'`, carrying over any import attributes. Deleting the statement would silently drop a polyfill, a stylesheet or a registration. A type-only statement (`import type {} from 'm'`, `export type {} from 'm'`) loads nothing, and the fix removes it. To delete a value statement entirely, use the "Remove empty import statement" suggestion.
+
+### ❌ Incorrect
+
+```ts
+import {} from './setup';
+import config from './config';
+export {} from './types';
+```
+
+### ✅ Correct
+
+```ts
+import './setup';
+import config from './config';
+export {};
+```
 
 ## Options
 
@@ -18,11 +42,8 @@ This rule aims to prevent issues related to empty-named-blocks.
 []
 ```
 
-## Implementation
+No options.
 
-- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-empty-named-blocks.ts)
-- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-empty-named-blocks.test.ts)
+## When Not To Use It
 
-## OWASP Foundation
-
-- **Category**: A00:2021 - General Security
+Never needed; an empty block has no meaning a side-effect import does not express better.

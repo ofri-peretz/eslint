@@ -153,3 +153,24 @@ ruleTester.run('prefer-tree-shakeable-imports', preferTreeShakeableImports, {
     },
   ],
 });
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/import-next).
+ruleTester.run(
+  'prefer-tree-shakeable-imports fidelity',
+  preferTreeShakeableImports,
+  {
+    valid: [
+      {
+        name: 'import type of a whole listed package is erased',
+        code: `import type Big from 'big';`,
+        options: [{ targetPackages: [{ name: 'big' }] }],
+      },
+      {
+        name: 'import type * as ns is erased, even when every namespace import is blocked',
+        code: `import type * as Big from './big';`,
+        options: [{ targetPackages: [], blockAllNamespaceImports: true }],
+      },
+    ],
+    invalid: [],
+  },
+);

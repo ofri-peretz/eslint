@@ -10,7 +10,10 @@ import {
   MessageIcons,
   hasParserServices,
   getParserServices,
+  objectKeyName,
+  propertyName,
 } from '@interlace/eslint-devkit';
+import type ts from 'typescript';
 import { loadTypeScript } from '../utils/typescript-peer';
 
 type MessageIds = 'namespace';
@@ -51,46 +54,72 @@ export const namespace = createRule<RuleOptions, MessageIds>({
     const services = getParserServices(context);
     const checker = services.program?.getTypeChecker?.();
 
+    /**
+     * The names the module behind namespace import `id` exports, or null
+     * when `id` is not a namespace import, or the module does not resolve
+     * (unknown, not missing), or is a CommonJS `export =` module (its names
+     * depend on interop).
+     */
+    function namespaceExports(id: TSESTree.Identifier): Set<string> | null {
+      const symbol = checker?.getSymbolAtLocation(
+        services.esTreeNodeToTSNodeMap.get(id),
+      );
+      const declaration = symbol?.declarations?.[0];
+      if (
+        !declaration ||
+        declaration.kind !== loadTypeScript()?.SyntaxKind.NamespaceImport
+      ) {
+        return null;
+      }
+      // NamespaceImport -> ImportClause -> ImportDeclaration
+      const importDeclaration = declaration.parent.parent as unknown as {
+        moduleSpecifier: ts.Node;
+      };
+      const moduleSymbol = checker?.getSymbolAtLocation(
+        importDeclaration.moduleSpecifier,
+      );
+      if (!moduleSymbol?.exports) return null;
+      if (moduleSymbol.exports.has('export=' as ts.__String)) return null;
+      return new Set(
+        checker?.getExportsOfModule(moduleSymbol).map((s) => s.name),
+      );
+    }
+
     return {
+      // `ns.missing` and `ns['missing']`; a runtime key `ns[k]` names nothing.
       MemberExpression(node: TSESTree.MemberExpression) {
-        // Check if object is a namespace import
-        const object = node.object;
-        if (object.type !== 'Identifier') return;
+        if (node.object.type !== 'Identifier') return;
+        const name = propertyName(node);
+        if (name === null) return;
+        const names = namespaceExports(node.object);
+        if (names && !names.has(name)) {
+          context.report({
+            node: node.property,
+            messageId: 'namespace',
+            data: { name },
+          });
+        }
+      },
 
-        const tsNode = services.esTreeNodeToTSNodeMap.get(object);
-        const symbol = checker?.getSymbolAtLocation?.(tsNode);
-
-        if (symbol && symbol.declarations && symbol.declarations.length > 0) {
-          const declaration = symbol.declarations[0];
-          if (
-            declaration.kind === loadTypeScript()?.SyntaxKind.NamespaceImport
-          ) {
-            // If we have a namespace import, the symbol should refer to the module.
-            // We need to check if the property being accessed exists on the module exports.
-
-            if (node.property.type !== 'Identifier') return; // Computed access might be hard to check
-
-            const propertyName = node.property.name;
-
-            // This is a bit simplified; we really need to check the type of the symbol
-            const type = checker?.getTypeAtLocation?.(tsNode);
-            if (!type) return;
-            const propertySymbol = checker?.getPropertyOfType?.(
-              type,
-              propertyName,
-            );
-
-            // Removed erroneous early return here
-
-            if (!propertySymbol) {
-              context.report({
-                node: node.property,
-                messageId: 'namespace',
-                data: {
-                  name: propertyName,
-                },
-              });
-            }
+      // `const { missing } = ns` reads the name too.
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        if (
+          node.id.type !== 'ObjectPattern' ||
+          node.init?.type !== 'Identifier'
+        ) {
+          return;
+        }
+        const names = namespaceExports(node.init);
+        if (!names) return;
+        for (const property of node.id.properties) {
+          if (property.type !== 'Property') continue;
+          const name = objectKeyName(property);
+          if (name !== null && !names.has(name)) {
+            context.report({
+              node: property.key,
+              messageId: 'namespace',
+              data: { name },
+            });
           }
         }
       },

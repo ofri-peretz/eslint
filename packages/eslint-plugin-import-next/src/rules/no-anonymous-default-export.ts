@@ -116,43 +116,44 @@ export const noAnonymousDefaultExport = createRule<RuleOptions, MessageIds>({
     let allowClassExpression: boolean;
     let allowFunctionExpression: boolean;
 
-    function isAnonymous(node: TSESTree.ExportDefaultDeclaration): boolean {
-      const declaration = node.declaration;
+    /**
+     * The exported function or class, through TS wrappers that do not change
+     * the value (`(() => {}) as Handler`, `satisfies`, `!`, `<T>x`).
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    function exportedValue(
+      node: TSESTree.ExportDefaultDeclaration,
+    ): TSESTree.Node {
+      let value: TSESTree.Node = node.declaration;
+      while (
+        value.type === 'TSAsExpression' ||
+        value.type === 'TSSatisfiesExpression' ||
+        value.type === 'TSNonNullExpression' ||
+        value.type === 'TSTypeAssertion'
+      ) {
+        value = value.expression;
+      }
+      return value;
+    }
 
-      switch (declaration.type) {
+    /**
+     * A default export is anonymous when it is a function or a class with no
+     * name. Everything else (a reference, a call, a literal, an object, an
+     * interface) is not a function or class this rule names.
+     */
+    function isAnonymous(node: TSESTree.ExportDefaultDeclaration): boolean {
+      const value = exportedValue(node);
+      switch (value.type) {
         case 'ArrowFunctionExpression':
           return !allowArrowFunction;
-
-        case 'ClassExpression':
-          return !allowClassExpression;
-
         case 'FunctionExpression':
-          return !allowFunctionExpression;
-
         case 'FunctionDeclaration':
-          // Function declarations in default exports are anonymous if they have no name
-          // (e.g., export default function() {}), and should be treated like function expressions
-          return declaration.id ? false : !allowFunctionExpression;
-
+          return !value.id && !allowFunctionExpression;
+        case 'ClassExpression':
         case 'ClassDeclaration':
-          // Class declarations in default exports are anonymous if they have no name
-          // (e.g., export default class {}), and should be treated like class expressions
-          return declaration.id ? false : !allowClassExpression;
-
-        case 'CallExpression':
-          // Allow calls like React.forwardRef(() => ...)
-          // Allow calls like withRouter(Component)
-          return false;
-
-        case 'Identifier':
-        case 'Literal':
-        case 'ObjectExpression':
-        case 'ArrayExpression':
-          // These are not anonymous - they're named references or literals
-          return false;
-
+          return !value.id && !allowClassExpression;
         default:
-          return true;
+          return false;
       }
     }
 
@@ -160,7 +161,7 @@ export const noAnonymousDefaultExport = createRule<RuleOptions, MessageIds>({
     function getSuggestionText(
       node: TSESTree.ExportDefaultDeclaration,
     ): string {
-      const declaration = node.declaration;
+      const declaration = exportedValue(node);
 
       switch (declaration.type) {
         case 'ArrowFunctionExpression':

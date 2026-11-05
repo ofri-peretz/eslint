@@ -1,7 +1,7 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-10-25",
+  "generatedAt": "2026-11-05",
   "totalPlugins": 32,
   "totalRules": 499,
   "oxlintCompatible": 499,
@@ -844,7 +844,7 @@
           "name": "no-deprecated",
           "portability": "compatible",
           "blockers": [],
-          "isTypeAware": false
+          "isTypeAware": true
         },
         {
           "name": "no-duplicates",
