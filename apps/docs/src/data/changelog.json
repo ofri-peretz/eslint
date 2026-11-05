@@ -7,6 +7,36 @@
     {
       "package": "oxlint-plugin-import-next",
       "short": "oxlint-plugin-import-next",
+      "version": "2.9.3",
+      "date": "2026-11-05T04:48:28Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-import-next@2.9.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.9.3",
+      "date": "2026-11-05T04:47:00Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-empty-named-blocks` autofix no longer deletes `import {} from 'm'` / `export {} from 'm'`, which silently dropped the module's side effects. It rewrites them to `import 'm'` (import attributes kept); type-only statements are still removed, and removing a value statement entirely remains a suggestion.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-import-next",
+      "short": "oxlint-plugin-import-next",
       "version": "2.9.2",
       "date": "2026-11-05T04:33:05Z",
       "isApp": false,
@@ -22350,21 +22380,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-import-next",
-      "short": "eslint-plugin-import-next",
-      "version": "2.9.3",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-empty-named-blocks` autofix no longer deletes `import {} from 'm'` / `export {} from 'm'`, which silently dropped the module's side effects. It rewrites them to `import 'm'` (import attributes kept); type-only statements are still removed, and removing a value statement entirely remains a suggestion.",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
@@ -22625,21 +22640,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-import-next",
-      "short": "oxlint-plugin-import-next",
-      "version": "2.9.3",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-import-next@2.9.3`",
           "pr": null
         }
       ]
