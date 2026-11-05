@@ -128,3 +128,63 @@ ruleTester.run('require-import-approval', requireImportApproval, {
     },
   ],
 });
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/import-next).
+ruleTester.run('require-import-approval fidelity', requireImportApproval, {
+  valid: [
+    {
+      name: 'a Node.js builtin is not a package, even under deny',
+      code: `import { readFile } from 'node:fs';\nimport path from 'path';`,
+      options: [denyByDefaultOptions],
+    },
+    {
+      name: 'a # subpath import is the package itself, not a dependency',
+      code: `import { x } from '#lib/x';`,
+      options: [denyByDefaultOptions],
+    },
+    {
+      name: 'path aliases npm cannot publish under are not packages',
+      code: `import a from '@/lib';\nimport b from '~/lib';`,
+      options: [denyByDefaultOptions],
+    },
+  ],
+  invalid: [
+    {
+      name: 'export { x } from a blocked package',
+      code: `export { x } from 'vulnerable-package';`,
+      options: [defaultOptions],
+      errors: [{ messageId: 'blockedPackage' }],
+    },
+    {
+      name: 'export * from a blocked package',
+      code: `export * from 'vulnerable-package';`,
+      options: [defaultOptions],
+      errors: [{ messageId: 'blockedPackage' }],
+    },
+    {
+      name: 'import x = require() of a blocked package',
+      code: `import v = require('vulnerable-package');`,
+      options: [defaultOptions],
+      errors: [{ messageId: 'blockedPackage' }],
+    },
+  ],
+});
+
+// Spellings that load no module, or load one the rule does not judge.
+ruleTester.run('require-import-approval fidelity (other spellings)', requireImportApproval, {
+  valid: [
+    {
+      name: "a local export and an import alias load nothing",
+      code: "namespace NS { export const b = 1; }\nimport A = NS.b;\nexport const v = A;\nexport { A };",
+      options: [denyByDefaultOptions],
+    },
+  ],
+  invalid: [
+    {
+      name: "an ignore pattern that names another package exempts nothing",
+      code: "import v from 'vulnerable-package';",
+      options: [{ ...defaultOptions, ignorePatterns: ['other-*'] }],
+      errors: [{ messageId: 'blockedPackage' }],
+    },
+  ],
+});

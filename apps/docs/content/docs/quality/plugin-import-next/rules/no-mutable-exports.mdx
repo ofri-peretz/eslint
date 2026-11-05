@@ -13,7 +13,30 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## Rule Details
 
-This rule aims to prevent issues related to mutable-exports.
+An exported `let` or `var` is a live binding: every importer sees the exporting module's later reassignments, which makes the value's history hard to follow. This rule reports a module-level `let` / `var` that the module exports by name:
+
+- inline, also destructured (`export let { a } = obj`);
+- through an export list, also renamed (`export { count as total }`);
+- as the default through a list (`export { count as default }`), which exports the binding.
+
+Not reported: `const`, functions and classes; `export default count`, which exports the value at that moment, not the binding; a re-export from another module; an imported binding re-exported.
+
+### ❌ Incorrect
+
+```ts
+export let count = 0;
+var total = 0;
+export { total };
+```
+
+### ✅ Correct
+
+```ts
+export const count = 0;
+let total = 0;
+export default total;
+export function increment() {}
+```
 
 ## Options
 
@@ -42,11 +65,9 @@ This rule aims to prevent issues related to mutable-exports.
 ]
 ```
 
-## Implementation
+- `allowInFiles` (default `[]`): file globs (or path substrings) where mutable exports are accepted. A glob matches any run of whole path segments, so `**/state/*.ts` matches an absolute filename.
+- `ignoreExports` (default `[]`): exported names to skip; the name the module publishes (`total` in `export { count as total }`).
 
-- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-mutable-exports.ts)
-- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-mutable-exports.test.ts)
+## When Not To Use It
 
-## OWASP Foundation
-
-- **Category**: A00:2021 - General Security
+When a module intentionally exposes live bindings, e.g. a state module read by other modules.

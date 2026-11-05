@@ -218,6 +218,145 @@ function importsOnlyInlineTypes(statement: string): boolean {
 }
 
 /**
+ * Re-exports of a whole module: `export * from './a'`, `export * as ns from
+ * './a'`. A runtime edge like `export { x } from`; `export type * from` does
+ * not match (`type` sits between `export` and `*`) and stays erased.
+ */
+const EXPORT_ALL_REGEX =
+  /export\s*\*\s*(?:as\s+[\w$]+\s+)?from\s+['"]([^'"]+)['"]/g;
+
+/**
+ * A top-level CommonJS load: `require('./a')`, `const a = require('./a')`,
+ * TS `import a = require('./a')`, at the start of a line. A `require()`
+ * nested in a function body runs later, after both modules initialized, so
+ * only an unindented one is taken as an initialization edge.
+ */
+const TOP_LEVEL_REQUIRE_REGEX =
+  /^(?:(?:const|let|var)\s+[\w${}\s,:]+=\s*|import\s+[\w$]+\s*=\s*)?require\s*\(\s*['"]([^'"]+)['"]\s*\)/gm;
+
+const exportKindCache = new Map<string, Map<string, 'type' | 'value'>>();
+
+/** Forget every `exportKindsOf` answer (watch mode: an edit changes them). */
+export function clearExportKindCache(): void {
+  exportKindCache.clear();
+}
+
+/** Resolves `specifier` as written in `fromFile`, or null when it cannot. */
+export type ExportKindResolver = (
+  specifier: string,
+  fromFile: string,
+) => string | null;
+
+/**
+ * The names `target` exports, each as a TYPE (`interface`, `type`) or a
+ * VALUE (anything else: `const`, `function`, `class`, `enum`, `namespace`).
+ * A name declared as both is a value. A regex over the source, like the rest
+ * of this graph: it is a cross-file read with no AST. An unreadable file
+ * exports nothing known, so every lookup misses and reads as a value.
+ *
+ * With `resolve`, names a barrel re-exports are followed to the module that
+ * declares them: `export type { A } from` and `export type *` are types,
+ * `export { A } from './x'` and `export * from './x'` take A's kind in `./x`,
+ * and `export { A }` / `export type { A }` lists take the local declaration's
+ * kind. Without it, a barrel's re-exported names stay unknown (values).
+ */
+export function exportKindsOf(
+  target: string,
+  resolve?: ExportKindResolver,
+  visiting: Set<string> = new Set(),
+): Map<string, 'type' | 'value'> {
+  const hit = exportKindCache.get(target);
+  if (hit) return hit;
+  const kinds = new Map<string, 'type' | 'value'>();
+  // A re-export cycle (`a` re-exports `b`, `b` re-exports `a`): the inner
+  // visit sees an empty, uncached answer and the outer one completes.
+  if (visiting.has(target)) return kinds;
+  visiting.add(target);
+  const source = readFileSync(target, 'utf-8') ?? '';
+  const set = (name: string, kind: 'type' | 'value') => {
+    if (kinds.get(name) !== 'value') kinds.set(name, kind);
+  };
+  for (const m of source.matchAll(
+    /export\s+(?:declare\s+)?(?:abstract\s+)?(?:const|let|var|function|class|enum|namespace|module)\s+([A-Za-z_$][\w$]*)/g,
+  )) {
+    set(m[1], 'value');
+  }
+  for (const m of source.matchAll(
+    /export\s+(?:declare\s+)?(?:interface|type)\s+([A-Za-z_$][\w$]*)/g,
+  )) {
+    set(m[1], 'type');
+  }
+  if (resolve) {
+    // Local declarations, exported or not, for `export { A }` lists.
+    const local = new Map<string, 'type' | 'value'>();
+    for (const m of source.matchAll(
+      /^(?:export\s+)?(?:declare\s+)?(?:abstract\s+)?(?:(const|let|var|function|class|enum|namespace|module)|(interface|type))\s+([A-Za-z_$][\w$]*)/gm,
+    )) {
+      if (local.get(m[3]) !== 'value') local.set(m[3], m[1] ? 'value' : 'type');
+    }
+    const kindIn = (from: string | undefined, name: string) => {
+      if (from === undefined) return local.get(name);
+      const file = resolve(from, target);
+      return file ? exportKindsOf(file, resolve, visiting).get(name) : undefined;
+    };
+    for (const m of source.matchAll(
+      /export\s+(type\s+)?\{([^}]*)\}(?:\s*from\s*['"]([^'"]+)['"])?/g,
+    )) {
+      for (const raw of m[2].split(',')) {
+        const spec = raw.trim();
+        if (!spec) continue;
+        const inlineType = /^type\s+(?!as(?:\s|$))/.test(spec);
+        const [orig, alias] = spec
+          .replace(/^type\s+(?!as(?:\s|$))/, '')
+          .split(/\s+as\s+/);
+        const exported = (alias ?? orig).trim();
+        const kind =
+          m[1] || inlineType ? 'type' : kindIn(m[3], orig.trim());
+        if (kind) set(exported, kind);
+      }
+    }
+    for (const m of source.matchAll(
+      /export\s+(type\s+)?\*\s*from\s*['"]([^'"]+)['"]/g,
+    )) {
+      const file = resolve(m[2], target);
+      if (!file) continue;
+      for (const [name, kind] of exportKindsOf(file, resolve, visiting)) {
+        if (!kinds.has(name)) kinds.set(name, m[1] ? 'type' : kind);
+      }
+    }
+  }
+  visiting.delete(target);
+  exportKindCache.set(target, kinds);
+  return kinds;
+}
+
+/**
+ * Does this braced import take nothing but TYPES from `target`, inline
+ * (`{ type T }`) or implicitly (`{ T }` where `target` exports `interface T`)?
+ * TypeScript elides such an import unless `verbatimModuleSyntax`, the same as
+ * an all-inline-type one, so it carries the same `inlineTypeOnly` flag.
+ */
+function importsOnlyTypesFrom(
+  statement: string,
+  target: string,
+  resolve: ExportKindResolver,
+): boolean {
+  const clause = BRACED_CLAUSE_ONLY.exec(statement);
+  if (!clause) return false;
+  const bindings = clause[1]
+    .split(',')
+    .map((binding) => binding.trim())
+    .filter(Boolean);
+  if (!bindings.length) return false;
+  const kinds = exportKindsOf(target, resolve);
+  return bindings.every(
+    (binding) =>
+      INLINE_TYPE_BINDING.test(binding) ||
+      kinds.get(binding.split(/\s+as\s+/)[0]) === 'type',
+  );
+}
+
+/**
  * Default extensions for import resolution.
  * Module-level constant to avoid allocating a new array per resolve call.
  */
@@ -770,18 +909,27 @@ export function getFileImports(
     // `importsOnlyInlineTypes`.
     while ((match = IMPORT_REGEX.exec(content)) !== null) {
       const isTypeImport = /^import\s+type[\s{]/.test(match[0]);
-      pushImport(
-        match[1],
-        false,
-        isTypeImport,
-        !isTypeImport && importsOnlyInlineTypes(match[0]),
-      );
+      let inlineTypeOnly = false;
+      if (!isTypeImport) {
+        const target = resolveImportPath(match[1], resolveOpts);
+        inlineTypeOnly =
+          importsOnlyInlineTypes(match[0]) ||
+          (target !== null &&
+            importsOnlyTypesFrom(match[0], target, (spec, fromFile) =>
+              resolveImportPath(spec, { ...resolveOpts, fromFile }),
+            ));
+      }
+      pushImport(match[1], false, isTypeImport, inlineTypeOnly);
     }
 
     // Match re-exports (`export … from '…'`). Without this, cycles routed
     // through re-export-only files (a common pattern in barrel-heavy
     // codebases) are invisible.
     while ((match = EXPORT_FROM_REGEX.exec(content)) !== null) pushImport(match[1]);
+    EXPORT_ALL_REGEX.lastIndex = 0;
+    while ((match = EXPORT_ALL_REGEX.exec(content)) !== null) pushImport(match[1]);
+    TOP_LEVEL_REQUIRE_REGEX.lastIndex = 0;
+    while ((match = TOP_LEVEL_REQUIRE_REGEX.exec(content)) !== null) pushImport(match[1]);
 
     // Match dynamic imports
     while ((match = DYNAMIC_IMPORT_REGEX.exec(content)) !== null) pushImport(match[1], true);
@@ -1146,6 +1294,7 @@ export function findShortestCyclePath(
   options: Omit<CycleDetectionOptions, 'reportAllCycles' | 'maxDepth'> & { maxDepth?: number },
 ): string[] | null {
   const { workspaceRoot, barrelExports, cache, resolverSettings } = options;
+  const maxDepth = options.maxDepth ?? Infinity;
 
   const srcSCC = cache.sccIndex.get(sourceFile);
   if (srcSCC === undefined) return null;
@@ -1156,6 +1305,9 @@ export function findShortestCyclePath(
 
   while (queue.length > 0) {
     const path = queue.shift()!;
+    // `maxDepth` counts the imports from the target back to the source:
+    // 1 finds only A -> B -> A. BFS order makes every later path as long.
+    if (path.length > maxDepth) break;
     const current = path[path.length - 1];
 
     const imports = getFileImports(current, {

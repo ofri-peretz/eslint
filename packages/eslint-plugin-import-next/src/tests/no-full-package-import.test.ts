@@ -156,3 +156,52 @@ ruleTester.run('no-full-package-import', noFullPackageImport, {
     },
   ],
 });
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/import-next).
+const fidelityBlocked = {
+  blockedPackages: [{ name: 'big', suggestion: 'Use subpath imports' }],
+};
+ruleTester.run('no-full-package-import fidelity', noFullPackageImport, {
+  valid: [
+    {
+      name: 'import type of the whole package is erased and bundles nothing',
+      code: `import type Big from 'big';`,
+      options: [fidelityBlocked],
+    },
+    {
+      name: 'a destructured require takes named members',
+      code: `const { a } = require('big');`,
+      options: [fidelityBlocked],
+    },
+  ],
+  invalid: [
+    {
+      name: 'const x = require() binds the whole package',
+      code: `const big = require('big');`,
+      options: [fidelityBlocked],
+      errors: [{ messageId: 'fullPackageImport' }],
+    },
+    {
+      name: 'import x = require() binds the whole package',
+      code: `import big = require('big');`,
+      options: [fidelityBlocked],
+      errors: [{ messageId: 'fullPackageImport' }],
+    },
+  ],
+});
+
+// Spellings that load no module, or load one the rule does not judge.
+ruleTester.run(
+  'no-full-package-import fidelity (other spellings)',
+  noFullPackageImport,
+  {
+    valid: [
+      {
+        name: 'require of a non-string, of an unlisted package, and an import alias',
+        code: "const a = require(42);\nconst b = require('other');\nnamespace NS { export const b = 1; }\nimport A = NS.b;\nexport const v = A;\nexport { A };",
+        options: [fidelityBlocked],
+      },
+    ],
+    invalid: [],
+  },
+);

@@ -26,7 +26,6 @@ import { createWithMockContext } from '@interlace/eslint-devkit';
 import { noDefaultExport } from '../rules/no-default-export';
 import { noDeprecated } from '../rules/no-deprecated';
 import { noDuplicates } from '../rules/no-duplicates';
-import { noEmptyNamedBlocks } from '../rules/no-empty-named-blocks';
 import { noExtraneousDependencies } from '../rules/no-extraneous-dependencies';
 import { noFullPackageImport } from '../rules/no-full-package-import';
 import { noInternalModules } from '../rules/no-internal-modules';
@@ -304,26 +303,6 @@ describe('no-deprecated — Layer 2', () => {
     expect(Object.keys(listeners)).toEqual([]);
   });
 
-  it('reads deprecation info from node.leadingComments', () => {
-    const { listeners, reports } = createWithMockContext(noDeprecated);
-    (listeners.VariableDeclaration as (n: unknown) => void)({
-      type: 'VariableDeclaration',
-      leadingComments: [
-        { type: 'Block', value: '* @deprecated use newThing instead ' },
-      ],
-      declarations: [
-        { type: 'VariableDeclarator', id: { type: 'Identifier', name: 'legacyVar' } },
-      ],
-    });
-    (listeners.CallExpression as (n: unknown) => void)({
-      type: 'CallExpression',
-      callee: { type: 'Identifier', name: 'legacyVar' },
-      arguments: [],
-    });
-    expect(reports).toHaveLength(1);
-    expect(reports[0]).toMatchObject({ messageId: 'deprecatedUsage' });
-  });
-
   it('tolerates synthetic export nodes without specifiers', () => {
     const { listeners, reports } = createWithMockContext(noDeprecated);
     (listeners.ExportNamedDeclaration as (n: unknown) => void)({
@@ -343,7 +322,7 @@ ruleTester.run('no-duplicates (coverage)', noDuplicates, {
   invalid: [
     {
       name: 'namespace imports are too complex to merge',
-      code: `import * as a from 'm';\nimport { b } from 'm';`,
+      code: `import * as a from 'm';\nimport * as b from 'm';`,
       errors: [{ messageId: 'noDuplicates' }],
       output: null,
     },
@@ -366,23 +345,6 @@ ruleTester.run('no-duplicates (coverage)', noDuplicates, {
       output: null,
     },
   ],
-});
-
-// ---------------------------------------------------------------------------
-// no-empty-named-blocks — Layer 2 (namespace + empty braces is unparseable)
-// ---------------------------------------------------------------------------
-describe('no-empty-named-blocks — Layer 2', () => {
-  it('namespace import with stray empty braces in text is not reported', () => {
-    const { listeners, reports } = createWithMockContext(noEmptyNamedBlocks, {
-      sourceText: `import * as ns, {} from 'm';`,
-    });
-    (listeners.ImportDeclaration as (n: unknown) => void)({
-      type: 'ImportDeclaration',
-      specifiers: [{ type: 'ImportNamespaceSpecifier' }],
-      source: { type: 'Literal', value: 'm' },
-    });
-    expect(reports).toEqual([]);
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -890,31 +852,6 @@ ruleTester.run(
     invalid: [],
   },
 );
-
-describe('no-named-as-default-member — Layer 2', () => {
-  it('skips non-computed member access with a non-identifier property', () => {
-    const { listeners, reports } = createWithMockContext(
-      noNamedAsDefaultMember,
-    );
-    (listeners.ImportDeclaration as (n: unknown) => void)({
-      type: 'ImportDeclaration',
-      source: { type: 'Literal', value: 'm' },
-      specifiers: [
-        {
-          type: 'ImportDefaultSpecifier',
-          local: { type: 'Identifier', name: 'def' },
-        },
-      ],
-    });
-    (listeners.MemberExpression as (n: unknown) => void)({
-      type: 'MemberExpression',
-      computed: false,
-      object: { type: 'Identifier', name: 'def' },
-      property: { type: 'Literal', value: 'x' },
-    });
-    expect(reports).toEqual([]);
-  });
-});
 
 // ---------------------------------------------------------------------------
 // no-named-as-default

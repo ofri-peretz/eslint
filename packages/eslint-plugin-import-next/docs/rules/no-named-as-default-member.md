@@ -8,7 +8,29 @@ Forbid use of exported name as property of default export
 
 ## Rule Details
 
-This rule aims to prevent issues related to named-as-default-member.
+Reading a named export as a property of the module's default import is reported: after `import foo from './m'`, `foo.bar` where `./m` exports `bar` should be `import { bar } from './m'`.
+
+The rule does not read the other module. The evidence that `./m` exports `bar` is this file taking `bar` from the same module: in the default's own declaration (`import foo, { bar } from './m'`), in another import (plain, or renamed `{ bar as b }`), or in a re-export (`export { bar } from './m'`). The default can be spelled `import foo` or `import { default as foo }`. The read can be `foo.bar`, `foo['bar']` or `const { bar } = foo`.
+
+The rule decides by binding: a parameter or local `foo` that shadows the import is a different value. Not reported: a key chosen at runtime (`foo[key]`), and a name taken from a different module.
+
+### ❌ Incorrect
+
+```ts
+import api, { fetchUser } from './api';
+api.fetchUser(1);
+api['fetchUser'](1);
+const { fetchUser: load } = api;
+```
+
+### ✅ Correct
+
+```ts
+import api, { fetchUser } from './api';
+fetchUser(1);
+api.version;
+const call = (api: { fetchUser(): void }) => api.fetchUser();
+```
 
 ## Options
 

@@ -146,17 +146,10 @@ function splitSpecifierClause(
 }
 
 /**
- * Check if a node is a local export (not re-exporting from another module)
+ * Is this sourceless named export a local declaration (`export const x = ...`)?
  */
-function isLocalExport(node: TSESTree.Node): boolean {
-  if (node.type === AST_NODE_TYPES.ExportNamedDeclaration) {
-    // Has a declaration (export const x = ...) or no source (export { x })
-    return node.source === null && node.declaration !== null;
-  }
-  if (node.type === AST_NODE_TYPES.ExportDefaultDeclaration) {
-    return true;
-  }
-  return false;
+function isLocalExport(node: TSESTree.ExportNamedDeclaration): boolean {
+  return node.declaration !== null;
 }
 
 /**
@@ -281,6 +274,8 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
     let importSourceByLocalName: Map<string, string>;
     let typeOnlyImportNames: Set<string>;
     let indirectReexportSources: Set<string>;
+    let defaultIdentifiers: string[];
+    let defaultReexports: number;
 
     return {
       before() {
@@ -319,6 +314,8 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
         typeOnlyImportNames = new Set<string>();
         // Sources forwarded indirectly (imported, then exported by specifier).
         indirectReexportSources = new Set<string>();
+        defaultIdentifiers = [];
+        defaultReexports = 0;
         return true;
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
@@ -338,12 +335,23 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
         }
       },
 
+      // A type-only re-export (`export type * from`, `export type { T } from`,
+      // `export { type T } from`) is erased at compile time: it loads nothing
+      // into a bundle, so it does not make a file a barrel.
       ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        if (node.exportKind === 'type') return;
         exportAllDeclarations.push(node);
       },
 
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
         if (isReexport(node)) {
+          if (
+            node.exportKind === 'type' ||
+            (node.specifiers.length > 0 &&
+              node.specifiers.every((s) => s.exportKind === 'type'))
+          ) {
+            return;
+          }
           namedReexports.push(node);
         } else if (isLocalExport(node)) {
           localExports.push(node);
@@ -359,12 +367,27 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
       },
 
       ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration) {
-        if (isLocalExport(node)) {
-          localExports.push(node);
+        // `import x from './x'; export default x;` passes `./x` through like
+        // `export { default } from './x'`. Resolved at Program:exit, since the
+        // import may come after.
+        if (node.declaration.type === AST_NODE_TYPES.Identifier) {
+          defaultIdentifiers.push(node.declaration.name);
+          return;
         }
+        localExports.push(node);
       },
 
       'Program:exit'(node: TSESTree.Program) {
+        for (const name of defaultIdentifiers) {
+          const source = importSourceByLocalName.get(name);
+          if (source === undefined) {
+            localExports.push(node);
+          } else {
+            indirectReexportSources.add(source);
+            defaultReexports++;
+          }
+        }
+
         for (const clause of sourcelessClauses) {
           const { reexportSources, hasLocalExport } = splitSpecifierClause(
             clause,
@@ -383,7 +406,9 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
         }
 
         const totalReexports =
-          exportAllDeclarations.length + namedReexports.length;
+          exportAllDeclarations.length +
+          namedReexports.length +
+          defaultReexports;
         const totalExports = totalReexports + localExports.length;
 
         // No exports = not a barrel file

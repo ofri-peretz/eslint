@@ -718,7 +718,8 @@ describe('export — Layer 2 (synthetic declarations)', () => {
     const { listeners, reports } = createWithMockContext(exportRule);
     (listeners.ExportNamedDeclaration as (n: unknown) => void)({
       type: 'ExportNamedDeclaration',
-      declaration: { type: 'TSModuleDeclaration' },
+      // An overload signature is not a second declaration.
+      declaration: { type: 'TSDeclareFunction' },
       specifiers: [],
     });
     expect(reports).toEqual([]);

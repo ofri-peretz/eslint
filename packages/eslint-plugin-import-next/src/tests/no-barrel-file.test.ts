@@ -412,3 +412,45 @@ ruleTester.run('no-barrel-file', noBarrelFile, {
     },
   ],
 });
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/import-next/
+// no_barrel_file): type-only re-exports were counted, though they load
+// nothing into a bundle, and `import x from './x'; export default x` counted
+// as a local export instead of a re-export.
+ruleTester.run('no-barrel-file - fidelity', noBarrelFile, {
+  valid: [
+    {
+      name: 'export type * from re-exports only types',
+      code: "export type * from './a';\nexport type * from './b';\nexport type * from './c';",
+      filename: '/project/src/types/index.ts',
+    },
+    {
+      name: 'export type { T } from re-exports only types',
+      code: "export type { A } from './a';\nexport { type B } from './b';\nexport type { C } from './c';",
+      filename: '/project/src/types/index.ts',
+    },
+    {
+      name: 'export default of a local binding is a local export',
+      code: "export * from './a';\nexport * from './b';\nexport * from './c';\nconst local = 1;\nexport default local;",
+      filename: '/project/src/lib/index.ts',
+    },
+    {
+      name: 'export default of a declaration is a local export',
+      code: "export * from './a';\nexport * from './b';\nexport * from './c';\nexport default function make() {}",
+      filename: '/project/src/lib/index.ts',
+    },
+    {
+      name: 'export {} from loads a module but counts like any re-export',
+      code: "export {} from './a';\nexport const x = 1;",
+      filename: '/project/src/lib/index.ts',
+    },
+  ],
+  invalid: [
+    {
+      name: 'an imported default exported again is a re-export',
+      code: "export { a } from './a';\nexport { b } from './b';\nimport c from './c';\nexport default c;",
+      filename: '/project/src/lib/index.ts',
+      errors: [{ messageId: 'barrelFileDetected' }],
+    },
+  ],
+});

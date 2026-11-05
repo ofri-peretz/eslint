@@ -14,7 +14,55 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## Rule Details
 
-This rule aims to prevent issues related to extraneous-dependencies.
+Reports a runtime import of a package the nearest manifest does not declare.
+Such an import works only by accident (a hoisted transitive dependency) and
+breaks for anyone who installs the package.
+
+The manifest is the nearest `package.json` that declares a package (a `name`
+or any dependency field); a nameless `{"type":"module"}` scope marker in a
+sub-folder is skipped. `packageJsonPath` or `packageJson` replace the lookup.
+
+A package is allowed when it is listed in `dependencies`, or in
+`devDependencies`, `optionalDependencies`, `peerDependencies`,
+`bundledDependencies` / `bundleDependencies` (npm accepts both spellings)
+while the matching option is `true` (the default). With
+`devDependencies: false`, a package listed only in `devDependencies` is
+reported as a dev dependency used in production. The package's own `name` is
+always allowed (Node self-reference).
+
+Never checked: Node builtins (`fs/promises`, `node:fs`), relative and
+absolute paths, `#imports`, URL schemes (`virtual:x`), and names matched by
+`ignore` (exact) or `allowPatterns` (regular expressions).
+
+Type-only imports are erased at compile time and never reported:
+`import type`, `export type ... from`, `import type x = require()`, and an
+import or re-export whose every specifier is an inline `type`, unless
+`verbatimModuleSyntax` is `true`, under which tsc keeps it as
+`import {} from 'pkg'`.
+
+Every runtime spelling is checked: `import`, side-effect imports,
+`export { a } from`, `export * from`, `export * as ns from`, `require()`,
+`import()` and TS `import x = require()`.
+
+`resolutionStrategy: 'workspace'` (alias `'monorepo'`) additionally allows the
+literal `@workspace/` and `@company/` scopes and reads no other manifest; for
+your own workspace scopes use `allowPatterns`.
+
+```json
+{ "name": "app", "dependencies": { "react": "^19.0.0" } }
+```
+
+```ts
+// ❌ Incorrect
+import axios from 'axios';
+export * from 'lodash';
+
+// ✅ Correct
+import React from 'react';
+import type { Schema } from 'zod';
+import { readFile } from 'node:fs/promises';
+import { feature } from 'app/feature';
+```
 
 ## Options
 

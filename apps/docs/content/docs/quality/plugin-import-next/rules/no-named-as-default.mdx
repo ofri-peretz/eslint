@@ -13,7 +13,29 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## Rule Details
 
-This rule aims to prevent issues related to named-as-default.
+A default import bound to the name of a named export of the same module is reported: after `import foo from './m'`, a reader cannot tell whether `foo` is the module's default or its named `foo`.
+
+The rule does not read the other module. The evidence that `./m` has a named export `foo` is this file taking that name from the same module: in the same declaration (`import foo, { foo as bar } from './m'`), in another import (`import { foo as bar } from './m'`), or in a re-export (`export { foo } from './m'`). The default can be spelled `import foo` or `import { default as foo }`.
+
+Not reported: a default bound to any other name, the name taken from a different module, and evidence that is only a type (`import type { foo }`, `{ type foo }`), since a type and a default value sharing a name is a judgment call.
+
+### ❌ Incorrect
+
+```ts
+import foo, { foo as namedFoo } from './m';
+
+import { default as bar } from './m';
+export { bar } from './m';
+```
+
+### ✅ Correct
+
+```ts
+import foo from './m';
+import { bar } from './m';
+
+import foo2, { type foo2 as Foo } from './m';
+```
 
 ## Options
 

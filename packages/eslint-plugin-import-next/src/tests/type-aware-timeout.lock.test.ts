@@ -30,6 +30,7 @@ const TYPE_AWARE_FILES = [
   'named.test.ts',
   'default.test.ts',
   'namespace.test.ts',
+  'no-deprecated-imports.test.ts',
 ];
 
 describe.each(TYPE_AWARE_FILES)('%s case timeout', (file) => {

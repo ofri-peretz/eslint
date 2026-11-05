@@ -8,7 +8,28 @@ Ensure named imports correspond to a named export in the remote file
 
 ## Rule Details
 
-This rule aims to prevent issues related to named.
+A named import or named re-export of a name the module does not export is reported: `import { a } from './m'`, `import { a as b } from './m'`, `import { type a } from './m'`, `export { a } from './m'` and `export { a as b } from './m'`.
+
+The module's exports are what TypeScript sees: a direct export, a renamed export (`export { v as a }`), a name reached through `export * from`, and a type export all count. A name the module exports only as its default is missing.
+
+The rule needs type information (`parserOptions.project` or `projectService`); without it, it is silent. It is also silent when the module does not resolve, when the module is a CommonJS `export =` module (its names depend on interop), for `import type { a }` statements (TypeScript checks them), and for `import { default as x }`, which the `default` rule judges.
+
+### ❌ Incorrect
+
+```ts
+// ./math.ts: export const add = ...; export default sum;
+import { subtract } from './math';
+import { sum } from './math'; // only the default is named `sum`
+export { multiply } from './math';
+```
+
+### ✅ Correct
+
+```ts
+import { add } from './math';
+import sum from './math';
+export { add as plus } from './math';
+```
 
 ## Options
 

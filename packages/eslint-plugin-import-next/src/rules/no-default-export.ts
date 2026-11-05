@@ -11,6 +11,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { matchesAnyFilePattern } from '../utils/file-patterns';
 
 type MessageIds =
   'defaultExport' | 'preferNamedExport' | 'defaultExportRefactor';
@@ -112,31 +113,11 @@ export const noDefaultExport = createRule<RuleOptions, MessageIds>({
     let filename: string;
 
     function shouldAllow(): boolean {
-      if (!filename) {
-        return false;
-      }
-
-      // Check if file is in allowed list
-      const allowedByFile = allowInFiles.some((pattern: string) => {
-        if (pattern.includes('*')) {
-          const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-          return regex.test(filename);
-        }
-        return filename.includes(pattern);
-      });
-
-      if (allowedByFile) {
-        return true;
-      }
-
-      // Check if filename matches allowed patterns
-      return allowPatterns.some((pattern: string) => {
-        if (pattern.includes('*')) {
-          const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-          return regex.test(filename);
-        }
-        return filename.includes(pattern);
-      });
+      return (
+        !!filename &&
+        (matchesAnyFilePattern(filename, allowInFiles) ||
+          matchesAnyFilePattern(filename, allowPatterns))
+      );
     }
 
     function generateNamedExportSuggestion(
@@ -240,15 +221,15 @@ export const noDefaultExport = createRule<RuleOptions, MessageIds>({
         // Check if this is export { default } from "module"
         // This is a re-export pattern that effectively creates a default export
         if (node.specifiers) {
+          // What matters is the name this module PUBLISHES. `export { default
+          // as Foo } from 'm'` takes another module's default and publishes it
+          // under a name: that is the named export this rule asks for.
           const hasDefaultSpecifier = node.specifiers.some(
             (spec: TSESTree.ExportSpecifier) =>
-              (spec.exported.type === 'Identifier' &&
-                spec.exported.name === 'default') ||
-              (spec.local &&
-                spec.local.type === 'Identifier' &&
-                spec.local.name === 'default'),
+              (spec.exported.type === 'Identifier'
+                ? spec.exported.name
+                : spec.exported.value) === 'default',
           );
-
           if (hasDefaultSpecifier) {
             context.report({
               node,
@@ -260,6 +241,33 @@ export const noDefaultExport = createRule<RuleOptions, MessageIds>({
               },
             });
           }
+        }
+      },
+
+      // `export * as default from 'm'` publishes the namespace as the default.
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        if (shouldAllow()) {
+          return;
+        }
+        // Typed as an Identifier, but `export * as "default"` parses as a
+        // string Literal.
+        const exported = node.exported as TSESTree.Node | null;
+        const name =
+          exported?.type === 'Identifier'
+            ? exported.name
+            : exported?.type === 'Literal'
+              ? exported.value
+              : undefined;
+        if (name === 'default') {
+          context.report({
+            node,
+            messageId: 'preferNamedExport',
+            data: {
+              pattern: 'export * as default',
+              currentFile: filename,
+              suggestion: 'Use a named namespace re-export instead',
+            },
+          });
         }
       },
 

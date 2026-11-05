@@ -177,6 +177,26 @@ export const noLegacyImports = createRule<RuleOptions, MessageIds>({
         }
       },
 
+      // `export { x } from 'old'`, `export * from 'old'`
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        if (node.source) checkImport(node.source.value, node, node.source);
+      },
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        checkImport(node.source.value, node, node.source);
+      },
+
+      // `import x = require('old')`
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        if (
+          node.moduleReference.type === AST_NODE_TYPES.TSExternalModuleReference
+        ) {
+          // TypeScript only accepts a string literal here.
+          const literal = node.moduleReference
+            .expression as TSESTree.StringLiteral;
+          checkImport(literal.value, node, literal);
+        }
+      },
+
       ImportExpression(node: TSESTree.ImportExpression) {
         if (node.source.type === AST_NODE_TYPES.Literal) {
           const importPath = node.source.value;

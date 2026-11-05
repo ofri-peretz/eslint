@@ -104,4 +104,74 @@ describe('no-restricted-paths', () => {
       ],
     });
   });
+
+  // Found by the fidelity model (benchmarks/suites/fidelity/models/import-next).
+  describe('fidelity: whole path segments, every import spelling', () => {
+    ruleTester.run('no-restricted-paths fidelity', noRestrictedPaths, {
+      valid: [
+        {
+          name: 'observer is not the server path',
+          code: "import o from './observer';",
+          options: [{ restricted: ['server'] }],
+        },
+        {
+          name: 'server-utils is not the server path',
+          code: "import u from './server-utils';",
+          options: [{ restricted: ['server'] }],
+        },
+        {
+          name: 'a multi-segment pattern needs every segment in order',
+          code: "import d from '../server/db';",
+          options: [{ restricted: ['app/server'] }],
+        },
+      ],
+      invalid: [
+        {
+          name: 'export * from a restricted path',
+          code: "export * from '../server/db';",
+          options: [{ restricted: ['server'] }],
+          errors: [{ messageId: 'pathViolation' }],
+        },
+        {
+          name: 'export { x } from a restricted path',
+          code: "export { db } from '@/server/db';",
+          options: [{ restricted: ['server'] }],
+          errors: [{ messageId: 'pathViolation' }],
+        },
+        {
+          name: 'a dynamic import of a restricted path',
+          code: "const load = () => import('./app/server');",
+          options: [{ restricted: ['app/server'] }],
+          errors: [{ messageId: 'pathViolation' }],
+        },
+        {
+          name: 'import x = require() of a restricted path',
+          code: "import db = require('../server/db');",
+          options: [{ restricted: ['server'] }],
+          errors: [{ messageId: 'pathViolation' }],
+        },
+      ],
+    });
+  });
 });
+
+// Spellings that load no module, or load one the rule does not judge.
+ruleTester.run(
+  'no-restricted-paths fidelity (other spellings)',
+  noRestrictedPaths,
+  {
+    valid: [
+      {
+        name: 'a pattern with no segments restricts nothing',
+        code: "import s from './server';",
+        options: [{ restricted: ['/'] }],
+      },
+      {
+        name: 'a local export and a dynamic specifier load nothing the rule can name',
+        code: 'namespace NS { export const b = 1; }\nimport A = NS.b;\nexport const v = A;\nexport { A };\nconst load = (p: string) => import(p);',
+        options: [{ restricted: ['server'] }],
+      },
+    ],
+    invalid: [],
+  },
+);

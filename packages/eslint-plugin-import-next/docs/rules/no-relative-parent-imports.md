@@ -8,7 +8,27 @@ Prevents ../ imports
 
 ## Rule Details
 
-This rule aims to prevent issues related to relative-parent-imports.
+A module may only depend on files at or below its own directory. A relative specifier that, once normalised, climbs out of the importing file's directory is reported: `..`, `../x`, `./../x`, `./a/../../x`. Every way a module is loaded or re-exported is checked: `import`, side-effect `import`, `export … from`, `export * from`, `require()`, `import()` and TypeScript's `import x = require()`.
+
+Options: `commonjs` (default `true`) checks `require()`; `amd` (default `false`) checks the dependency arrays of `define([...])` and `require([...])`. `import x = require()` is TypeScript's ES-import form and is always checked.
+
+Not reported: a path that stays inside (`./x`, `./a/../b`), and packages.
+
+### ❌ Incorrect
+
+```ts
+import config from '../config';
+export * from '..';
+const util = require('./a/../../util');
+```
+
+### ✅ Correct
+
+```ts
+import helper from './helper';
+import nested from './a/../b';
+import lodash from 'lodash';
+```
 
 ## Options
 

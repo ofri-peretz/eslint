@@ -13,6 +13,10 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-empty-named-blocks', noEmptyNamedBlocks, {
   valid: [
+    {
+      name: 'a {} inside a comment is no named block',
+      code: `import a /* {} */ from 'foo';`,
+    },
     // Non-empty imports
     { name: 'a named import', code: `import { foo } from 'bar';` },
     { code: `import { foo, bar } from 'baz';` },
@@ -37,6 +41,30 @@ ruleTester.run('no-empty-named-blocks', noEmptyNamedBlocks, {
   ],
 
   invalid: [
+    {
+      name: 'a comment inside the braces leaves the block empty',
+      code: `import { /* nothing yet */ } from 'foo';`,
+      errors: [
+        {
+          messageId: 'emptyNamedBlock',
+          suggestions: [{ messageId: 'suggestRemove', output: `` }],
+        },
+      ],
+      output: ``,
+    },
+    {
+      name: 'a default import with a commented empty block',
+      code: `import a, { /* nothing yet */ } from 'foo';`,
+      errors: [
+        {
+          messageId: 'emptyNamedBlock',
+          suggestions: [
+            { messageId: 'suggestRemove', output: `import a from 'foo';` },
+          ],
+        },
+      ],
+      output: `import a from 'foo';`,
+    },
     // Empty named import only - fixable (removes entire import)
     {
       name: 'an import with an empty named block',

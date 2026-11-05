@@ -10,7 +10,11 @@
  */
 import * as path from 'node:path';
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  isGlobalReference,
+  isTestFilePath,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'selfImport';
@@ -22,6 +26,14 @@ type MessageIds = 'selfImport';
  * `.constants` are all treated as naming a different file — which they do.
  */
 const MODULE_EXTENSION = /\.[cm]?[jt]sx?$/;
+
+/** The TypeScript sources an output extension in a specifier stands for. */
+const OUTPUT_TO_SOURCE: Readonly<Record<string, readonly string[]>> = {
+  '.js': ['.ts', '.tsx'],
+  '.jsx': ['.tsx'],
+  '.mjs': ['.mts'],
+  '.cjs': ['.cts'],
+};
 
 export interface Options {
   /** Allow self-import in test files */
@@ -56,46 +68,51 @@ function isImportingSelf(
     return false;
   }
 
-  // Resolve the import path
+  // Resolve the import path. ESLint passes an absolute filename; a relative
+  // one (the Linter API) is resolved the same way the specifier is, so the
+  // two sides compare.
+  const file = path.resolve(filename);
   let resolvedPath: string;
-
-  if (importPath.startsWith('./') || importPath.startsWith('../')) {
-    // Relative import - resolve relative to current file
-    const currentDir = path.dirname(filename);
-    resolvedPath = path.resolve(currentDir, importPath);
+  if (
+    importPath === '.' ||
+    importPath === '..' ||
+    importPath.startsWith('./') ||
+    importPath.startsWith('../')
+  ) {
+    resolvedPath = path.resolve(path.dirname(file), importPath);
   } else if (importPath.startsWith('/')) {
-    // Absolute import
     resolvedPath = importPath;
   } else {
     // Module import (like 'lodash') - not a self-import
     return false;
   }
 
-  // A self-import means the specifier resolves to THIS file. Stripping "the
-  // last extension" from both sides was a crude stand-in for that and got two
-  // classes wrong on the pinned corpus, both of them the only two findings this
-  // rule produced there:
-  //
-  //   main.jsx        importing './main.css'                 -> both became `main`
-  //   styleUtils.test.js importing './styleUtils.test.constants'
-  //                                                          -> both became `styleUtils.test`
-  //
-  // A stylesheet is not this module, and `.constants` is not an extension at
-  // all — it is part of the module's NAME, and `\.[^/.]+$` cannot tell the
-  // difference.
-  //
-  // So: a specifier whose last segment carries a dotted suffix that is not a
-  // module extension names a different file, full stop. Otherwise strip only
-  // real module extensions from each side before comparing.
-  const trailingSuffix = /\.[^/.]+$/.exec(importPath);
-  if (trailingSuffix && !MODULE_EXTENSION.test(importPath)) {
-    return false;
+  // A self-import means the specifier resolves to THIS file. A specifier
+  // whose last segment carries a dotted suffix that is not a module
+  // extension names a different file (`./main.css`,
+  // `./styleUtils.test.constants`: both were the only findings this rule
+  // produced on the pinned corpus when it stripped "the last extension").
+  const fileExt = MODULE_EXTENSION.exec(file)?.[0] ?? '';
+  const fileStem = file.slice(0, file.length - fileExt.length);
+  const specExt = MODULE_EXTENSION.exec(resolvedPath)?.[0];
+  if (specExt) {
+    // An explicit extension names this file when it is this file's own, or
+    // the OUTPUT extension TypeScript maps to it (`./app.js` for app.ts).
+    // `./app.tsx` from app.ts is another file.
+    return (
+      resolvedPath.slice(0, -specExt.length) === fileStem &&
+      (specExt === fileExt ||
+        (OUTPUT_TO_SOURCE[specExt] ?? []).includes(fileExt))
+    );
   }
-
-  const normalizedCurrent = filename.replace(MODULE_EXTENSION, '');
-  const normalizedImport = resolvedPath.replace(MODULE_EXTENSION, '');
-
-  return normalizedCurrent === normalizedImport;
+  // No module extension: the file itself ('./app.test' from app.test.ts),
+  // or - for an index file - its directory ('.', './', '../lib' from
+  // lib/index.ts). Any other dotted suffix names another file.
+  if (resolvedPath === fileStem) return true;
+  if (/\.[^/.]+$/.test(importPath)) return false;
+  return (
+    path.basename(fileStem) === 'index' && resolvedPath === path.dirname(file)
+  );
 }
 
 export const noSelfImport = createRule<RuleOptions, MessageIds>({
@@ -155,11 +172,30 @@ export const noSelfImport = createRule<RuleOptions, MessageIds>({
 
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        // Allow type imports in TypeScript
+        // A type-only import is erased, and so is one whose every specifier
+        // is an inline `type`: neither loads the module at runtime.
         if (node.importKind === 'type') {
           return;
         }
+        if (
+          node.specifiers.length > 0 &&
+          node.specifiers.every(
+            (s) => s.type === 'ImportSpecifier' && s.importKind === 'type',
+          )
+        ) {
+          return;
+        }
         visitModule(node.source, node);
+      },
+
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        // `import x = require('./self')` loads the module like require().
+        if (
+          node.importKind !== 'type' &&
+          node.moduleReference.type === 'TSExternalModuleReference'
+        ) {
+          visitModule(node.moduleReference.expression, node);
+        }
       },
 
       CallExpression(node: TSESTree.CallExpression) {
@@ -167,7 +203,9 @@ export const noSelfImport = createRule<RuleOptions, MessageIds>({
         if (
           node.callee.type === 'Identifier' &&
           node.callee.name === 'require' &&
-          node.arguments.length === 1
+          node.arguments.length === 1 &&
+          // A `require` the file declares itself is not Node's loader.
+          isGlobalReference(node.callee, context.sourceCode)
         ) {
           const arg = node.arguments[0];
           if (arg.type === 'Literal') {
@@ -184,15 +222,17 @@ export const noSelfImport = createRule<RuleOptions, MessageIds>({
       },
 
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
-        // Handle re-exports
-        if (node.source) {
+        // Handle re-exports; `export type { T } from` is erased.
+        if (node.source && node.exportKind !== 'type') {
           visitModule(node.source, node);
         }
       },
 
       ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
-        // Handle re-exports
-        visitModule(node.source, node);
+        // Handle re-exports; `export type * from` is erased.
+        if (node.exportKind !== 'type') {
+          visitModule(node.source, node);
+        }
       },
     };
   },

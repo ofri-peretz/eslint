@@ -9,7 +9,35 @@ Prevents CommonJS require/module.exports
 
 ## Rule Details
 
-This rule aims to prevent issues related to commonjs.
+An ES module that uses CommonJS cannot be tree-shaken, is not statically analysable, and breaks when loaded as native ESM. This rule reports CommonJS in an ES module:
+
+- a call to the global `require` (static or dynamic argument), and TS `import x = require('m')`;
+- assigning `module.exports` (dotted or computed), or one of its properties;
+- assigning a property of the global `exports`;
+- reading the global `__dirname` or `__filename`.
+
+The rule decides by binding. A `require` the file binds itself (a parameter, or `createRequire(import.meta.url)`, the sanctioned ESM way to load CommonJS), a local `exports` object, and the ESM `__dirname` shim (`const __dirname = dirname(fileURLToPath(import.meta.url))`) are the file's own values; a property named `__dirname` is not the global either.
+
+A `.cjs` / `.cts` file, or one the config parses as CommonJS, is CommonJS on purpose and is not checked. `require.resolve()` loads nothing and is not reported.
+
+### ❌ Incorrect
+
+```ts
+const util = require('./util');
+module.exports = { run };
+exports.run = run;
+console.log(__dirname);
+```
+
+### ✅ Correct
+
+```ts
+import util from './util';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const data = require('./data.json');
+export { run };
+```
 
 ## Options
 
@@ -51,11 +79,12 @@ This rule aims to prevent issues related to commonjs.
 ]
 ```
 
-## Implementation
+- `allowRequire` (default `false`): accept `require()` and `import x = require()`.
+- `allowModuleExports` (default `false`): accept `module.exports` assignments.
+- `allowExports` (default `false`): accept `exports.*` assignments.
+- `allowInFiles` (default `[]`): file globs (or path substrings) where CommonJS is accepted. A glob matches any run of whole path segments.
+- `suggestES6` (default `true`): offer an editor suggestion with the ES module equivalent.
 
-- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-commonjs.ts)
-- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-commonjs.test.ts)
+## When Not To Use It
 
-## OWASP Foundation
-
-- **Category**: A00:2021 - General Security
+In a CommonJS codebase that has not moved to ES modules.

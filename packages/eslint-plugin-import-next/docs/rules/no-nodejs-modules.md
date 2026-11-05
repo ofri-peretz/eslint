@@ -8,7 +8,28 @@ Prevents Node.js builtin imports
 
 ## Rule Details
 
-This rule aims to prevent issues related to nodejs-modules.
+Code meant for a browser or an edge runtime must not load a Node.js builtin. Every way a module is loaded or re-exported is checked: `import`, side-effect `import`, `export … from`, `export * from`, `require()`, `import()` and TypeScript's `import x = require()`.
+
+A specifier is a builtin when Node's own builtin module list names it, with or without the `node:` scheme, subpaths included: `fs`, `node:fs`, `fs/promises`, `worker_threads`. `additionalBuiltins` adds more names; `allow` exempts a builtin by name, in either spelling (`fs` and `node:fs` are the same module). `suggestAlternatives` only adds a browser-side hint to the message.
+
+Not reported: `import type` and `export type` (erased at compile time, they load nothing), and a package or path that only looks like a builtin (`fs-extra`, `./fs`).
+
+### ❌ Incorrect
+
+```ts
+import fs from 'fs';
+import { readFile } from 'node:fs/promises';
+export * from 'path';
+const os = require('os');
+```
+
+### ✅ Correct
+
+```ts
+import type { Stats } from 'node:fs';
+import fsExtra from 'fs-extra';
+import helper from './fs';
+```
 
 ## Options
 

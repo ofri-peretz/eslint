@@ -69,6 +69,35 @@ module.exports = {
 Every `key` must be distinct per abstract input, and `domain` must equal the
 number of distinct keys. See the five existing models for worked examples.
 
+## Rules that read other files
+
+A rule that follows imports (a cycle, a missing export, an unresolved path, a
+dependency missing from `package.json`) needs the files it reads. Add `files`:
+
+```js
+module.exports = {
+  rule: 'named',
+  typed: true, // lint with type information (a TS program over the files)
+  // settings: { 'import/resolver': { typescript: true } }, // ESLint settings
+  files: (s) => ({
+    'src/dep.ts': 'export const real = 1;\n',
+    'package.json': '{ "name": "app" }\n',
+  }),
+  code: (s) => "import { real } from './dep';\n", // the linted file
+  // filename: 'src/app.ts' (the default) is where `code` is written
+};
+```
+
+The runner writes `files` plus `code` (at `filename`) into a fresh temp dir,
+lints `filename` there with the dir as the ESLint `cwd`, and deletes the dir.
+With `typed: true` it adds a `tsconfig.json` (`moduleResolution: bundler`,
+`allowJs`) unless the input brings one, and lints with
+`parserOptions.project`. Each distinct input is linted once, however often
+Quint samples it, so a typed model costs one TS program per domain input:
+keep those domains small. `settings` works with or without `files`.
+`imports.cjs` renders every import spelling (`importOf(form, spec)`) for the
+import-next models.
+
 ## When the model and the rule disagree
 
 Decide which one is wrong, from the rule's documented contract:

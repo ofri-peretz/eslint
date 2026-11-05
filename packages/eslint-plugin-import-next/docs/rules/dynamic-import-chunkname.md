@@ -9,7 +9,26 @@ Enforce a leading comment with the webpackChunkName for dynamic imports
 
 ## Rule Details
 
-This rule aims to prevent issues related to dynamic-import-chunkname.
+webpack names the chunk a dynamic `import()` creates after the `/* webpackChunkName: "name" */` comment inside the call. Without one the chunk gets a numeric id, which makes bundles hard to read and cache keys unstable. This rule is a convention for webpack projects: every dynamic import carries a chunk name, written as a comment inside the call before the module argument, and the name matches `webpackChunknameFormat`.
+
+- A dynamic import is `import()`, and a call to any function listed in `importFunctions`. Other calls are not imports.
+- The default format accepts webpack's name characters (`0-9 a-z A-Z - _ / .`) and its `[request]` and `[index]` placeholders, so `/* webpackChunkName: "[request]" */` is valid.
+- `/* webpackMode: "eager" */` keeps the module in the parent chunk: there is no chunk to name, so no name is required.
+
+### ❌ Incorrect
+
+```ts
+import('./pages/home');
+import(/* webpackChunkName: "home page!" */ './pages/home');
+```
+
+### ✅ Correct
+
+```ts
+import(/* webpackChunkName: "home" */ './pages/home');
+import(/* webpackChunkName: "[request]" */ `./locale/${lang}`);
+import(/* webpackMode: "eager" */ './pages/home');
+```
 
 ## Options
 
@@ -37,11 +56,10 @@ This rule aims to prevent issues related to dynamic-import-chunkname.
 ]
 ```
 
-## Implementation
+- `importFunctions` (default `[]`): names of functions that wrap `import()` and take the module as their first argument, e.g. `["dynamicImport"]`. Their calls are checked like `import()`.
+- `allowEmpty` (default `false`): accept a dynamic import with no chunk name comment. A comment that names a chunk is still checked against the format.
+- `webpackChunknameFormat` (default `([0-9a-zA-Z-_/.]|\[(request|index)\])+`): the regular expression a chunk name must match in full. Setting it replaces the default, placeholders included.
 
-- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/dynamic-import-chunkname.ts)
-- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/dynamic-import-chunkname.test.ts)
+## When Not To Use It
 
-## OWASP Foundation
-
-- **Category**: A00:2021 - General Security
+When you do not bundle with webpack, or you are fine with numeric chunk ids.

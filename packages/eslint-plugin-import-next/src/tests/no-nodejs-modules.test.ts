@@ -557,4 +557,60 @@ describe('no-nodejs-modules', () => {
       expect(msg).not.toContain('{{');
     });
   });
+
+  // Found by the fidelity model (benchmarks/suites/fidelity/models/import-next).
+  describe('fidelity: re-exports load the builtin, type-only imports do not', () => {
+    ruleTester.run('no-nodejs-modules fidelity', noNodejsModules, {
+      valid: [
+        {
+          name: 'import type from a builtin is erased at compile time',
+          code: "import type { Stats } from 'node:fs';",
+        },
+        {
+          name: 'export type from a builtin is erased at compile time',
+          code: "export type { Stats } from 'fs';",
+        },
+      ],
+      invalid: [
+        {
+          name: 'export { x } from a builtin loads it',
+          code: "export { readFile } from 'fs';",
+          errors: [{ messageId: 'nodejsBuiltinImport' }],
+        },
+        {
+          name: 'export * from a builtin loads it',
+          code: "export * from 'node:fs/promises';",
+          errors: [{ messageId: 'nodejsBuiltinImport' }],
+        },
+        {
+          name: 'export * as ns from a builtin loads it',
+          code: "export * as path from 'path';",
+          errors: [{ messageId: 'nodejsBuiltinImport' }],
+        },
+      ],
+    });
+  });
 });
+
+// Spellings that load no module, or load one the rule does not judge.
+ruleTester.run(
+  'no-nodejs-modules fidelity (other spellings)',
+  noNodejsModules,
+  {
+    valid: [
+      {
+        name: 'a re-export of a local module',
+        code: "export * from './local';",
+      },
+      {
+        name: 'a dynamic import of a local module',
+        code: "const load = () => import('./local');",
+      },
+      {
+        name: 'a local export and an import alias load nothing',
+        code: 'namespace NS { export const b = 1; }\nimport A = NS.b;\nexport const v = A;\nexport { A };',
+      },
+    ],
+    invalid: [],
+  },
+);

@@ -126,15 +126,14 @@ ruleTester.run('no-relative-packages (coverage)', noRelativePackages, {
       code: `load('../../pkg-b/lib/util');`,
       filename: path.join(pkgADir, 'src', 'file.ts'),
     },
-  ],
-  invalid: [
     {
-      name: 'cross-package import into unnamed package falls back to basename',
+      // A nameless package.json is not a package anyone imports by name.
+      name: 'cross-package import into an unnamed package is not reported',
       code: `import x from '../../pkg-b/lib/util';`,
       filename: path.join(pkgADir, 'src', 'file.ts'),
-      errors: [{ messageId: 'relativePackage' }],
-      output: `import x from 'pkg-b/lib/util';`,
     },
+  ],
+  invalid: [
     {
       name: 'cross-package import uses package.json name and strips extension',
       code: `import x from '../../pkg-c/src/util.ts';`,
@@ -313,6 +312,7 @@ describe('no-self-import — Layer 2', () => {
     });
     (listeners.ImportDeclaration as (n: unknown) => void)({
       type: 'ImportDeclaration',
+      specifiers: [],
       source: { type: 'Literal', value: './x' },
     });
     expect(reports).toEqual([]);
@@ -466,19 +466,45 @@ ruleTester.run('prefer-default-export (coverage)', preferDefaultExport, {
       code: `export { default } from './other';`,
     },
     {
-      name: 'plain re-exports are skipped',
-      code: `export { a } from './other';`,
-    },
-    {
       name: 'sourceless type exports are skipped',
       code: `type T = number; export type { T };`,
     },
     {
-      name: 'destructured export declarators are not tracked',
-      code: `const obj = { x: 1 }; export const { x } = obj;`,
+      name: 'a destructured export declaring two names is two exports',
+      code: `const obj = { x: 1, y: 2 }; export const { x, y } = obj;`,
     },
   ],
   invalid: [
+    {
+      name: 'a single re-exported name is the module\'s one export',
+      code: `export { a } from './other';`,
+      errors: [
+        {
+          messageId: 'preferDefaultExport',
+          suggestions: [
+            {
+              messageId: 'preferDefaultExport',
+              output: `// TODO: Convert named export to default export\nexport { a } from './other';`,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'a destructured export declaring one name is one export',
+      code: `const obj = { x: 1 }; export const { x } = obj;`,
+      errors: [
+        {
+          messageId: 'preferDefaultExport',
+          suggestions: [
+            {
+              messageId: 'preferDefaultExport',
+              output: `const obj = { x: 1 }; // TODO: Convert named export to default export\nexport const { x } = obj;`,
+            },
+          ],
+        },
+      ],
+    },
     {
       name: 'single exported function should be default',
       code: `export function solo() {}`,
@@ -541,12 +567,12 @@ describe('prefer-default-export — Layer 2', () => {
     expect(Object.keys(listeners)).toEqual([]);
   });
 
-  it('synthetic source-only export without specifiers hits the re-export guard', () => {
+  it('a source-only export with no specifiers publishes nothing', () => {
     const { listeners, reports } = createWithMockContext(preferDefaultExport);
     (listeners.ExportNamedDeclaration as (n: unknown) => void)({
       type: 'ExportNamedDeclaration',
       source: { type: 'Literal', value: './x' },
-      specifiers: null,
+      specifiers: [],
       exportKind: 'value',
     });
     (listeners['Program:exit'] as (n: unknown) => void)({ type: 'Program' });
@@ -727,10 +753,10 @@ ruleTester.run('prefer-node-protocol (coverage)', preferNodeProtocol, {
   ],
   invalid: [
     {
-      name: 'case-insensitive builtin match',
-      code: `import fs from 'FS';`,
+      name: 'a builtin in a dynamic import',
+      code: `const p = import('fs');`,
       errors: [{ messageId: 'preferNodeProtocol' }],
-      output: `import fs from "node:FS";`,
+      output: `const p = import("node:fs");`,
     },
   ],
 });
@@ -772,6 +798,11 @@ describe('prefer-tree-shakeable-imports — Layer 2', () => {
 // ---------------------------------------------------------------------------
 ruleTester.run('require-import-approval (coverage)', requireImportApproval, {
   valid: [
+    {
+      name: 'a bare scope is not a package name, even under deny',
+      code: `import s from '@scope';`,
+      options: [{ packages: [], defaultPolicy: 'deny' }],
+    },
     {
       name: 'relative imports are not package imports',
       code: `import x from './local';`,
@@ -816,12 +847,6 @@ ruleTester.run('require-import-approval (coverage)', requireImportApproval, {
     },
   ],
   invalid: [
-    {
-      name: 'bare scope import is treated as its own package name',
-      code: `import s from '@scope';`,
-      options: [{ packages: [], defaultPolicy: 'deny' }],
-      errors: [{ messageId: 'unapprovedPackage' }],
-    },
     {
       name: 'blocked package without reason/alternative uses fallbacks',
       code: `import e from 'evil-pkg';`,

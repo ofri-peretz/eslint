@@ -16,6 +16,8 @@
  *
  * @see https://nx.dev/concepts/module-federation
  */
+import path from 'node:path';
+
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
@@ -233,36 +235,44 @@ export const enforceTeamBoundaries = createRule<RuleOptions, MessageIds>({
     let allowExternalPackages: boolean;
     let owningTeam: TeamBoundary;
 
+    let projectDir: string;
+
     function checkImport(
       node:
         | TSESTree.ImportDeclaration
+        | TSESTree.ExportNamedDeclaration
+        | TSESTree.ExportAllDeclaration
         | TSESTree.ImportExpression
-        | TSESTree.CallExpression,
+        | TSESTree.CallExpression
+        | TSESTree.TSImportEqualsDeclaration,
     ) {
-      let importPath: string | null = null;
-
-      if (node.type === AST_NODE_TYPES.ImportDeclaration) {
-        importPath =
-          typeof node.source.value === 'string' ? node.source.value : null;
-      } else if (node.type === AST_NODE_TYPES.ImportExpression) {
-        if (node.source.type === AST_NODE_TYPES.Literal) {
-          importPath =
-            typeof node.source.value === 'string' ? node.source.value : null;
+      let source: TSESTree.Node | null | undefined;
+      if (node.type === AST_NODE_TYPES.CallExpression) {
+        if (
+          node.callee.type === AST_NODE_TYPES.Identifier &&
+          node.callee.name === 'require' &&
+          node.arguments.length > 0
+        ) {
+          source = node.arguments[0];
         }
-      } else if (
-        node.type === AST_NODE_TYPES.CallExpression &&
-        node.callee.type === AST_NODE_TYPES.Identifier &&
-        node.callee.name === 'require' &&
-        node.arguments.length > 0 &&
-        node.arguments[0].type === AST_NODE_TYPES.Literal
-      ) {
-        importPath =
-          typeof node.arguments[0].value === 'string'
-            ? node.arguments[0].value
-            : null;
+      } else if (node.type === AST_NODE_TYPES.TSImportEqualsDeclaration) {
+        if (
+          node.moduleReference.type === AST_NODE_TYPES.TSExternalModuleReference
+        ) {
+          source = node.moduleReference.expression;
+        }
+      } else {
+        source = node.source;
       }
+      if (!source || source.type !== AST_NODE_TYPES.Literal) return;
+      const specifier = typeof source.value === 'string' ? source.value : null;
+      if (!specifier) return;
 
-      if (!importPath) return;
+      // A relative specifier is owned by the path it resolves to from this
+      // file (`../auth/x` from src/platform/a.ts is src/auth/x).
+      const importPath = specifier.startsWith('.')
+        ? path.posix.join(projectDir, specifier)
+        : specifier;
 
       // Allow external packages
       if (allowExternalPackages && isExternalImport(importPath)) {
@@ -300,7 +310,7 @@ export const enforceTeamBoundaries = createRule<RuleOptions, MessageIds>({
         data: {
           sourceTeam: owningTeam.team,
           targetTeam: targetTeam.team,
-          importPath,
+          importPath: specifier,
         },
       });
     }
@@ -313,6 +323,17 @@ export const enforceTeamBoundaries = createRule<RuleOptions, MessageIds>({
         // Get the file's team ownership
         const filename = context.filename;
         const sourceTeam = getFileTeam(filename, teams);
+        // The importing file's directory inside the project, so a resolved
+        // relative import reads like the `paths` globs (`src/auth/x`).
+        const relative = path.relative(context.cwd, filename);
+        projectDir = path.posix.dirname(
+          (path.isAbsolute(filename) &&
+          !relative.startsWith('..') &&
+          !path.isAbsolute(relative)
+            ? relative
+            : filename
+          ).replace(/\\/g, '/'),
+        );
 
         // If file doesn't belong to any team, skip checking
         if (!sourceTeam) {
@@ -325,7 +346,10 @@ export const enforceTeamBoundaries = createRule<RuleOptions, MessageIds>({
         return true;
       },
       ImportDeclaration: checkImport,
+      ExportNamedDeclaration: checkImport,
+      ExportAllDeclaration: checkImport,
       ImportExpression: checkImport,
+      TSImportEqualsDeclaration: checkImport,
       CallExpression(node: TSESTree.CallExpression) {
         if (
           node.callee.type === AST_NODE_TYPES.Identifier &&

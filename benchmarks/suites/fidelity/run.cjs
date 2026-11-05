@@ -28,6 +28,11 @@ const { Linter } = require(require.resolve('eslint', { paths: [REPO] }));
 const tsParser = require(
   require.resolve('@typescript-eslint/parser', { paths: [REPO] }),
 );
+// typescript-eslint keeps every TS program it builds; one per typed input
+// would exhaust the heap on a large typed domain.
+const { clearCaches } = require(
+  require.resolve('@typescript-eslint/typescript-estree', { paths: [REPO] }),
+);
 const MODELS_DIR = path.join(__dirname, 'models');
 const QUINT = '@informalsystems/quint@0.33.1';
 const DEFAULT_TRACES = 300;
@@ -62,6 +67,7 @@ const PLUGINS = [
   'modularity',
   'modernization',
   'react-a11y',
+  'import-next',
 ];
 
 const loadPlugin = (short) => {
@@ -102,20 +108,32 @@ function loadStates(qnt, traces) {
   }
 }
 
-function lint(short, cfg, code, ruleOpts, filename) {
-  const linter = new Linter({ configType: 'flat' });
+function lint(short, cfg, code, ruleOpts, filename, files) {
+  const linter = new Linter({ configType: 'flat', cwd: files?.dir });
   const id = `${short}/${cfg.rule}`;
+  const parserOptions =
+    files && cfg.typed
+      ? { project: './tsconfig.json', tsconfigRootDir: files.dir }
+      : undefined;
   const msgs = linter.verify(
     code,
     [
       {
-        files: ['**/*.{js,jsx,ts,tsx}'],
+        files: ['**/*.{js,jsx,ts,tsx,cjs,mjs}'],
         plugins: { [short]: loadPlugin(short) },
-        languageOptions: { parser: cfg.parser ?? tsParser },
+        languageOptions: {
+          parser: cfg.parser ?? tsParser,
+          ...(parserOptions && { parserOptions }),
+        },
+        ...(cfg.settings && { settings: cfg.settings }),
         rules: { [id]: ['error', ...(ruleOpts ? [ruleOpts] : [])] },
       },
     ],
-    { filename: filename ?? 'src/app.ts' },
+    {
+      filename: files
+        ? path.join(files.dir, filename)
+        : (filename ?? 'src/app.ts'),
+    },
   );
   const fatal = msgs.find((m) => m.fatal);
   if (fatal)
@@ -123,6 +141,40 @@ function lint(short, cfg, code, ruleOpts, filename) {
       `parse error in synthesized code: ${fatal.message}\n${code}`,
     );
   return msgs.some((m) => m.ruleId === id);
+}
+
+/**
+ * A multi-file input: `cfg.files(s)` returns `{ relPath: source }` for the
+ * files around the linted one (`filename`, default `src/app.ts`, whose source
+ * is `cfg.code(s)`). They are written to a fresh temp dir, which is the lint
+ * `cwd`; with `cfg.typed` the runner adds a `tsconfig.json` (unless the input
+ * brings one) and lints with type information.
+ */
+function writeProject(cfg, inputFiles, filename, code) {
+  const dir = fs.realpathSync(
+    fs.mkdtempSync(path.join(os.tmpdir(), 'fidelity-files-')),
+  );
+  const files = { ...inputFiles, [filename]: code };
+  if (cfg.typed && !files['tsconfig.json'])
+    files['tsconfig.json'] = JSON.stringify({
+      compilerOptions: {
+        strict: true,
+        target: 'es2022',
+        module: 'esnext',
+        moduleResolution: 'bundler',
+        allowJs: true,
+        allowImportingTsExtensions: true,
+        noEmit: true,
+        esModuleInterop: true,
+      },
+      include: ['**/*'],
+    });
+  for (const [rel, text] of Object.entries(files)) {
+    const abs = path.join(dir, rel);
+    fs.mkdirSync(path.dirname(abs), { recursive: true });
+    fs.writeFileSync(abs, text);
+  }
+  return { dir, files };
 }
 
 function run(short, model) {
@@ -136,19 +188,42 @@ function run(short, model) {
   const tally = { TP: 0, FP: 0, FN: 0, TN: 0 };
   const divergences = new Map();
   const covered = new Set();
+  const memo = new Map();
   for (const s of states) {
     const modelSays = verdict(s);
     const code = cfg.code(s);
     // `filename` may vary per input, e.g. to model `allowInTests`.
     const file =
       typeof cfg.filename === 'function' ? cfg.filename(s) : cfg.filename;
-    const ruleSays = lint(short, cfg, code, cfg.config?.(s), file);
+    const opts = cfg.config?.(s);
+    const files = cfg.files?.(s);
+    // A multi-file input pays for a temp dir (and, typed, a TS program): lint
+    // each distinct input once, however often Quint samples it.
+    const memoKey = files && JSON.stringify([code, opts, file, files]);
+    let ruleSays = memoKey && memo.get(memoKey);
+    if (ruleSays === undefined) {
+      const project =
+        files && writeProject(cfg, files, file ?? 'src/app.ts', code);
+      try {
+        ruleSays = lint(short, cfg, code, opts, file ?? 'src/app.ts', project);
+      } finally {
+        if (project) fs.rmSync(project.dir, { recursive: true, force: true });
+        if (cfg.typed) clearCaches();
+      }
+      if (memoKey) memo.set(memoKey, ruleSays);
+    }
     covered.add(key(s));
     tally[modelSays ? (ruleSays ? 'TP' : 'FN') : ruleSays ? 'FP' : 'TN']++;
     if (modelSays !== ruleSays) {
+      const shown = files
+        ? Object.entries({ ...files, [file ?? 'src/app.ts']: code })
+            .filter(([rel]) => rel !== 'tsconfig.json')
+            .map(([rel, text]) => `[${rel}] ${text}`)
+            .join('\n')
+        : code;
       divergences.set(
         `${key(s)} model=${modelSays} rule=${ruleSays}`,
-        code.trim().split('\n').join(' / '),
+        shown.trim().split('\n').join(' / '),
       );
     }
   }

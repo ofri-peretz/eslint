@@ -3,6 +3,27 @@
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { noExtraneousDependencies } from '../rules/no-extraneous-dependencies';
+import { afterAll } from 'vitest';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+
+/**
+ * A package on disk whose sub-folder holds a `{"type":"module"}` scope marker:
+ * the marker is the nearest package.json to `src/esm/app.ts`, but declares no
+ * package, so dependencies still come from the package around it.
+ */
+const ROOT = fs.realpathSync(
+  fs.mkdtempSync(path.join(os.tmpdir(), 'extraneous-marker-')),
+);
+fs.mkdirSync(path.join(ROOT, 'src/esm'), { recursive: true });
+fs.writeFileSync(
+  path.join(ROOT, 'package.json'),
+  JSON.stringify({ name: 'app', dependencies: { 'dep-a': '1.0.0' } }),
+);
+fs.writeFileSync(path.join(ROOT, 'src/esm/package.json'), '{ "type": "module" }');
+const MARKED = path.join(ROOT, 'src/esm/app.ts');
+afterAll(() => fs.rmSync(ROOT, { recursive: true, force: true }));
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -408,6 +429,135 @@ ruleTester.run('no-extraneous-dependencies — type-only imports', noExtraneousD
           ],
         },
       ],
+    },
+  ],
+});
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/import-next/
+// no_extraneous_dependencies): re-exports and `import x = require()` were not
+// read; `bundleDependencies` (npm's other spelling), the package's own name
+// and a scope-marker package.json produced false positives.
+const fidelityPackageJson = {
+  name: 'app',
+  dependencies: { 'dep-a': '1.0.0' },
+  bundleDependencies: ['bunalt-a'],
+};
+
+/** The two suggestions a missing `nope-a` gets, each a TODO above `code`. */
+const suggestionsFor = (code: string) => [
+  { messageId: 'addToDependencies' as const, output: `// TODO: Run: npm install nope-a\n${code}` },
+  { messageId: 'addToDevDependencies' as const, output: `// TODO: Run: npm install --save-dev nope-a\n${code}` },
+];
+
+ruleTester.run('no-extraneous-dependencies — fidelity', noExtraneousDependencies, {
+  valid: [
+    {
+      name: 'bundleDependencies is the same field as bundledDependencies',
+      code: "import x from 'bunalt-a';",
+      options: [{ packageJson: fidelityPackageJson }],
+    },
+    {
+      name: 'bundledDependencies: true bundles the dependencies, nothing more',
+      code: "import x from 'dep-a';",
+      options: [{ packageJson: { dependencies: { 'dep-a': '1' }, bundledDependencies: true } }],
+    },
+    {
+      name: 'the package may import itself by name',
+      code: "import x from 'app/feature';",
+      options: [{ packageJson: fidelityPackageJson }],
+    },
+    {
+      name: 'a {"type":"module"} scope marker is not the manifest',
+      code: "import x from 'dep-a';",
+      filename: MARKED,
+    },
+    {
+      name: 'export type ... from is erased',
+      code: "export type { A } from 'nope-a';",
+      options: [{ packageJson: fidelityPackageJson }],
+    },
+    {
+      name: 'export { type A } from is erased without verbatimModuleSyntax',
+      code: "export { type A } from 'nope-a';",
+      options: [{ packageJson: fidelityPackageJson }],
+    },
+    {
+      name: 'export type * from is erased',
+      code: "export type * from 'nope-a';",
+      options: [{ packageJson: fidelityPackageJson }],
+    },
+    {
+      name: 'import type x = require() is erased',
+      code: "import type x = require('nope-a');",
+      options: [{ packageJson: fidelityPackageJson }],
+    },
+    {
+      name: 'import x = Namespace.member is not a module specifier',
+      code: 'namespace A { export const b = 1; }\nimport x = A.b;',
+      options: [{ packageJson: fidelityPackageJson }],
+    },
+    {
+      name: 'a local export list loads nothing',
+      code: 'const a = 1;\nexport { a };',
+      options: [{ packageJson: fidelityPackageJson }],
+    },
+  ],
+  invalid: [
+    {
+      name: 'export { a } from an undeclared package',
+      code: "export { a } from 'nope-a';",
+      options: [{ packageJson: fidelityPackageJson }],
+      errors: [{ messageId: 'missingDependency', suggestions: suggestionsFor("export { a } from 'nope-a';") }],
+    },
+    {
+      name: 'export { type A, b } from keeps the runtime edge',
+      code: "export { type A, b } from 'nope-a';",
+      options: [{ packageJson: fidelityPackageJson }],
+      errors: [{ messageId: 'missingDependency', suggestions: suggestionsFor("export { type A, b } from 'nope-a';") }],
+    },
+    {
+      name: 'export { type A } from is kept under verbatimModuleSyntax',
+      code: "export { type A } from 'nope-a';",
+      options: [{ packageJson: fidelityPackageJson, verbatimModuleSyntax: true }],
+      errors: [{ messageId: 'missingDependency', suggestions: suggestionsFor("export { type A } from 'nope-a';") }],
+    },
+    {
+      name: 'export * from an undeclared package',
+      code: "export * from 'nope-a';",
+      options: [{ packageJson: fidelityPackageJson }],
+      errors: [{ messageId: 'missingDependency', suggestions: suggestionsFor("export * from 'nope-a';") }],
+    },
+    {
+      name: 'export * as ns from an undeclared package',
+      code: "export * as ns from 'nope-a';",
+      options: [{ packageJson: fidelityPackageJson }],
+      errors: [{ messageId: 'missingDependency', suggestions: suggestionsFor("export * as ns from 'nope-a';") }],
+    },
+    {
+      name: 'TS import x = require() of an undeclared package',
+      code: "import x = require('nope-a');",
+      options: [{ packageJson: fidelityPackageJson }],
+      errors: [{ messageId: 'missingDependency', suggestions: suggestionsFor("import x = require('nope-a');") }],
+    },
+    {
+      name: 'bundledDependencies: false does not allow a bundleDependencies entry',
+      code: "import x from 'bunalt-a';",
+      options: [{ packageJson: fidelityPackageJson, bundledDependencies: false }],
+      errors: [
+        {
+          messageId: 'missingDependency',
+          suggestions: [
+            { messageId: 'addToDependencies' as const, output: "// TODO: Run: npm install bunalt-a\nimport x from 'bunalt-a';" },
+            { messageId: 'addToDevDependencies' as const, output: "// TODO: Run: npm install --save-dev bunalt-a\nimport x from 'bunalt-a';" },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'below a scope marker, an undeclared package is still reported',
+      code: "import x from 'nope-a';",
+      filename: MARKED,
+      errors: [{ messageId: 'missingDependency', suggestions: suggestionsFor("import x from 'nope-a';") }],
     },
   ],
 });

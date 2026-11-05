@@ -78,3 +78,63 @@ ruleTester.run('no-named-as-default-member', noNamedAsDefaultMember, {
     },
   ],
 });
+
+/**
+ * Fidelity (benchmarks/suites/fidelity/models/import-next/no_named_as_default_member.qnt):
+ * the default is followed by binding, through every spelling of the read.
+ */
+describe('no-named-as-default-member — fidelity', () => {
+  ruleTester.run('binding and spellings', noNamedAsDefaultMember, {
+    valid: [
+      {
+        name: 'a parameter shadowing the default import is another value',
+        code: "import foo, { bar } from './m';\nexport const v = (foo: any) => foo.bar;",
+      },
+      {
+        name: 'aliasing the default reads no property',
+        code: "import foo, { bar } from './m';\nexport const alias = foo;",
+      },
+      {
+        name: 'a rest element in the destructuring names no export',
+        code: "import foo, { bar } from './m';\nexport const { ...all } = foo;",
+      },
+      {
+        name: 'a type-only import of the name is not evidence',
+        code: "import foo from './m';\nimport type { bar } from './m';\nexport const v = foo.bar;",
+      },
+      {
+        name: 'a computed key in the destructuring names nothing',
+        code: "import foo, { bar } from './m';\nexport const f = (k: string) => { const { [k]: v } = foo; return v; };",
+      },
+      {
+        name: 'an inline type import of the name is not evidence',
+        code: "import foo, { type bar } from './m';\nexport const v = foo.bar;",
+      },
+      {
+        name: 'a type-only re-export of the name is not evidence',
+        code: "import foo from './m';\nexport { type bar } from './m';\nexport const v = foo.bar;",
+      },
+      {
+        name: 'a runtime key names nothing',
+        code: "import foo, { bar } from './m';\nexport const v = (k: string) => foo[k];",
+      },
+    ],
+    invalid: [
+      {
+        name: 'import { default as foo } is the default import',
+        code: "import { default as foo, bar } from './m';\nexport const v = foo.bar;",
+        errors: [{ messageId: 'namedAsDefaultMember' }],
+      },
+      {
+        name: 'destructuring the named export off the default',
+        code: "import foo, { bar } from './m';\nexport const { bar: v } = foo;",
+        errors: [{ messageId: 'namedAsDefaultMember' }],
+      },
+      {
+        name: 'a re-export of the name is evidence',
+        code: "import foo from './m';\nexport { bar } from './m';\nexport const v = foo.bar;",
+        errors: [{ messageId: 'namedAsDefaultMember' }],
+      },
+    ],
+  });
+});

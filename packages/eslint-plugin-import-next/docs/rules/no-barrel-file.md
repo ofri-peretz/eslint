@@ -8,7 +8,39 @@ Disallow barrel files that harm build performance and tree-shaking efficiency
 
 ## Rule Details
 
-This rule aims to prevent issues related to barrel-file.
+A barrel file only re-exports other modules. Every import of it loads all of
+them, which slows builds and defeats tree-shaking. This rule reports a barrel
+candidate that passes through too many modules.
+
+A barrel candidate is a file matching `barrelPatterns` (default: an
+`index.ts` / `.tsx` / `.js` / `.jsx` / `.mts` / `.mjs` file) and no
+`allowedPaths` entry. It is reported when it re-exports at least `threshold`
+(default 3) distinct modules and either:
+
+- has no local export (`barrelFileDetected`), or
+- has local exports, `allowWithLocalExports` is `false`, and re-export
+  declarations make up at least `reexportRatio` (default 0.8) of its export
+  declarations (`considerDirectExports`).
+
+A re-export is any way a module's runtime binding is passed through:
+`export * from`, `export * as ns from`, `export { a } from`, and an imported
+binding exported again (`import { a } from './a'; export { a };`,
+`import * as ns from './a'; export { ns };`,
+`import a from './a'; export default a;`). A type-only re-export
+(`export type * from`, `export type { T } from`, an `import type` binding
+exported again) is erased at compile time and is not counted.
+
+```ts
+// ❌ Incorrect: src/components/index.ts
+export * from './Button';
+export * from './Card';
+export { Modal } from './Modal';
+
+// ✅ Correct: consumers import './components/Button' directly, or the file
+// holds real code alongside one or two re-exports
+export * from './Button';
+export const theme = createTheme();
+```
 
 ## Options
 

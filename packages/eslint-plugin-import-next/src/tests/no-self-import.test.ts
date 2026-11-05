@@ -72,13 +72,15 @@ describe('no-self-import', () => {
         // Self-import with different extension
         {
           code: 'import helpers from "./helpers.ts";',
-          filename: '/src/utils/helpers.js',
+          // An explicit extension names this file only when it is the
+          // file's own (helpers.js importing './helpers.ts' is another file).
+          filename: '/src/utils/helpers.ts',
           errors: [
             {
               messageId: 'selfImport',
               data: {
                 importPath: './helpers.ts',
-                currentFile: '/src/utils/helpers.js',
+                currentFile: '/src/utils/helpers.ts',
                 reason:
                   'A module cannot import itself, which would create a circular dependency',
               },
@@ -151,13 +153,15 @@ describe('no-self-import', () => {
         // Self-require with different extension
         {
           code: 'const helpers = require("./helpers.ts");',
-          filename: '/src/utils/helpers.js',
+          // An explicit extension names this file only when it is the
+          // file's own (helpers.js importing './helpers.ts' is another file).
+          filename: '/src/utils/helpers.ts',
           errors: [
             {
               messageId: 'selfImport',
               data: {
                 importPath: './helpers.ts',
-                currentFile: '/src/utils/helpers.js',
+                currentFile: '/src/utils/helpers.ts',
               },
             },
           ],
@@ -370,13 +374,15 @@ describe('no-self-import', () => {
         // Self-import with .ts extension
         {
           code: 'import helpers from "./helpers.ts";',
-          filename: '/src/utils/helpers.js',
+          // An explicit extension names this file only when it is the
+          // file's own (helpers.js importing './helpers.ts' is another file).
+          filename: '/src/utils/helpers.ts',
           errors: [
             {
               messageId: 'selfImport',
               data: {
                 importPath: './helpers.ts',
-                currentFile: '/src/utils/helpers.js',
+                currentFile: '/src/utils/helpers.ts',
               },
             },
           ],
@@ -543,6 +549,112 @@ describe('no-self-import — a suffix is not an extension', () => {
         code: "import { x } from './a';",
         filename: '/repo/src/__tests__/a.ts',
         options: [{ allowInTests: false }],
+        errors: [{ messageId: 'selfImport' }],
+      },
+    ],
+  });
+});
+
+/**
+ * Fidelity (benchmarks/suites/fidelity/models/import-next/no_self_import.qnt):
+ * a self-import is a specifier that resolves to this file, loaded at runtime.
+ */
+describe('no-self-import — fidelity', () => {
+  ruleTester.run('resolution and spellings', noSelfImport, {
+    valid: [
+      {
+        name: "import type x = require('./app') is erased",
+        code: "import type x = require('./app');",
+        filename: '/src/app.ts',
+      },
+      {
+        name: 'import A = NS.B aliases a namespace; it loads no module',
+        code: 'declare namespace NS {\n  const B: number;\n}\nimport A = NS.B;',
+        filename: '/src/app.ts',
+      },
+      {
+        name: 'export type * from itself is erased',
+        code: "export type * from './app';",
+        filename: '/src/app.ts',
+      },
+      {
+        name: 'export type { A } from itself is erased',
+        code: "export type { A } from './app';",
+        filename: '/src/app.ts',
+      },
+      {
+        name: './helpers.ts from helpers.js is another file',
+        code: 'import helpers from "./helpers.ts";',
+        filename: '/src/utils/helpers.js',
+      },
+      {
+        name: './app.tsx from app.ts is another file',
+        code: "import { a } from './app.tsx';",
+        filename: '/src/app.ts',
+      },
+      {
+        name: 'an import whose every specifier is an inline type is erased',
+        code: "import { type A } from './app';",
+        filename: '/src/app.ts',
+      },
+      {
+        name: 'a require the file declares itself is not the loader',
+        code: "export function load(require: (s: string) => unknown) { return require('./app'); }",
+        filename: '/src/app.ts',
+      },
+      {
+        name: "'.' from a non-index file names the directory index",
+        code: "import { a } from '.';",
+        filename: '/src/app.ts',
+      },
+    ],
+    invalid: [
+      {
+        name: 'a relative filename is resolved the same way as the specifier',
+        code: "import { a } from './app';",
+        filename: 'src/app.ts',
+        errors: [{ messageId: 'selfImport' }],
+      },
+      {
+        name: 'a side-effect import of itself',
+        code: "import './app';",
+        filename: '/src/app.ts',
+        errors: [{ messageId: 'selfImport' }],
+      },
+      {
+        name: 'export * from itself',
+        code: "export * from './app';",
+        filename: '/src/app.ts',
+        errors: [{ messageId: 'selfImport' }],
+      },
+      {
+        name: "'.' from an index file is the file itself",
+        code: "import { a } from '.';",
+        filename: '/src/lib/index.ts',
+        errors: [{ messageId: 'selfImport' }],
+      },
+      {
+        name: "'./' from an index file is the file itself",
+        code: "import { a } from './';",
+        filename: '/src/lib/index.ts',
+        errors: [{ messageId: 'selfImport' }],
+      },
+      {
+        name: "'../lib' from lib/index.ts is the file itself",
+        code: "import { a } from '../lib';",
+        filename: '/src/lib/index.ts',
+        errors: [{ messageId: 'selfImport' }],
+      },
+      {
+        name: "'./helpers.test' from helpers.test.ts is the file itself",
+        code: "import { a } from './helpers.test';",
+        filename: '/src/utils/helpers.test.ts',
+        errors: [{ messageId: 'selfImport' }],
+      },
+      {
+        name: "import x = require('./app') loads the module",
+        code: "import x = require('./app');",
+        filename: '/src/app.ts',
         errors: [{ messageId: 'selfImport' }],
       },
     ],

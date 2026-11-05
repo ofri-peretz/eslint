@@ -13,7 +13,25 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## Rule Details
 
-This rule aims to prevent issues related to named-default.
+A default export has its own import spelling. Taking it through the named block, `import { default as x } from 'm'`, is a roundabout way to write `import x from 'm'`. This rule reports it however `default` is written (an identifier or the string `'default'`) and also in a type import (`import type x from 'm'` is the equivalent).
+
+A re-export, `export { default as x } from 'm'`, is not an import and is not reported.
+
+### ❌ Incorrect
+
+```ts
+import { default as config } from './config';
+import { 'default' as config2 } from './config';
+import type { default as Config } from './config';
+```
+
+### ✅ Correct
+
+```ts
+import config from './config';
+import type Config from './config';
+export { default as config } from './config';
+```
 
 ## Options
 
@@ -21,11 +39,8 @@ This rule aims to prevent issues related to named-default.
 []
 ```
 
-## Implementation
+No options.
 
-- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-named-default.ts)
-- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-named-default.test.ts)
+## When Not To Use It
 
-## OWASP Foundation
-
-- **Category**: A00:2021 - General Security
+Never needed; the default import spelling always exists.

@@ -11,13 +11,15 @@
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isLocallyBound } from '../utils/bindings';
+import { matchesAnyFilePattern } from '../utils/file-patterns';
 
 type MessageIds = 'preferES6';
 
 export interface Options {
-  /** Allow AMD in certain contexts (e.g., legacy code) */
+  /** File globs (or path substrings) where AMD is allowed, e.g. legacy code */
   allow?: string[];
-  /** Suggest ES6 imports instead */
+  /** Has no effect; accepted so existing configs keep validating */
   suggestES6?: boolean;
 }
 
@@ -56,12 +58,14 @@ export const noAmd = createRule<RuleOptions, MessageIds>({
             items: {
               type: 'string',
             },
-            description: 'AMD patterns to allow.',
+            description:
+              'File globs (or path substrings) where AMD is allowed.',
           },
           suggestES6: {
             type: 'boolean',
             default: true,
-            description: 'Suggest ES6 imports instead.',
+            description:
+              'Has no effect; accepted so existing configs keep validating.',
           },
         },
         additionalProperties: false,
@@ -80,26 +84,8 @@ export const noAmd = createRule<RuleOptions, MessageIds>({
     let filename: string;
 
     function shouldAllow(): boolean {
-      // Check if the call is in an allowed pattern
-      return allow.some((pattern: string) => {
-        if (!filename) return false;
-
-        // Support glob patterns like **/legacy/**
-        if (pattern.includes('**')) {
-          // Simple glob matching: ** matches any path segment, * matches any name segment
-          const regexPattern = pattern
-            .replace(/\*\*/g, '.*')
-            .replace(/\*/g, '[^/]*');
-          const regex = new RegExp(`^${regexPattern}$`);
-          return regex.test(filename);
-        }
-
-        // Simple string matching for non-glob patterns
-        return filename.includes(pattern);
-      });
+      return !!filename && matchesAnyFilePattern(filename, allow);
     }
-
-    // Note: ES6 suggestion generation could be added here when hasSuggestions is enabled
 
     return {
       before() {
@@ -112,53 +98,37 @@ export const noAmd = createRule<RuleOptions, MessageIds>({
         filename = context.filename;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        if (shouldAllow()) {
-          return;
-        }
+        if (node.callee.type !== 'Identifier') return;
+        const name = node.callee.name;
+        if (name !== 'define' && name !== 'require') return;
+        // AMD's `define` / `require` are globals the loader installs. One
+        // imported or declared in this file is another function that happens
+        // to share the name.
+        if (isLocallyBound(context.sourceCode, node, name)) return;
+        if (shouldAllow()) return;
 
-        // Check for define() calls
-        if (
-          node.callee.type === 'Identifier' &&
-          node.callee.name === 'define'
-        ) {
-          context.report({
-            node: node.callee,
-            messageId: 'preferES6',
-            data: {
-              functionName: 'define',
-              currentFile: filename,
-              suggestion: 'Use ES6 export default or export {} syntax',
-            },
-          });
-        }
+        // `define(...)` in any form: deps + factory, a bare factory, a named
+        // module, an object. `require([...], callback)`: a dependency array
+        // and a callback (function, arrow, or reference); `require('m')` is
+        // CommonJS.
+        const isAmd =
+          name === 'define' ||
+          (node.arguments.length > 1 &&
+            node.arguments[0].type === 'ArrayExpression');
+        if (!isAmd) return;
 
-        // Check for AMD-style require() calls (not CommonJS)
-        else if (
-          node.callee.type === 'Identifier' &&
-          node.callee.name === 'require' &&
-          node.arguments.length > 0
-        ) {
-          const firstArg = node.arguments[0];
-
-          // AMD require typically has a callback function as second argument
-          // or is part of a define() call
-          const hasCallback =
-            node.arguments.length > 1 &&
-            node.arguments[1]?.type === 'FunctionExpression';
-
-          // Check if this looks like AMD require (array of deps + callback)
-          if (firstArg.type === 'ArrayExpression' && hasCallback) {
-            context.report({
-              node: node.callee,
-              messageId: 'preferES6',
-              data: {
-                functionName: 'require',
-                currentFile: filename,
-                suggestion: 'Use ES6 import statements at the top of the file',
-              },
-            });
-          }
-        }
+        context.report({
+          node: node.callee,
+          messageId: 'preferES6',
+          data: {
+            functionName: name,
+            currentFile: filename,
+            suggestion:
+              name === 'define'
+                ? 'Use ES6 export default or export {} syntax'
+                : 'Use ES6 import statements at the top of the file',
+          },
+        });
       },
     };
   },

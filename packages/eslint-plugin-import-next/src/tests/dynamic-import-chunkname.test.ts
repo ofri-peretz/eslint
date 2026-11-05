@@ -13,6 +13,23 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('dynamic-import-chunkname', dynamicImportChunkname, {
   valid: [
+    {
+      name: "webpack's [request] placeholder is a valid chunk name",
+      code: 'import(/* webpackChunkName: "[request]" */ `./locale/${lang}`);',
+    },
+    {
+      name: 'webpackMode eager makes no chunk, so there is nothing to name',
+      code: `import(/* webpackMode: "eager" */ './module');`,
+    },
+    {
+      name: 'a call not listed in importFunctions is not a dynamic import',
+      code: `load('./module');`,
+    },
+    {
+      name: 'importFunctions: a listed call with a chunk name',
+      code: `dynamicImport(/* webpackChunkName: "my-chunk" */ './module');`,
+      options: [{ importFunctions: ['dynamicImport'] }],
+    },
     // With webpackChunkName comment
     {
       name: 'a webpackChunkName comment',
@@ -36,6 +53,22 @@ ruleTester.run('dynamic-import-chunkname', dynamicImportChunkname, {
   ],
 
   invalid: [
+    {
+      name: 'importFunctions: a listed call with no chunk name',
+      code: `dynamicImport('./module');`,
+      options: [{ importFunctions: ['dynamicImport'] }],
+      errors: [
+        {
+          messageId: 'missingChunkName',
+          suggestions: [
+            {
+              messageId: 'suggestChunkName',
+              output: `dynamicImport(/* webpackChunkName: "module" */ './module');`,
+            },
+          ],
+        },
+      ],
+    },
     // Missing chunk name - has suggestion with expected output
     {
       name: 'a dynamic import with no chunk name — the bundle gets a number',

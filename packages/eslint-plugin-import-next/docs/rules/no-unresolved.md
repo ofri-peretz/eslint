@@ -9,7 +9,41 @@ Ensures imports point to resolvable modules
 
 ## Rule Details
 
-This rule aims to prevent issues related to unresolved.
+Reports a static module specifier that resolves to no file. Resolution
+follows Node and TypeScript: relative paths with or without an extension,
+index files, the NodeNext `.js` spelling of a `.ts` file, `node_modules`
+packages (scoped too), a package's `exports` map (a subpath it does not export
+does not resolve), the package.json `imports` map (`#util`) and tsconfig
+`paths` aliases.
+
+Not reported:
+
+- Node builtins (`fs`, `fs/promises`, `node:fs`);
+- a specifier with a URL scheme (`virtual:routes`, `bun:test`,
+  `https://...`): a module a bundler or runtime provides, which a file
+  resolver cannot judge;
+- a computed specifier (`import(name)`, `require(path)`);
+- a specifier listed in `ignore` (exactly, or as a path prefix; `*` matches
+  any run of characters);
+- anything, when `allowUnresolved` is `true`.
+
+`extensions` replaces the file extensions tried for an extensionless relative
+specifier (default `.ts`, `.tsx`, `.js`, `.jsx`, `.d.ts`, `.json`).
+
+Every spelling is checked: `import`, `import type`, side-effect imports,
+`export { a } from`, `export * from`, `import('x')`, `require('x')` and TS
+`import x = require('x')`.
+
+```ts
+// ❌ Incorrect
+import { dep } from './missing';
+import feature from 'pkg/not-exported-subpath';
+
+// ✅ Correct
+import { dep } from './dep'; // dep.ts
+import { readFile } from 'node:fs/promises';
+import routes from 'virtual:routes';
+```
 
 ## Options
 

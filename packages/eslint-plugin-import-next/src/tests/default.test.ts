@@ -89,3 +89,74 @@ ruleTester.run('default', defaultRule, {
     },
   ],
 });
+
+/**
+ * Fidelity (benchmarks/suites/fidelity/models/import-next/default.qnt): every
+ * spelling of taking the default is checked, and `export *` carries no
+ * default.
+ */
+ruleTester.run('default — fidelity', defaultRule, {
+  valid: [
+    {
+      name: 'export { default } from a module with a default',
+      code: `export { default } from './files/foo.ts';`,
+      filename: 'src/valid_default.ts',
+    },
+    {
+      name: 'import { default as x } from a module with a default',
+      code: `import { default as x } from './files/foo.ts';`,
+      filename: 'src/valid_default.ts',
+    },
+    {
+      name: 'import { default as x } from an export = module (interop default)',
+      code: `import { default as x } from './files/export-equals.ts';`,
+      filename: 'src/valid_default.ts',
+    },
+    {
+      name: 'import { default as x } from a module that does not resolve',
+      code: `import { default as x } from './files/missing.ts';`,
+      filename: 'src/valid_default.ts',
+    },
+    {
+      name: 'an inline type default specifier is checked by TypeScript',
+      code: `import { type default as X } from './files/no-default.ts';`,
+      filename: 'src/valid_default.ts',
+    },
+    {
+      name: 'a type-only re-export of the default is checked by TypeScript',
+      code: `export type { default } from './files/no-default.ts';`,
+      filename: 'src/valid_default.ts',
+    },
+    {
+      name: 'a named specifier that is not the default',
+      code: `import { bar } from './files/foo.ts';\nexport { bar as baz } from './files/foo.ts';`,
+      filename: 'src/valid_default.ts',
+    },
+  ],
+  invalid: [
+    {
+      name: "the string-literal spelling import { 'default' as x }",
+      code: `import { 'default' as x } from './files/no-default.ts';`,
+      filename: 'src/invalid_default.ts',
+      errors: [{ messageId: 'noDefaultExport' }],
+    },
+    {
+      name: 'import { default as x } from a module without a default',
+      code: `import { default as x } from './files/no-default.ts';`,
+      filename: 'src/invalid_default.ts',
+      errors: [{ messageId: 'noDefaultExport' }],
+    },
+    {
+      name: 'export { default } from a module without a default',
+      code: `export { default } from './files/no-default.ts';`,
+      filename: 'src/invalid_default.ts',
+      errors: [{ messageId: 'noDefaultExport' }],
+    },
+    {
+      name: 'export * does not re-export a default',
+      code: `import { default as x } from './files/star-only.ts';`,
+      filename: 'src/invalid_default.ts',
+      errors: [{ messageId: 'noDefaultExport' }],
+    },
+  ],
+});

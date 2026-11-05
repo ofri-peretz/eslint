@@ -136,11 +136,16 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
         return;
       }
 
+      // A URL scheme (`node:fs`, `virtual:routes`, `bun:test`, `data:...`,
+      // `https://...`) names a module the runtime or a bundler provides, not a
+      // file the resolver can look for: an unknown, not a finding. One letter
+      // is a Windows drive.
+      if (/^[a-zA-Z][a-zA-Z0-9+.-]+:/.test(importPath)) {
+        return;
+      }
+
       // Skip built-in modules
-      if (
-        importPath.startsWith('node:') ||
-        builtinModules.includes(importPath)
-      ) {
+      if (builtinModules.includes(importPath)) {
         return;
       }
 

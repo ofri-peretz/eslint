@@ -52,6 +52,37 @@ describe('no-commonjs', () => {
           filename: '/src/legacy/commonjs.js',
           options: [{ allowInFiles: ['**/legacy/**'] }],
         },
+        {
+          name: 'require from createRequire is the sanctioned ESM way to load CJS',
+          code: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url); const data = require('./data.json');",
+          filename: '/src/utils/helpers.ts',
+        },
+        {
+          name: 'a parameter named require is the caller\'s function',
+          code: "function load(require: (id: string) => unknown) { return require('./util'); }",
+          filename: '/src/utils/helpers.ts',
+        },
+        {
+          name: 'a local exports object is not the CommonJS global',
+          code: 'const exports: Record<string, number> = {}; exports.a = 1;',
+          filename: '/src/utils/helpers.ts',
+        },
+        {
+          name: 'a .cjs file is CommonJS by its extension',
+          code: "const helper = require('./helper'); module.exports = { helper, dir: __dirname };",
+          filename: '/src/utils/helpers.cjs',
+        },
+        {
+          name: 'a .cts file is CommonJS by its extension',
+          code: "import helper = require('./helper'); exports.helper = helper;",
+          filename: '/src/utils/helpers.cts',
+        },
+        {
+          name: 'a ** glob in allowInFiles matches a deep absolute path',
+          code: 'const helper = require("./helper");',
+          filename: '/repo/packages/web/src/legacy/commonjs.js',
+          options: [{ allowInFiles: ['src/legacy/**'] }],
+        },
       ],
       invalid: [
         // Invalid CommonJS require calls
@@ -236,6 +267,22 @@ describe('no-commonjs', () => {
           code: 'const dirname = import.meta.url;',
           filename: '/src/utils/helpers.js',
         },
+        {
+          name: 'a script-level var __dirname is the file\'s own binding',
+          code: "var __dirname = '/srv'; console.log(__dirname);",
+          filename: '/src/utils/helpers.js',
+          languageOptions: { sourceType: 'script' },
+        },
+        {
+          name: 'the ESM __dirname shim is the file\'s own binding',
+          code: "import { dirname } from 'node:path'; import { fileURLToPath } from 'node:url'; const __dirname = dirname(fileURLToPath(import.meta.url)); console.log(__dirname);",
+          filename: '/src/utils/helpers.ts',
+        },
+        {
+          name: 'a property named __dirname is not the global',
+          code: 'declare const config: { __dirname: string }; console.log(config.__dirname);',
+          filename: '/src/utils/helpers.ts',
+        },
       ],
       invalid: [
         {
@@ -246,6 +293,13 @@ describe('no-commonjs', () => {
               messageId: 'preferES6',
             },
           ],
+        },
+        {
+          name: 'a configured global __dirname is still the CommonJS global',
+          code: 'console.log(__dirname);',
+          filename: '/src/utils/helpers.js',
+          languageOptions: { globals: { __dirname: 'readonly' } },
+          errors: [{ messageId: 'preferES6' }],
         },
         {
           code: 'const filename = __filename;',

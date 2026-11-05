@@ -79,6 +79,9 @@ vi.mock('@interlace/eslint-devkit', async () => ({
   createFileSystemCache: () => mocks.cache,
   clearCache: mocks.clearCache,
   resolveImportPath: mocks.resolveImportPath,
+  // A mocked target is not on disk: it exports nothing known.
+  exportKindsOf: () => new Map(),
+  clearExportKindCache: () => {}, // eslint-disable-line @typescript-eslint/no-empty-function
   hasOnlyTypeImports: mocks.hasOnlyTypeImports,
   computeSCCsFromFile: mocks.computeSCCsFromFile,
   findShortestCyclePath: mocks.findShortestCyclePath,

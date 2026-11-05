@@ -172,11 +172,16 @@ ruleTester.run('no-named-export (final)', noNamedExport, {
       options: [{ allowInFiles: ['**/pages/*.ts'] }],
     },
     {
-      name: 'exported enums are outside the declaration checks',
-      code: `export enum E { A }`,
+      name: 'an exported const enum is erased like a type',
+      code: `export const enum E { A }`,
     },
   ],
   invalid: [
+    {
+      name: 'an exported enum is a value export',
+      code: `export enum E { A }`,
+      errors: [{ messageId: 'namedExport' }],
+    },
     {
       name: 'inline type specifiers are skipped, value specifiers reported',
       code: `type T = number; const v = 1; export { type T, v };`,
@@ -220,15 +225,14 @@ ruleTester.run('no-relative-packages (final)', noRelativePackages, {
       filename: path.join(pkgEDir, 'src', 'file.ts'),
       options: [{ allowSamePackage: false }],
     },
-  ],
-  invalid: [
     {
-      name: 'unreadable target package.json reports without a fix',
+      // An unreadable package.json names no package to import instead.
+      name: 'unreadable target package.json is not reported',
       code: `import x from '../../pkg-bad/lib/util';`,
       filename: path.join(pkgEDir, 'src', 'file.ts'),
-      errors: [{ messageId: 'relativePackage' }],
     },
   ],
+  invalid: [],
 });
 
 // ---------------------------------------------------------------------------
@@ -264,15 +268,42 @@ ruleTester.run('prefer-default-export (final)', preferDefaultExport, {
       code: `export interface Solo { x: number; }`,
     },
     {
-      name: 'exported enums are not tracked as named exports',
-      code: `export enum E { A }`,
-    },
-    {
-      name: 'string-named export specifiers are not tracked',
-      code: `const v = 1; export { v as "s-name" };`,
+      name: 'an exported const enum is erased like a type',
+      code: `export const enum E { A }`,
     },
   ],
-  invalid: [],
+  invalid: [
+    {
+      name: 'an exported enum is a value export',
+      code: `export enum E { A }`,
+      errors: [
+        {
+          messageId: 'preferDefaultExport',
+          suggestions: [
+            {
+              messageId: 'preferDefaultExport',
+              output: `// TODO: Convert named export to default export\nexport enum E { A }`,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'a string-named export specifier is a name the module publishes',
+      code: `const v = 1; export { v as "s-name" };`,
+      errors: [
+        {
+          messageId: 'preferDefaultExport',
+          suggestions: [
+            {
+              messageId: 'preferDefaultExport',
+              output: `const v = 1; // TODO: Convert named export to default export\nexport { v as "s-name" };`,
+            },
+          ],
+        },
+      ],
+    },
+  ],
 });
 
 describe('prefer-default-export — Layer 2 (final)', () => {
@@ -282,7 +313,7 @@ describe('prefer-default-export — Layer 2 (final)', () => {
       type: 'ExportNamedDeclaration',
       source: null,
       declaration: null,
-      specifiers: null,
+      specifiers: [],
       exportKind: 'value',
     });
     (listeners['Program:exit'] as (n: unknown) => void)({ type: 'Program' });

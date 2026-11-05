@@ -62,20 +62,24 @@ function matchesAnyPattern(path: string, patterns: string[]): boolean {
 function getImportDepth(importPath: string): number {
   // Handle relative imports
   if (importPath.startsWith('./') || importPath.startsWith('../')) {
-    const parts = importPath.split('/').filter((p) => p !== '.' && p !== '..');
+    const parts = importPath
+      .split('/')
+      .filter((p) => p !== '.' && p !== '..' && p !== '');
     return parts.length;
   }
 
+  // An empty segment adds no depth: a trailing slash (`./utils/`, `lodash/`)
+  // names the same module as the path without it.
   // Handle scoped packages (@org/package)
   if (importPath.startsWith('@')) {
-    const parts = importPath.split('/');
+    const parts = importPath.split('/').filter(Boolean);
     // @org/package = 0 depth, @org/package/sub = 1 depth
     return Math.max(0, parts.length - 2);
   }
 
   // Handle regular packages
-  const parts = importPath.split('/');
-  return parts.length - 1;
+  const parts = importPath.split('/').filter(Boolean);
+  return Math.max(0, parts.length - 1);
 }
 
 /**
@@ -436,12 +440,17 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
 
       // Handle dynamic imports: import('path')
       ImportExpression(node: TSESTree.ImportExpression) {
-        if (
-          node.source.type === 'Literal' &&
-          typeof node.source.value === 'string'
-        ) {
-          checkImport(node.source.value, node.source);
+        const staticText = staticString(node.source);
+        if (staticText !== null) {
+          checkImport(staticText, node.source);
         }
+      },
+
+      // `import x = require('path')`
+      TSExternalModuleReference(node: TSESTree.TSExternalModuleReference) {
+        // TypeScript only accepts a string literal here.
+        const literal = node.expression as TSESTree.StringLiteral;
+        checkImport(literal.value, literal);
       },
     };
   },

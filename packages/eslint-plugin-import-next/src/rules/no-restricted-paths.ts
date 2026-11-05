@@ -21,6 +21,21 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+/**
+ * Does `importPath` contain the path segments of `pattern`, in order, as whole
+ * segments? `server` matches `../server/db` and `@/server`, not `./observer`
+ * or `./server-utils`; `app/server` matches `./app/server`.
+ */
+function containsSegments(importPath: string, pattern: string): boolean {
+  const path = importPath.split('/').filter(Boolean);
+  const wanted = pattern.split('/').filter(Boolean);
+  if (wanted.length === 0) return false;
+  for (let i = 0; i + wanted.length <= path.length; i++) {
+    if (wanted.every((seg, j) => path[i + j] === seg)) return true;
+  }
+  return false;
+}
+
 export const noRestrictedPaths = createRule<RuleOptions, MessageIds>({
   name: 'no-restricted-paths',
   meta: {
@@ -81,7 +96,7 @@ export const noRestrictedPaths = createRule<RuleOptions, MessageIds>({
 
     function checkImport(importPath: string, node: TSESTree.Node) {
       for (const pattern of restricted) {
-        if (importPath.includes(pattern)) {
+        if (containsSegments(importPath, pattern)) {
           context.report({
             node,
             messageId: 'pathViolation',
@@ -102,6 +117,26 @@ export const noRestrictedPaths = createRule<RuleOptions, MessageIds>({
         if (typeof importPath === 'string') {
           checkImport(importPath, node.source);
         }
+      },
+
+      // `export { x } from 'p'`, `export * from 'p'`
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        if (node.source) checkImport(node.source.value, node.source);
+      },
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        checkImport(node.source.value, node.source);
+      },
+
+      ImportExpression(node: TSESTree.ImportExpression) {
+        const staticText = staticString(node.source);
+        if (staticText !== null) checkImport(staticText, node.source);
+      },
+
+      // `import x = require('p')`
+      TSExternalModuleReference(node: TSESTree.TSExternalModuleReference) {
+        // TypeScript only accepts a string literal here.
+        const literal = node.expression as TSESTree.StringLiteral;
+        checkImport(literal.value, literal);
       },
 
       CallExpression(node: TSESTree.CallExpression) {

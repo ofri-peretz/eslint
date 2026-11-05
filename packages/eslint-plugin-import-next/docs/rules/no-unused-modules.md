@@ -8,7 +8,32 @@ Forbid modules without exports
 
 ## Rule Details
 
-This rule aims to prevent issues related to unused-modules.
+This rule enforces a convention: every module exports something. It reports a module that has no export at all.
+
+An export is any way the module hands a value out: ESM `export` (named, default, `export * from`, a type), TypeScript `export =`, and CommonJS writes to the real `module.exports` or `exports`: `module.exports =`, `module['exports'] =`, `exports.a =`, `module.exports.a =`, and `Object.defineProperty(exports, …)` / `Object.assign(module.exports, …)`. A write to a local or parameter that is merely named `exports` exports nothing. `export {}` exports nothing but is how TypeScript marks a file as a module on purpose, so it is not reported.
+
+`allowImportOnly` exempts a module that imports something (ESM `import`, `require()`, or `import x = require()`) and exports nothing, such as an entry point that wires other modules together.
+
+### ❌ Incorrect
+
+```ts
+console.log('nothing leaves this file');
+
+function fill(exports: Record<string, unknown>) {
+  exports.a = 1;
+}
+```
+
+### ✅ Correct
+
+```ts
+export const a = 1;
+```
+
+```js
+module.exports.handler = () => {};
+Object.defineProperty(exports, 'version', { value: '1.0.0' });
+```
 
 ## Options
 

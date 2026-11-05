@@ -29,6 +29,26 @@ fs.writeFileSync(
   path.join(nodeNextDir, 'only.mjs'),
   'export const only = 1;\n',
 );
+// The targets of the reported cases below. A specifier that does not resolve
+// is no evidence of a style violation, so every finding names a real file.
+for (const file of [
+  'foo.js',
+  'data.json',
+  'types.d.ts',
+  'a.min.js',
+  'utils.js',
+  "o's-utils.js",
+  'dep.ts',
+  'source.config.ts',
+  'LICENSE',
+]) {
+  fs.writeFileSync(path.join(nodeNextDir, file), 'export const x = 1;\n');
+}
+fs.mkdirSync(path.join(nodeNextDir, 'lib'));
+fs.writeFileSync(
+  path.join(nodeNextDir, 'lib/index.ts'),
+  'export const x = 1;\n',
+);
 const nodeNextImporter = path.join(nodeNextDir, 'yargs.ts');
 afterAll(() => {
   fs.rmSync(nodeNextDir, { recursive: true, force: true });
@@ -183,11 +203,13 @@ describe('extensions', () => {
         code: "import foo from './foo.js';",
         output: "import foo from './foo';",
         options: [{ pattern: { js: 'never' } }],
+        filename: nodeNextImporter,
         errors: [{ messageId: 'unexpectedExtension' }],
       },
       {
         code: "import data from './data';",
         options: [{ pattern: { json: 'always' }, default: 'always' }], // Default always triggers missing extension check
+        filename: nodeNextImporter,
         errors: [{ messageId: 'missingExtension' }],
       },
 
@@ -201,6 +223,7 @@ describe('extensions', () => {
         code: "export { foo } from './foo.js';",
         output: "export { foo } from './foo';",
         options: [{ pattern: { js: 'never' } }],
+        filename: nodeNextImporter,
         errors: [{ messageId: 'unexpectedExtension' }],
       },
       {
@@ -208,12 +231,14 @@ describe('extensions', () => {
         code: "export * from './foo.js';",
         output: "export * from './foo';",
         options: [{ pattern: { js: 'never' } }],
+        filename: nodeNextImporter,
         errors: [{ messageId: 'unexpectedExtension' }],
       },
       {
         name: 'a missing extension on an export-from when the style requires one',
         code: "export { foo } from './data';",
         options: [{ pattern: { json: 'always' }, default: 'always' }],
+        filename: nodeNextImporter,
         errors: [{ messageId: 'missingExtension' }],
       },
 
@@ -228,12 +253,14 @@ describe('extensions', () => {
         code: "const m = await import('./foo.js');",
         output: "const m = await import('./foo');",
         options: [{ pattern: { js: 'never' } }],
+        filename: nodeNextImporter,
         errors: [{ messageId: 'unexpectedExtension' }],
       },
       {
         name: 'a missing extension on a dynamic import when the style requires one',
         code: "const m = await import('./data');",
         options: [{ pattern: { json: 'always' }, default: 'always' }],
+        filename: nodeNextImporter,
         errors: [{ messageId: 'missingExtension' }],
       },
 
@@ -260,6 +287,7 @@ describe('extensions', () => {
         code: "import x from './types.d.ts';",
         output: null,
         options: [{ pattern: { ts: 'never' } }],
+        filename: nodeNextImporter,
         errors: [{ messageId: 'unexpectedExtension' }],
       },
       {
@@ -267,6 +295,7 @@ describe('extensions', () => {
         code: "import x from './a.min.js';",
         output: null,
         options: [{ pattern: { js: 'never' } }],
+        filename: nodeNextImporter,
         errors: [{ messageId: 'unexpectedExtension' }],
       },
       // The fixer hardcoded single quotes and never escaped, so a double-quoted
@@ -277,6 +306,7 @@ describe('extensions', () => {
         code: 'import x from "./utils.js";',
         output: 'import x from "./utils";',
         options: [{ pattern: { js: 'never' } }],
+        filename: nodeNextImporter,
         errors: [{ messageId: 'unexpectedExtension' }],
       },
       // `ext` is measured on the DECODED `source.value` but the rewrite slices the
@@ -288,6 +318,7 @@ describe('extensions', () => {
         code: 'import x from "./utils\\u002ejs";',
         output: null,
         options: [{ pattern: { js: 'never' } }],
+        filename: nodeNextImporter,
         errors: [{ messageId: 'unexpectedExtension' }],
       },
       {
@@ -295,7 +326,94 @@ describe('extensions', () => {
         code: 'import x from "./o\'s-utils.js";',
         output: 'import x from "./o\'s-utils";',
         options: [{ pattern: { js: 'never' } }],
+        filename: nodeNextImporter,
         errors: [{ messageId: 'unexpectedExtension' }],
+      },
+    ],
+  });
+});
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/import-next/
+// extensions): a missing extension was judged by `default` alone instead of by
+// the policy for the resolved file's extension, an unresolved specifier was
+// reported, and `require()` / `import x = require()` were not read.
+describe('extensions - fidelity', () => {
+  ruleTester.run('extensions', extensions, {
+    valid: [
+      {
+        name: 'a missing extension on a specifier that does not resolve proves nothing',
+        code: "import x from './missing';",
+        filename: nodeNextImporter,
+        options: [{ default: 'always' }],
+      },
+      {
+        name: 'a written extension on a specifier that does not resolve proves nothing',
+        code: "import x from './missing.js';",
+        filename: nodeNextImporter,
+        options: [{ pattern: { js: 'never' } }],
+      },
+      {
+        name: 'a directory import has no file extension to add',
+        code: "import x from './lib';",
+        filename: nodeNextImporter,
+        options: [{ default: 'always' }],
+      },
+      {
+        name: 'a file with no extension at all has none to add',
+        code: "import x from './LICENSE';",
+        filename: nodeNextImporter,
+        options: [{ default: 'always' }],
+      },
+      {
+        name: 'require() of a computed specifier is left alone',
+        code: 'const x = require(name);',
+        filename: nodeNextImporter,
+      },
+      {
+        name: 'import x = Namespace.member is not a module specifier',
+        code: 'namespace A { export const b = 1; }\nimport x = A.b;',
+        filename: nodeNextImporter,
+      },
+      {
+        name: 'a call to something other than require() is left alone',
+        code: "load('./foo.js');",
+        filename: nodeNextImporter,
+      },
+      {
+        name: 'pattern never for the resolved extension beats default always',
+        code: "import x from './dep';",
+        filename: nodeNextImporter,
+        options: [{ default: 'always', pattern: { ts: 'never' } }],
+      },
+    ],
+    invalid: [
+      {
+        name: 'pattern always for the resolved extension reports a missing one',
+        code: "import x from './dep';",
+        filename: nodeNextImporter,
+        options: [{ pattern: { ts: 'always' } }],
+        errors: [{ messageId: 'missingExtension' }],
+      },
+      {
+        name: 'a dotted file name is judged by the file it resolves to',
+        code: "import x from './source.config';",
+        filename: nodeNextImporter,
+        options: [{ default: 'always' }],
+        errors: [{ messageId: 'missingExtension' }],
+      },
+      {
+        name: 'require() with an extension the style omits',
+        code: "const x = require('./foo.js');",
+        output: "const x = require('./foo');",
+        filename: nodeNextImporter,
+        errors: [{ messageId: 'unexpectedExtension' }],
+      },
+      {
+        name: 'import x = require() missing an extension the style requires',
+        code: "import x = require('./dep');",
+        filename: nodeNextImporter,
+        options: [{ default: 'always' }],
+        errors: [{ messageId: 'missingExtension' }],
       },
     ],
   });

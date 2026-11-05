@@ -11,6 +11,7 @@
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { matchesAnyFilePattern } from '../utils/file-patterns';
 
 type MessageIds = 'mutableExport' | 'varExport' | 'letExport';
 
@@ -97,7 +98,7 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
     let filename: string;
 
     function shouldSkipFile(): boolean {
-      return allowInFiles.some((pattern: string) => filename.includes(pattern));
+      return matchesAnyFilePattern(filename, allowInFiles);
     }
 
     function shouldIgnoreExport(exportName: string): boolean {

@@ -10,7 +10,26 @@ Forbid importing the submodules of other modules
 
 ## Rule Details
 
-This rule aims to prevent issues related to internal-modules.
+Code should import a module through its entry point, not reach into its files. Every way a module is loaded or re-exported is checked: `import`, side-effect `import`, `export … from`, `export * from`, `require()`, `import()` and TypeScript's `import x = require()`.
+
+A specifier's depth is how many path segments it goes past the module root: a package (`lodash` 0, `lodash/get` 1, `lodash/fp/get` 2), a scoped package (`@org/ui` 0, `@org/ui/button` 1), a relative path (each segment after the `./` / `../` prefix: `./utils` 1, `./utils/helpers` 2, `../../a/b` 2). A trailing slash names the same module (`./utils/` is `./utils`). A specifier deeper than `maxDepth` (default 1), or matching a `forbid` glob, is reported - unless it matches an `allow` or `ignorePaths` glob (`*` within a segment, `**` across segments). `strategy` (`error`, `warn`, `autofix`, `suggest`) only decides how a finding is fixed.
+
+### ❌ Incorrect
+
+```ts
+import helpers from './utils/helpers';
+import get from 'lodash/fp/get';
+export * from '@org/ui/button/icon';
+```
+
+### ✅ Correct
+
+```ts
+import utils from './utils';
+import get from 'lodash/get';
+// { allow: ['lodash/**'] }
+import fpGet from 'lodash/fp/get';
+```
 
 ## Options
 

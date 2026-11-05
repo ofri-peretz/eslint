@@ -28,6 +28,29 @@ function rel(absoluteImport: string): string {
 
 ruleTester.run('no-absolute-path', noAbsolutePath, {
   valid: [
+    {
+      name: 'esmodule off: ES spellings are not checked',
+      code: `export { a } from '/abs/a'; export * from '/abs/b'; import('/abs/c');`,
+      options: [{ esmodule: false }],
+    },
+    {
+      name: 'commonjs off: an import-equals require is not checked',
+      code: `import a = require('/abs/a');`,
+      options: [{ commonjs: false }],
+    },
+    {
+      name: 'a namespace alias names no module',
+      code: `import Alias = NS.Inner;`,
+    },
+    {
+      name: 'amd: a named module id is not a dependency path',
+      code: `define('/absolute/path', ['./dep'], function() {});`,
+      options: [{ amd: true }],
+    },
+    {
+      name: 'amd off (default): an AMD dependency array is not checked',
+      code: `require(['/absolute/path'], function() {});`,
+    },
     // Relative imports are allowed
     { name: 'a relative path', code: `import foo from './foo';` },
     { code: `import foo from '../foo';` },
@@ -83,12 +106,44 @@ ruleTester.run('no-absolute-path', noAbsolutePath, {
       output: `const foo = require('${rel('/absolute/path/to/foo')}');`,
     },
 
-    // AMD when enabled
+    // AMD when enabled: the modules are the dependency array's elements
     {
-      code: `define('/absolute/path', function() {});`,
+      name: 'amd: an absolute path in the define() dependency array',
+      code: `define(['/absolute/path'], function() {});`,
       options: [{ amd: true }],
       errors: [{ messageId: 'absolutePath' }],
-      output: `define('${rel('/absolute/path')}', function() {});`,
+      output: `define(['${rel('/absolute/path')}'], function() {});`,
+    },
+    {
+      name: 'amd: an absolute path in the require() dependency array',
+      code: `require(['/absolute/path'], function() {});`,
+      options: [{ amd: true }],
+      errors: [{ messageId: 'absolutePath' }],
+      output: `require(['${rel('/absolute/path')}'], function() {});`,
+    },
+    {
+      name: 'an absolute path re-exported with export ... from',
+      code: `export { foo } from '/absolute/foo';`,
+      errors: [{ messageId: 'absolutePath' }],
+      output: `export { foo } from '${rel('/absolute/foo')}';`,
+    },
+    {
+      name: 'an absolute path re-exported with export * from',
+      code: `export * from '/absolute/foo';`,
+      errors: [{ messageId: 'absolutePath' }],
+      output: `export * from '${rel('/absolute/foo')}';`,
+    },
+    {
+      name: 'an absolute path in a static template literal',
+      code: 'const foo = require(`/absolute/foo`);',
+      errors: [{ messageId: 'absolutePath' }],
+      output: `const foo = require('${rel('/absolute/foo')}');`,
+    },
+    {
+      name: 'an absolute path in a TS import-equals require',
+      code: `import foo = require('/absolute/foo');`,
+      errors: [{ messageId: 'absolutePath' }],
+      output: `import foo = require('${rel('/absolute/foo')}');`,
     },
   ],
 });

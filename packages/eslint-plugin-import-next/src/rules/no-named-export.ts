@@ -11,6 +11,8 @@
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { boundNames } from '../utils/bindings';
+import { matchesAnyFilePattern } from '../utils/file-patterns';
 
 type MessageIds = 'namedExport' | 'suggestDefault';
 
@@ -21,7 +23,7 @@ export interface Options {
   allowNames?: string[];
   /** Allow named exports for specific patterns */
   allowPatterns?: string[];
-  /** Suggest default export alternative */
+  /** Has no effect; accepted so existing configs keep validating */
   suggestDefault?: boolean;
 }
 
@@ -69,26 +71,29 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
             items: {
               type: 'string',
             },
-            description: 'Allow named exports in specific files.',
+            description:
+              'File globs (or path substrings) where named exports are allowed.',
           },
           allowNames: {
             type: 'array',
             items: {
               type: 'string',
             },
-            description: 'Allow specific named exports.',
+            description: 'Exported names that are allowed.',
           },
           allowPatterns: {
             type: 'array',
             items: {
               type: 'string',
             },
-            description: 'Allow named exports for specific patterns.',
+            description:
+              'More file globs (or path substrings) where named exports are allowed.',
           },
           suggestDefault: {
             type: 'boolean',
             default: true,
-            description: 'Suggest default export alternative.',
+            description:
+              'Has no effect; accepted so existing configs keep validating.',
           },
         },
         additionalProperties: false,
@@ -110,73 +115,27 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
     let allowPatterns: string[];
     let filename: string;
 
-    function shouldAllow(specifier?: TSESTree.ExportSpecifier): boolean {
-      if (!filename) {
-        return false;
-      }
-
-      // Check if file is in allowed list
-      const allowedByFile = allowInFiles.some((pattern: string) => {
-        if (pattern.includes('*')) {
-          const regexStr =
-            '^' +
-            pattern
-              .replace(/[.+?^${}()|[\]\\]/g, (match) => {
-                // The char class above never matches '*', so no special-casing needed.
-                return '\\' + match;
-              })
-              .replace(/\*\*/g, '.*')
-              .replace(/\*/g, '[^/]*') +
-            '$';
-
-          // regexStr escapes every regex metacharacter before translating
-          // glob tokens, so new RegExp() can never throw here.
-          const regex = new RegExp(regexStr);
-          return regex.test(filename);
-        }
-        return filename.includes(pattern);
-      });
-
-      if (allowedByFile) {
-        return true;
-      }
-
-      // Check if filename matches allowed patterns
-      const allowedByPattern = allowPatterns.some((pattern: string) => {
-        if (pattern.includes('*')) {
-          const regexStr =
-            '^' +
-            pattern
-              .replace(/[.+?^${}()|[\]\\]/g, (match) => {
-                // The char class above never matches '*', so no special-casing needed.
-                return '\\' + match;
-              })
-              .replace(/\*\*/g, '.*')
-              .replace(/\*/g, '[^/]*') +
-            '$';
-          // regexStr escapes every regex metacharacter before translating
-          // glob tokens, so new RegExp() can never throw here.
-          const regex = new RegExp(regexStr);
-          return regex.test(filename);
-        }
-        return filename.includes(pattern);
-      });
-
-      if (allowedByPattern) {
-        return true;
-      }
-
-      // Check if specific export name is allowed
-      if (
-        specifier &&
-        specifier.exported.type === 'Identifier' &&
-        allowNames.includes(specifier.exported.name)
-      ) {
-        return true;
-      }
-
-      return false;
+    function fileAllowed(): boolean {
+      return (
+        !!filename &&
+        (matchesAnyFilePattern(filename, allowInFiles) ||
+          matchesAnyFilePattern(filename, allowPatterns))
+      );
     }
+
+    /**
+     * Report a value export published under `names` (none known for
+     * `export * from`), unless every name is in `allowNames`.
+     */
+    function check(node: TSESTree.Node, names: string[]) {
+      if (names.length > 0 && names.every((n) => allowNames.includes(n))) {
+        return;
+      }
+      context.report({ node, messageId: 'namedExport' });
+    }
+
+    const nameOf = (n: TSESTree.Identifier | TSESTree.StringLiteral) =>
+      n.type === 'Identifier' ? n.name : n.value;
 
     return {
       before() {
@@ -185,72 +144,56 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
           allowInFiles = [],
           allowNames = [],
           allowPatterns = [],
-          // suggestDefault // unused option
+          // suggestDefault has no effect (accepted so configs validate)
         } = options || {});
 
         filename = context.filename;
+        return !fileAllowed();
       },
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
-        // Skip type exports
-        if (
-          node.exportKind === 'type' ||
-          (node.declaration &&
-            (node.declaration.type === 'TSInterfaceDeclaration' ||
-              node.declaration.type === 'TSTypeAliasDeclaration'))
-        ) {
-          return;
-        }
+        // Type-only exports have no default-export counterpart to prefer.
+        if (node.exportKind === 'type') return;
 
-        // Check each specifier individually
-        if (node.specifiers && node.specifiers.length > 0) {
-          for (const specifier of node.specifiers) {
-            // Allow re-exporting default as named export
-            if (
-              specifier.exported.type === 'Identifier' &&
-              specifier.exported.name !== 'default' &&
-              !shouldAllow(specifier)
-            ) {
-              if (specifier.exportKind !== 'type') {
-                context.report({
-                  node: specifier,
-                  messageId: 'namedExport',
-                });
-              }
-            }
+        for (const specifier of node.specifiers) {
+          const exported = nameOf(specifier.exported);
+          // Exported AS default is the default export, not a named one.
+          if (exported !== 'default' && specifier.exportKind !== 'type') {
+            check(specifier, [exported]);
           }
         }
 
-        // Check for export declarations (export const foo = 1;)
-        else if (node.declaration) {
-          if (node.declaration.type === 'VariableDeclaration') {
+        const declaration = node.declaration;
+        if (!declaration) return;
+        switch (declaration.type) {
+          case 'VariableDeclaration':
             // Report on each variable declarator individually
-            for (const declarator of node.declaration.declarations) {
-              const varName =
-                declarator.id.type === 'Identifier'
-                  ? declarator.id.name
-                  : undefined;
-              const isAllowed =
-                (varName && allowNames.includes(varName)) || shouldAllow();
-              if (!isAllowed) {
-                context.report({
-                  node: declarator,
-                  messageId: 'namedExport',
-                });
-              }
+            for (const declarator of declaration.declarations) {
+              check(declarator, boundNames(declarator.id));
             }
-          } else if (
-            node.declaration.type === 'FunctionDeclaration' ||
-            node.declaration.type === 'ClassDeclaration'
-          ) {
-            const name = node.declaration.id?.name;
-            if (name && !allowNames.includes(name) && !shouldAllow()) {
-              context.report({
-                node: node.declaration,
-                messageId: 'namedExport',
-              });
-            }
-          }
+            break;
+          case 'FunctionDeclaration':
+          case 'ClassDeclaration':
+            // (An overload signature is a TSDeclareFunction; the
+            // implementation below it is the export.)
+            // A function or class in a named export always has a name.
+            check(declaration, [(declaration.id as TSESTree.Identifier).name]);
+            break;
+          case 'TSEnumDeclaration':
+            // A `const enum` is erased like a type; a plain enum is a value.
+            if (!declaration.const) check(declaration, [declaration.id.name]);
+            break;
+          default:
+            // Interfaces, type aliases, namespaces: types or ambient.
+            break;
         }
+      },
+      // `export * from 'm'` publishes every name of `m`; `export * as ns`
+      // publishes `ns`. Only `export * as default` is the default export.
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        if (node.exportKind === 'type') return;
+        const exported = node.exported ? nameOf(node.exported) : undefined;
+        if (exported === 'default') return;
+        check(node, exported ? [exported] : []);
       },
     };
   },

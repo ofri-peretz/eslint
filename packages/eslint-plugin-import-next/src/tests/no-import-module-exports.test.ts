@@ -13,6 +13,20 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-import-module-exports', noImportModuleExports, {
   valid: [
+    {
+      name: 'a type-only import is erased and mixes nothing with CommonJS',
+      code: `import type { Dep } from './dep'; module.exports = { run: 1 };`,
+    },
+    {
+      name: "a wrapper's module and exports parameters are not the CommonJS globals",
+      code: `import dep from './dep'; function wrap(module: any, exports: any) { module.exports = exports; exports.run = dep; }`,
+    },
+    {
+      name: 'exceptions: a file matching a glob is exempt',
+      code: `import dep from './dep'; module.exports = dep;`,
+      filename: '/repo/scripts/build.ts',
+      options: [{ exceptions: ['**/scripts/**'] }],
+    },
     // Pure ESM
     {
       name: 'an ES export',
@@ -57,6 +71,13 @@ ruleTester.run('no-import-module-exports', noImportModuleExports, {
   ],
 
   invalid: [
+    {
+      name: 'exceptions: a file no glob matches is still reported',
+      code: `import dep from './dep'; module.exports = dep;`,
+      filename: '/repo/src/app.ts',
+      options: [{ exceptions: ['**/scripts/**'] }],
+      errors: [{ messageId: 'importModuleExports' }],
+    },
     // Import with module.exports
     {
       name: 'module.exports in a file that also uses import',

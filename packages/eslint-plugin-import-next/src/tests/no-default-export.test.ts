@@ -23,6 +23,16 @@ ruleTester.run('no-default-export', noDefaultExport, {
     { code: `export { foo } from './foo';` },
     { code: `export * from './module';` },
     { code: `export * as utils from './utils';` },
+    {
+      name: 'allowInFiles also exempts export * as default',
+      code: `export * as default from './m';`,
+      filename: '/repo/src/pages/index.ts',
+      options: [{ allowInFiles: ['**/pages/**'] }],
+    },
+    {
+      name: 'another module\'s default re-exported under a name is a named export',
+      code: `export { default as Widget } from './widget';`,
+    },
 
     // No exports at all
     { code: `const x = 1;` },
@@ -33,6 +43,21 @@ ruleTester.run('no-default-export', noDefaultExport, {
   ],
 
   invalid: [
+    {
+      name: 'a namespace re-exported as the string name "default"',
+      code: `export * as "default" from './m';`,
+      errors: [{ messageId: 'preferNamedExport' }],
+    },
+    {
+      name: 'a binding exported as the string name "default"',
+      code: `const value = 1; export { value as "default" };`,
+      errors: [{ messageId: 'preferNamedExport' }],
+    },
+    {
+      name: 'a namespace re-exported as the default',
+      code: `export * as default from './m';`,
+      errors: [{ messageId: 'preferNamedExport' }],
+    },
     // Default export expression (Literal)
     {
       name: 'a default export',
