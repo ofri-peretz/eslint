@@ -253,7 +253,7 @@
       "rules": 37,
       "description": "ESLint plugin for React accessibility — WCAG 2.1 rules for ARIA, alt text, keyboard interaction, and focus management, with auto-fixes",
       "category": "react",
-      "version": "2.6.0",
+      "version": "2.6.1",
       "published": true
     }
   ],
