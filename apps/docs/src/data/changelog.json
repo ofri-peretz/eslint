@@ -1,9 +1,39 @@
 {
-  "releaseCount": 954,
+  "releaseCount": 960,
   "packageCount": 66,
-  "entryCount": 2561,
+  "entryCount": 2567,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "oxlint-plugin-reliability",
+      "short": "oxlint-plugin-reliability",
+      "version": "4.2.1",
+      "date": "2026-11-04T23:14:19Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-reliability@4.2.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-reliability",
+      "short": "eslint-plugin-reliability",
+      "version": "4.2.1",
+      "date": "2026-11-04T23:11:48Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "rules now decide by code structure, found by the new Quint fidelity models.",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "oxlint-plugin-mongodb-security",
       "short": "oxlint-plugin-mongodb-security",
@@ -22175,6 +22205,51 @@
       ]
     },
     {
+      "package": "eslint-plugin-modernization",
+      "short": "eslint-plugin-modernization",
+      "version": "3.2.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "rules now decide by code structure, found by the new Quint fidelity models.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modularity",
+      "short": "eslint-plugin-modularity",
+      "version": "2.6.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "rules now decide by code structure, found by the new Quint fidelity models.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-operability",
+      "short": "eslint-plugin-operability",
+      "version": "4.2.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "rules now decide by code structure, found by the new Quint fidelity models.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
@@ -22300,21 +22375,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-reliability",
-      "short": "eslint-plugin-reliability",
-      "version": "4.2.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "rules now decide by code structure, found by the new Quint fidelity models.",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-supabase-security",
       "short": "eslint-plugin-supabase-security",
       "version": "1.0.0",
@@ -22335,8 +22395,38 @@
       ]
     },
     {
-      "package": "oxlint-plugin-reliability",
-      "short": "oxlint-plugin-reliability",
+      "package": "oxlint-plugin-modernization",
+      "short": "oxlint-plugin-modernization",
+      "version": "3.2.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-modernization@3.2.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-modularity",
+      "short": "oxlint-plugin-modularity",
+      "version": "2.6.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-modularity@2.6.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-operability",
+      "short": "oxlint-plugin-operability",
       "version": "4.2.1",
       "date": null,
       "isApp": false,
@@ -22344,7 +22434,7 @@
       "entries": [
         {
           "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-reliability@4.2.1`",
+          "title": "updated workspace dependencies: `eslint-plugin-operability@4.2.1`",
           "pr": null
         }
       ]
