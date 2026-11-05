@@ -9,7 +9,7 @@
  * Disallow functions that are declared in a scope which does not capture any variables from the outer scope
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'inconsistentFunctionScoping' | 'moveToModuleScope';
@@ -111,128 +111,59 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let checkArrowFunctions: boolean;
-    let scopeStack: Set<string>[];
-    /**
-     * scopeStack[0] is the vestigial set created by the initializer and
-     * scopeStack[1] is the module scope pushed by `Program()`; real function
-     * scopes start at index 2.
-     */
-    const MODULE_SCOPE_DEPTH = 2;
-
-    function enterScope() {
-      scopeStack.push(new Set());
-    }
-
-    function exitScope() {
-      scopeStack.pop();
-    }
-
-    function addVariableToCurrentScope(name: string) {
-      const currentScope = scopeStack[scopeStack.length - 1];
-      if (currentScope) {
-        currentScope.add(name);
-      }
-    }
 
     /**
-     * Register the sibling `function` declarations of a statement list.
-     *
-     * `scopeStack` was fed only by the `VariableDeclaration` visitor and by
-     * function params, so a helper written `function helper() {}` bound nothing
-     * as far as this rule was concerned, while the same helper written
-     * `const helper = () => {}` was tracked. A neighbour that called it then
-     * looked as though it captured nothing, and the report asserted "doesn't
-     * capture outer variables" about code where ESLint's own scope manager
-     * resolves the reference to the enclosing function — with a suggested move
-     * that does not compile.
-     *
-     * Registered on scope ENTRY rather than on visit, because function
-     * declarations hoist: a sibling declared further down the body is already
-     * callable above it.
-     *
-     * A function's own name lands here too, which is harmless — `boundNames` in
-     * `analyzeFunction` is built from `getDeclaredVariables(node)` and already
-     * contains it, so self-recursion still does not read as a capture.
+     * Is `v` the helper's own binding? `function helper() { helper(); }` and
+     * `const helper = () => helper()` name themselves; that is recursion, not
+     * a capture of the enclosing scope.
      */
-    function hoistFunctionDeclarations(body: TSESTree.Statement[]) {
-      for (const statement of body) {
-        if (
-          statement.type === AST_NODE_TYPES.FunctionDeclaration &&
-          statement.id
-        ) {
-          addVariableToCurrentScope(statement.id.name);
+    function isOwnBinding(
+      v: TSESLint.Scope.Variable,
+      node:
+        | TSESTree.FunctionDeclaration
+        | TSESTree.FunctionExpression
+        | TSESTree.ArrowFunctionExpression,
+    ): boolean {
+      return v.defs.some((def) => {
+        if (def.node === node) return true;
+        if (def.node.type !== 'VariableDeclarator') return false;
+        let init: TSESTree.Node | null | undefined = def.node.init;
+        while (init && BINDING_WRAPPERS.has(init.type)) {
+          init = (init as { expression?: TSESTree.Node }).expression;
         }
-      }
+        return init === node;
+      });
     }
 
     /**
-     * Every name a binding target introduces, destructuring included.
+     * Does the helper reference a binding of an enclosing function (or block)?
      *
-     * Only `Identifier` was recorded before, so `const { out } = opts` and
-     * `function f({ out })` bound nothing as far as this rule was concerned. A
-     * nested function that captured `out` then looked as though it captured
-     * nothing, and the report asserted "doesn't capture outer variables" about
-     * code where ESLint's own scope manager resolves the reference to the
-     * enclosing function — with a suggested move that does not compile.
+     * Decided by ESLint's scope manager, not by names. A hand-rolled stack of
+     * declared NAMES used to stand in for it: a helper declaring its own
+     * `const factor` read as using the outer `factor` and was never reported,
+     * a type annotation naming the outer function's `type Unit` was not a use
+     * at all (the suggested move did not compile), and references deeper than
+     * ten AST levels were not collected. `scope.through` is every reference the
+     * helper (and anything nested in it) leaves unresolved; one that resolves
+     * to a variable outside module/global scope is a capture.
      */
-    function addBindingToCurrentScope(target: TSESTree.Node) {
-      switch (target.type) {
-        case 'Identifier':
-          addVariableToCurrentScope(target.name);
-          break;
-        case 'ObjectPattern':
-          for (const prop of target.properties) {
-            addBindingToCurrentScope(
-              prop.type === 'RestElement' ? prop.argument : prop.value,
-            );
-          }
-          break;
-        case 'ArrayPattern':
-          for (const element of target.elements) {
-            if (element) addBindingToCurrentScope(element);
-          }
-          break;
-        case 'AssignmentPattern':
-          addBindingToCurrentScope(target.left);
-          break;
-        case 'RestElement':
-          addBindingToCurrentScope(target.argument);
-          break;
-        case 'TSParameterProperty':
-          addBindingToCurrentScope(target.parameter);
-          break;
-        // No default: the six cases above are every BindingName and every
-        // Parameter shape, so a seventh would be a parser change, not a
-        // reachable path.
-      }
-    }
-
-    function getOuterScopeVariables(): Set<string> {
-      /*
-       * Drop the module scope along with the enclosing one.
-       *
-       * Module scope is the DESTINATION this rule suggests moving to, so a
-       * binding that lives there is equally in scope after the move and cannot
-       * be what prevents it. `Program()` already declines to register
-       * module-level `function` declarations for exactly that reason, but the
-       * `VariableDeclaration` visitor registered module-level `const`/`let`
-       * anyway — so the identical helper was reported or suppressed purely by
-       * how its module binding happened to be spelled. Found on burgee
-       * packages/roundel/src/theme.ts:98, where `step` reaches only the
-       * module-level `SRGB_MAX`.
-       *
-       * Index 0 is the vestigial set from the initializer; `Program()` pushes
-       * the real module scope at index 1. Bindings from any FUNCTION scope in
-       * between are still counted, so a genuine closure stays silent.
-       */
-      const outerScopes = scopeStack.slice(0, -1).slice(MODULE_SCOPE_DEPTH);
-      const outerVars = new Set<string>();
-      for (const scope of outerScopes) {
-        for (const varName of scope) {
-          outerVars.add(varName);
+    function capturesEnclosingBinding(
+      node:
+        | TSESTree.FunctionDeclaration
+        | TSESTree.FunctionExpression
+        | TSESTree.ArrowFunctionExpression,
+    ): boolean {
+      const scope = context.sourceCode.getScope(node);
+      return scope.through.some((ref) => {
+        const v = ref.resolved;
+        if (!v) return false;
+        if (v.scope.type === 'module' || v.scope.type === 'global') {
+          return false;
         }
-      }
-      return outerVars;
+        // A named function expression's own name lives in a scope of its own.
+        if (v.scope.block === node) return false;
+        return !isOwnBinding(v, node);
+      });
     }
 
     /**
@@ -403,210 +334,43 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
       }
 
       // Get all variables referenced in the function body
-      const referencedVars = new Set<string>();
-
-      /**
-       * No `visited` set and no `depth > 10` early return.
-       *
-       * Both existed to survive the `parent` link, which made the "tree" a
-       * cyclic graph. Skipping `parent` below leaves an actual tree, so a node
-       * cannot be reached twice, and the `depth < 10` gate on the recursion
-       * means `depth > 10` was never true either — coverage said so with a
-       * line that could not be taken.
-       *
-       * The depth cap stays: it is why `a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p` is
-       * only partly collected, and there is a fixture pinning that.
-       */
-      function collectReferences(astNode: TSESTree.Node, depth = 0) {
-        if (astNode.type === 'Identifier') {
-          referencedVars.add(astNode.name);
-        }
-
-        // Recursively check all child nodes with depth limit
-        if (depth < 10) {
-          for (const key in astNode) {
-            /**
-             * `parent` is a link BACK UP the tree, not a child.
-             *
-             * Walking it turned this from "which names does the body use" into
-             * "which names appear anywhere in the file". Every arrow function
-             * therefore looked as though it captured its own binding and its
-             * enclosing function, so it never reported — measured on the probe
-             * below, an arrow whose entire body is `42` collected
-             * `helper, outer`. Only the `function` declaration form ever fired,
-             * which is why the rule looked like it worked.
-             */
-            if (key === 'parent') continue;
-            const child = (astNode as unknown as Record<string, unknown>)[key];
-            if (child && typeof child === 'object') {
-              if (Array.isArray(child)) {
-                child.forEach((item) => {
-                  if (item && typeof item === 'object' && 'type' in item) {
-                    collectReferences(item, depth + 1);
-                  }
-                });
-              } else if ('type' in child) {
-                // Outer `child && typeof child === 'object'` already guarantees
-                // a non-null object here (CodeQL: `js/comparison-between-incompatible-types`).
-                collectReferences(child as TSESTree.Node, depth + 1);
-              }
-            }
-          }
-        }
+      if (capturesEnclosingBinding(node)) {
+        return;
       }
 
-      // Collect all references in the function body
-      if (node.body.type === 'BlockStatement') {
-        node.body.body.forEach((stmt: TSESTree.Statement) =>
-          collectReferences(stmt),
-        );
-      } else {
-        // Arrow function with expression body
-        collectReferences(node.body);
-      }
-
-      // Check function parameters
-      node.params.forEach((param: TSESTree.Parameter) => {
-        collectReferences(param);
-      });
-
-      // Get variables from outer scopes
-      const outerVars = getOuterScopeVariables();
-
-      /*
-       * The names this function BINDS — its parameters and its own name.
-       *
-       * `collectReferences(param)` walks the whole pattern, so a destructured
-       * `{ value }` was recorded as a USE of `value`; an outer binding that
-       * happened to share the name then made the function look captured, and a
-       * perfectly movable function went unreported. Every mention of that name
-       * inside the body resolves to the parameter anyway — the outer one is
-       * shadowed, not captured. Default VALUES are unaffected and still count:
-       * `inner(v = fallback)` really does read `fallback` from outside, and
-       * `collectReferences` still records it.
-       */
-      const boundNames = new Set(
-        context.sourceCode.getDeclaredVariables(node).map((v) => v.name),
-      );
-
-      // Check if function captures any outer variables
-      let capturesOuterVar = false;
-      for (const ref of referencedVars) {
-        if (!boundNames.has(ref) && outerVars.has(ref)) {
-          capturesOuterVar = true;
-          break;
-        }
-      }
-
-      // If function doesn't capture any outer variables, it can be moved up
-      if (!capturesOuterVar) {
-        // Additional check: ensure function name doesn't conflict at module scope
-        const functionName =
-          node.type === 'FunctionDeclaration' ? node.id?.name : undefined;
-        const moduleScope = scopeStack[0];
-
-        if (!functionName || !moduleScope.has(functionName)) {
-          context.report({
-            node,
-            messageId: 'inconsistentFunctionScoping',
-            data: {
-              functionName: functionName || 'anonymous function',
+      const functionName =
+        node.type === 'FunctionDeclaration' ? node.id?.name : undefined;
+      context.report({
+        node,
+        messageId: 'inconsistentFunctionScoping',
+        data: {
+          functionName: functionName || 'anonymous function',
+        },
+        suggest: [
+          {
+            messageId: 'moveToModuleScope',
+            fix(fixer: TSESLint.RuleFixer) {
+              return fixer.insertTextBefore(
+                node,
+                "// TODO: Move this function to module scope - it doesn't capture outer variables\n",
+              );
             },
-            suggest: [
-              {
-                messageId: 'moveToModuleScope',
-                fix(fixer: TSESLint.RuleFixer) {
-                  // This is a complex fix that would require:
-                  // 1. Finding the module scope location
-                  // 2. Moving the function declaration33 3
-                  // 3. Updating any references
-                  // For now, just provide a suggestion
-                  return fixer.insertTextBefore(
-                    node,
-                    "// TODO: Move this function to module scope - it doesn't capture outer variables\n",
-                  );
-                },
-              },
-            ],
-          });
-        }
-      }
+          },
+        ],
+      });
     }
 
     return {
       before() {
         const [options] = context.options;
         ({ checkArrowFunctions = true } = options || {});
-
-        // Track variables declared in each scope
-        scopeStack = [new Set()];
       },
-      Program() {
-        /*
-         * Deliberately NOT hoisting here. Module scope is the destination the
-         * report suggests moving to, so a helper that only reaches module-level
-         * bindings really is movable and should still be reported. Registering
-         * module-level `function` declarations silenced exactly such a case
-         * (burgee packages/burgee/src/yargs/usage.ts:247, an arrow whose only
-         * outer reference is the module-level `getText`).
-         */
-        enterScope();
-      },
-
-      'Program:exit'() {
-        exitScope();
-      },
-
-      FunctionDeclaration(node: TSESTree.FunctionDeclaration) {
-        enterScope();
-        // Add function parameters to the current scope
-        node.params.forEach((param: TSESTree.Parameter) => {
-          addBindingToCurrentScope(param);
-        });
-        hoistFunctionDeclarations(node.body.body);
-        analyzeFunction(node);
-      },
-
-      'FunctionDeclaration:exit'() {
-        exitScope();
-      },
-
-      FunctionExpression(node: TSESTree.FunctionExpression) {
-        enterScope();
-        // Add function parameters to the current scope
-        node.params.forEach((param: TSESTree.Parameter) => {
-          addBindingToCurrentScope(param);
-        });
-        hoistFunctionDeclarations(node.body.body);
-        // Only check function expressions if they are assigned to variables
-        // (not just used as callbacks)
-        analyzeFunction(node);
-      },
-
-      'FunctionExpression:exit'() {
-        exitScope();
-      },
-
+      FunctionDeclaration: analyzeFunction,
+      FunctionExpression: analyzeFunction,
       ArrowFunctionExpression(node: TSESTree.ArrowFunctionExpression) {
-        enterScope();
-        // Add function parameters to the current scope
-        node.params.forEach((param: TSESTree.Parameter) => {
-          addBindingToCurrentScope(param);
-        });
         if (checkArrowFunctions) {
           analyzeFunction(node);
         }
-      },
-
-      'ArrowFunctionExpression:exit'() {
-        exitScope();
-      },
-
-      VariableDeclaration(node: TSESTree.VariableDeclaration) {
-        // Add variables to current scope
-        node.declarations.forEach((decl: TSESTree.VariableDeclarator) => {
-          addBindingToCurrentScope(decl.id);
-        });
       },
     };
   },

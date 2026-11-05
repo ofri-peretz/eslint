@@ -28,7 +28,7 @@ This rule is part of [`eslint-plugin-conventions`](https://www.npmjs.com/package
 
 ## Why these tags don't belong in JSDoc
 
-JSDoc and TSDoc define a finite tag vocabulary (`@param`, `@returns`, `@throws`, `@deprecated`, …). JSON Schema keywords like `@minimum`, `@maximum`, `@pattern`, `@format`, `@enum`, `@items`, `@required`, `@additionalProperties` look like JSDoc tags but are not recognized by:
+JSDoc and TSDoc define a finite tag vocabulary (`@param`, `@returns`, `@throws`, `@deprecated`, …). JSON Schema keywords like `@minimum`, `@maximum`, `@pattern` and `@format` look like JSDoc tags but are not recognized by:
 
 - The TypeScript compiler's strict TSDoc mode (`tsdoc.json` → `noStandardTags`).
 - DefinitelyTyped's lint suite (`dtslint`).
@@ -76,11 +76,45 @@ function setEmail(email: string) {}
    Fix: Move the constraint into the @param description, or move the entire validation to a schema layer (zod, valibot, ajv).
 ```
 
+## What the rule reads
+
+The rule reports a forbidden keyword written as a block tag in a JSDoc comment
+(`/** … */`): first on a line after the optional ` * ` gutter, or first in a
+one-line `/** @format email */`.
+
+Forbidden by default: `minimum`, `maximum`, `exclusiveMinimum`,
+`exclusiveMaximum`, `minLength`, `maxLength`, `minItems`, `maxItems`,
+`minProperties`, `maxProperties`, `multipleOf`, `pattern`, `uniqueItems`,
+`format`, `contentMediaType`, `contentEncoding`.
+
+It does not report:
+
+- `@enum` and `@const` — JSON Schema keywords, but also tags JSDoc itself
+  defines (TypeScript reads `@enum` in JavaScript).
+- An `@keyword` inside prose (`team@format.io`, `Range note: @minimum 1`):
+  it is description text, not a tag.
+- A plain block comment (`/* … */`) or a line comment: no JSDoc tool reads
+  them as carrying tags.
+
+## Options
+
+| Option                    | Type       | Default | Description                                         |
+| ------------------------- | ---------- | ------- | --------------------------------------------------- |
+| `additionalForbiddenTags` | `string[]` | `[]`    | More tag names to report, on top of the default set |
+
+```js
+{
+  rules: {
+    'conventions/no-json-schema-tags': ['warn', { additionalForbiddenTags: ['openapi'] }],
+  },
+}
+```
+
 <WhenNotToUse />
 
 <FalseNegativeCTA />
 
 ## Known False Negatives
 
-- Custom tags allowed via the rule's `additionalForbiddenTags` option are flagged; project-specific tag allowlists in `tsdoc.json` are not consulted.
-- Block-comment text containing `@minimum:` (with a colon, prose-style) is not flagged because it is not a JSDoc tag.
+- Project-specific tag allowlists in `tsdoc.json` are not consulted: a tag is
+  reported only when it is in the default set or `additionalForbiddenTags`.

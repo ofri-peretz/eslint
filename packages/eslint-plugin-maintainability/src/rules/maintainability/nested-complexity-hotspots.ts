@@ -171,6 +171,7 @@ export const nestedComplexityHotspots = createRule<RuleOptions, MessageIds>({
         | TSESTree.ForInStatement
         | TSESTree.ForOfStatement
         | TSESTree.WhileStatement
+        | TSESTree.DoWhileStatement
         | TSESTree.SwitchStatement,
     ) {
       // Count how many control structures are nested above this node
@@ -243,13 +244,21 @@ export const nestedComplexityHotspots = createRule<RuleOptions, MessageIds>({
       }
     }
 
+    // A disabled kind gets no listener at all. ESLint calls every key of the
+    // returned object, so `IfStatement: undefined` crashed the lint run
+    // ("ruleListener is not a function") as soon as a count was turned off.
     return {
-      IfStatement: countConditionals ? checkControlStructure : undefined,
-      ForStatement: countLoops ? checkControlStructure : undefined,
-      ForInStatement: countLoops ? checkControlStructure : undefined,
-      ForOfStatement: countLoops ? checkControlStructure : undefined,
-      WhileStatement: countLoops ? checkControlStructure : undefined,
-      SwitchStatement: countConditionals ? checkControlStructure : undefined,
+      ...(countConditionals && {
+        IfStatement: checkControlStructure,
+        SwitchStatement: checkControlStructure,
+      }),
+      ...(countLoops && {
+        ForStatement: checkControlStructure,
+        ForInStatement: checkControlStructure,
+        ForOfStatement: checkControlStructure,
+        WhileStatement: checkControlStructure,
+        DoWhileStatement: checkControlStructure,
+      }),
     };
   },
 });

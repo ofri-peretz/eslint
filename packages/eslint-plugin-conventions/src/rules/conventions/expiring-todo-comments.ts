@@ -150,7 +150,8 @@ export function checkDependencyCondition(
   };
 
   const hasPackage = packageName in allDeps;
-  return present ? hasPackage : hasPackage;
+  // `[+pkg]` comes due once the package is added, `[-pkg]` once it is removed.
+  return present ? hasPackage : !hasPackage;
 }
 
 export function parseTodoCondition(

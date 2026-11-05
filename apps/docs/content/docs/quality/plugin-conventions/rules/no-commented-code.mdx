@@ -1,6 +1,6 @@
 ---
 title: no-commented-code
-description: "ESLint Rule: no-commented-code with LLM-optimized suggestions and auto-fix capabilities."
+description: "Disallow commented-out code: delete it and let version control keep the history."
 tags: ['quality', 'conventions', 'style']
 category: quality
 autofix: suggestions
@@ -12,71 +12,74 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+Disallow commented-out code (SonarQube RSPEC-125).
+
 ## Quick Summary
 
-| Aspect         | Details                                      |
-| -------------- | -------------------------------------------- |
-| **Severity**   | Error (code quality)                        |
-| **Auto-Fix**   | ❌ No                                        |
-| **Category**   | Quality |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration      |
-| **Best For**   | Production applications                      |
-| **Suggestions** | ✅ 3 available           |
+| Aspect          | Details                                          |
+| --------------- | ------------------------------------------------ |
+| **Severity**    | Warning (code quality)                           |
+| **Auto-Fix**    | ❌ No                                            |
+| **Category**    | Quality                                          |
+| **Suggestions** | 💡 Remove the comment                            |
 
 ## Rule Details
 
-```mermaid
-%%{init: {
-  'theme': 'base',
-  'themeVariables': {
-    'primaryColor': '#f8fafc',
-    'primaryTextColor': '#1e293b',
-    'primaryBorderColor': '#334155',
-    'lineColor': '#475569',
-    'c0': '#f8fafc',
-    'c1': '#f1f5f9',
-    'c2': '#e2e8f0',
-    'c3': '#cbd5e1'
-  }
-}}%%
-flowchart TD
-    A["🔍 Detect no commented code"] --> B{"Valid pattern?"}
-    B -->|❌ No| C["🚨 Report violation"]
-    B -->|✅ Yes| D["✅ Pass"]
+Commented-out code rots. It is not compiled, not tested and not refactored
+with the code around it, so it is wrong by the time anyone reads it, and
+version control already keeps every line ever deleted.
 
-    classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
-    classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
+The rule reports a comment whose lines are code copied from source: a
+declaration (`const total = sum(items);`), a call statement
+(`client.connect();`), an import or export, a `throw new …`, an arrow function,
+a JSX element. A `//` line, a run of adjacent `//` lines (reported once, as one
+block) and a `/* … */` block are all read.
 
-    class A startNode
-    class C errorNode
+It does not report:
 
-```
+- **Prose**, even prose that opens with a keyword (`// for backward
+  compatibility`, `// if no key is passed, all cookies are returned`) or ends
+  in a parenthetical (`// Retries the request (see the retry docs)`). Copied
+  code keeps its punctuation; a sentence does not end like a statement.
+- **Links** (`// https://example.com/docs`) and `TODO` / `FIXME` / `HACK` /
+  `XXX` lines.
+- **JSDoc blocks** (`/** … */`): an `@example` body is the one place a comment
+  is meant to hold code.
 
+## Options
 
-### Why This Matters
-
-| Issue                | Impact                                | Solution                    |
-| -------------------- | ------------------------------------- | --------------------------- |
-| 🔒 **Security/Code Quality** | [Specific issue] | [Solution approach] |
-| 🐛 **Maintainability** | [Impact] | [Fix] |
-| ⚡ **Performance**   | [Impact] | [Optimization] |
-
-## Configuration
-
-**No configuration options available.**
+| Option             | Type      | Default | Description                                                  |
+| ------------------ | --------- | ------- | ------------------------------------------------------------ |
+| `ignoreSingleLine` | `boolean` | `false` | Do not report a lone `//` line (a run of them still counts)  |
+| `minLines`         | `number`  | `1`     | Report only comments (or runs of comments) at least this long |
+| `ignoreInTests`    | `boolean` | `true`  | Report nothing in `*.test.*` / `*.spec.*` files               |
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```typescript
-// Example of incorrect usage
+// const total = sum(items);
+// client.connect();
+
+/*
+ * import { legacy } from './legacy';
+ * legacy.run();
+ */
 ```
 
 ### ✅ Correct
 
 ```typescript
-// Example of correct usage
+// for widget and idx-js backward compatibility
+// Retries the request (see the retry docs)
+// https://example.com/docs/retries
+
+/**
+ * Adds the items.
+ * @example
+ * sum([1, 2]);
+ */
 ```
 
 ## Configuration Examples
@@ -88,68 +91,33 @@ flowchart TD
 export default [
   {
     rules: {
-      'conventions/no-commented-code': 'error',
+      'conventions/no-commented-code': 'warn',
     },
   },
 ];
 ```
 
-## LLM-Optimized Output
+### Only multi-line blocks
 
+```javascript
+{
+  rules: {
+    'conventions/no-commented-code': ['warn', { ignoreSingleLine: true, minLines: 2 }],
+  },
+}
 ```
-🚨 no commented code | Description | MEDIUM
-   Fix: Suggestion | Reference
-```
-
-## Related Rules
-
-- [`rule-name`](./rule-name) - Description
 
 ## Further Reading
 
-- **[Reference](https://example.com)** - Description
+- **[RSPEC-125: Sections of code should not be commented out](https://rules.sonarsource.com/javascript/RSPEC-125/)**
+
 <WhenNotToUse />
 
 <FalseNegativeCTA />
 
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = externalSource();
-processValue(value); // Variable origin not tracked
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Wrapped or Aliased Functions
-
-**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-function myWrapper(data) {
-  return internalApi(data); // Wrapper not analyzed
-}
-myWrapper(unsafeInput);
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- A fragment without a statement terminator (`// x = 1`) is not reported:
+  without the punctuation it cannot be told apart from prose.
+- Code inside a JSDoc block is never reported, even when it is not an
+  `@example`.

@@ -155,4 +155,62 @@ describe('max-parameters', () => {
       ],
     });
   });
+
+  // Fidelity divergences (max_parameters): a class `constructor` was reported
+  // under ignoreConstructors, and ignoreOverriddenMethods had no effect.
+  describe('class constructors and override members', () => {
+    ruleTester.run(
+      'ignoreConstructors and ignoreOverriddenMethods',
+      maxParameters,
+      {
+        valid: [
+          {
+            name: 'ignoreConstructors skips a class constructor',
+            code: 'class Cart { constructor(a, b, c, d, e) {} }',
+            options: [{ ignoreConstructors: true }],
+          },
+          {
+            name: 'ignoreOverriddenMethods skips an override method',
+            code: 'class Cart extends Base { override total(a, b, c, d, e) { return a; } }',
+            options: [{ ignoreOverriddenMethods: true }],
+          },
+          {
+            name: 'ignoreOverriddenMethods skips an override arrow property',
+            code: 'class Cart extends Base { override total = (a, b, c, d, e) => a; }',
+            options: [{ ignoreOverriddenMethods: true }],
+          },
+        ],
+        invalid: [
+          {
+            name: 'a class constructor is reported by default',
+            code: 'class Cart { constructor(a, b, c, d, e) {} }',
+            errors: [{ messageId: 'tooManyParameters' }],
+          },
+          {
+            name: 'an override method is reported by default',
+            code: 'class Cart extends Base { override total(a, b, c, d, e) { return a; } }',
+            errors: [{ messageId: 'tooManyParameters' }],
+          },
+          {
+            name: 'ignoreOverriddenMethods does not skip a plain method',
+            code: 'class Cart extends Base { total(a, b, c, d, e) { return a; } }',
+            options: [{ ignoreOverriddenMethods: true }],
+            errors: [{ messageId: 'tooManyParameters' }],
+          },
+          {
+            name: 'ignoreOverriddenMethods does not skip a plain property arrow',
+            code: 'class Cart extends Base { total = (a, b, c, d, e) => a; }',
+            options: [{ ignoreOverriddenMethods: true }],
+            errors: [{ messageId: 'tooManyParameters' }],
+          },
+          {
+            name: 'ignoreConstructors does not skip an override method',
+            code: 'class Cart extends Base { override total(a, b, c, d, e) { return a; } }',
+            options: [{ ignoreConstructors: true }],
+            errors: [{ messageId: 'tooManyParameters' }],
+          },
+        ],
+      },
+    );
+  });
 });

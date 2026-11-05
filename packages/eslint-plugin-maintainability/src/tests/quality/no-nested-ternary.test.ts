@@ -436,10 +436,14 @@ describe('no-nested-ternary', () => {
             code: 'const result = (a ? (b ? fn1 : fn2) : fn3)();',
             errors: [{ messageId: 'noNestedTernary' }],
           },
-          // Nested ConditionalExpression in test position
+          // Nested ConditionalExpression in test position: the outer ternary
+          // nests the one in its test, which nests another (2 errors)
           {
             code: 'const result = (a ? (b ? c : d) : e) ? "yes" : "no";',
-            errors: [{ messageId: 'noNestedTernary' }],
+            errors: [
+              { messageId: 'noNestedTernary' },
+              { messageId: 'noNestedTernary' },
+            ],
           },
           // AssignmentExpression with nested ternary (2 levels of nesting = 2 errors)
           {
@@ -505,6 +509,50 @@ describe('no-nested-ternary', () => {
               { messageId: 'noNestedTernary' },
               { messageId: 'noNestedTernary' },
             ],
+          },
+        ],
+      },
+    );
+  });
+
+  // Fidelity divergences (no_nested_ternary): a ternary in the test, or behind
+  // a TypeScript wrapper, was not seen as nested.
+  describe('every spelling of nesting', () => {
+    ruleTester.run(
+      'nested in the test or behind a TS wrapper',
+      noNestedTernary,
+      {
+        valid: [
+          {
+            name: 'a TS wrapper around a flat branch is not nesting',
+            code: 'const r = a ? (x as string) : y!;',
+          },
+        ],
+        invalid: [
+          {
+            name: 'a ternary in the test',
+            code: 'const r = (b ? a : c) ? one : two;',
+            errors: [{ messageId: 'noNestedTernary' }],
+          },
+          {
+            name: 'a nested ternary behind `as`',
+            code: 'const r = a ? one : ((b ? two : three) as string);',
+            errors: [{ messageId: 'noNestedTernary' }],
+          },
+          {
+            name: 'a nested ternary behind `satisfies`',
+            code: 'const r = a ? one : ((b ? two : three) satisfies string);',
+            errors: [{ messageId: 'noNestedTernary' }],
+          },
+          {
+            name: 'a nested ternary behind a non-null assertion',
+            code: 'const r = a ? one : (b ? maybe : two)!;',
+            errors: [{ messageId: 'noNestedTernary' }],
+          },
+          {
+            name: 'a nested ternary behind an angle-bracket assertion',
+            code: 'const r = a ? one : <string>(b ? two : three);',
+            errors: [{ messageId: 'noNestedTernary' }],
           },
         ],
       },

@@ -9,7 +9,11 @@
  * Prefer textContent over innerText for DOM node text access
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'preferDomNodeTextContent';
@@ -93,6 +97,16 @@ export const preferDomNodeTextContent = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      // `const { innerText } = el` reads the property as surely as `el.innerText`
+      // does. No suggestion: renaming the key would also rename the binding.
+      'ObjectPattern > Property'(node: TSESTree.Property) {
+        if (objectKeyName(node) !== 'innerText') return;
+        context.report({
+          node: node.key,
+          messageId: 'preferDomNodeTextContent',
+          data: { current: 'innerText', fix: 'textContent' },
+        });
+      },
       MemberExpression(node: TSESTree.MemberExpression) {
         if (isInnerTextAccess(node) && !isInAllowedContext()) {
           context.report({

@@ -267,8 +267,15 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
     let ignoredValues: Set<number>;
     let MAX_ARRAY_INDEX: number;
 
-    function isIgnoredNumber(value: number): boolean {
-      return ignoredValues.has(value);
+    /**
+     * `-42` is the number -42: the literal is `42` under a unary minus, so an
+     * `ignore` entry is matched against the signed value as well.
+     */
+    function isIgnoredNumber(node: TSESTree.Literal, value: number): boolean {
+      const parent = node.parent;
+      const negated =
+        parent?.type === 'UnaryExpression' && parent.operator === '-';
+      return ignoredValues.has(value) || (negated && ignoredValues.has(-value));
     }
 
     /**
@@ -583,7 +590,7 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
         const value = node.value;
 
         // Skip universally ignored values
-        if (isIgnoredNumber(value)) return;
+        if (isIgnoredNumber(node, value)) return;
 
         // Skip NaN / Infinity (not numeric literals per se)
         if (!isFinite(value)) return;

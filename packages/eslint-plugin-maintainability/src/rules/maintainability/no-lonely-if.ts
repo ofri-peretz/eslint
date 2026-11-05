@@ -15,7 +15,7 @@ import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 type MessageIds = 'noLonelyIf';
 
 export interface Options {
-  /** Allow lonely if in specific contexts */
+  /** Accepted for backward compatibility; has no effect. */
   allow?: string[];
 }
 
@@ -63,21 +63,11 @@ export const noLonelyIf = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{ allow: [] }],
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    let allowedContexts: Set<string>;
-
-    function isInAllowedContext(): boolean {
-      // Check if we're in an allowed context
-      // This is a simple implementation - could be extended for more complex cases
-      for (const allowedContext of allowedContexts) {
-        // For now, just check if the context string appears anywhere in the source
-        const sourceCode = context.sourceCode;
-        const sourceText = sourceCode.getText();
-        if (sourceText.includes(allowedContext)) {
-          return true;
-        }
-      }
-      return false;
-    }
+    // `allow` is accepted for backward compatibility and has no effect. It
+    // used to skip the whole file when its source text contained any listed
+    // string, so `allow: ['refresh']` silenced every lonely `if` in a file that
+    // merely called `refresh()`. A substring of the file proves nothing about
+    // the `if` being reported.
 
     // oxlint-disable-next-line consistent-function-scoping
     function isLonelyIf(node: TSESTree.IfStatement): boolean {
@@ -105,14 +95,8 @@ export const noLonelyIf = createRule<RuleOptions, MessageIds>({
     }
 
     return {
-      before() {
-        const [options] = context.options;
-        const { allow = [] } = options || {};
-
-        allowedContexts = new Set(allow);
-      },
       IfStatement(node: TSESTree.IfStatement) {
-        if (isLonelyIf(node) && !isInAllowedContext()) {
+        if (isLonelyIf(node)) {
           context.report({
             node,
             messageId: 'noLonelyIf',

@@ -382,6 +382,66 @@ describe('cognitive-complexity', () => {
     });
   });
 
+  // Fidelity divergences (cognitive_complexity): recursion was matched by
+  // NAME, so a local `const f` called inside `function f` counted, and an
+  // arrow bound to a const never did.
+  describe('recursion by binding', () => {
+    ruleTester.run('recursion by binding', cognitiveComplexity, {
+      valid: [
+        {
+          name: 'a call of a local that shares the function name is not recursion',
+          code: 'function f(n, a) { const f = (k) => k; if (a) touch(f(n)); }',
+          options: [{ maxComplexity: 1 }],
+        },
+        {
+          name: 'a call of a non-identifier callee is not recursion',
+          code: 'function f(n, a) { if (a) obj.f(n); }',
+          options: [{ maxComplexity: 1 }],
+        },
+        {
+          name: 'a call of a parameter is not recursion',
+          code: 'function f(g, a) { if (a) g(1); }',
+          options: [{ maxComplexity: 1 }],
+        },
+        {
+          name: 'a call of an imported function is not recursion',
+          code: "import { g } from './g';\nconst f = (n, a) => { if (a) g(n); };",
+          options: [{ maxComplexity: 1 }],
+        },
+        {
+          name: 'a call of another function declaration is not recursion',
+          code: 'function g() {}\nfunction f(n, a) { if (a) g(n); }',
+          options: [{ maxComplexity: 1 }],
+        },
+        {
+          name: 'a call of an undeclared global is not recursion',
+          code: 'const f = (n, a) => { if (a) g(n); };',
+          options: [{ maxComplexity: 1 }],
+        },
+      ],
+      invalid: [
+        {
+          name: 'an arrow bound to a const calling itself',
+          code: 'const f = (n) => { if (n > 0) f(n - 1); };',
+          options: [{ maxComplexity: 1 }],
+          errors: [{ messageId: 'highCognitiveComplexity' }],
+        },
+        {
+          name: 'an arrow bound through a type assertion calling itself',
+          code: 'const f = ((n: number): void => { if (n > 0) f(n - 1); }) as (n: number) => void;',
+          options: [{ maxComplexity: 1 }],
+          errors: [{ messageId: 'highCognitiveComplexity' }],
+        },
+        {
+          name: 'a named function expression calling its own name',
+          code: 'const g = function walk(n) { if (n > 0) walk(n - 1); };',
+          options: [{ maxComplexity: 1 }],
+          errors: [{ messageId: 'highCognitiveComplexity' }],
+        },
+      ],
+    });
+  });
+
   describe('Edge Cases - Suggestions (lines 275, 285)', () => {
     ruleTester.run('suggestions', cognitiveComplexity, {
       valid: [],

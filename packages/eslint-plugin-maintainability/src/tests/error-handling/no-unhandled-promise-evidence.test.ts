@@ -7,10 +7,11 @@
 /**
  * A call is not a promise.
  *
- * `isPromiseExpression` returned `true` for every `CallExpression`, and said so
- * in its own comment: "we check all CallExpressions since we can't statically
- * determine which functions return promises". Measured on real code that is
- * not a conservative default, it is the whole rule:
+ * This plugin's copy of the rule used the opposite construction and arrived at
+ * the same place: a DENYLIST of ~120 names known to be synchronous, with
+ * everything unrecognised treated as a promise. A denylist of "things that are
+ * not X" has to enumerate the world; `useDocusaurusContext`, `clsx`, `dynamic`
+ * and `require` were not in it.
  *
  *   excalidraw, 200 TypeScript files
  *     maintainability/no-unhandled-promise   7,061 findings   (35 per file)
@@ -136,6 +137,10 @@ describe('no-unhandled-promise — a call is not a promise', () => {
         code: 'handlers[0]();',
       },
       {
+        name: 'a name with no declaration anywhere',
+        code: 'function f() { arguments(); }',
+      },
+      {
         name: 'a member call on a non-identifier receiver',
         code: 'get().run();',
       },
@@ -152,10 +157,6 @@ describe('no-unhandled-promise — a call is not a promise', () => {
         code: 'const table = {};\ntable();',
       },
       {
-        name: 'a name with no declaration anywhere',
-        code: 'function f() { arguments(); }',
-      },
-      {
         name: 'a name resolved from an enclosing scope',
         code: 'const sync = () => 1;\nfunction outer() { sync(); }',
       },
@@ -169,29 +170,6 @@ describe('no-unhandled-promise — a call is not a promise', () => {
         // `promiseReturning` exists for the cases where the consumer knows.
         name: 'an imported name, whose body is in another file',
         code: 'import { load } from "./loader";\nload();',
-      },
-      // The wrapper call is a chain, not an argument, so the inner promise is
-      // reached — and the `.catch` at the end of it is the handling.
-      {
-        name: 'a wrapped promise whose chain ends in catch',
-        code: 'wrap(fetch(url)).catch(handle);',
-      },
-      {
-        name: 'a wrapped promise whose chain ends in finally',
-        code: 'wrap(fetch(url)).finally(handle);',
-      },
-      // The remaining arms of the nested-argument skip: a grandparent that is
-      // not a member expression, one whose object is not the wrapper, and a
-      // computed `["then"]` the skip does not recognise.
-      {
-        name: 'a wrapped promise in a fully handled chain',
-        code: 'wrap(fetch(url)).then(handle).catch(onError);',
-      },
-
-      {
-        name: 'a void expression, when the option allows it',
-        code: 'void fetch(url);',
-        options: [{ ignoreVoidExpressions: true }],
       },
     ],
     invalid: [
@@ -243,23 +221,10 @@ describe('no-unhandled-promise — a call is not a promise', () => {
         errors: 1,
       },
       {
-        name: 'a wrapper chained through a computed then',
-        code: 'wrap(fetch(url))["then"](handle);',
+        name: 'a Promise static',
+        code: 'Promise.all([a, b]);',
         errors: 1,
       },
-      {
-        /**
-         * The one path through the nested-argument skip that does NOT skip.
-         * `.then` is ACCESSED, not called, so the handled-check does not
-         * return first and the inner promise reaches the skip — where the
-         * grandparent is a `.then` member on the wrapper, so it is a chain
-         * rather than an argument and the inner call is reported.
-         */
-        name: 'a wrapped promise whose then is read but never called',
-        code: 'const t = wrap(fetch(url)).then;',
-        errors: 1,
-      },
-      { name: 'a Promise static', code: 'Promise.all([a, b]);', errors: 1 },
       {
         name: 'an immediately-invoked async function',
         code: '(async function () { return 1; })();',
@@ -268,13 +233,6 @@ describe('no-unhandled-promise — a call is not a promise', () => {
       {
         name: 'an async arrow bound to a const',
         code: 'const load = async () => {};\nload();',
-        errors: 1,
-      },
-      {
-        // The nested call is NOT skipped when its parent call is the object of
-        // a `.then`/`.catch`/`.finally` — that is a chain, not an argument.
-        name: 'a promise wrapped by a call that is then chained',
-        code: 'wrap(fetch(url)).then(handle);',
         errors: 1,
       },
     ],

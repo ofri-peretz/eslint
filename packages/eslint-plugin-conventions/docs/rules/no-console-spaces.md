@@ -3,7 +3,7 @@ title: no-console-spaces
 description: Disallow leading/trailing whitespace in console arguments. This rule is part of eslint-plugin-conventions.
 tags: ['quality', 'conventions', 'style']
 category: quality
-autofix: suggestions
+autofix: code
 ---
 
 > **Keywords:** console, logging, spaces, formatting, ESLint rule, auto-fix, LLM-optimized
@@ -20,14 +20,32 @@ Disallow leading/trailing whitespace in console arguments. This rule is part of 
 | Aspect         | Details                                                              |
 | -------------- | -------------------------------------------------------------------- |
 | **Severity**   | Warning (code quality)                                               |
-| **Auto-Fix**   | ✅ Yes (removes extra spaces)                                        |
+| **Auto-Fix**   | ✅ Yes, for strings (removes the redundant spaces); templates are reported only |
 | **Category**   | Development                                                          |
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration                              |
 | **Best For**   | Clean console output, consistent logging                             |
 
 ## Rule Details
 
-Console methods automatically add spaces between arguments, so leading/trailing spaces in strings are redundant.
+Console methods join their arguments with a space, so a space on the side of
+a string argument that touches another argument prints twice. The rule
+reports a leading space on an argument that has another argument before it,
+and a trailing space on an argument that has another after it, in quoted
+strings and template literals (only the outer edges of a template count; the
+spaces around an interpolation are its interior).
+
+It reads the global `console` by binding — `console.log`, `console['log']`,
+`globalThis.console.log`, or the `console` / `node:console` module — on
+`log`, `debug`, `info`, `warn`, `error`, `table`, `trace`, `group` and
+`groupCollapsed`.
+
+It does not report:
+
+- a leading space on the first argument or a trailing space on the last (or
+  only) one: nothing is joined there, so the space is the message's own (an
+  indented line, a prompt);
+- a string that is only whitespace (a deliberate spacer);
+- a `console` the code binds itself, such as an injected logger parameter.
 
 ### Why This Matters
 
@@ -35,23 +53,24 @@ Console methods automatically add spaces between arguments, so leading/trailing 
 | ------------------------- | ------------------------------- | ------------------------- |
 | 📝 **Double spaces**      | Inconsistent output             | Remove redundant spaces   |
 | 🔍 **Log parsing**        | Affects log analysis            | Clean formatting          |
-| 📖 **Readability**        | Cluttered logs                  | Trim strings              |
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```typescript
-// Leading/trailing spaces are redundant
 console.log('Value: ', value);  // Double space in output
 console.log(value, ' items');   // Double space in output
-console.log(' Debug: ', data);  // Leading space unnecessary
+console.log(' Debug: ', data);  // The trailing space doubles the separator
 ```
 
 ### ✅ Correct
 
 ```typescript
-console.log("hello", "world");
+console.log('hello', 'world');
+console.log('Value:', value);
+console.log('  indented line'); // only argument: the indent is the message's
+console.log(count, 'items ');   // last argument: nothing follows it
 ```
 
 ## Configuration Examples
@@ -75,42 +94,7 @@ console.log("hello", "world");
 - **[Console API - MDN](https://developer.mozilla.org/en-US/docs/Web/API/Console)** - Console reference
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = externalSource();
-processValue(value); // Variable origin not tracked
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Wrapped or Aliased Functions
-
-**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-function myWrapper(data) {
-  return internalApi(data); // Wrapper not analyzed
-}
-myWrapper(unsafeInput);
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- A `console` reached through another object (`deps.console.log(...)`) or a
+  wrapper function is not recognised as the global console.
+- A string assigned to a variable first (`const label = 'a '; console.log(label, b)`)
+  is not read.

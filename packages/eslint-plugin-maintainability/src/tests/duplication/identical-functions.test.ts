@@ -703,3 +703,39 @@ describe('identical-functions — short bodies need an exact match', () => {
     },
   );
 });
+
+// Fidelity divergence (identical_functions, body=Reformatted,
+// similarityThreshold: 1): whitespace between punctuation survived
+// normalization, so a reformatted copy was not an exact match.
+describe('identical-functions — layout is not implementation', () => {
+  ruleTester.run('reformatted copy', identicalFunctions, {
+    valid: [],
+    invalid: [
+      {
+        name: 'a reformatted, commented copy matches exactly',
+        code: `
+function priceUserOrder(order) {
+  const total = order.items.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const tax = total * order.rate;
+  return { id: order.id, total, tax };
+}
+function priceGuestOrder(order) {
+  // sum the lines first
+  const total = order.items.reduce(
+    (sum, item) => sum + item.price * item.qty,
+    0
+  );
+  const tax = total * order.rate; /* then tax */
+  return {
+    id: order.id,
+    total,
+    tax
+  };
+}
+`,
+        options: [{ similarityThreshold: 1 }],
+        errors: [{ messageId: 'identicalFunctions' }],
+      },
+    ],
+  });
+});

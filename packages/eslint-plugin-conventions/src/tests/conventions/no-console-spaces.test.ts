@@ -31,7 +31,7 @@ describe('no-console-spaces', () => {
         // reached only this way.
         {
           name: 'a dynamic console method names nothing to check',
-          code: 'console[m](" x ");',
+          code: 'console[m](n, " x ", n);',
         },
         {
           name: 'a dynamic method on another receiver names nothing',
@@ -44,43 +44,43 @@ describe('no-console-spaces', () => {
         },
         {
           name: 'a plain string with no padding',
-          code: 'console.error("error message");',
+          code: 'console.error(n, "error message", n);',
         },
         // Only the edges of the whole argument count. The space before an
         // interpolation is the separator between two words of one string,
         // not padding console would add a second copy of.
         {
           name: 'a space before an interpolation is interior, not trailing',
-          code: 'console.error(`No workflows dir at ${dir}`);',
+          code: 'console.error(n, `No workflows dir at ${dir}`, n);',
         },
         {
           name: 'a space after an interpolation is interior, not leading',
-          code: 'console.log(`${count} files`);',
+          code: 'console.log(n, `${count} files`, n);',
         },
         {
           name: 'spaces around a middle interpolation are interior',
-          code: 'console.log(`found ${n} in ${dir}`);',
+          code: 'console.log(n, `found ${n} in ${dir}`, n);',
         },
         {
-          code: 'console.warn("warning");',
+          code: 'console.warn(n, "warning", n);',
         },
         {
-          code: 'console.info("info");',
+          code: 'console.info(n, "info", n);',
         },
         {
-          code: 'console.debug("debug");',
+          code: 'console.debug(n, "debug", n);',
         },
         {
           code: 'console.table([{a: 1}]);',
         },
         {
-          code: 'console.trace("trace");',
+          code: 'console.trace(n, "trace", n);',
         },
         {
-          code: 'console.group("group");',
+          code: 'console.group(n, "group", n);',
         },
         {
-          code: 'console.groupCollapsed("collapsed");',
+          code: 'console.groupCollapsed(n, "collapsed", n);',
         },
         // Console calls with non-string arguments
         {
@@ -94,7 +94,7 @@ describe('no-console-spaces', () => {
           code: 'console.clear();',
         },
         {
-          code: 'console.count("counter");',
+          code: 'console.count(n, "counter", n);',
         },
         // Non-console calls
         {
@@ -105,8 +105,8 @@ describe('no-console-spaces', () => {
         // String with trailing space
         {
           name: 'a trailing space console already adds',
-          code: 'console.log("hello ");',
-          output: "console.log('hello');",
+          code: 'console.log(n, "hello ", n);',
+          output: "console.log(n, 'hello', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -119,8 +119,8 @@ describe('no-console-spaces', () => {
         // five rewritten sites happen to contain an apostrophe.
         {
           name: 'an apostrophe is re-escaped so the fixed line still parses',
-          code: `console.log("it's here ");`,
-          output: `console.log('it\\'s here');`,
+          code: `console.log(n, "it's here ", n);`,
+          output: `console.log(n, 'it\\'s here', n);`,
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -129,8 +129,8 @@ describe('no-console-spaces', () => {
         },
         {
           name: 'an interior newline is re-escaped so the fixed line still parses',
-          code: `console.log("a\\nb ");`,
-          output: `console.log('a\\nb');`,
+          code: `console.log(n, "a\\nb ", n);`,
+          output: `console.log(n, 'a\\nb', n);`,
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -144,8 +144,8 @@ describe('no-console-spaces', () => {
           // an unterminated string literal for each — verified by performing
           // exactly that mutation. CodeRabbit on #1037.
           name: 'a carriage return is re-escaped so the fixed line still parses',
-          code: 'console.log("a\\rb ");',
-          output: "console.log('a\\rb');",
+          code: 'console.log(n, "a\\rb ", n);',
+          output: "console.log(n, 'a\\rb', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -154,8 +154,8 @@ describe('no-console-spaces', () => {
         },
         {
           name: 'U+2028 is re-escaped — it is a line terminator, not a space',
-          code: 'console.log("a\\u2028b ");',
-          output: "console.log('a\\u2028b');",
+          code: 'console.log(n, "a\\u2028b ", n);',
+          output: "console.log(n, 'a\\u2028b', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -164,8 +164,8 @@ describe('no-console-spaces', () => {
         },
         {
           name: 'U+2029 is re-escaped — it is a line terminator, not a space',
-          code: 'console.log("a\\u2029b ");',
-          output: "console.log('a\\u2029b');",
+          code: 'console.log(n, "a\\u2029b ", n);',
+          output: "console.log(n, 'a\\u2029b', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -174,8 +174,8 @@ describe('no-console-spaces', () => {
         },
         {
           name: 'a backslash is re-escaped so the fixed string keeps its value',
-          code: String.raw`console.log('a\\b ');`,
-          output: String.raw`console.log('a\\b');`,
+          code: String.raw`console.log(n, 'a\\b ', n);`,
+          output: String.raw`console.log(n, 'a\\b', n);`,
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -184,8 +184,8 @@ describe('no-console-spaces', () => {
         },
         // String with leading space
         {
-          code: 'console.log(" hello");',
-          output: "console.log('hello');",
+          code: 'console.log(n, " hello", n);',
+          output: "console.log(n, 'hello', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -194,8 +194,8 @@ describe('no-console-spaces', () => {
         },
         // String with both leading and trailing spaces
         {
-          code: 'console.log(" hello ");',
-          output: "console.log('hello');",
+          code: 'console.log(n, " hello ", n);',
+          output: "console.log(n, 'hello', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -217,8 +217,8 @@ describe('no-console-spaces', () => {
         },
         // Different console methods
         {
-          code: 'console.error(" error message ");',
-          output: "console.error('error message');",
+          code: 'console.error(n, " error message ", n);',
+          output: "console.error(n, 'error message', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -226,8 +226,8 @@ describe('no-console-spaces', () => {
           ],
         },
         {
-          code: 'console.warn(" warning ");',
-          output: "console.warn('warning');",
+          code: 'console.warn(n, " warning ", n);',
+          output: "console.warn(n, 'warning', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -235,8 +235,8 @@ describe('no-console-spaces', () => {
           ],
         },
         {
-          code: 'console.info(" info ");',
-          output: "console.info('info');",
+          code: 'console.info(n, " info ", n);',
+          output: "console.info(n, 'info', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -244,8 +244,8 @@ describe('no-console-spaces', () => {
           ],
         },
         {
-          code: 'console.debug(" debug ");',
-          output: "console.debug('debug');",
+          code: 'console.debug(n, " debug ", n);',
+          output: "console.debug(n, 'debug', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -253,8 +253,8 @@ describe('no-console-spaces', () => {
           ],
         },
         {
-          code: 'console.table(" table ");',
-          output: "console.table('table');",
+          code: 'console.table(n, " table ", n);',
+          output: "console.table(n, 'table', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -271,8 +271,8 @@ describe('no-console-spaces', () => {
       invalid: [
         // Trailing space fix
         {
-          code: 'console.log("hello ");',
-          output: "console.log('hello');",
+          code: 'console.log(n, "hello ", n);',
+          output: "console.log(n, 'hello', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -281,8 +281,8 @@ describe('no-console-spaces', () => {
         },
         // Leading space fix
         {
-          code: 'console.log(" hello");',
-          output: "console.log('hello');",
+          code: 'console.log(n, " hello", n);',
+          output: "console.log(n, 'hello', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -291,8 +291,8 @@ describe('no-console-spaces', () => {
         },
         // Both spaces fix
         {
-          code: 'console.log(" hello ");',
-          output: "console.log('hello');",
+          code: 'console.log(n, " hello ", n);',
+          output: "console.log(n, 'hello', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -301,8 +301,8 @@ describe('no-console-spaces', () => {
         },
         // Multiple spaces
         {
-          code: 'console.log("  hello  ");',
-          output: "console.log('hello');",
+          code: 'console.log(n, "  hello  ", n);',
+          output: "console.log(n, 'hello', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -319,7 +319,7 @@ describe('no-console-spaces', () => {
       invalid: [
         // Template literal with trailing space in quasi
         {
-          code: 'console.log(`hello `);',
+          code: 'console.log(n, `hello `, n);',
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -328,7 +328,7 @@ describe('no-console-spaces', () => {
         },
         // Template literal with leading space
         {
-          code: 'console.log(` hello`);',
+          code: 'console.log(n, ` hello`, n);',
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -337,7 +337,7 @@ describe('no-console-spaces', () => {
         },
         // Template literal with both spaces
         {
-          code: 'console.log(` hello `);',
+          code: 'console.log(n, ` hello `, n);',
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -346,7 +346,7 @@ describe('no-console-spaces', () => {
         },
         // Template literal with interpolation and spaces
         {
-          code: 'console.log(` hello ${name} `);',
+          code: 'console.log(n, ` hello ${name} `, n);',
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -355,7 +355,7 @@ describe('no-console-spaces', () => {
         },
         // Multiple quasis with spaces (detected as single error)
         {
-          code: 'console.log(` hello ${a} world `);',
+          code: 'console.log(n, ` hello ${a} world `, n);',
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -374,12 +374,12 @@ describe('no-console-spaces', () => {
         {
           code: `
             function log() {
-              console.log(" hello ");
+              console.log(n, " hello ", n);
             }
           `,
           output: `
             function log() {
-              console.log('hello');
+              console.log(n, 'hello', n);
             }
           `,
           errors: [
@@ -390,8 +390,8 @@ describe('no-console-spaces', () => {
         },
         // In arrow function
         {
-          code: 'const log = () => console.log(" hello ");',
-          output: "const log = () => console.log('hello');",
+          code: 'const log = () => console.log(n, " hello ", n);',
+          output: "const log = () => console.log(n, 'hello', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -403,7 +403,7 @@ describe('no-console-spaces', () => {
           code: `
             class Logger {
               log(msg) {
-                console.log(\` \${msg} \`);
+                console.log(n, \` \${msg} \`, n);
               }
             }
           `,
@@ -417,12 +417,12 @@ describe('no-console-spaces', () => {
         {
           code: `
             if (debug) {
-              console.error(" error ");
+              console.error(n, " error ", n);
             }
           `,
           output: `
             if (debug) {
-              console.error('error');
+              console.error(n, 'error', n);
             }
           `,
           errors: [
@@ -434,12 +434,12 @@ describe('no-console-spaces', () => {
         // Multiple console calls
         {
           code: `
-            console.log(" hello ");
-            console.error(" world ");
+            console.log(n, " hello ", n);
+            console.error(n, " world ", n);
           `,
           output: `
-            console.log('hello');
-            console.error('world');
+            console.log(n, 'hello', n);
+            console.error(n, 'world', n);
           `,
           errors: [
             {
@@ -459,15 +459,15 @@ describe('no-console-spaces', () => {
       valid: [
         // Empty strings
         {
-          code: 'console.log("");',
+          code: 'console.log(n, "", n);',
         },
         // Whitespace-only strings (these have spaces but are valid)
         {
-          code: 'console.log("   ");',
+          code: 'console.log(n, "   ", n);',
         },
         // Strings with only newlines/tabs
         {
-          code: 'console.log("\\n\\t");',
+          code: 'console.log(n, "\\n\\t", n);',
         },
         // CORRECTED 2026-09-21 — these two were `invalid` with an `output` that
         // DELETED the escape. The separator `console.*` inserts is U+0020 and
@@ -479,11 +479,11 @@ describe('no-console-spaces', () => {
         // scripts/run-evals.ts:285 are banner spacers this rewrote.
         {
           name: 'a tab is not the separator, so it is not redundant',
-          code: 'console.log("\\thello");',
+          code: 'console.log(n, "\\thello", n);',
         },
         {
           name: 'a trailing newline survives the separator and is not redundant',
-          code: 'console.log("hello\\n");',
+          code: 'console.log(n, "hello\\n", n);',
         },
       ],
       invalid: [
@@ -492,8 +492,8 @@ describe('no-console-spaces', () => {
         // output was `'hello'` and both newlines were gone.
         {
           name: 'literal edge spaces are stripped without taking the newlines with them',
-          code: 'console.log(" \\n hello \\n ");',
-          output: "console.log('\\n hello \\n');",
+          code: 'console.log(n, " \\n hello \\n ", n);',
+          output: "console.log(n, '\\n hello \\n', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -509,8 +509,8 @@ describe('no-console-spaces', () => {
         // console.warn carrying prose).
         {
           name: 'an apostrophe in the trimmed value stays escaped, so the fix still parses',
-          code: 'console.log("  it\'s fine  ");',
-          output: "console.log('it\\'s fine');",
+          code: 'console.log(n, "  it\'s fine  ", n);',
+          output: "console.log(n, 'it\\'s fine', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -521,8 +521,8 @@ describe('no-console-spaces', () => {
         // interior line break).
         {
           name: 'an interior newline is re-emitted as an escape, not a raw line break',
-          code: 'console.log("  line1\\nline2  ");',
-          output: "console.log('line1\\nline2');",
+          code: 'console.log(n, "  line1\\nline2  ", n);',
+          output: "console.log(n, 'line1\\nline2', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -532,8 +532,8 @@ describe('no-console-spaces', () => {
         // From burgee scripts/brand.mts:515 (shape: path-bearing log line).
         {
           name: 'a backslash is re-escaped, so the fixed string keeps its value',
-          code: 'console.log("  C:\\\\path  ");',
-          output: "console.log('C:\\\\path');",
+          code: 'console.log(n, "  C:\\\\path  ", n);',
+          output: "console.log(n, 'C:\\\\path', n);",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -564,7 +564,7 @@ describe('no-console-spaces', () => {
         // String literals with spaces mixed with other args
         {
           code: 'console.log(" hello ", obj, " world ");',
-          output: "console.log('hello', obj, 'world');",
+          output: "console.log(' hello', obj, 'world ');",
           errors: [
             {
               messageId: 'noConsoleSpaces',
@@ -588,5 +588,55 @@ describe('no-console-spaces', () => {
         },
       ],
     });
+  });
+});
+
+describe('no-console-spaces: only the sides the separator touches', () => {
+  ruleTester.run('no-console-spaces', noConsoleSpaces, {
+    valid: [
+      {
+        name: 'a leading space on the only argument is the message own indent',
+        code: "console.log('  indented line');",
+      },
+      {
+        name: 'a trailing space on the last argument joins nothing',
+        code: "console.log(count, 'items ');",
+      },
+      {
+        name: 'a leading space on the first argument joins nothing',
+        code: "console.log(' items', count);",
+      },
+      {
+        name: 'an injected console is not the global',
+        code: "function f(console: { log(...a: unknown[]): void }) { console.log('a ', 1); }",
+      },
+    ],
+    invalid: [
+      {
+        name: 'a trailing space before another argument',
+        code: "console.log('items ', count);",
+        output: "console.log('items', count);",
+        errors: [{ messageId: 'noConsoleSpaces' }],
+      },
+      {
+        name: 'a leading space after another argument',
+        code: 'console.log(count, ` items`);',
+        output: null,
+        errors: [{ messageId: 'noConsoleSpaces' }],
+      },
+      {
+        name: 'globalThis.console is the global console',
+        code: "globalThis.console.log('items ', count);",
+        output: "globalThis.console.log('items', count);",
+        errors: [{ messageId: 'noConsoleSpaces' }],
+      },
+      {
+        name: 'the console module is the global console',
+        code: "import console from 'node:console';\nconsole.log('items ', count);",
+        output:
+          "import console from 'node:console';\nconsole.log('items', count);",
+        errors: [{ messageId: 'noConsoleSpaces' }],
+      },
+    ],
   });
 });

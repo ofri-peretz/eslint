@@ -10,6 +10,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { isGlobalObject } from '../../lib/global-binding';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'consistentExistenceCheck' | 'nonEquivalentExistenceCheck';
@@ -250,8 +251,12 @@ export const consistentExistenceIndexCheck = createRule<
           node.callee.type === 'MemberExpression' &&
           node.callee.object.type === 'MemberExpression' &&
           node.callee.object.object.type === 'MemberExpression' &&
-          node.callee.object.object.object.type === 'Identifier' &&
-          node.callee.object.object.object.name === 'Object' &&
+          // The built-in `Object` by binding: `Object` or `globalThis.Object`.
+          isGlobalObject(
+            node.callee.object.object.object,
+            'Object',
+            context.sourceCode,
+          ) &&
           propertyName(node.callee.object.object) === 'prototype' &&
           propertyName(node.callee.object) === 'hasOwnProperty' &&
           propertyName(node.callee) === 'call' &&
@@ -270,9 +275,8 @@ export const consistentExistenceIndexCheck = createRule<
         // Object.hasOwn(obj, prop)
         if (
           node.callee.type === 'MemberExpression' &&
-          node.callee.object.type === 'Identifier' &&
-          node.callee.object.name === 'Object' &&
           propertyName(node.callee) === 'hasOwn' &&
+          isGlobalObject(node.callee.object, 'Object', context.sourceCode) &&
           // Same gate, same reasoning as the direct form above: `Object.hasOwn`
           // reads its first two arguments and ignores the rest, so a surplus
           // argument leaves the question unchanged. It is still EVALUATED, so it

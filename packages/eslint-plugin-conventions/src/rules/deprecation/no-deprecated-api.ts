@@ -10,7 +10,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { createRule, propertyName, variableOf } from '@interlace/eslint-devkit';
 
 type MessageIds = 'deprecatedAPI' | 'useReplacement';
 
@@ -132,6 +132,62 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
       return 'medium';
     };
 
+    /**
+     * The API a bare callee names. Imported under another local name
+     * (`import { oldFetch as fetchIt }`), it is still the imported API.
+     */
+    function apiNameOf(callee: TSESTree.Identifier): string {
+      const definition = variableOf(callee, context.sourceCode)?.defs[0];
+      if (
+        definition?.type === 'ImportBinding' &&
+        definition.node.type === 'ImportSpecifier'
+      ) {
+        const imported = definition.node.imported;
+        return imported.type === 'Identifier' ? imported.name : imported.value;
+      }
+      return callee.name;
+    }
+
+    function checkCallee(
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ): void {
+      if (node.callee.type !== 'Identifier') return;
+      const callee = node.callee;
+      const apiName = apiNameOf(callee);
+      const deprecatedApi = apis.find(
+        (api: DeprecatedAPI) => api.name === apiName,
+      );
+      if (!deprecatedApi) return;
+      const daysRemaining = calculateDaysRemaining(deprecatedApi.removalDate);
+      const urgency = getUrgencyLevel(daysRemaining);
+      context.report({
+        node,
+        messageId: 'deprecatedAPI',
+        data: {
+          apiName: deprecatedApi.name,
+          replacement: deprecatedApi.replacement,
+          deprecatedSince: deprecatedApi.deprecatedSince,
+          daysRemaining: String(daysRemaining ?? 'Unknown'),
+          urgency: urgency.toUpperCase(),
+          migrationGuide: deprecatedApi.migrationGuide || 'See documentation',
+        },
+        // Renaming a local alias would leave the import of the old API in
+        // place, so the replacement is suggested only where the API is
+        // called by its own name.
+        suggest:
+          apiName === callee.name
+            ? [
+                {
+                  messageId: 'useReplacement',
+                  data: { replacement: deprecatedApi.replacement },
+                  fix: (fixer: TSESLint.RuleFixer) =>
+                    fixer.replaceText(callee, deprecatedApi.replacement),
+                },
+              ]
+            : [],
+      });
+    }
+
     return {
       before() {
         const options = context.options[0] || {};
@@ -193,45 +249,9 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
         });
       },
 
-      // Check call expressions (e.g., deprecatedFunction())
-      CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type !== 'Identifier') return;
-
-        const apiName = node.callee.name;
-        const deprecatedApi = apis.find(
-          (api: DeprecatedAPI) => api.name === apiName,
-        );
-
-        if (!deprecatedApi) return;
-
-        const daysRemaining = calculateDaysRemaining(deprecatedApi.removalDate);
-        const urgency = getUrgencyLevel(daysRemaining);
-
-        context.report({
-          node,
-          messageId: 'deprecatedAPI',
-          data: {
-            apiName: deprecatedApi.name,
-            replacement: deprecatedApi.replacement,
-            deprecatedSince: deprecatedApi.deprecatedSince,
-            daysRemaining: String(daysRemaining ?? 'Unknown'),
-            urgency: urgency.toUpperCase(),
-            migrationGuide: deprecatedApi.migrationGuide || 'See documentation',
-          },
-          suggest: [
-            {
-              messageId: 'useReplacement',
-              data: { replacement: deprecatedApi.replacement },
-              fix: (fixer: TSESLint.RuleFixer) => {
-                return fixer.replaceText(
-                  node.callee,
-                  deprecatedApi.replacement,
-                );
-              },
-            },
-          ],
-        });
-      },
+      // Calls and constructions of a bare name (`oldFetch()`, `new OldClient()`)
+      CallExpression: checkCallee,
+      NewExpression: checkCallee,
     };
   },
 });

@@ -84,6 +84,16 @@ if (a) {
 }
 ```
 
+## Configuration
+
+No options. `allow` is accepted for backward compatibility and has no effect
+(it used to switch the rule off for any file whose text contained a listed
+string, which says nothing about the `if` being reported).
+
+An `if` that shares the `else` block with other statements is not reported:
+`else if` holds a single statement, so collapsing it would strand the rest. A
+comment beside the lonely `if` is not a statement and does not save it.
+
 ## Configuration Examples
 
 ### Basic Usage

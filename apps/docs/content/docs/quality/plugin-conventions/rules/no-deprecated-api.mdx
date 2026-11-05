@@ -14,7 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 Prevent usage of deprecated APIs with migration context and timeline. This rule is part of [`eslint-plugin-conventions`](https://www.npmjs.com/package/eslint-plugin-conventions) and provides LLM-optimized error messages with fix suggestions.
 
-**💡 Provides suggestions** | **🔧 Automatically fixable**
+**💡 Provides suggestions**
 
 ## Quick Summary
 
@@ -22,7 +22,7 @@ Prevent usage of deprecated APIs with migration context and timeline. This rule 
 |--------|---------|
 | **CWE Reference** | [CWE-1078](https://cwe.mitre.org/data/definitions/1078.html) (Deprecated Components) |
 | **Severity** | Warning (maintenance best practice) |
-| **Auto-Fix** | ✅ Yes (suggests replacement APIs) |
+| **Auto-Fix** | 💡 Suggestion (renames to the replacement API) |
 | **Category** | Code Maintenance |
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
 | **Best For** | Projects using libraries with deprecation timelines |
@@ -48,14 +48,24 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ## Rule Details
 
-Enforces migration from deprecated APIs with clear timelines, replacement suggestions, and migration guides.
+Reports every use of an API you list in `apis`, so a migration finishes
+instead of stalling. The configured names are matched as given:
+
+- a call of the name (`oldFetch(url)`), also under a local name it was
+  imported as (`import { oldFetch as fetchIt } from 'lib'; fetchIt(url)`);
+- constructing it (`new OldClient()`);
+- a member of that name on any object (`api.oldFetch`, `api['oldFetch']`).
+
+The suggestion renames the use to `replacement`; it is not offered for a
+renamed import, where the import itself has to change. Nothing is reported
+while `apis` is empty (the default).
 
 ## Configuration
 
 | Option                   | Type               | Default | Description                                    |
 | ------------------------ | ------------------ | ------- | ---------------------------------------------- |
 | `apis`                   | `DeprecatedAPI[]`  | `[]`    | List of deprecated APIs                        |
-| `warnDaysBeforeRemoval`  | `number`           | `90`    | Days before removal to start warning           |
+| `warnDaysBeforeRemoval`  | `number`           | `90`    | Accepted for compatibility; has no effect: a listed API is reported whatever its removal date |
 
 ### DeprecatedAPI Object
 
@@ -72,7 +82,14 @@ Enforces migration from deprecated APIs with clear timelines, replacement sugges
 
 ### ❌ Incorrect
 
-> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
+With `apis: [{ name: 'oldFetch', replacement: 'newFetch', … }, { name: 'OldClient', replacement: 'Client', … }]`:
+
+```typescript
+import { oldFetch, OldClient } from 'my-library';
+oldFetch(url);
+new OldClient(url);
+api.oldFetch(url);
+```
 
 ### ✅ Correct
 
@@ -152,7 +169,7 @@ newFunction({ data: 'test' });
 |---------|------------------|--------------------------|----------------------|
 | **Custom Deprecations** | ✅ Yes | ⚠️ Limited | ⚠️ JSDoc only |
 | **Timeline Support** | ✅ Yes | ❌ No | ❌ No |
-| **Auto-Fix** | ✅ Yes | ❌ No | ❌ No |
+| **Suggestions** | ✅ Yes | ❌ No | ❌ No |
 | **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
 | **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
 | **Migration Guides** | ✅ Yes | ❌ No | ❌ No |
@@ -174,42 +191,10 @@ newFunction({ data: 'test' });
 
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
+- A reference that is not called or constructed (`const f = oldFetch;`,
+  `class X extends OldClient {}`) is not reported where it is written.
 
-### Dynamic Variable References
+## Known False Positives
 
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = externalSource();
-processValue(value); // Variable origin not tracked
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Wrapped or Aliased Functions
-
-**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-function myWrapper(data) {
-  return internalApi(data); // Wrapper not analyzed
-}
-myWrapper(unsafeInput);
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- Names are matched without their module: an API of the same name from a
+  different library is reported too.

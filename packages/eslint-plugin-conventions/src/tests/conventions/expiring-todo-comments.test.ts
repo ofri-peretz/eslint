@@ -414,3 +414,21 @@ describe('expiring-todo-comments', () => {
     });
   });
 });
+
+describe('expiring-todo-comments: a [-pkg] condition', () => {
+  ruleTester.run('expiring-todo-comments', expiringTodoComments, {
+    valid: [
+      {
+        name: '[-pkg] is not due while the package is a dependency',
+        code: '// TODO [-lodash]: inline the helper',
+      },
+    ],
+    invalid: [
+      {
+        name: '[-pkg] is due once the package is gone',
+        code: '// TODO [-no-such-package-xyz]: drop the shim',
+        errors: [{ messageId: 'expiringTodoComment' }],
+      },
+    ],
+  });
+});

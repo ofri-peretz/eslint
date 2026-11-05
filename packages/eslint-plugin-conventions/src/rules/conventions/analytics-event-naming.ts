@@ -39,6 +39,7 @@ import {
   createRule,
   staticString,
   propertyName,
+  followConst,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
@@ -130,7 +131,10 @@ export const analyticsEventNaming = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         if (!isCaptureLike(node) || node.arguments.length === 0) return;
         const first = node.arguments[0];
-        const staticText = staticString(first);
+        // `const EVENT = 'x'; track(EVENT)` names the event as surely as the
+        // literal does; `followConst` abstains on a parameter or an import.
+        const value = followConst(first, context.sourceCode);
+        const staticText = staticString(value);
         if (staticText !== null) {
           if (!EVENT_NAME_RE.test(staticText)) {
             context.report({
@@ -141,7 +145,7 @@ export const analyticsEventNaming = createRule<RuleOptions, MessageIds>({
           }
           return;
         }
-        if (first.type === 'TemplateLiteral' && first.expressions.length > 0) {
+        if (value.type === 'TemplateLiteral' && value.expressions.length > 0) {
           context.report({
             node: first,
             messageId: 'interpolatedEventName',

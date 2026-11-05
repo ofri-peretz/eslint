@@ -62,6 +62,8 @@ const PLUGINS = [
   'modularity',
   'modernization',
   'react-a11y',
+  'maintainability',
+  'conventions',
 ];
 
 const loadPlugin = (short) => {

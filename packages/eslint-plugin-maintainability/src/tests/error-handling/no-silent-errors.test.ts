@@ -3,8 +3,10 @@
  * Error Handling: Detects empty catch blocks
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
+import type { TSESTree } from '@interlace/eslint-devkit';
+import { createWithMockContext } from '@interlace/eslint-devkit';
 import { noSilentErrors } from '../../rules/error-handling/no-silent-errors';
 
 RuleTester.afterAll = afterAll;
@@ -63,19 +65,6 @@ describe('no-silent-errors', () => {
             }
           `,
           filename: 'test.spec.ts',
-          options: [{ ignoreInTests: true }],
-        },
-        {
-          // burgee sweep 2026-09-23: ignoreInTests missed .[cm]js/.[cm]ts test files
-          // (compat-oracle/vendor/commander/tests/*.test.cjs); matches reliability #1080.
-          name: 'ignoreInTests also skips an ESM test file (.test.mjs)',
-          code: `
-            try {
-              doSomething();
-            } catch (error) {
-            }
-          `,
-          filename: 'test.test.mjs',
           options: [{ ignoreInTests: true }],
         },
       ],
@@ -453,6 +442,82 @@ describe('no-silent-errors', () => {
       ],
     });
   });
+  // ---------------------------------------------------------------------
+  // Layer 2 — direct unit tests for parser-unreachable branches
+  // ---------------------------------------------------------------------
+
+  describe('Layer 2: listeners with mock context', () => {
+    it('treats a catch clause without a BlockStatement body as empty (options null fallback)', () => {
+      // Valid JS always gives a catch clause a BlockStatement body; only a
+      // synthetic node reaches the defensive branch. options: [null] also
+      // drives the `options || {}` fallback in create().
+      const { listeners, reports } = createWithMockContext(noSilentErrors, {
+        options: [null],
+      });
+      const node = {
+        type: 'CatchClause',
+        body: null,
+      } as unknown as TSESTree.CatchClause;
+      (listeners['CatchClause'] as (n: TSESTree.CatchClause) => void)(node);
+      expect(reports).toHaveLength(1);
+      expect(reports[0]).toMatchObject({ messageId: 'silentError' });
+      const suggest = (reports[0] as { suggest?: { messageId: string }[] })
+        .suggest;
+      expect(suggest?.map((s) => s.messageId)).toEqual([
+        'addErrorLogging',
+        'addErrorHandling',
+        'rethrowError',
+      ]);
+    });
+
+    it('hasExplanatoryComment returns false for a catch clause without a location', () => {
+      const { listeners, reports, context } = createWithMockContext(
+        noSilentErrors,
+        {
+          options: [{ allowWithComment: true }],
+        },
+      );
+      Object.assign(context.sourceCode, {
+        getAllComments: () => [
+          {
+            type: 'Line',
+            value: 'intentional noop',
+            loc: {
+              start: { line: 1, column: 0 },
+              end: { line: 1, column: 10 },
+            },
+          },
+        ],
+      });
+      const node = {
+        type: 'CatchClause',
+        body: { type: 'BlockStatement', body: [] },
+        loc: undefined,
+      } as unknown as TSESTree.CatchClause;
+      (listeners['CatchClause'] as (n: TSESTree.CatchClause) => void)(node);
+      // No location → the explanatory comment cannot be matched → report
+      expect(reports).toHaveLength(1);
+      expect(reports[0]).toMatchObject({ messageId: 'silentError' });
+    });
+
+    it('hasExplanatoryComment returns false when there are no comments at all', () => {
+      const { listeners, reports, context } = createWithMockContext(
+        noSilentErrors,
+        {
+          options: [{ allowWithComment: true }],
+        },
+      );
+      Object.assign(context.sourceCode, { getAllComments: () => [] });
+      const node = {
+        type: 'CatchClause',
+        body: { type: 'BlockStatement', body: [] },
+        loc: { start: { line: 2, column: 0 }, end: { line: 2, column: 12 } },
+      } as unknown as TSESTree.CatchClause;
+      (listeners['CatchClause'] as (n: TSESTree.CatchClause) => void)(node);
+      expect(reports).toHaveLength(1);
+      expect(reports[0]).toMatchObject({ messageId: 'silentError' });
+    });
+  });
 });
 
 /**
@@ -517,5 +582,74 @@ describe('no-silent-errors — allowWithComment sees a comment inside the catch'
         errors: [{ messageId: 'silentError' }],
       },
     ],
+  });
+  // `ignoreInTests` is documented ecosystem-wide as "Skip this rule in
+  // `*.test.*` / `*.spec.*` files" — a glob that says nothing about the
+  // extension. The predicate listed `ts|tsx|js|jsx` and so stopped applying
+  // the moment a repository adopted the ESM/CJS extensions. Surfaced by the
+  // burgee FP/FN sweep, which lints a `"type": "module"` monorepo; the same
+  // defect was fixed for the sibling `no-unhandled-promise` in c24bfe0b0 and
+  // its own commit noted the remaining rules as a separate pass. This is it.
+  describe('ignoreInTests reaches the ESM and CJS module extensions', () => {
+    ruleTester.run('ignoreInTests module extensions', noSilentErrors, {
+      valid: [
+        {
+          name: 'ignoreInTests covers .test.mts — an ESM TypeScript test file is a test file',
+          code: 'try { risky(); } catch (e) {}',
+          filename: 'c.test.mts',
+          options: [{ ignoreInTests: true }],
+        },
+        {
+          name: 'ignoreInTests covers .test.cts — a CommonJS TypeScript test file is a test file',
+          code: 'try { risky(); } catch (e) {}',
+          filename: 'c.test.cts',
+          options: [{ ignoreInTests: true }],
+        },
+        {
+          name: 'ignoreInTests covers .test.mjs — an ESM JavaScript test file is a test file',
+          code: 'try { risky(); } catch (e) {}',
+          filename: 'c.test.mjs',
+          options: [{ ignoreInTests: true }],
+        },
+        {
+          name: 'ignoreInTests covers .test.cjs — a CommonJS JavaScript test file is a test file',
+          code: 'try { risky(); } catch (e) {}',
+          filename: 'c.test.cjs',
+          options: [{ ignoreInTests: true }],
+        },
+        {
+          name: 'ignoreInTests covers .spec.mts — the `*.spec.*` half of the contract is extension-agnostic too',
+          code: 'try { risky(); } catch (e) {}',
+          filename: 'c.spec.mts',
+          options: [{ ignoreInTests: true }],
+        },
+        {
+          name: 'ignoreInTests covers .spec.cjs — the `*.spec.*` half reaches CommonJS as well',
+          code: 'try { risky(); } catch (e) {}',
+          filename: 'c.spec.cjs',
+          options: [{ ignoreInTests: true }],
+        },
+      ],
+      invalid: [
+        // The widened extension set must widen the exemption only — with the
+        // option off, an `.mts` test file is linted like any other file.
+        {
+          name: 'ignoreInTests: false still reports in a .test.mts file',
+          code: 'try { risky(); } catch (e) {}',
+          filename: 'c.test.mts',
+          options: [{ ignoreInTests: false }],
+          errors: [{ messageId: 'silentError' }],
+        },
+        // `.mts` is only exempt because of `.test.`/`.spec.` — a production
+        // `.mts` file is production code.
+        {
+          name: 'a plain .mts file is production code, not a test file',
+          code: 'try { risky(); } catch (e) {}',
+          filename: 'c.mts',
+          options: [{ ignoreInTests: true }],
+          errors: [{ messageId: 'silentError' }],
+        },
+      ],
+    });
   });
 });

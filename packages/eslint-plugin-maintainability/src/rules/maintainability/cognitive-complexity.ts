@@ -137,6 +137,47 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
      * Calculate cognitive complexity for a function
      * Based on SonarQube's cognitive complexity algorithm
      */
+    /**
+     * Does `call` invoke `fn` itself?
+     *
+     * Decided by the callee's binding. Matching the callee's NAME against a
+     * declaration's name counted a call of a local `const f` inside
+     * `function f` as recursion, and never saw recursion in an arrow or
+     * function expression bound to a `const` (it had no name to match).
+     */
+    function callsItself(
+      call: TSESTree.CallExpression,
+      fn:
+        | TSESTree.FunctionDeclaration
+        | TSESTree.FunctionExpression
+        | TSESTree.ArrowFunctionExpression,
+    ): boolean {
+      const callee = call.callee;
+      if (callee.type !== 'Identifier') return false;
+      const ref = context.sourceCode
+        .getScope(callee)
+        .references.find((r) => r.identifier === callee);
+      const defs = ref?.resolved?.defs ?? [];
+      return defs.some((def) => {
+        // The function's own name (a declaration or a named function
+        // expression). A PARAMETER's definition also points at the function
+        // node, so the definition type, not the node, decides.
+        if (def.type === 'FunctionName') return def.node === fn;
+        if (def.node.type !== 'VariableDeclarator') return false;
+        let init: TSESTree.Node | null | undefined = def.node.init;
+        while (
+          init &&
+          (init.type === 'TSAsExpression' ||
+            init.type === 'TSSatisfiesExpression' ||
+            init.type === 'TSNonNullExpression' ||
+            init.type === 'TSTypeAssertion')
+        ) {
+          init = init.expression;
+        }
+        return init === fn;
+      });
+    }
+
     function calculateCognitiveComplexity(
       node:
         | TSESTree.FunctionDeclaration
@@ -154,10 +195,6 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
         recursion: 0,
       };
 
-      const functionName =
-        node.type === 'FunctionDeclaration' && node.id
-          ? node.id.name
-          : 'anonymous';
 
       function traverse(n: TSESTree.Node, currentNesting: number) {
         // A nested function is scored as its own function, not as part of this one. The
@@ -282,15 +319,10 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
           breakdown.conditionals++;
         }
 
-        // Recursion
-        if (n.type === 'CallExpression') {
-          if (
-            n.callee.type === 'Identifier' &&
-            n.callee.name === functionName
-          ) {
-            complexity += 1;
-            breakdown.recursion++;
-          }
+        // Recursion: a call that reaches the function's OWN binding.
+        if (n.type === 'CallExpression' && callsItself(n, node)) {
+          complexity += 1;
+          breakdown.recursion++;
         }
 
         // Update max nesting. The three function node types this used to list

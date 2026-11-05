@@ -38,6 +38,10 @@ type RuleOptions = [Options?];
  * JSON Schema keywords that are commonly misused as JSDoc tags.
  * These have precise semantics in JSON Schema but are invalid
  * (or meaningless) in a JSDoc context.
+ *
+ * `enum` and `const` are JSON Schema keywords too, but `@enum` and `@const`
+ * (`@constant`) are tags JSDoc itself defines, and TypeScript reads `@enum`
+ * in JavaScript — so they are not listed.
  */
 const DEFAULT_FORBIDDEN_TAGS = new Set([
   'minimum',
@@ -53,8 +57,6 @@ const DEFAULT_FORBIDDEN_TAGS = new Set([
   'multipleOf',
   'pattern',
   'uniqueItems',
-  'const',
-  'enum',
   'format',
   'contentMediaType',
   'contentEncoding',
@@ -69,15 +71,19 @@ function findForbiddenTags(
 ): { tag: string; offset: number }[] {
   const results: { tag: string; offset: number }[] = [];
 
-  // Match @tagName patterns. We don't anchor at line start because block
-  // comments can have `* @tag …` or simply `@tag …` on any line.
-  const tagRegex = /@([a-zA-Z][a-zA-Z0-9]*)\b/g;
+  // A block tag stands first on its line, after the optional ` * ` gutter
+  // (or first in a one-line `/** @tag */`). An `@word` inside prose —
+  // `team@format.io` — is not a tag.
+  const tagRegex = /(?:^|\n)[ \t]*\**[ \t]*@([a-zA-Z][a-zA-Z0-9]*)\b/g;
   let match: RegExpExecArray | null;
 
   while ((match = tagRegex.exec(commentText)) !== null) {
     const tagName = match[1];
     if (forbiddenSet.has(tagName)) {
-      results.push({ tag: tagName, offset: match.index });
+      results.push({
+        tag: tagName,
+        offset: match.index + match[0].lastIndexOf('@'),
+      });
     }
   }
 
@@ -102,8 +108,6 @@ function getSuggestionText(tag: string): string {
     minItems: 'Include item count in description, e.g. "(at least 1 item)"',
     maxItems: 'Include item count in description, e.g. "(at most 10 items)"',
     pattern: 'Include the expected format in description text',
-    enum: 'Use @typedef or list allowed values in description',
-    const: 'Use @default instead, or document the fixed value in description',
     format:
       'Describe the expected format in description, e.g. "(ISO 8601 date)"',
   };
@@ -185,8 +189,9 @@ export const noJsonSchemaTags = createRule<RuleOptions, MessageIds>({
         const comments = sourceCode.getAllComments();
 
         for (const comment of comments) {
-          // Only inspect block comments (JSDoc is always /* … */)
-          if (comment.type !== 'Block') {
+          // Only JSDoc comments (`/** … */`): no JSDoc tool reads a plain
+          // `/* … */` or a line comment as carrying tags.
+          if (comment.type !== 'Block' || !comment.value.startsWith('*')) {
             continue;
           }
 

@@ -20,7 +20,7 @@ Prefer `textContent` over `innerText`. This rule is part of [`eslint-plugin-conv
 | Aspect         | Details                                                              |
 | -------------- | -------------------------------------------------------------------- |
 | **Severity**   | Warning (performance)                                                |
-| **Auto-Fix**   | ✅ Yes (converts property)                                           |
+| **Auto-Fix**   | 💡 Suggestion (converts property)                                    |
 | **Category**   | Quality                                                              |
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration                              |
 | **Best For**   | DOM manipulation, performance-critical code                          |
@@ -28,6 +28,14 @@ Prefer `textContent` over `innerText`. This rule is part of [`eslint-plugin-conv
 ## Rule Details
 
 `innerText` triggers reflow and is slower. `textContent` is more performant and works in all contexts.
+
+The rule reports reading or writing `innerText` in every spelling:
+`el.innerText`, `el['innerText']`, `el?.innerText`, an assignment target, and
+destructuring it (`const { innerText } = el`, renamed too). It does not report
+`textContent`, a runtime key (`el[key]`), an `innerText` key in an object
+literal (it builds an object; no element is touched) or a variable named
+`innerText`. The suggestion rewrites member accesses; destructuring gets no
+suggestion, because renaming the key would rename the binding too.
 
 ### Why This Matters
 
@@ -78,28 +86,6 @@ element.textContent = 'Hello';  // Faster
 - **[Difference between textContent and innerText](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/innerText#differences_from_textcontent)** - Comparison
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = externalSource();
-processValue(value); // Variable origin not tracked
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- The rule is not type-aware: it does not check that the receiver is a DOM
+  element, so a non-DOM object with an `innerText` property is reported too,
+  and an element reached through `Reflect.get(el, 'innerText')` is not.

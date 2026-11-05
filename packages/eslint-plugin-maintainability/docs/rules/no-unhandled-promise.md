@@ -1,30 +1,30 @@
 ---
 title: no-unhandled-promise
-description: Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling
-tags: ['quality', 'maintainability']
+description: Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling. This rule detects promises that are created but never have
+tags: ['quality', 'maintainability', 'async']
 category: quality
 autofix: suggestions
 ---
 
-> **Keywords:** unhandled promise, promise rejection, async error handling, Promise, async/await, error handling, Node.js, JavaScript promises, async patterns, promise chains, try/catch, await, error propagation, CWE-1024, SonarQube RSPEC-4635
+> **Keywords:** unhandled promise, promise rejection, async error handling, Promise, async/await, error handling, Node.js, JavaScript promises, async patterns, promise chains, try/catch, await, error propagation, [CWE-1024](https://cwe.mitre.org/data/definitions/1024.html), SonarQube RSPEC-4635
 
 
 <!-- @rule-summary -->
-Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling
+Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling. This rule detects promises that are created but never have
 <!-- @/rule-summary -->
 
 Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling. This rule detects promises that are created but never have their rejection handled, preventing silent failures in production applications.
 
 ## Quick Summary
 
-| Aspect          | Details                                   |
-| --------------- | ----------------------------------------- |
-| **Severity**    | Error (production safety)                 |
-| **Auto-Fix**    | ❌ No (complex logic)                     |
-| **Category**   | Quality |
-| **ESLint MCP**  | ✅ Optimized for ESLint MCP integration   |
-| **Best For**    | Production applications, async codebases  |
-| **Suggestions** | ✅ Add .catch(), use try/catch, use await |
+| Aspect         | Details                                      |
+| -------------- | -------------------------------------------- |
+| **Severity**   | Error (production safety)                    |
+| **Auto-Fix**   | ❌ No (complex logic)                         |
+| **Category**   | Error Handling                               |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration      |
+| **Best For**   | Production applications, async codebases     |
+| **Suggestions** | ✅ Add .catch(), use try/catch, use await   |
 
 ## Rule Details
 
@@ -43,17 +43,13 @@ Disallow unhandled Promise rejections with LLM-optimized suggestions for proper 
   }
 }}%%
 flowchart TD
-    A[🔍 Detect CallExpression] --> B{Could return Promise?}
-    B -->|✅ Yes| C{In promise chain?}
+    A[🔍 Detect CallExpression] --> B{File shows it returns a Promise?}
     B -->|❌ No| D[✅ Skip]
-    C -->|❌ No| E{Inside try/catch?}
+    B -->|✅ Yes| C{Rejection handled?<br/>.catch / .then with 2 args / await}
     C -->|✅ Yes| D
-    E -->|❌ No| F{Inside async function?}
+    C -->|❌ No| E{Value held?<br/>returned / assigned / Promise.all}
     E -->|✅ Yes| D
-    F -->|❌ No| G[🚨 Report unhandled promise]
-    F -->|✅ Yes| H{Uses await?}
-    H -->|❌ No| G
-    H -->|✅ Yes| D
+    E -->|❌ No| G[🚨 Report unhandled promise]
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
@@ -66,19 +62,37 @@ flowchart TD
 
 ### Why This Matters
 
-| Issue                  | Impact                              | Solution                   |
-| ---------------------- | ----------------------------------- | -------------------------- |
-| 🔒 **Silent Failures** | Errors swallowed without logging    | Proper error handling      |
-| 🐛 **Debugging**       | Hard to trace async failures        | Centralized error handling |
-| ⚡ **Reliability**     | Application crashes unexpectedly    | Graceful error recovery    |
-| 📊 **Monitoring**      | No visibility into promise failures | Error tracking & alerting  |
+| Issue                | Impact                                | Solution                    |
+| -------------------- | ------------------------------------- | --------------------------- |
+| 🔒 **Silent Failures** | Errors swallowed without logging     | Proper error handling      |
+| 🐛 **Debugging**     | Hard to trace async failures         | Centralized error handling |
+| ⚡ **Reliability**   | Application crashes unexpectedly     | Graceful error recovery    |
+| 📊 **Monitoring**    | No visibility into promise failures  | Error tracking & alerting  |
 
 ## Configuration
 
-| Option                  | Type      | Default | Description                       |
-| ----------------------- | --------- | ------- | --------------------------------- |
-| `ignoreInTests`         | `boolean` | `true`  | Skip promise checks in test files |
-| `ignoreVoidExpressions` | `boolean` | `false` | Skip promises in void expressions |
+| Option                  | Type      | Default | Description                                  |
+| ----------------------- | --------- | ------- | -------------------------------------------- |
+| `ignoreInTests`         | `boolean` | `true`  | Skip promise checks in test files            |
+| `ignoreVoidExpressions` | `boolean` | `false` | Skip promises in void expressions            |
+| `requirePromiseEvidence`| `boolean` | `true`  | Report only calls the file shows return a Promise |
+| `promiseReturning`      | `string[]`| `['fetch']` | Names that return a Promise and cannot be resolved from the file |
+
+### What counts as a promise
+
+With `requirePromiseEvidence` (the default) a call is a promise only when the
+file shows it: a function declared `async` in scope, `new Promise(…)`, a
+`Promise` static, a `.then(…)` chain, a parameter annotated to return a
+`Promise`, or a name listed in `promiseReturning`. An unknown call
+(`fetchUserData(id)` imported from elsewhere) is not reported unless you list it.
+
+### What counts as handled
+
+`.catch(handler)`, `.then(onFulfilled, onRejected)`, a `.catch` below a
+`.finally`, `await` (the rejection propagates to the caller), `return`, and
+holding the value (assigning it, `Promise.all([...])`). A `try` block catches a
+rejection only through an `await` inside it: `try { save(); } catch {}` has left
+the block by the time `save()` rejects, and is reported.
 
 ## Examples
 
@@ -86,10 +100,20 @@ flowchart TD
 
 ```typescript
 // Unhandled promise rejection
+async function fetchUserData(id) { /* … */ }
 fetchUserData(userId);
 
+// try without await does not catch the rejection
+try {
+  fetchUserData(userId);
+} catch (error) {
+  logger.error(error);
+}
+
 // Promise chain without error handling
-apiCall().then(processData).then(saveToDatabase);
+apiCall()
+  .then(processData)
+  .then(saveToDatabase);
 
 // Async function without await or error handling
 async function processOrder(orderId) {
@@ -102,15 +126,16 @@ async function processOrder(orderId) {
 
 ```typescript
 // Handle with .catch()
-fetchUserData(userId).catch((error) => {
-  logger.error('Failed to fetch user data', { userId, error });
-});
+fetchUserData(userId)
+  .catch(error => {
+    logger.error('Failed to fetch user data', { userId, error });
+  });
 
 // Complete promise chain
 apiCall()
   .then(processData)
   .then(saveToDatabase)
-  .catch((error) => {
+  .catch(error => {
     logger.error('API pipeline failed', { error });
   });
 
@@ -174,7 +199,7 @@ export default [
 ## LLM-Optimized Output
 
 ```
-🚨 CWE-1024 | Unhandled promise rejection detected | HIGH
+🚨 [CWE-1024](https://cwe.mitre.org/data/definitions/1024.html) | Unhandled promise rejection detected | HIGH
    Fix: Add .catch() handler or use try/catch | https://rules.sonarsource.com/javascript/RSPEC-4635/
 
 Suggestions:
@@ -212,7 +237,7 @@ class ErrorBoundary extends React.Component {
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('Unhandled promise rejection', {
     reason,
-    promise: promise.toString(),
+    promise: promise.toString()
   });
   // Don't exit process in production
 });
@@ -220,25 +245,25 @@ process.on('unhandledRejection', (reason, promise) => {
 
 ## When Not To Use
 
-| Scenario         | Recommendation                  |
-| ---------------- | ------------------------------- |
-| 🧪 Prototyping   | Disable or use warning level    |
-| 📚 Tutorials     | Add to ignorePatterns           |
-| 🔧 Build Scripts | Use ignorePatterns: ['scripts'] |
+| Scenario         | Recommendation                   |
+| ---------------- | -------------------------------- |
+| 🧪 Prototyping   | Disable or use warning level     |
+| 📚 Tutorials     | Add to ignorePatterns            |
+| 🔧 Build Scripts | Use ignorePatterns: ['scripts']  |
 
 ## Comparison with Alternatives
 
-| Feature               | no-unhandled-promise | eslint-plugin-promise | ESLint built-in |
-| --------------------- | -------------------- | --------------------- | --------------- |
+| Feature              | no-unhandled-promise | eslint-plugin-promise | ESLint built-in |
+| -------------------- | -------------------- | --------------------- | --------------- |
 | **Promise Detection** | ✅ Static analysis   | ✅ Runtime checks     | ❌ No           |
-| **Auto-Fix**          | ❌ No                | ❌ No                 | ❌ No           |
-| **LLM-Optimized**     | ✅ Yes               | ❌ No                 | ❌ No           |
-| **Customizable**      | ✅ Yes               | ⚠️ Limited            | ❌ No           |
+| **Auto-Fix**         | ❌ No                | ❌ No                 | ❌ No           |
+| **LLM-Optimized**    | ✅ Yes               | ❌ No                 | ❌ No           |
+| **Customizable**     | ✅ Yes               | ⚠️ Limited           | ❌ No           |
 
 ## Error Message Format
 
 ```
-🚨 CWE-1024 | Unhandled promise rejection detected | HIGH
+🚨 [CWE-1024](https://cwe.mitre.org/data/definitions/1024.html) | Unhandled promise rejection detected | HIGH
    Fix: Add .catch() handler or use try/catch | https://rules.sonarsource.com/javascript/RSPEC-4635/
 ```
 
@@ -252,7 +277,6 @@ process.on('unhandledRejection', (reason, promise) => {
 - **[Promise Error Handling](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises#error_handling)** - MDN Promise error handling guide
 - **[Async/Await Best Practices](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Asynchronous/Async_await)** - MDN async/await guide
 - **[Node.js Error Handling](https://nodejs.org/api/errors.html)** - Node.js error handling documentation
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:

@@ -72,7 +72,7 @@ export interface Options {
 }
 
 type RuleOptions = [Options?];
-type MessageIds = 'preferStrategy' | 'invalidStrategy';
+type MessageIds = 'preferStrategy' | 'invalidStrategy' | 'disallowedProtocol';
 
 export const preferDependencyVersionStrategy = createRule<
   RuleOptions,
@@ -104,6 +104,16 @@ export const preferDependencyVersionStrategy = createRule<
         description: 'Strategy "{{strategy}}" is not valid',
         severity: 'MEDIUM',
         fix: 'Use one of: caret (^), tilde (~), exact (no prefix), range (<, >, ||), or any',
+        documentationLink:
+          'https://docs.npmjs.com/cli/v10/configuring-npm/package-json#dependencies',
+      }),
+      disallowedProtocol: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'Disallowed Version Protocol',
+        description:
+          'Dependency "{{name}}" uses the {{protocol}} protocol, which this project does not allow',
+        severity: 'MEDIUM',
+        fix: 'Depend on a published version, or set allow{{option}} to true',
         documentationLink:
           'https://docs.npmjs.com/cli/v10/configuring-npm/package-json#dependencies',
       }),
@@ -168,10 +178,24 @@ export const preferDependencyVersionStrategy = createRule<
       depName: string,
       version: string,
     ): void {
-      // Skip special protocols
-      if (allowWorkspace && version.startsWith('workspace:')) return;
-      if (allowFile && version.startsWith('file:')) return;
-      if (allowLink && version.startsWith('link:')) return;
+      // `workspace:` / `file:` / `link:` versions: allowed by default; with the
+      // matching `allow*` option set to false, the protocol itself is the finding.
+      const protocols: [string, boolean, string][] = [
+        ['workspace:', allowWorkspace, 'Workspace'],
+        ['file:', allowFile, 'File'],
+        ['link:', allowLink, 'Link'],
+      ];
+      for (const [protocol, allowed, option] of protocols) {
+        if (!version.startsWith(protocol)) continue;
+        if (!allowed) {
+          context.report({
+            node: node.value,
+            messageId: 'disallowedProtocol',
+            data: { name: depName, protocol, option },
+          });
+        }
+        return;
+      }
 
       // Skip if not a semantic version (allow prefixes like ^, ~)
       // Match patterns like: 1.0.0, ^1.0.0, ~1.0.0, >=1.0.0, etc.
@@ -244,7 +268,11 @@ export const preferDependencyVersionStrategy = createRule<
         }
         case 'range':
           // Allow ranges like ">=1.0.0 <2.0.0" or "1.0.0 || 2.0.0"
+          // `^` and `~` are ranges too — and `^` is what this branch's own
+          // fix writes, so reporting it would flag the fix.
           if (
+            !version.startsWith('^') &&
+            !version.startsWith('~') &&
             !version.includes('||') &&
             !version.includes('>=') &&
             !version.includes('<=') &&
@@ -333,8 +361,13 @@ export const preferDependencyVersionStrategy = createRule<
           return false;
         }
 
-        // If strategy is 'any', allow all versions
-        if (strategy === 'any') {
+        // If strategy is 'any' and no package overrides it, allow all versions.
+        // An override still applies under 'any': `{ strategy: 'any',
+        // overrides: { react: 'exact' } }` pins react alone.
+        if (
+          strategy === 'any' &&
+          Object.values(overrides).every((value) => value === 'any')
+        ) {
           return false;
         }
         return true;
