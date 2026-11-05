@@ -88,7 +88,17 @@ flowchart TD
 
 ### ❌ Incorrect
 
-> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
+```typescript
+// terms: [{ incorrect: 'user', correct: 'customer', context: 'buyers are customers' }]
+const userTotal = 0;            // ❌ variable
+function loadUser() {}          // ❌ function
+class UserProfile {             // ❌ class
+  userId = '';                  // ❌ class property
+  refreshUser() {}              // ❌ method
+}
+```
+
+The rule checks names the file **declares**: variables, functions, classes, class properties and methods. A string term matches as a case-insensitive substring; a RegExp term matches by `test`. Names the file only uses (an imported binding, a property read on another object) belong to someone else's API and are not reported. With no `terms` configured, the rule reports nothing.
 
 ### ✅ Correct
 

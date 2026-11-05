@@ -30,9 +30,17 @@ Detects debug code that should not be present in production builds.
 
 Debug code left in production can expose sensitive information, internal system details, or create attack vectors. This rule detects:
 
-- `console.log()` statements
+- `console.log()` statements on the **global** console (dotted or `console['log']`). A `console` the code binds itself (a parameter, an injected logger) is not the global console and is not reported.
 - `DEBUG` identifiers
 - `__DEV__` React Native development flags
+
+`DEBUG` and `__DEV__` are matched by name wherever they are read, including in a declaration.
+
+## Configuration
+
+| Option                     | Type      | Default | Description                                                                                                          |
+| -------------------------- | --------- | ------- | -------------------------------------------------------------------------------------------------------------------- |
+| `ignoreNonProductionPaths` | `boolean` | `true`  | Skip directories that never ship (`scripts/`, `tools/`, `env/`, `benchmarks/`, examples, demos, fixtures) and build-tool config |
 
 ## Examples
 

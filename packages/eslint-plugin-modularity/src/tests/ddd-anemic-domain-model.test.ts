@@ -586,3 +586,98 @@ describe('ddd-anemic-domain-model — domain scope', () => {
     ],
   });
 });
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/modularity):
+// behaviour written as an arrow-function class property was skipped as a
+// plain field, so a rich entity reported as anemic.
+describe('ddd-anemic-domain-model — arrow-function methods are methods', () => {
+  const filename = 'src/domain/bank-account.ts';
+  ruleTester.run('arrow methods', dddAnemicDomainModel, {
+    valid: [
+      {
+        name: 'behaviour in an arrow-function property',
+        code: `class BankAccount {
+  private balance = 0;
+  withdraw = (amount: number) => {
+    if (this.balance < amount) throw new Error('Insufficient funds');
+    this.balance -= amount;
+  };
+}`,
+        filename,
+      },
+      {
+        name: 'behaviour in a function-expression property',
+        code: `class BankAccount {
+  private balance = 0;
+  deposit = function (this: BankAccount, amount: number) {
+    if (amount <= 0) throw new Error('Amount must be positive');
+    this.balance += amount;
+  };
+}`,
+        filename,
+      },
+    ],
+    invalid: [
+      {
+        name: 'a getter-shaped arrow property is not behaviour',
+        code: `class BankAccount {
+  private balance = 0;
+  getBalance = () => {
+    return this.balance;
+  };
+}`,
+        filename,
+        errors: [{ messageId: 'anemicDomainModel' }],
+      },
+      {
+        name: 'a concise arrow getter is not behaviour',
+        code: `class BankAccount {
+  private balance = 0;
+  getBalance = () => this.balance;
+}`,
+        filename,
+        errors: [{ messageId: 'anemicDomainModel' }],
+      },
+      {
+        name: 'a concise arrow delegation is not behaviour',
+        code: `class BankAccount {
+  private repository: any;
+  load = () => this.repository.load(this);
+}`,
+        filename,
+        errors: [{ messageId: 'anemicDomainModel' }],
+      },
+      {
+        name: 'a quoted getter name is the same getter',
+        code: `class BankAccount {
+  private balance = 0;
+  'getBalance' = () => {
+    return this.balance;
+  };
+}`,
+        filename,
+        errors: [{ messageId: 'anemicDomainModel' }],
+      },
+      {
+        name: 'a run-time key names no getter, so an empty method is behaviour-free',
+        code: `const k = Math.random() > 0.5 ? 'a' : 'b';
+class BankAccount {
+  private balance = 0;
+  [k]() {}
+}`,
+        filename,
+        options: [{ minBusinessMethods: 2 }],
+        errors: [{ messageId: 'anemicDomainModel' }],
+      },
+      {
+        name: 'an abstract method declares no behaviour',
+        code: `abstract class BankAccount {
+  private balance = 0;
+  abstract withdraw(amount: number): void;
+}`,
+        filename,
+        errors: [{ messageId: 'anemicDomainModel' }],
+      },
+    ],
+  });
+});

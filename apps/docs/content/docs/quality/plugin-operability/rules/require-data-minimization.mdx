@@ -20,7 +20,13 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## Rule Details
 
-This rule detects when applications collect excessive user data by flagging objects with more than 10 properties that include common PII fields (email, name, phone, address).
+This rule detects when applications collect excessive user data. It reports an object literal that:
+
+- writes more than `maxProperties` properties (default 10). A spread (`...rest`) copies a set the code does not show, so it does not count;
+- includes one of `piiFields` as a key, in any spelling (`email`, `'email'`, `['email']`); and
+- collects: at least one value is read at run time. An object of literals only is configuration and is not reported.
+
+Which fields are personal is a fact about your schema, so the rule ships with **no** `piiFields` and, until you name some, reports nothing.
 
 ### Why This Matters
 
@@ -104,7 +110,7 @@ The following patterns are **not detected** due to static analysis limitations:
 
 ### Data Collection via Spread Operators
 
-**Why**: Spread operators copy all properties, but we can't analyze the source object statically.
+**Why**: Spread operators copy all properties, but we can't analyze the source object statically, so a spread does not count toward `maxProperties`.
 
 ```typescript
 // ❌ NOT DETECTED - Spread may copy excessive fields
@@ -149,7 +155,18 @@ Object.assign(userData, req.body); // Copies all fields
 
 ## ⚙️ Configuration
 
-This rule has no configuration options. It flags any object literal with >10 properties that contains common PII fields.
+| Option          | Type       | Default | Description                                                                         |
+| --------------- | ---------- | ------- | ----------------------------------------------------------------------------------- |
+| `piiFields`     | `string[]` | `[]`    | Property names this project treats as personal data. Empty: the rule stays silent   |
+| `maxProperties` | `number`   | `10`    | How many written properties in one object literal count as excessive breadth        |
+
+```javascript
+{
+  rules: {
+    'operability/require-data-minimization': ['warn', { piiFields: ['email', 'phone', 'ssn'], maxProperties: 8 }]
+  }
+}
+```
 
 ## 🔗 Related Rules
 

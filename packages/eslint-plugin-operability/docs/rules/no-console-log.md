@@ -69,6 +69,8 @@ flowchart TD
     class K processNode
 ```
 
+The rule reports a call `<source>.<method>(...)`, dotted or subscripted (`console['log']`), where `<source>` is one of `sourcePatterns` and `<method>` is a key of the effective severity map with a non-empty value (`log` by default, plus every key of `severityMap`; mapping a method to `''` turns it off). `console` means the **global** console, decided by binding: the global itself or an import of `console` / `node:console`. A parameter or local named `console` (an injected logger) is not reported. Other `sourcePatterns` names match as configured.
+
 ### Why This Matters
 
 | Issue                | Impact                                | Solution                    |
@@ -89,6 +91,7 @@ flowchart TD
 | `severityMap`      | `object`                                       | `{}`          | Map method names to logger methods (e.g., `{ log: 'info', debug: 'verbose' }`)  |
 | `autoDetectLogger` | `boolean`                                      | `true`        | Auto-detect logger import in file                                               |
 | `sourcePatterns`   | `string[]`                                     | `['console']` | Object names to match and replace (e.g., `['console', 'winston', 'oldLogger']`) |
+| `ignoreNonProductionPaths` | `boolean`                              | `true`        | Skip directories that never ship (`scripts/`, `tools/`, `env/`, `benchmarks/`, examples, demos, fixtures) and build-tool config |
 | ~~`customLogger`~~ | `string`                                       | `'logger'`    | **Deprecated:** Use `loggerName` instead                                        |
 
 ### Strategy Comparison

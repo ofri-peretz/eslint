@@ -58,6 +58,9 @@ const PLUGINS = [
   'typeorm-security',
   'knex-security',
   'reliability',
+  'operability',
+  'modularity',
+  'modernization',
   'react-a11y',
 ];
 

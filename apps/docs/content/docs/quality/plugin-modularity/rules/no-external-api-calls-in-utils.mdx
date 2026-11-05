@@ -1,6 +1,6 @@
 ---
 title: no-external-api-calls-in-utils
-description: "ESLint Rule: no-external-api-calls-in-utils with LLM-optimized suggestions and auto-fix capabilities."
+description: "Report network calls inside utility modules, where an HTTP client makes the helper untestable without the network."
 tags: ['architecture', 'modularity']
 category: modularity
 autofix: suggestions
@@ -12,144 +12,114 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+Report a network call made inside a utility module. A helper that reaches the network cannot be tested, reused or run offline without it; the client belongs in a service, or is passed in.
+
+This rule is part of [`eslint-plugin-modularity`](https://www.npmjs.com/package/eslint-plugin-modularity).
+
 ## Quick Summary
 
-| Aspect         | Details                                      |
-| -------------- | -------------------------------------------- |
-| **Severity**   | Error (code quality)                        |
-| **Auto-Fix**   | ❌ No                                        |
-| **Category**   | Modularity |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration      |
-| **Best For**   | Production applications                      |
-| **Suggestions** | ✅ 4 available           |
+| Aspect          | Details                                                     |
+| --------------- | ----------------------------------------------------------- |
+| **Severity**    | Error (code quality)                                        |
+| **Auto-Fix**    | ❌ No                                                       |
+| **Category**    | Modularity                                                  |
+| **Suggestions** | ✅ Inject the client, extract to a service, pass the client |
 
 ## Rule Details
 
-```mermaid
-%%{init: {
-  'theme': 'base',
-  'themeVariables': {
-    'primaryColor': '#f8fafc',
-    'primaryTextColor': '#1e293b',
-    'primaryBorderColor': '#334155',
-    'lineColor': '#475569',
-    'c0': '#f8fafc',
-    'c1': '#f1f5f9',
-    'c2': '#e2e8f0',
-    'c3': '#cbd5e1'
-  }
-}}%%
-flowchart TD
-    A["🔍 Detect no external api calls in utils"] --> B{"Valid pattern?"}
-    B -->|❌ No| C["🚨 Report violation"]
-    B -->|✅ Yes| D["✅ Pass"]
+In a utility file, the rule reports a call whose callee resolves, by its
+binding, to an HTTP client:
 
-    classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
-    classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
+- the global `fetch`, also written `globalThis.fetch` / `window.fetch`;
+- a value imported or required from one of `httpModules` (axios, got, ky,
+  node-fetch, undici, superagent, needle, phin, `http`, `https`, `http2`, with
+  or without the `node:` prefix), called directly (`axios(config)`) or through
+  one of `networkMethods` (`axios.get(url)`, `axios['post'](url)`,
+  `https.get(url)`);
+- a client derived from one by a `const` (`const api = axios.create()`, then
+  `api.get(url)`).
 
-    class A startNode
-    class C errorNode
+It does not report:
 
-```
+- a client passed in as a parameter. Injecting the client is the fix this rule
+  suggests, so `function load(url, fetch) { return fetch(url); }` and
+  `function load(url, axios) { return axios.get(url); }` are not findings, even
+  when an import of the same name exists in an outer scope;
+- other methods of a client (`axios.create()`, `axios.isAxiosError(e)`), a
+  `Map#get`, or a function imported from a module that is not an HTTP client
+  (lodash's `get`);
+- a test file (`*.test.*`, `*.spec.*`) while `ignoreInTests` is true;
+- any file outside `utilityPatterns`.
 
-
-### Why This Matters
-
-| Issue                | Impact                                | Solution                    |
-| -------------------- | ------------------------------------- | --------------------------- |
-| 🔒 **Security/Code Quality** | [Specific issue] | [Solution approach] |
-| 🐛 **Maintainability** | [Impact] | [Fix] |
-| ⚡ **Performance**   | [Impact] | [Optimization] |
+An undeclared identifier spelled like a client module (`axios.get(url)` with no
+import in the file) is still reported, for the CDN global it most often is.
 
 ## Configuration
 
-**No configuration options available.**
+| Option             | Type       | Default                                         | Description                                                                                                         |
+| ------------------ | ---------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `utilityPatterns`  | `string[]` | `['**/utils/**', '**/helpers/**', '**/lib/**']` | Globs (`**` any number of directories, `*` within one segment) for the files the rule checks                                                |
+| `httpModules`      | `string[]` | the list above                                  | Modules whose imports and requires are HTTP clients                                                                 |
+| `networkMethods`   | `string[]` | `get post put patch delete head options request fetch all stream` | Methods that send a request on a client. A dotted entry (`'httpClient.get'`) names an in-house client exactly, by name |
+| `ignoreInTests`    | `boolean`  | `true`                                          | Skip `*.test.*` / `*.spec.*` files                                                                                  |
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```typescript
-// Example of incorrect usage
+// src/utils/user.ts
+import axios from 'axios';
+
+export async function loadUser(id: string) {
+  const { data } = await axios.get(`/api/users/${id}`);
+  return data;
+}
+
+export const ping = () => fetch('/health');
 ```
 
 ### ✅ Correct
 
 ```typescript
-// Example of correct usage
+// src/utils/user.ts: the client is passed in
+export async function loadUser(id: string, http: { get(url: string): Promise<{ data: unknown }> }) {
+  const { data } = await http.get(`/api/users/${id}`);
+  return data;
+}
+
+// src/services/user-service.ts: services own the network
+import axios from 'axios';
+export const loadUser = (id: string) => axios.get(`/api/users/${id}`);
 ```
 
 ## Configuration Examples
-
-### Basic Usage
 
 ```javascript
 // eslint.config.mjs
 export default [
   {
     rules: {
-      'modularity/no-external-api-calls-in-utils': 'error',
+      'modularity/no-external-api-calls-in-utils': [
+        'error',
+        { utilityPatterns: ['**/shared/**'], networkMethods: ['get', 'post', 'apiClient.get'] },
+      ],
     },
   },
 ];
 ```
 
-## LLM-Optimized Output
-
-```
-🚨 no external api calls in utils | Description | MEDIUM
-   Fix: Suggestion | Reference
-```
-
 ## Related Rules
 
-- [`rule-name`](./rule-name) - Description
+- [`no-mutable-exports`](./no-mutable-exports) - Keep module interfaces stable
 
-## Further Reading
-
-- **[Reference](https://example.com)** - Description
 <WhenNotToUse />
 
 <FalseNegativeCTA />
 
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = externalSource();
-processValue(value); // Variable origin not tracked
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Wrapped or Aliased Functions
-
-**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-function myWrapper(data) {
-  return internalApi(data); // Wrapper not analyzed
-}
-myWrapper(unsafeInput);
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- A wrapper the rule cannot trace (`import { http } from './http'`, an in-house
+  client) is not recognised; name it in `networkMethods` as `'http.get'`.
+- A client destructured from an import (`const { get } = axios`) is not
+  followed.

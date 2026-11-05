@@ -28,6 +28,16 @@ Prefer `EventTarget` over `EventEmitter` for isomorphic code. This rule is part 
 
 `EventTarget` is available in both browsers and Node.js (v14.5+), while `EventEmitter` is Node.js-specific.
 
+The rule reports Node's EventEmitter, found by where the binding comes from (`events` / `node:events`). A named or renamed import and a `require` destructure (plain or quoted key) are reported where they are bound. The default import (the module's default export is EventEmitter) and the required module itself (`const E = require('events')`) are reported where they are used, at `new E()` or `class Bus extends E`, because the same binding also reaches other `events` exports such as `E.once`. A namespace member (`ev.EventEmitter`) and `require('events').EventEmitter` are reported where they are read. `require` must be Node's loader, either the global or one made by `createRequire`.
+
+It does not report an `EventEmitter` from another module (Angular's `@angular/core` EventEmitter is an RxJS Subject), a class the file declares itself, a member of a parameter (`events.EventEmitter` where `events` is passed in), or other `events` exports such as `once`. A named binding (`import { EventEmitter }`, `const { EventEmitter } = require('events')`) is reported once, where it is bound. An undeclared `EventEmitter` or `events.EventEmitter` is still reported by name.
+
+## Configuration
+
+| Option              | Type      | Default | Description                  |
+| ------------------- | --------- | ------- | ---------------------------- |
+| `allowEventEmitter` | `boolean` | `false` | Turn the rule off            |
+
 ### Why This Matters
 
 | Issue                     | Impact                          | Solution                  |

@@ -143,4 +143,42 @@ describe('ddd-value-object-immutability', () => {
       invalid: [],
     });
   });
+
+  // Found by the fidelity model (benchmarks/suites/fidelity/models/modularity).
+  describe('parameter properties and what Object.freeze freezes', () => {
+    ruleTester.run('fidelity', dddValueObjectImmutability, {
+      valid: [
+        {
+          name: 'a readonly parameter property',
+          code: 'class PriceValueObject { constructor(private readonly amount: number) {} }',
+        },
+        {
+          name: 'a static field is class state, not instance value',
+          code: 'class PriceValueObject { static count = 0; readonly amount = 0; }',
+        },
+        {
+          name: 'requireReadonly: false turns the check off for parameter properties too',
+          code: 'class PriceValueObject { constructor(public amount: number) {} }',
+          options: [{ requireReadonly: false }],
+        },
+      ],
+      invalid: [
+        {
+          name: 'a parameter property without readonly is a mutable field',
+          code: 'class PriceValueObject { constructor(public amount: number) {} }',
+          errors: [{ messageId: 'mutableValueObject' }],
+        },
+        {
+          name: 'freezing a nested value leaves the fields writable',
+          code: 'class PriceValueObject { amount = 0; items: string[] = []; constructor() { Object.freeze(this.items); } }',
+          errors: [{ messageId: 'mutableValueObject' }],
+        },
+        {
+          name: 'Object.freeze() with no argument freezes nothing',
+          code: 'class PriceValueObject { amount = 0; constructor() { (Object.freeze as any)(); } }',
+          errors: [{ messageId: 'mutableValueObject' }],
+        },
+      ],
+    });
+  });
 });

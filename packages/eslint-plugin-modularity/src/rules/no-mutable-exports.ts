@@ -20,7 +20,7 @@
  *   export class Foo { ... }         // class declaration (always immutable)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, variableOf } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noMutableExport';
@@ -62,6 +62,28 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
     return {
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
         const decl = node.declaration;
+        // `let count = 0; export { count }` exports the same live binding as
+        // `export let count`. A re-export (`export { x } from './m'`) has no
+        // declaration in this file to read.
+        if (!decl && !node.source) {
+          for (const specifier of node.specifiers) {
+            // Without `from`, the local side is always an identifier: a string
+            // name (`export { 'a b' as c }`) is only valid on a re-export.
+            const local = specifier.local as TSESTree.Identifier;
+            const def = variableOf(local, context.sourceCode)?.defs[0];
+            if (
+              def?.type !== 'Variable' ||
+              (def.parent.kind !== 'let' && def.parent.kind !== 'var')
+            )
+              continue;
+            context.report({
+              node: specifier,
+              messageId: 'noMutableExport',
+              data: { kind: def.parent.kind },
+            });
+          }
+          return;
+        }
         if (!decl || decl.type !== 'VariableDeclaration') return;
         if (decl.kind !== 'let' && decl.kind !== 'var') return;
 

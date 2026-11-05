@@ -19,6 +19,7 @@ import {
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import { isNonProductionPath } from '../../lib/non-production-paths';
+import { isGlobalObject } from '../../lib/global-binding';
 
 type MessageIds = 'violationDetected';
 
@@ -111,7 +112,9 @@ export const noDebugCodeInProduction = createRule<RuleOptions, MessageIds>({
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           node.callee.object.type === AST_NODE_TYPES.Identifier &&
-          node.callee.object.name === 'console' &&
+          // The global console, by binding: a `console` the code declares (a
+          // parameter, an injected logger) is not debug output to stdout.
+          isGlobalObject(node.callee.object, 'console', context.sourceCode) &&
           propertyName(node.callee) === 'log'
         ) {
           context.report({ node, messageId: 'violationDetected' });

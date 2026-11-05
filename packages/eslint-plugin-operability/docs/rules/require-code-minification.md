@@ -41,10 +41,12 @@ Detects build configurations where minification is explicitly disabled. This rul
 
 ## Rule Details
 
-This rule detects:
+This rule reports a minification setting (`minificationKeys`: webpack writes `minimize`; Vite, Rollup, esbuild and Terser write `minify`) explicitly set to `false`, the literal or a `const` bound to it, in every spelling of the key:
 
-- `minimize: false` in webpack/build configurations
-- Explicitly disabled minification settings
+- an object property: `minify: false`, `'minify': false`, `['minify']: false`;
+- a member assignment: `config.build.minify = false`, `config.build['minify'] = false`.
+
+It does not report `true`, a tool name (`minify: 'esbuild'`), or a value the code does not prove (`minify: flag`).
 
 ## Why This Matters
 
@@ -56,12 +58,14 @@ This rule detects:
 
 ## Configuration
 
-This rule has no configuration options.
+| Option             | Type       | Default                  | Description                                                    |
+| ------------------ | ---------- | ------------------------ | -------------------------------------------------------------- |
+| `minificationKeys` | `string[]` | `['minimize', 'minify']` | Property names that turn minification off. Replaces the default |
 
 ```javascript
 {
   rules: {
-    'operability/require-code-minification': 'warn'
+    'operability/require-code-minification': ['warn', { minificationKeys: ['minimize', 'minify', 'compress'] }]
   }
 }
 ```
