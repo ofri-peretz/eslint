@@ -1,7 +1,7 @@
 {
-  "releaseCount": 967,
+  "releaseCount": 970,
   "packageCount": 66,
-  "entryCount": 2575,
+  "entryCount": 2582,
   "oldestYear": 2024,
   "releases": [
     {
@@ -22270,6 +22270,21 @@
       ]
     },
     {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.21.6",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "module-graph rules read every import spelling, judge what a specifier resolves to, and stay silent on what they cannot know, found by fidelity models for no-unresolved, no-cycle, extensions, no-useless-path-segments, no-relative-packages, no-extraneous-dependencies, no-barrel-file, no-barrel-import and prefer-direct-import.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.2.0",
@@ -22280,6 +22295,41 @@
         {
           "kind": "feature",
           "title": "the formatter is published. `eslint -f @interlace/eslint-formatter` emits ~408 tokens where `stylish` emits ~104,483, at the same measured signal score.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.9.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "module-syntax and export-style rules decide by binding and structure, read every import spelling, and honour their documented options, found by fidelity models.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "module-graph rules read every spelling and decide by binding, found by fidelity models for export, default, named, namespace, no-duplicates, no-self-import, no-unused-modules, no-named-as-default, no-named-as-default-member and no-deprecated.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "module-graph rules read every import spelling, judge what a specifier resolves to, and stay silent on what they cannot know, found by fidelity models for no-unresolved, no-cycle, extensions, no-useless-path-segments, no-relative-packages, no-extraneous-dependencies, no-barrel-file, no-barrel-import and prefer-direct-import.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "architecture and ecosystem rules read every import spelling and decide by the path an import resolves to, found by fidelity models.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.6`",
           "pr": null
         }
       ]
@@ -22545,6 +22595,21 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-import-next",
+      "short": "oxlint-plugin-import-next",
+      "version": "2.9.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-import-next@2.9.2`",
           "pr": null
         }
       ]
