@@ -334,7 +334,6 @@
     "onMouseUp"
   ],
   "packages/eslint-plugin-react-features/src/rules/react/sort-comp.ts#DEFAULT_ORDER": [
-    "everything-else",
     "instance-variables",
     "static-methods",
     "static-variables"

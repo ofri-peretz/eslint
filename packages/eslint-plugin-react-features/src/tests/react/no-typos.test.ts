@@ -355,3 +355,33 @@ describe('no-typos', () => {
   });
 });
 
+
+describe('no-typos: every React API name in another letter case', () => {
+  const instance = ['ComponentDidCatch', 'GetChildContext', 'Render'];
+  const statics = [
+    'ChildContextTypes',
+    'ContextType',
+    'ContextTypes',
+    'DisplayName',
+  ];
+  ruleTester.run('case variants', noTypos, {
+    valid: [],
+    invalid: [
+      ...instance.map((name) => ({
+        name: `instance ${name}() is a misspelled lifecycle`,
+        code: `import React from 'react'; class C extends React.Component { ${name}() { return null; } }`,
+        errors: [{ messageId: 'noTypos' as const }],
+      })),
+      ...statics.map((name) => ({
+        name: `static ${name} is a misspelled static`,
+        code: `import React from 'react'; class C extends React.Component { static ${name} = {}; }`,
+        errors: [{ messageId: 'noTypos' as const }],
+      })),
+      {
+        name: 'static GetDerivedStateFromError() is a misspelled static',
+        code: `import React from 'react'; class C extends React.Component { static GetDerivedStateFromError() { return {}; } }`,
+        errors: [{ messageId: 'noTypos' }],
+      },
+    ],
+  });
+});
