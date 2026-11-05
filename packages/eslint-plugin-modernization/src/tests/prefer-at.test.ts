@@ -384,6 +384,22 @@ describe('prefer-at', () => {
           code: 'function f() { const g = () => arguments[arguments.length - 2]; return g; }',
         },
         {
+          name: 'a fractional offset reads no element, so it is not a from-the-end read',
+          code: 'const v = xs[xs.length - 1.5];',
+        },
+        {
+          name: 'a non-null wrapped write target is still a write',
+          code: '(xs[xs.length - 1]!) = value;',
+        },
+        {
+          name: 'an as-wrapped write target is still a write',
+          code: '(xs[xs.length - 1] as number) = value;',
+        },
+        {
+          name: 'a dotted key and a nested path are different receivers',
+          code: "const v = obj['a.b'][obj.a.b.length - 1];",
+        },
+        {
           name: 'checkLastElement: false stops the last-element report',
           code: 'const last = xs[xs.length - 1];',
           options: [{ checkLastElement: false }],

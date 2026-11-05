@@ -327,6 +327,10 @@ ruleTester.run('no-process-exit — decided by binding', noProcessExit, {
       code: 'process.exitCode = 1;',
     },
     {
+      name: 'exit on an object imported from another module',
+      code: "import { worker } from './worker';\nworker.exit(1);",
+    },
+    {
       name: 'exit on another object',
       code: 'worker.exit(1);',
     },
@@ -384,6 +388,16 @@ ruleTester.run('no-process-exit — decided by binding', noProcessExit, {
     {
       name: 'renamed with a default, from globalThis.process',
       code: 'const { exit: quit = () => {} } = globalThis.process;\nquit(1);',
+      errors: [{ messageId: 'noProcessExit' }],
+    },
+    {
+      name: 'a const alias of process.exit',
+      code: 'const quit = process.exit;\nquit(1);',
+      errors: [{ messageId: 'noProcessExit' }],
+    },
+    {
+      name: 'a const alias of a destructured exit',
+      code: 'const { exit } = process;\nconst quit = exit;\nquit(1);',
       errors: [{ messageId: 'noProcessExit' }],
     },
     {

@@ -55,7 +55,7 @@ The rule provides **LLM-optimized error messages** with actionable architectural
 
 This rule identifies classes that don't satisfy the minimum requirement of business logic methods. It ignores standard Data Transfer Objects (DTOs) by default using configurable naming patterns, and checks only files in a domain directory (`domainPaths`).
 
-A business method is behaviour, written as a method or as an arrow-function class property (`withdraw = (amount) => { ... }`). Not business methods: the constructor, `get` / `set` accessors, a one-statement `get*` method that returns a value, a one-assignment `set*` method, and a one-statement delegation to a member such as `this.repository`. Anonymous classes are not reported.
+A business method is behaviour, written as a method or as an arrow-function class property (`withdraw = (amount) => { ... }`). A concise arrow body (`getBalance = () => this.balance`) is read as a one-statement `return`, and a quoted method name as the same name. Not business methods: the constructor, `get` / `set` accessors, a one-statement `get*` method that returns a value, a one-assignment `set*` method, and a one-statement delegation to a member such as `this.repository`. Anonymous classes are not reported.
 
 ```mermaid
 %%{init: {

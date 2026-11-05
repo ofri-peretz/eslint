@@ -238,7 +238,8 @@ export const dddValueObjectImmutability = createRule<RuleOptions, MessageIds>({
       const mutableProperties: TSESTree.Node[] = [];
 
       for (const member of node.body.body) {
-        if (member.type === 'PropertyDefinition') {
+        // A static field is class state, not the value of an instance.
+        if (member.type === 'PropertyDefinition' && !member.static) {
           if (requireReadonly && !hasReadonlyModifier(member)) {
             mutableProperties.push(member);
           }

@@ -30,6 +30,15 @@ function unwrapNonNull(node: TSESTree.Node): TSESTree.Node {
 
 type RuleOptions = [Options?];
 
+/** TS wrappers (and a parenthesised optional chain) erase at runtime. */
+const TRANSPARENT_WRAPPERS = new Set([
+  'TSNonNullExpression',
+  'TSAsExpression',
+  'TSSatisfiesExpression',
+  'TSTypeAssertion',
+  'ChainExpression',
+]);
+
 /**
  * Is this member expression being WRITTEN to rather than read?
  *
@@ -44,8 +53,15 @@ type RuleOptions = [Options?];
  * expression directly under those nodes, and the fix produced an invalid
  * assignment target for each.
  */
-function isWriteTarget(node: TSESTree.MemberExpression): boolean {
-  const parent = node.parent as TSESTree.Node;
+function isWriteTarget(target: TSESTree.MemberExpression): boolean {
+  // `(xs[i]!) = v` and `(xs[i] as T) = v` still write xs[i]: the TS wrappers
+  // erase at runtime, so read the position above them.
+  let node: TSESTree.Node = target;
+  let parent = node.parent as TSESTree.Node;
+  while (TRANSPARENT_WRAPPERS.has(parent.type)) {
+    node = parent;
+    parent = node.parent as TSESTree.Node;
+  }
   switch (parent.type) {
     case 'RestElement':
       return true;
@@ -83,13 +99,6 @@ function isWriteTarget(node: TSESTree.MemberExpression): boolean {
  * optional chain erase at runtime — `(a.b[i] as F)()` still binds `this` to
  * `a.b` — so walk through them before checking the call.
  */
-const TRANSPARENT_WRAPPERS = new Set([
-  'TSNonNullExpression',
-  'TSAsExpression',
-  'TSSatisfiesExpression',
-  'TSTypeAssertion',
-  'ChainExpression',
-]);
 
 function isCalleeOrTag(node: TSESTree.MemberExpression): boolean {
   let child: TSESTree.Node = node;
@@ -244,7 +253,8 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
             receiver.property.type === 'PrivateIdentifier'
               ? context.sourceCode.getText(receiver.property)
               : propertyName(receiver);
-          return key === null ? null : `${base}.${key}`;
+          // Each key is quoted, so `o['a.b']` and `o.a.b` cannot render alike.
+          return key === null ? null : `${base}[${JSON.stringify(key)}]`;
         };
 
         const arrayName = receiverPath(node.object);
@@ -264,6 +274,9 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           propertyName(node.property.left) === 'length' &&
           node.property.right.type === 'Literal' &&
           typeof node.property.right.value === 'number' &&
+          // A fractional index reads no element (undefined), while `.at()`
+          // truncates it to one, so only whole offsets are from-the-end reads.
+          Number.isInteger(node.property.right.value) &&
           node.property.right.value > 0
         ) {
           const offset = node.property.right.value;

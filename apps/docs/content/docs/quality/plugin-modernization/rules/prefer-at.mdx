@@ -34,7 +34,8 @@ It does not report:
 
 - a write target (`xs[xs.length - 1] = v`, `++`, `delete`, destructuring targets): `.at()` returns a value, not a reference;
 - the implicit `arguments` object, which has no `.at()` method;
-- another receiver's length (`a[b.length - 1]`) or a zero offset.
+- another receiver's length (`a[b.length - 1]`, including `o['a.b']` against `o.a.b`), a zero offset, or a fractional one (`xs[xs.length - 1.5]` reads no element).
+- a write target wrapped in a TS assertion (`(xs[xs.length - 1]!) = v`).
 
 ## Configuration
 

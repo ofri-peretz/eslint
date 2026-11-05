@@ -26,8 +26,9 @@ import {
 type SourceCode = Readonly<TSESLint.SourceCode>;
 
 /**
- * Is `node` the global `name` - an undeclared `name`, or `globalThis.name` -
- * possibly through a `const` alias (`const p = process`)?
+ * Is `node` the global `name` - an undeclared `name`, `globalThis.name`, or
+ * the `name` / `node:name` module itself - possibly through a `const` alias
+ * (`const p = process`)?
  */
 export function isGlobalObject(
   node: TSESTree.Node,
@@ -35,6 +36,12 @@ export function isGlobalObject(
   sourceCode: SourceCode,
 ): boolean {
   const target = followConst(node, sourceCode);
+  // `import console from 'node:console'`, `const p = require('process')`: the
+  // module is the same object as the global.
+  const binding = resolveModuleBinding(target, sourceCode.getScope(target));
+  if (binding !== undefined) {
+    return binding.module === name && binding.path.length === 0;
+  }
   if (target.type === 'Identifier') {
     return target.name === name && isGlobalReference(target, sourceCode);
   }
@@ -85,9 +92,11 @@ function isDestructuredFromGlobal(
  * Is this callee Node's `process.exit`, in any spelling the code can bind it?
  */
 export function isProcessExit(
-  callee: TSESTree.Node,
+  node: TSESTree.Node,
   sourceCode: SourceCode,
 ): boolean {
+  // `const quit = process.exit; quit(1)` calls the same function.
+  const callee = followConst(node, sourceCode);
   // `import proc from 'node:process'`, `import { exit as quit } from
   // 'process'`, `require('process').exit`.
   const binding = resolveModuleBinding(callee, sourceCode.getScope(callee));

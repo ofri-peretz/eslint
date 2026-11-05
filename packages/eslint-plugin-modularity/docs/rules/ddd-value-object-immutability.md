@@ -33,6 +33,9 @@ declares instance state without `readonly`:
 - a constructor parameter property (`constructor(public amount: number)`),
   which declares the same field.
 
+Static fields are class state, not the value of an instance, and are not
+checked.
+
 It does not report a value object that:
 
 - declares only `readonly` fields and `readonly` parameter properties;

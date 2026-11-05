@@ -204,6 +204,22 @@ describe('prefer-event-target', () => {
           code: "import * as ev from 'events';\nclass Bus extends ev.a.b {}",
         },
         {
+          name: 'a require parameter is not the module loader',
+          code: "function load(require: (id: string) => any) { const { EventEmitter } = require('events'); return EventEmitter; }",
+        },
+        {
+          name: 'a member of a local require call is not the module loader',
+          code: "function load(require: (id: string) => any) { return new (require('events').EventEmitter)(); }",
+        },
+        {
+          name: 'a require made by something other than createRequire',
+          code: "const require = makeLoader();\nconst { EventEmitter } = require('events');",
+        },
+        {
+          name: 'a require function declaration is not the loader',
+          code: "function require(id: string): any { return id; }\nconst { EventEmitter } = require('events');",
+        },
+        {
           name: 'other exports of events are not EventEmitter',
           code: "import { once } from 'events';\nvoid once;",
         },
@@ -238,6 +254,11 @@ describe('prefer-event-target', () => {
           name: 'extends on a destructured require reports once, at the require',
           code: "const { EventEmitter } = require('events');\nclass Bus extends EventEmitter {}",
           errors: [{ messageId: 'preferEventTarget', line: 1 }],
+        },
+        {
+          name: 'a createRequire loader is the module loader',
+          code: "import { createRequire } from 'node:module';\nconst require = createRequire(import.meta.url);\nconst { EventEmitter } = require('events');",
+          errors: [{ messageId: 'preferEventTarget' }],
         },
         {
           name: 'new on a named import reports once, at the import',

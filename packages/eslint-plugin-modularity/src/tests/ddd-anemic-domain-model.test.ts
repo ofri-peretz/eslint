@@ -630,6 +630,46 @@ describe('ddd-anemic-domain-model — arrow-function methods are methods', () =>
         errors: [{ messageId: 'anemicDomainModel' }],
       },
       {
+        name: 'a concise arrow getter is not behaviour',
+        code: `class BankAccount {
+  private balance = 0;
+  getBalance = () => this.balance;
+}`,
+        filename,
+        errors: [{ messageId: 'anemicDomainModel' }],
+      },
+      {
+        name: 'a concise arrow delegation is not behaviour',
+        code: `class BankAccount {
+  private repository: any;
+  load = () => this.repository.load(this);
+}`,
+        filename,
+        errors: [{ messageId: 'anemicDomainModel' }],
+      },
+      {
+        name: 'a quoted getter name is the same getter',
+        code: `class BankAccount {
+  private balance = 0;
+  'getBalance' = () => {
+    return this.balance;
+  };
+}`,
+        filename,
+        errors: [{ messageId: 'anemicDomainModel' }],
+      },
+      {
+        name: 'a run-time key names no getter, so an empty method is behaviour-free',
+        code: `const k = Math.random() > 0.5 ? 'a' : 'b';
+class BankAccount {
+  private balance = 0;
+  [k]() {}
+}`,
+        filename,
+        options: [{ minBusinessMethods: 2 }],
+        errors: [{ messageId: 'anemicDomainModel' }],
+      },
+      {
         name: 'an abstract method declares no behaviour',
         code: `abstract class BankAccount {
   private balance = 0;

@@ -320,12 +320,25 @@ describe('no-external-api-calls-in-utils — clients by binding', () => {
         filename,
       },
       {
+        name: '* stays inside one path segment',
+        code: "import axios from 'axios';\nexport const read = (u: string) => axios.get(u);",
+        filename: '/src/shared/a/b/load.ts',
+        options: [{ utilityPatterns: ['src/shared/*/load.ts'] }],
+      },
+      {
         name: 'a window that the code declares is not the global',
         code: 'export function load(url: string, window: { fetch(u: string): unknown }) { return window.fetch(url); }',
         filename,
       },
     ],
     invalid: [
+      {
+        name: '** spans several directories in utilityPatterns',
+        code: "import axios from 'axios';\nexport const read = (u: string) => axios.get(u);",
+        filename: '/src/shared/a/b/utils/load.ts',
+        options: [{ utilityPatterns: ['**/shared/**/utils/**'] }],
+        errors: [{ messageId: 'externalApiCallInUtils' }],
+      },
       {
         name: 'a subscripted method on an imported client',
         code: "import axios from 'axios';\nexport const send = (u: string) => axios['post'](u);",

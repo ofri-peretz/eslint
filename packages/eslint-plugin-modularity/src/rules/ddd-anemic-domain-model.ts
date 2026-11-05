@@ -13,7 +13,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, objectKeyName } from '@interlace/eslint-devkit';
 
 type MessageIds =
   | 'anemicDomainModel'
@@ -83,43 +83,56 @@ function isDto(className: string, dtoPatterns: string[]): boolean {
  * class property `withdraw = (n) => { ... }`, which carries the same behaviour.
  */
 type ClassMethod = {
-  key: TSESTree.PropertyName;
+  /** `getBalance`, `'getBalance'` and `['getBalance']` name the same method. */
+  name: string;
   value: TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression;
 };
 
 /** A class member that is a method, in either spelling. */
 function asClassMethod(member: TSESTree.ClassElement): ClassMethod | null {
-  if (member.type === 'MethodDefinition') {
-    // A method's value is always a function expression (or, for a TS
-    // overload signature, an empty-bodied one, which counts as nothing).
-    return member.value.type === 'FunctionExpression'
-      ? { key: member.key, value: member.value }
+  // A method's value is always a function expression (or, for a TS overload
+  // signature, an empty-bodied one, which counts as nothing).
+  const value =
+    member.type === 'MethodDefinition' || member.type === 'PropertyDefinition'
+      ? member.value
       : null;
-  }
   if (
-    member.type === 'PropertyDefinition' &&
-    (member.value?.type === 'ArrowFunctionExpression' ||
-      member.value?.type === 'FunctionExpression')
+    value?.type !== 'FunctionExpression' &&
+    value?.type !== 'ArrowFunctionExpression'
   ) {
-    return { key: member.key, value: member.value };
+    return null;
   }
-  return null;
+  const named = member as
+    TSESTree.MethodDefinition | TSESTree.PropertyDefinition;
+  // A key chosen at run time (`[k]() {}`) names no getter or setter.
+  return { name: objectKeyName(named) ?? '', value };
 }
 
 /**
  * Check if a method is a simple getter/setter in disguise
  */
-function isSimpleGetterSetter(member: ClassMethod): boolean {
-  const methodName = member.key.type === 'Identifier' ? member.key.name : '';
+/**
+ * The statements a method runs. A concise arrow body (`() => this.balance`)
+ * is one `return` of its expression.
+ */
+function statementsOf(member: ClassMethod): TSESTree.Statement[] {
   const body = member.value.body;
+  return body.type === 'BlockStatement'
+    ? body.body
+    : [{ type: 'ReturnStatement', argument: body } as TSESTree.ReturnStatement];
+}
 
-  if (body.type !== 'BlockStatement' || body.body.length === 0) {
+function isSimpleGetterSetter(member: ClassMethod): boolean {
+  const methodName = member.name;
+  const statements = statementsOf(member);
+
+  if (statements.length === 0) {
     return false;
   }
 
   // Check if it's a simple getter (getName() { return this.name; })
-  if (methodName.startsWith('get') && body.body.length === 1) {
-    const statement = body.body[0];
+  if (methodName.startsWith('get') && statements.length === 1) {
+    const statement = statements[0];
     if (statement.type === 'ReturnStatement' && statement.argument) {
       // Simple return statement
       return true;
@@ -127,8 +140,8 @@ function isSimpleGetterSetter(member: ClassMethod): boolean {
   }
 
   // Check if it's a simple setter (setName(name) { this.name = name; })
-  if (methodName.startsWith('set') && body.body.length === 1) {
-    const statement = body.body[0];
+  if (methodName.startsWith('set') && statements.length === 1) {
+    const statement = statements[0];
     if (
       statement.type === 'ExpressionStatement' &&
       statement.expression.type === 'AssignmentExpression'
@@ -147,13 +160,13 @@ function isSimpleGetterSetter(member: ClassMethod): boolean {
  * Does NOT count calls to array methods, built-ins, or methods on this
  */
 function isPureDelegation(member: ClassMethod): boolean {
-  const body = member.value.body;
+  const statements = statementsOf(member);
 
-  if (body.type !== 'BlockStatement' || body.body.length !== 1) {
+  if (statements.length !== 1) {
     return false;
   }
 
-  const statement = body.body[0];
+  const statement = statements[0];
 
   // Array/collection methods that are business logic, not delegation
   const builtInMethods = new Set([

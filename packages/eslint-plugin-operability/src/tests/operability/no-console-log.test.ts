@@ -755,6 +755,10 @@ ruleTester.run(
   {
     valid: [
       {
+        name: 'a console imported from another module is not the global console',
+        code: "import { console } from './log';\nexport function run() { console.log('x'); }",
+      },
+      {
         name: 'a console the code declares is not the global console',
         code: "const console = { log: (...a: unknown[]) => a };\nconsole.log('x');",
       },
@@ -764,6 +768,13 @@ ruleTester.run(
       },
     ],
     invalid: [
+      {
+        name: 'the node:console module is the global console',
+        code: "import console from 'node:console';\nexport function run() { console.log('x'); }",
+        output:
+          "import console from 'node:console';\nexport function run() {  }",
+        errors: [{ messageId: 'consoleLogFound' }],
+      },
       {
         name: 'the global console still reports',
         code: "export function run() { console.log('x'); }",

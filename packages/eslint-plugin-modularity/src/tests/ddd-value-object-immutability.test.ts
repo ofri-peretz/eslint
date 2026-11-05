@@ -153,6 +153,10 @@ describe('ddd-value-object-immutability', () => {
           code: 'class PriceValueObject { constructor(private readonly amount: number) {} }',
         },
         {
+          name: 'a static field is class state, not instance value',
+          code: 'class PriceValueObject { static count = 0; readonly amount = 0; }',
+        },
+        {
           name: 'requireReadonly: false turns the check off for parameter properties too',
           code: 'class PriceValueObject { constructor(public amount: number) {} }',
           options: [{ requireReadonly: false }],

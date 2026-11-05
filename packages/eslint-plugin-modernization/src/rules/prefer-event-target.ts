@@ -15,6 +15,7 @@ import {
   objectKeyName,
   propertyName,
   resolveModuleBinding,
+  variableOf,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
@@ -104,6 +105,23 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
         binding.path.length === 0 ||
         (binding.path.length === 1 && binding.path[0] === 'EventEmitter')
       );
+    }
+
+    /**
+     * Is this `require` Node's module loader: the global, or one made by
+     * `createRequire` from `module`? A `require` the code declares otherwise
+     * (a parameter, a local function) can return anything.
+     */
+    function isLoader(id: TSESTree.Identifier): boolean {
+      const def = variableOf(id, context.sourceCode)?.defs[0];
+      if (def === undefined) return true;
+      if (def.type !== 'Variable' || def.node.init?.type !== 'CallExpression')
+        return false;
+      const made = resolveModuleBinding(
+        def.node.init.callee,
+        context.sourceCode.getScope(def.node.init),
+      );
+      return made?.module === 'module' && made.path[0] === 'createRequire';
     }
 
     /**
@@ -215,7 +233,8 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         if (
           node.callee.type === 'Identifier' &&
-          node.callee.name === 'require'
+          node.callee.name === 'require' &&
+          isLoader(node.callee)
         ) {
           const arg = node.arguments[0];
           if (
@@ -265,6 +284,7 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
             node.object.type === 'CallExpression' &&
             node.object.callee.type === 'Identifier' &&
             node.object.callee.name === 'require' &&
+            isLoader(node.object.callee) &&
             node.object.arguments.length === 1 &&
             node.object.arguments[0].type === 'Literal' &&
             (node.object.arguments[0].value === 'events' ||

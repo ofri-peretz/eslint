@@ -44,9 +44,10 @@ This rule reports a `send` / `json` call (`res.send`, `res['send']`, `res.status
 - read directly: `err.stack`, `err['stack']`;
 - through a `const` (`const trace = err.stack`) or destructured from the error (`const { stack } = err`);
 - as the value of any property of an object literal, under any key, nested up to four objects deep: `{ stack: err.stack }`, `{ 'trace': err.stack }`, `{ error: { stack: err.stack } }`;
-- interpolated into a template literal or joined with `+`.
+- interpolated into a template literal, joined with `+`, or a result of `??`, `||` or a ternary;
+- inside an array literal, a spread of a `const` object that carries it, a computed key, or a getter's return value.
 
-The stack is what leaks, not the key name: `{ stack: 'hidden' }` is not reported, and neither is a value the rule cannot see into (a parameter, or `{ ...err }`, which does not copy an Error's non-enumerable `stack`). The receiver is not resolved: any object's `send` / `json` is read as a response.
+The stack is what leaks, not the key name: `{ stack: 'hidden' }` is not reported, and neither is a value the rule cannot see into (a parameter, or `{ ...err }`, which does not copy an Error's non-enumerable `stack`), or a destructured `stack` reassigned before it is sent. The receiver is not resolved: any object's `send` / `json` is read as a response.
 
 ## Why This Matters
 

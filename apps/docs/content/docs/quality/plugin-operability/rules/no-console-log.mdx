@@ -70,7 +70,7 @@ flowchart TD
 ```
 
 
-The rule reports a call `<source>.<method>(...)`, dotted or subscripted (`console['log']`), where `<source>` is one of `sourcePatterns` and `<method>` is a key of the effective severity map (`log` by default, plus every key of `severityMap`). `console` means the **global** console, decided by binding: a parameter or local named `console` (an injected logger) is not reported. Other `sourcePatterns` names match as configured.
+The rule reports a call `<source>.<method>(...)`, dotted or subscripted (`console['log']`), where `<source>` is one of `sourcePatterns` and `<method>` is a key of the effective severity map with a non-empty value (`log` by default, plus every key of `severityMap`; mapping a method to `''` turns it off). `console` means the **global** console, decided by binding: the global itself or an import of `console` / `node:console`. A parameter or local named `console` (an injected logger) is not reported. Other `sourcePatterns` names match as configured.
 
 ### Why This Matters
 

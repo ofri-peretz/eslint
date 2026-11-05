@@ -58,7 +58,7 @@ import in the file) is still reported, for the CDN global it most often is.
 
 | Option             | Type       | Default                                         | Description                                                                                                         |
 | ------------------ | ---------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `utilityPatterns`  | `string[]` | `['**/utils/**', '**/helpers/**', '**/lib/**']` | Globs (`**` any path, `*` one segment) for the files the rule checks                                                |
+| `utilityPatterns`  | `string[]` | `['**/utils/**', '**/helpers/**', '**/lib/**']` | Globs (`**` any number of directories, `*` within one segment) for the files the rule checks                                                |
 | `httpModules`      | `string[]` | the list above                                  | Modules whose imports and requires are HTTP clients                                                                 |
 | `networkMethods`   | `string[]` | `get post put patch delete head options request fetch all stream` | Methods that send a request on a client. A dotted entry (`'httpClient.get'`) names an in-house client exactly, by name |
 | `ignoreInTests`    | `boolean`  | `true`                                          | Skip `*.test.*` / `*.spec.*` files                                                                                  |

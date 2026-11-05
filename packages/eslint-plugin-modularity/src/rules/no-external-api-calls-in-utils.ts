@@ -93,8 +93,10 @@ const AMBIGUOUS_MODULE_NAMES = new Set(['request', 'got']);
  */
 function isUtilityFile(filename: string, patterns: string[]): boolean {
   return patterns.some((pattern) => {
+    // `**` spans directories, `*` stays inside one segment. Rewrite them in
+    // one pass so the `*` of a `.*` already emitted is not rewritten again.
     const regex = new RegExp(
-      pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*'),
+      pattern.replace(/\*\*|\*/g, (star) => (star === '**' ? '.*' : '[^/]*')),
     );
     return regex.test(filename);
   });
