@@ -13,11 +13,34 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { findAttribute } from '../utils/jsx-static';
+import { findAttribute, intrinsicName, judgedValue } from '../utils/jsx-static';
 
 type MessageIds = 'missingKeyboardEvent';
 
 type RuleOptions = [];
+
+// WAI-ARIA widget roles: on a component they keep the exemption the rule
+// always gave them (see below).
+const INTERACTIVE_ARIA_ROLES = new Set([
+  'button',
+  'link',
+  'checkbox',
+  'menuitem',
+  'menuitemcheckbox',
+  'menuitemradio',
+  'option',
+  'radio',
+  'searchbox',
+  'switch',
+  'tab',
+  'textbox',
+  'treeitem',
+  'combobox',
+  'gridcell',
+  'listbox',
+  'slider',
+  'spinbutton',
+]);
 
 export const clickEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
   name: 'click-events-have-key-events',
@@ -81,6 +104,18 @@ export const clickEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
           ) ||
           (tagName === 'a' && findAttribute(node, 'href') !== undefined);
         if (isInteractive) return;
+
+        // A component with an interactive role (`<Link component="button"
+        // role="link">`) may render a native control that handles keys
+        // itself: reporting it is a guess, so the exemption it always had
+        // stays for components. On an intrinsic element the role adds none.
+        if (
+          intrinsicName(node) === null &&
+          INTERACTIVE_ARIA_ROLES.has(
+            judgedValue(node, findAttribute(node, 'role')) ?? '',
+          )
+        )
+          return;
 
         if (!hasKeyboardEvent) {
           context.report({

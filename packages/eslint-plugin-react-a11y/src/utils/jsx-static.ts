@@ -193,3 +193,22 @@ export function inputImplicitRole(node: TSESTree.JSXOpeningElement): string {
   }
   return role;
 }
+
+/**
+ * The value a rule may judge on `element`.
+ *
+ * An intrinsic element is read in every static spelling. A component's prop
+ * may never reach the DOM as written, so a finding on it is a guess: such
+ * findings stay where they were (the plain string spelling, `role="x"`) and
+ * are not extended to `{"x"}`, templates or conditionals.
+ */
+export function judgedValue(
+  element: TSESTree.JSXOpeningElement,
+  attr: TSESTree.JSXAttribute | undefined | null,
+): string | null {
+  if (!attr) return null;
+  if (intrinsicName(element) !== null) return staticAttributeValue(attr);
+  return attr.value?.type === AST_NODE_TYPES.Literal
+    ? String(attr.value.value)
+    : null;
+}

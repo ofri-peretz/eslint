@@ -25,6 +25,11 @@ describe('lang', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - valid lang codes', lang, {
       valid: [
+        {
+          // @found corpus scan (okta-signin-widget): not extended to components
+          name: 'a braced lang on a component is not judged',
+          code: '<Comp lang={"english"} />',
+        },
         { name: 'a braced valid tag', code: '<html lang={"en-US"}></html>' },
         { name: 'a lang the file cannot see', code: '<html lang={locale}></html>' },
         { name: 'a bare lang carries no tag to judge', code: '<html lang></html>' },

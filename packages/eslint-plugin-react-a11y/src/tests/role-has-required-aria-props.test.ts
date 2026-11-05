@@ -25,6 +25,11 @@ describe('role-has-required-aria-props', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - roles with required props', roleHasRequiredAriaProps, {
       valid: [
+        {
+          // @found corpus scan (okta-signin-widget): not extended to components
+          name: 'a braced role on a component is not judged',
+          code: '<Comp role={"checkbox"} />',
+        },
         { name: 'aria-checked supplied', code: '<div role="checkbox" aria-checked="true"></div>' },
         { code: '<div role="slider" aria-valuenow={50} aria-valuemin={0} aria-valuemax={100}></div>' },
         { code: '<div role="spinbutton" aria-valuenow={5} aria-valuemin={0} aria-valuemax={10}></div>' },

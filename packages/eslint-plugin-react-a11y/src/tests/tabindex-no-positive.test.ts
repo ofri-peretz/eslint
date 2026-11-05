@@ -25,6 +25,11 @@ describe('tabindex-no-positive', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - non-positive tabindex', tabindexNoPositive, {
       valid: [
+        {
+          // @found corpus scan (okta-signin-widget): not extended to components
+          name: 'a braced tabIndex on a component is not judged',
+          code: '<Comp tabIndex={1} />',
+        },
         { name: 'tabIndex zero', code: '<div tabIndex={0}></div>' },
         { code: '<div tabIndex={-1}></div>' },
         { code: '<div tabIndex="0"></div>' },

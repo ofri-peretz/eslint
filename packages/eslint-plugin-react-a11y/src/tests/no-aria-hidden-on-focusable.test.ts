@@ -25,6 +25,11 @@ describe('no-aria-hidden-on-focusable', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - no aria-hidden on focusable', noAriaHiddenOnFocusable, {
       valid: [
+        {
+          // @found corpus scan (okta-signin-widget): not extended to components
+          name: 'a braced aria-hidden on a component is not judged',
+          code: '<Comp aria-hidden={true} tabIndex={0} />',
+        },
         { name: 'aria-hidden on a plain div', code: '<div aria-hidden="true"></div>' },
         { code: '<span aria-hidden="true"></span>' },
         { code: '<button>Click</button>' },

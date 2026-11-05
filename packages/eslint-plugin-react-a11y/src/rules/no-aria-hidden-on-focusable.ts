@@ -16,6 +16,8 @@ import { createRule } from '@interlace/eslint-devkit';
 import {
   attributeValue,
   findAttribute,
+  intrinsicName,
+  judgedValue,
   staticAttributeValue,
 } from '../utils/jsx-static';
 
@@ -38,7 +40,7 @@ function isTabbable(
 ): boolean {
   const tabIndexAttr = findAttribute(node, 'tabIndex');
   if (tabIndexAttr) {
-    const value = staticAttributeValue(tabIndexAttr);
+    const value = judgedValue(node, tabIndexAttr);
     if (value !== null) {
       const n = parseInt(value, 10);
       if (!isNaN(n)) return n >= 0;
@@ -103,8 +105,13 @@ export const noAriaHiddenOnFocusable = createRule<RuleOptions, MessageIds>({
 
         // `aria-hidden="true"`, `aria-hidden={true}` and the bare attribute
         // all hide; `"false"` and a dynamic value do not prove it.
+        // On a component only `aria-hidden="true"`: see judgedValue.
         const ariaHidden = findAttribute(node, 'aria-hidden');
-        if (!ariaHidden || attributeValue(ariaHidden) !== 'true') return;
+        if (!ariaHidden) return;
+        const hidden = intrinsicName(node)
+          ? attributeValue(ariaHidden)
+          : judgedValue(node, ariaHidden);
+        if (hidden !== 'true') return;
 
         if (isTabbable(node, node.name.name)) {
           context.report({

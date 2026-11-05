@@ -30,6 +30,11 @@ describe('prefer-tag-over-role', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - semantic elements without redundant roles', preferTagOverRole, {
       valid: [
+        {
+          // @found corpus scan (okta-signin-widget): not extended to components
+          name: 'a braced role=img (container pattern) is not extended',
+          code: '<div role={"img"} aria-label="stars">x</div>',
+        },
         // Semantic elements without roles (preferred)
         {
           name: 'the header element',

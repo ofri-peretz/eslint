@@ -25,6 +25,11 @@ describe('click-events-have-key-events', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - has key handlers', clickEventsHaveKeyEvents, {
       valid: [
+        {
+          // @found corpus scan (okta-signin-widget): not extended to components
+          name: 'a component with an interactive role keeps its exemption (it may render a native control)',
+          code: '<MuiLink component="button" role="link" onClick={handleClick}>Back</MuiLink>',
+        },
         { name: 'both handlers present', code: '<div onClick={handler} onKeyDown={handler}></div>' },
         { code: '<div onClick={handler} onKeyUp={handler}></div>' },
         { code: '<div onClick={handler} onKeyPress={handler}></div>' },

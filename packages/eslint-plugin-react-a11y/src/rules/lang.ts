@@ -13,7 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { staticAttributeValue } from '../utils/jsx-static';
+import { judgedValue } from '../utils/jsx-static';
 
 type MessageIds = 'invalidLang';
 
@@ -56,7 +56,10 @@ export const lang = createRule<RuleOptions, MessageIds>({
         // `lang="en"`, `lang={"en"}` and `` lang={`en`} `` write the same
         // value; one the file cannot see is not a finding.
         if (node.value === null) return;
-        const value = staticAttributeValue(node);
+        const value = judgedValue(
+          node.parent as TSESTree.JSXOpeningElement,
+          node,
+        );
         if (value === null) return;
 
         // The primary subtag of a BCP 47 tag is a language: 2-3 letters

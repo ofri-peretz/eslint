@@ -13,7 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { staticAttributeValue } from '../utils/jsx-static';
+import { intrinsicName, judgedValue } from '../utils/jsx-static';
 
 type MessageIds = 'avoidPositiveTabIndex';
 
@@ -53,16 +53,20 @@ export const tabindexNoPositive = createRule<RuleOptions, MessageIds>({
       JSXAttribute(node: TSESTree.JSXAttribute) {
         // React renders the lowercase `tabindex` too, and HTML attribute
         // names are case-insensitive.
+        // On a component only `tabIndex="1"`: see judgedValue.
+        const element = node.parent as TSESTree.JSXOpeningElement;
+        const intrinsic = intrinsicName(element) !== null;
         if (
           node.name.type !== 'JSXIdentifier' ||
-          (node.name.name !== 'tabIndex' && node.name.name !== 'tabindex')
+          (node.name.name !== 'tabIndex' &&
+            !(intrinsic && node.name.name === 'tabindex'))
         ) {
           return;
         }
 
         // `"1"`, `{1}`, `{"1"}`, `` {`1`} `` and `{flag ? 1 : 1}` all write
         // the same value; a dynamic one is unknown and stays silent.
-        const value = staticAttributeValue(node);
+        const value = judgedValue(element, node);
         if (value === null) return;
         const numericValue = parseInt(value, 10);
         if (!isNaN(numericValue) && numericValue > 0) {

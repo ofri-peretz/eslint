@@ -30,6 +30,11 @@ describe('no-noninteractive-tabindex', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - no tabindex or allowed tabindex', noNoninteractiveTabindex, {
       valid: [
+        {
+          // @found corpus scan (okta-signin-widget): not extended to components
+          name: 'a braced tabIndex on a component is not judged (it may render a button)',
+          code: '<Box component="button" tabIndex={0} onClick={onClick}>x</Box>',
+        },
         // No tabindex attribute
         {
           name: 'no tabIndex',

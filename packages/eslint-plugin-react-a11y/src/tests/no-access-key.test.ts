@@ -25,6 +25,11 @@ describe('no-access-key', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - no accessKey', noAccessKey, {
       valid: [
+        {
+          // @found corpus scan (okta-signin-widget): not extended to components
+          name: 'the lowercase accesskey prop on a component is not judged',
+          code: '<Comp accesskey="s" />',
+        },
         { name: 'no access key', code: '<button>Click</button>' },
         { code: '<a href="#">Link</a>' },
         { code: '<input />' },

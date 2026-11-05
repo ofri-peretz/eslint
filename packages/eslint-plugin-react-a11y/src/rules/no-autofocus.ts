@@ -80,9 +80,15 @@ export const noAutofocus = createRule<RuleOptions, MessageIds>({
       JSXAttribute(node: TSESTree.JSXAttribute) {
         // React spells it autoFocus; HTML attribute names are
         // case-insensitive, so autofocus reaches the DOM too.
+        // On a component only `autoFocus`: its prop may never reach the DOM,
+        // so that finding is not extended to a new spelling.
         if (
           node.name.type !== 'JSXIdentifier' ||
-          node.name.name.toLowerCase() !== 'autofocus'
+          (node.name.name !== 'autoFocus' &&
+            !(
+              intrinsicName(node.parent as TSESTree.JSXOpeningElement) &&
+              node.name.name.toLowerCase() === 'autofocus'
+            ))
         )
           return;
 

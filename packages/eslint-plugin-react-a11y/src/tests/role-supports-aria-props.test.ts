@@ -30,6 +30,11 @@ describe('role-supports-aria-props', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - elements with supported ARIA properties', roleSupportsAriaProps, {
       valid: [
+        {
+          // @found corpus scan (okta-signin-widget): not extended to components
+          name: 'a braced role on a component is not judged',
+          code: '<Comp role={"button"} aria-checked="true" />',
+        },
         // Elements without roles or ARIA properties
         {
           name: 'a div with no aria at all',

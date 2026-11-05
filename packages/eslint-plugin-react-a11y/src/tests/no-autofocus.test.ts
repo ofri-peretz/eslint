@@ -25,6 +25,11 @@ describe('no-autofocus', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - no autofocus', noAutofocus, {
       valid: [
+        {
+          // @found corpus scan (okta-signin-widget): not extended to components
+          name: 'the lowercase autofocus prop on a component is not judged',
+          code: '<Comp autofocus />',
+        },
         { name: 'no autofocus', code: '<input />' },
         { code: '<button>Click</button>' },
         { code: '<textarea></textarea>' },

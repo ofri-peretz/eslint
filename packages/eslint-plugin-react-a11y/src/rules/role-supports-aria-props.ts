@@ -21,7 +21,7 @@ import { createRule } from '@interlace/eslint-devkit';
 import {
   findAttribute,
   inputImplicitRole,
-  staticAttributeValue,
+  judgedValue,
 } from '../utils/jsx-static';
 
 type MessageIds = 'unsupportedAriaProp';
@@ -122,7 +122,8 @@ export const roleSupportsAriaProps = createRule<RuleOptions, MessageIds>({
         // dynamic is unknown.
         const roleAttr = findAttribute(node, 'role');
         if (roleAttr) {
-          const explicitRole = staticAttributeValue(roleAttr);
+          // On a component only `role="x"`: see judgedValue.
+          const explicitRole = judgedValue(node, roleAttr);
           if (explicitRole === null) return;
           role = explicitRole.trim();
         } else {

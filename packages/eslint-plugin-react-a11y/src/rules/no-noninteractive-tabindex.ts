@@ -13,7 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { findAttribute, staticAttributeValue } from '../utils/jsx-static';
+import { findAttribute, judgedValue } from '../utils/jsx-static';
 
 type MessageIds = 'noNoninteractiveTabindex';
 
@@ -174,7 +174,8 @@ export const noNoninteractiveTabindex = createRule<RuleOptions, MessageIds>({
 
         // Every static spelling (`"0"`, `{0}`, `{"0"}`, a conditional with
         // equal branches); a dynamic value is unknown.
-        const tabindexValue = staticAttributeValue(tabindexAttr);
+        // On a component only `tabIndex="0"`: see judgedValue.
+        const tabindexValue = judgedValue(node, tabindexAttr);
         if (tabindexValue === null) return;
 
         // Check if element is in allowed tags
@@ -196,7 +197,7 @@ export const noNoninteractiveTabindex = createRule<RuleOptions, MessageIds>({
           return;
         }
         if (roleAttr) {
-          const roleValue = staticAttributeValue(roleAttr);
+          const roleValue = judgedValue(node, roleAttr);
           if (roleValue === null) {
             // A role the file cannot know may be interactive:
             // `allowExpressionValues` (default) leaves the element alone;

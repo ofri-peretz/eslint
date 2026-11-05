@@ -64,6 +64,9 @@ function isHostElement(name: string): boolean {
   );
 }
 
+/** Roles whose finding is a judgment call: see the rule body. */
+const JUDGMENT_ROLES = new Set(['img', 'textbox']);
+
 export const preferTagOverRole = createRule<RuleOptions, MessageIds>({
   name: 'prefer-tag-over-role',
   meta: {
@@ -114,6 +117,13 @@ export const preferTagOverRole = createRule<RuleOptions, MessageIds>({
         // Every static spelling of the role; a dynamic one is unknown.
         const roleValue = staticAttributeValue(roleAttr);
         if (roleValue === null) return;
+
+        // `role="img"` on a container (the emoji / SVG-group pattern: an
+        // <img> cannot hold children) and `role="textbox"` (a contentEditable
+        // editor: HTML has no rich-text element) are judgment findings, kept
+        // as they were in the plain string spelling and not extended.
+        if (JUDGMENT_ROLES.has(roleValue) && roleAttr.value?.type !== 'Literal')
+          return;
 
         // Check if there's a preferred semantic element for this role
         const preferredTag = ROLE_TO_TAG_MAPPING[roleValue];

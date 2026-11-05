@@ -20,6 +20,7 @@ import { createRule } from '@interlace/eslint-devkit';
 import {
   findAttribute,
   intrinsicName,
+  judgedValue,
   staticAttributeValue,
 } from '../utils/jsx-static';
 
@@ -60,7 +61,8 @@ export const roleHasRequiredAriaProps = createRule<RuleOptions, MessageIds>({
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         // Every static spelling of `role`; a dynamic one cannot be checked.
-        const roleValue = staticAttributeValue(findAttribute(node, 'role'));
+        // On a component only `role="x"`: see judgedValue.
+        const roleValue = judgedValue(node, findAttribute(node, 'role'));
         if (roleValue === null) return;
 
         const roles = roleValue.trim().split(/\s+/).filter(Boolean);
