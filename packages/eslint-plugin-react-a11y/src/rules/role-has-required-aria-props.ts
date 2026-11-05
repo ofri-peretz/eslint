@@ -17,6 +17,11 @@ import {
   ARIA_REQUIRED_PROPS,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import {
+  findAttribute,
+  intrinsicName,
+  staticAttributeValue,
+} from '../utils/jsx-static';
 
 type MessageIds = 'missingRequiredProp';
 
@@ -54,30 +59,24 @@ export const roleHasRequiredAriaProps = createRule<RuleOptions, MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
-        const roleAttr = node.attributes.find(
-          (
-            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-          ): attr is TSESTree.JSXAttribute =>
-            attr.type === 'JSXAttribute' &&
-            attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'role',
-        );
+        // Every static spelling of `role`; a dynamic one cannot be checked.
+        const roleValue = staticAttributeValue(findAttribute(node, 'role'));
+        if (roleValue === null) return;
 
-        if (
-          !roleAttr ||
-          !roleAttr.value ||
-          roleAttr.value.type !== 'Literal' ||
-          typeof roleAttr.value.value !== 'string'
-        ) {
-          return;
-        }
+        const roles = roleValue.trim().split(/\s+/).filter(Boolean);
 
-        const roles = roleAttr.value.value.split(/\s+/);
+        // A native checkbox exposes aria-checked from its own `checked`
+        // state (ARIA in HTML), whatever checkable role it carries.
+        const nativeCheckbox =
+          intrinsicName(node) === 'input' &&
+          staticAttributeValue(findAttribute(node, 'type'))?.toLowerCase() ===
+            'checkbox';
 
         for (const role of roles) {
           const requiredProps = ARIA_REQUIRED_PROPS[role];
           if (requiredProps) {
             for (const prop of requiredProps) {
+              if (nativeCheckbox && prop === 'aria-checked') continue;
               const hasProp = node.attributes.some(
                 (
                   attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,

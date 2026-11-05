@@ -47,6 +47,20 @@ describe('aria-unsupported-elements', () => {
       },
         { name: 'an aria attribute on an element that has no accessibility semantics', code: '<meta aria-label="Label" />', errors: [{ messageId: 'unsupportedAria' }] },
         { code: '<html aria-hidden="true"></html>', errors: [{ messageId: 'unsupportedAria' }] },
+        {
+          name: 'picture takes no role and no aria-* (ARIA in HTML)',
+          code: '<picture role="presentation"><img src="/a.png" alt="A" /></picture>',
+          errors: [{ messageId: 'unsupportedAria' }],
+        },
+        {
+          name: 'noscript, template and slot take no role and no aria-* (ARIA in HTML)',
+          code: '<noscript aria-hidden="true">x</noscript>; <template aria-label="T">x</template>; <slot role="none"></slot>',
+          errors: [
+            { messageId: 'unsupportedAria' },
+            { messageId: 'unsupportedAria' },
+            { messageId: 'unsupportedAria' },
+          ],
+        },
       ],
     });
   });

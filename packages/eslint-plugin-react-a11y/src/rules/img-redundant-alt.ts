@@ -13,6 +13,12 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import {
+  attributeValue,
+  DYNAMIC,
+  findAttribute,
+  staticAttributeValue,
+} from '../utils/jsx-static';
 
 type MessageIds = 'redundantAlt';
 
@@ -74,10 +80,13 @@ export const imgRedundantAlt = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {} as Options] = currentOptions();
-        ({ components = DEFAULT_COMPONENTS, words = DEFAULT_REDUNDANT_WORDS } =
-          options ?? ({} as Options));
-        // `words` always has a value here: the destructuring default above already
-        // falls back to DEFAULT_REDUNDANT_WORDS when options omit it.
+        const { components: extraComponents = [], words: extraWords = [] } =
+          options ?? ({} as Options);
+        // Both options ADD to the defaults (the jsx-a11y contract): naming an
+        // `Image` component does not stop `<img>` being checked, and an extra
+        // word does not drop "image" / "photo" / "picture".
+        components = [...DEFAULT_COMPONENTS, ...extraComponents];
+        words = [...DEFAULT_REDUNDANT_WORDS, ...extraWords];
         redundantWords = words.map((word: string) => word.toLowerCase());
       },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
@@ -86,51 +95,27 @@ export const imgRedundantAlt = createRule<RuleOptions, MessageIds>({
         const elementName = node.name.name;
         if (!components.includes(elementName)) return;
 
-        // Check if element is aria-hidden
-        const ariaHidden = node.attributes.find(
-          (
-            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-          ): attr is TSESTree.JSXAttribute =>
-            attr.type === 'JSXAttribute' &&
-            attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'aria-hidden',
-        );
-
-        if (
-          ariaHidden &&
-          ariaHidden.type === 'JSXAttribute' &&
-          ariaHidden.value &&
-          ariaHidden.value.type === 'Literal' &&
-          ariaHidden.value.value === true
-        ) {
-          return; // Skip hidden images
+        // A hidden image is never announced. `aria-hidden` is spelled bare,
+        // `"true"` or `{true}`; one the file cannot see is not a finding.
+        const ariaHidden = findAttribute(node, 'aria-hidden');
+        if (ariaHidden) {
+          const v = attributeValue(ariaHidden);
+          if (v === DYNAMIC || v === 'true') return;
         }
 
-        // Find alt attribute
-        const altAttr = node.attributes.find(
-          (
-            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-          ): attr is TSESTree.JSXAttribute =>
-            attr.type === 'JSXAttribute' &&
-            attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'alt',
-        );
+        const altAttr = findAttribute(node, 'alt');
+        const altValue = staticAttributeValue(altAttr);
+        if (!altAttr || altAttr.value === null || altValue === null) return;
 
-        if (
-          !altAttr ||
-          altAttr.type !== 'JSXAttribute' ||
-          !altAttr.value ||
-          altAttr.value.type !== 'Literal'
-        )
-          return;
-
-        const altValue = String(altAttr.value.value);
         const altLower = altValue.toLowerCase();
 
         // Check for redundant words (exact matches)
         for (const word of redundantWords) {
           // Check for whole word matches (not partial)
-          const regex = new RegExp(`\\b${word}\\b`, 'i');
+          const regex = new RegExp(
+            `\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
+            'i',
+          );
           if (regex.test(altLower)) {
             context.report({
               node: altAttr,

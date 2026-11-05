@@ -16,6 +16,7 @@ import {
   staticString,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { attributeValue } from '../utils/jsx-static';
 
 type MessageIds =
   | 'missingAlt'
@@ -251,6 +252,15 @@ export const altText = createRule<RuleOptions, MessageIds>({
           a.name.name === name,
       );
 
+    /**
+     * The `alt` attribute when it renders one. `alt={undefined}` / `alt={null}`
+     * render nothing: React drops the attribute, so the image has no alt.
+     */
+    const getAlt = (node: TSESTree.JSXOpeningElement) => {
+      const attr = getAttr(node, 'alt');
+      return attr && attributeValue(attr) !== undefined ? attr : undefined;
+    };
+
     /** Returns the literal string value of an attribute, or null if dynamic / not a string. */
     // oxlint-disable-next-line consistent-function-scoping
     const getStringValue = (attr: TSESTree.JSXAttribute): string | null => {
@@ -320,8 +330,20 @@ export const altText = createRule<RuleOptions, MessageIds>({
       );
     };
 
+    /** Write `alt="text"`: over an `alt={undefined}`, or as a new attribute. */
+    const setAlt = (
+      fixer: TSESLint.RuleFixer,
+      node: TSESTree.JSXOpeningElement,
+      text: string,
+    ) => {
+      const unrendered = getAttr(node, 'alt');
+      return unrendered
+        ? fixer.replaceText(unrendered, `alt="${text}"`)
+        : fixer.insertTextAfter(getAltInsertionAnchor(node), ` alt="${text}"`);
+    };
+
     const checkImg = (node: TSESTree.JSXOpeningElement) => {
-      const altAttr = getAttr(node, 'alt');
+      const altAttr = getAlt(node);
 
       // alt present in any form is acceptable: getStringValue is exhaustive —
       // '' (boolean shorthand / empty = decorative), a non-empty string, or
@@ -350,16 +372,11 @@ export const altText = createRule<RuleOptions, MessageIds>({
         suggest: [
           {
             messageId: 'addDescriptiveAlt',
-            fix: (fixer) =>
-              fixer.insertTextAfter(
-                getAltInsertionAnchor(node),
-                ' alt="TODO: Add descriptive text"',
-              ),
+            fix: (fixer) => setAlt(fixer, node, 'TODO: Add descriptive text'),
           },
           {
             messageId: 'useEmptyAlt',
-            fix: (fixer) =>
-              fixer.insertTextAfter(getAltInsertionAnchor(node), ' alt=""'),
+            fix: (fixer) => setAlt(fixer, node, ''),
           },
         ],
       });
@@ -376,14 +393,14 @@ export const altText = createRule<RuleOptions, MessageIds>({
     const checkArea = (node: TSESTree.JSXOpeningElement) => {
       if (hasAria(node, /* requireOptIn */ false)) return;
       // Any alt (empty, non-empty, or dynamic) is acceptable — see checkImg.
-      if (getAttr(node, 'alt')) return;
+      if (getAlt(node)) return;
       context.report({ node, messageId: 'areaMissingAlternative' });
     };
 
     const checkInputImage = (node: TSESTree.JSXOpeningElement) => {
       if (hasAria(node, /* requireOptIn */ false)) return;
       // Any alt (empty, non-empty, or dynamic) is acceptable — see checkImg.
-      if (getAttr(node, 'alt')) return;
+      if (getAlt(node)) return;
       context.report({ node, messageId: 'inputImageMissingAlternative' });
     };
 

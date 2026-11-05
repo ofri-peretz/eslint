@@ -61,6 +61,21 @@ describe('control-has-associated-label', () => {
         {
           code: '<div>Content</div>',
         },
+        // <a> without href is not a control (HTML: a placeholder link)
+        {
+          name: 'anchor without href is not a control',
+          code: '<a id="top"></a>',
+        },
+        // A real label is never a finding, however deep it is nested
+        {
+          name: 'label text nested three levels deep',
+          code: '<button type="button"><span><span><strong>Save</strong></span></span></button>',
+        },
+        // Hidden from assistive technology: nothing to name
+        {
+          name: 'aria-hidden control needs no label',
+          code: '<button type="button" aria-hidden="true"></button>',
+        },
         {
           code: '<span>Text</span>',
         },

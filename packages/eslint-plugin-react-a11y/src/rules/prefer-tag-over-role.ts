@@ -13,6 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { staticAttributeValue } from '../utils/jsx-static';
 
 type MessageIds = 'preferTagOverRole';
 
@@ -38,6 +39,16 @@ const ROLE_TO_TAG_MAPPING: Record<string, string> = {
   checkbox: 'input[type="checkbox"]',
   radio: 'input[type="radio"]',
   searchbox: 'input[type="search"]',
+};
+
+/**
+ * Every element that already is the preferred tag, where it is more than one:
+ * any heading level, either list, either text control.
+ */
+const HOST_TAGS: Record<string, ReadonlySet<string>> = {
+  heading: new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']),
+  list: new Set(['ul', 'ol']),
+  textbox: new Set(['input', 'textarea']),
 };
 
 /**
@@ -98,16 +109,11 @@ export const preferTagOverRole = createRule<RuleOptions, MessageIds>({
             attr.name.name === 'role',
         );
 
-        if (
-          !roleAttr ||
-          roleAttr.type !== 'JSXAttribute' ||
-          !roleAttr.value ||
-          roleAttr.value.type !== 'Literal'
-        )
-          return;
+        if (!roleAttr) return;
 
-        const roleValue = roleAttr.value.value;
-        if (typeof roleValue !== 'string') return;
+        // Every static spelling of the role; a dynamic one is unknown.
+        const roleValue = staticAttributeValue(roleAttr);
+        if (roleValue === null) return;
 
         // Check if there's a preferred semantic element for this role
         const preferredTag = ROLE_TO_TAG_MAPPING[roleValue];
@@ -118,6 +124,7 @@ export const preferTagOverRole = createRule<RuleOptions, MessageIds>({
         // (`input[type="checkbox"]` etc.) on an <input> element, so no separate
         // type-attribute matching is needed here.
         if (elementName === preferredTag.split('[')[0]) return;
+        if (HOST_TAGS[roleValue]?.has(elementName)) return;
 
         // A CUSTOM COMPONENT is not a DOM element, and this rule cannot know
         // what one renders.

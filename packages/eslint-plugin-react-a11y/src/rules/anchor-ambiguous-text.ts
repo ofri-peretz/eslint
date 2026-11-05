@@ -119,8 +119,13 @@ function extractTextFromChildren(children: TSESTree.JSXChild[]): string {
         }
       }
     } else if (child.type === 'JSXExpressionContainer') {
-      // Handle JSX expressions like {variable} or {`template literal`}
-      text += `{${extractExpressionText(child.expression)}}`;
+      // A static string child (`{"click here"}`, `` {`click here`} ``) IS
+      // text; anything else keeps its braces, so it never equals a phrase.
+      const staticText =
+        child.expression.type === 'JSXEmptyExpression'
+          ? null
+          : staticString(child.expression);
+      text += staticText ?? `{${extractExpressionText(child.expression)}}`;
     }
   }
 

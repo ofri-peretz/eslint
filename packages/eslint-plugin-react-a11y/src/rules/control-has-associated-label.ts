@@ -13,6 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { findAttribute, staticAttributeValue } from '../utils/jsx-static';
 
 type MessageIds = 'missingLabel';
 
@@ -172,15 +173,17 @@ function hasTextInChildren(
  * Check if element is a control component
  */
 function isControlComponent(
+  node: TSESTree.JSXOpeningElement,
   elementName: string,
   controlComponents: string[],
 ): boolean {
+  // An <a> is a control only with an href (without one it is a placeholder).
+  if (elementName === 'a') return findAttribute(node, 'href') !== undefined;
   const controls = [
     'button',
     'input',
     'select',
     'textarea',
-    'a',
     ...controlComponents,
   ];
   return controls.includes(elementName);
@@ -296,7 +299,9 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
           controlComponents = [],
           ignoreElements = DEFAULT_IGNORE_ELEMENTS,
           ignoreRoles = DEFAULT_IGNORE_ROLES,
-          depth = 2,
+          // A real label is a label at any depth: search the whole subtree
+          // (the schema maximum) unless the user caps it.
+          depth = 25,
         } = options ?? ({} as Options));
       },
       JSXElement(node: TSESTree.JSXElement) {
@@ -310,13 +315,24 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
         if (ignoreElements.includes(elementName)) return;
 
         // Check if it's a control component or has interactive role
-        const isControl = isControlComponent(elementName, controlComponents);
+        const isControl = isControlComponent(
+          openingElement,
+          elementName,
+          controlComponents,
+        );
         const hasInteractiveRoleAttr = hasInteractiveRole(
           openingElement,
           ignoreRoles,
         );
 
         if (!isControl && !hasInteractiveRoleAttr) return;
+
+        // Hidden from assistive technology: there is nothing to name.
+        if (
+          staticAttributeValue(findAttribute(openingElement, 'aria-hidden')) ===
+          'true'
+        )
+          return;
 
         // Check if it has accessible text
         if (!hasAccessibleText(node, depth, labelAttributes)) {

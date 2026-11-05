@@ -25,6 +25,9 @@ describe('html-has-lang', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - html with lang', htmlHasLang, {
       valid: [
+        { /* @found fidelity model react-a11y/html_has_lang */ name: 'FP: a static lang in braces is a value', code: '<html lang={"en"}></html>' },
+        { /* @found fidelity model react-a11y/html_has_lang */ name: 'FP: a template lang is a value', code: '<html lang={`en`}></html>' },
+        { /* @found fidelity model react-a11y/html_has_lang */ name: 'FP: a dynamic lang is a value the file cannot see', code: '<html lang={value}></html>' },
         { name: 'lang is set', code: '<html lang="en"></html>' },
         { code: '<html lang="es"></html>' },
         { code: '<html lang="fr-CA"></html>' },
@@ -38,6 +41,12 @@ describe('html-has-lang', () => {
     ruleTester.run('invalid - html without lang', htmlHasLang, {
       valid: [],
       invalid: [
+      {
+        // @found fidelity model react-a11y/html_has_lang
+        name: 'FN: lang={undefined} renders no lang',
+        code: '<html lang={undefined}></html>',
+        errors: [{ messageId: 'missingLang' }],
+      },
       {
         // @found rule review
         name: 'FN: an empty lang names no language',

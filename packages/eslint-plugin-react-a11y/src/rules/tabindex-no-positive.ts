@@ -13,6 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { staticAttributeValue } from '../utils/jsx-static';
 
 type MessageIds = 'avoidPositiveTabIndex';
 
@@ -50,27 +51,26 @@ export const tabindexNoPositive = createRule<RuleOptions, MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
+        // React renders the lowercase `tabindex` too, and HTML attribute
+        // names are case-insensitive.
         if (
           node.name.type !== 'JSXIdentifier' ||
-          node.name.name !== 'tabIndex'
+          (node.name.name !== 'tabIndex' && node.name.name !== 'tabindex')
         ) {
           return;
         }
 
-        const value = node.value;
-        if (!value) return;
-
-        if (value.type === 'Literal') {
-          const numericValue = parseInt(String(value.value), 10);
-          if (!isNaN(numericValue) && numericValue > 0) {
-            context.report({
-              node,
-              messageId: 'avoidPositiveTabIndex',
-            });
-          }
+        // `"1"`, `{1}`, `{"1"}`, `` {`1`} `` and `{flag ? 1 : 1}` all write
+        // the same value; a dynamic one is unknown and stays silent.
+        const value = staticAttributeValue(node);
+        if (value === null) return;
+        const numericValue = parseInt(value, 10);
+        if (!isNaN(numericValue) && numericValue > 0) {
+          context.report({
+            node,
+            messageId: 'avoidPositiveTabIndex',
+          });
         }
-        // Note: We cannot easily check dynamic values without type checking, but we could try basic expression analysis if needed.
-        // For now, literal check is sufficient for most cases.
       },
     };
   },

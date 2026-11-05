@@ -27,6 +27,8 @@ describe('anchor-has-content', () => {
   describe('Valid Code - Accessible Anchors', () => {
     ruleTester.run('valid - anchors with content', anchorHasContent, {
       valid: [
+        { name: 'a static string child is content', code: '<a href="/x">{"Docs"}</a>' },
+        { name: 'a visible element beside a hidden one is content', code: '<a href="/x"><span aria-hidden="true">x</span>Docs</a>' },
         // Text content
         { name: 'an anchor with text', code: '<a href="#">Click here</a>' },
         { code: '<a href="/home">Home</a>' },
@@ -58,6 +60,9 @@ describe('anchor-has-content', () => {
     ruleTester.run('invalid - empty anchors', anchorHasContent, {
       valid: [],
       invalid: [
+        { /* @found fidelity model react-a11y/anchor_has_content */ name: 'FN: an aria-hidden child is not announced', code: '<a href="/x"><span aria-hidden="true">x</span></a>', errors: [{ messageId: 'missingContent' }] },
+        { /* @found fidelity model react-a11y/anchor_has_content */ name: 'FN: {undefined} renders no content', code: '<a href="/x">{undefined}</a>', errors: [{ messageId: 'missingContent' }] },
+        { /* @found fidelity model react-a11y/anchor_has_content */ name: 'FN: whitespace-only text is no content', code: '<a href="/x"> </a>', errors: [{ messageId: 'missingContent' }] },
         // Empty anchor
         {
           name: 'an anchor with nothing inside it',
@@ -102,9 +107,8 @@ describe('anchor-has-content', () => {
         { code: '<a href="#"><>Content</></a>' },
         // Conditional content (content exists)
         { code: '<a href="#">{condition ? "Yes" : "No"}</a>' },
-        // Whitespace-only text - currently valid, but could be FP in strict mode
-        // NOTE: This might need stricter handling
-        { code: '<a href="#"> </a>' },
+        // Whitespace-only text is no content: see 'FN: whitespace-only text
+        // is no content' — its accessible name is empty after trimming.
       ],
       invalid: [],
     });

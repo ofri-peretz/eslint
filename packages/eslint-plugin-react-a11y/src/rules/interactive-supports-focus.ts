@@ -13,6 +13,13 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import {
+  DYNAMIC,
+  attributeValue,
+  findAttribute,
+  intrinsicName,
+  staticAttributeValue,
+} from '../utils/jsx-static';
 
 type MessageIds = 'missingTabIndex';
 
@@ -31,15 +38,36 @@ const INTERACTIVE_HANDLERS = new Set([
   'onMouseUp',
 ]);
 
-const NATIVE_INTERACTIVE_ELEMENTS = new Set([
-  'a',
+/** Elements the browser already puts in the focus order. */
+const NATIVE_FOCUSABLE_ELEMENTS = new Set([
   'button',
   'input',
   'select',
   'textarea',
-  'area',
   'option',
   'summary',
+]);
+
+/** WAI-ARIA 1.2 widget roles: an element with one is operated by the user. */
+const INTERACTIVE_ROLES = new Set([
+  'button',
+  'link',
+  'checkbox',
+  'menuitem',
+  'menuitemcheckbox',
+  'menuitemradio',
+  'option',
+  'radio',
+  'searchbox',
+  'switch',
+  'tab',
+  'textbox',
+  'treeitem',
+  'combobox',
+  'gridcell',
+  'listbox',
+  'slider',
+  'spinbutton',
 ]);
 
 export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
@@ -91,82 +119,54 @@ export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
         ({ tabbable = [] } = options ?? ({} as Options));
       },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
-        if (node.name.type !== 'JSXIdentifier') return;
-        const element = node.name.name;
+        const element = intrinsicName(node);
+        if (!element) return;
 
-        // Skip native interactive elements and configured tabbable elements
+        // Natively focusable: a, area only with an href.
         if (
-          NATIVE_INTERACTIVE_ELEMENTS.has(element) ||
-          tabbable.includes(element)
+          NATIVE_FOCUSABLE_ELEMENTS.has(element) ||
+          ((element === 'a' || element === 'area') &&
+            findAttribute(node, 'href') !== undefined)
         )
           return;
 
+        // The contract covers elements the author made interactive: an
+        // interactive WAI-ARIA role. Role-less elements belong to
+        // no-static-element-interactions; role presentation is the opt-out.
+        const role = staticAttributeValue(findAttribute(node, 'role'));
+        if (role === null || !INTERACTIVE_ROLES.has(role.trim())) return;
+
         const hasInteractiveHandler = node.attributes.some(
-          (
-            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-          ): attr is TSESTree.JSXAttribute =>
+          (attr) =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
-            // `attr.name` is always present on a JSXAttribute — no fallback needed.
             INTERACTIVE_HANDLERS.has(attr.name.name),
         );
-
         if (!hasInteractiveHandler) return;
 
-        // Elements with interactive ARIA roles inherit focus management from the AT/framework
-        // (e.g. role="button" gets Tab focus from the browser's keyboard model)
-        const INTERACTIVE_ARIA_ROLES = new Set([
-          'button',
-          'link',
-          'checkbox',
-          'menuitem',
-          'menuitemcheckbox',
-          'menuitemradio',
-          'option',
-          'radio',
-          'searchbox',
-          'switch',
-          'tab',
-          'textbox',
-          'treeitem',
-          'combobox',
-          'gridcell',
-          'listbox',
-          'slider',
-          'spinbutton',
-        ]);
+        // Disabled or hidden from assistive technology: nothing to reach.
+        if (
+          staticAttributeValue(findAttribute(node, 'aria-disabled')) ===
+            'true' ||
+          staticAttributeValue(findAttribute(node, 'aria-hidden')) === 'true'
+        )
+          return;
 
-        const roleAttr = node.attributes.find(
-          (
-            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-          ): attr is TSESTree.JSXAttribute =>
-            attr.type === 'JSXAttribute' &&
-            attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'role',
-        );
-        if (roleAttr) {
-          const roleValue =
-            roleAttr.value?.type === 'Literal'
-              ? String(roleAttr.value.value)
-              : null;
-          if (roleValue && INTERACTIVE_ARIA_ROLES.has(roleValue)) return;
+        // An ARIA role never makes an element focusable (WAI-ARIA 1.2): it
+        // needs a tabIndex, and a role listed in `tabbable` needs one >= 0.
+        // tabIndex={undefined} renders no attribute.
+        const tabIndex = findAttribute(node, 'tabIndex');
+        const value = tabIndex ? attributeValue(tabIndex) : undefined;
+        if (value === undefined) {
+          context.report({ node, messageId: 'missingTabIndex' });
+          return;
         }
-
-        // Check tabIndex
-        const tabIndex = node.attributes.find(
-          (
-            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-          ): attr is TSESTree.JSXAttribute =>
-            attr.type === 'JSXAttribute' &&
-            attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'tabIndex',
-        );
-
-        if (!tabIndex) {
-          context.report({
-            node,
-            messageId: 'missingTabIndex',
-          });
+        if (
+          value !== DYNAMIC &&
+          tabbable.includes(role.trim()) &&
+          Number(value) < 0
+        ) {
+          context.report({ node, messageId: 'missingTabIndex' });
         }
       },
     };

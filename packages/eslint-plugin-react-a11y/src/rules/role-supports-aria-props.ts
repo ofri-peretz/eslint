@@ -16,9 +16,13 @@ import {
   MessageIcons,
   ROLE_SUPPORTED_ARIA_PROPS,
   GLOBAL_ARIA_PROPS,
-  staticString,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import {
+  findAttribute,
+  inputImplicitRole,
+  staticAttributeValue,
+} from '../utils/jsx-static';
 
 type MessageIds = 'unsupportedAriaProp';
 
@@ -26,8 +30,6 @@ type RuleOptions = [];
 
 // Implicit roles for HTML elements
 const IMPLICIT_ROLES: Record<string, string> = {
-  a: 'link',
-  area: 'link',
   article: 'article',
   aside: 'complementary',
   body: 'document',
@@ -45,7 +47,6 @@ const IMPLICIT_ROLES: Record<string, string> = {
   h6: 'heading',
   hr: 'separator',
   img: 'img',
-  input: 'textbox', // varies by type, but textbox is common
   li: 'listitem',
   link: 'link',
   main: 'main',
@@ -65,6 +66,20 @@ const IMPLICIT_ROLES: Record<string, string> = {
   tr: 'row',
   ul: 'list',
 };
+
+/**
+ * The implicit role an element gets from HTML-AAM, or `''` when it has none
+ * this rule can know: an `a`/`area` without `href` is generic, an `input`'s
+ * role follows its `type` (a missing `type` is text; a `list` makes the text
+ * types a combobox; a dynamic `type` is unknown).
+ */
+function implicitRole(node: TSESTree.JSXOpeningElement, name: string): string {
+  if (name === 'a' || name === 'area') {
+    return findAttribute(node, 'href') ? 'link' : '';
+  }
+  if (name === 'input') return inputImplicitRole(node);
+  return IMPLICIT_ROLES[name] || '';
+}
 
 export const roleSupportsAriaProps = createRule<RuleOptions, MessageIds>({
   name: 'role-supports-aria-props',
@@ -103,25 +118,15 @@ export const roleSupportsAriaProps = createRule<RuleOptions, MessageIds>({
         const elementName = node.name.name;
         let role = '';
 
-        // Check explicit role
-        const roleAttr = node.attributes.find(
-          (
-            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-          ): attr is TSESTree.JSXAttribute =>
-            attr.type === 'JSXAttribute' &&
-            attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'role',
-        );
-
-        const explicitRole =
-          roleAttr?.type === 'JSXAttribute' && roleAttr.value
-            ? staticString(roleAttr.value)
-            : null;
-        if (explicitRole !== null) {
-          role = explicitRole;
+        // Explicit role, in any static spelling; a role that is present but
+        // dynamic is unknown.
+        const roleAttr = findAttribute(node, 'role');
+        if (roleAttr) {
+          const explicitRole = staticAttributeValue(roleAttr);
+          if (explicitRole === null) return;
+          role = explicitRole.trim();
         } else {
-          // Use implicit role
-          role = IMPLICIT_ROLES[elementName] || '';
+          role = implicitRole(node, elementName);
         }
 
         if (!role || !ROLE_SUPPORTED_ARIA_PROPS[role]) return;

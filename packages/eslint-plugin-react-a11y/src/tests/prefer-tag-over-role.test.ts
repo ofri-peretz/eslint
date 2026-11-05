@@ -426,8 +426,30 @@ describe('prefer-tag-over-role', () => {
         {
           code: '<div role="custom-role">Custom role</div>',
         },
+        {
+          name: 'any h1-h6 already is the heading element',
+          code: '<h2 role="heading">Title</h2>; <h6 role="heading">Small</h6>',
+        },
+        {
+          name: 'an ol already is a list element',
+          code: '<ol role="list"><li>x</li></ol>',
+        },
+        {
+          name: 'a textarea already is a textbox element',
+          code: '<textarea role="textbox"></textarea>',
+        },
       ],
       invalid: [
+        {
+          name: 'a role with a native tag written as a braced string',
+          code: '<div role={"button"}>Save</div>',
+          errors: [{ messageId: 'preferTagOverRole' }],
+        },
+        {
+          name: 'a role with a native tag written as a constant template',
+          code: '<span role={`link`}>Home</span>',
+          errors: [{ messageId: 'preferTagOverRole' }],
+        },
         // Multiple attributes with role
         {
           code: '<div className="header" role="banner">Header</div>',

@@ -13,6 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { findAttribute, staticAttributeValue } from '../utils/jsx-static';
 
 type MessageIds =
   'keyboardInaccessible' | 'addTabIndex' | 'addAriaRole' | 'useButton';
@@ -39,13 +40,10 @@ function hasKeyboardSupport(node: TSESTree.JSXOpeningElement): boolean {
       attr.name.name === 'tabIndex',
   );
 
-  // Check for ARIA role
-  const hasRole = node.attributes.some(
-    (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) =>
-      attr.type === 'JSXAttribute' &&
-      attr.name.type === 'JSXIdentifier' &&
-      attr.name.name === 'role',
-  );
+  // A role never makes an element focusable (WAI-ARIA 1.2); only role
+  // presentation/none opts the element out of being a control at all.
+  const role = staticAttributeValue(findAttribute(node, 'role'))?.trim();
+  const optedOut = role === 'presentation' || role === 'none';
 
   // Check for onClick handler (indicates it should be keyboard accessible)
   const hasOnClick = node.attributes.some(
@@ -56,7 +54,7 @@ function hasKeyboardSupport(node: TSESTree.JSXOpeningElement): boolean {
   );
 
   // If it has onClick but no keyboard support, it's a problem
-  if (hasOnClick && !hasTabIndex && !hasRole) {
+  if (hasOnClick && !hasTabIndex && !optedOut) {
     return false;
   }
 

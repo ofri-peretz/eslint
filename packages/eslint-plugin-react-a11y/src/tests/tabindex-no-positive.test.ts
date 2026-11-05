@@ -31,6 +31,10 @@ describe('tabindex-no-positive', () => {
         { code: '<div tabIndex="-1"></div>' },
         { code: '<button>Click</button>' },
         { code: '<div></div>' },
+        {
+          name: 'a tabIndex the file cannot know',
+          code: '<div tabIndex={index}>x</div>',
+        },
       ],
       invalid: [],
     });
@@ -47,6 +51,26 @@ describe('tabindex-no-positive', () => {
       },
         { name: "a positive tabIndex reorders the whole document's tab sequence", code: '<div tabIndex="1"></div>', errors: [{ messageId: 'avoidPositiveTabIndex' }] },
         { code: '<button tabIndex="99">Click</button>', errors: [{ messageId: 'avoidPositiveTabIndex' }] },
+        {
+          name: 'a positive tabIndex written as a braced number, the usual React spelling',
+          code: '<div tabIndex={1}>x</div>',
+          errors: [{ messageId: 'avoidPositiveTabIndex' }],
+        },
+        {
+          name: 'a positive tabIndex written as a braced string or a constant template',
+          code: '<div tabIndex={"2"}>x</div>; <div tabIndex={`3`}>y</div>',
+          errors: [{ messageId: 'avoidPositiveTabIndex' }, { messageId: 'avoidPositiveTabIndex' }],
+        },
+        {
+          name: 'a positive tabIndex in both branches of a conditional',
+          code: '<div tabIndex={flag ? 1 : 1}>x</div>',
+          errors: [{ messageId: 'avoidPositiveTabIndex' }],
+        },
+        {
+          name: 'the lowercase tabindex attribute, which React still renders',
+          code: '<div tabindex="1">x</div>',
+          errors: [{ messageId: 'avoidPositiveTabIndex' }],
+        },
       ],
     });
   });

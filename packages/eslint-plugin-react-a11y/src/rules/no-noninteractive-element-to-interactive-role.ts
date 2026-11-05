@@ -13,6 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { staticAttributeValue } from '../utils/jsx-static';
 
 type MessageIds = 'noninteractiveToInteractive';
 
@@ -40,8 +41,8 @@ const NON_INTERACTIVE_ELEMENTS = new Set([
   'header',
   'footer',
   'nav',
-  'div',
-  'span',
+  // div and span are generic, not non-interactive: they have no semantics
+  // for a widget role to discard, and are what custom widgets are built on.
   'table',
   'tbody',
   'thead',
@@ -177,16 +178,11 @@ export const noNoninteractiveElementToInteractiveRole = createRule<
             attr.name.name === 'role',
         );
 
-        if (
-          !roleAttr ||
-          roleAttr.type !== 'JSXAttribute' ||
-          !roleAttr.value ||
-          roleAttr.value.type !== 'Literal'
-        )
-          return;
+        if (!roleAttr) return;
 
-        const role = roleAttr.value.value;
-        if (typeof role !== 'string') return;
+        // Every static spelling of the role; a dynamic one is unknown.
+        const role = staticAttributeValue(roleAttr);
+        if (role === null) return;
 
         // Check if role is interactive
         if (!INTERACTIVE_ROLES.has(role)) return;

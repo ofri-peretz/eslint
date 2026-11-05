@@ -13,6 +13,12 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import {
+  DYNAMIC,
+  attributeValue,
+  findAttribute,
+  staticAttributeValue,
+} from '../utils/jsx-static';
 
 type MessageIds = 'noInteraction';
 
@@ -78,6 +84,46 @@ const INTERACTIVE_HANDLERS = [
   'onKeyUp',
 ];
 
+/**
+ * WAI-ARIA 1.2 document-structure and landmark roles: content, not controls.
+ * An element given one of these is announced as content whatever its tag.
+ */
+const NON_INTERACTIVE_ROLES = new Set([
+  'alert',
+  'article',
+  'banner',
+  'blockquote',
+  'caption',
+  'cell',
+  'complementary',
+  'contentinfo',
+  'definition',
+  'document',
+  'feed',
+  'figure',
+  'form',
+  'group',
+  'heading',
+  'img',
+  'list',
+  'listitem',
+  'log',
+  'main',
+  'math',
+  'navigation',
+  'note',
+  'paragraph',
+  'region',
+  'rowgroup',
+  'search',
+  'status',
+  'table',
+  'term',
+  'time',
+  'timer',
+  'tooltip',
+]);
+
 export const noNoninteractiveElementInteractions = createRule<
   RuleOptions,
   MessageIds
@@ -133,7 +179,23 @@ export const noNoninteractiveElementInteractions = createRule<
         if (node.name.type !== 'JSXIdentifier') return;
         const element = node.name.name;
 
-        if (!NON_INTERACTIVE_ELEMENTS.has(element)) return;
+        // An explicit static role decides; otherwise (no role, a dynamic or
+        // unknown one) the element's own semantics do.
+        const roleAttr = findAttribute(node, 'role');
+        const role = staticAttributeValue(roleAttr)?.trim() ?? null;
+        if (role === 'presentation' || role === 'none') return;
+        if (!(role !== null && NON_INTERACTIVE_ROLES.has(role))) {
+          if (!NON_INTERACTIVE_ELEMENTS.has(element)) return;
+        }
+
+        // Hidden from assistive technology, or an editing surface: exempt.
+        if (staticAttributeValue(findAttribute(node, 'aria-hidden')) === 'true')
+          return;
+        const editable = findAttribute(node, 'contentEditable');
+        if (editable) {
+          const v = attributeValue(editable);
+          if (v === DYNAMIC || (typeof v === 'string' && v !== 'false')) return;
+        }
 
         const hasInteractiveHandler = node.attributes.some(
           (
@@ -146,8 +208,7 @@ export const noNoninteractiveElementInteractions = createRule<
 
         if (!hasInteractiveHandler) return;
 
-        // Only interactive ARIA roles exempt the element from this rule.
-        // Non-interactive roles (presentation, none, img, group) do NOT exempt it.
+        // An interactive ARIA role makes the element a control.
         const INTERACTIVE_ARIA_ROLES = new Set([
           'button',
           'link',
@@ -168,20 +229,7 @@ export const noNoninteractiveElementInteractions = createRule<
           'slider',
           'spinbutton',
         ]);
-
-        const roleAttr = node.attributes.find(
-          (attr): attr is TSESTree.JSXAttribute =>
-            attr.type === 'JSXAttribute' &&
-            attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'role',
-        );
-        if (roleAttr) {
-          const roleValue =
-            roleAttr.value?.type === 'Literal'
-              ? String(roleAttr.value.value)
-              : null;
-          if (roleValue && INTERACTIVE_ARIA_ROLES.has(roleValue)) return;
-        }
+        if (role !== null && INTERACTIVE_ARIA_ROLES.has(role)) return;
 
         context.report({
           node,

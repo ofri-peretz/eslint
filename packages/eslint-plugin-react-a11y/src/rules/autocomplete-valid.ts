@@ -13,6 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { staticAttributeValue } from '../utils/jsx-static';
 
 type MessageIds = 'invalidAutocomplete';
 
@@ -72,10 +73,27 @@ const VALID_AUTOCOMPLETE_VALUES = new Set([
   'tel-national',
   'tel-area-code',
   'tel-local',
+  'tel-local-prefix',
+  'tel-local-suffix',
   'tel-extension',
   'impp',
   'url',
   'photo',
+  'one-time-code',
+]);
+
+/** Field names a contact modifier (home, work, ...) may precede (HTML §4.10.18.7.1). */
+const CONTACT_FIELDS: ReadonlySet<string> = new Set([
+  'tel',
+  'tel-country-code',
+  'tel-national',
+  'tel-area-code',
+  'tel-local',
+  'tel-local-prefix',
+  'tel-local-suffix',
+  'tel-extension',
+  'email',
+  'impp',
 ]);
 
 /**
@@ -164,19 +182,17 @@ export const autocompleteValid = createRule<RuleOptions, MessageIds>({
           ): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'autocomplete',
+            // React spells it autoComplete; HTML attribute names are case-insensitive.
+            attr.name.name.toLowerCase() === 'autocomplete',
         );
 
-        if (
-          !autocomplete ||
-          autocomplete.type !== 'JSXAttribute' ||
-          !autocomplete.value ||
-          autocomplete.value.type !== 'Literal' ||
-          typeof autocomplete.value.value !== 'string'
-        )
-          return;
+        // A static value however it is spelled ("x", {"x"}, {`x`}); a bare
+        // attribute or a dynamic value is not checked.
+        if (!autocomplete || autocomplete.value === null) return;
+        const raw = staticAttributeValue(autocomplete);
+        if (raw === null) return;
 
-        const value = autocomplete.value.value.trim();
+        const value = raw.trim();
         if (value === '') {
           context.report({
             node: autocomplete,
@@ -208,15 +224,22 @@ export const autocompleteValid = createRule<RuleOptions, MessageIds>({
           ADDRESS_MODIFIERS.has(tokens[index] as string)
         )
           index += 1;
+        let contact = false;
         if (
           index < tokens.length &&
           CONTACT_MODIFIERS.has(tokens[index] as string)
-        )
+        ) {
           index += 1;
+          contact = true;
+        }
 
         // Then EXACTLY one field name. Two is the shape this rule used to pass.
         const field = tokens[index];
-        if (field === undefined || !VALID_AUTOCOMPLETE_VALUES.has(field)) {
+        if (
+          field === undefined ||
+          !VALID_AUTOCOMPLETE_VALUES.has(field) ||
+          (contact && !CONTACT_FIELDS.has(field))
+        ) {
           report();
           return;
         }

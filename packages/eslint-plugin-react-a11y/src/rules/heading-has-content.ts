@@ -13,6 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { hasAccessibleChild } from '../utils/jsx-static';
 
 type MessageIds = 'missingContent';
 
@@ -26,7 +27,9 @@ function hasContent(
   node: TSESTree.JSXOpeningElement,
   children: TSESTree.JSXChild[],
 ): boolean {
-  if (children.length > 0) return true;
+  // Blank text, `{undefined}` and an `aria-hidden` child are not content a
+  // screen reader can announce.
+  if (hasAccessibleChild(children)) return true;
 
   return node.attributes.some(
     (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) => {

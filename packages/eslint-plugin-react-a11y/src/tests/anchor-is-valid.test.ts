@@ -25,6 +25,11 @@ describe('anchor-is-valid', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid anchors', anchorIsValid, {
       valid: [
+        { /* @found fidelity model react-a11y/anchor_is_valid */ name: 'FP: aspects [noHref] does not check href values', code: '<a href="#">x</a>', options: [{ aspects: ['noHref'] }] },
+        { /* @found fidelity model react-a11y/anchor_is_valid */ name: 'FP: aspects [noHref] does not check javascript: hrefs', code: '<a href="javascript:void(0)" onClick={go}>x</a>', options: [{ aspects: ['noHref'] }] },
+        { /* @found fidelity model react-a11y/anchor_is_valid */ name: 'FP: aspects [preferButton] alone ignores a handler-less #', code: '<a href="#">x</a>', options: [{ aspects: ['preferButton'] }] },
+        { /* @found fidelity model react-a11y/anchor_is_valid */ name: 'FP: aspects [invalidHref] alone ignores a missing href', code: '<a onClick={go}>x</a>', options: [{ aspects: ['invalidHref'] }] },
+        { name: 'a dynamic href is a destination', code: '<a href={url}>x</a>' },
         { name: 'an anchor with a real destination', code: '<a href="https://example.com">Link</a>' },
         { code: '<a href="/page">Link</a>' },
         { code: '<a href="#section">Link</a>' },
@@ -50,6 +55,10 @@ describe('anchor-is-valid', () => {
     ruleTester.run('invalid anchors', anchorIsValid, {
       valid: [],
       invalid: [
+        { /* @found fidelity model react-a11y/anchor_is_valid */ name: 'FN: a braced # goes nowhere', code: '<a href={"#"}>x</a>', errors: [{ messageId: 'invalidHref' }] },
+        { /* @found fidelity model react-a11y/anchor_is_valid */ name: 'FN: a template javascript: URL goes nowhere', code: '<a href={`javascript:void(0)`}>x</a>', errors: [{ messageId: 'invalidHref' }] },
+        { /* @found fidelity model react-a11y/anchor_is_valid */ name: 'FN: specialLink names the destination attribute', code: '<Link to="#">x</Link>', options: [{ components: ['Link'], specialLink: ['to'] }], errors: [{ messageId: 'invalidHref' }] },
+        { name: 'with preferButton off, a handler on # is an invalid href', code: '<a href="#" onClick={go}>x</a>', options: [{ aspects: ['invalidHref'] }], errors: [{ messageId: 'invalidHref' }] },
         { name: 'an anchor whose href is a bare fragment', code: '<a href="#">Link</a>', errors: [{ messageId: 'invalidHref' }] },
         { code: '<a href="javascript:void(0)">Link</a>', errors: [{ messageId: 'invalidHref' }] },
         { code: '<a onClick={handleClick}>Link</a>', errors: [{ messageId: 'preferButton' }] },

@@ -29,6 +29,9 @@ describe('no-access-key', () => {
         { code: '<a href="#">Link</a>' },
         { code: '<input />' },
         { code: '<div></div>' },
+        // No access key is set
+        { name: 'empty accessKey sets nothing', code: '<div accessKey="">x</div>' },
+        { name: 'undefined accessKey sets nothing', code: '<div accessKey={undefined}>x</div>' },
       ],
       invalid: [],
     });
@@ -41,6 +44,8 @@ describe('no-access-key', () => {
         { name: "accessKey collides with the screen reader's own shortcuts", code: '<button accessKey="s">Save</button>', errors: [{ messageId: 'noAccessKey' }] },
         { code: '<a href="#" accessKey="h">Home</a>', errors: [{ messageId: 'noAccessKey' }] },
         { code: '<input accessKey="i" />', errors: [{ messageId: 'noAccessKey' }] },
+        // HTML attribute names are case-insensitive: accesskey reaches the DOM too
+        { name: 'HTML accesskey spelling', code: '<div accesskey="s">x</div>', errors: [{ messageId: 'noAccessKey' }] },
       ],
     });
   });

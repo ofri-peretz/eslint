@@ -73,6 +73,18 @@ describe('anchor-ambiguous-text', () => {
       valid: [],
       invalid: [
         {
+          // @found fidelity model react-a11y/anchor_ambiguous_text
+          name: 'FN: a static string child is link text',
+          code: '<a href="#">{"click here"}</a>',
+          errors: [{ messageId: 'ambiguousText', data: { text: 'click here' } }],
+        },
+        {
+          // @found fidelity model react-a11y/anchor_ambiguous_text
+          name: 'FN: a template child with no expressions is link text',
+          code: '<a href="#">{`click here`}</a>',
+          errors: [{ messageId: 'ambiguousText', data: { text: 'click here' } }],
+        },
+        {
           name: 'link text that says "here" and nothing else',
           code: '<a href="#">here</a>',
           errors: [

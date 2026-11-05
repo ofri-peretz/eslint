@@ -25,6 +25,9 @@ describe('iframe-has-title', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - iframe with title', iframeHasTitle, {
       valid: [
+        { /* @found fidelity model react-a11y/iframe_has_title */ name: 'FP: a static title in braces is a value', code: '<iframe title={"en"} src="/v" />' },
+        { /* @found fidelity model react-a11y/iframe_has_title */ name: 'FP: a template title is a value', code: '<iframe title={`en`} src="/v" />' },
+        { /* @found fidelity model react-a11y/iframe_has_title */ name: 'FP: a dynamic title is a value the file cannot see', code: '<iframe title={value} src="/v" />' },
         { name: 'a titled iframe', code: '<iframe src="page.html" title="Page content"></iframe>' },
         { code: '<iframe src="video.html" title="Video player"></iframe>' },
         { code: '<div></div>' },
@@ -37,6 +40,12 @@ describe('iframe-has-title', () => {
     ruleTester.run('invalid - iframe without title', iframeHasTitle, {
       valid: [],
       invalid: [
+      {
+        // @found fidelity model react-a11y/iframe_has_title
+        name: 'FN: title={undefined} renders no title',
+        code: '<iframe title={undefined} src="/v" />',
+        errors: [{ messageId: 'missingTitle' }],
+      },
       {
         // @found rule review
         name: 'FN: an empty title announces nothing',

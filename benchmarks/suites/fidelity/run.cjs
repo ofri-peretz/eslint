@@ -57,6 +57,7 @@ const PLUGINS = [
   'supabase-security',
   'typeorm-security',
   'knex-security',
+  'react-a11y',
 ];
 
 const loadPlugin = (short) => {

@@ -31,6 +31,18 @@ describe('role-has-required-aria-props', () => {
         { code: '<div role="combobox" aria-expanded="true" aria-controls="list"></div>' },
         { code: '<div role="button"></div>' },
         { code: '<div></div>' },
+        {
+          name: 'slider with aria-valuenow alone (min/max have WAI-ARIA 1.2 defaults)',
+          code: '<div role="slider" aria-valuenow={5}></div>',
+        },
+        {
+          name: 'scrollbar with aria-controls and aria-valuenow (orientation/min/max have defaults)',
+          code: '<div role="scrollbar" aria-controls="pane" aria-valuenow={5}></div>',
+        },
+        {
+          name: 'a native checkbox exposes aria-checked from its checked state',
+          code: '<input type="checkbox" role="switch" />; <input type="checkbox" role="menuitemcheckbox" />',
+        },
       ],
       invalid: [],
     });
@@ -49,13 +61,26 @@ describe('role-has-required-aria-props', () => {
           errors: [{ messageId: 'missingRequiredProp' }, { messageId: 'missingRequiredProp' }],
         },
         {
-          name: 'slider requires its value props, and reports for each',
+          // WAI-ARIA 1.2: only aria-valuenow is required; aria-valuemin and
+          // aria-valuemax default to 0 and 100.
+          name: 'slider requires aria-valuenow, its only required prop',
           code: '<div role="slider"></div>',
-          errors: [
-            { messageId: 'missingRequiredProp' },
-            { messageId: 'missingRequiredProp' },
-            { messageId: 'missingRequiredProp' },
-          ],
+          errors: [{ messageId: 'missingRequiredProp' }],
+        },
+        {
+          name: 'a required prop missing behind a braced role',
+          code: '<div role={"checkbox"}></div>',
+          errors: [{ messageId: 'missingRequiredProp' }],
+        },
+        {
+          name: 'a required prop missing behind a constant template role',
+          code: '<div role={`switch`}></div>',
+          errors: [{ messageId: 'missingRequiredProp' }],
+        },
+        {
+          name: 'scrollbar still requires aria-controls',
+          code: '<div role="scrollbar" aria-valuenow={5}></div>',
+          errors: [{ messageId: 'missingRequiredProp' }],
         },
       ],
     });

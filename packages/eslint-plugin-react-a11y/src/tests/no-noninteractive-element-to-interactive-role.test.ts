@@ -66,34 +66,36 @@ describe('no-noninteractive-element-to-interactive-role', () => {
     });
   });
 
+  describe('Static elements (div/span) carry no semantics to lose', () => {
+    ruleTester.run('valid - the custom-widget pattern on static elements', noNoninteractiveElementToInteractiveRole, {
+      valid: [
+        {
+          // div and span are generic (HTML-AAM): giving them a widget role is
+          // how a custom widget is built, not a loss of document semantics.
+          name: 'a div given the button role, with its behaviour',
+          code: '<div role="button" tabIndex={0} onClick={handle}>Click me</div>',
+        },
+        {
+          name: 'a span given the link role',
+          code: '<span role="link">Link text</span>',
+        },
+        {
+          name: 'a role the file cannot know on a heading',
+          code: '<h2 role={dynamicRole}>Title</h2>',
+        },
+      ],
+      invalid: [],
+    });
+  });
+
   describe('Invalid Code - Non-interactive Elements with Interactive Roles', () => {
     ruleTester.run('invalid - non-interactive elements with interactive roles', noNoninteractiveElementToInteractiveRole, {
       valid: [],
       invalid: [
         {
-          name: 'a div given the button role without the behaviour that implies',
-          code: '<div role="button">Click me</div>',
-          errors: [
-            {
-              messageId: 'noninteractiveToInteractive',
-              data: {
-                element: 'div',
-                role: 'button',
-              },
-            },
-          ],
-        },
-        {
-          code: '<span role="link">Link text</span>',
-          errors: [
-            {
-              messageId: 'noninteractiveToInteractive',
-              data: {
-                element: 'span',
-                role: 'link',
-              },
-            },
-          ],
+          name: 'an interactive role written as a braced string',
+          code: '<h2 role={"button"}>Click me</h2>',
+          errors: [{ messageId: 'noninteractiveToInteractive' }],
         },
         {
           code: '<p role="checkbox">Check me</p>',
@@ -240,22 +242,22 @@ describe('no-noninteractive-element-to-interactive-role', () => {
         {
           code: `
             <div className="container">
-              <div role="button">Click me</div>
-              <span role="link">Link text</span>
+              <h2 role="button">Click me</h2>
+              <p role="link">Link text</p>
             </div>
           `,
           errors: [
             {
               messageId: 'noninteractiveToInteractive',
               data: {
-                element: 'div',
+                element: 'h2',
                 role: 'button',
               },
             },
             {
               messageId: 'noninteractiveToInteractive',
               data: {
-                element: 'span',
+                element: 'p',
                 role: 'link',
               },
             },
