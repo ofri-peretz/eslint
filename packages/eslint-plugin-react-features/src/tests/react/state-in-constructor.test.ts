@@ -31,6 +31,32 @@ describe('state-in-constructor', () => {
   describe('Valid cases - state in constructor', () => {
     ruleTester.run('state in constructor is valid', stateInConstructor, {
       valid: [
+        {
+          name: 'a declared state type initializes nothing',
+          code: `class MyComponent extends React.Component<P, S> {
+            declare state: S;
+            render() { return null; }
+          }`,
+        },
+        {
+          name: 'a static state field is not instance state',
+          code: `class MyComponent extends React.Component {
+            static state = { count: 0 };
+          }`,
+        },
+        {
+          name: 'a Component from another library is not React',
+          code: `import { Component } from 'lit';
+          class MyElement extends Component { state = { count: 0 }; }`,
+        },
+        {
+          name: 'a constructor overload signature, then the implementation',
+          code: `class MyComponent extends React.Component {
+            state = { count: 0 };
+            constructor(props: any);
+            constructor(props: any) { super(props); this.state = { count: 0 }; }
+          }`,
+        },
         // State initialized in constructor
         {
           name: 'state assigned in the constructor',
@@ -131,6 +157,18 @@ describe('state-in-constructor', () => {
     ruleTester.run('state as class property triggers error', stateInConstructor, {
       valid: [],
       invalid: [
+        {
+          name: 'a class expression on a renamed import',
+          code: `import { Component as Base } from 'react';
+          const MyComponent = class extends Base { state = { count: 0 }; };`,
+          errors: [{ messageId: 'stateInConstructor' }],
+        },
+        {
+          name: 'a computed state key on a namespace import',
+          code: `import * as R from 'react';
+          class MyComponent extends R.Component { ['state'] = { count: 0 }; }`,
+          errors: [{ messageId: 'stateInConstructor' }],
+        },
         // State as class property in Component
         {
           name: 'a class field where the configuration wants the constructor',

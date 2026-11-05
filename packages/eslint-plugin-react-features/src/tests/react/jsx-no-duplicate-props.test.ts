@@ -58,6 +58,11 @@ describe('jsx-no-duplicate-props', () => {
         code: '<div onClick={handleClick} onClick={otherHandler} />',
         errors: [{ messageId: 'duplicateProp' }],
       },
+      {
+        name: 'a namespaced prop written twice',
+        code: '<use xlink:href="#a" xlink:href="#b" />',
+        errors: [{ messageId: 'duplicateProp' }],
+      },
     ],
   });
 });

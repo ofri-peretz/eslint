@@ -188,3 +188,52 @@ describe('no-unnecessary-rerenders — message stays on the documented two lines
     ],
   });
 });
+
+const MEMO_ROW =
+  "import { memo } from 'react'; const Row = memo((p) => <i>{p.x}</i>);";
+
+describe('no-unnecessary-rerenders: only receivers that compare props by identity', () => {
+  ruleTester.run('receivers', noUnnecessaryRerenders, {
+    valid: [
+      {
+        name: 'an inline function on a host element',
+        code: 'function App() { return <button onClick={() => go()} />; }',
+      },
+      {
+        name: 'a big object on a custom element',
+        code: 'function App() { return <my-widget opts={{ a: 1, b: 2, c: 3, d: 4, e: 5 }} />; }',
+      },
+      {
+        name: 'an inline function on a component defined without memo',
+        code: 'const Row = (p) => <i />; function App() { return <Row onSelect={() => go()} />; }',
+      },
+      {
+        name: 'an inline function on a Component class',
+        code: "import React from 'react'; class Row extends React.Component { render() { return null; } } function App() { return <Row onSelect={() => go()} />; }",
+      },
+    ],
+    invalid: [
+      {
+        name: 'an inline function on a memo component',
+        code: `${MEMO_ROW} function App() { return <Row onSelect={() => go()} />; }`,
+        errors: [{ messageId: 'unnecessaryRerender' }],
+      },
+      {
+        name: 'a choice between two inline functions on React.memo',
+        code: "import React from 'react'; const Row = React.memo(() => <i />); function App() { return <Row onSelect={flag ? () => a() : () => b()} />; }",
+        errors: [{ messageId: 'unnecessaryRerender' }],
+      },
+      {
+        name: 'a big array, cast with as, on a PureComponent',
+        code: "import { PureComponent as P } from 'react'; class Row extends P { render() { return null; } } function App() { return <Row items={[1, 2, 3, 4, 5] as number[]} />; }",
+        errors: [{ messageId: 'unnecessaryRerender' }],
+      },
+      {
+        name: 'two objects at minSize chosen by a conditional',
+        code: `${MEMO_ROW} function App() { return <Row opts={flag ? { a: 1, b: 2 } : { a: 2, b: 3, c: 4 }} />; }`,
+        options: [{ minSize: 2 }],
+        errors: [{ messageId: 'unnecessaryRerender' }],
+      },
+    ],
+  });
+});

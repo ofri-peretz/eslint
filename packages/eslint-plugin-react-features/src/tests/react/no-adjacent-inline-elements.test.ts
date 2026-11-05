@@ -76,7 +76,23 @@ ruleTester.run('no-adjacent-inline-elements', noAdjacentInlineElements, {
       name: 'member expression elements',
       code: `<div><UI.Span>A</UI.Span><UI.Span>B</UI.Span></div>`,
     },
-    // Note: expression containers don't reset the counter, only text nodes with content do
+    // CORRECTED: a dynamic child may render text between them; it was
+    // asserted as a finding, which reported an unknown value.
+    {
+      name: 'inline elements with expression between',
+      code: `<div><span>A</span>{variable}<span>B</span></div>`,
+    },
+    {
+      name: 'inline elements on their own lines are left to CSS layout',
+      code: `<div>
+        <span>A</span>
+        <span>B</span>
+      </div>`,
+    },
+    {
+      name: 'a space on the same line separates inline elements',
+      code: `<p><em>A</em> <b>B</b></p>`,
+    },
   ],
   invalid: [
     // Invalid - adjacent span elements
@@ -133,10 +149,9 @@ ruleTester.run('no-adjacent-inline-elements', noAdjacentInlineElements, {
       code: `<div><span><b>Bold</b></span><span><i>Italic</i></span></div>`,
       errors: [{ messageId: 'noAdjacentInlineElements' }],
     },
-    // Invalid - expression containers don't separate inline elements
     {
-      name: 'inline elements with expression between',
-      code: `<div><span>A</span>{variable}<span>B</span></div>`,
+      name: 'an empty comment child renders nothing between them',
+      code: `<><em>A</em>{/* gap */}<b>B</b></>`,
       errors: [{ messageId: 'noAdjacentInlineElements' }],
     },
   ],

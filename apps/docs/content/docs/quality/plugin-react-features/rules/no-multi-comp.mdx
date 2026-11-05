@@ -67,8 +67,21 @@ export default UserCard;
 ### ✅ Correct
 
 ```tsx
-hello
+// UserCard.tsx — one component; helpers that are not components are fine
+function renderBadge(role: string) {
+  return <span className="badge">{role}</span>;
+}
+
+export default function UserCard({ user }) {
+  return (
+    <div className="user-card">
+      {user.name} {renderBadge(user.role)}
+    </div>
+  );
+}
 ```
+
+A component, as React defines one: a class that extends React's `Component` / `PureComponent`, a function whose name starts with a capital letter and that returns JSX, or a function passed to React's `memo` / `forwardRef`. A lowercase render helper or a PascalCase function that returns no JSX is not a component. Every component after the first is reported; with `ignoreStateless: true`, only class components count.
 
 ## Options
 
@@ -119,48 +132,12 @@ hello
 
 - **[Thinking in React](https://react.dev/learn/thinking-in-react)** - Component organization
 - **[Single Responsibility](https://en.wikipedia.org/wiki/Single-responsibility_principle)** - Design principle
+
 <WhenNotToUse />
 
 <FalseNegativeCTA />
 
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Prop from variable
-const propValue = computedValue;
-<Component prop={propValue} /> // Computation not analyzed
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Wrapped or Aliased Functions
-
-**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-function myWrapper(data) {
-  return internalApi(data); // Wrapper not analyzed
-}
-myWrapper(unsafeInput);
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- **Components made by other higher-order functions**: `styled.div`, `connect(...)(View)` or a custom `withX(() => <div />)` are not counted; only `memo` / `forwardRef` (by binding), PascalCase functions that return JSX, and classes that extend React's `Component` / `PureComponent` are.
+- **A component that returns JSX only through a helper call** (`function Card() { return renderCard(); }`) is not recognised.

@@ -29,13 +29,18 @@ Implements rule **R19** of the [portable component-modeling floor](https://githu
 
 ## Rule Details
 
-Scans `className="..."` strings (and `cn`/`clsx`/`twMerge` arguments) for
-`<prop>-[<value>]` patterns. Reports when:
+Scans `className` values — `"…"`, `{"…"}`, templates, both branches of a
+conditional, `flag && "…"` — and class-name builder arguments (plain,
+conditional, template, array elements, object keys) for `<prop>-[<value>]`
+patterns. A builder is `cn` (the helper shadcn/ui generates), or clsx /
+classnames / tailwind-merge by import binding, renamed or not. Reports when:
 
 - `<prop>` is in the tokenizable set: `rounded*`, `p*` (`p`, `px`, `py`, `pt`,
   `pb`, `pl`, `pr`), `m*` (same pattern), `gap`, `gap-x`, `gap-y`, `space-x`,
   `space-y`.
-- `<value>` is a simple pixel/rem/em literal (`12px`, `1.5rem`, `2em`).
+- `<value>` is a simple pixel/rem/em literal (`12px`, `1.5rem`, `.5rem`, `2em`).
+- A negative utility (`-mx-[4px]`) and any variant prefix (`hover:`, `md:`,
+  `!`, `data-[state=open]:`) are the same utility.
 
 **Explicitly allowed** arbitrary values that don't trip the rule:
 
@@ -69,8 +74,8 @@ cn("rounded-[12px]")
 
 - Class strings built by string concatenation aren't traced.
 - Template-literal interpolations with dynamic prop fragments are skipped.
-- Custom class-name builders not in `cn`/`clsx`/`twMerge`/`classNames` are
-  ignored — extend the rule if you have a project-specific builder.
+- Custom class-name builders other than `cn` and the clsx / classnames /
+  tailwind-merge exports are ignored.
 
 ## Related
 

@@ -9,8 +9,9 @@
  * Enforce static property placement
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { createRule, objectKeyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { extendsReactComponent } from '../../utils/react-api';
 
 type MessageIds = 'staticPropertyPlacement';
 
@@ -65,6 +66,7 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
           childClass: {
             type: 'string',
             enum: ['first', 'last'],
+            description: 'Accepted for compatibility; it has no effect.',
           },
         },
         additionalProperties: false,
@@ -86,31 +88,8 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, [Options]>) {
     let propertyGroups: { name: string; properties: string[] }[];
 
-    // oxlint-disable-next-line consistent-function-scoping
-    function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
-      if (!node.superClass) return false;
-
-      if (node.superClass.type === 'Identifier') {
-        return (
-          node.superClass.name === 'Component' ||
-          node.superClass.name === 'PureComponent'
-        );
-      }
-
-      if (node.superClass.type === 'MemberExpression') {
-        return (
-          node.superClass.object.type === 'Identifier' &&
-          node.superClass.object.name === 'React' &&
-          (propertyName(node.superClass) === 'Component' ||
-            propertyName(node.superClass) === 'PureComponent')
-        );
-      }
-
-      return false;
-    }
-
     function checkStaticPropertyPlacement(
-      node: TSESTree.ClassDeclaration,
+      node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
       groups: NonNullable<Options['propertyGroups']>,
     ) {
       const members = node.body.body;
@@ -189,18 +168,25 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
       );
     }
 
+    /**
+     * The static's name in any spelling (`propTypes`, `['propTypes']`).
+     * `static [propTypes] = {}` is a property whose name is whatever the
+     * VARIABLE `propTypes` holds — not the property `propTypes` — so it has
+     * no static name.
+     */
     // oxlint-disable-next-line consistent-function-scoping
     function getPropertyName(
       member: TSESTree.PropertyDefinition | TSESTree.MethodDefinition,
     ): string | null {
-      // `static [propTypes] = {}` is a property whose name is whatever the
-      // VARIABLE `propTypes` holds — not the property `propTypes`. Reading the
-      // identifier through a computed key was the same mistake in miniature as
-      // the one this rule's grouping check made.
-      if (!member.computed && member.key.type === 'Identifier') {
-        return member.key.name;
+      return objectKeyName(member);
+    }
+
+    function check(
+      node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
+    ): void {
+      if (extendsReactComponent(node, context.sourceCode.getScope(node))) {
+        checkStaticPropertyPlacement(node, propertyGroups);
       }
-      return null;
     }
 
     return {
@@ -208,11 +194,8 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
         const [options] = context.options;
         propertyGroups = options?.propertyGroups ?? DEFAULT_GROUPS;
       },
-      ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        if (isReactComponent(node)) {
-          checkStaticPropertyPlacement(node, propertyGroups);
-        }
-      },
+      ClassDeclaration: check,
+      ClassExpression: check,
     };
   },
 });

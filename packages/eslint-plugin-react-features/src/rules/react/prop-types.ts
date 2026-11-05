@@ -9,8 +9,13 @@
  * Enforce prop types usage
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { extendsReactComponent } from '../../utils/react-api';
 
 type MessageIds = 'propTypes';
 
@@ -40,6 +45,7 @@ export const propTypes = createRule<[Options], MessageIds>({
           customValidators: {
             type: 'array',
             items: { type: 'string' },
+            description: 'Accepted for compatibility; it has no effect.',
           },
           skipUndeclared: {
             type: 'boolean',
@@ -62,97 +68,76 @@ export const propTypes = createRule<[Options], MessageIds>({
   },
   defaultOptions: [{}],
   createOnce(context: TSESLint.RuleContext<MessageIds, [Options]>) {
+    type ClassNode = TSESTree.ClassDeclaration | TSESTree.ClassExpression;
+    type Component = { node: ClassNode; declared: boolean; usesProps: boolean };
+
     let ignore: string[];
     let skipUndeclared: boolean;
-    let components: TSESTree.ClassDeclaration[];
-    let propTypesMap: Map<string, TSESTree.PropertyDefinition>;
+    /** Every class being walked; `component` is set for React components. */
+    let classes: { component: Component | null }[];
+    let components: Component[];
+    /** `X.propTypes = …`, resolved against the classes at the end. */
+    let assigned: TSESTree.Identifier[];
 
+    /** The name a class goes by: its own, or the variable it is bound to. */
     // oxlint-disable-next-line consistent-function-scoping
-    function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
-      if (!node.superClass) return false;
-
-      if (node.superClass.type === 'Identifier') {
-        return (
-          node.superClass.name === 'Component' ||
-          node.superClass.name === 'PureComponent'
-        );
-      }
-
-      if (node.superClass.type === 'MemberExpression') {
-        return (
-          node.superClass.object.type === 'Identifier' &&
-          node.superClass.object.name === 'React' &&
-          (propertyName(node.superClass) === 'Component' ||
-            propertyName(node.superClass) === 'PureComponent')
-        );
-      }
-
-      return false;
+    function nameOf(node: ClassNode): string | null {
+      if (node.id) return node.id.name;
+      const parent = node.parent;
+      return parent.type === 'VariableDeclarator' &&
+        parent.id.type === 'Identifier'
+        ? parent.id.name
+        : null;
     }
 
-    function hasPropsUsage(node: TSESTree.ClassDeclaration): boolean {
-      // Simple check: look for this.props usage
-      for (const member of node.body.body) {
-        if (member.type === 'MethodDefinition') {
-          const body = member.value.body;
-          if (containsPropsAccess(body)) {
-            return true;
-          }
-        }
-      }
-      return false;
+    /**
+     * Are the props declared on the class itself: a `static propTypes` in any
+     * key spelling, or TypeScript props on the base (`Component<Props>`)?
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    function declaresProps(node: ClassNode): boolean {
+      return (
+        Boolean(node.superTypeArguments) ||
+        node.body.body.some(
+          (member) =>
+            member.type === 'PropertyDefinition' &&
+            member.static &&
+            objectKeyName(member) === 'propTypes',
+        )
+      );
     }
 
-    function containsPropsAccess(
-      node: TSESTree.Node | null | undefined,
-      visited = new Set<TSESTree.Node>(),
-    ): boolean {
-      if (!node) return false;
-
-      if (visited.has(node)) return false;
-      visited.add(node);
-
-      if (
-        node.type === 'MemberExpression' &&
-        node.object.type === 'ThisExpression' &&
-        propertyName(node) === 'props'
+    /** The class a name is bound to in this file, if any. */
+    function classBoundTo(id: TSESTree.Identifier): ClassNode | undefined {
+      for (
+        let scope: TSESLint.Scope.Scope | null =
+          context.sourceCode.getScope(id);
+        scope;
+        scope = scope.upper
       ) {
-        return true;
+        const def = scope.set.get(id.name)?.defs[0];
+        if (!def) continue;
+        if (def.type === 'ClassName') return def.node as ClassNode;
+        const init = def.type === 'Variable' ? def.node.init : null;
+        return init?.type === 'ClassExpression' ? init : undefined;
       }
+      return undefined;
+    }
 
-      // Skip non-child keys to avoid circular references
-      const skipKeys = new Set([
-        'parent',
-        'range',
-        'loc',
-        'start',
-        'end',
-        'tokens',
-        'comments',
-      ]);
+    function enter(node: ClassNode): void {
+      const name = nameOf(node);
+      const isComponent =
+        extendsReactComponent(node, context.sourceCode.getScope(node)) &&
+        !(name !== null && ignore.includes(name));
+      const component = isComponent
+        ? { node, declared: declaresProps(node), usesProps: false }
+        : null;
+      if (component) components.push(component);
+      classes.push({ component });
+    }
 
-      for (const key in node) {
-        if (skipKeys.has(key)) continue;
-
-        const child = (node as unknown as Record<string, unknown>)[key];
-        if (child && typeof child === 'object') {
-          if (Array.isArray(child)) {
-            for (const item of child) {
-              if (item && typeof item === 'object' && 'type' in item) {
-                if (containsPropsAccess(item as TSESTree.Node, visited)) {
-                  return true;
-                }
-              }
-            }
-          } else if ('type' in child) {
-            if (containsPropsAccess(child as TSESTree.Node, visited)) {
-              return true;
-            }
-          }
-        }
-      }
-
-      return false;
+    function exit(): void {
+      classes.pop();
     }
 
     return {
@@ -160,44 +145,52 @@ export const propTypes = createRule<[Options], MessageIds>({
         const [options] = context.options;
         ignore = options?.ignore ?? [];
         skipUndeclared = options?.skipUndeclared ?? false;
-
+        classes = [];
         components = [];
-        propTypesMap = new Map<string, TSESTree.PropertyDefinition>();
+        assigned = [];
       },
-      // Collect class components
-      ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        if (isReactComponent(node) && !ignore.includes(node.id?.name || '')) {
-          components.push(node);
+      ClassDeclaration: enter,
+      ClassExpression: enter,
+      'ClassDeclaration:exit': exit,
+      'ClassExpression:exit': exit,
+
+      // `this.props` read inside the nearest enclosing component class.
+      ThisExpression(node: TSESTree.ThisExpression) {
+        const component = classes.at(-1)?.component;
+        // `(this as Props).props` reads the same object as `this.props`.
+        let inner: TSESTree.Node = node;
+        while (inner.parent?.type === 'TSAsExpression') inner = inner.parent;
+        const parent = inner.parent!;
+        if (
+          component &&
+          parent.type === 'MemberExpression' &&
+          parent.object === inner &&
+          propertyName(parent) === 'props'
+        ) {
+          component.usesProps = true;
         }
       },
 
-      // Collect propTypes (PropertyDefinition in TypeScript ESLint)
-      'PropertyDefinition[key.name="propTypes"]'(
-        node: TSESTree.PropertyDefinition,
-      ) {
-        if (node.parent.type === 'ClassBody') {
-          const classNode = node.parent.parent as TSESTree.ClassDeclaration;
-          if (classNode.id?.name) {
-            propTypesMap.set(classNode.id.name, node);
-          }
-        }
+      // `App.propTypes = …` (through a cast too) declares the same static.
+      AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        const target = node.left;
+        if (
+          target.type !== 'MemberExpression' ||
+          propertyName(target) !== 'propTypes'
+        )
+          return;
+        let object: TSESTree.Node = target.object;
+        while (object.type === 'TSAsExpression') object = object.expression;
+        if (object.type === 'Identifier') assigned.push(object);
       },
 
-      // Check components at the end
       'Program:exit'() {
+        const assignedTo = new Set(assigned.map(classBoundTo));
         for (const component of components) {
-          const componentName = component.id?.name;
-          if (!componentName) continue;
-
-          const propTypesProp = propTypesMap.get(componentName);
-
-          // Skip if component has propTypes or if skipUndeclared is true and no props are used
-          if (propTypesProp || (skipUndeclared && !hasPropsUsage(component))) {
-            continue;
-          }
-
+          if (component.declared || assignedTo.has(component.node)) continue;
+          if (skipUndeclared && !component.usesProps) continue;
           context.report({
-            node: component.id || component,
+            node: component.node.id ?? component.node,
             messageId: 'propTypes',
           });
         }

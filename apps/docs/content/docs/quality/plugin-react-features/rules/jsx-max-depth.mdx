@@ -74,7 +74,28 @@ flowchart TD
 
 ### ❌ Incorrect (with max: 3)
 
-> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
+```jsx
+function Card() {
+  return (
+    <div>                         {/* depth 0 */}
+      <section>                   {/* depth 1 */}
+        <>                        {/* depth 2: a fragment is a level */}
+          {flag && (
+            <p>                   {/* depth 3: nested where it is written */}
+              <b>Too deep</b>     {/* depth 4 > 3 — reported */}
+            </p>
+          )}
+        </>
+      </section>
+    </div>
+  );
+}
+```
+
+Depth counts every element and fragment from the outermost JSX of an expression,
+including elements written under `&&`, `||`, `??` or either branch of a conditional
+child. An element returned from a callback inside the tree
+(`{items.map((i) => <li />)}`) starts its own count.
 
 ### ✅ Correct (with max: 3)
 

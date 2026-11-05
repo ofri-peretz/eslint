@@ -33,9 +33,13 @@ invisible to design-token tooling, refactors, and theme audits. Static values
 belong in Tailwind classes; dynamic positions belong in CSS variables that the
 component sets via inline style and consumes via class.
 
-This rule flags `style={{...}}` where **any** property has a static literal
-value (string or number) and the property key isn't a CSS variable. CSS-variable
-assignment (`style={{ "--snp-x": x }}`) is explicitly allowed.
+This rule flags `style={{...}}` where **any** property has a static value — a
+string, a number, a negative number or a template with no placeholder — and the
+key names a CSS property (`padding`, `'padding'`, `['padding']`) rather than a
+CSS variable. CSS-variable assignment (`style={{ "--snp-x": x }}`) is explicitly
+allowed. A key chosen at runtime (`[key]`) may be a CSS variable and is not
+reported; a choice between two static values (`flag ? '1px' : '2px'`) varies at
+runtime and is not reported.
 
 ## Examples
 
@@ -59,7 +63,12 @@ assignment (`style={{ "--snp-x": x }}`) is explicitly allowed.
 ## Known False Negatives
 
 - Static values spread via a variable (`const styles = { padding: "10px" }; <div style={styles} />`) aren't detected — flatten the inline literal into Tailwind classes if it's truly static.
-- Tagged template literals or computed property keys are not analysed.
+- Tagged template literals are not analysed.
+
+## Known False Positives
+
+- `style` on a component (`<Box style={{ padding: 10 }} />`) is reported
+  although the component's `style` prop may not be CSS.
 
 ## Related
 

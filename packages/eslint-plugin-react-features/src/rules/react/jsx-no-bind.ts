@@ -49,10 +49,11 @@ export const jsxNoBind = createRule<[], MessageIds>({
             return;
           }
 
-          // Check for .bind() calls
-          if (isBindCall(expression)) {
+          // Check for .bind() calls, as the value or as what it evaluates to
+          const bind = findBindCall(expression);
+          if (bind) {
             context.report({
-              node: expression,
+              node: bind,
               messageId: 'jsxNoBind',
             });
           }
@@ -63,17 +64,24 @@ export const jsxNoBind = createRule<[], MessageIds>({
 });
 
 /**
- * Check if expression is a .bind() call
+ * The `.bind()` call a prop value evaluates to, in any spelling:
+ * `h.bind(x)`, `h['bind'](x)`, `h.bind?.(x)`, or as a branch of a
+ * conditional or the right of a logical expression. `null` otherwise.
  */
-function isBindCall(node: TSESTree.Expression): boolean {
-  if (node.type === 'CallExpression') {
-    if (
-      node.callee.type === 'MemberExpression' &&
-      propertyName(node.callee) === 'bind'
-    ) {
-      return true;
-    }
+function findBindCall(node: TSESTree.Node): TSESTree.Node | null {
+  switch (node.type) {
+    case 'ChainExpression':
+      return findBindCall(node.expression) && node;
+    case 'CallExpression':
+      return node.callee.type === 'MemberExpression' &&
+        propertyName(node.callee) === 'bind'
+        ? node
+        : null;
+    case 'ConditionalExpression':
+      return findBindCall(node.consequent) ?? findBindCall(node.alternate);
+    case 'LogicalExpression':
+      return findBindCall(node.right);
+    default:
+      return null;
   }
-
-  return false;
 }

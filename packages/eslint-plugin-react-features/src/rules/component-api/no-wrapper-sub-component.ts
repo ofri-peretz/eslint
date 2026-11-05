@@ -19,6 +19,7 @@
  *   still flagged; consumers should import the primitive directly.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { isReactApi } from '../../utils/react-api';
 import {
   createRule,
   formatLLMMessage,
@@ -49,12 +50,39 @@ const isPassthroughBody = (
   return stmt.argument;
 };
 
-const isSpreadOnlyJsx = (el: TSESTree.JSXElement): boolean => {
+type FunctionNode =
+  | TSESTree.FunctionDeclaration
+  | TSESTree.FunctionExpression
+  | TSESTree.ArrowFunctionExpression;
+
+/**
+ * The name the function's props arrive under, when it takes them whole:
+ * `(props)`, or `({ ...rest })` (the same object). `({ label, ...rest })`
+ * filters `label` out, which is behaviour, so it has none.
+ */
+const wholePropsName = (fn: FunctionNode): string | null => {
+  const [param] = fn.params;
+  if (!param) return null;
+  if (param.type === 'Identifier') return param.name;
+  if (param.type !== 'ObjectPattern' || param.properties.length !== 1)
+    return null;
+  const [only] = param.properties;
+  // In a binding pattern the object rest target is always a plain identifier
+  // (ECMAScript: `BindingRestProperty : ... BindingIdentifier`).
+  return only.type === 'RestElement'
+    ? (only.argument as TSESTree.Identifier).name
+    : null;
+};
+
+/** The element spreads exactly the props it was given, and nothing else. */
+const isSpreadOnlyJsx = (el: TSESTree.JSXElement, props: string): boolean => {
   const attrs = el.openingElement.attributes;
   if (attrs.length !== 1) return false;
   const attr = attrs[0];
   if (attr.type !== 'JSXSpreadAttribute') return false;
   if (attr.argument.type !== 'Identifier') return false;
+  // `{...defaults}` ignores the props it was given: not a passthrough.
+  if (attr.argument.name !== props) return false;
   // children must be empty (self-closing or empty)
   return el.children.length === 0;
 };
@@ -95,17 +123,12 @@ export const noWrapperSubComponent = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const checkFn = (
-      node:
-        | TSESTree.FunctionDeclaration
-        | TSESTree.FunctionExpression
-        | TSESTree.ArrowFunctionExpression,
-      name: string,
-    ): void => {
+    const checkFn = (node: FunctionNode, name: string): void => {
       if (!isPascalCaseIdentifier(name)) return;
       const jsx = isPassthroughBody(node.body);
       if (!jsx) return;
-      if (!isSpreadOnlyJsx(jsx)) return;
+      const props = wholePropsName(node);
+      if (props === null || !isSpreadOnlyJsx(jsx, props)) return;
       if (!isPascalCaseJsxName(jsx.openingElement.name)) return;
       context.report({
         node,
@@ -122,13 +145,23 @@ export const noWrapperSubComponent = createRule<RuleOptions, MessageIds>({
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (node.id.type !== 'Identifier') return;
         if (!node.init) return;
+        // `const MyTrigger = memo((props) => <Trigger {...props} />)` is the
+        // same wrapper, memoised.
+        let fn: TSESTree.Node = node.init;
         if (
-          node.init.type !== 'ArrowFunctionExpression' &&
-          node.init.type !== 'FunctionExpression'
+          fn.type === 'CallExpression' &&
+          isReactApi(fn.callee, context.sourceCode.getScope(fn), 'memo') &&
+          fn.arguments.length > 0
+        ) {
+          fn = fn.arguments[0];
+        }
+        if (
+          fn.type !== 'ArrowFunctionExpression' &&
+          fn.type !== 'FunctionExpression'
         ) {
           return;
         }
-        checkFn(node.init, node.id.name);
+        checkFn(fn, node.id.name);
       },
     };
   },

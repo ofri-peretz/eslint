@@ -11,6 +11,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { isReactApi } from '../../utils/react-api';
 
 type MessageIds = 'missingAttribute' | 'addAttribute';
 
@@ -138,6 +139,25 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
       return null;
     };
 
+    type TagName = TSESTree.JSXIdentifier | TSESTree.JSXMemberExpression;
+
+    /** A JSX tag name as the expression it stands for (`Ui.Card` -> member). */
+    // oxlint-disable-next-line consistent-function-scoping
+    // A JSX member tag (`<React.Fragment>`) has no computed spelling: its
+    // property is always a plain JSX identifier, read here as written.
+    const asExpression = (name: TagName): TSESTree.Node => {
+      if (name.type === 'JSXIdentifier') {
+        return { type: 'Identifier', name: name.name } as TSESTree.Identifier;
+      }
+      const tag = name.property;
+      return {
+        type: 'MemberExpression',
+        computed: false,
+        object: asExpression(name.object as TagName),
+        property: { type: 'Identifier', name: tag.name },
+      } as TSESTree.MemberExpression;
+    };
+
     /**
      * Check if element has attribute
      */
@@ -216,6 +236,19 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         const elementName = getElementName(node);
         if (!elementName) return;
+
+        // React's `Fragment` renders no element and accepts no prop but
+        // `key`: nothing can be required of it.
+        // (`getElementName` returned a name, so the tag is not namespaced.)
+        if (
+          isReactApi(
+            asExpression(node.name as TagName),
+            context.sourceCode.getScope(node),
+            'Fragment',
+          )
+        ) {
+          return;
+        }
 
         // Check if element is in global ignore list
         if (ignoreComponents.includes(elementName)) {

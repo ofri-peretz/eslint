@@ -1,154 +1,111 @@
 ---
 title: no-unnecessary-rerenders
-description: no-unnecessary-rerenders rule
+description: Report an object, array or function created during render and passed to a component that compares props by identity.
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
 ---
 
-
 <!-- @rule-summary -->
-no-unnecessary-rerenders rule
+Report an object, array or function created during render and passed to a component that compares props by identity.
 <!-- @/rule-summary -->
 
 # no-unnecessary-rerenders
 
-> **Keywords:** no unnecessary rerenders, performance, ESLint rule, JavaScript, TypeScript
-
-ESLint Rule: no-unnecessary-rerenders with LLM-optimized suggestions and auto-fix capabilities.
+> **Keywords:** React.memo, PureComponent, useMemo, useCallback, re-render, performance, ESLint rule
 
 ## Quick Summary
 
-| Aspect         | Details                                      |
-| -------------- | -------------------------------------------- |
-| **Severity**   | Error (code quality)                        |
-| **Auto-Fix**   | ❌ No                                        |
-| **Category**   | Performance |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration      |
-| **Best For**   | Production applications                      |
-| **Suggestions** | ✅ 4 available           |
+| Aspect          | Details                                     |
+| --------------- | ------------------------------------------- |
+| **Severity**    | Suggestion (performance)                    |
+| **Auto-Fix**    | No (suggestions: `useMemo` / `useCallback`) |
+| **Category**    | Performance                                 |
+| **Best For**    | Components that use `memo` or `PureComponent` |
 
 ## Rule Details
 
-```mermaid
-%%{init: {
-  'theme': 'base',
-  'themeVariables': {
-    'primaryColor': '#f8fafc',
-    'primaryTextColor': '#1e293b',
-    'primaryBorderColor': '#334155',
-    'lineColor': '#475569',
-    'c0': '#f8fafc',
-    'c1': '#f1f5f9',
-    'c2': '#e2e8f0',
-    'c3': '#cbd5e1'
-  }
-}}%%
-flowchart TD
-    A[🔍 Detect no unnecessary rerenders] --> B{Valid pattern?}
-    B -->|❌ No| C[🚨 Report violation]
-    B -->|✅ Yes| D[✅ Pass]
+An object literal, an array literal or an inline function written as a prop is
+created anew on every render, so it never equals the value from the last
+render. That matters only when the receiver skips re-rendering on equal props:
 
-    classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
-    classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
+- a component the file wraps in React's `memo` (`memo(...)`, `React.memo(...)`,
+  a renamed import, `memo(forwardRef(...))`), or
+- a class extending React's `PureComponent`.
 
-    class A startNode
-    class C errorNode
-```
+There, a fresh value defeats the memoization and the child re-renders every
+time its parent does. The rule reports it.
 
-### Why This Matters
+It does **not** report:
 
-| Issue                | Impact                                | Solution                    |
-| -------------------- | ------------------------------------- | --------------------------- |
-| 🔒 **Security/Code Quality** | [Specific issue] | [Solution approach] |
-| 🐛 **Maintainability** | [Impact] | [Fix] |
-| ⚡ **Performance**   | [Impact] | [Optimization] |
+- a host element (`<div style={{…}}>`, `<button onClick={() => …}>`,
+  `<my-widget>`): React sets the new value on the DOM node; there is no render
+  to save;
+- a component the file defines without `memo` (a function, an arrow,
+  `forwardRef(...)`, a `Component` class): it re-renders with its parent
+  whatever its props are;
+- a value that is not created in render (an identifier, a call result, a
+  string or number).
 
-## Configuration
+A conditional whose two branches are both fresh values of the same kind
+(`flag ? () => a() : () => b()`) is a fresh value; TypeScript's `as`,
+`satisfies` and `!` are seen through.
 
-**No configuration options available.**
+## Options
+
+| Option          | Type      | Default | Description                                                         |
+| --------------- | --------- | ------- | ------------------------------------------------------------------- |
+| `minSize`       | `number`  | `5`     | Smallest object / array literal reported. Functions are reported at any size. |
+| `ignoreInTests` | `boolean` | `true`  | Skip `*.test.*` / `*.spec.*` files.                                 |
 
 ## Examples
 
 ### ❌ Incorrect
 
-```typescript
-// Example of incorrect usage
+```tsx
+import { memo } from 'react';
+
+const Row = memo(function Row({ onSelect }: Props) {
+  return <li onClick={onSelect}>…</li>;
+});
+
+function List({ items }: { items: Item[] }) {
+  // A new function every render: Row's memo never holds.
+  return items.map((item) => <Row key={item.id} onSelect={() => select(item)} />);
+}
 ```
 
 ### ✅ Correct
 
-```typescript
-// Example of correct usage
+```tsx
+function List({ items }: { items: Item[] }) {
+  const onSelect = useCallback((item: Item) => select(item), []);
+  return items.map((item) => <Row key={item.id} item={item} onSelect={onSelect} />);
+}
+
+// A host element has no render to save.
+<button onClick={() => save()}>Save</button>;
 ```
 
-## Configuration Examples
+## Known False Positives
 
-### Basic Usage
+- **A component the file cannot see** (an import, `<Ctx.Provider>`, `<Ui.Row>`)
+  is still checked: whether it compares props by identity is unknown, so the
+  finding may not hold.
 
-```javascript
-// eslint.config.mjs
-export default [
-  {
-    rules: {
-      'react-features/no-unnecessary-rerenders': 'error',
-    },
-  },
-];
-```
+## Known False Negatives
 
-## LLM-Optimized Output
-
-```
-🚨 no unnecessary rerenders | Description | MEDIUM
-   Fix: Suggestion | Reference
-```
+- An object or array smaller than `minSize` passed to a memo component also
+  defeats the memo; it is not reported below the threshold.
+- A fresh value produced by a call (`debounce(() => …)`, `{...a}` spread into a
+  new object through a helper) is not followed.
 
 ## Related Rules
 
-- [`rule-name`](./rule-name.md) - Description
+- [`react-render-optimization`](./react-render-optimization.md)
+- [`react-no-inline-functions`](./react-no-inline-functions.md)
 
 ## Further Reading
 
-- **[Reference](https://example.com)** - Description
-## Known False Negatives
-
-The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Prop from variable
-const propValue = computedValue;
-<Component prop={propValue} /> // Computation not analyzed
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Wrapped or Aliased Functions
-
-**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-function myWrapper(data) {
-  return internalApi(data); // Wrapper not analyzed
-}
-myWrapper(unsafeInput);
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- **[memo](https://react.dev/reference/react/memo)** - when props are compared
+- **[useMemo](https://react.dev/reference/react/useMemo)** and **[useCallback](https://react.dev/reference/react/useCallback)**

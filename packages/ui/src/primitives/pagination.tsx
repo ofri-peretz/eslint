@@ -58,7 +58,7 @@ function PaginationLink({
     // Content and href are supplied by the consumer via {...props} (this is
     // a bare navigable link primitive); the rules can't see through the
     // spread.
-    // eslint-disable-next-line react-a11y/anchor-has-content, react-a11y/control-has-associated-label, react-a11y/anchor-is-valid
+    // eslint-disable-next-line react-a11y/anchor-has-content, react-a11y/anchor-is-valid
     <a
       aria-current={active ? 'page' : undefined}
       data-slot="pagination-link"

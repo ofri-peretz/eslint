@@ -10,6 +10,14 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-namespace', noNamespace, {
   valid: [
+    {
+      name: 'a type-only namespace import is erased',
+      code: "import type * as T from './types';",
+    },
+    {
+      name: 'a namespace re-export is not an import',
+      code: "export * as utils from './utils';",
+    },
     // Valid - named imports
     {
       name: 'named import from react',

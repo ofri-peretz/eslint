@@ -41,85 +41,58 @@ export const reactInJsxScope = createRule<[], MessageIds>({
   },
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
-    let hasReactImport: boolean;
-    let hasJsxUsage: boolean;
+    /**
+     * `/** @jsxRuntime automatic *\/`: the file compiles JSX to the automatic
+     * runtime's own imports, so it needs no `React` binding.
+     */
+    let automatic: boolean;
+
+    /**
+     * Does this definition leave a runtime value? A type alias / interface
+     * does not, and neither does a type-only import (`import type React`,
+     * `import { type default as React }`): both are erased at compile time.
+     */
+    function declaresValue(def: TSESLint.Scope.Definition): boolean {
+      if (def.type === 'Type') return false;
+      if (def.type !== 'ImportBinding') return true;
+      const declaration = def.parent as { importKind?: string };
+      const specifier = def.node as { importKind?: string };
+      return (
+        declaration.importKind !== 'type' && specifier.importKind !== 'type'
+      );
+    }
+
+    /** Is a value named `React` declared in this scope or an enclosing one? */
+    function reactInScope(scope: TSESLint.Scope.Scope): boolean {
+      for (
+        let s: TSESLint.Scope.Scope | null = scope;
+        s !== null;
+        s = s.upper
+      ) {
+        const variable = s.set.get('React');
+        if (variable?.defs.some(declaresValue)) return true;
+      }
+      return false;
+    }
+
+    function check(
+      node: TSESTree.JSXOpeningElement | TSESTree.JSXOpeningFragment,
+    ): void {
+      if (automatic || reactInScope(context.sourceCode.getScope(node))) return;
+      context.report({
+        node: node.type === 'JSXOpeningElement' ? node.name : node,
+        messageId: 'reactInJsxScope',
+      });
+    }
 
     return {
-      before() {
-        hasReactImport = false;
-        hasJsxUsage = false;
+      Program() {
+        automatic = context.sourceCode
+          .getAllComments()
+          .some((c) => /@jsxRuntime\s+automatic\b/.test(c.value));
       },
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        // Check for React import
-        if (node.source.value === 'react') {
-          for (const specifier of node.specifiers) {
-            if (
-              specifier.type === 'ImportDefaultSpecifier' &&
-              specifier.local.name === 'React'
-            ) {
-              hasReactImport = true;
-              break;
-            }
-            if (
-              specifier.type === 'ImportNamespaceSpecifier' &&
-              specifier.local.name === 'React'
-            ) {
-              hasReactImport = true;
-              break;
-            }
-          }
-        }
-      },
-
-      // Check for JSX usage
-      JSXElement() {
-        hasJsxUsage = true;
-      },
-
-      JSXFragment() {
-        hasJsxUsage = true;
-      },
-
-      // Check at the end of the program
-      'Program:exit'(node: TSESTree.Program) {
-        if (hasJsxUsage && !hasReactImport) {
-          // Find the first JSX element to report on
-          for (const statement of node.body) {
-            if (
-              statement.type === 'ExpressionStatement' &&
-              statement.expression.type === 'JSXElement'
-            ) {
-              context.report({
-                node: statement.expression.openingElement.name,
-                messageId: 'reactInJsxScope',
-              });
-              break;
-            }
-            if (statement.type === 'VariableDeclaration') {
-              for (const declarator of statement.declarations) {
-                if (declarator.init && declarator.init.type === 'JSXElement') {
-                  context.report({
-                    node: declarator.init.openingElement.name,
-                    messageId: 'reactInJsxScope',
-                  });
-                  return;
-                }
-              }
-            }
-            if (
-              statement.type === 'ReturnStatement' &&
-              statement.argument &&
-              statement.argument.type === 'JSXElement'
-            ) {
-              context.report({
-                node: statement.argument.openingElement.name,
-                messageId: 'reactInJsxScope',
-              });
-              break;
-            }
-          }
-        }
-      },
+      JSXOpeningElement: check,
+      JSXOpeningFragment: check,
     };
   },
 });

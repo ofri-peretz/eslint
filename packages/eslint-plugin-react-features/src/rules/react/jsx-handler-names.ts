@@ -46,13 +46,18 @@ export const jsxHandlerNames = createRule<[], MessageIds>({
         if (node.name.type === 'JSXIdentifier') {
           const attrName = node.name.name;
 
-          // Check if this is an event handler (starts with 'on')
-          if (attrName.startsWith('on') && attrName.length > 2) {
+          // An event prop is `on` + an uppercase letter (`onClick`), React's
+          // own shape; `only`, `once` or `online` are ordinary props.
+          if (/^on[A-Z]/.test(attrName)) {
             // Check if the value is an identifier (function reference)
             if (node.value && node.value.type === 'JSXExpressionContainer') {
               const expression = node.value.expression;
 
-              if (expression.type === 'Identifier') {
+              // `{undefined}` passes no handler at all.
+              if (
+                expression.type === 'Identifier' &&
+                expression.name !== 'undefined'
+              ) {
                 const handlerName = expression.name;
 
                 // Check naming convention: should start with 'handle' or 'on'

@@ -28,7 +28,12 @@ Prevent using `.bind()` or arrow functions in JSX props. This rule is part of [`
 
 ## Rule Details
 
-Using `.bind()` or inline arrow functions in JSX creates new function instances on every render.
+A `.bind()` call written as a JSX prop value creates a new function instance on every
+render. It is reported in every spelling of the call: `h.bind(this)`, `h['bind'](this)`,
+`h.bind?.(this)`, and as a branch of a conditional or the right of `&&` / `||` / `??`.
+
+Inline arrow functions are **not** reported: whether a fresh function matters depends on
+a memoized child the file cannot see, so it is left to judgment.
 
 ### Why This Matters
 
@@ -46,11 +51,8 @@ Using `.bind()` or inline arrow functions in JSX creates new function instances 
 // Bind in render
 <button onClick={this.handleClick.bind(this)}>Click</button>
 
-// Arrow function in render
-<button onClick={() => this.handleClick()}>Click</button>
-
-// Arrow with arguments
-<button onClick={(e) => this.handleClick(id, e)}>Click</button>
+// Bind in a conditional
+<button onClick={enabled ? this.handleClick.bind(this) : undefined}>Click</button>
 ```
 
 ### ✅ Correct

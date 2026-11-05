@@ -23,6 +23,14 @@ const ruleTester = new RuleTester({
 describe('require-data-slot', () => {
   ruleTester.run('require-data-slot', requireDataSlot, {
     valid: [
+      {
+        name: 'data-testid={undefined} renders no test id, so the element is not a named part',
+        code: '<div data-testid={undefined} />',
+      },
+      {
+        name: 'a braced data-slot is a data-slot',
+        code: '<div data-testid="card-header" data-slot={"card-header"} />',
+      },
       // Both data-testid and data-slot present
       {
         name: 'both present',
@@ -38,6 +46,11 @@ describe('require-data-slot', () => {
       },
     ],
     invalid: [
+      {
+        name: 'data-slot={undefined} renders no slot',
+        code: '<div data-testid="card-header" data-slot={undefined} />',
+        errors: [{ messageId: 'missingDataSlot' }],
+      },
       {
         name: 'a test id on a nested element with no slot beside it',
         code: 'const El = () => <section data-testid="card-footer"><span /></section>;',

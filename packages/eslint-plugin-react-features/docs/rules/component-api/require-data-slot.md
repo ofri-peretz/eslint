@@ -33,6 +33,10 @@ the component and must also carry `data-slot`. `data-slot` lets consumers
 target the part with CSS or with composition adapters without learning the
 internal class structure — it's the public CSS selector contract.
 
+Values follow React: `data-testid={undefined}` renders no test id, so the
+element is not a named part; `data-slot={undefined}` renders no slot, so it is
+still missing. Any other value, static or dynamic, counts as present.
+
 ## Examples
 
 ### ❌ Incorrect
@@ -46,6 +50,13 @@ internal class structure — it's the public CSS selector contract.
 ```tsx
 <div data-slot="card-header" data-testid="card-header" className="…" />
 ```
+
+## Known False Positives
+
+- An element with a spread (`<div data-testid="x" {...rest} />`) is reported
+  although the spread may carry `data-slot`.
+- A component (`<Card data-testid="x" />`) is reported although it may set its
+  own `data-slot` inside.
 
 ## Known False Negatives
 

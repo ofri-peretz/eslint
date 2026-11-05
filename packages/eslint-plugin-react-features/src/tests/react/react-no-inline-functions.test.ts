@@ -27,6 +27,9 @@ const ruleTester = new RuleTester({
   },
 });
 
+const MEMO_ROW =
+  "import { memo } from 'react'; const Row = memo((p) => <i>{p.x}</i>);";
+
 describe('react-no-inline-functions', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - no inline functions', reactNoInlineFunctions, {
@@ -38,8 +41,49 @@ describe('react-no-inline-functions', () => {
         },
         // Event handlers (if allowed)
         {
-          code: '<button onClick={() => handleClick()}>Click</button>',
+          name: 'allowInEventHandlers exempts onClick on a component',
+          code: '<Button onClick={() => handleClick()}>Click</Button>',
           options: [{ allowInEventHandlers: true }],
+        },
+        {
+          name: 'CORRECTED: a host element has no render to save',
+          code: '<button onClick={() => handleClick()}>Click</button>',
+        },
+        {
+          name: 'a custom element is a host element',
+          code: '<my-widget onSelect={() => pick()} />',
+        },
+        {
+          name: 'a component defined without memo re-renders with its parent anyway',
+          code: 'function Row(p) { return <i>{p.x}</i>; } <Row onSelect={() => pick()} />',
+        },
+        {
+          name: 'a forwardRef component without memo',
+          code: "import { forwardRef } from 'react'; const Row = forwardRef((p, r) => <i ref={r} />); <Row onSelect={() => pick()} />",
+        },
+        {
+          name: 'a Component class without shouldComponentUpdate',
+          code: "import { Component } from 'react'; class Row extends Component { render() { return null; } } <Row onSelect={() => pick()} />",
+        },
+        {
+          name: 'a function passed by reference is not created in render',
+          code: `${MEMO_ROW} <Row onSelect={pick} />`,
+        },
+        {
+          name: 'CORRECTED: a callback passed to .map() in children is not a prop',
+          code: '<Row>{items.map(() => <span>test</span>)}</Row>',
+        },
+        {
+          name: 'a callback passed to a call in a prop is not judged (the call result is unknown)',
+          code: `${MEMO_ROW} <Row onSelect={debounce(() => pick())} />`,
+        },
+        {
+          name: 'CORRECTED: a function child of a host element',
+          code: '<div>{() => console.log("test")}</div>',
+        },
+        {
+          name: 'a local memo() that is not React\'s is not judged as memo',
+          code: 'function memo(f) { return f; } const Row = (p) => <i />; <Row onSelect={() => pick()} />',
         },
       ],
       invalid: [],
@@ -50,29 +94,45 @@ describe('react-no-inline-functions', () => {
     ruleTester.run('invalid - inline functions in JSX', reactNoInlineFunctions, {
       valid: [],
       invalid: [
-        // Note: Rule may not detect inline functions in map() callbacks
-        // This is a rule limitation - map callbacks are often acceptable
         {
           name: 'an inline arrow in a prop',
-          code: '<button onClick={() => handleClick()}>Click</button>',
+          code: '<Button onClick={() => handleClick()}>Click</Button>',
           errors: [{ messageId: 'inlineFunction' }],
         },
-      ],
-    });
-  });
-
-  describe('Suggestions', () => {
-    ruleTester.run('suggestions for fixes', reactNoInlineFunctions, {
-      valid: [],
-      invalid: [
         {
-          code: '<button onClick={() => handleClick()}>Click</button>',
-          errors: [
-            {
-              messageId: 'inlineFunction',
-              // Note: Rule may not provide suggestions in all cases
-            },
-          ],
+          name: 'an inline arrow on a memo component',
+          code: `${MEMO_ROW} <Row onSelect={() => pick()} />`,
+          errors: [{ messageId: 'inlineFunction' }],
+        },
+        {
+          name: 'an inline function on React.memo(forwardRef(...))',
+          code: "import * as R from 'react'; const Row = R.memo(R.forwardRef((p, r) => <i ref={r} />)); <Row onSelect={function () { pick(); }} />",
+          errors: [{ messageId: 'inlineFunction' }],
+        },
+        {
+          name: 'an inline arrow on a renamed memo import',
+          code: "import { memo as pure } from 'react'; const Row = pure(() => <i />); <Row onSelect={() => pick()} />",
+          errors: [{ messageId: 'inlineFunction' }],
+        },
+        {
+          name: 'an inline arrow on a PureComponent class',
+          code: "import React from 'react'; class Row extends React.PureComponent { render() { return null; } } <Row onSelect={() => pick()} />",
+          errors: [{ messageId: 'inlineFunction' }],
+        },
+        {
+          name: 'a choice between two inline functions',
+          code: `${MEMO_ROW} <Row onSelect={flag ? () => a() : () => b()} />`,
+          errors: [{ messageId: 'inlineFunction' }],
+        },
+        {
+          name: 'a function child of a memo component is its children prop',
+          code: `${MEMO_ROW} <Row>{(data) => <b>{data}</b>}</Row>`,
+          errors: [{ messageId: 'inlineFunction' }],
+        },
+        {
+          name: 'a component with its own shouldComponentUpdate is not known to re-render',
+          code: "import { Component } from 'react'; class Row extends Component { shouldComponentUpdate() { return false; } render() { return null; } } <Row onSelect={() => pick()} />",
+          errors: [{ messageId: 'inlineFunction' }],
         },
       ],
     });
@@ -82,54 +142,47 @@ describe('react-no-inline-functions', () => {
     ruleTester.run('options testing', reactNoInlineFunctions, {
       valid: [
         {
-          code: '<button onClick={() => handleClick()}>Click</button>',
+          name: 'allowInEventHandlers exempts an on-handler on a memo component',
+          code: `${MEMO_ROW} <Row onSelect={() => pick()} />`,
           options: [{ allowInEventHandlers: true }],
+        },
+        {
+          name: 'minArraySize has no effect on a children callback',
+          code: '<Row>{largeArray.map(() => <span>test</span>)}</Row>',
+          options: [{ minArraySize: 50 }],
         },
       ],
       invalid: [
-        // Test inline function in JSXExpressionContainer (line 77-82) - not in JSXAttribute
         {
-          code: '<div>{() => console.log("test")}</div>',
+          name: 'allowInEventHandlers: `only` is not an event handler',
+          code: `${MEMO_ROW} <Row only={() => pick()} />`,
+          options: [{ allowInEventHandlers: true }],
           errors: [{ messageId: 'inlineFunction' }],
         },
         {
-          code: '<div>{function test() { return "test"; }}</div>',
-          errors: [{ messageId: 'inlineFunction' }],
-        },
-        // Test inline function in array methods (lines 92-96)
-        {
-          code: '<div>{items.map(() => <span>test</span>)}</div>',
+          name: 'allowInEventHandlers: a render prop is not an event handler',
+          code: `${MEMO_ROW} <Row renderItem={(i) => <b>{i}</b>} />`,
+          options: [{ allowInEventHandlers: true }],
           errors: [{ messageId: 'inlineFunction' }],
         },
         {
-          code: '<div>{items.forEach(() => console.log("test"))}</div>',
+          name: 'allowInEventHandlers: a function child is not an event handler',
+          code: '<Loader>{function test() { return "test"; }}</Loader>',
+          options: [{ allowInEventHandlers: true }],
           errors: [{ messageId: 'inlineFunction' }],
         },
         {
-          code: '<div>{items.filter(() => true)}</div>',
-          errors: [{ messageId: 'inlineFunction' }],
-        },
-        {
-          code: '<div>{items.reduce(() => 0, 0)}</div>',
-          errors: [{ messageId: 'inlineFunction' }],
-        },
-        {
-          code: '<div>{items.sort(() => 0)}</div>',
-          errors: [{ messageId: 'inlineFunction' }],
-        },
-        // Test large array size (line 113 - estimatedSize > 50)
-        {
-          code: '<div>{largeArray.map(() => <span>test</span>)}</div>',
-          options: [{ minArraySize: 50 }],
+          name: 'a namespaced attribute is never an event handler',
+          code: '<Row xlink:href={() => pick()} />',
+          options: [{ allowInEventHandlers: true }],
           errors: [{ messageId: 'inlineFunction' }],
         },
       ],
     });
   });
 
-  describe('Uncovered Lines', () => {
-    // Lines 80-82: isInJSX returns false
-    ruleTester.run('line 80-82 - not in JSX', reactNoInlineFunctions, {
+  describe('Not in JSX', () => {
+    ruleTester.run('not in JSX', reactNoInlineFunctions, {
       valid: [
         {
           code: 'const fn = () => console.log("test");',
@@ -137,48 +190,15 @@ describe('react-no-inline-functions', () => {
         {
           code: 'function test() { return () => {}; }',
         },
-      ],
-      invalid: [],
-    });
-
-    // Line 113: estimatedSize > 50 in calculateImpact
-    ruleTester.run('line 113 - high severity for large arrays', reactNoInlineFunctions, {
-      valid: [],
-      invalid: [
-        {
-          code: '<div>{largeArray.map(() => <span>test</span>)}</div>',
-          options: [{ minArraySize: 50 }],
-          errors: [{ messageId: 'inlineFunction' }],
-        },
-      ],
-    });
-
-    // Line 138: isInJSXExpressionContainer returns false
-    ruleTester.run('line 138 - not in JSXExpressionContainer', reactNoInlineFunctions, {
-      valid: [
         {
           code: 'const fn = () => items.map(x => x);',
         },
+        {
+          name: 'a string attribute and a boolean attribute',
+          code: '<Row label="x" disabled />',
+        },
       ],
       invalid: [],
     });
-
-    // Lines 182-184: Event handler check in CallExpression visitor
-    ruleTester.run('line 182-184 - event handler in CallExpression', reactNoInlineFunctions, {
-      valid: [
-        {
-          code: '<button onClick={items.map(() => handleClick)}>Click</button>',
-          options: [{ allowInEventHandlers: true }],
-        },
-      ],
-      invalid: [
-        {
-          code: '<div>{items.map(() => <span>test</span>)}</div>',
-          options: [{ allowInEventHandlers: true }],
-          errors: [{ messageId: 'inlineFunction' }],
-        },
-      ],
-    });
   });
 });
-

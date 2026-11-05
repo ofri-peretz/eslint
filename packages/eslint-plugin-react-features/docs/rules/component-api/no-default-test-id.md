@@ -39,6 +39,11 @@ The type-level fix is to require `data-testid` on every component (e.g. via a
 `RequiredTestId` mixin); the runtime fix this rule enforces is to **not** assign
 a default value in the destructure.
 
+The key is matched however it is written: `"data-testid"`, `['data-testid']`
+or a template key, in the props parameter or in a destructure of props in the
+body. `= undefined` is not a default (the prop stays absent) and is not
+reported.
+
 ## Examples
 
 ### ❌ Incorrect

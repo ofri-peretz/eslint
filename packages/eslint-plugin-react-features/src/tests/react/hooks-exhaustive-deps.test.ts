@@ -201,15 +201,28 @@ describe('hooks-exhaustive-deps', () => {
 
   describe('useEffect - Extra Dependencies', () => {
     ruleTester.run('detect extra deps in useEffect', hooksExhaustiveDeps, {
-      valid: [],
-      invalid: [
-        // Extra dependency not used in effect
+      valid: [
         {
+          name: 'an effect lists a reactive value it does not read, to re-run when it changes',
           code: `
             function Component({ value, unused }) {
               useEffect(() => {
                 console.log(value);
               }, [value, unused]);
+            }
+          `,
+        },
+      ],
+      invalid: [
+        // A module constant never changes, so listing it re-runs nothing
+        {
+          name: 'an effect lists a module constant it does not read',
+          code: `
+            const LIMIT = 10;
+            function Component({ value }) {
+              useEffect(() => {
+                console.log(value);
+              }, [value, LIMIT]);
             }
           `,
           errors: [
@@ -219,7 +232,8 @@ describe('hooks-exhaustive-deps', () => {
                 {
                   messageId: 'suggestRemoveDep',
                   output: `
-            function Component({ value, unused }) {
+            const LIMIT = 10;
+            function Component({ value }) {
               useEffect(() => {
                 console.log(value);
               }, [value]);
@@ -688,5 +702,222 @@ describe('hooks-exhaustive-deps', () => {
       ],
       invalid: [],
     });
+  });
+
+  describe('hooks resolved by binding, not by name', () => {
+    ruleTester.run('hook bindings', hooksExhaustiveDeps, {
+      valid: [
+        {
+          name: 'a local function named useEffect is not React',
+          code: `
+            function useEffect(fn, deps) { return [fn, deps]; }
+            function Component({ value }) {
+              useEffect(() => { console.log(value); }, []);
+            }
+          `,
+        },
+        {
+          name: 'useEffect imported from another module is not React',
+          code: `
+            import { useEffect } from './scheduler';
+            function Component({ value }) {
+              useEffect(() => { console.log(value); }, []);
+            }
+          `,
+        },
+        {
+          name: 'the setter of a renamed useState import is stable',
+          code: `
+            import { useEffect, useState as useS } from 'react';
+            function Component() {
+              const [n, setN] = useS(0);
+              useEffect(() => { setN(1); }, []);
+              return n;
+            }
+          `,
+        },
+        {
+          name: 'a member path dependency covers the callback reading it',
+          code: `
+            import { useCallback } from 'react';
+            function Component(props) {
+              return useCallback(() => props.label, [props.label]);
+            }
+          `,
+        },
+        {
+          name: 'a type in an as-cast is not a dependency',
+          code: `
+            import { useMemo } from 'react';
+            function List<T>({ items }: { items: unknown }) {
+              return useMemo(() => items as T[], [items]);
+            }
+          `,
+        },
+        {
+          name: 'useImperativeHandle with its dependency listed in the third argument',
+          code: `
+            import { useImperativeHandle } from 'react';
+            function Field({ value }, ref) {
+              useImperativeHandle(ref, () => ({ value }), [value]);
+            }
+          `,
+        },
+        {
+          name: 'useImperativeHandle with only a ref is not judged',
+          code: `
+            import { useImperativeHandle } from 'react';
+            function Field(props, ref) { useImperativeHandle(ref); }
+          `,
+        },
+      ],
+      invalid: [
+        {
+          name: 'a renamed useEffect import with a missing dependency',
+          code: `
+            import { useEffect as useFx } from 'react';
+            function Component({ value }) {
+              useFx(() => { console.log(value); }, []);
+            }
+          `,
+          errors: [
+            {
+              messageId: 'missingDep',
+              suggestions: [{ messageId: 'suggestAddDep', output: `
+            import { useEffect as useFx } from 'react';
+            function Component({ value }) {
+              useFx(() => { console.log(value); }, [value]);
+            }
+          ` }],
+            },
+          ],
+        },
+        {
+          name: 'a namespace-imported useMemo with a missing dependency',
+          code: `
+            import * as R from 'react';
+            function Component({ value }) {
+              return R.useMemo(() => value * 2, []);
+            }
+          `,
+          errors: [
+            {
+              messageId: 'missingDep',
+              suggestions: [{ messageId: 'suggestAddDep', output: `
+            import * as R from 'react';
+            function Component({ value }) {
+              return R.useMemo(() => value * 2, [value]);
+            }
+          ` }],
+            },
+          ],
+        },
+        {
+          name: 'a missing dependency whose name starts with a capital letter',
+          code: `
+            import { useCallback } from 'react';
+            function Component(props) {
+              const Tag = props.as;
+              return useCallback(() => Tag, []);
+            }
+          `,
+          errors: [
+            {
+              messageId: 'missingDep',
+              suggestions: [{ messageId: 'suggestAddDep', output: `
+            import { useCallback } from 'react';
+            function Component(props) {
+              const Tag = props.as;
+              return useCallback(() => Tag, [Tag]);
+            }
+          ` }],
+            },
+          ],
+        },
+        {
+          name: 'useImperativeHandle reads its callback from the second argument',
+          code: `
+            import { useImperativeHandle } from 'react';
+            function Field({ value }, ref) {
+              useImperativeHandle(ref, () => ({ value }), []);
+            }
+          `,
+          errors: [
+            {
+              messageId: 'missingDep',
+              suggestions: [{ messageId: 'suggestAddDep', output: `
+            import { useImperativeHandle } from 'react';
+            function Field({ value }, ref) {
+              useImperativeHandle(ref, () => ({ value }), [value]);
+            }
+          ` }],
+            },
+          ],
+        },
+        {
+          name: 'useCallback lists a reactive value it never reads',
+          code: `
+            import { useCallback } from 'react';
+            function Component({ value, other }) {
+              return useCallback(() => value, [value, other]);
+            }
+          `,
+          errors: [
+            {
+              messageId: 'extraDep',
+              suggestions: [{ messageId: 'suggestRemoveDep', output: `
+            import { useCallback } from 'react';
+            function Component({ value, other }) {
+              return useCallback(() => value, [value]);
+            }
+          ` }],
+            },
+          ],
+        },
+      ],
+    });
+  });
+});
+
+describe('hooks-exhaustive-deps: Preact implements React hooks', () => {
+  ruleTester.run('preact hooks', hooksExhaustiveDeps, {
+    valid: [
+      {
+        name: 'a complete dependency list on a preact/hooks useEffect',
+        code: "import { useEffect } from 'preact/hooks'; function A({ x }) { useEffect(() => { log(x); }, [x]); return null; }",
+      },
+    ],
+    invalid: [
+      {
+        name: 'a missing dependency on a preact/hooks useEffect',
+        code: "import { useEffect } from 'preact/hooks'; function A({ x }) { useEffect(() => { log(x); }, []); return null; }",
+        errors: [
+          {
+            messageId: 'missingDep',
+            suggestions: [
+              {
+                messageId: 'suggestAddDep',
+                output: "import { useEffect } from 'preact/hooks'; function A({ x }) { useEffect(() => { log(x); }, [x]); return null; }",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'a missing dependency on a preact/compat useMemo',
+        code: "import { useMemo } from 'preact/compat'; function A({ x }) { return useMemo(() => x * 2, []); }",
+        errors: [
+          {
+            messageId: 'missingDep',
+            suggestions: [
+              {
+                messageId: 'suggestAddDep',
+                output: "import { useMemo } from 'preact/compat'; function A({ x }) { return useMemo(() => x * 2, [x]); }",
+              },
+            ],
+          },
+        ],
+      },
+    ],
   });
 });

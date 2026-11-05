@@ -300,4 +300,48 @@ describe('no-access-state-in-setstate', () => {
       ],
     });
   });
+
+  describe('state read through a local, and receivers that are not the component', () => {
+    ruleTester.run('state through locals', noAccessStateInSetState, {
+      valid: [
+        {
+          name: 'setState on another object is not the component state',
+          code: 'class A extends React.Component { f = () => { store.setState({ n: this.state.n }); }; }',
+        },
+        {
+          name: 'a local not read from this.state',
+          code: 'class A extends React.Component { f = () => { const n = this.props.n; this.setState({ n: n + 1 }); }; }',
+        },
+        {
+          name: 'a property named like a state local is a name, not a read',
+          code: 'class A extends React.Component { f = () => { const { n } = this.state; this.setState({ n: 1, m: other.n }); }; }',
+        },
+        {
+          name: 'an array hole in the update',
+          code: 'class A extends React.Component { f = () => { this.setState({ list: [1, , 2] }); }; }',
+        },
+        {
+          name: 'an undeclared global in the update',
+          code: 'class A extends React.Component { f = () => { this.setState({ n: total }); }; }',
+        },
+      ],
+      invalid: [
+        {
+          name: 'a local destructured from this.state',
+          code: 'class A extends React.Component { f = () => { const { n } = this.state; this.setState({ n: n + 1 }); }; }',
+          errors: [{ messageId: 'noAccessStateInSetState' }],
+        },
+        {
+          name: 'a local from this.state used as a computed member',
+          code: 'class A extends React.Component { f = () => { const i = this.state.i; this.setState({ v: list[i] }); }; }',
+          errors: [{ messageId: 'noAccessStateInSetState' }],
+        },
+        {
+          name: 'a local from this.state used as a computed key',
+          code: 'class A extends React.Component { f = () => { const k = this.state.k; this.setState({ [k]: 1 }); }; }',
+          errors: [{ messageId: 'noAccessStateInSetState' }],
+        },
+      ],
+    });
+  });
 });

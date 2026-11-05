@@ -201,5 +201,36 @@ describe('jsx-no-bind', () => {
       ],
     });
   });
-});
 
+  describe('bind in every spelling of the value', () => {
+    ruleTester.run('bind spellings', jsxNoBind, {
+      valid: [
+        {
+          name: 'a conditional with no bind in either branch',
+          code: '<button onClick={ok ? save : undefined} />',
+        },
+        {
+          name: 'an optional call that is not bind',
+          code: '<button onClick={make?.(save)} />',
+        },
+      ],
+      invalid: [
+        {
+          name: 'an optional bind call',
+          code: '<button onClick={this.save.bind?.(this)} />',
+          errors: [{ messageId: 'jsxNoBind' }],
+        },
+        {
+          name: 'bind in a branch of a conditional',
+          code: '<Button onClick={ok ? undefined : this.save.bind(this)} />',
+          errors: [{ messageId: 'jsxNoBind' }],
+        },
+        {
+          name: 'bind on the right of &&',
+          code: '<button onClick={ok && this.save.bind(this)} />',
+          errors: [{ messageId: 'jsxNoBind' }],
+        },
+      ],
+    });
+  });
+});

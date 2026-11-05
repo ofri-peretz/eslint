@@ -31,6 +31,18 @@ describe('no-string-refs', () => {
   describe('Basic Functionality', () => {
     ruleTester.run('no-string-refs validation', noStringRefs, {
       valid: [
+        {
+          name: 'this.refs in a class that is not a React component',
+          code: 'class Graph { m() { return this.refs.input; } }',
+        },
+        {
+          name: 'another object refs',
+          code: 'class A extends React.Component { m() { return store.refs.input; } }',
+        },
+        {
+          name: 'a ref from a value the file cannot know',
+          code: '<input ref={flag ? value : "a"} />',
+        },
         // No ref prop
         {
           name: 'no ref',
@@ -74,6 +86,16 @@ describe('no-string-refs', () => {
         },
       ],
       invalid: [
+        {
+          name: 'a ref whose branches are both strings',
+          code: '<input ref={flag ? "a" : "b"} />',
+          errors: [{ messageId: 'noStringRefs' }],
+        },
+        {
+          name: 'this["refs"] read in a React class component',
+          code: 'import { Component } from "react"; class A extends Component { m() { return this["refs"].input; } }',
+          errors: [{ messageId: 'noStringRefs' }],
+        },
         // String ref usage
         {
           name: 'a string ref, removed in React 19',
@@ -271,9 +293,8 @@ describe('no-string-refs', () => {
             }
           `,
           errors: [
-            {
-              messageId: 'noStringRefs',
-            },
+            { messageId: 'noStringRefs', line: 5 },
+            { messageId: 'noStringRefs', line: 9 },
           ],
         },
         // Library components with string refs

@@ -43,6 +43,8 @@ export const noNamespace = createRule<[], MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       ImportNamespaceSpecifier(node: TSESTree.ImportNamespaceSpecifier) {
+        // `import type * as T` is erased by TypeScript: nothing is bundled.
+        if (node.parent.importKind === 'type') return;
         context.report({
           node,
           messageId: 'noNamespace',

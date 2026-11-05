@@ -48,15 +48,12 @@ Enforces a consistent ordering of methods within React class components, making 
 5. `everything-else` - Custom methods
 6. `render` - The render method (always last)
 
-### Lifecycle Methods Order
-
-Within the `lifecycle` group, methods follow React's lifecycle order:
-- `constructor`
-- `getDerivedStateFromProps`
-- `componentDidMount`
-- `shouldComponentUpdate`
-- `componentDidUpdate`
-- `componentWillUnmount`
+The `lifecycle` group holds the constructor and React's lifecycle methods
+(`componentDidMount`, `shouldComponentUpdate`, `componentDidUpdate`,
+`componentWillUnmount`, …); their order among themselves is not checked.
+Member names are read in every spelling (`['render']()`). The class must
+extend React's `Component` or `PureComponent`, by binding, declared or as a
+class expression.
 
 ## Examples
 
@@ -89,14 +86,35 @@ class UserProfile extends React.Component {
 
 ### ✅ Correct
 
-> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
+```tsx
+class UserProfile extends React.Component {
+  static propTypes = {
+    userId: PropTypes.string.isRequired,
+  };
+
+  state = { name: '' };
+
+  constructor(props) {
+    super(props);
+  }
+
+  componentDidMount() {
+    this.fetchUser();
+  }
+
+  fetchUser() {}
+
+  render() {
+    return <div>{this.state.name}</div>;
+  }
+}
+```
 
 ## Options
 
 | Option   | Type     | Default          | Description                       |
 | -------- | -------- | ---------------- | --------------------------------- |
 | `order`  | string[] | See default order| Array of group names in order     |
-| `groups` | object   | `{}`             | Custom group definitions          |
 
 ### Configuration with Options
 
@@ -107,19 +125,11 @@ class UserProfile extends React.Component {
       order: [
         'static-variables',
         'static-methods',
-        'instance-variables',
         'lifecycle',
-        'event-handlers',
-        'getters',
+        'instance-variables',
         'everything-else',
         'render'
-      ],
-      groups: {
-        'event-handlers': [
-          '/^handle.+$/',
-          '/^on.+$/'
-        ]
-      }
+      ]
     }]
   }
 }
@@ -148,28 +158,6 @@ class UserProfile extends React.Component {
 - **[Class Components](https://react.dev/reference/react/Component#defining-a-class-component)** - Structure
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Prop from variable
-const propValue = computedValue;
-<Component prop={propValue} /> // Computation not analyzed
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- Lifecycle methods are not ordered among themselves; only the groups are.
+- `getDerivedStateFromProps` is a static method, so it sorts with
+  `static-methods`.

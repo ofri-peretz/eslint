@@ -14,9 +14,10 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
-  propertyName,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { extendsReactComponent } from '../../utils/react-api';
 
 type MessageIds = 'noUnsafe';
 
@@ -84,43 +85,40 @@ export const noUnsafe = createRule<RuleOptions, MessageIds>({
     currentOptions,
   ) {
     let checkAliases: boolean;
-    let inClassComponent: boolean;
 
     function checkMethod(
       node: TSESTree.MethodDefinition | TSESTree.PropertyDefinition,
     ): void {
-      if (!inClassComponent) return;
-      if (node.key.type !== 'Identifier') return;
+      // A lifecycle is an instance member of a React class component —
+      // declared or a class expression, whatever its superclass is called.
+      if (node.static) return;
+      const owner = node.parent.parent;
+      if (
+        (owner.type !== 'ClassDeclaration' &&
+          owner.type !== 'ClassExpression') ||
+        !extendsReactComponent(owner, context.sourceCode.getScope(owner))
+      )
+        return;
 
-      const methodName = node.key.name;
+      // `UNSAFE_x() {}`, `UNSAFE_x = () => {}` and `['UNSAFE_x']() {}`.
+      const methodName = objectKeyName(node);
+      if (methodName === null) return;
 
-      // Check UNSAFE_ prefixed methods
-      const unsafeInfo = UNSAFE_METHODS[methodName];
-      if (unsafeInfo) {
+      const info =
+        (Object.hasOwn(UNSAFE_METHODS, methodName) &&
+          UNSAFE_METHODS[methodName]) ||
+        (checkAliases &&
+          Object.hasOwn(LEGACY_METHODS, methodName) &&
+          LEGACY_METHODS[methodName]);
+      if (info) {
         context.report({
           node,
           messageId: 'noUnsafe',
           data: {
             method: methodName,
-            replacement: unsafeInfo.replacement,
+            replacement: info.replacement,
           },
         });
-        return;
-      }
-
-      // Check legacy methods if checkAliases is enabled
-      if (checkAliases) {
-        const legacyInfo = LEGACY_METHODS[methodName];
-        if (legacyInfo) {
-          context.report({
-            node,
-            messageId: 'noUnsafe',
-            data: {
-              method: methodName,
-              replacement: legacyInfo.replacement,
-            },
-          });
-        }
       }
     }
 
@@ -128,34 +126,7 @@ export const noUnsafe = createRule<RuleOptions, MessageIds>({
       before() {
         const [options = {} as Options] = currentOptions();
         ({ checkAliases = false } = options ?? ({} as Options));
-        inClassComponent = false;
       },
-      ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        if (!node.superClass) return;
-
-        if (node.superClass.type === 'MemberExpression') {
-          if (
-            node.superClass.object.type === 'Identifier' &&
-            node.superClass.object.name === 'React' &&
-            (propertyName(node.superClass) === 'Component' ||
-              propertyName(node.superClass) === 'PureComponent')
-          ) {
-            inClassComponent = true;
-          }
-        } else if (node.superClass.type === 'Identifier') {
-          if (
-            node.superClass.name === 'Component' ||
-            node.superClass.name === 'PureComponent'
-          ) {
-            inClassComponent = true;
-          }
-        }
-      },
-
-      'ClassDeclaration:exit'() {
-        inClassComponent = false;
-      },
-
       MethodDefinition: checkMethod,
       PropertyDefinition: checkMethod,
     };

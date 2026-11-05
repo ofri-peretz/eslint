@@ -29,7 +29,10 @@ Detect unescaped HTML entities in JSX. This rule is part of [`eslint-plugin-reac
 
 ## Rule Details
 
-Characters like `>`, `"`, `'`, `}` have special meaning in JSX and must be escaped.
+A raw `"` in JSX text reads like an attribute delimiter that was never closed.
+The rule reads the source as written, so the escaped spellings (`&quot;`,
+`&#34;`, `{'"'}`) and quotes inside attribute values or string expressions
+are not reported.
 
 ### Why This Matters
 
@@ -44,17 +47,19 @@ Characters like `>`, `"`, `'`, `}` have special meaning in JSX and must be escap
 ### ❌ Incorrect
 
 ```tsx
-// Unescaped special characters
-<div>5 > 3</div>
-<div>It's working</div>
 <div>Use "quotes"</div>
-<div>Value: {value}</div>  // Unescaped } if not expression
 ```
+
+`>` and `}` in JSX text do not parse in TypeScript, and the parser reports
+them before this rule runs.
 
 ### ✅ Correct
 
 ```tsx
 <div>Hello World</div>
+<div>Use &quot;quotes&quot;</div>
+<div>Use {'"'}quotes{'"'}</div>
+<div>It's working</div>
 ```
 
 ### Entity Reference
@@ -90,42 +95,6 @@ Characters like `>`, `"`, `'`, `}` have special meaning in JSX and must be escap
 - **[HTML Entities](https://www.w3schools.com/html/html_entities.asp)** - Reference
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Prop from variable
-const propValue = computedValue;
-<Component prop={propValue} /> // Computation not analyzed
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Wrapped or Aliased Functions
-
-**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-function myWrapper(data) {
-  return internalApi(data); // Wrapper not analyzed
-}
-myWrapper(unsafeInput);
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- `'` is not reported: an apostrophe renders as written and is ordinary prose.
+- `>` and `}` in JSX text are a TypeScript parse error, so the rule never sees
+  them in a `.tsx` file.

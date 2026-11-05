@@ -11,6 +11,10 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  type FunctionNode,
+  isFunctionComponent,
+} from '../../utils/function-component';
 
 type MessageIds = 'noObjectTypeAsDefaultProp';
 
@@ -27,7 +31,11 @@ type MessageIds = 'noObjectTypeAsDefaultProp';
  * Climb the pattern spine — a default can nest arbitrarily deep inside object
  * and array patterns — and accept only if it terminates in a `params` slot.
  */
-const isInParameterPosition = (node: TSESTree.AssignmentPattern): boolean => {
+/**
+ * The function whose first parameter (the props) this destructuring default
+ * sits in, or `null` when it is not in the props pattern.
+ */
+const propsOwner = (node: TSESTree.AssignmentPattern): FunctionNode | null => {
   let current: TSESTree.Node = node;
   let parent: TSESTree.Node = current.parent;
   while (
@@ -40,14 +48,23 @@ const isInParameterPosition = (node: TSESTree.AssignmentPattern): boolean => {
     current = parent;
     parent = current.parent;
   }
-  // Anything else terminates the pattern: it is a parameter only when the
-  // spine lands directly in the enclosing function's own params.
-  return (
-    'params' in parent &&
-    Array.isArray(parent.params) &&
-    (parent.params as TSESTree.Node[]).includes(current)
-  );
+  // Anything else terminates the pattern: it is the props only when the spine
+  // lands directly in a function's first parameter.
+  return (parent.type === AST_NODE_TYPES.FunctionDeclaration ||
+    parent.type === AST_NODE_TYPES.FunctionExpression ||
+    parent.type === AST_NODE_TYPES.ArrowFunctionExpression) &&
+    parent.params[0] === current
+    ? parent
+    : null;
 };
+
+/** A literal that builds a new object (or array, or function) each time. */
+const FRESH = new Set<string>([
+  AST_NODE_TYPES.ObjectExpression,
+  AST_NODE_TYPES.ArrayExpression,
+  AST_NODE_TYPES.ArrowFunctionExpression,
+  AST_NODE_TYPES.FunctionExpression,
+]);
 
 export const noObjectTypeAsDefaultProp = createRule<[], MessageIds>({
   name: 'no-object-type-as-default-prop',
@@ -77,37 +94,17 @@ export const noObjectTypeAsDefaultProp = createRule<[], MessageIds>({
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
-      // Check defaultProps assignments (PropertyDefinition is used by TypeScript parser)
-      'PropertyDefinition[key.name="defaultProps"]'(
-        node: TSESTree.PropertyDefinition,
-      ) {
-        if (node.value && node.value.type === 'ObjectExpression') {
-          for (const prop of node.value.properties) {
-            if (
-              prop.type === 'Property' &&
-              prop.value.type === 'ObjectExpression'
-            ) {
-              context.report({
-                node: prop.key,
-                messageId: 'noObjectTypeAsDefaultProp',
-              });
-            }
-          }
-        }
-      },
-
-      // Check default parameter assignments in function components
+      // A destructured prop default of a function component is evaluated on
+      // every render. A class's `static defaultProps` is evaluated once and
+      // is not reported; a whole-object parameter default
+      // (`function C(props = {})`) is not a prop default.
       AssignmentPattern(node: TSESTree.AssignmentPattern) {
-        // The destructuring requirement is unchanged: a whole-object parameter
-        // default (`function C(props = {})`) is deliberately not a prop default.
         const inDestructuring =
           node.parent.type === AST_NODE_TYPES.Property ||
           node.parent.type === AST_NODE_TYPES.RestElement;
-        if (
-          node.right.type === 'ObjectExpression' &&
-          inDestructuring &&
-          isInParameterPosition(node)
-        ) {
+        if (!inDestructuring || !FRESH.has(node.right.type)) return;
+        const owner = propsOwner(node);
+        if (owner && isFunctionComponent(owner, context.sourceCode)) {
           context.report({
             node: node.left,
             messageId: 'noObjectTypeAsDefaultProp',

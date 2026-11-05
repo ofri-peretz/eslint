@@ -155,7 +155,42 @@ describe('display-name', () => {
           code: `export default ({ show }) => show ? <div>Visible</div> : null;`,
           errors: [{ messageId: 'displayName' }],
         },
+        {
+          name: 'an anonymous default export rendering through React.createElement',
+          code: `import React from 'react'; export default (p) => React.createElement('div', null, p.x);`,
+          errors: [{ messageId: 'displayName' }],
+        },
+        {
+          name: 'a renamed memo import with no binding',
+          code: `import { memo as m } from 'react'; export default m(() => <div />);`,
+          errors: [{ messageId: 'displayName' }],
+        },
+        {
+          name: 'an anonymous class extending a renamed Component import',
+          code: `import { Component as Base } from 'react'; export default class extends Base { render() { return <div />; } }`,
+          errors: [{ messageId: 'displayName' }],
+        },
       ],
+    });
+  });
+
+  describe('bindings that are not React', () => {
+    ruleTester.run('not react', displayName, {
+      valid: [
+        {
+          name: 'a local memo is not React.memo',
+          code: `const memo = (f) => f; export default memo(() => <div />);`,
+        },
+        {
+          name: 'a Component class from another library',
+          code: `import { Component } from 'lit'; export default class extends Component { render() { return <div />; } }`,
+        },
+        {
+          name: 'a local createElement is not React rendering',
+          code: `const createElement = (t) => t; export default () => createElement('div');`,
+        },
+      ],
+      invalid: [],
     });
   });
 });

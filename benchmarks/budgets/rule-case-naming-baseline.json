@@ -19,7 +19,7 @@
     "react-features/no-object-type-as-default-prop": 1,
     "react-features/no-render-return-value": 2,
     "react-features/no-unknown-property": 1,
-    "react-features/no-unsafe": 8,
+    "react-features/no-unsafe": 7,
     "react-features/no-wrapper-sub-component": 2,
     "react-features/prefer-stateless-function": 6,
     "react-features/prop-types": 4,

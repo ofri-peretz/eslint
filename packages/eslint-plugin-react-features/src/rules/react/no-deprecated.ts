@@ -15,9 +15,10 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
-  propertyName,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { extendsReactComponent, reactExport } from '../../utils/react-api';
 
 type MessageIds = 'deprecated';
 
@@ -76,6 +77,16 @@ const DEPRECATED_APIS: Record<string, { replacement: string; since: string }> =
     },
   };
 
+/** The lifecycle names React renamed; reported on a React class component. */
+const LIFECYCLES = new Set([
+  'componentWillMount',
+  'componentWillReceiveProps',
+  'componentWillUpdate',
+  'UNSAFE_componentWillMount',
+  'UNSAFE_componentWillReceiveProps',
+  'UNSAFE_componentWillUpdate',
+]);
+
 export const noDeprecated = createRule<RuleOptions, MessageIds>({
   name: 'no-deprecated',
   meta: {
@@ -100,111 +111,71 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    let inClassComponent: boolean;
+    /** One entry per class being walked: is it a React class component? */
+    let classes: boolean[];
 
-    function checkMemberExpression(node: TSESTree.MemberExpression): void {
-      if (node.object.type !== 'Identifier') return;
-      // `ReactDOM['render']` names the same deprecated API.
-      const member = propertyName(node);
-      if (member === null) return;
+    function report(node: TSESTree.Node, name: string): void {
+      const deprecation = DEPRECATED_APIS[name];
+      context.report({
+        node,
+        messageId: 'deprecated',
+        data: {
+          name,
+          replacement: deprecation.replacement,
+          since: deprecation.since,
+        },
+      });
+    }
 
-      const fullName = `${node.object.name}.${member}`;
-      const deprecation = DEPRECATED_APIS[fullName];
+    /**
+     * The deprecated API this expression names, by binding: `ReactDOM.render`,
+     * `R.render`, `import { render as r }`, the UMD global. A bare name the
+     * file never imports names no module and is not read.
+     */
+    function check(node: TSESTree.Identifier | TSESTree.MemberExpression): void {
+      const api = reactExport(node, context.sourceCode.getScope(node));
+      if (api?.module !== 'react' && api?.module !== 'react-dom') return;
+      const name = `${api.module === 'react' ? 'React' : 'ReactDOM'}.${api.name}`;
+      if (Object.hasOwn(DEPRECATED_APIS, name)) report(node, name);
+    }
 
-      if (deprecation) {
-        context.report({
-          node,
-          messageId: 'deprecated',
-          data: {
-            name: fullName,
-            replacement: deprecation.replacement,
-            since: deprecation.since,
-          },
-        });
-      }
+    function enterClass(
+      node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
+    ): void {
+      classes.push(extendsReactComponent(node, context.sourceCode.getScope(node)));
     }
 
     function checkLifecycleMethod(
       node: TSESTree.MethodDefinition | TSESTree.PropertyDefinition,
     ): void {
-      if (!inClassComponent) return;
-      if (node.key.type !== 'Identifier') return;
-
-      const methodName = node.key.name;
-      const deprecation = DEPRECATED_APIS[methodName];
-
-      if (deprecation) {
-        context.report({
-          node,
-          messageId: 'deprecated',
-          data: {
-            name: methodName,
-            replacement: deprecation.replacement,
-            since: deprecation.since,
-          },
-        });
+      if (!classes.at(-1) || node.static) return;
+      // `componentWillMount() {}`, `'componentWillMount'() {}` and an arrow
+      // property all declare the lifecycle React calls.
+      const methodName = objectKeyName(node);
+      if (methodName !== null && LIFECYCLES.has(methodName)) {
+        report(node, methodName);
       }
     }
 
     return {
       before() {
-        // Track lifecycle methods in class components
-        inClassComponent = false;
+        classes = [];
       },
-      ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        // Check if this extends React.Component or React.PureComponent
-        if (!node.superClass) return;
-
-        if (node.superClass.type === 'MemberExpression') {
-          if (
-            node.superClass.object.type === 'Identifier' &&
-            node.superClass.object.name === 'React' &&
-            (propertyName(node.superClass) === 'Component' ||
-              propertyName(node.superClass) === 'PureComponent')
-          ) {
-            inClassComponent = true;
-          }
-        } else if (node.superClass.type === 'Identifier') {
-          if (
-            node.superClass.name === 'Component' ||
-            node.superClass.name === 'PureComponent'
-          ) {
-            inClassComponent = true;
-          }
-        }
-      },
-
+      ClassDeclaration: enterClass,
+      ClassExpression: enterClass,
       'ClassDeclaration:exit'() {
-        inClassComponent = false;
+        classes.pop();
       },
-
-      ClassExpression(node: TSESTree.ClassExpression) {
-        if (!node.superClass) return;
-
-        if (node.superClass.type === 'MemberExpression') {
-          if (
-            node.superClass.object.type === 'Identifier' &&
-            node.superClass.object.name === 'React' &&
-            (propertyName(node.superClass) === 'Component' ||
-              propertyName(node.superClass) === 'PureComponent')
-          ) {
-            inClassComponent = true;
-          }
-        } else if (node.superClass.type === 'Identifier') {
-          if (
-            node.superClass.name === 'Component' ||
-            node.superClass.name === 'PureComponent'
-          ) {
-            inClassComponent = true;
-          }
-        }
-      },
-
       'ClassExpression:exit'() {
-        inClassComponent = false;
+        classes.pop();
       },
-
-      MemberExpression: checkMemberExpression,
+      MemberExpression: check,
+      // A named import is used as a plain identifier; only a reference (not
+      // the import itself, a property key or a member name) is a use.
+      Identifier(node: TSESTree.Identifier) {
+        const scope = context.sourceCode.getScope(node);
+        if (scope.references.some((ref) => ref.identifier === node)) check(node);
+      },
       MethodDefinition: checkLifecycleMethod,
       PropertyDefinition: checkLifecycleMethod,
     };

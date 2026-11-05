@@ -17,6 +17,7 @@ import {
   propertyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isReactApi, reactExport } from '../../utils/react-api';
 
 /*
  * `items['map'](...)` iterates exactly as `items.map(...)` does, and a key is
@@ -194,11 +195,17 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       const { callee } = node;
 
       // Pattern 1: array.map(), array.forEach(), array.flatMap()
+      // React's own `Children.map` keys every element its callback returns
+      // (from the original child's key or position), so it is not a list
+      // this rule judges. Resolved by binding: `Children`, `React.Children`.
       if (
         callee.type === 'MemberExpression' &&
         namesOneOf(propertyName(callee), ITERATOR_METHODS)
       ) {
-        return true;
+        return (
+          reactExport(callee.object, context.sourceCode.getScope(node))
+            ?.name !== 'Children'
+        );
       }
 
       // Pattern 2: Array.from(items, mapFn) - only when 2nd argument is a mapping function
@@ -260,50 +267,6 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
     }
 
     /**
-     * Check if node is inside Children.map or React.Children.map
-     */
-    function isInsideChildrenMap(node: TSESTree.Node): boolean {
-      let current: TSESTree.Node | undefined = node;
-
-      while (current?.parent) {
-        const parent: TSESTree.Node = current.parent;
-
-        if (
-          parent.type === 'ArrowFunctionExpression' ||
-          parent.type === 'FunctionExpression'
-        ) {
-          const grandParent = parent.parent;
-          if (grandParent?.type === 'CallExpression') {
-            const callee = grandParent.callee;
-            if (
-              callee.type === 'MemberExpression' &&
-              propertyName(callee) === 'map'
-            ) {
-              const obj = callee.object;
-              // Children.map()
-              if (obj.type === 'Identifier' && obj.name === 'Children') {
-                return true;
-              }
-              // React.Children.map()
-              if (
-                obj.type === 'MemberExpression' &&
-                obj.object.type === 'Identifier' &&
-                obj.object.name === 'React' &&
-                propertyName(obj) === 'Children'
-              ) {
-                return true;
-              }
-            }
-          }
-        }
-
-        current = parent;
-      }
-
-      return false;
-    }
-
-    /**
      * Check if a JSXElement is the DIRECT return value of an iterator callback.
      * Uses node.parent traversal for reliability.
      *
@@ -311,15 +274,13 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
      * - array.map(item => <div>)
      * - array.map(function(item) { return <div>; })
      * - Array.from(items, item => <div>)
-     * - React.Children.map(children, child => <div>)
      * - [...items].map(item => <div>)
+     *
+     * `node` is a JSX element, a fragment or a `createElement` call.
      */
-    function isDirectIteratorReturn(node: TSESTree.JSXElement): boolean {
+    function isDirectIteratorReturn(node: TSESTree.Node): boolean {
       // Quick check for Array.from and Children.map patterns
       if (isInsideArrayFromMapFn(node)) {
-        return isDirectReturnFromFunction(node);
-      }
-      if (isInsideChildrenMap(node)) {
         return isDirectReturnFromFunction(node);
       }
 
@@ -403,7 +364,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
     /**
      * Helper: Check if JSX is directly returned from a function (arrow body or return statement)
      */
-    function isDirectReturnFromFunction(node: TSESTree.JSXElement): boolean {
+    function isDirectReturnFromFunction(node: TSESTree.Node): boolean {
       let current: TSESTree.Node = node;
 
       while (current.parent) {
@@ -451,9 +412,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
      * - Array.from(items, (item, index) => ...) -> 'item'
      * - Children.map(children, child => ...) -> 'child'
      */
-    function getIteratorKeyExpression(
-      node: TSESTree.JSXElement,
-    ): string | null {
+    function getIteratorKeyExpression(node: TSESTree.Node): string | null {
       // The nearest enclosing iterator callback renders this element, so its
       // parameter — or its lack of one — decides the key. Every caller has
       // already proved the element is returned from an iterator callback
@@ -461,7 +420,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       // no "ran out of ancestors" arm to carry. Stopping at the FIRST one is
       // the point: climbing past a parameterless inner callback reached the
       // outer row and suggested one constant key for every inner element.
-      let current: TSESTree.Node = node.parent;
+      let current: TSESTree.Node = node.parent as TSESTree.Node;
       while (!(
         (current.type === AST_NODE_TYPES.ArrowFunctionExpression ||
           current.type === AST_NODE_TYPES.FunctionExpression) &&
@@ -470,6 +429,64 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
         current = current.parent as TSESTree.Node;
       }
       return keyExpressionForCallback(current);
+    }
+
+    /** Is `id` the index parameter (the second) of an iterator callback? */
+    function isIndexParam(id: TSESTree.Identifier): boolean {
+      const scope = context.sourceCode.getScope(id);
+      const variable = scope.references.find(
+        (ref) => ref.identifier === id,
+      )?.resolved;
+      const def = variable?.defs[0];
+      if (def?.type !== 'Parameter') return false;
+      const fn = def.node;
+      return (
+        (fn.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+          fn.type === AST_NODE_TYPES.FunctionExpression) &&
+        fn.params[1] === def.name &&
+        isIteratorCall(fn.parent)
+      );
+    }
+
+    /**
+     * A fragment shorthand returned from an iterator callback: `<>` cannot
+     * carry a key, so the list item always lacks one.
+     */
+    function checkFragmentInIteration(node: TSESTree.JSXFragment) {
+      if (isDirectIteratorReturn(node)) {
+        context.report({ node: node.openingFragment, messageId: 'missingKey' });
+      }
+    }
+
+    /**
+     * `React.createElement(type, props, ...)` returned from an iterator
+     * callback with no `key` in its props. A props value the file cannot read
+     * (a variable, a spread) may carry one, so only `null`, no props and an
+     * object literal without `key` and without a spread are judged.
+     */
+    function checkCreateElementInIteration(node: TSESTree.CallExpression) {
+      if (
+        !isReactApi(
+          node.callee,
+          context.sourceCode.getScope(node),
+          'createElement',
+        ) ||
+        !isDirectIteratorReturn(node)
+      ) {
+        return;
+      }
+      const props = node.arguments[1];
+      const missing =
+        props === undefined ||
+        (props.type === AST_NODE_TYPES.Literal && props.value === null) ||
+        (props.type === AST_NODE_TYPES.ObjectExpression &&
+          props.properties.every(
+            (p) =>
+              p.type === AST_NODE_TYPES.Property && objectKeyName(p) !== 'key',
+          ));
+      if (missing) {
+        context.report({ node, messageId: 'missingKey' });
+      }
     }
 
     function checkJSXElementInIteration(node: TSESTree.JSXElement) {
@@ -528,12 +545,14 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       if (keyProp.type === 'JSXAttribute' && keyProp.value) {
         const keyValue = keyProp.value;
 
-        // Check for common index variable names used as keys (unstable)
+        // The key is the iterator callback's index parameter — by binding,
+        // whatever it is called. A template that adds to it
+        // (`` `row-${i}` ``) is left to judgment.
         if (
           warnUnstableKeys &&
           keyValue.type === 'JSXExpressionContainer' &&
-          keyValue.expression.type === 'Identifier' &&
-          ['i', 'index', 'idx', 'key'].includes(keyValue.expression.name)
+          keyValue.expression.type === AST_NODE_TYPES.Identifier &&
+          isIndexParam(keyValue.expression)
         ) {
           context.report({
             node: keyProp,
@@ -559,9 +578,13 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       JSXElement(node: TSESTree.JSXElement) {
         checkJSXElementInIteration(node);
       },
+      JSXFragment(node: TSESTree.JSXFragment) {
+        checkFragmentInIteration(node);
+      },
 
       // Reset key tracker for each new array/map context
       CallExpression(node: TSESTree.CallExpression) {
+        checkCreateElementInIteration(node);
         // Check if this is any iterator pattern that produces lists
         if (isIteratorCall(node)) {
           // Entering a new iteration context

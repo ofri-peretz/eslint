@@ -50,7 +50,16 @@ Ensures React components have required attributes (e.g., accessibility attribute
 
 ### ❌ Incorrect
 
-> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
+```tsx
+// With { attributes: [{ attribute: 'data-testid' }] }
+<button onClick={handleClick}>Click me</button>
+<Card title="Profile" />
+```
+
+Nothing is required by default. Each configured attribute is required on every
+JSX element (intrinsic, component or member) unless `ignoreTags` names the tag
+for that attribute or `ignoreComponents` names the element. React's `Fragment`
+accepts no attribute but `key`, so nothing is required of it.
 
 ### ✅ Correct
 
@@ -150,28 +159,7 @@ Ensures React components have required attributes (e.g., accessibility attribute
 
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Prop from variable
-const propValue = computedValue;
-<Component prop={propValue} /> // Computation not analyzed
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Cross-Module Data Flow
-
-**Why**: ESLint rules analyze one file at a time. Values imported from other modules cannot be traced.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Apply the same rule to imported modules. Use module boundaries and explicit exports.
+- An element with a spread (`<input {...rest} />`) is reported even though the
+  spread may carry the attribute.
+- `type` and `name` are only required on `input`, `button`, `select` and
+  `textarea`.

@@ -11,12 +11,9 @@
  * @see https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/no-find-dom-node.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import {
-  formatLLMMessage,
-  MessageIcons,
-  propertyName,
-} from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { isReactApi } from '../../utils/react-api';
 
 type MessageIds = 'noFindDOMNode';
 
@@ -51,23 +48,17 @@ export const noFindDomNode = createRule<RuleOptions, MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        // Check for ReactDOM.findDOMNode()
+        // react-dom's `findDOMNode`, however it is named: an import (renamed or
+        // not), `ReactDOM.findDOMNode` / `ReactDOM['findDOMNode']` on an
+        // import, a require or the UMD global. A local function of the same
+        // name is not React's.
         if (
-          node.callee.type === 'MemberExpression' &&
-          node.callee.object.type === 'Identifier' &&
-          node.callee.object.name === 'ReactDOM' &&
-          propertyName(node.callee) === 'findDOMNode'
-        ) {
-          context.report({
-            node,
-            messageId: 'noFindDOMNode',
-          });
-        }
-
-        // Check for findDOMNode() imported directly
-        if (
-          node.callee.type === 'Identifier' &&
-          node.callee.name === 'findDOMNode'
+          isReactApi(
+            node.callee,
+            context.sourceCode.getScope(node),
+            'findDOMNode',
+            'react-dom',
+          )
         ) {
           context.report({
             node,

@@ -25,6 +25,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  staticString,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'kindProp';
@@ -32,16 +33,63 @@ type RuleOptions = [];
 
 const FLAGGED_NAMES = new Set(['type', 'kind']);
 
-const isStringLiteralUnion = (node: TSESTree.TypeNode | undefined): boolean => {
-  if (!node) return false;
+type Scope = TSESLint.Scope.Scope;
+
+/** `type`, `'type'` and `['type']` all declare `type`. */
+const signatureKeyName = (
+  node: TSESTree.TSPropertySignature,
+): string | null => {
+  const { key } = node;
+  // A computed key names a property only when it is a static string.
+  if (node.computed || key.type !== 'Identifier') return staticString(key);
+  return key.name;
+};
+
+/** The type a local type alias stands for (`type Kind = 'a' | 'b'`), if declared in scope. */
+const aliasTarget = (
+  ref: TSESTree.TSTypeReference,
+  scope: Scope,
+): TSESTree.TypeNode | undefined => {
+  if (ref.typeName.type !== 'Identifier' || ref.typeArguments) return undefined;
+  const { name } = ref.typeName;
+  for (let s: Scope | null = scope; s; s = s.upper) {
+    const def = s.set
+      .get(name)
+      ?.defs.find((d) => d.node.type === 'TSTypeAliasDeclaration');
+    if (def)
+      return (def.node as TSESTree.TSTypeAliasDeclaration).typeAnnotation;
+  }
+  return undefined;
+};
+
+/**
+ * A union of 2+ string literals, optionally widened with `undefined` / `null`
+ * (an optional kind), written inline or through a local type alias.
+ */
+const isStringLiteralUnion = (
+  node: TSESTree.TypeNode | undefined,
+  scope: Scope,
+  seen: Set<TSESTree.Node> = new Set(),
+): boolean => {
+  if (!node || seen.has(node)) return false;
+  seen.add(node);
+  if (node.type === 'TSTypeReference')
+    return isStringLiteralUnion(aliasTarget(node, scope), scope, seen);
   if (node.type !== 'TSUnionType') return false;
-  const members = node.types;
-  if (members.length < 2) return false;
-  return members.every(
+  const literals = node.types.filter(
     (m) =>
       m.type === 'TSLiteralType' &&
       m.literal.type === 'Literal' &&
       typeof m.literal.value === 'string',
+  );
+  return (
+    literals.length >= 2 &&
+    node.types.every(
+      (m) =>
+        literals.includes(m) ||
+        m.type === 'TSUndefinedKeyword' ||
+        m.type === 'TSNullKeyword',
+    )
   );
 };
 
@@ -73,14 +121,15 @@ export const noKindPropDiscriminator = createRule<RuleOptions, MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       TSPropertySignature(node: TSESTree.TSPropertySignature) {
-        if (node.key.type !== 'Identifier') return;
-        if (!FLAGGED_NAMES.has(node.key.name)) return;
+        const name = signatureKeyName(node);
+        if (name === null || !FLAGGED_NAMES.has(name)) return;
         const ann = node.typeAnnotation?.typeAnnotation;
-        if (!isStringLiteralUnion(ann)) return;
+        if (!isStringLiteralUnion(ann, context.sourceCode.getScope(node)))
+          return;
         context.report({
           node: node.key,
           messageId: 'kindProp',
-          data: { name: node.key.name },
+          data: { name },
         });
       },
     };

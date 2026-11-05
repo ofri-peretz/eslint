@@ -151,8 +151,41 @@ describe('no-multi-comp', () => {
 
   describe('Multiple Components (Invalid)', () => {
     ruleTester.run('multiple components trigger errors', noMultiComp, {
-      valid: [],
+      valid: [
+        {
+          name: 'a lowercase render helper is not a second component',
+          code: 'function UserCard() { const renderItem = (x) => <li>{x}</li>; return <ul>{items.map(renderItem)}</ul>; } function renderRow() { return <tr />; }',
+        },
+        {
+          name: 'a PascalCase function that returns no JSX is not a component',
+          code: 'function UserCard() { return <div />; } function FormatName(n) { return n.trim(); }',
+        },
+        {
+          name: 'a class from another library is not a component',
+          code: 'import { Component } from "lit"; class A extends Component { render() { return null; } } function UserCard() { return <div />; }',
+        },
+        {
+          name: 'ignoreStateless: one class component and function components',
+          code: 'class A extends React.Component { render() { return <div />; } } const B = React.memo(() => <i />);',
+          options: [{ ignoreStateless: true }],
+        },
+      ],
       invalid: [
+        {
+          name: 'a memo component is a second component',
+          code: 'import { memo } from "react"; function UserCard() { return <div />; } const Avatar = memo(() => <img />);',
+          errors: [{ messageId: 'noMultiComp' }],
+        },
+        {
+          name: 'a forwardRef component passed a function expression',
+          code: 'import React from "react"; const UserCard = () => <div />; export default React.forwardRef(function (p, ref) { return <img ref={ref} />; });',
+          errors: [{ messageId: 'noMultiComp' }],
+        },
+        {
+          name: 'a class expression component after a function component',
+          code: 'import * as R from "react"; function UserCard() { return <div />; } const Avatar = class extends R.PureComponent { render() { return <img />; } };',
+          errors: [{ messageId: 'noMultiComp' }],
+        },
         // Two function components
         {
           name: 'two components in one file',

@@ -24,16 +24,10 @@ import { jsxNoBind } from '../../rules/react/jsx-no-bind';
 import { jsxNoDuplicateProps } from '../../rules/react/jsx-no-duplicate-props';
 import { jsxKey } from '../../rules/react/jsx-key';
 import { noAccessStateInSetState } from '../../rules/react/no-access-state-in-setstate';
-import { noMultiComp } from '../../rules/react/no-multi-comp';
 import { noUnsafe } from '../../rules/react/no-unsafe';
-import { propTypes } from '../../rules/react/prop-types';
-import { reactInJsxScope } from '../../rules/react/react-in-jsx-scope';
 import { requiredAttributes } from '../../rules/react/required-attributes';
-import { sortComp } from '../../rules/react/sort-comp';
 import { requireOptimization } from '../../rules/react/require-optimization';
 import { reactRenderOptimization } from '../../rules/performance/react-render-optimization';
-import { reactNoInlineFunctions } from '../../rules/performance/react-no-inline-functions';
-import { preferStatelessFunction } from '../../rules/react/prefer-stateless-function';
 
 /* oxlint-disable no-explicit-any */
 type AnyNode = any;
@@ -78,9 +72,9 @@ function link(node: AnyNode, parent: AnyNode | null): AnyNode {
 describe('component-api rules (layer 2)', () => {
   it('no-arbitrary-token-class ignores non-string className literals', () => {
     const { listeners, reports } = createWithMockContext(noArbitraryTokenClass);
-    listener(listeners, 'JSXAttribute[name.name="className"] > Literal')({
-      type: 'Literal',
-      value: 42,
+    listener(listeners, 'JSXAttribute[name.name="className"]')({
+      type: 'JSXAttribute',
+      value: { type: 'Literal', value: 42 },
     });
     expect(reports).toHaveLength(0);
   });
@@ -94,7 +88,7 @@ describe('component-api rules (layer 2)', () => {
     expect(reports).toHaveLength(0);
   });
 
-  it('no-kind-prop-discriminator skips non-identifier keys', () => {
+  it('no-kind-prop-discriminator skips a quoted key with no type annotation', () => {
     const { listeners, reports } = createWithMockContext(noKindPropDiscriminator);
     listener(listeners, 'TSPropertySignature')({
       type: 'TSPropertySignature',
@@ -150,13 +144,14 @@ describe('jsx-no-duplicate-props (layer 2)', () => {
 describe('no-unsafe (layer 2)', () => {
   it('null options entry falls back to defaults and still reports UNSAFE methods', () => {
     const { listeners, reports } = createWithMockContext(noUnsafe, { options: [null] });
-    listener(listeners, 'ClassDeclaration')({
+    const owner = {
       type: 'ClassDeclaration',
       superClass: { type: 'Identifier', name: 'Component' },
-    });
+    };
     listener(listeners, 'MethodDefinition')({
       type: 'MethodDefinition',
       key: { type: 'Identifier', name: 'UNSAFE_componentWillMount' },
+      parent: { type: 'ClassBody', parent: owner },
     });
     expect(reports).toHaveLength(1);
     expect(reports[0]).toMatchObject({ messageId: 'noUnsafe' });
@@ -171,145 +166,13 @@ describe('no-access-state-in-setstate (layer 2)', () => {
       type: 'CallExpression',
       callee: {
         type: 'MemberExpression',
+        object: { type: 'ThisExpression' },
         property: { type: 'Identifier', name: 'setState' },
       },
-      arguments: [{ type: 'ObjectExpression', properties: [shared, shared] }],
+      // An enumerable `parent` (a synthetic node's) is not followed back up.
+      arguments: [{ type: 'ObjectExpression', properties: [shared, shared], parent: null }],
     });
     expect(reports).toHaveLength(0);
-  });
-});
-
-describe('no-multi-comp (layer 2)', () => {
-  it('null arrow body is not a component', () => {
-    const { listeners, reports } = createWithMockContext(noMultiComp);
-    listener(listeners, 'VariableDeclarator, FunctionDeclaration')({
-      type: 'VariableDeclarator',
-      id: { type: 'Identifier', name: 'Foo' },
-      init: { type: 'ArrowFunctionExpression', body: null },
-    });
-    listener(listeners, 'Program:exit')();
-    expect(reports).toHaveLength(0);
-  });
-
-  it('duplicated node references short-circuit JSX search', () => {
-    const { listeners, reports } = createWithMockContext(noMultiComp);
-    const shared = { type: 'Identifier', name: 'x' };
-    listener(listeners, 'VariableDeclarator, FunctionDeclaration')({
-      type: 'FunctionDeclaration',
-      id: { type: 'Identifier', name: 'Foo' },
-      body: { type: 'BlockStatement', body: [shared, shared] },
-    });
-    listener(listeners, 'Program:exit')();
-    expect(reports).toHaveLength(0);
-  });
-
-  it('falls back to the node when the declaration shape mutates before naming', () => {
-    const { listeners, reports } = createWithMockContext(noMultiComp);
-    const jsxBody = { type: 'JSXElement', openingElement: { attributes: [] }, children: [] };
-    const first = {
-      type: 'FunctionDeclaration',
-      id: { type: 'Identifier', name: 'First' },
-      body: jsxBody,
-    };
-    const idlessDeclarator = {
-      type: 'VariableDeclarator',
-      id: null,
-      init: { type: 'ArrowFunctionExpression', body: { ...jsxBody } },
-    };
-    let typeReads = 0;
-    const shapeShifter = {
-      get type() {
-        typeReads += 1;
-        return typeReads <= 2 ? 'FunctionDeclaration' : 'Mutated';
-      },
-      id: { type: 'Identifier', name: 'Third' },
-      body: { ...jsxBody },
-    };
-    const declListener = listener(listeners, 'VariableDeclarator, FunctionDeclaration');
-    declListener(first);
-    declListener(idlessDeclarator);
-    declListener(shapeShifter);
-    listener(listeners, 'Program:exit')();
-    expect(reports).toHaveLength(2);
-    // id-less declarator reports on the declarator node itself (L190 fallback)
-    expect(reports[0]).toMatchObject({ messageId: 'noMultiComp', node: idlessDeclarator });
-    // shape-shifted node falls through every branch to `return node` (L192)
-    expect(reports[1]).toMatchObject({ messageId: 'noMultiComp', node: shapeShifter });
-  });
-});
-
-describe('prop-types (layer 2)', () => {
-  it('propTypes definitions outside a class body are ignored', () => {
-    const { listeners, reports } = createWithMockContext(propTypes);
-    listener(listeners, 'PropertyDefinition[key.name="propTypes"]')({
-      type: 'PropertyDefinition',
-      parent: { type: 'ObjectExpression' },
-    });
-    listener(listeners, 'Program:exit')();
-    expect(reports).toHaveLength(0);
-  });
-
-  it('falls back to the component node when the id vanishes before reporting', () => {
-    const { listeners, reports } = createWithMockContext(propTypes);
-    let idReads = 0;
-    const component = {
-      type: 'ClassDeclaration',
-      superClass: { type: 'Identifier', name: 'Component' },
-      get id() {
-        idReads += 1;
-        return idReads <= 2 ? { type: 'Identifier', name: 'Zed' } : null;
-      },
-      body: { type: 'ClassBody', body: [] },
-    };
-    listener(listeners, 'ClassDeclaration')(component);
-    listener(listeners, 'Program:exit')();
-    expect(reports).toHaveLength(1);
-    expect(reports[0]).toMatchObject({ messageId: 'propTypes', node: component });
-  });
-
-  it('duplicated nodes inside method bodies are visited once (skipUndeclared)', () => {
-    const { listeners, reports } = createWithMockContext(propTypes, {
-      options: [{ skipUndeclared: true }],
-    });
-    const shared = { type: 'Identifier', name: 'v' };
-    listener(listeners, 'ClassDeclaration')({
-      type: 'ClassDeclaration',
-      superClass: { type: 'Identifier', name: 'Component' },
-      id: { type: 'Identifier', name: 'Quiet' },
-      body: {
-        type: 'ClassBody',
-        body: [
-          {
-            type: 'MethodDefinition',
-            key: { type: 'Identifier', name: 'm' },
-            value: { body: { type: 'BlockStatement', body: [shared, shared] } },
-          },
-        ],
-      },
-    });
-    listener(listeners, 'Program:exit')();
-    expect(reports).toHaveLength(0);
-  });
-});
-
-describe('react-in-jsx-scope (layer 2)', () => {
-  it('reports JSX returned from a top-level return statement', () => {
-    const { listeners, reports } = createWithMockContext(reactInJsxScope);
-    listener(listeners, 'JSXElement')();
-    const jsxName = { type: 'JSXIdentifier', name: 'div' };
-    listener(listeners, 'Program:exit')({
-      type: 'Program',
-      body: [
-        { type: 'ReturnStatement', argument: null },
-        { type: 'ReturnStatement', argument: { type: 'Identifier', name: 'x' } },
-        {
-          type: 'ReturnStatement',
-          argument: { type: 'JSXElement', openingElement: { name: jsxName } },
-        },
-      ],
-    });
-    expect(reports).toHaveLength(1);
-    expect(reports[0]).toMatchObject({ messageId: 'reactInJsxScope', node: jsxName });
   });
 });
 
@@ -365,36 +228,6 @@ describe('required-attributes (layer 2)', () => {
   });
 });
 
-describe('sort-comp (layer 2)', () => {
-  it('falls back to the member node when the key shape mutates before reporting', () => {
-    const { listeners, reports } = createWithMockContext(sortComp);
-    let keyTypeReads = 0;
-    const trickMember = {
-      type: 'MethodDefinition',
-      static: false,
-      key: {
-        get type() {
-          keyTypeReads += 1;
-          return keyTypeReads <= 1 ? 'Identifier' : 'Mutated';
-        },
-        name: 'zzz',
-      },
-    };
-    const renderMember = {
-      type: 'MethodDefinition',
-      static: false,
-      key: { type: 'Identifier', name: 'render' },
-    };
-    listener(listeners, 'ClassDeclaration')({
-      type: 'ClassDeclaration',
-      superClass: { type: 'Identifier', name: 'Component' },
-      body: { type: 'ClassBody', body: [renderMember, trickMember] },
-    });
-    expect(reports).toHaveLength(1);
-    expect(reports[0]).toMatchObject({ messageId: 'sortComp', node: trickMember });
-  });
-});
-
 describe('hooks-exhaustive-deps (layer 2, impossible declarator ids)', () => {
   it('unknown declarator id shapes declare nothing', () => {
     const { listeners, reports } = createWithMockContext(hooksExhaustiveDeps);
@@ -419,56 +252,6 @@ describe('hooks-exhaustive-deps (layer 2, impossible declarator ids)', () => {
       ],
     });
     expect(reports).toHaveLength(0);
-  });
-});
-
-describe('prefer-stateless-function (layer 2)', () => {
-  it('isPureComponent falls through when the superclass shape mutates', () => {
-    let typeReads = 0;
-    const node = {
-      type: 'ClassDeclaration',
-      id: { type: 'Identifier', name: 'Shifty' },
-      superClass: {
-        get type() {
-          typeReads += 1;
-          // Read 1 (isReactComponent) sees Identifier; isPureComponent's two
-          // checks (L97, L101) see a mutated shape and fall to L110.
-          return typeReads <= 1 ? 'Identifier' : 'Mutated';
-        },
-        name: 'PureComponent',
-      },
-      body: { type: 'ClassBody', body: [] },
-    };
-    const { listeners, reports } = createWithMockContext(preferStatelessFunction, {
-      options: [{ ignorePureComponents: true }],
-    });
-    listener(listeners, 'ClassDeclaration')(node);
-    // isPureComponent returned false (L110), so the class is still reported.
-    expect(reports).toHaveLength(1);
-    expect(reports[0]).toMatchObject({ messageId: 'preferStatelessFunction' });
-  });
-
-  it('isPureComponent guards against a vanished superClass', () => {
-    let superClassReads = 0;
-    const superClass = { type: 'Identifier', name: 'PureComponent' };
-    const node = {
-      type: 'ClassDeclaration',
-      id: { type: 'Identifier', name: 'Ghost' },
-      get superClass() {
-        superClassReads += 1;
-        // isReactComponent performs 4 reads (guard, type check, and both name
-        // comparisons); the 5th read — isPureComponent's guard — sees null.
-        return superClassReads <= 4 ? superClass : null;
-      },
-      body: { type: 'ClassBody', body: [] },
-    };
-    const { listeners, reports } = createWithMockContext(preferStatelessFunction, {
-      options: [{ ignorePureComponents: true }],
-    });
-    listener(listeners, 'ClassDeclaration')(node);
-    // isPureComponent returned false (L95), so the class is still reported.
-    expect(reports).toHaveLength(1);
-    expect(reports[0]).toMatchObject({ messageId: 'preferStatelessFunction' });
   });
 });
 
@@ -606,7 +389,9 @@ describe('jsx-key (layer 2, synthetic parent chains)', () => {
     expect(reports).toHaveLength(0);
   });
 
-  it('Children.map: return statement with a different argument keeps walking', () => {
+  // Array.from, not Children.map: React's Children.map keys what its callback
+  // returns, so the rule no longer judges it (CORRECTED with the fidelity model).
+  it('Array.from: return statement with a different argument keeps walking', () => {
     // L376 false arm; the arrow-body check above it later returns true.
     const { listeners, reports } = createWithMockContext(jsxKey);
     const node = jsxEl();
@@ -616,8 +401,8 @@ describe('jsx-key (layer 2, synthetic parent chains)', () => {
       type: 'CallExpression',
       callee: {
         type: 'MemberExpression',
-        object: { type: 'Identifier', name: 'Children' },
-        property: { type: 'Identifier', name: 'map' },
+        object: { type: 'Identifier', name: 'Array' },
+        property: { type: 'Identifier', name: 'from' },
       },
       arguments: [{ type: 'Identifier', name: 'kids' }, arrow],
     };
@@ -645,8 +430,8 @@ describe('jsx-key (layer 2, synthetic parent chains)', () => {
       type: 'CallExpression',
       callee: {
         type: 'MemberExpression',
-        object: { type: 'Identifier', name: 'Children' },
-        property: { type: 'Identifier', name: 'map' },
+        object: { type: 'Identifier', name: 'Array' },
+        property: { type: 'Identifier', name: 'from' },
       },
       arguments: [{ type: 'Identifier', name: 'kids' }, fn],
     };
@@ -684,8 +469,8 @@ describe('jsx-key (layer 2, synthetic parent chains)', () => {
       type: 'CallExpression',
       callee: {
         type: 'MemberExpression',
-        object: { type: 'Identifier', name: 'Children' },
-        property: { type: 'Identifier', name: 'map' },
+        object: { type: 'Identifier', name: 'Array' },
+        property: { type: 'Identifier', name: 'from' },
       },
       arguments: [{ type: 'Identifier', name: 'kids' }, fnY],
     };
@@ -1057,7 +842,12 @@ describe('react-render-optimization (layer 2, synthetic AST)', () => {
     const whileLoop = { type: 'WhileStatement', parent: null };
     const call = { type: 'CallExpression', parent: whileLoop };
     const ifStmt = { type: 'IfStatement', parent: call };
-    const cond = { type: 'ConditionalExpression', parent: ifStmt };
+    const cond = {
+      type: 'ConditionalExpression',
+      consequent: { type: 'Identifier' },
+      alternate: { type: 'Identifier' },
+      parent: ifStmt,
+    };
     listener(listeners, 'JSXAttribute')(
       attr({ type: 'JSXExpressionContainer', expression: cond }),
     );
@@ -1099,136 +889,5 @@ describe('react-render-optimization (layer 2, synthetic AST)', () => {
     );
     // The catch arm returns without reporting instead of crashing the rule.
     expect(reports).toHaveLength(0);
-  });
-});
-
-describe('react-no-inline-functions (layer 2, synthetic AST)', () => {
-  function arrow(parent: AnyNode | null): AnyNode {
-    return link({ type: 'ArrowFunctionExpression', params: [] }, parent);
-  }
-
-  it('null options entry falls back to defaults; nodes outside JSX bail', () => {
-    const { listeners, reports } = createWithMockContext(reactNoInlineFunctions, {
-      options: [null],
-    });
-    const call = link({ type: 'CallExpression', callee: { type: 'Identifier' } }, null);
-    listener(
-      listeners,
-      'JSXExpressionContainer > ArrowFunctionExpression, JSXExpressionContainer > FunctionExpression',
-    )(arrow(call));
-    expect(reports).toHaveLength(0);
-  });
-
-  it('direct JSXAttribute parent counts as JSX and reports a prop function', () => {
-    const { listeners, reports } = createWithMockContext(reactNoInlineFunctions);
-    const attrParent = link(
-      {
-        type: 'JSXAttribute',
-        name: { type: 'JSXIdentifier', name: 'render' },
-        parent: null,
-      },
-      null,
-    );
-    listener(
-      listeners,
-      'JSXExpressionContainer > ArrowFunctionExpression, JSXExpressionContainer > FunctionExpression',
-    )(arrow(attrParent));
-    expect(reports).toHaveLength(1);
-    expect(reports[0]).toMatchObject({
-      messageId: 'inlineFunction',
-      data: { location: 'JSX prop' },
-    });
-  });
-
-  it('allowInEventHandlers skips on-handlers but keeps other attributes', () => {
-    const jsxListenerName =
-      'JSXExpressionContainer > ArrowFunctionExpression, JSXExpressionContainer > FunctionExpression';
-    const onAttr = { type: 'JSXAttribute', name: { type: 'JSXIdentifier', name: 'onClick' }, parent: null };
-    const onContainer = link({ type: 'JSXExpressionContainer' }, onAttr);
-    const allowed = createWithMockContext(reactNoInlineFunctions, {
-      options: [{ allowInEventHandlers: true }],
-    });
-    listener(allowed.listeners, jsxListenerName)(arrow(onContainer));
-    expect(allowed.reports).toHaveLength(0);
-
-    const fooAttr = { type: 'JSXAttribute', name: { type: 'JSXIdentifier', name: 'foo' }, parent: null };
-    const fooContainer = link({ type: 'JSXExpressionContainer' }, fooAttr);
-    const kept = createWithMockContext(reactNoInlineFunctions, {
-      options: [{ allowInEventHandlers: true }],
-    });
-    listener(kept.listeners, jsxListenerName)(arrow(fooContainer));
-    expect(kept.reports).toHaveLength(1);
-  });
-
-  it('non-member and non-array callees are not array methods', () => {
-    const jsxListenerName =
-      'JSXExpressionContainer > ArrowFunctionExpression, JSXExpressionContainer > FunctionExpression';
-    const { listeners, reports } = createWithMockContext(reactNoInlineFunctions);
-    const container = link({ type: 'JSXExpressionContainer' }, null);
-    const thenCall = link(
-      {
-        type: 'CallExpression',
-        callee: {
-          type: 'MemberExpression',
-          property: { type: 'Identifier', name: 'then' },
-        },
-      },
-      container,
-    );
-    listener(listeners, jsxListenerName)(arrow(thenCall));
-    expect(reports).toHaveLength(1);
-    expect(reports[0]).toMatchObject({ data: { location: 'JSX prop' } });
-  });
-
-  it('large configured arrays raise impact to high inside map calls', () => {
-    const jsxListenerName =
-      'JSXExpressionContainer > ArrowFunctionExpression, JSXExpressionContainer > FunctionExpression';
-    const { listeners, reports } = createWithMockContext(reactNoInlineFunctions, {
-      options: [{ minArraySize: 100 }],
-    });
-    const container = link({ type: 'JSXExpressionContainer' }, null);
-    const mapCall = link(
-      {
-        type: 'CallExpression',
-        callee: {
-          type: 'MemberExpression',
-          property: { type: 'Identifier', name: 'map' },
-        },
-      },
-      container,
-    );
-    listener(listeners, jsxListenerName)(arrow(mapCall));
-    expect(reports).toHaveLength(1);
-    expect(reports[0]).toMatchObject({
-      data: { impact: 'high', location: 'map() call' },
-    });
-  });
-
-  it('identifier callees inside JSX are not array methods', () => {
-    const jsxListenerName =
-      'JSXExpressionContainer > ArrowFunctionExpression, JSXExpressionContainer > FunctionExpression';
-    const { listeners, reports } = createWithMockContext(reactNoInlineFunctions);
-    const container = link({ type: 'JSXExpressionContainer' }, null);
-    const idCall = link(
-      { type: 'CallExpression', callee: { type: 'Identifier', name: 'run' } },
-      container,
-    );
-    listener(listeners, jsxListenerName)(arrow(idCall));
-    expect(reports).toHaveLength(1);
-    expect(reports[0]).toMatchObject({ data: { location: 'JSX prop' } });
-  });
-
-  it('call-expression listener: attribute in chain without allow flag still reports', () => {
-    const callListenerName =
-      'CallExpression > ArrowFunctionExpression, CallExpression > FunctionExpression';
-    const { listeners, reports } = createWithMockContext(reactNoInlineFunctions);
-    const container = link({ type: 'JSXExpressionContainer' }, null);
-    const attrNode = link(
-      { type: 'JSXAttribute', name: { type: 'JSXIdentifier', name: 'onClick' } },
-      container,
-    );
-    listener(listeners, callListenerName)(arrow(attrNode));
-    expect(reports).toHaveLength(1);
-    expect(reports[0]).toMatchObject({ data: { location: 'JSX prop' } });
   });
 });

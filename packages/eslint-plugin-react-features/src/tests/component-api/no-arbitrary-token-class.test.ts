@@ -23,6 +23,14 @@ const ruleTester = new RuleTester({
 describe('no-arbitrary-token-class', () => {
   ruleTester.run('no-arbitrary-token-class', noArbitraryTokenClass, {
     valid: [
+      {
+        name: 'a bare className attribute has no class text',
+        code: '<div className />',
+      },
+      {
+        name: 'another function is not a class-name builder',
+        code: "import { format } from './utils'; format('px-[18px]');",
+      },
       // Token classes — allowed
       {
         name: 'scale tokens',
@@ -42,6 +50,46 @@ describe('no-arbitrary-token-class', () => {
       { code: `<div className="text-[14px]" />` },
     ],
     invalid: [
+      {
+        name: 'a braced className string',
+        code: '<div className={"px-[18px]"} />',
+        errors: [{ messageId: 'arbitraryClass' }],
+      },
+      {
+        name: 'a conditional className',
+        code: '<div className={flag ? "px-[18px]" : "px-4"} />',
+        errors: [{ messageId: 'arbitraryClass' }],
+      },
+      {
+        name: 'a negative margin',
+        code: '<div className="-mx-[4px]" />',
+        errors: [{ messageId: 'arbitraryClass' }],
+      },
+      {
+        name: 'a length with no leading zero',
+        code: '<div className="p-[.5rem]" />',
+        errors: [{ messageId: 'arbitraryClass' }],
+      },
+      {
+        name: 'a conditional builder argument',
+        code: '<div className={cn("flex", flag && "px-[18px]")} />',
+        errors: [{ messageId: 'arbitraryClass' }],
+      },
+      {
+        name: 'a builder object key',
+        code: '<div className={cn({ "px-[18px]": flag })} />',
+        errors: [{ messageId: 'arbitraryClass' }],
+      },
+      {
+        name: 'a builder array element',
+        code: '<div className={cn(["flex", "px-[18px]"])} />',
+        errors: [{ messageId: 'arbitraryClass' }],
+      },
+      {
+        name: 'a renamed clsx import',
+        code: "import { clsx as cx } from 'clsx'; cx('px-[18px]');",
+        errors: [{ messageId: 'arbitraryClass' }],
+      },
       // rounded with px literal
       {
         name: 'an arbitrary value where the scale has a token',

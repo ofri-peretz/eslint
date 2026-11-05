@@ -9,8 +9,9 @@
  * Prefer ES6 classes over createClass
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { createRule, resolveModuleBinding } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isReactApi } from '../../utils/react-api';
 
 type MessageIds = 'preferEs6Class';
 
@@ -42,23 +43,16 @@ export const preferEs6Class = createRule<[], MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        // Check for React.createClass()
+        // React's legacy `createClass` (an import of any shape, a computed
+        // member, the UMD global), or `create-react-class`, the package it
+        // moved to, under whatever local name. Decided by binding: a local
+        // function or object of the same name is not the factory.
+        const scope = context.sourceCode.getScope(node);
+        const binding = resolveModuleBinding(node.callee, scope);
         if (
-          node.callee.type === 'MemberExpression' &&
-          node.callee.object.type === 'Identifier' &&
-          node.callee.object.name === 'React' &&
-          propertyName(node.callee) === 'createClass'
-        ) {
-          context.report({
-            node: node.callee.property,
-            messageId: 'preferEs6Class',
-          });
-        }
-
-        // Check for createClass() (imported)
-        if (
-          node.callee.type === 'Identifier' &&
-          node.callee.name === 'createClass'
+          isReactApi(node.callee, scope, 'createClass') ||
+          (binding?.module === 'create-react-class' &&
+            binding.path.length === 0)
         ) {
           context.report({
             node: node.callee,

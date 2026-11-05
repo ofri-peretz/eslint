@@ -39,7 +39,24 @@ Before React 17, JSX was transformed to `React.createElement()`, requiring React
 
 ### ❌ Incorrect (React < 17)
 
-> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
+```tsx
+// No React binding: the classic runtime compiles this to React.createElement
+export function Component() {
+  return <div>Hello</div>;
+}
+
+// Named imports do not bring `React` into scope
+import { useState } from 'react';
+export const Fragment = () => <>Hello</>;
+
+// A type-only import is erased at compile time
+import type React from 'react';
+export const el: React.ReactNode = <span />;
+```
+
+Every JSX element and fragment needs a value named `React` in scope: a default
+or namespace import, a `require`, or any other binding. A file that declares
+`/** @jsxRuntime automatic */` needs none.
 
 ### ✅ Correct
 
@@ -93,28 +110,5 @@ export function Component() {
 
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Prop from variable
-const propValue = computedValue;
-<Component prop={propValue} /> // Computation not analyzed
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- A custom `@jsx` pragma (`/** @jsx h */`) is not read: the rule still asks for
+  `React`.

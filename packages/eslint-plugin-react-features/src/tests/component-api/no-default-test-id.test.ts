@@ -23,6 +23,10 @@ const ruleTester = new RuleTester({
 describe('no-default-test-id', () => {
   ruleTester.run('no-default-test-id', noDefaultTestId, {
     valid: [
+      {
+        name: '`= undefined` is no default: the prop stays absent',
+        code: 'function Card({ "data-testid": testId = undefined }) { return <div data-testid={testId} />; }',
+      },
       // No default — consumer must provide
       {
         name: 'the prop is passed through with no default',
@@ -38,6 +42,20 @@ describe('no-default-test-id', () => {
       },
     ],
     invalid: [
+      {
+        name: 'a default on a template-literal computed key',
+        code: 'function Card({ [`data-testid`]: testId = "card" }) { return <div data-testid={testId} />; }',
+        output:
+          'function Card({ [`data-testid`]: testId }) { return <div data-testid={testId} />; }',
+        errors: [{ messageId: 'defaultTestId' }],
+      },
+      {
+        name: 'a default in a destructure of props in the body',
+        code: 'function Card(props) { const { "data-testid": testId = "card" } = props; return <div data-testid={testId} />; }',
+        output:
+          'function Card(props) { const { "data-testid": testId } = props; return <div data-testid={testId} />; }',
+        errors: [{ messageId: 'defaultTestId' }],
+      },
       // Literal default value
       {
         name: 'a default test id makes two instances indistinguishable in a test',

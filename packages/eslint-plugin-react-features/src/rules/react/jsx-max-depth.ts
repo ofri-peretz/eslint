@@ -67,10 +67,17 @@ export const jsxMaxDepth = createRule<RuleOptions, MessageIds>({
         maxDepth = options?.max ?? 5;
       },
       JSXElement(node: TSESTree.JSXElement) {
-        const depth = calculateDepth(node);
-        if (depth > maxDepth) {
+        if (calculateDepth(node) > maxDepth) {
           context.report({
             node: node.openingElement.name,
+            messageId: 'jsxMaxDepth',
+          });
+        }
+      },
+      JSXFragment(node: TSESTree.JSXFragment) {
+        if (calculateDepth(node) > maxDepth) {
+          context.report({
+            node: node.openingFragment,
             messageId: 'jsxMaxDepth',
           });
         }
@@ -79,26 +86,42 @@ export const jsxMaxDepth = createRule<RuleOptions, MessageIds>({
   },
 });
 
-/**
- * Calculate the maximum depth of JSX nesting
- */
-function calculateDepth(node: TSESTree.JSXElement, currentDepth = 0): number {
-  let maxDepth = currentDepth;
+type JSXNode = TSESTree.JSXElement | TSESTree.JSXFragment;
 
-  // Check children
+/**
+ * The JSX an expression child renders where it is written: the element or
+ * fragment itself, either branch of a conditional, the right of `&&` / `||`
+ * / `??`. A callback's return (`items.map(i => <li />)`) crosses a function
+ * boundary and is not followed.
+ */
+function renderedJSX(expr: TSESTree.Node): JSXNode[] {
+  switch (expr.type) {
+    case 'JSXElement':
+    case 'JSXFragment':
+      return [expr];
+    case 'ConditionalExpression':
+      return [...renderedJSX(expr.consequent), ...renderedJSX(expr.alternate)];
+    case 'LogicalExpression':
+      return [...renderedJSX(expr.left), ...renderedJSX(expr.right)];
+    default:
+      return [];
+  }
+}
+
+/**
+ * The maximum depth of JSX nesting below `node`. A fragment is a level like
+ * any element.
+ */
+function calculateDepth(node: JSXNode, currentDepth = 0): number {
+  let maxDepth = currentDepth;
   for (const child of node.children) {
-    if (child.type === 'JSXElement') {
-      const childDepth = calculateDepth(child, currentDepth + 1);
-      maxDepth = Math.max(maxDepth, childDepth);
-    } else if (child.type === 'JSXExpressionContainer') {
-      // Check for JSX inside expressions
-      const expression = child.expression;
-      if (expression.type === 'JSXElement') {
-        const childDepth = calculateDepth(expression, currentDepth + 1);
-        maxDepth = Math.max(maxDepth, childDepth);
-      }
+    const nested =
+      child.type === 'JSXExpressionContainer'
+        ? renderedJSX(child.expression)
+        : renderedJSX(child);
+    for (const jsx of nested) {
+      maxDepth = Math.max(maxDepth, calculateDepth(jsx, currentDepth + 1));
     }
   }
-
   return maxDepth;
 }

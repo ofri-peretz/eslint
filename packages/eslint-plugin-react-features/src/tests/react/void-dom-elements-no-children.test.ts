@@ -25,6 +25,22 @@ const ruleTester = new RuleTester({
 describe('void-dom-elements-no-children', () => {
   ruleTester.run('void-dom-elements-no-children', voidDomElementsNoChildren, {
     valid: [
+      {
+        name: 'createElement of a void element with no content',
+        code: 'import React from "react"; React.createElement("br", null);',
+      },
+      {
+        name: 'createElement of a non-void element with children',
+        code: 'import { createElement } from "react"; createElement("div", null, "x");',
+      },
+      {
+        name: 'a local createElement is not React',
+        code: 'function createElement(...a) { return a; } createElement("br", null, "x");',
+      },
+      {
+        name: 'createElement with a dynamic type',
+        code: 'import { createElement } from "react"; createElement(type, { className: "x" }, "x");',
+      },
       // Void elements without children
       { name: 'a void element with no children', code: '<img src="image.png" alt="Image" />' },
       '<br />',
@@ -83,6 +99,21 @@ describe('void-dom-elements-no-children', () => {
       },
       {
         code: '<input>{value}</input>',
+        errors: [{ messageId: 'voidNoChildren' }],
+      },
+      {
+        name: 'createElement of a void element with a child argument',
+        code: 'import React from "react"; React.createElement("br", null, "x");',
+        errors: [{ messageId: 'voidNoChildren' }],
+      },
+      {
+        name: 'createElement of a void element with a children prop',
+        code: 'import { createElement as h } from "react"; h(`img`, { "children": value });',
+        errors: [{ messageId: 'voidNoChildren' }],
+      },
+      {
+        name: 'createElement of a void element with dangerouslySetInnerHTML',
+        code: 'import * as R from "react"; R.createElement("hr", { ...rest, dangerouslySetInnerHTML: { __html: x } });',
         errors: [{ messageId: 'voidNoChildren' }],
       },
     ],

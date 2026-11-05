@@ -114,15 +114,50 @@ function UserProfile({ userId }) {
 ### ✅ Correct
 
 ```tsx
-mounted
+import { useEffect, useCallback, useRef, useState } from 'react';
+
+function SearchResults({ query }) {
+  const [results, setResults] = useState([]);
+  const latest = useRef(query);
+
+  useEffect(() => {
+    // setResults (a useState setter) and latest (a useRef) are stable: not dependencies
+    latest.current = query;
+    fetchResults(query).then(setResults);
+  }, [query]);
+
+  // A dependency listed as a member path covers the callback reading it
+  const label = useCallback(() => `Results for ${query}`, [query]);
+
+  return <ResultList items={results} label={label()} />;
+}
 ```
+
+### What counts
+
+- **The hook** is React's, by binding: `useEffect`, a renamed import
+  (`import { useEffect as useFx }`), `React.useEffect`, `React['useEffect']` or a
+  namespace import. A local function, or an import from another module, that is called
+  `useEffect` is not checked. `additionalHooks` adds hooks by name.
+- **The callback** is the hook's function argument, and the dependency list follows it:
+  `useImperativeHandle(ref, create, deps)` reads `create` and `deps`.
+- **Missing**: a reactive value (prop, state, a value computed during render, whatever
+  its name's case) the callback reads and the list does not name. Not reactive: a
+  `useState` / `useReducer` setter and a `useRef` object (by binding, so also through a
+  renamed `useState`), module-level values, globals, the callback's own parameters.
+- **Unnecessary**: for `useCallback` / `useMemo`, any listed value the callback does not
+  read. For an effect, only a listed value that is not reactive (a module constant):
+  listing a reactive value to re-run the effect when it changes is the documented
+  pattern, so it is never reported.
+- A dependency argument that is not an array literal cannot be checked and is reported;
+  no dependency argument at all is not judged.
 
 ## Configuration
 
 | Option                                           | Type      | Default | Description                              |
 | ------------------------------------------------ | --------- | ------- | ---------------------------------------- |
-| `additionalHooks`                                | `string`  | -       | Regex for custom hooks to check          |
-| `enableDangerousAutofixThisMayCauseInfiniteLoops`| `boolean` | `false` | Allow autofix (may cause issues)         |
+| `additionalHooks`                                | `string`  | -       | Regex matched against the name of a called custom hook (e.g. `useCustomEffect(...)`); matching hooks are checked like `useEffect` |
+| `enableDangerousAutofixThisMayCauseInfiniteLoops`| `boolean` | `false` | Accepted for compatibility with `react-hooks/exhaustive-deps`; has no effect (fixes are always offered as suggestions, never applied automatically) |
 
 ## Configuration Examples
 

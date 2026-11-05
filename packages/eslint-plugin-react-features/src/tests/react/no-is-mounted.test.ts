@@ -95,33 +95,27 @@ describe('no-is-mounted', () => {
     });
   });
 
-  describe('Invalid cases - isMounted property access', () => {
-    ruleTester.run('isMounted property access triggers error', noIsMounted, {
-      valid: [],
-      invalid: [
-        // Basic property access
+  describe('A flag or variable named isMounted is not the API', () => {
+    ruleTester.run('isMounted flags are valid', noIsMounted, {
+      valid: [
         {
-          name: 'isMounted, an anti-pattern React removed',
+          name: 'reading a this.isMounted flag',
           code: `if (this.isMounted) { this.setState({}); }`,
-          errors: [{ messageId: 'noIsMounted' }],
         },
-        // Conditional with isMounted
         {
+          name: 'a flag read in a logical expression',
           code: `this.isMounted && this.setState({ count: 1 });`,
-          errors: [{ messageId: 'noIsMounted' }],
         },
-        // In ternary
         {
+          name: 'a flag read in a ternary',
           code: `this.isMounted ? this.setState({}) : null;`,
-          errors: [{ messageId: 'noIsMounted' }],
         },
-        // Assignment
         {
+          name: 'a flag copied to a variable',
           code: `const mounted = this.isMounted;`,
-          errors: [{ messageId: 'noIsMounted' }],
         },
-        // In callback
         {
+          name: 'a flag read in a callback',
           code: `
             fetchData().then(() => {
               if (this.isMounted) {
@@ -129,9 +123,84 @@ describe('no-is-mounted', () => {
               }
             });
           `,
-          errors: [{ messageId: 'noIsMounted' }],
+        },
+        {
+          name: 'a let variable named isMounted',
+          code: `let isMounted = false;`,
+        },
+        {
+          name: 'a const variable named isMounted',
+          code: `const isMounted = true;`,
+        },
+        {
+          name: 'a var variable named isMounted',
+          code: `var isMounted = false;`,
+        },
+        {
+          name: 'a local isMounted variable in a class component',
+          code: `
+            class MyComponent extends Component {
+              componentDidMount() {
+                let isMounted = true;
+                this.setState({ ready: isMounted });
+              }
+            }
+          `,
+        },
+        {
+          name: 'the isMounted ref pattern in a function component',
+          code: `
+            function MyComponent() {
+              let isMounted = false;
+              useEffect(() => {
+                isMounted = true;
+              }, []);
+            }
+          `,
+        },
+        {
+          name: 'a component tracking its own mounted flag',
+          code: `
+            class MyComponent extends Component {
+              componentDidMount() {
+                this.isMounted = true;
+                fetchData().then(data => {
+                  if (this.isMounted) {
+                    this.setState({ data });
+                  }
+                });
+              }
+              componentWillUnmount() {
+                this.isMounted = false;
+              }
+            }
+          `,
+        },
+        {
+          name: 'a class field named isMounted',
+          code: `
+            class MyComponent extends Component {
+              isMounted = false;
+              componentDidMount() {
+                this.isMounted = true;
+              }
+            }
+          `,
+        },
+        {
+          name: 'module-level this.isMounted() is not a component',
+          code: `if (this.isMounted()) { this.setState({}); }`,
+        },
+        {
+          name: 'another object isMounted() is not the component API',
+          code: `class A extends Component { m() { return store.isMounted(); } }`,
+        },
+        {
+          name: 'a class that is not a React component may define isMounted',
+          code: `class Pool { isMounted() { return true; } m() { return this.isMounted(); } }`,
         },
       ],
+      invalid: [],
     });
   });
 
@@ -139,19 +208,19 @@ describe('no-is-mounted', () => {
     ruleTester.run('isMounted method call triggers error', noIsMounted, {
       valid: [],
       invalid: [
-        // Method call
         {
-          code: `if (this.isMounted()) { this.setState({}); }`,
+          name: 'isMounted(), an anti-pattern React removed',
+          code: `class A extends Component { m() { if (this.isMounted()) { this.setState({}); } } }`,
           errors: [{ messageId: 'noIsMounted' }],
         },
-        // In conditional
         {
-          code: `this.isMounted() && this.setState({ count: 1 });`,
+          name: 'isMounted() in a logical expression',
+          code: `class A extends React.Component { m() { this.isMounted() && this.setState({ count: 1 }); } }`,
           errors: [{ messageId: 'noIsMounted' }],
         },
-        // Stored result
         {
-          code: `const mounted = this.isMounted();`,
+          name: 'isMounted() result stored, on a renamed import',
+          code: `import { Component as Base } from 'react'; class A extends Base { m = () => { const mounted = this['isMounted'](); }; }`,
           errors: [{ messageId: 'noIsMounted' }],
         },
         // In async callback - wrapped in class
@@ -171,96 +240,4 @@ describe('no-is-mounted', () => {
       ],
     });
   });
-
-  describe('Invalid cases - isMounted variable declaration', () => {
-    ruleTester.run('isMounted variable declaration triggers error', noIsMounted, {
-      valid: [],
-      invalid: [
-        // let declaration
-        {
-          code: `let isMounted = false;`,
-          errors: [{ messageId: 'noIsMounted' }],
-        },
-        // const declaration
-        {
-          code: `const isMounted = true;`,
-          errors: [{ messageId: 'noIsMounted' }],
-        },
-        // var declaration
-        {
-          code: `var isMounted = false;`,
-          errors: [{ messageId: 'noIsMounted' }],
-        },
-        // In class component
-        {
-          code: `
-            class MyComponent extends Component {
-              componentDidMount() {
-                let isMounted = true;
-                this.setState({ ready: isMounted });
-              }
-            }
-          `,
-          errors: [{ messageId: 'noIsMounted' }],
-        },
-        // In function component
-        {
-          code: `
-            function MyComponent() {
-              let isMounted = false;
-              useEffect(() => {
-                isMounted = true;
-              }, []);
-            }
-          `,
-          errors: [{ messageId: 'noIsMounted' }],
-        },
-      ],
-    });
-  });
-
-  describe('Complex scenarios', () => {
-    ruleTester.run('complex scenarios', noIsMounted, {
-      valid: [],
-      invalid: [
-        // Multiple isMounted usages
-        {
-          code: `
-            class MyComponent extends Component {
-              componentDidMount() {
-                this.isMounted = true;
-                fetchData().then(data => {
-                  if (this.isMounted) {
-                    this.setState({ data });
-                  }
-                });
-              }
-              componentWillUnmount() {
-                this.isMounted = false;
-              }
-            }
-          `,
-          errors: [
-            { messageId: 'noIsMounted' },
-            { messageId: 'noIsMounted' },
-            { messageId: 'noIsMounted' },
-          ],
-        },
-        // isMounted assignment (class field 'isMounted = false' not detected by MemberExpression rule)
-        {
-          code: `
-            class MyComponent extends Component {
-              isMounted = false;
-              componentDidMount() {
-                this.isMounted = true;
-              }
-            }
-          `,
-          // Only this.isMounted is detected by MemberExpression rule
-          errors: [{ messageId: 'noIsMounted' }],
-        },
-      ],
-    });
-  });
 });
-

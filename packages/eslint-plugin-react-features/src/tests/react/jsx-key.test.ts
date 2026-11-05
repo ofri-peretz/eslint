@@ -502,8 +502,12 @@ describe('jsx-key', () => {
             ))
           `,
         },
-        // JSXFragment parent - nested elements don't need keys
+      ],
+      invalid: [
+        // CORRECTED: the fragment is the list item, and `<>` cannot carry a
+        // key; the key on the inner div does not key the list.
         {
+          name: 'a keyed element inside a fragment shorthand list item',
           code: `
             items.map(item => (
               <>
@@ -511,9 +515,8 @@ describe('jsx-key', () => {
               </>
             ))
           `,
+          errors: [{ messageId: 'missingKey' }],
         },
-      ],
-      invalid: [
         // Map in component return - should be detected
         {
           code: `
@@ -1035,6 +1038,76 @@ describe('jsx-key', () => {
               ],
             },
           ],
+        },
+      ],
+    });
+  });
+
+  describe('fidelity: spellings and bindings', () => {
+    ruleTester.run('jsx-key spellings', jsxKey, {
+      valid: [
+        {
+          name: 'a variable named index that holds an id is a stable key',
+          code: 'items.map((item) => { const index = item.id; return <li key={index} />; });',
+        },
+        {
+          name: 'the index parameter of a function that is not an iterator callback',
+          code: 'function row(item, i) { return items.map((x) => <li key={i} />); }',
+        },
+        {
+          name: 'the first parameter of the callback is not its index',
+          code: 'ids.map((id) => <li key={id} />);',
+        },
+        {
+          name: 'a fragment nested inside the list item needs no key',
+          code: 'items.map((item) => <li key={item.id}><>{item.name}</></li>);',
+        },
+        {
+          name: 'a keyed React.createElement list item',
+          code: "import React from 'react'; items.map((item) => React.createElement('li', { key: item.id }));",
+        },
+        {
+          name: 'createElement props the file cannot read may carry the key',
+          code: "import React from 'react'; items.map((item) => React.createElement('li', item.props));",
+        },
+        {
+          name: 'createElement props with a spread may carry the key',
+          code: "import React from 'react'; items.map((item) => React.createElement('li', { ...item }));",
+        },
+        {
+          name: 'a local createElement is not React',
+          code: "const createElement = (t) => t; items.map((item) => createElement('li'));",
+        },
+        {
+          name: 'React.createElement outside an iterator callback',
+          code: "import React from 'react'; const el = React.createElement('li', null);",
+        },
+      ],
+      invalid: [
+        {
+          name: 'the index parameter used as a key, whatever it is called',
+          code: 'items.map((item, n) => <li key={n}>{item.name}</li>);',
+          errors: [{ messageId: 'unstableKey' }],
+        },
+        {
+          name: 'a fragment shorthand list item cannot carry a key',
+          code: 'items.map((item) => <>{item.name}</>);',
+          errors: [{ messageId: 'missingKey' }],
+        },
+        {
+          name: 'React.createElement list item with null props',
+          code: "import React from 'react'; items.map((item) => React.createElement('li', null, item.name));",
+          errors: [{ messageId: 'missingKey' }],
+        },
+        {
+          name: 'createElement list item with no props at all',
+          code: "import { createElement } from 'react'; items.map(function (item) { return createElement('li'); });",
+          errors: [{ messageId: 'missingKey' }],
+        },
+        {
+          name: 'createElement list item whose props have no key',
+          code: "import * as R from 'react'; items['map']((item) => R.createElement('li', { id: item.id }));",
+          errors: [{ messageId: 'missingKey' }],
         },
       ],
     });

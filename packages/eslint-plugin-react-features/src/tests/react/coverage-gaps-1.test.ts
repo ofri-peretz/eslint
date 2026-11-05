@@ -132,7 +132,7 @@ describe('no-danger-with-children coverage gaps', () => {
   ruleTester.run('no-danger-with-children', noDangerWithChildren, {
     valid: [
       { name: 'danger with empty JSX expression child', code: 'const a = <div dangerouslySetInnerHTML={{ __html: html }}>{}</div>;' },
-      { name: 'danger with whitespace-only text child', code: 'const a = <div dangerouslySetInnerHTML={{ __html: html }}>   </div>;' },
+      { name: 'danger with a line break only between the tags', code: 'const a = <div dangerouslySetInnerHTML={{ __html: html }}>\n  </div>;' },
       { name: 'plain createElement identifier call', code: "createElement('div', { dangerouslySetInnerHTML: x }, 'child');" },
       { name: 'non-React object createElement', code: "Foo.createElement('div', { dangerouslySetInnerHTML: x }, 'child');" },
       { name: 'deep member callee', code: "a.b.createElement('div', {}, 'child');" },
@@ -183,6 +183,11 @@ describe('jsx-key coverage gaps', () => {
       { name: 'JSX wrapped in helper call inside map', code: 'const a = items.map(item => wrap(<div />));' },
       { name: 'key present via Children.map callback', code: 'const a = Children.map(children, child => <div key={child.id} />);' },
       { name: 'non-Children non-React deep map object', code: 'const a = Foo.Children.map(children, child => <div key={child.id} />);' },
+      // CORRECTED: React's Children.map keys every element its callback
+      // returns, so a missing key there is not a finding.
+      { name: 'Children.map assigns keys itself', code: "import { Children } from 'react'; const a = Children.map(children, child => <div />);" },
+      { name: 'React.Children.map assigns keys itself', code: "import React from 'react'; const a = React.Children.map(children, child => <div />);" },
+      { name: 'a zero-param Children.map callback needs no key', code: 'const a = Children.map(children, () => <div />);' },
       { name: 'key without index in map', code: 'const a = items.map(item => <div key={item.id} />);' },
       {
         name: 'index key allowed when warnUnstableKeys false',
@@ -222,41 +227,6 @@ describe('jsx-key coverage gaps', () => {
             ],
           },
         ],
-      },
-      {
-        name: 'missing key in Children.map',
-        code: 'const a = Children.map(children, child => <div />);',
-        errors: [
-          {
-            messageId: 'missingKey',
-            suggestions: [
-              { messageId: 'suggestKey', output: 'const a = Children.map(children, child => <div key={child.id} />);' },
-            ],
-          },
-        ],
-      },
-      {
-        name: 'missing key in React.Children.map',
-        code: 'const a = React.Children.map(children, child => <div />);',
-        errors: [
-          {
-            messageId: 'missingKey',
-            suggestions: [
-              { messageId: 'suggestKey', output: 'const a = React.Children.map(children, child => <div key={child.id} />);' },
-            ],
-          },
-        ],
-      },
-      {
-        /*
-         * CORRECTED 2026-09-20: previously pinned the output as
-         * `key={item.id}`. The callback takes no parameter, so `item` is
-         * bound nowhere and accepting that edit threw at render. With no
-         * parameter there is no key to derive, so no suggestion is offered.
-         */
-        name: 'a zero-param Children.map callback offers no suggestion, having no key to name',
-        code: 'const a = Children.map(children, () => <div />);',
-        errors: [{ messageId: 'missingKey', suggestions: [] }],
       },
       {
         name: 'missing key in function-expression map with block return',

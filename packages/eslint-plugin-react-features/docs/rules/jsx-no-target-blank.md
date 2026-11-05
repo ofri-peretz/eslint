@@ -47,6 +47,23 @@ Links with `target="_blank"` without `rel="noopener noreferrer"` are vulnerable 
 <a target="_blank" rel="noopener" href="https://example.com">Link</a>
 ```
 
+## What is checked
+
+An `<a>` whose `target` is `_blank` (any letter case, plain or braced) and whose `href`
+is external (`http://` / `https://` in any letter case, or protocol-relative `//host`,
+plain or braced) is reported unless `rel` contains `noopener` or `noreferrer` (tokens read
+case-insensitively, plain or braced). `noopener` alone is enough.
+
+## Options
+
+| Option                   | Type                    | Default    | Description |
+| ------------------------ | ----------------------- | ---------- | ----------- |
+| `allowReferrer`          | `boolean`               | `false`    | Only changes the autofix: add `noopener` instead of `noopener noreferrer` |
+| `enforceDynamicLinks`    | `'always'` \| `'never'` | `'always'` | `'always'` treats a dynamic `href` as external and a dynamic `target` as `_blank`; `'never'` leaves them unjudged |
+| `warnOnSpreadAttributes` | `boolean`               | `false`    | By default an element with a spread is skipped (the spread may carry `rel`) |
+| `links`                  | `boolean`               | `true`     | Check `<a>` elements |
+| `forms`                  | `boolean`               | `false`    | Also check `<form target="_blank">` |
+
 ## Related Rules
 
 - [`jsx-no-script-url`](./jsx-no-script-url.mdx) - Prevent javascript URLs

@@ -9,7 +9,8 @@
  * Prevent isMounted anti-pattern
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+import { componentSetState } from '../../utils/component-set-state';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 /**
@@ -49,22 +50,14 @@ export const noIsMounted = createRule<RuleOptions, MessageIds>({
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
-      // Check for isMounted property access (covers both property access and method calls)
-      MemberExpression(node: TSESTree.MemberExpression) {
-        if (propertyName(node) === 'isMounted') {
-          context.report({
-            node: node.property,
-            messageId: 'noIsMounted',
-          });
-        }
-      },
-
-      // Check for isMounted variable declarations
-      'VariableDeclarator[id.name="isMounted"]'(
-        node: TSESTree.VariableDeclarator,
-      ) {
+      // React's legacy `isMounted()`: a React class component calling its own
+      // `this.isMounted()`. A variable or flag the code names `isMounted`
+      // (`const isMounted = useRef(false)`) is the documented replacement,
+      // not the API.
+      CallExpression(node: TSESTree.CallExpression) {
+        if (!componentSetState(node, context.sourceCode, 'isMounted')) return;
         context.report({
-          node: node.id,
+          node: (node.callee as TSESTree.MemberExpression).property,
           messageId: 'noIsMounted',
         });
       },

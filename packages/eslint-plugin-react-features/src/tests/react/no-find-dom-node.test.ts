@@ -34,6 +34,14 @@ describe('no-find-dom-node', () => {
       // Different function names
       'findNode(element);',
       'DOMNode(element);',
+      {
+        name: 'a local function named findDOMNode is not React',
+        code: 'function findDOMNode(x) { return x; } findDOMNode(this);',
+      },
+      {
+        name: 'findDOMNode imported from another module is not React',
+        code: 'import { findDOMNode } from "./dom"; findDOMNode(this);',
+      },
     ],
     invalid: [
       {
@@ -47,6 +55,16 @@ describe('no-find-dom-node', () => {
       },
       {
         code: 'ReactDOM.findDOMNode(ref.current);',
+        errors: [{ messageId: 'noFindDOMNode' }],
+      },
+      {
+        name: 'a renamed findDOMNode import',
+        code: 'import { findDOMNode as find } from "react-dom"; find(this);',
+        errors: [{ messageId: 'noFindDOMNode' }],
+      },
+      {
+        name: 'findDOMNode on a react-dom namespace import',
+        code: 'import * as Dom from "react-dom"; Dom.findDOMNode?.(this);',
         errors: [{ messageId: 'noFindDOMNode' }],
       },
     ],

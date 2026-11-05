@@ -31,6 +31,16 @@ describe('required-attributes', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - components with required attributes', requiredAttributes, {
       valid: [
+        {
+          name: 'a React Fragment takes no attribute but key',
+          code: `import { Fragment } from 'react'; const a = <Fragment>x</Fragment>;`,
+          options: [{ attributes: [{ attribute: 'data-testid' }] }],
+        },
+        {
+          name: 'React.Fragment takes no attribute but key',
+          code: `import React from 'react'; const a = <React.Fragment key="k">x</React.Fragment>;`,
+          options: [{ attributes: [{ attribute: 'data-testid' }] }],
+        },
         // Component with required attribute
         {
           name: 'the attribute present',
@@ -58,6 +68,22 @@ describe('required-attributes', () => {
     ruleTester.run('invalid - missing required attributes', requiredAttributes, {
       valid: [],
       invalid: [
+        {
+          name: 'a local component named Fragment is not React',
+          code: `import { Fragment } from './layout'; const a = <Fragment>x</Fragment>;`,
+          options: [{ attributes: [{ attribute: 'data-testid' }] }],
+          errors: [
+            {
+              messageId: 'missingAttribute',
+              suggestions: [
+                {
+                  messageId: 'addAttribute',
+                  output: `import { Fragment } from './layout'; const a = <Fragment data-testid="fragment">x</Fragment>;`,
+                },
+              ],
+            },
+          ],
+        },
         {
           name: 'a component missing an attribute the configuration requires',
           code: '<Button />',

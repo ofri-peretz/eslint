@@ -31,6 +31,50 @@ describe('no-this-in-sfc', () => {
   describe('Basic Functionality', () => {
     ruleTester.run('no-this-in-sfc validation', noThisInSfc, {
       valid: [
+        {
+          name: 'a lowercase function that does not return JSX is not a component',
+          code: 'function notAComponent() { return this.value; }',
+        },
+        {
+          name: 'a PascalCase arrow that returns no JSX',
+          code: 'const Format = () => this.value;',
+        },
+        {
+          name: 'a module-level arrow that is not a component',
+          code: 'const myFunc = () => this.value;',
+        },
+        {
+          name: 'an object method has its own this',
+          code: 'const obj = { method: function() { return this.value; } };',
+        },
+        {
+          name: 'a plain helper function has its own this',
+          code: 'function helper() { const value = this.something; return this.other; }',
+        },
+        {
+          name: 'a PascalCase constructor function that does not return JSX',
+          code: 'function Counter() { this.count = 0; }',
+        },
+        {
+          name: 'a nested function inside a component has its own this',
+          code: 'function Card() { const f = function () { return this.x; }; return <div>{f()}</div>; }',
+        },
+        {
+          name: 'a lowercase render helper is not a component',
+          code: 'function renderRow() { return <div>{this.props.x}</div>; }',
+        },
+        {
+          name: 'a function with an explicit this parameter',
+          code: 'function Card(this: any) { return <div>{this.x}</div>; }',
+        },
+        {
+          name: 'a function passed to something other than memo or forwardRef',
+          code: 'const Card = wrap(() => <div>{this.x}</div>);',
+        },
+        {
+          name: 'a class field initializer this is the instance',
+          code: 'class Store { handler = () => this.x; }',
+        },
         // Class components - this is allowed
         {
           name: '`this` in a class render, where it is the instance',
@@ -93,57 +137,6 @@ describe('no-this-in-sfc', () => {
         },
       ],
       invalid: [
-        // this in regular functions (not in classes)
-        {
-          name: '`this` in a function component, where it is undefined',
-          code: 'function notAComponent() { return this.value; }',
-          errors: [
-            {
-              messageId: 'noThisInSfc',
-            },
-          ],
-        },
-        {
-          name: 'an arrow function has no receiver of its own, so `this` is not its instance',
-          code: 'const myFunc = () => this.value;',
-          errors: [
-            {
-              messageId: 'noThisInSfc',
-            },
-          ],
-        },
-        // this in object methods (not classes)
-        {
-          code: `
-            const obj = {
-              method: function() {
-                return this.value;
-              }
-            };
-          `,
-          errors: [
-            {
-              messageId: 'noThisInSfc',
-            },
-          ],
-        },
-        // Multiple this usages
-        {
-          code: `
-            function helper() {
-              const value = this.something;
-              return this.other;
-            }
-          `,
-          errors: [
-            {
-              messageId: 'noThisInSfc',
-            },
-            {
-              messageId: 'noThisInSfc',
-            },
-          ],
-        },
         // this in functional components (should use hooks instead)
         {
           code: `
@@ -180,6 +173,20 @@ describe('no-this-in-sfc', () => {
         {
           code: 'class Empty {}',
         },
+        {
+          name: 'a class component and a helper with its own this',
+          code: `
+            class MyComponent extends React.Component {
+              render() {
+                return this.props.value;
+              }
+            }
+
+            function helper() {
+              return this.value;
+            }
+          `,
+        },
         // Class with only static methods
         {
           code: `
@@ -192,24 +199,35 @@ describe('no-this-in-sfc', () => {
         },
       ],
       invalid: [
-        // Mixed class and non-class code
         {
-          code: `
-            class MyComponent extends React.Component {
-              render() {
-                return this.props.value; // OK
-              }
-            }
-
-            function helper() {
-              return this.value; // NOT OK
-            }
-          `,
-          errors: [
-            {
-              messageId: 'noThisInSfc',
-            },
-          ],
+          name: 'this in a component that also declares helpers',
+          code: 'function Card() { const f = () => 1; function g() { return <i />; } class X {} return <div>{this.x}{f()}</div>; }',
+          errors: [{ messageId: 'noThisInSfc' }],
+        },
+        {
+          name: 'this in an expression-bodied arrow component',
+          code: 'const Card = () => (x ? null : <i>{this.x}</i>);',
+          errors: [{ messageId: 'noThisInSfc' }],
+        },
+        {
+          name: 'this in a memo component on a named import',
+          code: 'import { memo } from "react"; const Card = memo(() => <div>{this.props.x}</div>);',
+          errors: [{ messageId: 'noThisInSfc' }],
+        },
+        {
+          name: 'this in an arrow inside a forwardRef component',
+          code: 'import React from "react"; const Card = React.forwardRef(function (props, ref) { const f = () => this.x; return <div ref={ref}>{f()}</div>; });',
+          errors: [{ messageId: 'noThisInSfc' }],
+        },
+        {
+          name: 'this in an anonymous export default function component',
+          code: 'export default function (props) { return cond ? <div>{this.x}</div> : null; }',
+          errors: [{ messageId: 'noThisInSfc' }],
+        },
+        {
+          name: 'this in a function expression component that renders conditionally',
+          code: 'const Card = function () { if (x) { return null; } return ok && <b>{this.x}</b>; };',
+          errors: [{ messageId: 'noThisInSfc' }],
         },
       ],
     });

@@ -295,4 +295,45 @@ describe('no-children-prop', () => {
       ],
     });
   });
+
+  describe('children in props objects, every key spelling', () => {
+    ruleTester.run('children keys', noChildrenProp, {
+      valid: [
+        {
+          name: 'a local function called createElement is not React',
+          code: 'const createElement = (...a) => a; createElement(Card, { children: x });',
+        },
+        {
+          name: 'createElement with props the file cannot read',
+          code: "import React from 'react'; React.createElement(Card, props);",
+        },
+        {
+          name: 'createElement with no props',
+          code: "import React from 'react'; React.createElement(Card);",
+        },
+      ],
+      invalid: [
+        {
+          name: 'a quoted children key in a spread object',
+          code: "<Card {...{ 'children': x }} />",
+          errors: [{ messageId: 'noChildrenProp' }],
+        },
+        {
+          name: 'a computed children key in a spread object',
+          code: "<Card {...{ ['children']: x }} />",
+          errors: [{ messageId: 'noChildrenProp' }],
+        },
+        {
+          name: 'children in React.createElement props',
+          code: "import React from 'react'; React.createElement(Card, { children: x });",
+          errors: [{ messageId: 'noChildrenProp' }],
+        },
+        {
+          name: 'children in the props of a named createElement import',
+          code: "import { createElement } from 'react'; createElement(Card, { 'children': x });",
+          errors: [{ messageId: 'noChildrenProp' }],
+        },
+      ],
+    });
+  });
 });

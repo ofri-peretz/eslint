@@ -31,11 +31,21 @@ Implements rule **R19** of the [portable component-modeling floor](https://githu
 Detects color literals in formats: hex (`#…`), `rgb(...)`, `rgba(...)`,
 `hsl(...)`, `hsla(...)`, `oklch(...)`, `oklab(...)`.
 
-Scoped to common component-source surfaces — JSX attribute string values, object
-literals inside JSX expressions (e.g. `style={{ color: "#…" }}`), and the
-arguments to common class-name builders (`cn`, `clsx`, `twMerge`, `classNames`).
-This scoping keeps the rule focused on the source that ships to consumers and
-minimizes false positives in tests / fixtures / docs.
+Scoped to the places component source styles things. Values are read however
+they are written: `"…"`, `{"…"}`, a template, both branches of a conditional,
+`flag && "…"`.
+
+- **`className` / `class`** and **`style={{ … }}` values** are CSS: a colour
+  anywhere in the string is reported (`bg-[#ff0000]`, `1px solid #fff`).
+- **Other JSX attributes and other objects in JSX** are reported when the
+  value *is* a colour (`fill="#ff0000"`, `{ color: "#f00" }`). Text that only
+  contains `#` and hex digits (`title="Issue #123"`) is not a colour, and URL
+  attributes (`href`, `src`, `xlink:href`, …) are never read: `href="#add"` is
+  an in-page link.
+- **Class-name builder arguments**: plain, conditional, template, array
+  elements and object keys. A builder is `cn` (the helper shadcn/ui generates),
+  or clsx / classnames / tailwind-merge by import binding, renamed or not
+  (`import { clsx as cx } from 'clsx'`).
 
 ## Examples
 

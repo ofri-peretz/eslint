@@ -73,41 +73,51 @@ export const noAdjacentInlineElements = createRule<[], MessageIds>({
   },
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
-    return {
-      JSXElement(node: TSESTree.JSXElement) {
-        if (node.children.length < 2) return;
-
-        // Find sequences of adjacent inline elements
-        let consecutiveInlineCount = 0;
-        let lastInlineElement: TSESTree.JSXElement | null = null;
-
-        for (const child of node.children) {
-          if (child.type === 'JSXElement') {
-            const elementName = getElementName(child);
-            if (elementName && INLINE_ELEMENTS.has(elementName)) {
-              consecutiveInlineCount++;
-              lastInlineElement = child;
-
-              if (consecutiveInlineCount >= 2) {
-                context.report({
-                  node: lastInlineElement.openingElement.name,
-                  messageId: 'noAdjacentInlineElements',
-                });
-              }
-            } else {
-              consecutiveInlineCount = 0;
-              lastInlineElement = null;
-            }
-          } else if (child.type === 'JSXText') {
-            // Reset counter on text nodes
-            consecutiveInlineCount = 0;
-            lastInlineElement = null;
+    /**
+     * Report each inline host element that follows another with nothing
+     * between them but an empty `{/* comment *\/}`. Text (any whitespace
+     * included), a braced string and a dynamic child separate them.
+     */
+    function checkChildren(node: TSESTree.JSXElement | TSESTree.JSXFragment) {
+      let previousInline = false;
+      for (const child of node.children) {
+        if (child.type === 'JSXElement') {
+          const elementName = getElementName(child);
+          const inline =
+            elementName !== null && INLINE_ELEMENTS.has(elementName);
+          if (inline && previousInline) {
+            context.report({
+              node: child.openingElement.name,
+              messageId: 'noAdjacentInlineElements',
+            });
           }
+          previousInline = inline;
+        } else if (rendersSomething(child)) {
+          previousInline = false;
         }
-      },
+      }
+    }
+
+    return {
+      JSXElement: checkChildren,
+      JSXFragment: checkChildren,
     };
   },
 });
+
+/**
+ * Does this non-element child separate its siblings? Text does, including
+ * line-break whitespace: JSX drops it, but the doc treats elements on their
+ * own lines (laid out by CSS, e.g. a flex gap) as separated, a judgment the
+ * rule leaves to the author. A dynamic child may render text. Only an empty
+ * `{/* comment *\/}` renders nothing.
+ */
+function rendersSomething(child: TSESTree.JSXChild): boolean {
+  return !(
+    child.type === 'JSXExpressionContainer' &&
+    child.expression.type === 'JSXEmptyExpression'
+  );
+}
 
 /**
  * Get the name of a JSX element

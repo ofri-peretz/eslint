@@ -15,6 +15,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'defaultTestId';
@@ -49,11 +50,17 @@ export const noDefaultTestId = createRule<RuleOptions, MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       Property(node: TSESTree.Property) {
-        // Match `"data-testid": x = "..."` in destructuring patterns
-        if (node.key.type !== 'Literal' || node.key.value !== 'data-testid')
-          return;
+        // `"data-testid": x = "..."` in a destructuring pattern, with the key
+        // quoted, computed or a template. `= undefined` is no default: the
+        // prop stays absent when the consumer omits it.
+        if (objectKeyName(node) !== 'data-testid') return;
         if (node.value.type !== 'AssignmentPattern') return;
         const assignment = node.value;
+        if (
+          assignment.right.type === 'Identifier' &&
+          assignment.right.name === 'undefined'
+        )
+          return;
         context.report({
           node: assignment,
           messageId: 'defaultTestId',

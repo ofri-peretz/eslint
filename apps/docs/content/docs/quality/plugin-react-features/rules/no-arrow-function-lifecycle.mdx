@@ -36,6 +36,11 @@ Lifecycle methods should be defined as regular methods, not arrow functions. Arr
 | 🐛 **Testing difficulties**   | Harder to spy/mock                  | Standard method syntax       |
 | 🔍 **Memory overhead**        | Arrow creates new instance          | Regular method shares proto  |
 
+Only a React class component is judged: a class that extends React's `Component` or
+`PureComponent`, recognised by binding (`React.Component`, a named, renamed or namespace
+import). A plain class or a `Component` from another library is not. The member key may
+be written `componentDidMount`, `'componentDidMount'` or `['componentDidMount']`.
+
 ## Examples
 
 ### ❌ Incorrect

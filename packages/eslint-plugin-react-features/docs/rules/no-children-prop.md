@@ -39,6 +39,11 @@ Passing `children` as a prop instead of nesting is less readable and can cause i
 | 🔄 **Consistency**        | Mixed patterns                  | Standardize               |
 | 🐛 **Edge cases**         | Prop overwrite issues           | Natural nesting           |
 
+Reported: a `children={...}` prop, a `children` key (plain, quoted, computed or
+shorthand) in a spread object literal, and a `children` key in the props object of
+React's `createElement` (recognised by binding: `React.createElement` or a named
+import). A local function that happens to be called `createElement` is not React's.
+
 ## Examples
 
 ### ❌ Incorrect

@@ -146,8 +146,48 @@ describe('no-typos', () => {
 
   describe('Invalid cases - typos in method names', () => {
     ruleTester.run('typos in method names trigger error', noTypos, {
-      valid: [],
+      valid: [
+        {
+          name: 'a static propTypes on a component is the right spelling',
+          code: `class C extends React.Component { static propTypes = {}; static getDerivedStateFromProps() { return null; } }`,
+        },
+        {
+          name: 'a typo on a class that is not a React component',
+          code: `class Painter { ComponentDidMount() {} static PropTypes = {}; }`,
+        },
+        {
+          name: 'a Component from another library is not React',
+          code: `import { Component } from 'lit';
+          class El extends Component { componenDidMount() {} }`,
+        },
+        {
+          name: 'a private member is never a lifecycle',
+          code: `class C extends React.Component { #ComponentDidMount() {} }`,
+        },
+      ],
       invalid: [
+        {
+          name: 'a lifecycle in another letter case',
+          code: `import { Component as Base } from 'react';
+          class C extends Base { ComponentDidMount() {} }`,
+          errors: [{ messageId: 'noTypos' }],
+        },
+        {
+          name: 'a static in another letter case',
+          code: `class C extends React.PureComponent { static PropTypes = {}; }`,
+          errors: [{ messageId: 'noTypos' }],
+        },
+        {
+          name: 'an instance lifecycle declared static never runs',
+          code: `class C extends React.Component { static componentDidMount() {} }`,
+          errors: [{ messageId: 'noTypos' }],
+        },
+        {
+          name: 'getDerivedStateFromProps declared on the instance never runs',
+          code: `import * as R from 'react';
+          const C = class extends R.Component { getDerivedStateFromProps() { return null; } };`,
+          errors: [{ messageId: 'noTypos' }],
+        },
         // componenDidMount typo
         {
           code: `
@@ -234,16 +274,57 @@ describe('no-typos', () => {
 
   describe('Invalid cases - typos in member expressions', () => {
     ruleTester.run('typos in member expressions trigger error', noTypos, {
-      valid: [],
-      invalid: [
-        // Access to typo property
+      valid: [
         {
+          name: 'reading a property of an object the file does not prove is a component',
           code: `Component.defaulProps`,
+        },
+        {
+          name: 'reading a property off this',
+          code: `this.defaulProps`,
+        },
+        {
+          name: 'reading a correctly spelt static',
+          code: `class C extends React.Component {} const shape = { ...C.propTypes, name: PropTypes.string };`,
+        },
+        {
+          name: 'the exact static spelling assigned to a component',
+          code: `class C extends React.Component {} C.defaultProps = {};`,
+        },
+        {
+          name: 'a misspelt static assigned to a plain class',
+          code: `class C {} C.DefaultProps = {};`,
+        },
+        {
+          name: 'a misspelt static assigned to an object',
+          code: `const C = {}; C.DefaultProps = {};`,
+        },
+        {
+          name: 'a misspelt static assigned to a computed target',
+          code: `class C extends React.Component {} things[0].DefaultProps = {};`,
+        },
+        {
+          name: 'a misspelt static assigned to a function (a component or not, the file does not prove)',
+          code: `function C() { return null; } C.DefaultProps = {};`,
+        },
+        {
+          name: 'a plain variable assignment',
+          code: `let x = 0; x = 1;`,
+        },
+        {
+          name: 'an assignment to a name declared nowhere',
+          code: `Undeclared.DefaultProps = {};`,
+        },
+      ],
+      invalid: [
+        {
+          name: 'a misspelt static assigned to a class component',
+          code: `class C extends React.Component {} C.DefaultProps = {};`,
           errors: [{ messageId: 'noTypos' }],
         },
-        // Access to typo property via this
         {
-          code: `this.defaulProps`,
+          name: 'a misspelt static assigned to a class expression component, through a cast',
+          code: `const C = class extends React.Component {}; (C as any).defaulProps = {};`,
           errors: [{ messageId: 'noTypos' }],
         },
       ],
@@ -274,3 +355,33 @@ describe('no-typos', () => {
   });
 });
 
+
+describe('no-typos: every React API name in another letter case', () => {
+  const instance = ['ComponentDidCatch', 'GetChildContext', 'Render'];
+  const statics = [
+    'ChildContextTypes',
+    'ContextType',
+    'ContextTypes',
+    'DisplayName',
+  ];
+  ruleTester.run('case variants', noTypos, {
+    valid: [],
+    invalid: [
+      ...instance.map((name) => ({
+        name: `instance ${name}() is a misspelled lifecycle`,
+        code: `import React from 'react'; class C extends React.Component { ${name}() { return null; } }`,
+        errors: [{ messageId: 'noTypos' as const }],
+      })),
+      ...statics.map((name) => ({
+        name: `static ${name} is a misspelled static`,
+        code: `import React from 'react'; class C extends React.Component { static ${name} = {}; }`,
+        errors: [{ messageId: 'noTypos' as const }],
+      })),
+      {
+        name: 'static GetDerivedStateFromError() is a misspelled static',
+        code: `import React from 'react'; class C extends React.Component { static GetDerivedStateFromError() { return {}; } }`,
+        errors: [{ messageId: 'noTypos' }],
+      },
+    ],
+  });
+});

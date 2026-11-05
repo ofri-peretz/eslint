@@ -412,23 +412,104 @@ describe('prop-types', () => {
 
   describe('Anonymous Class Components', () => {
     ruleTester.run('anonymous class handling', propTypes, {
-      valid: [
-        // Anonymous class - no id to report on, typically not an issue
+      valid: [],
+      invalid: [
         {
+          name: 'props read through a cast of this',
+          code: `class MyComponent extends Component { render() { return (this as any).props.name; } }`,
+          options: [{ skipUndeclared: true }],
+          errors: [{ messageId: 'propTypes' }],
+        },
+        {
+          name: 'a renamed import, reading props in an arrow handler',
+          code: `import { Component as Base } from 'react';
+          class MyComponent extends Base {
+            handle = () => this.props.onPick();
+            render() { return <b onClick={this.handle} />; }
+          }`,
+          options: [{ skipUndeclared: true }],
+          errors: [{ messageId: 'propTypes' }],
+        },
+        {
+          name: 'propTypes assigned to another class does not declare this one',
+          code: `class A extends Component { render() { return this.props.x; } }
+          class B extends Component { static propTypes = {}; render() { return null; } }
+          B.propTypes = {};
+          const obj = {}; obj.propTypes = {};
+          function make() {} make.propTypes = {};
+          const C = class extends Component {}; C.propTypes = {};
+          Ghost.propTypes = {};
+          things[0].propTypes = {};
+          let other; other = 1;
+          A.displayName = 'A';`,
+          errors: [{ messageId: 'propTypes' }],
+        },
+        {
+          name: 'an anonymous class expression has no binding name to ignore',
+          code: `use(class extends Component { render() { return this.props.x; } });`,
+          options: [{ ignore: ['Wrapped'] }],
+          errors: [{ messageId: 'propTypes' }],
+        },
+        {
+          name: 'a destructured binding has no single name to ignore',
+          code: `const { A = class extends Component { render() { return this.props.x; } } } = mods;`,
+          options: [{ ignore: ['A'] }],
+          errors: [{ messageId: 'propTypes' }],
+        },
+        {
+          name: 'an anonymous class component is a component too',
           code: `
             export default class extends Component {
               render() { return <div>Hello</div>; }
             }
           `,
+          errors: [{ messageId: 'propTypes' }],
         },
       ],
-      invalid: [],
     });
   });
 
   describe('Edge Cases', () => {
     ruleTester.run('edge cases', propTypes, {
       valid: [
+        {
+          name: 'TypeScript props on the base class declare them',
+          code: `class MyComponent extends React.Component<{ name: string }> {
+            render() { return <div>{this.props.name}</div>; }
+          }`,
+        },
+        {
+          name: 'propTypes assigned after the class, through a cast',
+          code: `class MyComponent extends React.Component {
+            render() { return <div>{this.props.name}</div>; }
+          }
+          (MyComponent as any).propTypes = { name: PropTypes.string };`,
+        },
+        {
+          name: 'a computed propTypes static key',
+          code: `const MyComponent = class extends Component {
+            static ['propTypes'] = { name: PropTypes.string };
+            render() { return <div>{this.props.name}</div>; }
+          };`,
+        },
+        {
+          name: 'a Component from another library is not React',
+          code: `import { Component } from 'lit';
+          class El extends Component { render() { return this.props.name; } }`,
+        },
+        {
+          name: 'ignore names a class-expression component by its binding',
+          code: `const Wrapped = class extends Component { render() { return this.props.name; } };`,
+          options: [{ ignore: ['Wrapped'] }],
+        },
+        {
+          name: 'skipUndeclared: props read only by an outer helper do not count',
+          code: `class Outer extends Component {
+            render() { return null; }
+          }
+          function helper() { return this.props; }`,
+          options: [{ skipUndeclared: true }],
+        },
         // Class without superClass
         {
           code: `

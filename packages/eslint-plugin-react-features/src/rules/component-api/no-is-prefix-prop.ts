@@ -15,10 +15,40 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  staticString,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'isPrefix' | 'renameSuggestion';
 type RuleOptions = [];
+
+/** `isLooped`, `'isLooped'` and `['isLooped']` all declare `isLooped`. */
+const signatureKeyName = (
+  node: TSESTree.TSPropertySignature,
+): string | null => {
+  const { key } = node;
+  // A computed key names a property only when it is a static string.
+  if (node.computed || key.type !== 'Identifier') return staticString(key);
+  return key.name;
+};
+
+/**
+ * A boolean type: `boolean`, or `boolean` widened with `undefined` / `null`
+ * (`boolean | undefined` is how an optional boolean prop is often spelled).
+ */
+const isBooleanType = (ann: TSESTree.TypeNode | undefined): boolean => {
+  if (!ann) return false;
+  if (ann.type === 'TSBooleanKeyword') return true;
+  if (ann.type !== 'TSUnionType') return false;
+  return (
+    ann.types.some((t) => t.type === 'TSBooleanKeyword') &&
+    ann.types.every(
+      (t) =>
+        t.type === 'TSBooleanKeyword' ||
+        t.type === 'TSUndefinedKeyword' ||
+        t.type === 'TSNullKeyword',
+    )
+  );
+};
 
 const stripIsPrefix = (name: string): string => {
   const rest = name.slice(2);
@@ -66,11 +96,9 @@ export const noIsPrefixProp = createRule<RuleOptions, MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       TSPropertySignature(node: TSESTree.TSPropertySignature) {
-        if (node.key.type !== 'Identifier') return;
-        const { name } = node.key;
-        if (!/^is[A-Z]/.test(name)) return;
-        const ann = node.typeAnnotation?.typeAnnotation;
-        if (!ann || ann.type !== 'TSBooleanKeyword') return;
+        const name = signatureKeyName(node);
+        if (name === null || !/^is[A-Z]/.test(name)) return;
+        if (!isBooleanType(node.typeAnnotation?.typeAnnotation)) return;
         const suggested = stripIsPrefix(name);
         const keyNode = node.key;
         context.report({

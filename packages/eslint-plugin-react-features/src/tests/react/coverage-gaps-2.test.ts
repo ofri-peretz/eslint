@@ -38,7 +38,9 @@ const ruleTester = new RuleTester({
 describe('jsx-no-script-url coverage gaps', () => {
   ruleTester.run('jsx-no-script-url', jsxNoScriptUrl, {
     valid: [
-      { name: 'namespaced attribute name is skipped', code: 'const a = <a xlink:href="javascript:void(0)" />;' },
+      // CORRECTED: `xlink:href` is SVG's link attribute; see the invalid case
+      // 'xlink:href is a URL prop' in jsx-no-script-url.test.ts.
+      { name: 'a namespaced attribute that is not a URL prop', code: 'const a = <a xml:lang="javascript:void(0)" />;' },
       { name: 'url prop without value', code: 'const a = <a href />;' },
       { name: 'expression href with safe string', code: "const a = <a href={'https://safe.example'} />;" },
       { name: 'template href with safe prefix', code: 'const a = <a href={`https://${host}`} />;' },
@@ -153,7 +155,6 @@ describe('react-class-to-hooks coverage gaps', () => {
     valid: [
       { name: 'class extends call expression', code: 'class A extends mixin() { render() { return null; } }' },
       { name: 'class extends non-React member', code: 'class A extends Foo.Component { render() { return null; } }' },
-      { name: 'anonymous default export class', code: 'export default class extends Component { render() { return null; } }' },
       {
         name: 'complex lifecycle skipped when allowed',
         code: 'class A extends Component { static getDerivedStateFromProps() { return null; } render() { return null; } }',
@@ -161,6 +162,11 @@ describe('react-class-to-hooks coverage gaps', () => {
       },
     ],
     invalid: [
+      {
+        name: 'CORRECTED: an anonymous default export class is a class component',
+        code: 'export default class extends Component { render() { return null; } }',
+        errors: [{ messageId: 'migrateToHooks' }],
+      },
       {
         name: 'React.PureComponent class is flagged',
         code: 'class A extends React.PureComponent { render() { return null; } }',
@@ -224,33 +230,37 @@ describe('no-unnecessary-rerenders coverage gaps', () => {
       },
       { name: 'small object below minSize', code: 'function App() { return <div opts={{ a: 1 }} />; }' },
       { name: 'small sparse array below minSize', code: 'function App() { return <div opts={[1, , 2]} />; }' },
+      {
+        name: 'CORRECTED: a host element has no render to save',
+        code: 'function App() { return <div opts={{ a: 1, b: 2, c: 3, d: 4, e: 5 }} onClick={() => {}} />; }',
+      },
     ],
     invalid: [
       {
         name: 'big object literal in JSX prop',
-        code: 'function App() { return <div opts={{ a: 1, b: 2, c: 3, d: 4, e: 5 }} />; }',
+        code: 'function App() { return <Widget opts={{ a: 1, b: 2, c: 3, d: 4, e: 5 }} />; }',
         errors: [{ messageId: 'unnecessaryRerender' }],
       },
       {
         name: 'big array literal in JSX prop',
-        code: 'function App() { return <div opts={[1, 2, 3, 4, 5]} />; }',
+        code: 'function App() { return <Widget opts={[1, 2, 3, 4, 5]} />; }',
         errors: [{ messageId: 'unnecessaryRerender' }],
       },
       {
         name: 'arrow function prop reports useCallback suggestion',
-        code: 'function App() { return <div onClick={() => {}} />; }',
+        code: 'function App() { return <Widget onClick={() => {}} />; }',
         errors: [{ messageId: 'unnecessaryRerender' }],
       },
       {
         name: 'function expression prop in test file with ignoreInTests false',
-        code: 'function App() { return <div onClick={function () {}} />; }',
+        code: 'function App() { return <Widget onClick={function () {}} />; }',
         options: [{ ignoreInTests: false }],
         filename: 'component.test.tsx',
         errors: [{ messageId: 'unnecessaryRerender' }],
       },
       {
         name: 'small object with minSize 1',
-        code: 'function App() { return <div opts={{ a: 1 }} />; }',
+        code: 'function App() { return <Widget opts={{ a: 1 }} />; }',
         options: [{ minSize: 1 }],
         errors: [{ messageId: 'unnecessaryRerender' }],
       },

@@ -88,6 +88,14 @@ describe('jsx-handler-names', () => {
         {
           code: `<input onFocus />`,
         },
+        {
+          name: 'a prop that merely starts with "on" is not an event prop',
+          code: `<List only={selectedItems} online={isOnline} />`,
+        },
+        {
+          name: 'undefined passes no handler',
+          code: `<button onClick={undefined}>Click</button>`,
+        },
       ],
       invalid: [],
     });

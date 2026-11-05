@@ -194,13 +194,21 @@ describe('no-redundant-should-component-update', () => {
   describe('Edge cases', () => {
     ruleTester.run('edge cases', noRedundantShouldComponentUpdate, {
       valid: [
-        // Arrow function body (not FunctionExpression)
         {
-          code: `
-            class MyComponent extends Component {
-              shouldComponentUpdate = () => true;
-            }
-          `,
+          name: 'a getter returning true is not a method that returns true',
+          code: 'class A extends Component { get shouldComponentUpdate() { return true; } }',
+        },
+        {
+          name: 'always true on a class that is not a React component',
+          code: 'import { Component } from "./lib"; class A extends Component { shouldComponentUpdate() { return true; } }',
+        },
+        {
+          name: 'a shouldComponentUpdate field that is not a function',
+          code: 'class A extends Component { shouldComponentUpdate = true; }',
+        },
+        {
+          name: 'a static shouldComponentUpdate is not the lifecycle',
+          code: 'class A extends Component { static shouldComponentUpdate() { return true; } }',
         },
         // Getter
         {
@@ -213,7 +221,22 @@ describe('no-redundant-should-component-update', () => {
           `,
         },
       ],
-      invalid: [],
+      invalid: [
+        {
+          name: 'an arrow property that always returns true',
+          code: `
+            class MyComponent extends Component {
+              shouldComponentUpdate = () => true;
+            }
+          `,
+          errors: [{ messageId: 'noRedundantShouldComponentUpdate' }],
+        },
+        {
+          name: 'a quoted-key method on a namespace-import component',
+          code: 'import * as R from "react"; class A extends R.Component { "shouldComponentUpdate"() { return true; } }',
+          errors: [{ messageId: 'noRedundantShouldComponentUpdate' }],
+        },
+      ],
     });
   });
 });

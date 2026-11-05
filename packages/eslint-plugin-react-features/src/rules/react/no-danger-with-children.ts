@@ -15,9 +15,10 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
-  propertyName,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { reactExport } from '../../utils/react-api';
 
 type MessageIds = 'dangerWithChildren';
 
@@ -51,37 +52,42 @@ export const noDangerWithChildren = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    function hasDangerouslySetInnerHTML(
-      node: TSESTree.JSXOpeningElement,
-    ): boolean {
-      return node.attributes.some(
-        (attr): attr is TSESTree.JSXAttribute =>
-          attr.type === 'JSXAttribute' &&
-          attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'dangerouslySetInnerHTML',
+    /**
+     * Does this JSX attribute set its prop to a value? `prop={undefined}` and
+     * `prop={null}` leave it unset, as React reads it.
+     */
+    function setsValue(attr: TSESTree.JSXAttribute): boolean {
+      return !(
+        attr.value?.type === 'JSXExpressionContainer' &&
+        attr.value.expression.type !== 'JSXEmptyExpression' &&
+        isNullish(attr.value.expression)
       );
     }
 
-    function hasChildrenProp(node: TSESTree.JSXOpeningElement): boolean {
+    function hasProp(node: TSESTree.JSXOpeningElement, name: string): boolean {
       return node.attributes.some(
-        (attr): attr is TSESTree.JSXAttribute =>
+        (attr) =>
           attr.type === 'JSXAttribute' &&
           attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'children',
+          attr.name.name === name &&
+          setsValue(attr),
       );
     }
 
     // oxlint-disable-next-line consistent-function-scoping
     function hasJSXChildren(node: TSESTree.JSXElement): boolean {
-      // Check if there are any meaningful children
       return node.children.some((child) => {
         if (child.type === 'JSXText') {
-          // Only count non-whitespace text
-          return !/^\s*$/.test(child.value);
+          // JSX drops whitespace only when it spans a line break; a space on
+          // the same line (`<div> </div>`) is a text child.
+          return !/^\s*$/.test(child.value) || !/[\r\n]/.test(child.value);
         }
         if (child.type === 'JSXExpressionContainer') {
-          // Ignore empty expressions or just comments
-          return child.expression.type !== 'JSXEmptyExpression';
+          // `{/* comment */}` and `{undefined}` render no child.
+          return (
+            child.expression.type !== 'JSXEmptyExpression' &&
+            !isNullish(child.expression)
+          );
         }
         // JSXElement, JSXFragment, JSXSpreadChild all count as children
         return true;
@@ -92,13 +98,13 @@ export const noDangerWithChildren = createRule<RuleOptions, MessageIds>({
       JSXElement(node: TSESTree.JSXElement) {
         const openingElement = node.openingElement;
 
-        if (!hasDangerouslySetInnerHTML(openingElement)) {
+        if (!hasProp(openingElement, 'dangerouslySetInnerHTML')) {
           return;
         }
 
         // Check for children prop or JSX children
         const hasChildren =
-          hasChildrenProp(openingElement) || hasJSXChildren(node);
+          hasProp(openingElement, 'children') || hasJSXChildren(node);
 
         if (hasChildren) {
           context.report({
@@ -108,38 +114,28 @@ export const noDangerWithChildren = createRule<RuleOptions, MessageIds>({
         }
       },
 
-      // Also check React.createElement() calls
+      // React's createElement(type, props, ...children), however it is named.
+      // A bare `createElement` the file never imports names no module.
       CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type !== 'MemberExpression') return;
-        if (
-          node.callee.object.type !== 'Identifier' ||
-          node.callee.object.name !== 'React'
-        )
-          return;
-        // `React['createElement'](…)` builds the same element.
-        if (propertyName(node.callee) !== 'createElement') return;
+        const api = reactExport(node.callee, context.sourceCode.getScope(node));
+        if (api?.module !== 'react' || api.name !== 'createElement') return;
 
-        // React.createElement(type, props, ...children)
-        if (node.arguments.length < 2) return;
+        const [, propsArg, ...extra] = node.arguments;
+        if (propsArg?.type !== 'ObjectExpression') return;
 
-        const propsArg = node.arguments[1];
-        const hasExtraChildren = node.arguments.length > 2;
-
-        if (propsArg.type !== 'ObjectExpression') return;
+        // One extra argument becomes `props.children` as is (so `undefined`
+        // is none); two or more always make an array.
+        const hasExtraChildren =
+          extra.length > 1 || (extra.length === 1 && !isNullish(extra[0]));
 
         let hasDanger = false;
         let hasChildrenInProps = false;
 
         for (const prop of propsArg.properties) {
-          if (prop.type !== 'Property') continue;
-          if (prop.key.type !== 'Identifier') continue;
-
-          if (prop.key.name === 'dangerouslySetInnerHTML') {
-            hasDanger = true;
-          }
-          if (prop.key.name === 'children') {
-            hasChildrenInProps = true;
-          }
+          if (prop.type !== 'Property' || isNullish(prop.value)) continue;
+          const key = objectKeyName(prop);
+          if (key === 'dangerouslySetInnerHTML') hasDanger = true;
+          if (key === 'children') hasChildrenInProps = true;
         }
 
         if (hasDanger && (hasChildrenInProps || hasExtraChildren)) {
@@ -152,3 +148,11 @@ export const noDangerWithChildren = createRule<RuleOptions, MessageIds>({
     };
   },
 });
+
+/** `undefined` or `null`: a prop or child React treats as absent. */
+function isNullish(node: TSESTree.Node): boolean {
+  return (
+    (node.type === 'Identifier' && node.name === 'undefined') ||
+    (node.type === 'Literal' && node.raw === 'null')
+  );
+}

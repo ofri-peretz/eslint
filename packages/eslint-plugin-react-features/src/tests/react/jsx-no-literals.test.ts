@@ -230,5 +230,47 @@ describe('jsx-no-literals', () => {
       ],
     });
   });
-});
 
+  describe('literal text in every spelling', () => {
+    ruleTester.run('literal spellings', jsxNoLiterals, {
+      valid: [
+        {
+          name: 'a braced string prop is ignored by default',
+          code: "<p title={'Hello'} />",
+        },
+        {
+          name: 'a dynamic child is not a literal',
+          code: '<p>{label}</p>',
+        },
+        {
+          name: 'noStrings: false turns props off too',
+          code: '<p title="Hello" />',
+          options: [{ noStrings: false, ignoreProps: false }],
+        },
+        {
+          name: 'a braced child listed in allowedStrings',
+          code: "<p>{'•'}</p>",
+          options: [{ allowedStrings: ['•'] }],
+        },
+      ],
+      invalid: [
+        {
+          name: 'a braced string child',
+          code: "<p>{'Hello'}</p>",
+          errors: [{ messageId: 'jsxNoLiterals' }],
+        },
+        {
+          name: 'a template child with no placeholders',
+          code: '<>{`Hello`}</>',
+          errors: [{ messageId: 'jsxNoLiterals' }],
+        },
+        {
+          name: 'a braced string prop with ignoreProps: false',
+          code: "<p title={'Hello'} />",
+          options: [{ ignoreProps: false }],
+          errors: [{ messageId: 'jsxNoLiterals' }],
+        },
+      ],
+    });
+  });
+});

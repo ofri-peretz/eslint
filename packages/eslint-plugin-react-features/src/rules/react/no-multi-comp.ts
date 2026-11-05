@@ -9,7 +9,12 @@
  * Prevent multiple components per file
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+import {
+  type FunctionNode,
+  isFunctionComponent,
+} from '../../utils/function-component';
+import { extendsReactComponent } from '../../utils/react-api';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noMultiComp';
@@ -57,178 +62,59 @@ export const noMultiComp = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ ignoreStateless: false }],
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    let components: TSESTree.Node[];
+    /** Each component defined in the file, and whether it is a class. */
+    let components: { node: TSESTree.Node; isClass: boolean }[];
 
-    // oxlint-disable-next-line consistent-function-scoping
-    function getComponentFromDeclaration(
-      node: TSESTree.VariableDeclarator | TSESTree.FunctionDeclaration,
-    ):
-      | TSESTree.FunctionExpression
-      | TSESTree.ArrowFunctionExpression
-      | TSESTree.FunctionDeclaration
-      | null {
-      if (node.type === 'FunctionDeclaration') {
-        return node;
-      }
-
-      if (node.type === 'VariableDeclarator' && node.init) {
-        if (
-          node.init.type === 'FunctionExpression' ||
-          node.init.type === 'ArrowFunctionExpression'
-        ) {
-          return node.init;
-        }
-      }
-
-      return null;
-    }
-
-    function isReactComponentFunction(
+    function nameNode(
       node:
-        | TSESTree.FunctionExpression
-        | TSESTree.ArrowFunctionExpression
-        | TSESTree.FunctionDeclaration
-        | null,
-    ): boolean {
-      if (!node) return false;
-      const body = node.type === 'FunctionDeclaration' ? node.body : node.body;
-      return containsJSX(body);
+        | TSESTree.ClassDeclaration
+        | TSESTree.ClassExpression
+        | FunctionNode,
+    ): TSESTree.Node {
+      if (node.id) return node.id;
+      // `const A = …` / `const A = memo(…)`: the variable names it.
+      const holder =
+        node.parent.type === 'CallExpression' ? node.parent.parent : node.parent;
+      return holder?.type === 'VariableDeclarator' ? holder.id : node;
     }
 
-    function containsJSX(
-      node: TSESTree.Node | null | undefined,
-      visited = new Set<TSESTree.Node>(),
-    ): boolean {
-      if (!node) return false;
-
-      if (visited.has(node)) return false;
-      visited.add(node);
-
-      if (node.type === 'JSXElement' || node.type === 'JSXFragment') {
-        return true;
+    function onClass(
+      node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
+    ): void {
+      if (extendsReactComponent(node, context.sourceCode.getScope(node))) {
+        components.push({ node: nameNode(node), isClass: true });
       }
-
-      // Skip non-child keys to avoid circular references
-      const skipKeys = new Set([
-        'parent',
-        'range',
-        'loc',
-        'start',
-        'end',
-        'tokens',
-        'comments',
-      ]);
-
-      for (const key in node) {
-        if (skipKeys.has(key)) continue;
-
-        const child = (node as unknown as Record<string, unknown>)[key];
-        if (child && typeof child === 'object') {
-          if (Array.isArray(child)) {
-            for (const item of child) {
-              if (item && typeof item === 'object' && 'type' in item) {
-                if (containsJSX(item as TSESTree.Node, visited)) {
-                  return true;
-                }
-              }
-            }
-          } else if ('type' in child) {
-            if (containsJSX(child as TSESTree.Node, visited)) {
-              return true;
-            }
-          }
-        }
-      }
-
-      return false;
     }
 
-    // oxlint-disable-next-line consistent-function-scoping
-    function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
-      if (!node.superClass) return false;
-
-      if (node.superClass.type === 'Identifier') {
-        return (
-          node.superClass.name === 'Component' ||
-          node.superClass.name === 'PureComponent'
-        );
+    function onFunction(node: FunctionNode): void {
+      if (isFunctionComponent(node, context.sourceCode)) {
+        components.push({ node: nameNode(node), isClass: false });
       }
-
-      if (node.superClass.type === 'MemberExpression') {
-        return (
-          node.superClass.object.type === 'Identifier' &&
-          node.superClass.object.name === 'React' &&
-          (propertyName(node.superClass) === 'Component' ||
-            propertyName(node.superClass) === 'PureComponent')
-        );
-      }
-
-      return false;
-    }
-
-    function isStatelessComponent(node: TSESTree.Node): boolean {
-      // Simple heuristic: check if it's a function component without useState
-      return !isReactComponent(node as TSESTree.ClassDeclaration);
-    }
-
-    // oxlint-disable-next-line consistent-function-scoping
-    function getComponentNameNode(node: TSESTree.Node): TSESTree.Node {
-      if (node.type === 'ClassDeclaration') {
-        return node.id || node;
-      }
-      if (node.type === 'FunctionDeclaration') {
-        return node.id || node;
-      }
-      if (node.type === 'VariableDeclarator') {
-        return node.id || node;
-      }
-      return node;
     }
 
     return {
       before() {
         components = [];
       },
-      // Class components
-      ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        if (isReactComponent(node)) {
-          components.push(node);
-        }
-      },
-
-      // Function components
-      'VariableDeclarator, FunctionDeclaration'(
-        node: TSESTree.VariableDeclarator | TSESTree.FunctionDeclaration,
-      ) {
-        if (isReactComponentFunction(getComponentFromDeclaration(node))) {
-          components.push(node);
-        }
-      },
+      ClassDeclaration: onClass,
+      ClassExpression: onClass,
+      FunctionDeclaration: onFunction,
+      FunctionExpression: onFunction,
+      ArrowFunctionExpression: onFunction,
 
       'Program:exit'() {
         const [firstOption] = context.options;
         const ignoreStateless = firstOption?.ignoreStateless ?? false;
-
-        let componentCount = components.length;
-
-        if (ignoreStateless) {
-          // Count only stateful components
-          componentCount = components.filter(
-            (comp) => !isStatelessComponent(comp),
-          ).length;
-        }
-
-        if (componentCount > 1) {
-          // Report on all components except the first
-          for (let i = 1; i < components.length; i++) {
-            const comp = components[i];
-            if (!ignoreStateless || !isStatelessComponent(comp)) {
-              context.report({
-                node: getComponentNameNode(comp),
-                messageId: 'noMultiComp',
-              });
-            }
-          }
+        // With `ignoreStateless`, only class components count.
+        const counted = components.filter(
+          (comp) => comp.isClass || !ignoreStateless,
+        );
+        // Report on all components except the first
+        for (const comp of counted.slice(1)) {
+          context.report({
+            node: comp.node,
+            messageId: 'noMultiComp',
+          });
         }
       },
     };

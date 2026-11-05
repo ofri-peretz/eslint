@@ -222,17 +222,52 @@ describe('require-default-props', () => {
   describe('Edge cases', () => {
     ruleTester.run('edge cases', requireDefaultProps, {
       valid: [
-        // PropTypes with non-identifier keys (skipped)
         {
+          name: 'a runtime-computed key names no prop',
           code: `
             class MyComponent extends Component {
               static propTypes = {
-                ['computed']: PropTypes.string
+                [key]: PropTypes.string
               };
               render() {
                 return <div>Hello</div>;
               }
             }
+          `,
+        },
+        {
+          name: 'defaults assigned after the class count',
+          code: `
+            class MyComponent extends Component {
+              static propTypes = { variant: PropTypes.string };
+              render() { return null; }
+            }
+            MyComponent.defaultProps = { variant: 'primary' };
+          `,
+        },
+        {
+          name: 'a declared static with no value',
+          code: `class MyComponent extends Component { state = {}; static styles = {}; static propTypes: any; static defaultProps; }`,
+        },
+        {
+          name: 'a Component from another library is not React',
+          code: `
+            import { Component } from 'lit';
+            class El extends Component { static propTypes = { variant: PropTypes.string }; }
+          `,
+        },
+        {
+          name: 'an assignment to a non-class binding',
+          code: `
+            class MyComponent extends Component { render() { return null; } }
+            const other = {};
+            other.propTypes = { variant: PropTypes.string };
+            function make() {}
+            make.propTypes = { variant: PropTypes.string };
+            Undeclared.propTypes = { variant: PropTypes.string };
+            MyComponent.propTypes = shared;
+            MyComponent.displayName = { x: 1 };
+            MyComponent[key] = { x: 1 };
           `,
         },
         // Spread in propTypes (skipped)
@@ -250,7 +285,48 @@ describe('require-default-props', () => {
           `,
         },
       ],
-      invalid: [],
+      invalid: [
+        {
+          name: 'a computed string key is the same prop',
+          code: `
+            class MyComponent extends Component {
+              static propTypes = {
+                ['computed']: PropTypes.string
+              };
+              render() {
+                return <div>Hello</div>;
+              }
+            }
+          `,
+          errors: [{ messageId: 'requireDefaultProps' }],
+        },
+        {
+          name: 'propTypes assigned after a renamed-import class, with a quoted key',
+          code: `
+            import { Component as Base } from 'react';
+            class MyComponent extends Base { render() { return null; } }
+            MyComponent.propTypes = { 'aria-label': PropTypes.string };
+          `,
+          errors: [{ messageId: 'requireDefaultProps' }],
+        },
+        {
+          name: 'propTypes assigned to a class-expression binding',
+          code: `
+            const MyComponent = class extends React.Component {};
+            (MyComponent as any).propTypes = { variant: PropTypes.string };
+          `,
+          errors: [{ messageId: 'requireDefaultProps' }],
+        },
+        {
+          name: 'a class expression component, with a computed propTypes static',
+          code: `
+            const MyComponent = class extends React.Component {
+              static ['propTypes'] = { variant: PropTypes.string };
+            };
+          `,
+          errors: [{ messageId: 'requireDefaultProps' }],
+        },
+      ],
     });
   });
 });

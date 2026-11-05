@@ -70,6 +70,7 @@ const PLUGINS = [
   'maintainability',
   'conventions',
   'import-next',
+  'react-features',
 ];
 
 const loadPlugin = (short) => {

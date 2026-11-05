@@ -36,6 +36,23 @@ describe('require-optimization', () => {
   describe('React.memo suggestions', () => {
     ruleTester.run('suggest React.memo for components with many props', requireOptimization, {
       valid: [
+        {
+          name: 'a component exported through memo is memoized',
+          code: `
+            import { memo } from 'react';
+            function Card({ title, subtitle, icon }) { return <h2>{title}</h2>; }
+            export default memo(Card);
+          `,
+        },
+        {
+          name: 'an arrow component passed to React.memo later',
+          code: `
+            import React from 'react';
+            const Card = ({ title, subtitle, icon }) => <h2>{title}</h2>;
+            export const Memo = React.memo(Card);
+            log(Card);
+          `,
+        },
         // Already memoized
         {
           name: 'React.memo',
@@ -56,6 +73,29 @@ describe('require-optimization', () => {
         },
       ],
       invalid: [
+        {
+          name: 'a function expression component',
+          code: `const Card = function ({ title, subtitle, icon }) { return <h2>{title}</h2>; };`,
+          errors: [{ messageId: 'considerMemo' }],
+        },
+        {
+          name: 'a local function named memo is not React',
+          code: `
+            function memo(x) { return x; }
+            function Card({ title, subtitle, icon }) { return <h2>{title}</h2>; }
+            export default memo(Card, true);
+          `,
+          errors: [{ messageId: 'considerMemo' }],
+        },
+        {
+          name: 'the component passed to memo as a second argument is not memoized',
+          code: `
+            import { memo } from 'react';
+            function Card({ title, subtitle, icon }) { return <h2>{title}</h2>; }
+            export default memo(Other, Card);
+          `,
+          errors: [{ messageId: 'considerMemo' }],
+        },
         // Many props - should suggest memo
         {
           name: 'a component with many props and no memo',

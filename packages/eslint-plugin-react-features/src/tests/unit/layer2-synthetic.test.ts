@@ -86,6 +86,7 @@ describe('hooks-exhaustive-deps (layer 2, synthetic AST)', () => {
       scope: {
         type: 'function',
         upper: null,
+        set: new Map(),
         variables: [
           { name: 'sharedDep', defs: [], scope: { type: 'function' } },
           { name: 'objRoot', defs: [], scope: { type: 'function' } },
@@ -152,6 +153,8 @@ describe('no-unnecessary-rerenders (layer 2, synthetic AST)', () => {
     return {
       type: 'JSXAttribute',
       value: { type: 'JSXExpressionContainer', expression },
+      // `<Ui.Row>`: a receiver the file cannot see, so props are judged.
+      parent: { type: 'JSXOpeningElement', name: { type: 'JSXMemberExpression' } },
     };
   }
 
