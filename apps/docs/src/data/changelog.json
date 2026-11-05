@@ -5,6 +5,56 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "oxlint-plugin-react-a11y",
+      "short": "oxlint-plugin-react-a11y",
+      "version": "2.6.1",
+      "date": "2026-11-05T01:55:55Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-react-a11y@2.6.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-a11y",
+      "short": "eslint-plugin-react-a11y",
+      "version": "2.6.1",
+      "date": "2026-11-05T01:52:19Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "rules read every static spelling of a value, honour their documented options, and follow WAI-ARIA 1.2 / HTML-AAM, found by fidelity models for all 37 rules.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.21.5",
+      "date": "2026-11-05T01:52:17Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "rules read every static spelling of a value, honour their documented options, and follow WAI-ARIA 1.2 / HTML-AAM, found by fidelity models for all 37 rules.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "oxlint-plugin-modernization",
       "short": "oxlint-plugin-modernization",
       "version": "3.2.1",
@@ -22160,21 +22210,6 @@
       ]
     },
     {
-      "package": "@interlace/eslint-devkit",
-      "short": "eslint-devkit",
-      "version": "1.21.5",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "rules read every static spelling of a value, honour their documented options, and follow WAI-ARIA 1.2 / HTML-AAM, found by fidelity models for all 37 rules.",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.2.0",
@@ -22435,26 +22470,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-react-a11y",
-      "short": "eslint-plugin-react-a11y",
-      "version": "2.6.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "rules read every static spelling of a value, honour their documented options, and follow WAI-ARIA 1.2 / HTML-AAM, found by fidelity models for all 37 rules.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.5`",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-supabase-security",
       "short": "eslint-plugin-supabase-security",
       "version": "1.0.0",
@@ -22470,21 +22485,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-react-a11y",
-      "short": "oxlint-plugin-react-a11y",
-      "version": "2.6.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-react-a11y@2.6.1`",
           "pr": null
         }
       ]
