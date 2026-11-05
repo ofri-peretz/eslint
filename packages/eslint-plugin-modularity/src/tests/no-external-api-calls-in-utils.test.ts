@@ -326,6 +326,26 @@ describe('no-external-api-calls-in-utils — clients by binding', () => {
         options: [{ utilityPatterns: ['src/shared/*/load.ts'] }],
       },
       {
+        name: 'consts that refer to each other end the walk',
+        code: 'const a: any = b;\nconst b: any = a;\nexport const read = (u: string) => a.get(u);',
+        filename,
+      },
+      {
+        name: 'fetch read off a value the code builds is not the global',
+        code: 'const get = makeHost().fetch;\nexport const load = () => get(\'/api\');',
+        filename,
+      },
+      {
+        name: 'a run-time member of globalThis names no client',
+        code: 'const get = (globalThis as any)[key];\nexport const load = () => get(\'/api\');',
+        filename,
+      },
+      {
+        name: 'a run-time member read directly off globalThis names no client',
+        code: 'const get = globalThis[key as keyof typeof globalThis];\nexport const load = () => (get as any)(\'/api\');',
+        filename,
+      },
+      {
         name: 'a window that the code declares is not the global',
         code: 'export function load(url: string, window: { fetch(u: string): unknown }) { return window.fetch(url); }',
         filename,
@@ -337,6 +357,18 @@ describe('no-external-api-calls-in-utils — clients by binding', () => {
         code: "import axios from 'axios';\nexport const read = (u: string) => axios.get(u);",
         filename: '/src/shared/a/b/utils/load.ts',
         options: [{ utilityPatterns: ['**/shared/**/utils/**'] }],
+        errors: [{ messageId: 'externalApiCallInUtils' }],
+      },
+      {
+        name: 'a const alias of globalThis.fetch',
+        code: "const get = globalThis.fetch;\nexport const load = () => get('/api');",
+        filename,
+        errors: [{ messageId: 'externalApiCallInUtils' }],
+      },
+      {
+        name: 'a client derived through nine consts',
+        code: "import axios from 'axios';\nconst a1 = axios; const a2 = a1; const a3 = a2; const a4 = a3; const a5 = a4; const a6 = a5; const a7 = a6; const a8 = a7; const a9 = a8;\nexport const read = (u: string) => a9.get(u);",
+        filename,
         errors: [{ messageId: 'externalApiCallInUtils' }],
       },
       {

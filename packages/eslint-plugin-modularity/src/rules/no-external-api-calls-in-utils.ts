@@ -102,9 +102,6 @@ function isUtilityFile(filename: string, patterns: string[]): boolean {
   });
 }
 
-/** How many `const a = b.create()` links a client may be derived through. */
-const MAX_ALIAS_HOPS = 8;
-
 /**
  * Innermost identifier of a member chain: `a.b.c` -> `a`
  */
@@ -237,7 +234,10 @@ export const noExternalApiCallsInUtils = createRule<RuleOptions, MessageIds>({
      * (`const api = axios.create()`). An undeclared name keeps the name match
      * (the global `fetch`, a CDN `axios`).
      */
-    function isClient(id: TSESTree.Identifier, hops = 0): boolean {
+    function isClient(
+      id: TSESTree.Identifier,
+      seen = new Set<TSESLint.Scope.Variable>(),
+    ): boolean {
       const variable = variableOf(id, context.sourceCode);
       if (!variable || variable.defs.length === 0) {
         return globalClients.has(id.name);
@@ -254,13 +254,29 @@ export const noExternalApiCallsInUtils = createRule<RuleOptions, MessageIds>({
       const init = def.node.init;
       const source = requiredModule(init);
       if (source !== null) return modules.has(source);
-      // `const api = axios.create()` / `const send = axios.post`
-      if (def.node.id.type !== 'Identifier' || hops >= MAX_ALIAS_HOPS)
-        return false;
-      const root = rootIdentifier(
-        init.type === 'CallExpression' ? init.callee : init,
+      // `const api = axios.create()` / `const send = axios.post` /
+      // `const get = globalThis.fetch`. Each binding is visited once, so a
+      // chain of any length resolves and a cycle ends.
+      if (def.node.id.type !== 'Identifier' || seen.has(variable)) return false;
+      seen.add(variable);
+      const target = init.type === 'CallExpression' ? init.callee : init;
+      if (target.type === 'MemberExpression' && isHostedGlobalClient(target))
+        return true;
+      const root = rootIdentifier(target);
+      return root !== null && isClient(root, seen);
+    }
+
+    /** `globalThis.fetch` / `window.fetch`: the global client on its host. */
+    function isHostedGlobalClient(member: TSESTree.MemberExpression): boolean {
+      const host = rootIdentifier(member.object);
+      const method = propertyName(member);
+      return (
+        host !== null &&
+        method !== null &&
+        GLOBAL_CLIENT_HOSTS.has(host.name) &&
+        isGlobalReference(host, context.sourceCode) &&
+        GLOBAL_CLIENTS.has(method)
       );
-      return root !== null && isClient(root, hops + 1);
     }
 
     /**
@@ -289,7 +305,7 @@ export const noExternalApiCallsInUtils = createRule<RuleOptions, MessageIds>({
         GLOBAL_CLIENT_HOSTS.has(root.name) &&
         isGlobalReference(root, context.sourceCode)
       ) {
-        return GLOBAL_CLIENTS.has(method);
+        return isHostedGlobalClient(callee);
       }
       return methods.has(method) && isClient(root);
     }
