@@ -13,6 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { findAttribute } from '../utils/jsx-static';
 
 type MessageIds = 'noStaticInteraction';
 
@@ -98,7 +99,11 @@ export const noStaticElementInteractions = createRule<RuleOptions, MessageIds>({
       },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier') return;
-        if (!STATIC_ELEMENTS.has(node.name.name)) return;
+        // An <a> without href has no role (HTML-AAM maps it to generic).
+        const isStatic =
+          STATIC_ELEMENTS.has(node.name.name) ||
+          (node.name.name === 'a' && findAttribute(node, 'href') === undefined);
+        if (!isStatic) return;
 
         const hasInteractiveHandler = node.attributes.some(
           (

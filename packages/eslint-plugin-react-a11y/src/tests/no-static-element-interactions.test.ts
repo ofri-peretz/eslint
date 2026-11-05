@@ -42,6 +42,8 @@ describe('no-static-element-interactions', () => {
       invalid: [
         { name: 'a click handler on a div', code: '<div onClick={handler}></div>', errors: [{ messageId: 'noStaticInteraction' }] },
         { code: '<span onClick={handler}></span>', errors: [{ messageId: 'noStaticInteraction' }] },
+        // <a> without href has no role (HTML-AAM: generic), so it is static
+        { name: 'anchor without href is a static element', code: '<a onClick={handler}>x</a>', errors: [{ messageId: 'noStaticInteraction' }] },
         // Non-interactive roles don't make the element interactive
         { code: '<div role="presentation" onClick={handler}></div>', errors: [{ messageId: 'noStaticInteraction' }] },
         { code: '<div role="none" onClick={handler}></div>', errors: [{ messageId: 'noStaticInteraction' }] },

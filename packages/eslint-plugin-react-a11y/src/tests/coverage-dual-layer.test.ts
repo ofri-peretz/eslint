@@ -55,8 +55,6 @@ import { noNoninteractiveElementToInteractiveRole } from '../rules/no-noninterac
 import {
   noNoninteractiveTabindex,
   isAllowedTabindex,
-  isLiteralRole,
-  getRoleValue,
 } from '../rules/no-noninteractive-tabindex';
 import { noRedundantRoles } from '../rules/no-redundant-roles';
 import { noStaticElementInteractions } from '../rules/no-static-element-interactions';
@@ -557,16 +555,15 @@ describe('interactive-supports-focus — roles and tabIndex (Layer 1)', () => {
       { code: '<Foo.Bar onClick={handleClick} />' },
       // tabIndex present → focusable
       { code: '<div onClick={handleClick} tabIndex={0} />' },
+      // dynamic role: the file cannot prove an interactive role
+      { code: '<div onClick={handleClick} role={dynamicRole} />' },
+      // literal but non-interactive role: out of this rule's contract
+      { code: '<div onClick={handleClick} role="tooltip" />' },
     ],
     invalid: [
-      // dynamic role value can't be verified
+      // an interactive role never makes the element focusable
       {
-        code: '<div onClick={handleClick} role={dynamicRole} />',
-        errors: [{ messageId: 'missingTabIndex' }],
-      },
-      // literal but non-interactive role
-      {
-        code: '<div onClick={handleClick} role="tooltip" />',
+        code: '<div onClick={handleClick} role="button" />',
         errors: [{ messageId: 'missingTabIndex' }],
       },
     ],
@@ -584,9 +581,9 @@ describe('label-has-associated-control — assert modes and attributes (Layer 1)
         options: [{ labelAttributes: ['data-for'] }],
       },
       { code: '<label htmlFor="a">Name</label>', options: [{ assert: 'htmlFor' }] },
-      { code: '<label><input /></label>', options: [{ assert: 'nesting' }] },
+      { code: '<label>Name<input /></label>', options: [{ assert: 'nesting' }] },
       {
-        code: '<label htmlFor="a"><input id="a" /></label>',
+        code: '<label htmlFor="a">Name<input id="a" /></label>',
         options: [{ assert: 'both' }],
       },
     ],
@@ -610,7 +607,8 @@ describe('label-has-associated-control — assert modes and attributes (Layer 1)
       },
       // control nested deeper than `depth` is not found
       {
-        code: '<label><div><div><div><input /></div></div></div></label>',
+        code: '<label>Name<div><div><div><input /></div></div></div></label>',
+        options: [{ depth: 2 }],
         errors: [{ messageId: 'missingControl' }],
       },
     ],
@@ -702,9 +700,9 @@ describe('no-noninteractive-element-interactions — roles (Layer 1)', () => {
         code: '<li onClick={handleClick} role={dynamicRole} />',
         errors: [{ messageId: 'noInteraction' }],
       },
-      // non-interactive role does not exempt
+      // an explicit non-interactive role does not exempt
       {
-        code: '<li onClick={handleClick} role="presentation" />',
+        code: '<li onClick={handleClick} role="listitem" />',
         errors: [{ messageId: 'noInteraction' }],
       },
     ],
@@ -895,7 +893,9 @@ describe('Layer 2 — null options fall back to defaults', () => {
     const { listeners, reports } = createWithMockContext(asRule(interactiveSupportsFocus), {
       options: [null],
     });
-    listener(listeners, 'JSXOpeningElement')(openingEl('div', [jsxAttr('onClick')]));
+    listener(listeners, 'JSXOpeningElement')(
+      openingEl('div', [jsxAttr('onClick'), jsxAttr('role', literal('button'))]),
+    );
     expect(reports).toHaveLength(1);
     expect(messageIdOf(reports[0])).toBe('missingTabIndex');
   });
@@ -1089,23 +1089,5 @@ describe('Layer 2 — no-noninteractive-tabindex helpers', () => {
     expect(isAllowedTabindex('-1')).toBe(true);
     expect(isAllowedTabindex('0')).toBe(false);
     expect(isAllowedTabindex('abc')).toBe(false);
-  });
-
-  it('isLiteralRole rejects missing attributes and non-string Literals', () => {
-    expect(isLiteralRole(undefined, true)).toBe(false);
-    expect(isLiteralRole(undefined, false)).toBe(false);
-    expect(isLiteralRole({ value: null } as never, true)).toBe(false);
-    // Literal with a non-string value under strict (no-expression) mode
-    expect(isLiteralRole({ value: literal(5) } as never, false)).toBe(false);
-    // Literal string under strict mode is accepted
-    expect(isLiteralRole({ value: literal('button') } as never, false)).toBe(true);
-  });
-
-  it('getRoleValue returns null without a usable attribute and the string otherwise', () => {
-    expect(getRoleValue(undefined)).toBeNull();
-    expect(getRoleValue({ value: null } as never)).toBeNull();
-    expect(getRoleValue({ value: literal(7) } as never)).toBeNull();
-    expect(getRoleValue({ value: { type: 'JSXExpressionContainer' } } as never)).toBeNull();
-    expect(getRoleValue({ value: literal('tab') } as never)).toBe('tab');
   });
 });

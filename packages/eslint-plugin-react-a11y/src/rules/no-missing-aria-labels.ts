@@ -13,6 +13,11 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import {
+  attributeValue,
+  findAttribute,
+  staticAttributeValue,
+} from '../utils/jsx-static';
 
 type MessageIds = 'missingAriaLabel';
 
@@ -30,15 +35,37 @@ type RuleOptions = [Options?];
  * Check if element has ARIA label
  */
 function hasAriaLabel(node: TSESTree.JSXOpeningElement): boolean {
-  return node.attributes.some(
-    (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) =>
-      attr.type === 'JSXAttribute' &&
-      attr.name.type === 'JSXIdentifier' &&
-      (attr.name.name === 'aria-label' ||
-        attr.name.name === 'aria-labelledby' ||
-        attr.name.name === 'title'), // title also provides an accessible name
-  );
+  // title also provides an accessible name. An empty or undefined value
+  // names nothing (accname 1.2 skips empty strings).
+  return ['aria-label', 'aria-labelledby', 'title'].some((name) => {
+    const attr = findAttribute(node, name);
+    if (!attr) return false;
+    const value = attributeValue(attr);
+    return (
+      value !== undefined && (typeof value !== 'string' || value.trim() !== '')
+    );
+  });
 }
+
+/** Whether a <label> element wraps the node (HTML: it labels its control). */
+function insideLabel(node: TSESTree.JSXOpeningElement): boolean {
+  for (
+    let n: TSESTree.Node | undefined = node.parent?.parent;
+    n;
+    n = n.parent
+  ) {
+    if (
+      n.type === 'JSXElement' &&
+      n.openingElement.name.type === 'JSXIdentifier' &&
+      n.openingElement.name.name === 'label'
+    )
+      return true;
+  }
+  return false;
+}
+
+/** input types that need no name: hidden is not rendered, submit/reset have a default one (HTML-AAM). */
+const UNNAMED_INPUT_TYPES = new Set(['hidden', 'submit', 'reset']);
 
 /** Returns true if any direct JSX child provides visible text content. */
 function hasTextContent(jsxElement: TSESTree.JSXElement): boolean {
@@ -130,6 +157,15 @@ export const noMissingAriaLabels = createRule<RuleOptions, MessageIds>({
 
       // aria-label / aria-labelledby / title already provide an accessible name
       if (hasAriaLabel(node)) return;
+
+      if (elementName === 'input') {
+        const type = staticAttributeValue(findAttribute(node, 'type'));
+        if (type !== null && UNNAMED_INPUT_TYPES.has(type.trim().toLowerCase()))
+          return;
+      }
+
+      // A wrapping <label> names the control inside it.
+      if (insideLabel(node)) return;
 
       // Text children (e.g. <button>Submit</button>) provide an accessible name
       const parent = (node as TSESTree.Node & { parent?: TSESTree.Node })

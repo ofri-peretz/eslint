@@ -43,6 +43,11 @@ describe('autocomplete-valid', () => {
       { name: 'FP: the webauthn credential suffix', code: '<input autocomplete="username webauthn" />' },
       { name: 'a section label with a modifier and a field', code: '<input autocomplete="section-a billing home tel" />' },
       { name: 'off stands alone', code: '<input autocomplete="off" />' },
+      // HTML autofill field name for one-time codes
+      { name: 'one-time-code is a field name', code: '<input autocomplete="one-time-code" />' },
+      { name: 'a dynamic value is not checked', code: '<input autoComplete={value} />' },
+      // React spells the attribute autoComplete
+      { name: 'React autoComplete with a valid token', code: '<input autoComplete="email" />' },
         { name: 'a valid token', code: '<input autocomplete="name" />' },
         { code: '<input autocomplete="email" />' },
         { code: '<input autocomplete="username" />' },
@@ -62,6 +67,24 @@ describe('autocomplete-valid', () => {
     ruleTester.run('invalid autocomplete values', autocompleteValid, {
       valid: [],
       invalid: [
+      {
+        // React's prop name: every React input writes autoComplete
+        name: 'React autoComplete with an invalid token',
+        code: '<input autoComplete="foo" />',
+        errors: [{ messageId: 'invalidAutocomplete' }],
+      },
+      {
+        // A braced or template string is the same static value
+        name: 'braced string value is checked',
+        code: '<input autoComplete={"foo"} />',
+        errors: [{ messageId: 'invalidAutocomplete' }],
+      },
+      {
+        // home/work/mobile/fax/pager only precede contact fields (tel*, email, impp)
+        name: 'contact modifier before a non-contact field',
+        code: '<input autocomplete="home name" />',
+        errors: [{ messageId: 'invalidAutocomplete' }],
+      },
       {
         // Both tokens are legal field names, and exactly one field name is
         // allowed. Checking tokens singly could never see this.

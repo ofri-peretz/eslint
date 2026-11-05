@@ -13,19 +13,16 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { findAttribute } from '../utils/jsx-static';
 
 type MessageIds = 'missingTabIndex';
 
 type RuleOptions = [];
 
-const INHERENTLY_FOCUSABLE = new Set([
-  'input',
-  'select',
-  'textarea',
-  'button',
-  'a',
-  'area',
-]);
+const INHERENTLY_FOCUSABLE = new Set(['input', 'select', 'textarea', 'button']);
+
+/** `a` and `area` are focusable only as links, i.e. with an `href`. */
+const FOCUSABLE_WITH_HREF = new Set(['a', 'area']);
 
 export const ariaActivedescendantHasTabindex = createRule<
   RuleOptions,
@@ -80,6 +77,9 @@ export const ariaActivedescendantHasTabindex = createRule<
 
         // Check if element is inherently focusable
         if (INHERENTLY_FOCUSABLE.has(element)) return;
+        if (FOCUSABLE_WITH_HREF.has(element) && findAttribute(node, 'href')) {
+          return;
+        }
 
         // Check if element has explicit tabIndex
         const tabIndex = node.attributes.find(

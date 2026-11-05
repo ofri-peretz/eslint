@@ -213,7 +213,7 @@
       "rules": 6,
       "description": "ESLint plugin for module architecture — enforces DDD value objects and anemic-model checks, naming, REST conventions, and utility isolation",
       "category": "quality",
-      "version": "2.6.0",
+      "version": "2.6.1",
       "published": true
     },
     {
@@ -221,7 +221,7 @@
       "rules": 6,
       "description": "ESLint plugin for production operability — bans debug code and console logging in production, verbose error messages, and process.exit calls",
       "category": "quality",
-      "version": "4.2.0",
+      "version": "4.2.1",
       "published": true
     },
     {
@@ -237,7 +237,7 @@
       "rules": 4,
       "description": "ESLint plugin for modernizing JavaScript — auto-fixes legacy patterns to ES2022+ (Array.at, template literals, EventTarget, Array.isArray)",
       "category": "quality",
-      "version": "3.2.0",
+      "version": "3.2.1",
       "published": true
     },
     {
@@ -260,5 +260,5 @@
   "totalRules": 495,
   "totalPlugins": 31,
   "allPluginsCount": 32,
-  "generatedAt": "2026-11-04"
+  "generatedAt": "2026-11-05"
 }

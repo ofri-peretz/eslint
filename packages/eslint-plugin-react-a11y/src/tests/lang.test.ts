@@ -25,6 +25,14 @@ describe('lang', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - valid lang codes', lang, {
       valid: [
+        {
+          // @found corpus scan (okta-signin-widget): not extended to components
+          name: 'a braced lang on a component is not judged',
+          code: '<Comp lang={"english"} />',
+        },
+        { name: 'a braced valid tag', code: '<html lang={"en-US"}></html>' },
+        { name: 'a lang the file cannot see', code: '<html lang={locale}></html>' },
+        { name: 'a bare lang carries no tag to judge', code: '<html lang></html>' },
         { name: 'a valid tag', code: '<html lang="en"></html>' },
         { code: '<html lang="en-US"></html>' },
         { code: '<html lang="fr"></html>' },
@@ -46,6 +54,9 @@ describe('lang', () => {
     ruleTester.run('invalid - invalid lang codes', lang, {
       valid: [],
       invalid: [
+        { /* @found fidelity model react-a11y/lang */ name: 'FN: digits are not a primary language subtag', code: '<html lang="123"></html>', errors: [{ messageId: 'invalidLang' }] },
+        { /* @found fidelity model react-a11y/lang */ name: 'FN: a braced static lang is read', code: '<html lang={"english"}></html>', errors: [{ messageId: 'invalidLang' }] },
+        { /* @found fidelity model react-a11y/lang */ name: 'FN: a template lang is read', code: '<html lang={`en_US`}></html>', errors: [{ messageId: 'invalidLang' }] },
         { name: 'a lang value that is not a valid language tag', code: '<html lang="invalid"></html>', errors: [{ messageId: 'invalidLang' }] },
         // Single char is invalid
         { code: '<html lang="e"></html>', errors: [{ messageId: 'invalidLang' }] },

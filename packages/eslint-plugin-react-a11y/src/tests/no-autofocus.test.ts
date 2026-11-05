@@ -25,9 +25,20 @@ describe('no-autofocus', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - no autofocus', noAutofocus, {
       valid: [
+        {
+          // @found corpus scan (okta-signin-widget): not extended to components
+          name: 'the lowercase autofocus prop on a component is not judged',
+          code: '<Comp autofocus />',
+        },
         { name: 'no autofocus', code: '<input />' },
         { code: '<button>Click</button>' },
         { code: '<textarea></textarea>' },
+        // Nothing gets focus
+        { name: 'autoFocus false does not focus', code: '<input autoFocus={false} />' },
+        { name: 'autoFocus undefined does not focus', code: '<input autoFocus={undefined} />' },
+        // ignoreNonDOM exempts custom components
+        { name: 'ignoreNonDOM exempts a component', code: '<TextInput autoFocus />', options: [{ ignoreNonDOM: true }] },
+        { name: 'ignoreNonDOM exempts a member component', code: '<Ui.TextInput autoFocus />', options: [{ ignoreNonDOM: true }] },
       ],
       invalid: [],
     });
@@ -41,6 +52,10 @@ describe('no-autofocus', () => {
         { code: '<input autoFocus={true} />', errors: [{ messageId: 'noAutoFocus' }] },
         { code: '<button autoFocus>Click</button>', errors: [{ messageId: 'noAutoFocus' }] },
         { code: '<textarea autoFocus></textarea>', errors: [{ messageId: 'noAutoFocus' }] },
+        { name: 'components are checked by default', code: '<TextInput autoFocus />', errors: [{ messageId: 'noAutoFocus' }] },
+        { name: 'ignoreNonDOM still checks DOM elements', code: '<input autoFocus />', options: [{ ignoreNonDOM: true }], errors: [{ messageId: 'noAutoFocus' }] },
+        // HTML attribute names are case-insensitive: autofocus reaches the DOM too
+        { name: 'HTML autofocus spelling', code: '<input autofocus />', errors: [{ messageId: 'noAutoFocus' }] },
       ],
     });
   });

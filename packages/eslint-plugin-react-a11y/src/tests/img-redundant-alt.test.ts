@@ -155,14 +155,34 @@ describe('img-redundant-alt', () => {
 
   describe('Options - words', () => {
     ruleTester.run('words option', imgRedundantAlt, {
-      valid: [
-        // With custom words, default words (image, photo, picture) are no longer checked
+      valid: [],
+      invalid: [
         {
+          // @found fidelity model react-a11y/img_redundant_alt
+          name: 'FN: custom words add to the defaults, they do not replace them',
           code: '<img src="photo.jpg" alt="Photo of sunset" />',
           options: [{ words: ['Bild', 'Foto'] }],
+          errors: [{ messageId: 'redundantAlt', data: { word: 'photo' } }],
         },
-      ],
-      invalid: [
+        {
+          // @found fidelity model react-a11y/img_redundant_alt
+          name: 'FN: naming an Image component still checks <img>',
+          code: '<img src="photo.jpg" alt="Photo of sunset" />',
+          options: [{ components: ['Image'] }],
+          errors: [{ messageId: 'redundantAlt', data: { word: 'photo' } }],
+        },
+        {
+          // @found fidelity model react-a11y/img_redundant_alt
+          name: 'FN: a braced static alt is read',
+          code: '<img src="photo.jpg" alt={"Photo of sunset"} />',
+          errors: [{ messageId: 'redundantAlt', data: { word: 'photo' } }],
+        },
+        {
+          // @found fidelity model react-a11y/img_redundant_alt
+          name: 'FN: a template alt with no expressions is read',
+          code: '<img src="photo.jpg" alt={`Photo of sunset`} />',
+          errors: [{ messageId: 'redundantAlt', data: { word: 'photo' } }],
+        },
         // Custom word "Bild" is now redundant
         {
           code: '<img src="photo.jpg" alt="Bild of sunset" />',
@@ -216,20 +236,18 @@ describe('img-redundant-alt', () => {
         {
           code: '<img src="photo.jpg" alt={dynamicAlt} />',
         },
+        {
+          // @found fidelity model react-a11y/img_redundant_alt
+          name: 'FP: aria-hidden="true" hides the image from screen readers',
+          code: '<img src="photo.jpg" aria-hidden="true" alt="Photo of something" />',
+        },
+        {
+          // @found fidelity model react-a11y/img_redundant_alt
+          name: 'FP: a bare aria-hidden is aria-hidden="true"',
+          code: '<img src="photo.jpg" aria-hidden alt="Photo of something" />',
+        },
       ],
       invalid: [
-        // aria-hidden without "true" value - still checked
-        {
-          code: '<img src="photo.jpg" aria-hidden alt="Photo of something" />',
-          errors: [
-            {
-              messageId: 'redundantAlt',
-              data: {
-                word: 'photo',
-              },
-            },
-          ],
-        },
         // aria-hidden="false" - still checked
         {
           code: '<img src="photo.jpg" aria-hidden="false" alt="Photo of something" />',

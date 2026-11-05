@@ -13,23 +13,61 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import {
+  attributeValue,
+  findAttribute,
+  intrinsicName,
+  judgedValue,
+  staticAttributeValue,
+} from '../utils/jsx-static';
 
 type MessageIds = 'ariaHiddenFocusable';
 
 type RuleOptions = [];
 
-const FOCUSABLE_ELEMENTS = new Set([
-  'a',
-  'button',
-  'input',
-  'select',
-  'textarea',
-  'area',
-]);
+/** Controls that take focus unless disabled. */
+const FOCUSABLE_CONTROLS = new Set(['button', 'input', 'select', 'textarea']);
 
-const isJSXAttribute = (
-  attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-): attr is TSESTree.JSXAttribute => attr.type === 'JSXAttribute';
+/**
+ * Whether the element is in the tab order: a native control (not disabled,
+ * not `type="hidden"`), a link (`a`/`area` with `href`), or any element with
+ * a tabIndex >= 0. A negative tabIndex removes even a native control from the
+ * tab order. A value the file cannot know is not proof of focusability.
+ */
+function isTabbable(
+  node: TSESTree.JSXOpeningElement,
+  element: string,
+): boolean {
+  const tabIndexAttr = findAttribute(node, 'tabIndex');
+  if (tabIndexAttr) {
+    const value = judgedValue(node, tabIndexAttr);
+    if (value !== null) {
+      const n = parseInt(value, 10);
+      if (!isNaN(n)) return n >= 0;
+    }
+  }
+
+  if (element === 'a' || element === 'area') {
+    return findAttribute(node, 'href') !== undefined;
+  }
+  if (!FOCUSABLE_CONTROLS.has(element)) return false;
+
+  if (
+    element === 'input' &&
+    staticAttributeValue(findAttribute(node, 'type'))?.toLowerCase() ===
+      'hidden'
+  ) {
+    return false;
+  }
+
+  // `disabled`, `disabled={true}`, `disabled=""`: not focusable. A disabled
+  // state the file cannot know is not proof the control is reachable.
+  const disabledAttr = findAttribute(node, 'disabled');
+  if (disabledAttr) {
+    return attributeValue(disabledAttr) === 'false';
+  }
+  return true;
+}
 
 export const noAriaHiddenOnFocusable = createRule<RuleOptions, MessageIds>({
   name: 'no-aria-hidden-on-focusable',
@@ -65,52 +103,17 @@ export const noAriaHiddenOnFocusable = createRule<RuleOptions, MessageIds>({
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier') return;
 
-        // Check for aria-hidden="true"
-        const ariaHidden = node.attributes.find(
-          (
-            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-          ): attr is TSESTree.JSXAttribute =>
-            isJSXAttribute(attr) &&
-            attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'aria-hidden',
-        );
+        // `aria-hidden="true"`, `aria-hidden={true}` and the bare attribute
+        // all hide; `"false"` and a dynamic value do not prove it.
+        // On a component only `aria-hidden="true"`: see judgedValue.
+        const ariaHidden = findAttribute(node, 'aria-hidden');
+        if (!ariaHidden) return;
+        const hidden = intrinsicName(node)
+          ? attributeValue(ariaHidden)
+          : judgedValue(node, ariaHidden);
+        if (hidden !== 'true') return;
 
-        if (
-          !ariaHidden ||
-          ariaHidden.type !== 'JSXAttribute' ||
-          !ariaHidden.value ||
-          ariaHidden.value.type !== 'Literal' ||
-          ariaHidden.value.value !== 'true'
-        ) {
-          return;
-        }
-
-        const element = node.name.name;
-        let isFocusable = FOCUSABLE_ELEMENTS.has(element);
-
-        // Check tabIndex
-        const tabIndex = node.attributes.find(
-          (
-            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-          ): attr is TSESTree.JSXAttribute =>
-            isJSXAttribute(attr) &&
-            attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'tabIndex',
-        );
-
-        if (
-          tabIndex &&
-          tabIndex.type === 'JSXAttribute' &&
-          tabIndex.value &&
-          tabIndex.value.type === 'Literal'
-        ) {
-          const val = parseInt(String(tabIndex.value.value), 10);
-          if (!isNaN(val) && val >= 0) {
-            isFocusable = true;
-          }
-        }
-
-        if (isFocusable) {
+        if (isTabbable(node, node.name.name)) {
           context.report({
             node,
             messageId: 'ariaHiddenFocusable',

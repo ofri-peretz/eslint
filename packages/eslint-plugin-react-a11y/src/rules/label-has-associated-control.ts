@@ -13,8 +13,13 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import {
+  attributeValue,
+  findAttribute,
+  intrinsicName,
+} from '../utils/jsx-static';
 
-type MessageIds = 'missingControl';
+type MessageIds = 'missingControl' | 'missingText';
 
 type Options = {
   labelComponents?: string[];
@@ -50,6 +55,16 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
           'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/label-has-associated-control.md',
         wcag: 'WCAG 1.3.1',
       }),
+      missingText: formatLLMMessage({
+        icon: MessageIcons.ACCESSIBILITY,
+        issueName: 'Empty Label',
+        description: 'Form label must have accessible text',
+        severity: 'HIGH',
+        fix: 'Add text content, aria-label, or a configured label attribute',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/label-has-associated-control.md',
+        wcag: 'WCAG 1.3.1',
+      }),
     },
     schema: [
       {
@@ -71,7 +86,7 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       assert: 'either',
-      depth: 2,
+      depth: 25,
     },
   ],
   createOnce(
@@ -106,6 +121,46 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
       );
     }
 
+    /** Whether an attribute is present with a value that renders. */
+    function hasValue(node: TSESTree.JSXOpeningElement, name: string): boolean {
+      const attr = findAttribute(node, name);
+      if (!attr) return false;
+      const value = attributeValue(attr);
+      return (
+        value !== undefined &&
+        (typeof value !== 'string' || value.trim() !== '')
+      );
+    }
+
+    /**
+     * Whether the label has (or may have) text: text content at any depth,
+     * an expression or a custom component that may render it, aria-label /
+     * aria-labelledby, or a configured label attribute.
+     */
+    function hasLabelText(node: TSESTree.JSXElement): boolean {
+      const opening = node.openingElement;
+      if (
+        ['aria-label', 'aria-labelledby', ...labelAttributes].some((name) =>
+          hasValue(opening, name),
+        )
+      )
+        return true;
+      return node.children.some((child) => {
+        if (child.type === 'JSXText') return child.value.trim() !== '';
+        if (child.type === 'JSXExpressionContainer')
+          return child.expression.type !== 'JSXEmptyExpression';
+        if (child.type === 'JSXElement') {
+          const name = child.openingElement.name;
+          if (intrinsicName(child.openingElement) === null)
+            return !controlTags.has(
+              name.type === 'JSXIdentifier' ? name.name : '',
+            );
+          return hasLabelText(child);
+        }
+        return child.type === 'JSXFragment';
+      });
+    }
+
     return {
       before() {
         const [options = {} as Options] = currentOptions();
@@ -114,7 +169,9 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
           labelAttributes = [],
           controlComponents = [],
           assert = 'either',
-          depth = 2,
+          // HTML associates a nested control at any depth: search the whole
+          // subtree unless the user caps it.
+          depth = 25,
         } = options ?? ({} as Options));
 
         labelTags = new Set(['label', ...labelComponents]);
@@ -148,16 +205,11 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
         );
         if (hasAriaLabel) return;
 
-        // Check htmlFor
-        const hasHtmlFor = openingElement.attributes.some(
-          (
-            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-          ): attr is TSESTree.JSXAttribute =>
-            attr.type === 'JSXAttribute' &&
-            attr.name.type === 'JSXIdentifier' &&
-            (attr.name.name === 'htmlFor' ||
-              labelAttributes.includes(attr.name.name)) &&
-            attr.value?.type === 'Literal',
+        // htmlFor associates the label whatever its value, dynamic included;
+        // only a value that renders nothing ({undefined}) does not. A
+        // configured label attribute keeps counting too, as it always has.
+        const hasHtmlFor = ['htmlFor', ...labelAttributes].some((name) =>
+          hasValue(openingElement, name),
         );
 
         // Check nesting
@@ -173,6 +225,14 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
           context.report({
             node: openingElement,
             messageId: 'missingControl',
+          });
+          return;
+        }
+
+        if (!hasLabelText(node)) {
+          context.report({
+            node: openingElement,
+            messageId: 'missingText',
           });
         }
       },

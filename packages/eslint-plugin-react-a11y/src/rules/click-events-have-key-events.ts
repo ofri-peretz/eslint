@@ -13,12 +13,14 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { findAttribute, intrinsicName, judgedValue } from '../utils/jsx-static';
 
 type MessageIds = 'missingKeyboardEvent';
 
 type RuleOptions = [];
 
-// Interactive ARIA roles that handle keyboard interaction natively (via AT or JS framework)
+// WAI-ARIA widget roles: on a component they keep the exemption the rule
+// always gave them (see below).
 const INTERACTIVE_ARIA_ROLES = new Set([
   'button',
   'link',
@@ -91,38 +93,29 @@ export const clickEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
             ['onKeyUp', 'onKeyDown', 'onKeyPress'].includes(attr.name.name),
         );
 
-        // Exception: hidden inputs or non-interactive elements that shouldn't have click?
-        // Actually, if it has click, it should have keyboard support.
-        // But if it's a button or link, it's native.
+        // Native interactive elements fire click from the keyboard themselves.
+        // An <a> is one only with an href; an ARIA role adds no key handling
+        // (WAI-ARIA APG: the author implements Enter/Space).
         const tagName =
           node.name.type === 'JSXIdentifier' ? node.name.name : null;
-        const isInteractive = [
-          'button',
-          'a',
-          'input',
-          'select',
-          'textarea',
-          'option',
-        ].includes(tagName || '');
-
-        // Native interactive elements handle keyboard click automatically.
-        // But if it's a div/span with onClick, it needs keyboard listener.
+        const isInteractive =
+          ['button', 'input', 'select', 'textarea', 'option'].includes(
+            tagName || '',
+          ) ||
+          (tagName === 'a' && findAttribute(node, 'href') !== undefined);
         if (isInteractive) return;
 
-        // Elements with interactive ARIA roles handle keyboard via AT/framework
-        const roleAttr = node.attributes.find(
-          (attr): attr is TSESTree.JSXAttribute =>
-            attr.type === 'JSXAttribute' &&
-            attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'role',
-        );
-        if (roleAttr) {
-          const roleValue =
-            roleAttr.value?.type === 'Literal'
-              ? String(roleAttr.value.value)
-              : null;
-          if (roleValue && INTERACTIVE_ARIA_ROLES.has(roleValue)) return;
-        }
+        // A component with an interactive role (`<Link component="button"
+        // role="link">`) may render a native control that handles keys
+        // itself: reporting it is a guess, so the exemption it always had
+        // stays for components. On an intrinsic element the role adds none.
+        if (
+          intrinsicName(node) === null &&
+          INTERACTIVE_ARIA_ROLES.has(
+            judgedValue(node, findAttribute(node, 'role')) ?? '',
+          )
+        )
+          return;
 
         if (!hasKeyboardEvent) {
           context.report({

@@ -13,6 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { findAttribute, staticAttributeValue } from '../utils/jsx-static';
 
 type MessageIds = 'invalidHref' | 'noHref' | 'preferButton';
 
@@ -23,6 +24,8 @@ type Options = {
 };
 
 type RuleOptions = [Options?];
+
+const ALL_ASPECTS = ['noHref', 'invalidHref', 'preferButton'];
 
 export const anchorIsValid = createRule<RuleOptions, MessageIds>({
   name: 'anchor-is-valid',
@@ -86,12 +89,16 @@ export const anchorIsValid = createRule<RuleOptions, MessageIds>({
     let components: string[];
     let specialLink: string[];
     let anchors: Set<string>;
+    let aspects: Set<string>;
 
     return {
       before() {
         const [options = {} as Options] = currentOptions();
         ({ components = [], specialLink = [] } = options || {});
         anchors = new Set(['a', ...components]);
+        // `aspects` narrows the checks; omitted or empty, all three are on.
+        const chosen = options?.aspects ?? [];
+        aspects = new Set(chosen.length > 0 ? chosen : ALL_ASPECTS);
       },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (
@@ -101,56 +108,47 @@ export const anchorIsValid = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const href = node.attributes.find(
+        // The destination: `href`, or an attribute `specialLink` names
+        // (React Router's `to`).
+        const hrefs = node.attributes.filter(
           (
             attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
           ): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'href',
+            (attr.name.name === 'href' || specialLink.includes(attr.name.name)),
         );
+        const onClick = findAttribute(node, 'onClick');
 
-        const onClick = node.attributes.find(
-          (
-            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-          ): attr is TSESTree.JSXAttribute =>
-            attr.type === 'JSXAttribute' &&
-            attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'onClick',
-        );
+        // A click handler on an anchor with no real destination is a button
+        // (preferButton); with that aspect off, the anchor falls to the
+        // noHref / invalidHref aspect it fails.
+        const asButton = Boolean(onClick) && aspects.has('preferButton');
 
-        if (!href) {
-          // Check for special link props (like 'to' in React Router)
-          const hasSpecialLink = specialLink.some((prop: string) =>
-            node.attributes.some(
-              (
-                attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-              ): attr is TSESTree.JSXAttribute =>
-                attr.type === 'JSXAttribute' &&
-                attr.name.type === 'JSXIdentifier' &&
-                attr.name.name === prop,
-            ),
-          );
-
-          if (!hasSpecialLink) {
-            if (onClick) {
-              context.report({ node, messageId: 'preferButton' });
-            } else {
-              context.report({ node, messageId: 'noHref' });
-            }
+        if (hrefs.length === 0) {
+          if (asButton) {
+            context.report({ node, messageId: 'preferButton' });
+          } else if (aspects.has('noHref')) {
+            context.report({ node, messageId: 'noHref' });
           }
           return;
         }
 
-        if (href.value?.type === 'Literal') {
-          const value = href.value.value;
-          if (value === '#' || value === 'javascript:void(0)') {
-            if (onClick) {
-              context.report({ node, messageId: 'preferButton' });
-            } else {
-              context.report({ node, messageId: 'invalidHref' });
-            }
-          }
+        // `#` and a `javascript:` URL go nowhere, however the value is
+        // spelled; a value the file cannot see is not a finding.
+        const goesNowhere = hrefs.some((attr) => {
+          const value = staticAttributeValue(attr);
+          return (
+            value !== null &&
+            attr.value !== null &&
+            (value === '#' || /^\W*?javascript:/i.test(value))
+          );
+        });
+        if (!goesNowhere) return;
+        if (asButton) {
+          context.report({ node, messageId: 'preferButton' });
+        } else if (aspects.has('invalidHref')) {
+          context.report({ node, messageId: 'invalidHref' });
         }
       },
     };

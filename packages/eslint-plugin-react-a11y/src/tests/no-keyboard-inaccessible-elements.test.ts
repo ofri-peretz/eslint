@@ -34,9 +34,10 @@ describe('no-keyboard-inaccessible-elements', () => {
           name: 'tabIndex and role supplied',
           code: '<div onClick={handler} tabIndex={0} role="button">Click</div>',
         },
-        // Div with role
+        // role presentation/none: the author opted the element out
         {
-          code: '<div onClick={handler} role="button">Click</div>',
+          name: 'role presentation opts a clickable div out',
+          code: '<div onClick={handler} role="presentation">Click</div>',
         },
         // Button element (native keyboard support)
         {
@@ -73,6 +74,12 @@ describe('no-keyboard-inaccessible-elements', () => {
         {
           name: 'a click handler on a div with no tabIndex or role',
           code: '<div onClick={handler}>Click</div>',
+          errors: [{ messageId: 'keyboardInaccessible' }],
+        },
+        // A role does not make an element focusable (WAI-ARIA 1.2): role="button" alone is unreachable by keyboard
+        {
+          name: 'role button without tabIndex is still unreachable by keyboard',
+          code: '<div onClick={handler} role="button">Click</div>',
           errors: [{ messageId: 'keyboardInaccessible' }],
         },
         // Span with onClick but no tabIndex or role

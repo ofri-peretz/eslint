@@ -30,6 +30,11 @@ describe('no-noninteractive-tabindex', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - no tabindex or allowed tabindex', noNoninteractiveTabindex, {
       valid: [
+        {
+          // @found corpus scan (okta-signin-widget): not extended to components
+          name: 'a braced tabIndex on a component is not judged (it may render a button)',
+          code: '<Box component="button" tabIndex={0} onClick={onClick}>x</Box>',
+        },
         // No tabindex attribute
         {
           name: 'no tabIndex',
@@ -216,11 +221,18 @@ describe('no-noninteractive-tabindex', () => {
         {
           code: '<div role={dynamicRole} tabIndex="-1">Dynamic Role</div>',
         },
+        {
+          // allowExpressionValues (default true): a role the file cannot know
+          // may be interactive, so the element is not judged.
+          name: 'a role expression is allowed by default (allowExpressionValues: true)',
+          code: '<h2 role={dynamicRole} tabIndex="0">Dynamic Role</h2>',
+        },
       ],
       invalid: [
-        // Dynamic roles can't be determined, so non-interactive tabindex is flagged
         {
-          code: '<div role={dynamicRole} tabIndex="0">Dynamic Role</div>',
+          name: 'allowExpressionValues: false judges an element with a role expression as the bare element',
+          code: '<h2 role={dynamicRole} tabIndex="0">Dynamic Role</h2>',
+          options: [{ allowExpressionValues: false }],
           errors: [
             {
               messageId: 'noNoninteractiveTabindex',
@@ -290,15 +302,30 @@ describe('no-noninteractive-tabindex', () => {
         {
           code: '<div tabIndex>Undefined tabindex</div>',
         },
-        // Expression tabindex values are skipped (rule only handles Literal)
         {
-          code: '<div tabIndex={0}>Numeric zero</div>',
-        },
-        {
-          code: '<div tabIndex={1}>Numeric one</div>',
+          name: 'a braced tabIndex on a role-less div/span is not extended (scrollable-region judgment)',
+          code: '<div tabIndex={0}>Numeric zero</div>; <span tabIndex={1}>Numeric one</span>',
         },
       ],
       invalid: [
+        {
+          name: 'tabIndex={0}, the usual React spelling, on a heading',
+          code: '<h2 tabIndex={0}>Title</h2>',
+          errors: [{ messageId: 'noNoninteractiveTabindex' }],
+        },
+        {
+          name: 'a braced tabIndex reads the same as the string one',
+          code: '<p tabIndex={0}>Numeric zero</p>; <li tabIndex={1}>Numeric one</li>',
+          errors: [
+            { messageId: 'noNoninteractiveTabindex' },
+            { messageId: 'noNoninteractiveTabindex' },
+          ],
+        },
+        {
+          name: 'a non-interactive role written as a braced string',
+          code: '<div role={"article"} tabIndex={0}>x</div>',
+          errors: [{ messageId: 'noNoninteractiveTabindex' }],
+        },
         // tabindex="0" string literal
         {
           code: '<div tabIndex="0">String zero</div>',

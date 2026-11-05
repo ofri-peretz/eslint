@@ -321,7 +321,6 @@
     "treegrid"
   ],
   "packages/eslint-plugin-react-a11y/src/rules/no-noninteractive-element-interactions.ts#INTERACTIVE_HANDLERS": [
-    "onKeyDown",
     "onKeyPress",
     "onKeyUp",
     "onMouseDown",

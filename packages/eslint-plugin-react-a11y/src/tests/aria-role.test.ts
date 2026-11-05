@@ -144,8 +144,51 @@ describe('aria-role', () => {
         { code: '<div role={dynamicRole}></div>' },
         // Multiple valid roles (space-separated)
         // Note: This is actually valid per ARIA spec
+        {
+          name: 'an empty role names no role at all, nothing invalid',
+          code: '<div role=""></div>',
+        },
+        {
+          name: 'whitespace around the role is not a token',
+          code: '<div role=" button "></div>',
+        },
+        {
+          name: 'DPUB-ARIA doc-* roles are WAI-ARIA module roles',
+          code: '<section role="doc-chapter"></section>',
+        },
+        {
+          name: 'Graphics-ARIA graphics-* roles are WAI-ARIA module roles',
+          code: '<svg role="graphics-document"></svg>',
+        },
+        {
+          name: 'ignoreNonDOM skips a component whose role prop never reaches the DOM as written',
+          code: '<Box role="foo"></Box>; <Ui.Box role="foo"></Ui.Box>',
+          options: [{ ignoreNonDOM: true }],
+        },
       ],
-      invalid: [],
+      invalid: [
+        {
+          name: 'an invalid role written as a braced string',
+          code: '<div role={"foo"}></div>',
+          errors: [{ messageId: 'invalidRole' }],
+        },
+        {
+          name: 'an invalid role in a constant template or in both branches of a conditional',
+          code: '<div role={`widget`}></div>; <div role={flag ? "buton" : "buton"}></div>',
+          errors: [{ messageId: 'invalidRole' }, { messageId: 'invalidRole' }],
+        },
+        {
+          name: 'ignoreNonDOM still checks DOM elements',
+          code: '<div role="foo"></div>',
+          options: [{ ignoreNonDOM: true }],
+          errors: [{ messageId: 'invalidRole' }],
+        },
+        {
+          name: 'components are checked by default (ignoreNonDOM false)',
+          code: '<Box role="foo"></Box>',
+          errors: [{ messageId: 'invalidRole' }],
+        },
+      ],
     });
   });
 });

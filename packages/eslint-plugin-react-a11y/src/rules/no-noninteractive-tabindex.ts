@@ -11,12 +11,9 @@
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-noninteractive-tabindex.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import {
-  formatLLMMessage,
-  MessageIcons,
-  staticString,
-} from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { findAttribute, judgedValue } from '../utils/jsx-static';
 
 type MessageIds = 'noNoninteractiveTabindex';
 
@@ -97,43 +94,8 @@ export function isAllowedTabindex(tabindex: string | number): boolean {
   return numValue === -1;
 }
 
-/**
- * Check if role attribute is a literal string
- */
-export function isLiteralRole(
-  roleAttr: TSESTree.JSXAttribute | undefined,
-  allowExpressionValues: boolean,
-): boolean {
-  if (!roleAttr || !roleAttr.value) return false;
-
-  // If expressions are not allowed, only literal strings are valid
-  if (!allowExpressionValues) {
-    return staticString(roleAttr.value) !== null;
-  }
-
-  // If expressions are allowed, check if it's a literal or expression
-  return (
-    roleAttr.value.type === 'Literal' ||
-    roleAttr.value.type === 'JSXExpressionContainer'
-  );
-}
-
-/**
- * Get role value from attribute
- */
-export function getRoleValue(
-  roleAttr: TSESTree.JSXAttribute | undefined,
-): string | null {
-  if (!roleAttr || !roleAttr.value) return null;
-
-  const staticText = staticString(roleAttr.value);
-  if (staticText !== null) {
-    return staticText;
-  }
-
-  // For expressions, we can't statically determine the value
-  return null;
-}
+/** HTML-AAM `generic` elements: no semantics of their own. */
+const GENERIC_ELEMENTS = new Set(['div', 'span']);
 
 export const noNoninteractiveTabindex = createRule<RuleOptions, MessageIds>({
   name: 'no-noninteractive-tabindex',
@@ -206,30 +168,14 @@ export const noNoninteractiveTabindex = createRule<RuleOptions, MessageIds>({
 
         const elementName = node.name.name;
 
-        // Find tabindex attribute
-        const tabindexAttr = node.attributes.find(
-          (
-            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-          ): attr is TSESTree.JSXAttribute =>
-            attr.type === 'JSXAttribute' &&
-            attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'tabIndex',
-        );
+        const tabindexAttr = findAttribute(node, 'tabIndex');
+        // A bare `tabIndex` carries no number to judge.
+        if (!tabindexAttr?.value) return;
 
-        if (
-          !tabindexAttr ||
-          tabindexAttr.type !== 'JSXAttribute' ||
-          !tabindexAttr.value
-        )
-          return;
-
-        // Get tabindex value
-        let tabindexValue: string | number | null = null;
-        if (tabindexAttr.value.type === 'Literal') {
-          tabindexValue = tabindexAttr.value.value as string | number;
-        }
-
-        // If we can't determine the value, skip (dynamic values)
+        // Every static spelling (`"0"`, `{0}`, `{"0"}`, a conditional with
+        // equal branches); a dynamic value is unknown.
+        // On a component only `tabIndex="0"`: see judgedValue.
+        const tabindexValue = judgedValue(node, tabindexAttr);
         if (tabindexValue === null) return;
 
         // Check if element is in allowed tags
@@ -238,41 +184,36 @@ export const noNoninteractiveTabindex = createRule<RuleOptions, MessageIds>({
         // Check if element is inherently interactive
         if (isInteractiveElement(elementName)) return;
 
-        // Find role attribute
-        const roleAttr = node.attributes.find(
-          (
-            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-          ): attr is TSESTree.JSXAttribute =>
-            attr.type === 'JSXAttribute' &&
-            attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'role',
-        );
-
-        // Check if role attribute is valid for this rule
-        const jsxRoleAttr =
-          roleAttr && roleAttr.type === 'JSXAttribute' ? roleAttr : undefined;
-        if (isLiteralRole(jsxRoleAttr, allowExpressionValues)) {
-          const roleValue = getRoleValue(jsxRoleAttr);
-
-          // If role is interactive or allowed, permit tabindex
-          if (roleValue && isInteractiveRole(roleValue, roles)) return;
-
-          // If role is not interactive and tabindex is not -1, it's an error
-          if (!isAllowedTabindex(tabindexValue)) {
-            context.report({
-              node: tabindexAttr,
-              messageId: 'noNoninteractiveTabindex',
-            });
+        const roleAttr = findAttribute(node, 'role');
+        // `<div tabIndex="0">` / `<span tabIndex="0">` with no role is also the
+        // keyboard-scrollable-region pattern WCAG 2.1.1 asks for: whether it is
+        // a problem is a judgment, so that finding stays as it was (the plain
+        // string spelling only) and is not extended to `{0}` and the others.
+        if (
+          !roleAttr &&
+          GENERIC_ELEMENTS.has(elementName) &&
+          tabindexAttr.value.type !== 'Literal'
+        ) {
+          return;
+        }
+        if (roleAttr) {
+          const roleValue = judgedValue(node, roleAttr);
+          if (roleValue === null) {
+            // A role the file cannot know may be interactive:
+            // `allowExpressionValues` (default) leaves the element alone;
+            // `false` judges it as the bare element.
+            if (allowExpressionValues) return;
+          } else if (isInteractiveRole(roleValue.trim(), roles)) {
+            // If role is interactive or allowed, permit tabindex
             return;
           }
-        } else {
-          // No valid role attribute, element is non-interactive
-          if (!isAllowedTabindex(tabindexValue)) {
-            context.report({
-              node: tabindexAttr,
-              messageId: 'noNoninteractiveTabindex',
-            });
-          }
+        }
+
+        if (!isAllowedTabindex(tabindexValue)) {
+          context.report({
+            node: tabindexAttr,
+            messageId: 'noNoninteractiveTabindex',
+          });
         }
       },
     };

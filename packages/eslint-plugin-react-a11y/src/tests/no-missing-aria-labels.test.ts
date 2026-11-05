@@ -42,6 +42,21 @@ describe('no-missing-aria-labels', () => {
         {
           code: '<div>Content</div>',
         },
+        // A wrapping <label> names its first labelable descendant (HTML label element)
+        {
+          name: 'input wrapped in a label is named by it',
+          code: '<label>Email <input type="text" /></label>',
+        },
+        // type=hidden is never rendered
+        {
+          name: 'hidden input needs no accessible name',
+          code: '<input type="hidden" name="token" />',
+        },
+        // HTML-AAM gives submit and reset buttons a default name
+        {
+          name: 'submit input has a default accessible name',
+          code: '<input type="submit" />',
+        },
         // Test files (if ignoreInTests is true)
         {
           code: '<button><Icon /></button>',
@@ -77,6 +92,12 @@ describe('no-missing-aria-labels', () => {
     ruleTester.run('invalid - elements without ARIA labels', noMissingAriaLabels, {
       valid: [],
       invalid: [
+        // An empty aria-label yields no accessible name (accname 1.2)
+        {
+          name: 'empty aria-label is not a name',
+          code: '<input type="text" aria-label="" />',
+          errors: [{ messageId: 'missingAriaLabel' }],
+        },
         // Icon-only button — no text child, no aria-label/aria-labelledby/title,
         // so it has no accessible name. (Buttons WITH text children, e.g.
         // `<button>Click</button>`, are exempted — see hasTextContent() below.)

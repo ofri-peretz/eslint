@@ -67,6 +67,26 @@ describe('alt-text', () => {
         // Some patterns may not be detected due to JSX parsing limitations
         // These tests represent expected behavior, but rule may need enhancement
         {
+          // @found fidelity model react-a11y/alt_text
+          name: 'FN: alt={undefined} renders no alt',
+          code: '<img src="photo.jpg" alt={undefined} />',
+          errors: [
+            {
+              messageId: 'missingAlt',
+              suggestions: [
+                {
+                  messageId: 'addDescriptiveAlt',
+                  output: '<img src="photo.jpg" alt="TODO: Add descriptive text" />',
+                },
+                {
+                  messageId: 'useEmptyAlt',
+                  output: '<img src="photo.jpg" alt="" />',
+                },
+              ],
+            },
+          ],
+        },
+        {
           name: 'an image with no alt attribute',
           code: '<img src="photo.jpg" />',
           errors: [
@@ -259,14 +279,9 @@ describe('alt-text', () => {
         {
           code: '<img src="photo.jpg" {...props} alt="Description" />',
         },
-        // Dynamic alt — `alt={undefined}` and `alt={variable}` are accepted
-        // per the rule's "match jsx-a11y semantics" comment in alt-text.ts:
-        // when alt resolves to a non-string expression, the rule trusts the
-        // author. (This was previously flagged; rule was relaxed 2026-05-09
-        // to align with the standard jsx-a11y/alt-text contract.)
-        {
-          code: '<img src="photo.jpg" alt={undefined} />',
-        },
+        // `alt={undefined}` is NOT here: React drops an undefined attribute,
+        // so it renders no alt at all (jsx-a11y reports it too). See the
+        // 'FN: alt={undefined} renders no alt' case.
       ],
       invalid: [
         // Image with JSXSpreadAttribute but no alt (to cover line 89-91)
@@ -475,14 +490,14 @@ describe('alt-text', () => {
       ],
     });
 
-    // alt={undefined} / alt={variable} / alt={getAltText()} — dynamic values
-    // are accepted by the rule per the jsx-a11y semantics adopted 2026-05-09:
+    // alt={variable} / alt={getAltText()} — dynamic values are accepted by
+    // the rule per the jsx-a11y semantics adopted 2026-05-09 (alt={undefined}
+    // is not dynamic: it renders no alt, and is reported):
     // "when alt resolves to a non-string expression, the rule trusts the
     // author." This matches the standard `jsx-a11y/alt-text` contract and
     // is what every major React codebase expects.
     ruleTester.run('dynamic alt values are valid (jsx-a11y semantics)', altText, {
       valid: [
-        { code: '<img src="photo.jpg" alt={undefined} />' },
         { code: '<img src="photo.jpg" alt={altText} />' },
         { code: '<img src="photo.jpg" alt={getAltText()} />' },
       ],

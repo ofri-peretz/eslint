@@ -31,6 +31,12 @@ describe('no-noninteractive-element-interactions', () => {
         { code: '<div role="button" onClick={handler}></div>' },
         { code: '<p>Text only</p>' },
         { code: '<article></article>' },
+        // jsx-a11y contract: presentation, hidden from AT and contentEditable are exempt
+        { name: 'role presentation opts a non-interactive element out', code: '<li onClick={handler} role="presentation">x</li>' },
+        { name: 'role none opts a non-interactive element out', code: '<li onClick={handler} role="none">x</li>' },
+        { name: 'aria-hidden element is exempt', code: '<li onClick={handler} aria-hidden="true">x</li>' },
+        { name: 'dynamic contentEditable may make it an editing surface', code: '<p onKeyDown={handler} contentEditable={editable}>x</p>' },
+        { name: 'contentEditable element is exempt', code: '<p onKeyDown={handler} contentEditable="true">x</p>' },
       ],
       invalid: [],
     });
@@ -43,6 +49,11 @@ describe('no-noninteractive-element-interactions', () => {
         { name: 'a click handler on a paragraph', code: '<p onClick={handler}>Click me</p>', errors: [{ messageId: 'noInteraction' }] },
         { code: '<article onClick={handler}>Content</article>', errors: [{ messageId: 'noInteraction' }] },
         { code: '<section onClick={handler}>Section</section>', errors: [{ messageId: 'noInteraction' }] },
+        // An explicit non-interactive WAI-ARIA role makes any element non-interactive
+        { name: 'explicit non-interactive role article on a div', code: '<div role="article" onClick={handler}>x</div>', errors: [{ messageId: 'noInteraction' }] },
+        { name: 'contentEditable false is not an editing surface', code: '<p onKeyDown={handler} contentEditable="false">x</p>', errors: [{ messageId: 'noInteraction' }] },
+        { name: 'contentEditable undefined is not an editing surface', code: '<p onKeyDown={handler} contentEditable={undefined}>x</p>', errors: [{ messageId: 'noInteraction' }] },
+        { name: 'explicit non-interactive role listitem on a div', code: '<div role="listitem" onClick={handler}>x</div>', errors: [{ messageId: 'noInteraction' }] },
       ],
     });
   });

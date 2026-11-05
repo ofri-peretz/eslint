@@ -13,6 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { findAttribute, givesValue } from '../utils/jsx-static';
 
 type MessageIds = 'missingLang';
 
@@ -50,19 +51,10 @@ export const htmlHasLang = createRule<RuleOptions, MessageIds>({
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type === 'JSXIdentifier' && node.name.name === 'html') {
-          const hasLang = node.attributes.some(
-            (
-              attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-            ): attr is TSESTree.JSXAttribute =>
-              attr.type === 'JSXAttribute' &&
-              attr.name.type === 'JSXIdentifier' &&
-              attr.name.name === 'lang' &&
-              attr.value?.type === 'Literal' &&
-              // Presence is not the requirement — a VALUE is.
-              // an empty `lang` names no language: the screen reader still has to guess,
-              typeof attr.value.value === 'string' &&
-              attr.value.value.trim() !== '',
-          );
+          // Presence is not the requirement — a VALUE is: an empty `lang` or
+          // `{undefined}` names nothing. A static value in braces or a template
+          // is a value, and so is a dynamic one the file cannot see.
+          const hasLang = givesValue(findAttribute(node, 'lang'));
 
           if (!hasLang) {
             context.report({

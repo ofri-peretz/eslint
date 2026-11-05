@@ -13,6 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { judgedValue } from '../utils/jsx-static';
 
 type MessageIds = 'invalidLang';
 
@@ -52,20 +53,20 @@ export const lang = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const value = node.value;
-        if (
-          !value ||
-          value.type !== 'Literal' ||
-          typeof value.value !== 'string'
-        ) {
-          return;
-        }
+        // `lang="en"`, `lang={"en"}` and `` lang={`en`} `` write the same
+        // value; one the file cannot see is not a finding.
+        if (node.value === null) return;
+        const value = judgedValue(
+          node.parent as TSESTree.JSXOpeningElement,
+          node,
+        );
+        if (value === null) return;
 
-        const langCode = value.value.split('-')[0].toLowerCase(); // Handle en-US
+        // The primary subtag of a BCP 47 tag is a language: 2-3 letters
+        // (`en`, `en-US`). Digits, `en_US` or a word are not a tag.
+        const langCode = value.split('-')[0];
 
-        // Basic validation - check if 2 chars or in list
-        // We can also just check format if list is too restrictive
-        if (langCode.length !== 2 && langCode.length !== 3) {
+        if (!/^[a-z]{2,3}$/i.test(langCode)) {
           context.report({
             node,
             messageId: 'invalidLang',
