@@ -13,7 +13,11 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { attributeValue, findAttribute } from '../utils/jsx-static';
+import {
+  attributeValue,
+  findAttribute,
+  intrinsicName,
+} from '../utils/jsx-static';
 
 type MessageIds = 'missingControl' | 'missingText';
 
@@ -147,7 +151,7 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
           return child.expression.type !== 'JSXEmptyExpression';
         if (child.type === 'JSXElement') {
           const name = child.openingElement.name;
-          if (name.type !== 'JSXIdentifier' || !/^[a-z]/.test(name.name))
+          if (intrinsicName(child.openingElement) === null)
             return !controlTags.has(
               name.type === 'JSXIdentifier' ? name.name : '',
             );
