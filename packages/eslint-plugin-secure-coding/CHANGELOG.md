@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.6.5
+
+### Patch Changes
+
+- **🐛 Fix** — an `Object.keys` key narrowed by `.filter()` / `.slice()` / `.toSorted()` / `.toReversed()` is now treated as an own key, matching the direct `Object.keys(x).forEach` form. `.map()` chains still report.
+
 ## 5.6.4
 
 ### Patch Changes
