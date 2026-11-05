@@ -13,8 +13,11 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
+  isGlobalReference,
   MessageIcons,
+  objectKeyName,
   staticString,
+  variableOf,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
@@ -122,6 +125,69 @@ function constInitializer(
   return def.node.init ?? null;
 }
 
+type ClassNode = TSESTree.ClassDeclaration | TSESTree.ClassExpression;
+
+/** The class this identifier names, when the file declares it; else `null`. */
+function localClass(
+  id: TSESTree.Identifier,
+  sourceCode: TSESLint.SourceCode,
+): ClassNode | null {
+  const def = variableOf(id, sourceCode)?.defs[0];
+  if (def?.type === 'ClassName') return def.node as ClassNode;
+  if (def?.type === 'Variable' && def.node.init?.type === 'ClassExpression') {
+    return def.node.init;
+  }
+  return null;
+}
+
+/**
+ * Does a class declared in this file pass a message to `super` from its own
+ * constructor? Then `new Subclass()` with no argument still carries one.
+ */
+function constructorSuppliesMessage(
+  cls: ClassNode,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  const ctor = cls.body.body.find(
+    (m): m is TSESTree.MethodDefinition =>
+      m.type === 'MethodDefinition' && m.kind === 'constructor',
+  );
+  return (
+    ctor?.value.body?.body.some(
+      (stmt) =>
+        stmt.type === 'ExpressionStatement' &&
+        stmt.expression.type === 'CallExpression' &&
+        stmt.expression.callee.type === 'Super' &&
+        stmt.expression.arguments[0] !== undefined &&
+        isProvablyString(stmt.expression.arguments[0], sourceCode),
+    ) ?? false
+  );
+}
+
+/**
+ * Is an instance of this file-declared class an Error? Decided by its
+ * declaration: it extends a built-in Error constructor, or another class
+ * declared here that does. A class with no `extends` is not one. A base the
+ * file cannot see (an import) is unknown, and unknown is not a finding.
+ */
+function classIsError(
+  cls: ClassNode,
+  sourceCode: TSESLint.SourceCode,
+  depth = 0,
+): boolean {
+  const base = cls.superClass;
+  if (!base) return false;
+  if (base.type !== 'Identifier' || depth > 8) return true;
+  if (
+    BUILTIN_ERROR_CONSTRUCTORS.has(base.name) &&
+    isGlobalReference(base, sourceCode)
+  ) {
+    return true;
+  }
+  const parent = localClass(base, sourceCode);
+  return parent === null || classIsError(parent, sourceCode, depth + 1);
+}
+
 /**
  * Check if error has a message
  */
@@ -168,7 +234,8 @@ function hasErrorMessage(
       return false;
     }
     if (constructed.arguments.length === 0) {
-      return false;
+      const cls = localClass(constructed.callee, sourceCode);
+      return cls !== null && constructorSuppliesMessage(cls, sourceCode);
     }
     const firstArg = constructed.arguments[0];
     const staticText = staticString(firstArg);
@@ -203,13 +270,23 @@ function hasErrorMessage(
     return true;
   }
 
+  // `throw { message: '…', code }` spells its message out.
+  if (node.argument.type === 'ObjectExpression') {
+    return node.argument.properties.some(
+      (p) => p.type === 'Property' && objectKeyName(p) === 'message',
+    );
+  }
+
   return false;
 }
 
 /**
  * Check if error is an Error instance (has stack trace)
  */
-function hasErrorStack(node: TSESTree.ThrowStatement): boolean {
+function hasErrorStack(
+  node: TSESTree.ThrowStatement,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
   if (!node.argument) {
     return false;
   }
@@ -232,6 +309,9 @@ function hasErrorStack(node: TSESTree.ThrowStatement): boolean {
       node.argument.type === 'CallExpression') &&
     node.argument.callee.type === 'Identifier'
   ) {
+    // A class this file declares answers by its `extends` clause, not its name.
+    const cls = localClass(node.argument.callee, sourceCode);
+    if (cls !== null) return classIsError(cls, sourceCode);
     const calleeName = node.argument.callee.name;
     // Error, TypeError, ReferenceError, etc. all have stack traces
     if (calleeName === 'Error' || calleeName.endsWith('Error')) {
@@ -339,7 +419,7 @@ export const noMissingErrorContext = createRule<RuleOptions, MessageIds>({
         missing.push('message');
       }
 
-      if (requireStackTrace && !hasErrorStack(node)) {
+      if (requireStackTrace && !hasErrorStack(node, context.sourceCode)) {
         missing.push('stack trace');
       }
 

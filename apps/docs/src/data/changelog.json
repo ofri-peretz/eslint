@@ -1,9 +1,39 @@
 {
-  "releaseCount": 950,
+  "releaseCount": 954,
   "packageCount": 66,
-  "entryCount": 2557,
+  "entryCount": 2561,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "oxlint-plugin-mongodb-security",
+      "short": "oxlint-plugin-mongodb-security",
+      "version": "9.2.2",
+      "date": "2026-11-04T22:05:29Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-mongodb-security@9.2.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mongodb-security",
+      "short": "eslint-plugin-mongodb-security",
+      "version": "9.2.2",
+      "date": "2026-11-04T22:03:48Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "a `user` / `username` / `auth` literal in a query filter, update document or aggregation stage is no longer reported.",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "oxlint-plugin-knex-security",
       "short": "oxlint-plugin-knex-security",
@@ -22270,6 +22300,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-reliability",
+      "short": "eslint-plugin-reliability",
+      "version": "4.2.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "rules now decide by code structure, found by the new Quint fidelity models.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-supabase-security",
       "short": "eslint-plugin-supabase-security",
       "version": "1.0.0",
@@ -22285,6 +22330,21 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-reliability",
+      "short": "oxlint-plugin-reliability",
+      "version": "4.2.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-reliability@4.2.1`",
           "pr": null
         }
       ]

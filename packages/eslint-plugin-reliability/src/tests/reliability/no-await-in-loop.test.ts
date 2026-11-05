@@ -157,7 +157,7 @@ describe('no-await-in-loop', () => {
         },
         {
           name: 'await in a classic for update re-runs every iteration and stays reported',
-          code: `async function f() { for (let i = 0; i < 10; i = await next(i)) { step(); } }`,
+          code: `async function f() { for (let i = 0; i < 10; i++, await tick()) { step(); } }`,
           errors: [{ messageId: 'awaitInLoop' }],
         },
         // Interaction guard: a once-evaluated head await still costs Nx when
@@ -268,6 +268,81 @@ describe('no-await-in-loop', () => {
         // Sparse array literal → null entries in AST child arrays
         {
           code: 'async function f(xs) { for (const x of xs) { const pair = [, x]; await g(pair); } }',
+          errors: [{ messageId: 'awaitInLoop' }],
+        },
+      ],
+    });
+  });
+  describe('loop-carried awaits and allowWhile on do-while (fidelity)', () => {
+    ruleTester.run('loop-carried awaits', noAwaitInLoop, {
+      valid: [
+        {
+          name: 'a cursor the loop test reads cannot be fetched concurrently',
+          code: `async function f(seed) { let cursor = seed; while (cursor) { const page = await getPage(cursor); out.push(page); cursor = page.next; } }`,
+        },
+        {
+          name: 'the same cursor in a do-while',
+          code: `async function f(seed) { let cursor = seed; do { const page = await getPage(cursor); cursor = page.next; } while (cursor); }`,
+        },
+        {
+          name: 'an accumulator fed back into the next await',
+          code: `async function f(items, seed) { let acc = seed; for (const item of items) { acc = await step(item, acc); } return acc; }`,
+        },
+        {
+          name: 'an awaited update the test reads',
+          code: `async function f() { for (let page = await first(); page; page = await page.next()) { out.push(page); } }`,
+        },
+        {
+          name: 'a classic for whose update awaits the next counter',
+          code: `async function f() { for (let i = 0; i < 10; i = await next(i)) { step(); } }`,
+        },
+        {
+          name: 'polling until the awaited status says done',
+          code: `async function f() { while (true) { const s = await status(); if (s.done) break; } }`,
+        },
+        {
+          name: 'a retry that returns on the first success',
+          code: `async function f() { for (let attempt = 0; attempt < 3; attempt++) { const res = await tryIt(); if (res.ok) return res; } }`,
+        },
+        {
+          name: 'results the next await reads, filled by push',
+          code: `async function f(items) { const results = []; for (const item of items) { const result = await processWithPrevious(item, results); results.push(result); } return results; }`,
+        },
+        {
+          name: 'allowWhile covers a do-while loop',
+          code: `async function f(items) { let i = 0; do { await work(items[i++]); } while (i < items.length); }`,
+          options: [{ allowWhile: true }],
+        },
+      ],
+      invalid: [
+        {
+          name: 'an awaited value only collected for later is independent work',
+          code: `async function f(items) { const out = []; for (const item of items) { const r = await work(item); out.push(r); } return out; }`,
+          errors: [{ messageId: 'awaitInLoop' }],
+        },
+        {
+          name: 'a running total of awaited values is independent work',
+          code: `async function f(items) { let total = 0; for (const item of items) { total += await price(item); } return total; }`,
+          errors: [{ messageId: 'awaitInLoop' }],
+        },
+        {
+          name: 'an exit branch that reads nothing awaited does not carry the await',
+          code: `async function f(items) { for (const item of items) { const r = await work(item); out.push(r); if (item === stop) break; } }`,
+          errors: [{ messageId: 'awaitInLoop' }],
+        },
+        {
+          name: 'an awaited value stored on an undeclared global does not taint other globals',
+          code: `async function f(items) { for (const item of items) { log = await work(item); if (stop) break; } }`,
+          errors: [{ messageId: 'awaitInLoop' }],
+        },
+        {
+          name: 'a callback defined in the loop does not carry the loop await',
+          code: `async function f(items) { let last; for (const item of items) { await work(item); hooks.push(() => { last = item; }); } }`,
+          errors: [{ messageId: 'awaitInLoop' }],
+        },
+        {
+          name: 'a do-while is still reported without allowWhile',
+          code: `async function f(items) { let i = 0; do { await work(items[i++]); } while (i < items.length); }`,
           errors: [{ messageId: 'awaitInLoop' }],
         },
       ],

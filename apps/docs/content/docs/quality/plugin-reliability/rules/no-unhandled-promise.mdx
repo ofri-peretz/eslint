@@ -42,17 +42,13 @@ Disallow unhandled Promise rejections with LLM-optimized suggestions for proper 
   }
 }}%%
 flowchart TD
-    A["🔍 Detect CallExpression"] --> B{"Could return Promise?"}
-    B -->|✅ Yes| C{"In promise chain?"}
+    A["🔍 Detect CallExpression"] --> B{"File shows it returns a Promise?"}
     B -->|❌ No| D["✅ Skip"]
-    C -->|❌ No| E{"Inside try/catch?"}
+    B -->|✅ Yes| C{"Rejection handled?<br/>.catch / .then with 2 args / await"}
     C -->|✅ Yes| D
-    E -->|❌ No| F{"Inside async function?"}
+    C -->|❌ No| E{"Value held?<br/>returned / assigned / Promise.all"}
     E -->|✅ Yes| D
-    F -->|❌ No| G["🚨 Report unhandled promise"]
-    F -->|✅ Yes| H{"Uses await?"}
-    H -->|❌ No| G
-    H -->|✅ Yes| D
+    E -->|❌ No| G["🚨 Report unhandled promise"]
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
@@ -80,6 +76,24 @@ flowchart TD
 | ----------------------- | --------- | ------- | -------------------------------------------- |
 | `ignoreInTests`         | `boolean` | `true`  | Skip promise checks in test files            |
 | `ignoreVoidExpressions` | `boolean` | `false` | Skip promises in void expressions            |
+| `requirePromiseEvidence`| `boolean` | `true`  | Report only calls the file shows return a Promise |
+| `promiseReturning`      | `string[]`| `['fetch']` | Names that return a Promise and cannot be resolved from the file |
+
+### What counts as a promise
+
+With `requirePromiseEvidence` (the default) a call is a promise only when the
+file shows it: a function declared `async` in scope, `new Promise(…)`, a
+`Promise` static, a `.then(…)` chain, a parameter annotated to return a
+`Promise`, or a name listed in `promiseReturning`. An unknown call
+(`fetchUserData(id)` imported from elsewhere) is not reported unless you list it.
+
+### What counts as handled
+
+`.catch(handler)`, `.then(onFulfilled, onRejected)`, a `.catch` below a
+`.finally`, `await` (the rejection propagates to the caller), `return`, and
+holding the value (assigning it, `Promise.all([...])`). A `try` block catches a
+rejection only through an `await` inside it: `try { save(); } catch {}` has left
+the block by the time `save()` rejects, and is reported.
 
 ## Examples
 
@@ -87,7 +101,15 @@ flowchart TD
 
 ```typescript
 // Unhandled promise rejection
+async function fetchUserData(id) { /* … */ }
 fetchUserData(userId);
+
+// try without await does not catch the rejection
+try {
+  fetchUserData(userId);
+} catch (error) {
+  logger.error(error);
+}
 
 // Promise chain without error handling
 apiCall()

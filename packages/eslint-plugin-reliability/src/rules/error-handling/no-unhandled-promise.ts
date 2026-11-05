@@ -639,7 +639,7 @@ function chainHasRejectionHandler(node: TSESTree.CallExpression): boolean {
 }
 
 /**
- * Check if promise is handled (has .catch, .then, or is in try/catch)
+ * Check if promise is handled (has .catch, .then, or is awaited)
  *
  * Exported for direct Layer-2 unit testing: the Identifier branch is only
  * reachable when called with an Identifier node (kept for the future
@@ -715,10 +715,10 @@ export function isPromiseHandled(node: TSESTree.Node): boolean {
       }
     }
 
-    // Check if in try/catch block
-    if (parent.type === 'TryStatement') {
-      return true;
-    }
+    // No `TryStatement` arm: a try block catches a rejection only through an
+    // `await` inside it — answered just below. `try { save(); } catch {}` has
+    // left the block by the time `save()` rejects, and a call in the catch or
+    // finally clause is not guarded by the try at all.
 
     // Check if in await expression
     if (parent.type === 'AwaitExpression') {

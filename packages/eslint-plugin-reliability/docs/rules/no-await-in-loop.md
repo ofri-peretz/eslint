@@ -74,13 +74,28 @@ flowchart TD
 | 📊 **Scalability**       | Slow with large datasets    | Batch processing        |
 | 🎯 **Resource Usage**    | Inefficient API calls       | Parallelization         |
 
+### What is reported
+
+An `await` that runs on every iteration: in the loop body, in a nested block of
+it, or in a per-iteration header slot (a `for` test or update, a `while` /
+do-while condition). Not reported:
+
+- an `await` in a slot evaluated once before iterating (the `for…of` / `for…in`
+  iterable, a `for` initialiser);
+- an `await` inside a function defined in the loop — it runs in its own async
+  context;
+- a loop that carries an awaited value into its next iteration: a cursor the
+  loop test reads, an accumulator passed to the next `await`, a status that
+  decides a `break` or `return`. Those iterations cannot run concurrently, so
+  the sequential loop is the correct shape.
+
 ## Configuration
 
 | Option            | Type      | Default  | Description                              |
 | ----------------- | --------- | -------- | ---------------------------------------- |
 | `allowForOf`      | `boolean` | `false`  | Allow await in for-of loops              |
-| `allowWhile`      | `boolean` | `false`  | Allow await in while loops               |
-| `checkConcurrency`| `boolean` | `true`   | Check for potential concurrent execution |
+| `allowWhile`      | `boolean` | `false`  | Allow await in while and do-while loops  |
+| `checkConcurrency`| `boolean` | `true`   | Shapes the advice in the message; never whether a loop is reported |
 
 ## Examples
 
@@ -198,8 +213,17 @@ async function fetchAll(urls: string[]) {
 
 ### When Sequential is Required
 
+The rule stays silent when an iteration needs the previous one's awaited result:
+
 ```typescript
-// ✅ Extract to separate function if sequential is needed
+// ✅ Not reported: the cursor the test reads comes from the await
+let cursor = start;
+while (cursor) {
+  const page = await getPage(cursor);
+  cursor = page.next;
+}
+
+// ✅ Not reported: the accumulator feeds the next await
 async function processSequentially(items: Item[]) {
   const results = [];
   for (const item of items) {

@@ -30,34 +30,36 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+/** Both spellings of a type assertion: `x as T` and `<T>x`. */
+type Assertion = TSESTree.TSAsExpression | TSESTree.TSTypeAssertion;
+
+function isAssertion(node: TSESTree.Node): node is Assertion {
+  return node.type === 'TSAsExpression' || node.type === 'TSTypeAssertion';
+}
+
 /**
- * Check if type assertion is unsafe (as unknown as T)
+ * Is this the double assertion that bypasses the checker — an assertion whose
+ * operand was itself asserted to `unknown` or `any`? Every spelling counts:
+ * `x as unknown as T`, `<T><unknown>x`, `<T>(x as unknown)`,
+ * `(<unknown>x) as T`.
+ *
+ * A single assertion, or a widening to `unknown`, is the checker's own
+ * business and is left to TypeScript.
  */
-function isUnsafeTypeAssertion(node: TSESTree.TSAsExpression): boolean {
-  // Check for double assertion pattern: as unknown as T or as any as T
-  if (node.expression.type === 'TSAsExpression') {
-    const innerAssertion = node.expression as TSESTree.TSAsExpression;
-    // Check if inner assertion is to 'unknown'
-    if (innerAssertion.typeAnnotation.type === 'TSUnknownKeyword') {
-      return true; // as unknown as T pattern
-    }
-    // Also check for 'any' type
-    if (innerAssertion.typeAnnotation.type === 'TSAnyKeyword') {
-      return true; // as any as T pattern
-    }
-  }
-
-  // Don't flag direct assertions to unknown/any - those are handled by TSC
-  // Only flag the double assertion pattern which bypasses type safety
-
-  return false;
+function isUnsafeTypeAssertion(node: Assertion): boolean {
+  const inner = node.expression;
+  return (
+    isAssertion(inner) &&
+    (inner.typeAnnotation.type === 'TSUnknownKeyword' ||
+      inner.typeAnnotation.type === 'TSAnyKeyword')
+  );
 }
 
 /**
  * Check if type assertion has explanatory comment
  */
 function hasExplanatoryComment(
-  node: TSESTree.TSAsExpression,
+  node: Assertion,
   sourceCode: TSESLint.SourceCode,
 ): boolean {
   const comments = sourceCode.getAllComments();
@@ -204,7 +206,7 @@ export const noUnsafeTypeNarrowing = createRule<RuleOptions, MessageIds>({
     /**
      * Check type assertions
      */
-    function checkTypeAssertion(node: TSESTree.TSAsExpression) {
+    function checkTypeAssertion(node: Assertion) {
       if (!isUnsafeTypeAssertion(node)) {
         return;
       }
@@ -264,6 +266,7 @@ export const noUnsafeTypeNarrowing = createRule<RuleOptions, MessageIds>({
         return true;
       },
       TSAsExpression: checkTypeAssertion,
+      TSTypeAssertion: checkTypeAssertion,
     };
   },
 });

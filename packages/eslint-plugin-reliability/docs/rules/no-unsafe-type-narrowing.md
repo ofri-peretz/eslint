@@ -1,152 +1,98 @@
 ---
 title: no-unsafe-type-narrowing
-description: "ESLint Rule: no-unsafe-type-narrowing with LLM-optimized suggestions and auto-fix capabilities."
+description: "Report double type assertions through unknown or any that bypass the type checker."
 tags: ['quality', 'reliability']
 category: quality
 autofix: suggestions
 ---
 
-> **Keywords:** no unsafe type narrowing, quality, ESLint rule, JavaScript, TypeScript, SonarQube RSPEC-4326
-
+> **Keywords:** no unsafe type narrowing, double assertion, as unknown as, type assertion, TypeScript, ESLint rule, SonarQube RSPEC-4326
 
 <!-- @rule-summary -->
-ESLint Rule: no-unsafe-type-narrowing with LLM-optimized suggestions and auto-fix capabilities.
+Report a double type assertion through `unknown` or `any` (`x as unknown as T`). It silences the checker exactly where it would have refused the conversion, and narrows a value nothing has checked.
 <!-- @/rule-summary -->
 
-ESLint Rule: no-unsafe-type-narrowing with LLM-optimized suggestions and auto-fix capabilities.
+This rule is part of [`eslint-plugin-reliability`](https://www.npmjs.com/package/eslint-plugin-reliability).
 
 ## Quick Summary
 
-| Aspect         | Details                                      |
-| -------------- | -------------------------------------------- |
-| **Severity**   | Error (code quality)                        |
-| **Auto-Fix**   | ❌ No                                        |
-| **Category**   | Quality |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration      |
-| **Best For**   | Production applications                      |
-| **Suggestions** | ✅ 4 available           |
+| Aspect          | Details                                      |
+| --------------- | -------------------------------------------- |
+| **Severity**    | Error (code quality)                         |
+| **Auto-Fix**    | ❌ No                                        |
+| **Category**    | Quality                                      |
+| **Suggestions** | ✅ Use a type guard or validate first        |
 
 ## Rule Details
 
-```mermaid
-%%{init: {
-  'theme': 'base',
-  'themeVariables': {
-    'primaryColor': '#f8fafc',
-    'primaryTextColor': '#1e293b',
-    'primaryBorderColor': '#334155',
-    'lineColor': '#475569',
-    'c0': '#f8fafc',
-    'c1': '#f1f5f9',
-    'c2': '#e2e8f0',
-    'c3': '#cbd5e1'
-  }
-}}%%
-flowchart TD
-    A[🔍 Detect no unsafe type narrowing] --> B{Valid pattern?}
-    B -->|❌ No| C[🚨 Report violation]
-    B -->|✅ Yes| D[✅ Pass]
+The rule reports an assertion whose operand was itself asserted to `unknown` or
+`any`, in every spelling TypeScript has for it:
 
-    classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
-    classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
+| Spelling            | Example                     |
+| ------------------- | --------------------------- |
+| `as` twice          | `raw as unknown as User`    |
+| through `any`       | `raw as any as User`        |
+| angle brackets      | `<User>(<unknown>raw)`      |
+| mixed, `<T>` outer  | `<User>(raw as unknown)`    |
+| mixed, `as` outer   | `(<unknown>raw) as User`    |
 
-    class A startNode
-    class C errorNode
-```
-
-### Why This Matters
-
-| Issue                | Impact                                | Solution                    |
-| -------------------- | ------------------------------------- | --------------------------- |
-| 🔒 **Security/Code Quality** | [Specific issue] | [Solution approach] |
-| 🐛 **Maintainability** | [Impact] | [Fix] |
-| ⚡ **Performance**   | [Impact] | [Optimization] |
+A single assertion (`raw as User`, `<User>raw`), a widening to `unknown`,
+`as const` and `satisfies` are the checker's own business and are not reported.
 
 ## Configuration
 
-**No configuration options available.**
+| Option             | Type      | Default | Description                                                                               |
+| ------------------ | --------- | ------- | ----------------------------------------------------------------------------------------- |
+| `allowWithComment` | `boolean` | `false` | Accept a double assertion with an explanatory comment on the line above or the same line  |
+| `ignoreInTests`    | `boolean` | `true`  | Skip `*.test.*` / `*.spec.*` files                                                        |
+
+With `allowWithComment`, the comment must say why the assertion is sound
+(`validated`, `checked`, `type guard`, `safe`, `known`, `intentional`, …). A
+comment trailing the PREVIOUS statement speaks for that statement, not this one.
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```typescript
-// Example of incorrect usage
+const user = raw as unknown as User;
+const user = <User>(<unknown>raw);
 ```
 
 ### ✅ Correct
 
 ```typescript
-// Example of correct usage
-```
+function isUser(value: unknown): value is User {
+  return typeof value === 'object' && value !== null && 'id' in value;
+}
+if (isUser(raw)) use(raw);
 
-## Configuration Examples
+const user = raw as User; // the checker still verifies this conversion
 
-### Basic Usage
-
-```javascript
-// eslint.config.mjs
-export default [
-  {
-    rules: {
-      'reliability/no-unsafe-type-narrowing': 'error',
-    },
-  },
-];
-```
-
-## LLM-Optimized Output
-
-```
-🚨 no unsafe type narrowing | Description | MEDIUM
-   Fix: Suggestion | Reference
+// With { allowWithComment: true }
+// validated by the schema above
+const user = raw as unknown as User;
 ```
 
 ## Related Rules
 
-- [`rule-name`](./rule-name.md) - Description
+- [`no-missing-null-checks`](./no-missing-null-checks.md) - Dereferences of possibly-null values
 
-## Further Reading
-
-- **[Reference](https://example.com)** - Description
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Dynamic Variable References
+### Values the file cannot see
 
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = externalSource();
-processValue(value); // Variable origin not tracked
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Wrapped or Aliased Functions
-
-**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
+**Why**: a value that comes from another module, a parameter or an unresolved
+call carries no evidence in this file, and a rule that decides from structure
+stays silent rather than guess.
 
 ```typescript
-// ❌ NOT DETECTED - Custom wrapper
-function myWrapper(data) {
-  return internalApi(data); // Wrapper not analyzed
-}
-myWrapper(unsafeInput);
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
+// ❌ NOT DETECTED - origin in another module
 import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
+processValue(getValue());
 ```
 
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+**Mitigation**: apply the same contract inside the helper, where the evidence
+is visible.
