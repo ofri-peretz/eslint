@@ -30,12 +30,17 @@ By default, the rule flags:
   `<textarea>`, `<form>`
 - `<a>` with `href` or `onClick` (in-page anchors without those are
   ignored)
-- Custom React components (PascalCase identifiers)
+- Custom React components (names matching `componentPattern`, PascalCase by
+  default) that handle an `on*` event (`onClick`, `onChange`, …). Set
+  `componentRequiresHandler: false` to flag every component; presentational
+  wrappers are not test targets by default.
+- Any name listed in `requireOn`, whatever else it matches.
 
 If `data-testid` is present but its value is computed (e.g. a function call,
-`Math.random()`, `Date.now()`), it's flagged separately as
-`dynamicDataTestId` — those values change between renders and produce
-flaky tests.
+`Math.random()`, `Date.now()`) or is the boolean shorthand `data-testid`,
+it's flagged separately as `dynamicDataTestId`. A string literal, a template
+literal of references, a reference to a value (`TEST_ID`, `ids.submit`) and
+a choice between stable values (`ok ? 'save' : 'cancel'`) are all stable.
 
 If the element receives `{...props}`, the rule assumes the parent supplies
 `data-testid` and skips it (avoids double-flagging in pure render-forward
@@ -55,7 +60,10 @@ components).
       "ignore": ["VisuallyHidden", "Slot"],
 
       // Regex string — names matching this are treated as components.
+      // An empty string turns component checks off.
       "componentPattern": "^[A-Z]",
+      // Flag a component only when it has an `on*` handler. Default: true.
+      "componentRequiresHandler": true,
 
       // Reject computed `data-testid` values. Default: true.
       "enforceStableValues": true
@@ -71,7 +79,8 @@ components).
 ```tsx
 <button data-testid="submit">Submit</button>
 <a data-testid="docs-link" href="/docs">Docs</a>
-<MyButton data-testid="primary-cta">Go</MyButton>
+<MyButton data-testid="primary-cta" onClick={go}>Go</MyButton>
+<MyButton>Go</MyButton> // no event handler: not a test target by default
 <button data-testid={`page-${pageNumber}`}>Next</button>
 
 // Spreading parent props — parent owns the testid.
@@ -85,7 +94,7 @@ function ForwardingButton(props) {
 ```tsx
 <button>Submit</button>
 <a href="/docs">Docs</a>
-<MyButton>Go</MyButton>
+<MyButton onClick={go}>Go</MyButton>
 <button data-testid={Math.random()}>Unstable</button>
 ```
 

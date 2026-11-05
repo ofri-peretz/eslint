@@ -3,7 +3,7 @@ title: prefer-code-point
 description: Prefer String.codePointAt() over String.charCodeAt(). This rule is part of eslint-plugin-conventions.
 tags: ['quality', 'conventions', 'style']
 category: quality
-autofix: suggestions
+autofix: false
 ---
 
 > **Keywords:** codePointAt, charCodeAt, Unicode, emoji, ESLint rule, auto-fix, LLM-optimized
@@ -20,7 +20,7 @@ Prefer `String.codePointAt()` over `String.charCodeAt()`. This rule is part of [
 | Aspect         | Details                                                              |
 | -------------- | -------------------------------------------------------------------- |
 | **Severity**   | Warning (correctness)                                                |
-| **Auto-Fix**   | ✅ Yes (converts method)                                             |
+| **Auto-Fix**   | ❌ No                                                                |
 | **Category**   | Quality                                                              |
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration                              |
 | **Best For**   | Unicode handling, emoji support                                      |
@@ -28,6 +28,12 @@ Prefer `String.codePointAt()` over `String.charCodeAt()`. This rule is part of [
 ## Rule Details
 
 `charCodeAt()` only works for Basic Multilingual Plane characters. `codePointAt()` handles all Unicode including emoji.
+
+The rule reports a call of a `charCodeAt` method in every spelling:
+`s.charCodeAt(0)`, `s['charCodeAt'](0)`, an optional call (`s?.charCodeAt(0)`)
+and a non-null receiver (`s!.charCodeAt(0)`). It does not report
+`codePointAt`, a method chosen by a runtime key (`s[method](0)`), or a plain
+function that happens to be named `charCodeAt`. The rule has no options.
 
 ### Why This Matters
 
@@ -79,28 +85,7 @@ for (const char of string) {
 - **[codePointAt() - MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/codePointAt)** - MDN reference
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = externalSource();
-processValue(value); // Variable origin not tracked
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- `String.prototype.charCodeAt.call(s, 0)` and a reference that is called
+  later (`const at = s.charCodeAt; at.call(s, 0)`) are not reported.
+- `String.fromCharCode()` (the inverse, which `String.fromCodePoint()`
+  replaces) is not in scope.

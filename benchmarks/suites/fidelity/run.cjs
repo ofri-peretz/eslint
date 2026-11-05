@@ -61,6 +61,8 @@ const PLUGINS = [
   'operability',
   'modularity',
   'modernization',
+  'maintainability',
+  'conventions',
 ];
 
 const loadPlugin = (short) => {

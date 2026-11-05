@@ -59,8 +59,8 @@ describe('coverage fixtures', () => {
   describe('error-message: member-expression constructors are out of scope', () => {
     ruleTester.run('error-message', errorMessage, {
       valid: [
-        // NewExpression with a non-Identifier callee.
-        { code: 'const e = new globalThis.Error();' },
+        // NewExpression with a member callee on a user object (not the global).
+        { code: 'const e = new errors.Error();' },
         // CallExpression with a non-Identifier callee.
         { code: 'const e = factory.Error();' },
       ],
@@ -394,6 +394,12 @@ describe('coverage fixtures', () => {
         { code: '(!foo)();' },
         // Sparse array elements produce null AST entries in the depth walk.
         { code: '(function () { const arr = [1, , 2]; return arr; })();' },
+        // Three parameters are not a documented limit.
+        { code: '(function (a, b, c) { report(a + b + c); })(1, 2, 3);' },
+        // A computed member that is not a literal is not `.call` / `.apply`.
+        { code: '(function () { a(); b(); c(); d(); })[method](this);' },
+        // A literal member that is not `call` / `apply`.
+        { code: "(function () { a(); b(); c(); d(); })['bind'](this);" },
       ],
       invalid: [
         {
@@ -421,20 +427,7 @@ describe('coverage fixtures', () => {
           ],
         },
         {
-          // Only issue is the parameter count: the non-complex suggestion text.
-          code: '(function (a, b, c) { report(a + b + c); })(1, 2, 3);',
-          errors: [
-            {
-              messageId: 'unreadableIIFE',
-              suggestions: iifeSuggestions(
-                '(function (a, b, c) { report(a + b + c); })(1, 2, 3);',
-              ),
-            },
-          ],
-        },
-        {
-          // Depth beyond maxDepth without tripping the complex-statement scan
-          // (for-of is not in the hasComplexLogic statement list).
+          // Depth beyond maxDepth.
           code: '(function () { for (const x of items) { if (x) { if (x > 1) { use(x); } } } })();',
           errors: [
             {

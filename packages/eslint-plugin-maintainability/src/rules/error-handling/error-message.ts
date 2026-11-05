@@ -9,7 +9,11 @@
  * Enforces providing a message when creating built-in Error objects
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  isGlobalReference,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingErrorMessage' | 'addErrorMessage';
@@ -78,26 +82,57 @@ export const errorMessage = createRule<RuleOptions, MessageIds>({
       return errorConstructors.has(name);
     }
 
-    // oxlint-disable-next-line consistent-function-scoping
+    /**
+     * Does the first argument carry a message? Only an argument the code
+     * proves carries no text answers no: none at all, `undefined`, a literal
+     * that is not a string (`null`, `42`), or a string literal / template with
+     * nothing but whitespace in it. Anything else — a variable, a call, a
+     * template with a substitution — may be a message.
+     */
     function hasMessageArgument(
       node: TSESTree.NewExpression | TSESTree.CallExpression,
     ): boolean {
-      // Check if there are arguments
-      if (!node.arguments || node.arguments.length === 0) {
-        return false;
-      }
-
-      // Check if first argument is a non-empty string or expression
       const firstArg = node.arguments[0];
+      if (!firstArg) return false;
       if (firstArg.type === 'Literal') {
-        // Allow non-empty strings
         return (
           typeof firstArg.value === 'string' && firstArg.value.trim().length > 0
         );
       }
-
-      // Allow any expression (variable, function call, etc.) as it might be dynamic
+      if (firstArg.type === 'TemplateLiteral') {
+        return (
+          firstArg.expressions.length > 0 ||
+          String(firstArg.quasis[0].value.cooked).trim().length > 0
+        );
+      }
+      if (firstArg.type === 'Identifier' && firstArg.name === 'undefined') {
+        return !isGlobalReference(firstArg, context.sourceCode);
+      }
       return true;
+    }
+
+    /**
+     * The built-in Error constructor this callee reaches, or `null`. Decided by
+     * binding: `Error` must be the global (a local class of that name is not
+     * the language's), reached bare or as `globalThis.Error`.
+     */
+    function builtinErrorName(callee: TSESTree.Node): string | null {
+      if (callee.type === 'Identifier') {
+        return isErrorConstructor(callee.name) &&
+          isGlobalReference(callee, context.sourceCode)
+          ? callee.name
+          : null;
+      }
+      if (
+        callee.type === 'MemberExpression' &&
+        callee.object.type === 'Identifier' &&
+        callee.object.name === 'globalThis' &&
+        isGlobalReference(callee.object, context.sourceCode)
+      ) {
+        const name = propertyName(callee);
+        return name !== null && isErrorConstructor(name) ? name : null;
+      }
+      return null;
     }
 
     function isInCatchClause(node: TSESTree.Node): boolean {
@@ -114,21 +149,9 @@ export const errorMessage = createRule<RuleOptions, MessageIds>({
     function checkErrorCreation(
       node: TSESTree.NewExpression | TSESTree.CallExpression,
     ) {
-      let constructorName: string | null = null;
+      const constructorName = builtinErrorName(node.callee);
 
-      if (node.type === 'NewExpression') {
-        // new Error(...)
-        if (node.callee.type === 'Identifier') {
-          constructorName = node.callee.name;
-        }
-      } else if (node.type === 'CallExpression') {
-        // Error(...) - function call style
-        if (node.callee.type === 'Identifier') {
-          constructorName = node.callee.name;
-        }
-      }
-
-      if (!constructorName || !isErrorConstructor(constructorName)) {
+      if (!constructorName) {
         return;
       }
 

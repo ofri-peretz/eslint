@@ -28,6 +28,11 @@ Enforce consistent version strategy (caret `^`, tilde `~`, exact, range, or any)
 
 ## Rule Details
 
+Only specifiers of the form `X.Y.Z` (optionally prefixed) are checked; a
+dist-tag (`latest`), a git URL or an `npm:` alias is left alone. An explicit
+range (`>=1.0.0 <2.0.0`, `1.0.0 || 2.0.0`) is only checked by the `range`
+strategy.
+
 The rule reads only objects under a `dependencies`, `devDependencies`, `peerDependencies` or `optionalDependencies` key: in a `package.json` parsed by `jsonc-eslint-parser`, or in an object literal in source. Any other object of package names to versions is left alone, such as a table of the exact versions a test matrix pinned. Its shape is no evidence that it is a manifest.
 
 ```mermaid
@@ -99,10 +104,10 @@ flowchart TD
 | Option          | Type                                      | Default | Description                                                                 |
 | --------------- | ----------------------------------------- | ------- | --------------------------------------------------------------------------- |
 | `strategy`      | `'caret' \| 'tilde' \| 'exact' \| 'range' \| 'any'` | `'caret'` | Default version strategy to enforce for all packages                       |
-| `allowWorkspace` | `boolean`                                 | `true`  | Allow `workspace:` protocol versions (monorepo support)                     |
-| `allowFile`     | `boolean`                                 | `true`  | Allow `file:` protocol versions                                            |
-| `allowLink`     | `boolean`                                 | `true`  | Allow `link:` protocol versions                                            |
-| `overrides`     | `Record<string, VersionStrategy>`        | `{}`    | Package-specific strategy overrides. Key is package name, value is strategy |
+| `allowWorkspace` | `boolean`                                 | `true`  | Allow `workspace:` protocol versions (monorepo support); `false` reports them |
+| `allowFile`     | `boolean`                                 | `true`  | Allow `file:` protocol versions; `false` reports them                        |
+| `allowLink`     | `boolean`                                 | `true`  | Allow `link:` protocol versions; `false` reports them                        |
+| `overrides`     | `Record<string, VersionStrategy>`        | `{}`    | Package-specific strategy overrides. Key is package name, value is strategy. Applies under `strategy: 'any'` too |
 
 ### Strategy Options
 
@@ -111,8 +116,8 @@ flowchart TD
 | `caret`  | `^`    | Allows minor and patch updates (recommended)   | `^1.0.0`       |
 | `tilde`  | `~`    | Allows only patch updates                      | `~1.0.0`       |
 | `exact`  | none   | Requires exact version match                   | `1.0.0`        |
-| `range`  | `>=`, `<`, `\|\|` | Allows range operators                      | `>=1.0.0 <2.0.0` |
-| `any`    | any    | Allows any version format (disables rule)     | Any format     |
+| `range`  | `>=`, `<`, `\|\|`, `^`, `~` | Requires a range; only an exact version is reported (fixed to `^`) | `>=1.0.0 <2.0.0` |
+| `any`    | any    | Allows any version format, except for packages given another strategy in `overrides` | Any format     |
 
 ## Examples
 
@@ -565,28 +570,7 @@ The rule and the lockfile check are independent and run at different stages: the
 - **1.0.0** - Initial release with caret, tilde, exact, range, and any strategies
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = externalSource();
-processValue(value); // Variable origin not tracked
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- A partial version (`^18`, `18.2`) is not checked: only `X.Y.Z` specifiers
+  are.
+- Under `exact`, `tilde` or `caret`, an explicit range (`>=18.0.0 <19.0.0`) is
+  not reported.

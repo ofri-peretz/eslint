@@ -231,10 +231,11 @@ describe('no-json-schema-tags', () => {
       ],
     });
 
-    ruleTester.run('invalid - @enum', noJsonSchemaTags, {
-      valid: [],
-      invalid: [
+    // `@enum` and `@const` are JSDoc's own tags, not only JSON Schema keywords.
+    ruleTester.run('@enum and @const are JSDoc tags', noJsonSchemaTags, {
+      valid: [
         {
+          name: 'the JSDoc @enum tag',
           code: `
             /**
              * Log level.
@@ -242,30 +243,9 @@ describe('no-json-schema-tags', () => {
              */
             const level = 'info';
           `,
-          errors: [
-            {
-              messageId: 'jsonSchemaTag',
-              suggestions: [
-                {
-                  messageId: 'moveToDescription',
-                  output: `
-            /**
-             * Log level.
-             */
-            const level = 'info';
-          `,
-                },
-              ],
-            },
-          ],
         },
-      ],
-    });
-
-    ruleTester.run('invalid - @const', noJsonSchemaTags, {
-      valid: [],
-      invalid: [
         {
+          name: 'the JSDoc @const tag',
           code: `
             /**
              * API version.
@@ -273,19 +253,39 @@ describe('no-json-schema-tags', () => {
              */
             const version = 2;
           `,
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('only a tag in a JSDoc comment', noJsonSchemaTags, {
+      valid: [
+        {
+          name: 'a keyword after @ inside prose is not a tag',
+          code: '/**\n * Ask team@format.io for the range.\n */\nconst x = 1;',
+        },
+        {
+          name: 'a keyword mid-line is description text',
+          code: '/** Range note: @minimum 1 */\nconst x = 1;',
+        },
+        {
+          name: 'a plain block comment carries no JSDoc tags',
+          code: '/*\n * @minimum 0\n */\nconst x = 1;',
+        },
+        {
+          name: 'a line comment carries no JSDoc tags',
+          code: '// @format email\nconst x = 1;',
+        },
+      ],
+      invalid: [
+        {
+          name: 'a one-line JSDoc that starts with the tag',
+          code: '/** @format email */\nconst x = 1;',
           errors: [
             {
               messageId: 'jsonSchemaTag',
               suggestions: [
-                {
-                  messageId: 'moveToDescription',
-                  output: `
-            /**
-             * API version.
-             */
-            const version = 2;
-          `,
-                },
+                { messageId: 'moveToDescription', output: 'const x = 1;' },
               ],
             },
           ],

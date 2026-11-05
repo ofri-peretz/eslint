@@ -134,17 +134,19 @@ describe('no-lonely-if', () => {
   });
 
   describe('allow option', () => {
-    ruleTester.run('allow option suppresses in matching context', noLonelyIf, {
-      valid: [
-        // Lonely if is allowed when code matches allow pattern
+    ruleTester.run('allow has no effect', noLonelyIf, {
+      valid: [],
+      invalid: [
         {
+          // Fidelity divergence (no_lonely_if, allowSet=true): the option
+          // silenced the rule whenever the file text contained a listed word.
+          name: 'allow naming a word in the file does not silence a lonely if',
           code: 'if (condition1) { doSomething(); } else { if (condition2) { doSomethingElse(); } }',
           options: [{ allow: ['doSomething'] }],
+          errors: [{ messageId: 'noLonelyIf' }],
         },
-      ],
-      invalid: [
-        // Lonely if is NOT allowed when code doesn't match allow pattern
         {
+          name: 'allow naming a word absent from the file',
           code: 'if (a) { x(); } else { if (b) { y(); } }',
           options: [{ allow: ['notInCode'] }],
           errors: [{ messageId: 'noLonelyIf' }],
@@ -152,7 +154,4 @@ describe('no-lonely-if', () => {
       ],
     });
   });
-
-  // Note: The 'allow' option has a bug in isInAllowedContext where 'context' variable
-  // shadows the outer context - not testing this feature
 });

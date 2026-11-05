@@ -113,3 +113,25 @@ describe('utm-taxonomy', () => {
     ],
   });
 });
+
+describe('utm-taxonomy: a value a template placeholder completes', () => {
+  ruleTester.run('utm-taxonomy', utmTaxonomy, {
+    valid: [
+      {
+        name: 'a placeholder ends the utm_source value',
+        code: 'const u = `https://x.dev/?utm_source=dev_to${suffix}`;',
+      },
+      {
+        name: 'a placeholder ends the utm_medium value',
+        code: 'const u = `https://x.dev/?utm_medium=Docs${suffix}`;',
+      },
+    ],
+    invalid: [
+      {
+        name: 'a complete value before a placeholder is still read',
+        code: 'const u = `https://x.dev/?utm_source=dev_to&utm_content=${id}`;',
+        errors: [{ messageId: 'invalidUtmSource' }],
+      },
+    ],
+  });
+});

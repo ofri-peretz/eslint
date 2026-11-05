@@ -500,3 +500,30 @@ describe('prefer-dom-node-text-content', () => {
     });
   });
 });
+
+describe('prefer-dom-node-text-content: destructuring', () => {
+  ruleTester.run('prefer-dom-node-text-content', preferDomNodeTextContent, {
+    valid: [
+      {
+        name: 'destructuring textContent',
+        code: 'const { textContent } = el;',
+      },
+      {
+        name: 'an innerText key in an object literal touches no element',
+        code: "const o = { innerText: 'x' };",
+      },
+    ],
+    invalid: [
+      {
+        name: 'destructuring innerText',
+        code: 'const { innerText } = el;',
+        errors: [{ messageId: 'preferDomNodeTextContent' }],
+      },
+      {
+        name: 'destructuring innerText under another name',
+        code: "const { ['innerText']: text } = el;",
+        errors: [{ messageId: 'preferDomNodeTextContent' }],
+      },
+    ],
+  });
+});

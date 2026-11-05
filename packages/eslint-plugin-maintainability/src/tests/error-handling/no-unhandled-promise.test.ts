@@ -3,9 +3,15 @@
  * Error Handling: CWE-1024 - Detects unhandled Promise rejections
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
-import { noUnhandledPromise } from '../../rules/error-handling/no-unhandled-promise';
+import type { TSESTree } from '@interlace/eslint-devkit';
+import { createWithMockContext } from '@interlace/eslint-devkit';
+import {
+  noUnhandledPromise,
+  isPromiseHandled,
+  isLikelyPromiseExpression,
+} from '../../rules/error-handling/no-unhandled-promise';
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -33,53 +39,143 @@ describe('no-unhandled-promise', () => {
           name: 'a bare .catch with a handler settles the chain',
           code: 'promise.catch(error => handleError(error));',
         },
+        // A `.then` chain that ends in `.catch`. Bare `promise.then(cb)` with
+        // no `.catch` used to sit here as valid — the shape the rule exists to
+        // catch, asserted as fine.
+        {
+          name: 'not reported: promise.then(result => console.log(result)).catch(handleError);',
+          code: 'promise.then(result => console.log(result)).catch(handleError);',
+        },
+        // Promise with .finally()
+        {
+          name: 'not reported: promise.finally(() => cleanup());',
+          code: 'promise.finally(() => cleanup());',
+        },
         // Await in async function
         {
+          name: 'not reported: async function fn() { await fetch(url); }',
           code: 'async function fn() { await fetch(url); }',
         },
         {
+          name: 'not reported: async () => { await promise; }',
           code: 'async () => { await promise; }',
         },
-        // In try/catch
+        // In try/catch, awaited: the await is what lets the catch see the rejection
         {
+          name: 'not reported: async function fn() { try { await fetch(url); } catch (error) { console.error(error); } }',
           code: `
-            try {
-              fetch(url);
-            } catch (error) {
-              console.error(error);
+            async function fn() {
+              try {
+                await fetch(url);
+              } catch (error) {
+                console.error(error);
+              }
             }
           `,
         },
         // Test files (if ignoreInTests is true)
         {
+          name: 'not reported: fetch(url); with ignoreInTests: true in test.spec.ts',
           code: 'fetch(url);',
           filename: 'test.spec.ts',
           options: [{ ignoreInTests: true }],
+        },
+        // Call inside callback of a .then() chain
+        {
+          name: 'not reported: promise.then(result => { doSomething(result); }).catch(onErr);',
+          code: 'promise.then(result => { doSomething(result); }).catch(onErr);',
+        },
+        // Call inside callback of a .catch() chain
+        {
+          name: 'not reported: promise.catch(err => { logError(err); });',
+          code: 'promise.catch(err => { logError(err); });',
+        },
+        // Void expression with ignoreVoidExpressions
+        {
+          name: 'not reported: void fetch(url); with ignoreVoidExpressions: true',
+          code: 'void fetch(url);',
+          options: [{ ignoreVoidExpressions: true }],
+        },
+        // .then with non-arrow callback — handled only because a .catch follows.
+        {
+          name: 'not reported: promise.then(handler).catch(onError);',
+          code: 'promise.then(handler).catch(onError);',
+        },
+        // .catch with non-arrow callback
+        {
+          name: 'not reported: promise.catch(handler);',
+          code: 'promise.catch(handler);',
         },
       ],
       invalid: [],
     });
   });
 
-  describe('.finally is chain-transparent, not a terminator', () => {
+  describe('Invalid Code - Unhandled Promises', () => {
+    ruleTester.run('invalid - unhandled promises', noUnhandledPromise, {
+      valid: [],
+      invalid: [
+        // Basic unhandled fetch
+        {
+          name: 'a floating fetch — rejection goes nowhere',
+          code: 'fetch(url);',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        // Unhandled axios call
+        {
+          // `axios` is not resolvable from the file, so the consumer names it.
+          name: "reported: axios.get(url); with promiseReturning: ['fetch', 'axios']",
+          options: [{ promiseReturning: ['fetch', 'axios'] }],
+          code: 'axios.get(url);',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        // Unhandled custom async function
+        {
+          // The declaration IS the evidence.
+          name: 'reported: async function myAsyncFunction() {} myAsyncFunction();',
+          code: 'async function myAsyncFunction() {}\nmyAsyncFunction();',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        // .then() with empty callback body — still unhandled
+        {
+          name: 'reported: promise.then(result => {});',
+          code: 'promise.then(result => {});',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+      ],
+    });
+  });
+
+  describe('Known-Synchronous Built-ins', () => {
+    ruleTester.run('valid - sync built-ins never flagged', noUnhandledPromise, {
+      valid: [
+        // Direct call to a known-sync global function
+        {
+          name: 'not reported: setTimeout(cb, 100);',
+          code: 'setTimeout(cb, 100);',
+        },
+        // Method on a known-sync namespace, method name not in the sync list
+        { name: 'not reported: Math.hypot(1, 2);', code: 'Math.hypot(1, 2);' },
+      ],
+      invalid: [],
+    });
+  });
+
+  describe('Delegation to Caller', () => {
     ruleTester.run(
-      'valid - a handler under a .finally still handles',
+      'valid - returned and forwarded promises',
       noUnhandledPromise,
       {
         valid: [
+          // return fn() — caller takes responsibility
           {
-            name: 'a .catch followed by .finally is still handled',
-            code: `
-            async function apiCall() {}
-            apiCall().then(processData).catch(onError).finally(cleanup);
-          `,
+            name: 'not reported: function f() { return fetchData(); }',
+            code: 'function f() { return fetchData(); }',
           },
+          // Concise-body arrow forwards the promise
           {
-            name: 'a two-argument .then under a .finally is still handled',
-            code: `
-            async function apiCall() {}
-            apiCall().then(processData, onError).finally(cleanup);
-          `,
+            name: 'not reported: const g = () => fetchData();',
+            code: 'const g = () => fetchData();',
           },
         ],
         invalid: [],
@@ -87,15 +183,38 @@ describe('no-unhandled-promise', () => {
     );
   });
 
-  describe('Invalid Code - Unhandled Promises', () => {
-    ruleTester.run('invalid - unhandled promises', noUnhandledPromise, {
-      valid: [],
-      invalid: [
+  describe('Chain Detection Edge Cases', () => {
+    ruleTester.run('promise-chain walk-up variants', noUnhandledPromise, {
+      valid: [
+        // .finally directly on a call result handles it
         {
-          name: 'a floating fetch — rejection goes nowhere',
-          code: 'fetch(url);',
-          errors: [{ messageId: 'unhandledPromise' }],
+          name: 'not reported: doWork().finally(cleanup);',
+          code: 'doWork().finally(cleanup);',
         },
+        // Inner call skipped when wrapped by a sync-namespace outer call
+        {
+          name: 'not reported: String(fetchData());',
+          code: 'String(fetchData());',
+        },
+        {
+          // `.finally` is chain-TRANSPARENT, not reportable on sight: the
+          // `.catch` under it is the handler, and appending cleanup after it
+          // must not start a report.
+          name: 'a .catch followed by .finally is still handled',
+          code: `
+            async function apiCall() {}
+            apiCall().then(processData).catch(onError).finally(cleanup);
+          `,
+        },
+        {
+          name: 'a two-argument .then under a .finally is still handled',
+          code: `
+            async function apiCall() {}
+            apiCall().then(processData, onError).finally(cleanup);
+          `,
+        },
+      ],
+      invalid: [
         {
           /**
            * Walks PAST a `.finally` onto a member call that is not a chain
@@ -109,11 +228,11 @@ describe('no-unhandled-promise', () => {
         },
         {
           /**
+           * The docs' own ❌ chain with `.finally(cleanup)` appended.
            * `.finally` does not handle a rejection —
-           * `Promise.reject(e).finally(f)` runs `f` and then rejects with the
-           * same `e`, verified on Node 24. Treating it as a chain TERMINATOR
-           * let a one-token edit silence a HIGH-severity check. This plugin
-           * ships its own fork of the rule and carried the identical defect.
+           * `Promise.reject(e).finally(f)` runs `f` and rejects with the same
+           * `e`, verified on Node 24 — yet it silenced a HIGH-severity check.
+           * A one-token edit defeated the rule.
            */
           name: 'appending .finally does not handle the chain',
           code: `
@@ -157,33 +276,85 @@ describe('no-unhandled-promise', () => {
           `,
           errors: [{ messageId: 'unhandledPromise' }],
         },
+        /**
+         * These fixtures exercise the AST walk-up branches, not promise
+         * detection. Each now carries a local `async function` so the file
+         * itself shows a promise — under the denylist they passed only because
+         * every unrecognised call was assumed to be one, which on real code
+         * meant 4,805 findings across 200 files.
+         */
+        // IIFE — callee is neither Identifier nor MemberExpression
         {
-          // `axios` is not in the default `promiseReturning` list and cannot be
-          // resolved from the file, so the consumer names it. A rule that
-          // decides from a name has to let the consumer own the name.
-          name: 'a configured promise-returning receiver',
-          code: 'axios.get(url);',
-          options: [{ promiseReturning: ['fetch', 'axios'] }],
+          name: 'reported: (async function () { return 1; })();',
+          code: '(async function () { return 1; })();',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        // Computed method call — property is not an Identifier
+        {
+          name: "reported: handlers[\"run\"](); with promiseReturning: ['fetch', 'handlers']",
+          options: [{ promiseReturning: ['fetch', 'handlers'] }],
+          code: 'handlers["run"]();',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        // Callback argument of a non-promise method is not a promise callback
+        // (console.info is known-sync so only the inner call reports)
+        {
+          name: 'reported: async function doAsync() {} console.info(() => { doAsync(); });',
+          code: 'async function doAsync() {}\nconsole.info(() => { doAsync(); });',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        // Function nested in a plain declaration (not a .then/.catch arg)
+        {
+          name: 'reported: async function doAsync() {} const run = () => { doAsync(); };',
+          code: 'async function doAsync() {}\nconst run = () => { doAsync(); };',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        // Computed ["then"] access is not recognized as handling — both the
+        // inner call and the outer computed call get flagged
+        {
+          name: 'reported: async function getPromise() {} getPromise()["then"](handleIt);',
+          code: 'async function getPromise() {}\ngetPromise()["then"](handleIt);',
+          errors: [
+            { messageId: 'unhandledPromise' },
+            { messageId: 'unhandledPromise' },
+          ],
+        },
+        // Non-promise method between call and statement (walk-up continues)
+        {
+          name: 'reported: async function getData() {} getData().map(row => row);',
+          code: 'async function getData() {}\ngetData().map(row => row);',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        // .then accessed but never called
+        {
+          name: 'reported: async function fetchData() {} const t = fetchData().then;',
+          code: 'async function fetchData() {}\nconst t = fetchData().then;',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        // Call used as computed member property
+        {
+          name: 'reported: async function computeIndex() {} const v = items[computeIndex()].value;',
+          code: 'async function computeIndex() {}\nconst v = items[computeIndex()].value;',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        // Promise-returning argument inside a chained call where the
+        // promise method is ACCESSED but never called: isPromiseHandled
+        // requires the member to be a callee, while the argument-skip
+        // grandparent check does not — so the inner argument falls through
+        // to report (outer call reports too: its .then is never invoked)
+        {
+          name: 'reported: async function getData() {} const t1 = process1(getData()).then;',
+          code: 'async function getData() {}\nconst t1 = process1(getData()).then;',
           errors: [{ messageId: 'unhandledPromise' }],
         },
         {
-          // The declaration is the evidence. Without it this case asserted only
-          // that the rule reported every call, which it did — 35 times per file
-          // on real code.
-          name: 'a locally declared async function, called and forgotten',
-          code: 'async function myAsyncFunction() {}\nmyAsyncFunction();',
+          name: 'reported: async function getData() {} const t2 = process1(getData()).catch;',
+          code: 'async function getData() {}\nconst t2 = process1(getData()).catch;',
           errors: [{ messageId: 'unhandledPromise' }],
         },
         {
-          code: 'promise.then(result => {});', // .then() without .catch() might still be unhandled
-          errors: [{ messageId: 'unhandledPromise' }],
-        },
-        {
-          // Was asserted VALID until 2026-08. `.then` used to terminate the
-          // chain before the handled-check could look for a `.catch`, so the
-          // rule passed the shape it exists to catch.
-          name: 'a then chain with no catch',
-          code: 'promise.then(result => console.log(result));',
+          name: 'reported: async function getData() {} const t3 = process1(getData()).finally;',
+          code: 'async function getData() {}\nconst t3 = process1(getData()).finally;',
           errors: [{ messageId: 'unhandledPromise' }],
         },
       ],
@@ -194,6 +365,7 @@ describe('no-unhandled-promise', () => {
     ruleTester.run('options - ignoreInTests', noUnhandledPromise, {
       valid: [
         {
+          name: 'not reported: fetch(url); with ignoreInTests: true in test.spec.ts',
           code: 'fetch(url);',
           filename: 'test.spec.ts',
           options: [{ ignoreInTests: true }],
@@ -242,6 +414,7 @@ describe('no-unhandled-promise', () => {
       ],
       invalid: [
         {
+          name: 'reported: fetch(url); with ignoreInTests: false in test.spec.ts',
           code: 'fetch(url);',
           filename: 'test.spec.ts',
           options: [{ ignoreInTests: false }],
@@ -271,17 +444,185 @@ describe('no-unhandled-promise', () => {
     ruleTester.run('options - ignoreVoidExpressions', noUnhandledPromise, {
       valid: [
         {
+          name: 'not reported: void fetch(url); with ignoreVoidExpressions: true',
           code: 'void fetch(url);',
           options: [{ ignoreVoidExpressions: true }],
         },
       ],
       invalid: [
         {
+          name: 'reported: void fetch(url); with ignoreVoidExpressions: false',
           code: 'void fetch(url);',
           options: [{ ignoreVoidExpressions: false }],
           errors: [{ messageId: 'unhandledPromise' }],
         },
+        // Option enabled but the call is NOT inside a void expression
+        {
+          name: 'reported: async function fetchData() {} fetchData(); with ignoreVoidExpressions: true',
+          code: 'async function fetchData() {}\nfetchData();',
+          options: [{ ignoreVoidExpressions: true }],
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
       ],
+    });
+  });
+
+  describe('Computed promise-method callbacks', () => {
+    ruleTester.run(
+      'a subscripted then IS a promise chain',
+      noUnhandledPromise,
+      {
+        valid: [],
+        invalid: [
+          // Was pinned as TWO findings, on the grounds that "the property is a
+          // Literal, so isInsidePromiseCallback does not treat it as a promise
+          // callback" — so the inner `doAsync()` was reported a second time.
+          // `p['then'](…)` IS the promise chain, so the callback is a promise
+          // callback and only the outer chain — which still has no `.catch` —
+          // reports.
+          {
+            name: 'a subscripted then with no catch reports once, not twice',
+            code: 'async function doAsync() {}\np["then"](() => { doAsync(); });',
+            errors: [{ messageId: 'unhandledPromise' }],
+          },
+          // The shape the old comment actually described: a method named at
+          // RUNTIME. There is no name to match, so `p[m](…)` is not a promise
+          // chain and does not report — but the arrow is not a promise
+          // callback either, so the inner `doAsync()` does.
+          {
+            name: 'a runtime-keyed callee reports the inner call, not the chain',
+            code: 'async function doAsync() {}\np[m](() => { doAsync(); });',
+            errors: [{ messageId: 'unhandledPromise' }],
+          },
+        ],
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------
+  // Layer 2 — direct unit tests for parser-unreachable branches
+  // ---------------------------------------------------------------------
+
+  describe('Layer 2: isLikelyPromiseExpression', () => {
+    it('returns false for non-CallExpression nodes', () => {
+      const ident = {
+        type: 'Identifier',
+        name: 'maybePromise',
+      } as unknown as TSESTree.Node;
+      expect(isLikelyPromiseExpression(ident)).toBe(false);
+    });
+  });
+
+  describe('Layer 2: isPromiseHandled (Identifier branch)', () => {
+    /** Build `<ident>.<method>` optionally wrapped in a call of that member. */
+    function identInChain(
+      method: string | { computed: true },
+      opts: {
+        called?: boolean;
+        asCallee?: boolean;
+        objectIsIdent?: boolean;
+      } = {},
+    ): TSESTree.Node {
+      const { called = true, asCallee = true, objectIsIdent = true } = opts;
+      const ident: Record<string, unknown> = { type: 'Identifier', name: 'p' };
+      const property =
+        typeof method === 'string'
+          ? { type: 'Identifier', name: method }
+          : { type: 'Literal', value: 'then' };
+      const member: Record<string, unknown> = {
+        type: 'MemberExpression',
+        object: objectIsIdent ? ident : { type: 'Identifier', name: 'other' },
+        property,
+      };
+      ident.parent = member;
+      if (called) {
+        const call: Record<string, unknown> = {
+          type: 'CallExpression',
+          callee: asCallee ? member : { type: 'Identifier', name: 'f' },
+          arguments: asCallee ? [] : [member],
+        };
+        member.parent = call;
+      } else {
+        member.parent = { type: 'ExpressionStatement' };
+      }
+      return ident as unknown as TSESTree.Node;
+    }
+
+    it('returns true when the identifier is the object of a called .then/.catch/.finally', () => {
+      expect(isPromiseHandled(identInChain('then'))).toBe(true);
+      expect(isPromiseHandled(identInChain('catch'))).toBe(true);
+      expect(isPromiseHandled(identInChain('finally'))).toBe(true);
+    });
+
+    it('returns false when the member method is not a promise handler', () => {
+      expect(isPromiseHandled(identInChain('map'))).toBe(false);
+    });
+
+    it('returns false for computed (non-Identifier) promise-method access', () => {
+      expect(isPromiseHandled(identInChain({ computed: true }))).toBe(false);
+    });
+
+    it('returns false when .then is accessed but never called', () => {
+      expect(isPromiseHandled(identInChain('then', { called: false }))).toBe(
+        false,
+      );
+    });
+
+    it('returns false when the member is an argument instead of the callee', () => {
+      expect(isPromiseHandled(identInChain('then', { asCallee: false }))).toBe(
+        false,
+      );
+    });
+
+    it('returns false when the identifier is not the object of the member', () => {
+      expect(
+        isPromiseHandled(identInChain('then', { objectIsIdent: false })),
+      ).toBe(false);
+    });
+
+    it('returns false for a parentless identifier', () => {
+      const orphan = {
+        type: 'Identifier',
+        name: 'p',
+      } as unknown as TSESTree.Node;
+      expect(isPromiseHandled(orphan)).toBe(false);
+    });
+
+    it('returns false when the identifier parent is not a MemberExpression', () => {
+      const ident: Record<string, unknown> = { type: 'Identifier', name: 'p' };
+      ident.parent = { type: 'ExpressionStatement' };
+      expect(isPromiseHandled(ident as unknown as TSESTree.Node)).toBe(false);
+    });
+  });
+
+  describe('Layer 2: create() with mock context', () => {
+    it('reports a parentless promise-like call even when options is null', () => {
+      // options: [null] drives the `options || {}` fallback in create();
+      // a parentless CallExpression exercises the `!parent` early-return
+      // branch of isPromiseDelegatedToCaller.
+      const { listeners, reports } = createWithMockContext(noUnhandledPromise, {
+        options: [null],
+      });
+      const node = {
+        type: 'CallExpression',
+        // `fetch`, not an arbitrary name: the rule now requires the file to
+        // show that a call returns a promise, and this test is about the
+        // options fallback and the parentless walk-up, not the evidence gate.
+        callee: { type: 'Identifier', name: 'fetch' },
+        arguments: [],
+      } as unknown as TSESTree.CallExpression;
+      (listeners['CallExpression'] as (n: TSESTree.CallExpression) => void)(
+        node,
+      );
+      expect(reports).toHaveLength(1);
+      expect(reports[0]).toMatchObject({ messageId: 'unhandledPromise' });
+      const suggest = (reports[0] as { suggest?: { messageId: string }[] })
+        .suggest;
+      expect(suggest?.map((s) => s.messageId)).toEqual([
+        'addCatch',
+        'useTryCatch',
+        'useAwait',
+      ]);
     });
   });
 
@@ -332,6 +673,38 @@ describe('no-unhandled-promise', () => {
         {
           name: 'a local async function called and forgotten still reports beside a quiet parameter',
           code: 'async function save() {}\nasync function main(write: (s: string) => void) { write("x"); save(); }',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+      ],
+    });
+  });
+  describe('a try block does not catch a rejection it does not await (fidelity)', () => {
+    ruleTester.run('try without await', noUnhandledPromise, {
+      valid: [
+        {
+          name: 'awaited inside try',
+          code: 'async function save() {}\nasync function run() { try { await save(); } catch (e) { log(e); } }',
+        },
+      ],
+      invalid: [
+        {
+          name: 'a call in a try block, not awaited, rejects after the block has exited',
+          code: 'async function save() {}\nfunction run() { try { save(); } catch (e) { log(e); } }',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        {
+          name: 'a .then chain in a try block, not awaited',
+          code: 'function run() { try { client.connect().then(onReady); } catch (e) { log(e); } }',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        {
+          name: 'a call in the catch clause is not guarded by its own try',
+          code: 'async function report() {}\nfunction run() { try { work(); } catch (e) { report(); } }',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        {
+          name: 'a call in the finally clause is not guarded by the try',
+          code: 'async function flush() {}\nfunction run() { try { work(); } finally { flush(); } }',
           errors: [{ messageId: 'unhandledPromise' }],
         },
       ],

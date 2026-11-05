@@ -3,8 +3,10 @@
  * Error Handling: Detects thrown errors without context
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
+import type { TSESTree } from '@interlace/eslint-devkit';
+import { createWithMockContext } from '@interlace/eslint-devkit';
 import { noMissingErrorContext } from '../../rules/error-handling/no-missing-error-context';
 
 RuleTester.afterAll = afterAll;
@@ -31,33 +33,46 @@ describe('no-missing-error-context', () => {
           options: [{ requireMessage: true }],
         },
         {
-          name: 'a built-in Error subclass with a message',
+          name: 'not reported: throw new TypeError("Invalid type"); with requireMessage: true',
           code: 'throw new TypeError("Invalid type");',
           options: [{ requireMessage: true }],
         },
         // Template literal message
         {
+          name: 'not reported: throw new Error(`Error: ${message}`); with requireMessage: true',
           code: 'throw new Error(`Error: ${message}`);',
           options: [{ requireMessage: true }],
         },
         // String literal
         {
+          name: 'not reported: throw "Error message"; with requireMessage: true',
           code: 'throw "Error message";',
           options: [{ requireMessage: true }],
         },
         // Test files (if ignoreInTests is true)
         {
+          name: 'not reported: throw new Error(); with ignoreInTests: true, requireMessage: true in test.spec.ts',
           code: 'throw new Error();',
           filename: 'test.spec.ts',
           options: [{ ignoreInTests: true, requireMessage: true }],
         },
+        // Re-throw of caught error — original message + stack already attached.
         {
-          // burgee sweep 2026-09-23: ignoreInTests missed .[cm]js/.[cm]ts test files
-          // (compat-oracle/vendor/commander/tests/*.test.cjs); matches reliability #1080.
-          name: 'ignoreInTests also skips an ESM test file (.test.mjs)',
-          code: 'throw new Error();',
-          filename: 'test.test.mjs',
-          options: [{ ignoreInTests: true, requireMessage: true }],
+          name: 'not reported: try { run(); } catch (e) { throw e; } with requireMessage: true',
+          code: 'try { run(); } catch (e) { throw e; }',
+          options: [{ requireMessage: true }],
+        },
+        // Re-throw of a bare named identifier (e.g. forwarded error param).
+        {
+          name: 'not reported: function forward(error) { throw error; } with requireMessage: true',
+          code: 'function forward(error) { throw error; }',
+          options: [{ requireMessage: true }],
+        },
+        // Re-throw also satisfies stack-trace requirement.
+        {
+          name: 'not reported: try { run(); } catch (err) { throw err; } with requireStackTrace: true',
+          code: 'try { run(); } catch (err) { throw err; }',
+          options: [{ requireStackTrace: true }],
         },
       ],
       invalid: [],
@@ -75,7 +90,22 @@ describe('no-missing-error-context', () => {
           errors: [{ messageId: 'missingErrorContext' }],
         },
         {
+          name: 'reported: throw undefined; with requireMessage: true',
           code: 'throw undefined;',
+          options: [{ requireMessage: true }],
+          errors: [{ messageId: 'missingErrorContext' }],
+        },
+        // `NaN` is a global identifier but carries no diagnostic value.
+        {
+          name: 'reported: throw NaN; with requireMessage: true',
+          code: 'throw NaN;',
+          options: [{ requireMessage: true }],
+          errors: [{ messageId: 'missingErrorContext' }],
+        },
+        // `Infinity` — same reasoning.
+        {
+          name: 'reported: throw Infinity; with requireMessage: true',
+          code: 'throw Infinity;',
           options: [{ requireMessage: true }],
           errors: [{ messageId: 'missingErrorContext' }],
         },
@@ -89,7 +119,27 @@ describe('no-missing-error-context', () => {
         valid: [],
         invalid: [
           {
+            name: 'reported: throw "Error message"; with requireStackTrace: true',
             code: 'throw "Error message";',
+            options: [{ requireStackTrace: true }],
+            errors: [{ messageId: 'missingErrorContext' }],
+          },
+          // Global-constant identifiers don't carry a stack.
+          {
+            name: 'reported: throw undefined; with requireStackTrace: true',
+            code: 'throw undefined;',
+            options: [{ requireStackTrace: true }],
+            errors: [{ messageId: 'missingErrorContext' }],
+          },
+          {
+            name: 'reported: throw NaN; with requireStackTrace: true',
+            code: 'throw NaN;',
+            options: [{ requireStackTrace: true }],
+            errors: [{ messageId: 'missingErrorContext' }],
+          },
+          {
+            name: 'reported: throw Infinity; with requireStackTrace: true',
+            code: 'throw Infinity;',
             options: [{ requireStackTrace: true }],
             errors: [{ messageId: 'missingErrorContext' }],
           },
@@ -102,12 +152,14 @@ describe('no-missing-error-context', () => {
     ruleTester.run('options - requireMessage', noMissingErrorContext, {
       valid: [
         {
+          name: 'not reported: throw new Error("message"); with requireMessage: true',
           code: 'throw new Error("message");',
           options: [{ requireMessage: true }],
         },
       ],
       invalid: [
         {
+          name: 'reported: throw new Error(); with requireMessage: true',
           code: 'throw new Error();',
           options: [{ requireMessage: true }],
           errors: [{ messageId: 'missingErrorContext' }],
@@ -118,17 +170,123 @@ describe('no-missing-error-context', () => {
     ruleTester.run('options - requireStackTrace', noMissingErrorContext, {
       valid: [
         {
+          name: 'not reported: throw new Error("message"); with requireStackTrace: true',
           code: 'throw new Error("message");',
           options: [{ requireStackTrace: true }],
         },
       ],
       invalid: [
         {
+          name: 'reported: throw "message"; with requireStackTrace: true',
           code: 'throw "message";',
           options: [{ requireStackTrace: true }],
           errors: [{ messageId: 'missingErrorContext' }],
         },
       ],
+    });
+  });
+  describe('Custom Error Classes and Stack Traces', () => {
+    ruleTester.run(
+      'custom error constructor arguments',
+      noMissingErrorContext,
+      {
+        valid: [
+          // Non-string argument to a custom *Error class — the constructor
+          // argument IS the context
+          {
+            name: 'not reported: throw new UserNotFoundError(userId); in src/app.ts',
+            code: 'throw new UserNotFoundError(userId);',
+            filename: 'src/app.ts',
+          },
+          // Template literal thrown directly carries interpolated context
+          {
+            name: 'not reported: throw `failed for ${id}`; in src/app.ts',
+            code: 'throw `failed for ${id}`;',
+            filename: 'src/app.ts',
+          },
+        ],
+        invalid: [
+          // Non-string argument to the BASE Error class proves nothing
+          {
+            name: 'reported: throw new Error(someVar); in src/app.ts',
+            code: 'throw new Error(someVar);',
+            filename: 'src/app.ts',
+            errors: [{ messageId: 'missingErrorContext' }],
+          },
+        ],
+      },
+    );
+
+    ruleTester.run('stack trace requirement', noMissingErrorContext, {
+      valid: [
+        // *Error-suffixed class satisfies the stack-trace requirement
+        {
+          name: "not reported: throw new CustomError('x'); with requireMessage: false, requireStackTrace: true in src/app.ts",
+          code: "throw new CustomError('x');",
+          filename: 'src/app.ts',
+          options: [{ requireMessage: false, requireStackTrace: true }],
+        },
+      ],
+      invalid: [
+        // Non-Error constructor has no guaranteed stack trace
+        {
+          name: "reported: throw new Foo('x'); with requireMessage: false, requireStackTrace: true in src/app.ts",
+          code: "throw new Foo('x');",
+          filename: 'src/app.ts',
+          options: [{ requireMessage: false, requireStackTrace: true }],
+          errors: [{ messageId: 'missingErrorContext' }],
+        },
+      ],
+    });
+  });
+
+  // ---------------------------------------------------------------------
+  // Layer 2 — direct unit tests for parser-unreachable branches
+  // ---------------------------------------------------------------------
+
+  describe('Layer 2: throw without an argument (synthetic AST)', () => {
+    // `throw;` is a SyntaxError in JS, so node.argument === null can only be
+    // produced synthetically.
+    it('reports missing message for an argument-less throw (options null fallback)', () => {
+      const { listeners, reports } = createWithMockContext(
+        noMissingErrorContext,
+        {
+          options: [null],
+        },
+      );
+      const node = {
+        type: 'ThrowStatement',
+        argument: null,
+      } as unknown as TSESTree.ThrowStatement;
+      (listeners['ThrowStatement'] as (n: TSESTree.ThrowStatement) => void)(
+        node,
+      );
+      expect(reports).toHaveLength(1);
+      expect(reports[0]).toMatchObject({
+        messageId: 'missingErrorContext',
+        data: { missing: 'message' },
+      });
+    });
+
+    it('reports missing message and stack trace when both are required', () => {
+      const { listeners, reports } = createWithMockContext(
+        noMissingErrorContext,
+        {
+          options: [{ requireMessage: true, requireStackTrace: true }],
+        },
+      );
+      const node = {
+        type: 'ThrowStatement',
+        argument: null,
+      } as unknown as TSESTree.ThrowStatement;
+      (listeners['ThrowStatement'] as (n: TSESTree.ThrowStatement) => void)(
+        node,
+      );
+      expect(reports).toHaveLength(1);
+      expect(reports[0]).toMatchObject({
+        messageId: 'missingErrorContext',
+        data: { missing: 'message and stack trace' },
+      });
     });
   });
 
@@ -201,5 +359,74 @@ describe('no-missing-error-context', () => {
         ],
       },
     );
+  });
+  // `ignoreInTests` is documented ecosystem-wide as "Skip this rule in
+  // `*.test.*` / `*.spec.*` files" — a glob that says nothing about the
+  // extension. The predicate listed `ts|tsx|js|jsx` and so stopped applying
+  // the moment a repository adopted the ESM/CJS extensions. Surfaced by the
+  // burgee FP/FN sweep, which lints a `"type": "module"` monorepo; the same
+  // defect was fixed for the sibling `no-unhandled-promise` in c24bfe0b0 and
+  // its own commit noted the remaining rules as a separate pass. This is it.
+  describe('ignoreInTests reaches the ESM and CJS module extensions', () => {
+    ruleTester.run('ignoreInTests module extensions', noMissingErrorContext, {
+      valid: [
+        {
+          name: 'ignoreInTests covers .test.mts — an ESM TypeScript test file is a test file',
+          code: 'declare const m: string;\nthrow new Error(m);',
+          filename: 'c.test.mts',
+          options: [{ ignoreInTests: true }],
+        },
+        {
+          name: 'ignoreInTests covers .test.cts — a CommonJS TypeScript test file is a test file',
+          code: 'declare const m: string;\nthrow new Error(m);',
+          filename: 'c.test.cts',
+          options: [{ ignoreInTests: true }],
+        },
+        {
+          name: 'ignoreInTests covers .test.mjs — an ESM JavaScript test file is a test file',
+          code: 'declare const m: string;\nthrow new Error(m);',
+          filename: 'c.test.mjs',
+          options: [{ ignoreInTests: true }],
+        },
+        {
+          name: 'ignoreInTests covers .test.cjs — a CommonJS JavaScript test file is a test file',
+          code: 'declare const m: string;\nthrow new Error(m);',
+          filename: 'c.test.cjs',
+          options: [{ ignoreInTests: true }],
+        },
+        {
+          name: 'ignoreInTests covers .spec.mts — the `*.spec.*` half of the contract is extension-agnostic too',
+          code: 'declare const m: string;\nthrow new Error(m);',
+          filename: 'c.spec.mts',
+          options: [{ ignoreInTests: true }],
+        },
+        {
+          name: 'ignoreInTests covers .spec.cjs — the `*.spec.*` half reaches CommonJS as well',
+          code: 'declare const m: string;\nthrow new Error(m);',
+          filename: 'c.spec.cjs',
+          options: [{ ignoreInTests: true }],
+        },
+      ],
+      invalid: [
+        // The widened extension set must widen the exemption only — with the
+        // option off, an `.mts` test file is linted like any other file.
+        {
+          name: 'ignoreInTests: false still reports in a .test.mts file',
+          code: 'declare const m: string;\nthrow new Error(m);',
+          filename: 'c.test.mts',
+          options: [{ ignoreInTests: false }],
+          errors: [{ messageId: 'missingErrorContext' }],
+        },
+        // `.mts` is only exempt because of `.test.`/`.spec.` — a production
+        // `.mts` file is production code.
+        {
+          name: 'a plain .mts file is production code, not a test file',
+          code: 'declare const m: string;\nthrow new Error(m);',
+          filename: 'c.mts',
+          options: [{ ignoreInTests: true }],
+          errors: [{ messageId: 'missingErrorContext' }],
+        },
+      ],
+    });
   });
 });

@@ -86,3 +86,30 @@ describe('no-raw-cross-property-href', () => {
     },
   );
 });
+
+describe('no-raw-cross-property-href: the href in an expression container', () => {
+  ruleTester.run('no-raw-cross-property-href', noRawCrossPropertyHref, {
+    valid: [
+      {
+        name: 'an external URL in an expression container',
+        code: "<a href={'https://github.com/ofri-peretz/eslint'}>gh</a>;",
+      },
+      {
+        name: 'a template with a placeholder is not raw text',
+        code: '<a href={`https://eslint.interlace.tools/${path}`}>docs</a>;',
+      },
+    ],
+    invalid: [
+      {
+        name: 'a quoted string in an expression container',
+        code: "<a href={'https://eslint.interlace.tools/docs'}>docs</a>;",
+        errors: [{ messageId: 'rawCrossPropertyHref' }],
+      },
+      {
+        name: 'a placeholder-free template in an expression container',
+        code: '<a href={`https://ofriperetz.dev/articles`}>blog</a>;',
+        errors: [{ messageId: 'rawCrossPropertyHref' }],
+      },
+    ],
+  });
+});

@@ -112,6 +112,18 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
     let allowReturningIIFE: boolean;
 
     // oxlint-disable-next-line consistent-function-scoping
+    function isCallOrApply(member: TSESTree.MemberExpression): boolean {
+      const { property } = member;
+      const name =
+        property.type === 'Identifier' && !member.computed
+          ? property.name
+          : property.type === 'Literal'
+            ? property.value
+            : null;
+      return name === 'call' || name === 'apply';
+    }
+
+    // oxlint-disable-next-line consistent-function-scoping
     function getIifeFunctionNode(
       node: TSESTree.CallExpression,
     ): TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression | null {
@@ -123,6 +135,17 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
         node.callee.type === 'ArrowFunctionExpression'
       ) {
         return node.callee;
+      }
+
+      // `(function () { ... }).call(this)` / `.apply(this, args)`: the same
+      // IIFE, invoked through Function.prototype with an explicit receiver.
+      if (
+        node.callee.type === 'MemberExpression' &&
+        (node.callee.object.type === 'FunctionExpression' ||
+          node.callee.object.type === 'ArrowFunctionExpression') &&
+        isCallOrApply(node.callee)
+      ) {
+        return node.callee.object;
       }
 
       // Check for unary operator IIFEs like (!function(){})(), (+function(){})(), (void function(){})()
@@ -204,47 +227,6 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
       return maxNestingDepth;
     }
 
-    function hasComplexLogic(
-      body: TSESTree.BlockStatement | TSESTree.Expression,
-    ): boolean {
-      if (body.type !== 'BlockStatement') {
-        return false;
-      }
-
-      // Check for multiple statements
-      if (body.body.length > maxStatements) {
-        return true;
-      }
-
-      // Check for complex constructs
-      for (const statement of body.body) {
-        if (
-          statement.type === 'IfStatement' ||
-          statement.type === 'ForStatement' ||
-          statement.type === 'WhileStatement' ||
-          statement.type === 'SwitchStatement' ||
-          statement.type === 'TryStatement'
-        ) {
-          return true;
-        }
-
-        // Check for nested function declarations
-        if (
-          statement.type === 'FunctionDeclaration' ||
-          (statement.type === 'VariableDeclaration' &&
-            statement.declarations.some(
-              (decl: TSESTree.VariableDeclarator) =>
-                decl.init?.type === 'FunctionExpression' ||
-                decl.init?.type === 'ArrowFunctionExpression',
-            ))
-        ) {
-          return true;
-        }
-      }
-
-      return false;
-    }
-
     function analyzeIIFE(
       node: TSESTree.CallExpression,
       functionNode:
@@ -253,37 +235,34 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
       const body = functionNode.body;
       const statementCount = countStatements(body);
       const nestingDepth = calculateDepth(body);
-      const hasComplex = hasComplexLogic(body);
+      // Only a `return` that hands back a value makes the IIFE an initializer.
       const returnsValue =
         body.type === 'BlockStatement' &&
         body.body.some(
-          (stmt: TSESTree.Statement) => stmt.type === 'ReturnStatement',
+          (stmt: TSESTree.Statement) =>
+            stmt.type === 'ReturnStatement' && stmt.argument !== null,
         );
+      const tooDeep = nestingDepth > maxDepth;
 
-      // Skip IIFEs that return values if allowed
-      if (allowReturningIIFE && returnsValue && !hasComplex) {
-        return;
-      }
-
-      // Check various conditions for unreadable IIFE
+      // The documented limits, and only those. A single `if` or `try`, a
+      // helper declared inside, or a third parameter is not on its own an
+      // unreadable IIFE: `(async () => { try { await main(); } catch (e) {
+      // ... } })()` is the standard entry point. A value-returning IIFE (with
+      // `allowReturningIIFE`) is a scoped initializer, so its statement count
+      // is not held against it; its nesting still is.
       const issues = [];
 
-      if (statementCount > maxStatements) {
+      if (
+        statementCount > maxStatements &&
+        !(allowReturningIIFE && returnsValue)
+      ) {
         issues.push(
           `too many statements (${statementCount} > ${maxStatements})`,
         );
       }
 
-      if (nestingDepth > maxDepth) {
+      if (tooDeep) {
         issues.push(`too deeply nested (${nestingDepth} > ${maxDepth})`);
-      }
-
-      if (hasComplex) {
-        issues.push('contains complex control flow');
-      }
-
-      if (functionNode.params.length > 2) {
-        issues.push('too many parameters');
       }
 
       if (issues.length > 0) {
@@ -294,7 +273,7 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
             issues: issues.join(', '),
             statementCount,
             nestingDepth,
-            suggestion: hasComplex
+            suggestion: tooDeep
               ? 'extract to named function'
               : 'simplify or use block scope',
           },

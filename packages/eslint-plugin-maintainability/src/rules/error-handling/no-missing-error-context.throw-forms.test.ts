@@ -205,3 +205,74 @@ function outer(): void { function inner(): void { throw new Error(message); } in
     invalid: [],
   });
 });
+
+// A class this file declares answers by its declaration — what its
+// constructor passes to `super`, what it `extends` — never by its name.
+describe('no-missing-error-context — file-declared classes and object literals (fidelity)', () => {
+  const stack = [{ requireMessage: false, requireStackTrace: true }] as const;
+  ruleTester.run('declarations, not names', rule, {
+    valid: [
+      {
+        name: 'an object literal with a `message` key carries a message',
+        code: "throw { message: 'cache read failed', code: 'E_CACHE' };",
+      },
+      {
+        name: 'a subclass whose constructor passes a message to super',
+        code: "class CacheMiss extends Error { constructor() { super('cache read failed'); } }\nthrow new CacheMiss();",
+      },
+      {
+        name: 'a class expression bound to a const whose constructor passes a message',
+        code: "const CacheMiss = class extends Error { constructor() { super('miss'); } };\nthrow new CacheMiss();",
+      },
+      {
+        name: 'a subclass of Error has a stack whatever its name',
+        code: "class Failure extends Error {}\nthrow new Failure('boom');",
+        options: stack,
+      },
+      {
+        name: 'a subclass of a file-declared Error subclass has a stack',
+        code: "class Base extends Error {}\nclass Failure extends Base {}\nthrow new Failure('boom');",
+        options: stack,
+      },
+      {
+        name: 'a base the file cannot see is unknown, and unknown is silent',
+        code: "import { Base } from './base';\nclass Failure extends Base {}\nthrow new Failure('boom');",
+        options: stack,
+      },
+      {
+        name: 'a computed base the file cannot name is unknown',
+        code: "class Failure extends mixin(Error) {}\nthrow new Failure('boom');",
+        options: stack,
+      },
+    ],
+    invalid: [
+      {
+        name: 'an object literal with no `message` key',
+        code: "throw { code: 'E_CACHE' };",
+        errors: [{ messageId: 'missingErrorContext' }],
+      },
+      {
+        name: 'a subclass whose constructor passes nothing to super, thrown bare',
+        code: 'class CacheMiss extends Error { constructor() { super(); } }\nthrow new CacheMiss();',
+        errors: [{ messageId: 'missingErrorContext' }],
+      },
+      {
+        name: 'a subclass with no constructor, thrown bare',
+        code: 'class CacheMiss extends Error {}\nthrow new CacheMiss();',
+        errors: [{ messageId: 'missingErrorContext' }],
+      },
+      {
+        name: 'a class named ...Error that extends nothing has no stack',
+        code: "class CacheError { constructor(readonly detail: string) {} }\nthrow new CacheError('boom');",
+        options: stack,
+        errors: [{ messageId: 'missingErrorContext' }],
+      },
+      {
+        name: 'a local Error class shadowing the built-in is not the built-in',
+        code: "class Error {}\nclass Failure extends Error {}\nthrow new Failure('boom');",
+        options: stack,
+        errors: [{ messageId: 'missingErrorContext' }],
+      },
+    ],
+  });
+});

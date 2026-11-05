@@ -1,7 +1,7 @@
 ---
 title: error-message
-description: Enforce providing a message when creating built-in Error objects for better debugging
-tags: ['quality', 'maintainability']
+description: Enforce providing a message when creating built-in Error objects for better debugging.
+tags: ['quality', 'maintainability', 'error-handling']
 category: quality
 autofix: suggestions
 ---
@@ -10,20 +10,20 @@ autofix: suggestions
 
 
 <!-- @rule-summary -->
-Enforce providing a message when creating built-in Error objects for better debugging
+Enforce providing a message when creating built-in Error objects for better debugging.
 <!-- @/rule-summary -->
 
 Enforce providing a message when creating built-in Error objects for better debugging. This rule is part of [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability) and provides LLM-optimized error messages with suggestions.
 
 ## Quick Summary
 
-| Aspect         | Details                                              |
-| -------------- | ---------------------------------------------------- |
-| **Severity**   | Error (correctness)                                  |
-| **Auto-Fix**   | 💡 Suggests fixes                                    |
-| **Category**   | Quality |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration              |
-| **Best For**   | All projects, especially debugging-heavy development |
+| Aspect         | Details                                                              |
+| -------------- | -------------------------------------------------------------------- |
+| **Severity**   | Error (correctness)                                                  |
+| **Auto-Fix**   | 💡 Suggests fixes                                                    |
+| **Category**   | Error Handling                                                       |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration                              |
+| **Best For**   | All projects, especially debugging-heavy development                 |
 
 ## Rule Details
 
@@ -45,17 +45,17 @@ flowchart TD
     A[🔍 Detect Error Constructor] --> B{Built-in Error?}
     B -->|❌ No| C[✅ Pass]
     B -->|✅ Yes| D{Has Message?}
-
+    
     D -->|✅ Non-empty| C
     D -->|❌ Empty/Missing| E{In Catch?}
-
+    
     E -->|✅ Yes & Allowed| C
     E -->|❌ No| F[❌ Report: Add Message]
-
+    
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
     classDef processNode fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1f2937
-
+    
     class A startNode
     class F errorNode
     class C processNode
@@ -63,30 +63,39 @@ flowchart TD
 
 ### Why This Matters
 
-| Issue                      | Impact                     | Solution                 |
-| -------------------------- | -------------------------- | ------------------------ |
-| 🐛 **Debugging**           | No context in stack traces | Add descriptive messages |
-| 📊 **Error Tracking**      | Vague errors in monitoring | Clear error descriptions |
-| 🔍 **Root Cause Analysis** | Hard to identify issues    | Actionable messages      |
-| 📝 **Documentation**       | Code intent unclear        | Self-documenting errors  |
+| Issue                     | Impact                          | Solution                  |
+| ------------------------- | ------------------------------- | ------------------------- |
+| 🐛 **Debugging**          | No context in stack traces      | Add descriptive messages  |
+| 📊 **Error Tracking**     | Vague errors in monitoring      | Clear error descriptions  |
+| 🔍 **Root Cause Analysis**| Hard to identify issues         | Actionable messages       |
+| 📝 **Documentation**      | Code intent unclear             | Self-documenting errors   |
 
 ## Configuration
 
-| Option            | Type      | Default | Description                        |
-| ----------------- | --------- | ------- | ---------------------------------- |
-| `allowEmptyCatch` | `boolean` | `false` | Allow empty errors in catch blocks |
+| Option            | Type      | Default | Description                              |
+| ----------------- | --------- | ------- | ---------------------------------------- |
+| `allowEmptyCatch` | `boolean` | `false` | Allow empty errors in catch blocks       |
 
 ### Covered Error Constructors
 
-| Constructor      | Example                         |
-| ---------------- | ------------------------------- |
-| `Error`          | `new Error('message')`          |
-| `TypeError`      | `new TypeError('message')`      |
-| `ReferenceError` | `new ReferenceError('message')` |
-| `SyntaxError`    | `new SyntaxError('message')`    |
-| `RangeError`     | `new RangeError('message')`     |
-| `EvalError`      | `new EvalError('message')`      |
-| `URIError`       | `new URIError('message')`       |
+| Constructor      | Example                              |
+| ---------------- | ------------------------------------ |
+| `Error`          | `new Error('message')`               |
+| `TypeError`      | `new TypeError('message')`           |
+| `ReferenceError` | `new ReferenceError('message')`      |
+| `SyntaxError`    | `new SyntaxError('message')`         |
+| `RangeError`     | `new RangeError('message')`          |
+| `EvalError`      | `new EvalError('message')`           |
+| `URIError`       | `new URIError('message')`            |
+
+### What counts as a missing message
+
+The constructor must be the built-in one — decided by binding, so a local class
+named `Error` is not it, and `globalThis.Error` is. The message is missing when
+the code proves it empty: no argument, `undefined`, a literal that is not a
+string (`null`, `42`), or a string literal or template with nothing but
+whitespace in it. A variable, a call or a template with a substitution may
+carry a message and is not reported.
 
 ## Examples
 
@@ -101,6 +110,8 @@ throw new RangeError();
 // Empty string message
 throw new Error('');
 throw new Error('   ');
+throw new Error(``);
+throw new Error(undefined);
 
 // Function call without new (also caught)
 throw Error();
@@ -202,7 +213,7 @@ function validateAge(age: number) {
 function processConfig(config: unknown) {
   if (typeof config !== 'object') {
     throw new TypeError(
-      `Expected config to be an object, received ${typeof config}`,
+      `Expected config to be an object, received ${typeof config}`
     );
   }
 }
@@ -210,21 +221,21 @@ function processConfig(config: unknown) {
 
 ## When Not To Use
 
-| Scenario                  | Recommendation              |
-| ------------------------- | --------------------------- |
-| 🔄 **Re-throwing errors** | Use `allowEmptyCatch: true` |
-| 🧪 **Test assertions**    | Test frameworks handle this |
-| 📦 **Error wrapping**     | Ensure wrapper adds message |
+| Scenario                    | Recommendation                              |
+| --------------------------- | ------------------------------------------- |
+| 🔄 **Re-throwing errors**   | Use `allowEmptyCatch: true`                 |
+| 🧪 **Test assertions**      | Test frameworks handle this                 |
+| 📦 **Error wrapping**       | Ensure wrapper adds message                 |
 
 ## Comparison with Alternatives
 
-| Feature                | error-message | unicorn rule | Manual review |
-| ---------------------- | ------------- | ------------ | ------------- |
-| **All Error types**    | ✅ Yes        | ✅ Yes       | ⚠️ Manual     |
-| **Function calls**     | ✅ Error()    | ✅ Yes       | ⚠️ Manual     |
-| **Empty string check** | ✅ Yes        | ✅ Yes       | ❌ No         |
-| **LLM-Optimized**      | ✅ Yes        | ❌ No        | ❌ No         |
-| **ESLint MCP**         | ✅ Optimized  | ❌ No        | ❌ No         |
+| Feature              | error-message       | unicorn rule         | Manual review      |
+| -------------------- | ------------------- | -------------------- | ------------------ |
+| **All Error types**  | ✅ Yes              | ✅ Yes               | ⚠️ Manual          |
+| **Function calls**   | ✅ Error()          | ✅ Yes               | ⚠️ Manual          |
+| **Empty string check** | ✅ Yes            | ✅ Yes               | ❌ No              |
+| **LLM-Optimized**    | ✅ Yes              | ❌ No                | ❌ No              |
+| **ESLint MCP**       | ✅ Optimized        | ❌ No                | ❌ No              |
 
 ## Related Rules
 
@@ -237,7 +248,6 @@ function processConfig(config: unknown) {
 - **[unicorn error-message](https://github.com/sindresorhus/eslint-plugin-unicorn/blob/main/docs/rules/error-message.md)** - Unicorn implementation
 - **[Error Handling Best Practices](https://www.joyent.com/node-js/production/design/errors)** - Node.js error handling
 - **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:

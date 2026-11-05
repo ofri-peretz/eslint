@@ -1,6 +1,6 @@
 ---
 title: max-parameters
-description: "ESLint Rule: max-parameters with LLM-optimized suggestions and auto-fix capabilities."
+description: "Report functions that take more parameters than a caller can pass correctly."
 tags: ['quality', 'maintainability']
 category: quality
 autofix: suggestions
@@ -12,102 +12,91 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+Report a function that takes more than `max` parameters. A long positional parameter list is easy to call with arguments in the wrong order.
+
+This rule is part of [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability).
+
 ## Quick Summary
 
-| Aspect          | Details                                 |
-| --------------- | --------------------------------------- |
-| **Severity**    | Error (code quality)                    |
-| **Auto-Fix**    | ❌ No                                   |
-| **Category**   | Quality |
-| **ESLint MCP**  | ✅ Optimized for ESLint MCP integration |
-| **Best For**    | Production applications                 |
-| **Suggestions** | ✅ 4 available                          |
+| Aspect          | Details                                              |
+| --------------- | ---------------------------------------------------- |
+| **Severity**    | Error (code quality)                                 |
+| **Auto-Fix**    | ❌ No                                                |
+| **Category**    | Quality                                              |
+| **Suggestions** | 💡 Use an object parameter, extract a class, split   |
 
 ## Rule Details
 
-```mermaid
-%%{init: {
-  'theme': 'base',
-  'themeVariables': {
-    'primaryColor': '#f8fafc',
-    'primaryTextColor': '#1e293b',
-    'primaryBorderColor': '#334155',
-    'lineColor': '#475569',
-    'c0': '#f8fafc',
-    'c1': '#f1f5f9',
-    'c2': '#e2e8f0',
-    'c3': '#cbd5e1'
-  }
-}}%%
-flowchart TD
-    A["🔍 Detect max parameters"] --> B{"Valid pattern?"}
-    B -->|❌ No| C["🚨 Report violation"]
-    B -->|✅ Yes| D["✅ Pass"]
+The rule counts the parameters a caller passes and reports a function with more
+than `max` (default 4). Every function form is checked: a declaration, a
+function expression, an arrow, a class method, a constructor, and an
+arrow-function class property.
 
-    classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
-    classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
-
-    class A startNode
-    class C errorNode
-
-```
-
-
-### Why This Matters
-
-| Issue                        | Impact           | Solution            |
-| ---------------------------- | ---------------- | ------------------- |
-| 🔒 **Security/Code Quality** | [Specific issue] | [Solution approach] |
-| 🐛 **Maintainability**       | [Impact]         | [Fix]               |
-| ⚡ **Performance**           | [Impact]         | [Optimization]      |
+- A rest parameter (`...rest`) is one parameter.
+- A destructured parameter (`{ a, b }`) is one parameter.
+- TypeScript's `this` parameter is not counted: it is erased before emit and no
+  caller passes it (as in `@typescript-eslint/max-params`).
+- A file whose leading comment declares it generated (`@generated`) is skipped:
+  a generated signature's arity is the generator's decision.
 
 ## Configuration
 
-**No configuration options available.**
+| Option                    | Type      | Default | Description                                                                 |
+| ------------------------- | --------- | ------- | --------------------------------------------------------------------------- |
+| `max`                     | `number`  | `4`     | Most parameters a function may take                                         |
+| `ignoreConstructors`      | `boolean` | `false` | Skip class constructors (their arity often comes from dependency injection) |
+| `ignoreOverriddenMethods` | `boolean` | `false` | Skip methods and arrow properties marked `override` (the base class decides the signature) |
+
+With `ignoreConstructors`, a function declaration whose name starts with an
+uppercase letter (an ES5 constructor function) is skipped as well.
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```typescript
-// Example of incorrect usage
+function createUser(name: string, email: string, age: number, role: Role, team: Team) {}
+
+class Cart {
+  total = (a: number, b: number, c: number, d: number, e: number) => a + b + c + d + e;
+}
 ```
 
 ### ✅ Correct
 
 ```typescript
-// Example of correct usage
+function createUser({ name, email, age, role, team }: NewUser) {}
+
+// `this` is not a parameter a caller passes
+function onClick(this: HTMLElement, a: number, b: number, c: number, d: number) {}
+
+// With { ignoreOverriddenMethods: true }
+class Admin extends User {
+  override update(a: string, b: string, c: string, d: string, e: string) {}
+}
 ```
 
 ## Configuration Examples
-
-### Basic Usage
 
 ```javascript
 // eslint.config.mjs
 export default [
   {
     rules: {
-      'maintainability/max-parameters': 'error',
+      'maintainability/max-parameters': ['error', { max: 5, ignoreConstructors: true }],
     },
   },
 ];
 ```
 
-## LLM-Optimized Output
-
-```
-🚨 max parameters | Description | MEDIUM
-   Fix: Suggestion | Reference
-```
-
 ## Related Rules
 
-- [`rule-name`](./rule-name) - Description
+- [`cognitive-complexity`](./cognitive-complexity) - Function complexity limits
 
 ## Further Reading
 
-- **[Reference](https://example.com)** - Description
+- **[SonarQube RSPEC-107](https://rules.sonarsource.com/javascript/RSPEC-107/)** - Functions should not have too many parameters
+- **[Introduce Parameter Object](https://refactoring.guru/introduce-parameter-object)** - The refactoring this rule suggests
 
 <WhenNotToUse />
 
@@ -115,28 +104,12 @@ export default [
 
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
+### Overload and declaration signatures
 
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = externalSource();
-processValue(value); // Variable origin not tracked
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
+**Why**: the rule checks function implementations. A `declare function`
+signature, an overload signature or a function type has no body to refactor.
 
 ```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
+// ❌ NOT DETECTED
+declare function legacy(a: number, b: number, c: number, d: number, e: number): void;
 ```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.

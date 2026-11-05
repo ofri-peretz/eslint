@@ -75,7 +75,10 @@ flowchart TD
 | Option       | Type       | Default                    | Description                              |
 | ------------ | ---------- | -------------------------- | ---------------------------------------- |
 | `terms`      | `string[]` | `['TODO', 'FIXME', 'XXX']` | Terms to check for                       |
-| `dateFormat` | `string`   | `'YYYY-MM-DD'`             | Date format for expiry dates             |
+| `dateFormat` | `string`   | `'YYYY-MM-DD'`             | Accepted for compatibility; has no effect. Dates are always `YYYY-MM-DD` |
+
+Terms match case-insensitively. Version and dependency conditions read the
+`package.json` in the directory ESLint runs from.
 
 ## Condition Types
 
@@ -85,6 +88,11 @@ flowchart TD
 | **Package Version** | `[>=X.Y.Z]`         | `TODO [>=2.0.0]: Use new API`     |
 | **Engine Version** | `[engine:node@>=X]`  | `TODO [engine:node@>=20]: Use fetch` |
 | **Dependency**    | `[+package]` / `[-package]` | `TODO [+lodash]: Replace with lodash` |
+
+A date condition is due on and after that day. `[+package]` is due once the
+package is a dependency (any of `dependencies`, `devDependencies`,
+`peerDependencies`); `[-package]` once it is no longer one. An engine
+condition is compared with `engines.node`; other engines never come due.
 
 ## Examples
 
@@ -123,15 +131,15 @@ currentImplementation();
 ### ❌ Invalid Format
 
 ```typescript
-// Missing brackets
-// TODO 2024-12-01: Fix this  // ❌ Invalid
+// Two conditions in one bracket
+// TODO [2024-01-01, >=2.0.0]: Fix this  // ❌ Reported
 
-// Wrong date format
-// TODO [12/01/2024]: Fix this  // ❌ Invalid
-
-// Multiple conditions
-// TODO [2024-01-01, >=2.0.0]: Fix this  // ❌ Invalid
+// A bracket that is not one of the condition types above
+// TODO [12/01/2024]: Fix this  // ❌ Reported as an invalid condition
 ```
+
+A TODO without a bracket (`// TODO 2024-12-01: Fix this`) carries no
+condition and is not read.
 
 ## Configuration Examples
 
@@ -238,28 +246,7 @@ function validateManually(data: unknown) { }
 - **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = externalSource();
-processValue(value); // Variable origin not tracked
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- A bracket that is not meant as a condition (`TODO [JIRA-123]: …`) is
+  reported as an invalid condition.
+- `engine:npm`, `engine:yarn` and `engine:pnpm` conditions are accepted but
+  never come due.

@@ -445,3 +445,61 @@ describe('prefer-dependency-version-strategy', () => {
     );
   });
 });
+
+describe('prefer-dependency-version-strategy: protocols, range and overrides under any', () => {
+  ruleTester.run(
+    'prefer-dependency-version-strategy',
+    preferDependencyVersionStrategy,
+    {
+      valid: [
+        {
+          name: 'a caret version is a range',
+          code: "const m = { dependencies: { react: '^18.2.0' } };",
+          options: [{ strategy: 'range' }],
+        },
+        {
+          name: 'a tilde version is a range',
+          code: "const m = { dependencies: { react: '~18.2.0' } };",
+          options: [{ strategy: 'range' }],
+        },
+        {
+          name: 'any with only any overrides checks nothing',
+          code: "const m = { dependencies: { react: '18.2.0' } };",
+          options: [{ strategy: 'any', overrides: { react: 'any' } }],
+        },
+        {
+          name: 'a workspace version is allowed by default',
+          code: "const m = { dependencies: { utils: 'workspace:*' } };",
+        },
+      ],
+      invalid: [
+        {
+          name: 'an override still applies when the strategy is any',
+          code: "const m = { dependencies: { react: '^18.2.0', lodash: '^4.0.0' } };",
+          options: [{ strategy: 'any', overrides: { react: 'exact' } }],
+          output:
+            'const m = { dependencies: { react: "18.2.0", lodash: \'^4.0.0\' } };',
+          errors: [{ messageId: 'preferStrategy' }],
+        },
+        {
+          name: 'a workspace version when allowWorkspace is false',
+          code: "const m = { dependencies: { utils: 'workspace:*' } };",
+          options: [{ allowWorkspace: false }],
+          errors: [{ messageId: 'disallowedProtocol' }],
+        },
+        {
+          name: 'a file version when allowFile is false',
+          code: "const m = { dependencies: { utils: 'file:../utils' } };",
+          options: [{ allowFile: false }],
+          errors: [{ messageId: 'disallowedProtocol' }],
+        },
+        {
+          name: 'a link version when allowLink is false',
+          code: "const m = { dependencies: { utils: 'link:../utils' } };",
+          options: [{ allowLink: false }],
+          errors: [{ messageId: 'disallowedProtocol' }],
+        },
+      ],
+    },
+  );
+});

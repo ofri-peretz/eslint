@@ -190,3 +190,33 @@ describe('consistent-existence-index-check', () => {
     );
   });
 });
+
+describe('consistent-existence-index-check: the built-in Object by binding', () => {
+  ruleTester.run(
+    'consistent-existence-index-check',
+    consistentExistenceIndexCheck,
+    {
+      valid: [
+        {
+          name: 'a local Object is not the built-in',
+          code: 'function f(Object: { hasOwn(o: object, k: string): boolean }, o: object) { return Object.hasOwn(o, "a"); }',
+          options: [{ preferred: 'in' }],
+        },
+      ],
+      invalid: [
+        {
+          name: 'globalThis.Object.hasOwn is Object.hasOwn',
+          code: 'globalThis.Object.hasOwn(obj, "a");',
+          options: [{ preferred: 'in' }],
+          errors: [{ messageId: 'nonEquivalentExistenceCheck' }],
+        },
+        {
+          name: 'globalThis.Object.prototype.hasOwnProperty.call is the long form',
+          code: 'globalThis.Object.prototype.hasOwnProperty.call(obj, "a");',
+          output: 'Object.hasOwn(obj, "a");',
+          errors: [{ messageId: 'consistentExistenceCheck' }],
+        },
+      ],
+    },
+  );
+});

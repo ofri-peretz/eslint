@@ -115,11 +115,23 @@ export const utmTaxonomy = createRule<RuleOptions, MessageIds>({
   defaultOptions: [],
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    function checkString(node: TSESTree.Node, value: string): void {
+    /**
+     * `openEnded`: a template placeholder follows this text, so a value that
+     * runs to its end (`utm_source=dev${suffix}`) is only partly written here.
+     * The full value is known at runtime only, and is not a finding.
+     */
+    function checkString(
+      node: TSESTree.Node,
+      value: string,
+      openEnded = false,
+    ): void {
       UTM_PARAM_RE.lastIndex = 0;
       let match: RegExpExecArray | null;
       while ((match = UTM_PARAM_RE.exec(value)) !== null) {
         const [, key, raw] = match;
+        if (openEnded && match.index + match[0].length === value.length) {
+          continue;
+        }
         const decoded = safeDecode(raw);
         if (key === 'utm_source' && !VALID_UTM_SOURCES.has(decoded)) {
           context.report({
@@ -156,7 +168,7 @@ export const utmTaxonomy = createRule<RuleOptions, MessageIds>({
           // `TemplateLiteral` visitor, so a TAGGED template reaches it.
           const text = quasi.value.cooked ?? quasi.value.raw;
           if (text.includes('utm_')) {
-            checkString(quasi, text);
+            checkString(quasi, text, !quasi.tail);
           }
         }
       },

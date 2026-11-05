@@ -22,6 +22,11 @@ report, and no dashboard can merge them after the fact. The rule validates any
 URL literal carrying UTM parameters against the fixed source/medium taxonomy in
 UTM_PHILOSOPHY.md.
 
+A percent-encoded value is decoded before it is checked. Template literals are
+read too, but a value a placeholder completes (`` `?utm_source=dev${suffix}` ``)
+is only known at runtime and is not reported; a complete value before a
+placeholder (`` `?utm_source=dev_to&utm_content=${id}` ``) is.
+
 URLs without UTM parameters are ignored — the rule constrains spelling, it does
 not require attribution (that is `no-raw-cross-property-href`'s job).
 

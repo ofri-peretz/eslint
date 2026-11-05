@@ -29,6 +29,18 @@ The rule checks the first argument of `track(...)` and `posthog.capture(...)`:
   `submit`) — invented synonyms like `clicked` or `pressed` are rejected so the
   same interaction never ships under two spellings
 
+The name is read in every spelling the code fixes it: a quoted string, a
+template literal without placeholders, and a `const` bound to either
+(`const EVENT = 'articles:card_click'; track(EVENT)`). Vendor-reserved events
+(`$pageview`, `$set`, …) are exempt.
+
+A template literal WITH a placeholder (`` track(`articles:${slug}_view`) ``)
+is reported as `interpolatedEventName`: it mints an unbounded catalog of
+event names. Move the dynamic part into an event property instead.
+
+A name the code does not fix — a parameter, a value from another module — is
+not reported: an unknown name is not a finding.
+
 ## Examples
 
 ### ❌ Incorrect
@@ -37,6 +49,7 @@ The rule checks the first argument of `track(...)` and `posthog.capture(...)`:
 track('ArticlesCardClick', {});      // not snake_case
 track('articles_card_click', {});    // missing category separator
 track('articles:card_clicked', {});  // verb not in the fixed list
+track(`articles:${slug}_view`, {});   // interpolated name
 ```
 
 ### ✅ Correct

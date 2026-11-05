@@ -115,7 +115,7 @@ export const noNestedTernary = createRule<RuleOptions, MessageIds>({
     }
 
     function hasNestedTernary(node: TSESTree.ConditionalExpression): boolean {
-      // Check if the consequent or alternate contains another ternary
+      // Check if the test, consequent or alternate contains another ternary
       function containsTernary(expr: TSESTree.Node): boolean {
         if (expr.type === 'ConditionalExpression') {
           return true;
@@ -160,6 +160,13 @@ export const noNestedTernary = createRule<RuleOptions, MessageIds>({
             return containsTernary(expr.argument);
           case 'AssignmentExpression':
             return containsTernary(expr.right);
+          // TypeScript wrappers change nothing the reader parses: `(b ? x : y)
+          // as T` and `(b ? x : y)!` are still a ternary in the branch.
+          case 'TSAsExpression':
+          case 'TSSatisfiesExpression':
+          case 'TSNonNullExpression':
+          case 'TSTypeAssertion':
+            return containsTernary(expr.expression);
           // For literals and identifiers, no nested expressions
           case 'Literal':
           case 'Identifier':
@@ -186,8 +193,12 @@ export const noNestedTernary = createRule<RuleOptions, MessageIds>({
         }
       }
 
+      // The test is a branch of the expression too: `(b ? x : y) ? one : two`
+      // nests exactly as deeply as a ternary in the alternate.
       return (
-        containsTernary(node.consequent) || containsTernary(node.alternate)
+        containsTernary(node.test) ||
+        containsTernary(node.consequent) ||
+        containsTernary(node.alternate)
       );
     }
 

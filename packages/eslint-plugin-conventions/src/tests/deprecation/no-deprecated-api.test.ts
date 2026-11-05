@@ -388,3 +388,56 @@ describe('no-deprecated-api', () => {
     );
   });
 });
+
+describe('no-deprecated-api: construction and renamed imports', () => {
+  const apis = [
+    {
+      name: 'oldFetch',
+      replacement: 'newFetch',
+      deprecatedSince: '2024-01-01',
+      reason: 'Better error handling',
+    },
+    {
+      name: 'OldClient',
+      replacement: 'Client',
+      deprecatedSince: '2024-01-01',
+      reason: 'Renamed',
+    },
+  ];
+  ruleTester.run('no-deprecated-api', noDeprecatedApi, {
+    valid: [
+      {
+        name: 'a local name imported from another API',
+        code: "import { newFetch as fetchIt } from 'lib';\nfetchIt(url);",
+        options: [{ apis }],
+      },
+    ],
+    invalid: [
+      {
+        name: 'constructing a deprecated class',
+        code: 'new OldClient(url);',
+        options: [{ apis }],
+        errors: [
+          {
+            messageId: 'deprecatedAPI',
+            suggestions: [
+              { messageId: 'useReplacement', output: 'new Client(url);' },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'calling a deprecated API under a renamed import',
+        code: "import { oldFetch as fetchIt } from 'lib';\nfetchIt(url);",
+        options: [{ apis }],
+        errors: [{ messageId: 'deprecatedAPI', suggestions: [] }],
+      },
+      {
+        name: 'calling a deprecated API imported by a string name',
+        code: "import { 'oldFetch' as fetchIt } from 'lib';\nfetchIt(url);",
+        options: [{ apis }],
+        errors: [{ messageId: 'deprecatedAPI', suggestions: [] }],
+      },
+    ],
+  });
+});

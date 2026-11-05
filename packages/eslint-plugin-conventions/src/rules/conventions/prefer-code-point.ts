@@ -51,39 +51,15 @@ export const preferCodePoint = createRule<RuleOptions, MessageIds>({
   defaultOptions: [],
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, consistent-function-scoping
-    function isInAllowedContext(node: TSESTree.CallExpression): boolean {
-      // For simplicity, we'll skip the allow option for now
-      // This would require more complex logic to check comments/code context
-      return false;
-    }
-
-    // oxlint-disable-next-line consistent-function-scoping
-    function shouldIgnoreCall(node: TSESTree.CallExpression): boolean {
-      // The unicorn rule flags ALL charCodeAt calls, but allows some contexts
-
-      if (node.callee.type === 'MemberExpression') {
-        // Allow optional chaining
-        if (node.callee.optional) {
-          return true;
-        }
-
-        // The `obj[method]` arm that stood here is gone, not covered: the
-        // caller runs `isCharCodeAtCall` FIRST, and `propertyName` returns
-        // null for a runtime key, so no input could ever reach it.
-      }
-
-      return false;
-    }
-
     // oxlint-disable-next-line consistent-function-scoping
     function isCharCodeAtCall(node: TSESTree.CallExpression): boolean {
       // Check if this is a call to charCodeAt method
       if (node.callee.type === 'MemberExpression') {
         // `obj.charCodeAt` and `obj['charCodeAt']` alike — `propertyName`
         // resolves both, so the separate computed-literal arm this replaces
-        // was the same question asked twice. `obj[method]` is still ignored,
-        // by `shouldIgnoreCall` above.
+        // was the same question asked twice. `obj[method]` names no static
+        // property and is not reported. An optional call (`s?.charCodeAt(0)`)
+        // splits astral characters just the same, so it is reported too.
         if (propertyName(node.callee) === 'charCodeAt') {
           return true;
         }
@@ -94,11 +70,7 @@ export const preferCodePoint = createRule<RuleOptions, MessageIds>({
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        if (
-          isCharCodeAtCall(node) &&
-          !isInAllowedContext(node) &&
-          !shouldIgnoreCall(node)
-        ) {
+        if (isCharCodeAtCall(node)) {
           context.report({
             node,
             messageId: 'preferCodePoint',

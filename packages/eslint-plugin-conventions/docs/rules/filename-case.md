@@ -79,7 +79,7 @@ flowchart TD
 | Option                 | Type       | Default                                    | Description                                              |
 | ---------------------- | ---------- | ------------------------------------------ | -------------------------------------------------------- |
 | `case`                 | `string`   | `'kebabCase'`                              | Case convention: `camelCase`, `kebabCase`, `pascalCase`, `snakeCase` |
-| `ignore`               | `array`    | `[]`                                       | Patterns to ignore completely                            |
+| `ignore`               | `array`    | `[]`                                       | Basenames (exact strings) or RegExps to ignore completely |
 | `allowedUppercaseFiles`| `string[]` | `['README', 'LICENSE', 'CHANGELOG', ...]`  | Uppercase filenames allowed without extension            |
 | `allowedKebabCase`     | `string[]` | `[]`                                       | Specific files allowed to use kebab-case                 |
 | `allowedSnakeCase`     | `string[]` | `[]`                                       | Specific files allowed to use snake_case                 |
@@ -108,7 +108,14 @@ src/
 
 ### ✅ Correct (with `kebabCase`)
 
-> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
+```
+src/
+  user-service.ts       ✅ kebab-case
+  user.ts               ✅ a single lowercase word conforms to kebab, camel and snake
+  user-service.test.ts  ✅ .test / .spec / .stories / .story / .e2e / .d suffixes are not part of the name
+  README.md             ✅ conventional uppercase file (allowedUppercaseFiles)
+  .eslintrc.js          ✅ dotfiles are not checked
+```
 
 ## Configuration Examples
 
@@ -191,30 +198,10 @@ src/
 - **[Naming Conventions](https://google.github.io/styleguide/tsguide.html#naming-style)** - Google TypeScript Style Guide
 - **[eslint-plugin-unicorn filename-case](https://github.com/sindresorhus/eslint-plugin-unicorn/blob/main/docs/rules/filename-case.md)** - Unicorn's implementation
 - **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
-## Known False Negatives
+## Known Limitations
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = externalSource();
-processValue(value); // Variable origin not tracked
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- A name with several dot-separated parts (`user.controller.ts`,
+  `vitest.config.ts`) is checked as one name, dots included, so it conforms to
+  no case; add such names to `ignore`.
+- An `allowed<Case>Case` entry exempts a name only when the name is written in
+  that case.

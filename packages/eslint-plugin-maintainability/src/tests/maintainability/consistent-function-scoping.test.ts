@@ -768,4 +768,57 @@ describe('a function already at module scope has nowhere higher to go', () => {
       },
     ],
   });
+
+  // Fidelity divergences (consistent_function_scoping): capture was decided
+  // by NAME, so a helper's own `const factor` read as the outer `factor`, and
+  // a type annotation naming the outer function's type was not a use.
+  describe('capture is decided by binding', () => {
+    ruleTester.run('scope-manager capture', consistentFunctionScoping, {
+      valid: [
+        {
+          name: 'a helper typed with a type the outer function declares',
+          code: 'export function outer(n: number) { type Unit = number; function helper(x: Unit) { return x; } return helper(n); }',
+        },
+        {
+          name: 'a helper whose only use of the outer binding is deeply nested',
+          code: 'export function outer(k: number) { function helper(x: number) { return { a: { b: { c: { d: { e: { f: { g: { h: { i: { j: [x, k] } } } } } } } } } }; } return helper(1); }',
+        },
+        {
+          name: 'an arrow helper reading the enclosing `arguments`',
+          code: 'export function outer() { const helper = () => arguments.length; return helper(); }',
+        },
+        {
+          name: 'a helper using a binding of an enclosing block',
+          code: 'export function outer(ok: boolean) { if (ok) { const k = 2; const helper = (x: number) => x * k; return helper(1); } return 0; }',
+        },
+      ],
+      invalid: [
+        {
+          name: 'a helper declaring its own binding under the outer name',
+          code: 'export function outer(factor: number) { function helper(x: number) { const factor = 2; return x * factor; } return helper(factor); }',
+          errors: [{ messageId: 'inconsistentFunctionScoping', suggestions: 1 }],
+        },
+        {
+          name: 'a self-recursive helper that captures nothing else',
+          code: 'export function outer() { function helper(n: number): number { return n ? helper(n - 1) : 0; } return helper(3); }',
+          errors: [{ messageId: 'inconsistentFunctionScoping', suggestions: 1 }],
+        },
+        {
+          name: 'a self-recursive arrow helper bound through a type assertion',
+          code: 'export function outer() { const helper = ((n: number): number => (n ? helper(n - 1) : 0)) as (n: number) => number; return helper(3); }',
+          errors: [{ messageId: 'inconsistentFunctionScoping', suggestions: 1 }],
+        },
+        {
+          name: 'a named function expression calling itself by its own name',
+          code: 'export function outer() { const helper = function walk(n: number): number { return n ? walk(n - 1) : 0; }; return helper(3); }',
+          errors: [{ messageId: 'inconsistentFunctionScoping', suggestions: 1 }],
+        },
+        {
+          name: 'a function helper using its own `this`',
+          code: 'export function outer() { function helper(this: { rate: number }, x: number) { return x * this.rate; } return helper.call({ rate: 2 }, 1); }',
+          errors: [{ messageId: 'inconsistentFunctionScoping', suggestions: 1 }],
+        },
+      ],
+    });
+  });
 });

@@ -128,12 +128,19 @@ describe('prefer-code-point', () => {
         {
           code: 'const method = "charCodeAt"; const code = str[method](0);',
         },
-        // Optional chaining
-        {
-          code: 'const code = str?.charCodeAt?.(0);',
-        },
       ],
       invalid: [
+        // An optional call splits astral characters just the same.
+        {
+          name: 'an optional call of charCodeAt',
+          code: 'const code = str?.charCodeAt?.(0);',
+          errors: [{ messageId: 'preferCodePoint' }],
+        },
+        {
+          name: 'charCodeAt on an optional receiver',
+          code: 'const code = str?.charCodeAt(0);',
+          errors: [{ messageId: 'preferCodePoint' }],
+        },
         // charCodeAt with computed property
         {
           code: 'const code = str["charCodeAt"](0);',
