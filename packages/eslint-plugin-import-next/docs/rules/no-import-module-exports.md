@@ -8,7 +8,29 @@ Forbid import statements with CommonJS module.exports
 
 ## Rule Details
 
-This rule aims to prevent issues related to import-module-exports.
+A file that runs `import` declarations and also exports through CommonJS mixes two module systems: bundlers treat it as an ES module, where `module.exports` does not exist, and the exports silently disappear. This rule reports the CommonJS exports of such a file. It needs both:
+
+- a value `import ... from 'm'`. A type-only `import type` is erased at compile time and mixes nothing; a dynamic `import()` is legal in CommonJS.
+- a use of the global `module` / `exports`: assigning `module.exports` (dotted or computed) or one of its properties, reading `module.exports`, or assigning a property of `exports`.
+
+A `module` / `exports` bound in the file (a wrapper's parameters) is not the CommonJS global.
+
+### ❌ Incorrect
+
+```ts
+import dep from './dep';
+module.exports = { run: dep };
+```
+
+### ✅ Correct
+
+```ts
+import dep from './dep';
+export const run = dep;
+
+import type { Dep } from './dep';
+module.exports = { run: (d: Dep) => d };
+```
 
 ## Options
 
@@ -29,11 +51,8 @@ This rule aims to prevent issues related to import-module-exports.
 ]
 ```
 
-## Implementation
+- `exceptions` (default `[]`): file globs (or path substrings) where mixing is accepted, e.g. `["**/scripts/**"]`. A glob matches any run of whole path segments.
 
-- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-import-module-exports.ts)
-- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-import-module-exports.test.ts)
+## When Not To Use It
 
-## OWASP Foundation
-
-- **Category**: A00:2021 - General Security
+When a build step you control transpiles these files to CommonJS and the mix is intended.

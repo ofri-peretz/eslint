@@ -14,7 +14,29 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## Rule Details
 
-This rule aims to prevent issues related to absolute-path.
+A module specifier that is an absolute file-system path (`/home/me/app/lib/util`) only resolves on the machine it was written on. This rule reports one, in every spelling of the module system its option turns on, and the fix rewrites it relative to the file.
+
+- `esmodule` (default on): `import ... from`, side-effect `import`, `export ... from`, `export * from`, and `import()`.
+- `commonjs` (default on): `require('m')` with one argument, and TS `import x = require('m')`.
+- `amd` (default off): the elements of the dependency array of `define([...], factory)` and `require([...], callback)`. A named module id (`define('id', [...], f)`) is a name, not a path, and is not checked.
+
+A static template literal (``require(`/abs/x`)``) is the same string as a quoted one. A specifier the file cannot know (a variable, a template with a substitution) is not checked. Relative and package specifiers are fine.
+
+### ❌ Incorrect
+
+```ts
+import util from '/srv/app/lib/util';
+export * from '/srv/app/lib/util';
+const util2 = require(`/srv/app/lib/util`);
+```
+
+### ✅ Correct
+
+```ts
+import util from './lib/util';
+import lodash from 'lodash';
+const load = (name: string) => import(name);
+```
 
 ## Options
 
@@ -41,11 +63,10 @@ This rule aims to prevent issues related to absolute-path.
 ]
 ```
 
-## Implementation
+- `esmodule` (default `true`): check ES module syntax.
+- `commonjs` (default `true`): check `require()` and `import x = require()`.
+- `amd` (default `false`): check AMD dependency arrays.
 
-- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-absolute-path.ts)
-- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-absolute-path.test.ts)
+## When Not To Use It
 
-## OWASP Foundation
-
-- **Category**: A00:2021 - General Security
+When absolute specifiers are mapped by your bundler or resolver to something other than the file system (e.g. a `/` alias for the project root).

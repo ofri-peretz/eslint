@@ -8,7 +8,27 @@ Enforce explicit approval for high-risk package imports
 
 ## Rule Details
 
-This rule aims to prevent issues related to require-import-approval.
+A third-party package must be approved before it is used. The user keeps the policy in `packages`: each entry names a package (`axios`), a scope (`@acme/*`) or a prefix (`lodash*`) with a `status` of `approved`, `pending` or `blocked`. Every way a package is loaded or re-exported is checked: `import`, side-effect `import`, `export … from`, `export * from`, `require()`, `import()` and TypeScript's `import x = require()`.
+
+A `blocked` or `pending` package is reported; with `defaultPolicy: 'deny'` a package not listed at all is reported too (the default `allow` lets it through). `ignorePatterns` exempts packages. The package is matched by name: `axios/lib/x` is `axios`, `@acme/sdk/x` is `@acme/sdk`.
+
+Never a package: relative and absolute paths, `#` subpath imports (the package's own files), Node.js builtins (`fs`, `node:fs`), and path aliases npm cannot publish under (`@/lib`: a scope is never empty; `~/lib`: `~` is not allowed in a package name).
+
+### ❌ Incorrect
+
+```ts
+// { packages: [{ package: 'axios', status: 'blocked' }], defaultPolicy: 'deny' }
+import axios from 'axios';
+import leftPad from 'left-pad';
+```
+
+### ✅ Correct
+
+```ts
+import fs from 'node:fs';
+import { x } from '#lib/x';
+import helper from './helper';
+```
 
 ## Options
 

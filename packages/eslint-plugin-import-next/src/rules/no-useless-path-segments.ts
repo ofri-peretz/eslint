@@ -16,6 +16,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  resolveModule,
 } from '@interlace/eslint-devkit';
 import * as path from 'node:path';
 
@@ -77,33 +78,49 @@ export const noUselessPathSegments = createRule<RuleOptions, MessageIds>({
       if (!importPath.startsWith('./') && !importPath.startsWith('../')) {
         return null;
       }
+      // A trailing slash only matches a directory, so `./lib/` can name a
+      // different module than `./lib` (a sibling `lib.ts`). Not provably
+      // useless: leave it alone.
+      if (importPath.endsWith('/')) return null;
 
-      const normalized = path.posix.normalize(importPath);
+      // Lexical normalisation: `./a/./b`, `./a/../b`, `./a//b` -> `./b`.
+      let simplified = path.posix.normalize(importPath);
 
-      // Check for useless ./
-      // ./foo -> foo (but we keep it as relative)
-      // ./a/../b -> ./b
-      // ./a/./b -> ./a/b
-
-      // Normalize the path
-      let simplified = normalized;
-
-      // Remove trailing /index if noUselessIndex is enabled
-      if (noUselessIndex) {
-        simplified = simplified.replace(/\/index$/, '');
-        // Handle ./index -> .
-        if (simplified === './index' || simplified === 'index') {
-          simplified = '.';
-        }
+      // A path that leaves the file's directory only to come back into it:
+      // from `src/app.ts`, `../src/dep` is `./dep`. Node resolves a relative
+      // specifier against the importing file's directory, so this is the same
+      // module by construction.
+      const file = path.resolve(context.cwd, context.filename);
+      if (simplified.startsWith('../')) {
+        const fileDir = path.posix.dirname(file.split(path.sep).join('/'));
+        const relative = path.posix.relative(
+          fileDir,
+          path.posix.join(fileDir, simplified),
+        );
+        if (!relative.startsWith('../')) simplified = relative || '.';
       }
 
-      // Ensure relative paths start with ./
+      // Ensure relative paths start with ./ (`posix.normalize` drops it, and a
+      // first segment may itself start with a dot: `.config/x`).
       if (
+        simplified !== '.' &&
+        simplified !== '..' &&
         !simplified.startsWith('./') &&
-        !simplified.startsWith('../') &&
-        !simplified.startsWith('.')
+        !simplified.startsWith('../')
       ) {
         simplified = './' + simplified;
+      }
+
+      // Remove a trailing extensionless `/index` when that names the same
+      // module: `./foo/index` -> `./foo` is only safe when `./foo` does not
+      // resolve to a sibling `foo.ts` instead. Both must resolve, to the same
+      // file: an unresolvable path proves nothing.
+      if (noUselessIndex && simplified.endsWith('/index')) {
+        const stripped = simplified.slice(0, -'/index'.length);
+        const target = resolveModule(simplified, file);
+        if (target !== null && target === resolveModule(stripped, file)) {
+          simplified = stripped;
+        }
       }
 
       // If nothing changed, return null
@@ -142,6 +159,27 @@ export const noUselessPathSegments = createRule<RuleOptions, MessageIds>({
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         checkImport(node.source);
+      },
+
+      // `export { a } from './x'` and `export * from './x'` load a module by
+      // the same specifier an import does.
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        if (node.source) checkImport(node.source);
+      },
+
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        checkImport(node.source);
+      },
+
+      // TS `import x = require('./x')` compiles to `require()`: it follows the
+      // `commonjs` option like a `require()` call.
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        if (!commonjs) return;
+        const ref = node.moduleReference;
+        // The parser only accepts a string literal inside `require(...)` here.
+        if (ref.type === AST_NODE_TYPES.TSExternalModuleReference) {
+          checkImport(ref.expression as TSESTree.Literal);
+        }
       },
 
       ImportExpression(node: TSESTree.ImportExpression) {

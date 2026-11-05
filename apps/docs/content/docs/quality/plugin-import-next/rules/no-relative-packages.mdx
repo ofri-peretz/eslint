@@ -14,7 +14,40 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## Rule Details
 
-This rule aims to prevent issues related to relative-packages.
+In a workspace, a relative specifier that climbs out of the importing file's
+package into another package bypasses that package's name, its `exports` map
+and its build output. This rule reports such a specifier and fixes it to the
+package name (`../../other/src/x` becomes `other/src/x`, `../../other` becomes
+`other`).
+
+A package is a directory whose `package.json` declares a `name`. The rule
+finds the nearest one above the importing file and above the import target,
+and reports when they differ. Not reported:
+
+- an import inside one package, including across a nameless `package.json`
+  such as a `{"type":"module"}` scope marker in a sub-folder;
+- a target whose nearest `package.json` has no `name` (or cannot be read):
+  there is no package name to import it by;
+- a target in a package that contains the importing one (the workspace root);
+- package specifiers and absolute paths.
+
+Every static spelling is checked: `import`, `import type`, side-effect
+imports, `export { a } from`, `export * from`, `import()`, `require()` and TS
+`import x = require()`.
+
+```ts
+// ❌ Incorrect (in packages/app/src/app.ts)
+import { x } from '../../other/src/x';
+export * from '../../other';
+
+// ✅ Correct
+import { x } from 'other/src/x';
+export * from 'other';
+import { util } from './util';
+```
+
+`allowSamePackage` is accepted for configuration compatibility and changes
+nothing: an import inside one package is never reported.
 
 ## Options
 

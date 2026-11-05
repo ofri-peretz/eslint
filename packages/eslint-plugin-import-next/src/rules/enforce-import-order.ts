@@ -8,6 +8,8 @@
  * ESLint Rule: enforce-import-order
  * Enforces a specific order for import statements
  */
+import { builtinModules } from 'node:module';
+
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
@@ -154,30 +156,23 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
       }
 
       // Built-in modules (node:)
-      if (
-        source.startsWith('node:') ||
-        [
-          'fs',
-          'path',
-          'os',
-          'util',
-          'http',
-          'https',
-          'events',
-          'stream',
-          'child_process',
-        ].includes(source)
-      ) {
-        // console.log('DEBUG: identified as builtin');
+      // A statement-level `import type` has its own group only when the
+      // configured groups name one; otherwise it is grouped by its path.
+      if (node.importKind === 'type' && options.groups.includes('type')) {
+        return 'type';
+      }
+
+      // Node's own builtin list (subpaths included), or the `node:` scheme.
+      if (source.startsWith('node:') || builtinModules.includes(source)) {
         return 'builtin';
       }
 
-      // Relative imports
       if (source.startsWith('.')) {
-        if (source.startsWith('../')) {
+        if (source === '..' || source.startsWith('../')) {
           return 'parent';
         }
-        if (source === './index' || source === '.') {
+        // The directory's own index: `.`, `./`, `./index`, `./index.js`.
+        if (/^\.(?:\/(?:index(?:\.[^/]*)?)?)?$/.test(source)) {
           return 'index';
         }
         return 'sibling';
@@ -382,9 +377,15 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
               const sourceA = a.source.value;
               const sourceB = b.source.value;
 
+              // Case-sensitive order is code-unit order (`Zed` before
+              // `react`); `localeCompare` would fold case anyway.
               const compareResult = options.alphabetize?.caseInsensitive
                 ? sourceA.toLowerCase().localeCompare(sourceB.toLowerCase())
-                : sourceA.localeCompare(sourceB);
+                : sourceA < sourceB
+                  ? -1
+                  : sourceA > sourceB
+                    ? 1
+                    : 0;
 
               return options.alphabetize?.order === 'asc'
                 ? compareResult

@@ -13,6 +13,20 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('group-exports', groupExports, {
   valid: [
+    {
+      name: 'a value list and a type-only list group separately',
+      code: `
+        export { a };
+        export type { T };
+      `,
+    },
+    {
+      name: 'a value re-export and a type-only re-export from one source group separately',
+      code: `
+        export { a } from './m';
+        export type { T } from './m';
+      `,
+    },
     // Single export statement
     { name: 'a single grouped export', code: `export { a, b, c };` },
 
@@ -49,6 +63,14 @@ ruleTester.run('group-exports', groupExports, {
   ],
 
   invalid: [
+    {
+      name: 'two type-only lists',
+      code: `
+        export type { T };
+        export type { U };
+      `,
+      errors: [{ messageId: 'groupExports' }],
+    },
     // Multiple local exports
     {
       name: 'two export statements where one would do',

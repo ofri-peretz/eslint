@@ -78,12 +78,26 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let esmodule: boolean;
 
+    /**
+     * Is the module name fixed in the source? A literal, a template whose
+     * substitutions are themselves static, or a `+` of static parts
+     * (`'./plugins/' + 'a'`). A variable or a call is not.
+     */
     function isStaticValue(node: TSESTree.Node): boolean {
-      return (
-        node.type === AST_NODE_TYPES.Literal ||
-        (node.type === AST_NODE_TYPES.TemplateLiteral &&
-          node.expressions.length === 0)
-      );
+      switch (node.type) {
+        case AST_NODE_TYPES.Literal:
+          return true;
+        case AST_NODE_TYPES.TemplateLiteral:
+          return node.expressions.every(isStaticValue);
+        case AST_NODE_TYPES.BinaryExpression:
+          return (
+            node.operator === '+' &&
+            isStaticValue(node.left) &&
+            isStaticValue(node.right)
+          );
+        default:
+          return false;
+      }
     }
 
     return {

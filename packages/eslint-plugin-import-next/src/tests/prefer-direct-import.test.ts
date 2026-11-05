@@ -132,3 +132,38 @@ ruleTester.run('prefer-direct-import', preferDirectImport, {
     },
   ],
 });
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/import-next/
+// prefer_direct_import): inline `type` specifiers were reported though they
+// are erased, and `export { X } from` the barrel was not read.
+const ui = [{ mappings: [{ barrel: '^@/ui$', directPath: '@/ui/{name}' }] }];
+ruleTester.run('prefer-direct-import - fidelity', preferDirectImport, {
+  valid: [
+    { name: 'inline type imports only', code: "import { type Props } from '@/ui';", options: ui },
+    { name: 'export type from a barrel', code: "export type { Props } from '@/ui';", options: ui },
+    { name: 'export { type P } from a barrel', code: "export { type Props } from '@/ui';", options: ui },
+    { name: 'a local export list', code: 'const a = 1;\nexport { a };', options: ui },
+    { name: 'export * has no name to map', code: "export * from '@/ui';", options: ui },
+  ],
+  invalid: [
+    {
+      name: 'export { Button } from a barrel',
+      code: "export { Button } from '@/ui';",
+      output: "export { Button } from '@/ui/Button';",
+      options: ui,
+      errors: [{ messageId: 'preferDirectImport' }],
+    },
+    {
+      name: 'a value specifier beside an inline type one is reported, not fixed',
+      code: "import { type Props, Button } from '@/ui';",
+      options: ui,
+      errors: [
+        {
+          messageId: 'preferDirectImport',
+          // Several specifiers: the split is manual, so no rewrite is offered.
+          suggestions: [],
+        },
+      ],
+    },
+  ],
+});

@@ -181,38 +181,41 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
               node.specifiers.length !== namedSpecifiers.length ||
               rebuildWouldDropAnAttribute;
 
-            // If all named imports are type imports, suggest top-level
-            if (
-              !isTypeImport &&
-              namedSpecifiers.length > 0 &&
-              inlineTypeSpecifiers.length === namedSpecifiers.length
-            ) {
+            // Any inline `type` qualifier breaks the convention, also next to
+            // value specifiers (`import { type A, b }`): the type names belong
+            // in their own `import type` statement. Only an all-type block
+            // can be rewritten in place; a mixed one would turn its values
+            // into types, so it is reported without a fix.
+            if (!isTypeImport && inlineTypeSpecifiers.length > 0) {
+              const allTypes =
+                inlineTypeSpecifiers.length === namedSpecifiers.length;
               context.report({
                 node,
                 messageId: 'preferTopLevel',
                 data: {
-                  name: namedSpecifiers
+                  name: inlineTypeSpecifiers
                     .map((s: TSESTree.ImportSpecifier) => s.local.name)
                     .join(', '),
                 },
-                fix: rebuildWouldDropABinding
-                  ? undefined
-                  : function (fixer: TSESLint.RuleFixer) {
-                      // Build the new import statement using AST
-                      // Convert: import { type Foo, type Bar } from 'x'
-                      // To: import type { Foo, Bar } from 'x'
+                fix:
+                  rebuildWouldDropABinding || !allTypes
+                    ? undefined
+                    : function (fixer: TSESLint.RuleFixer) {
+                        // Build the new import statement using AST
+                        // Convert: import { type Foo, type Bar } from 'x'
+                        // To: import type { Foo, Bar } from 'x'
 
-                      const specifiersText = namedSpecifiers
-                        .map((spec: TSESTree.ImportSpecifier) =>
-                          getSpecifierText(spec),
-                        )
-                        .join(', ');
+                        const specifiersText = namedSpecifiers
+                          .map((spec: TSESTree.ImportSpecifier) =>
+                            getSpecifierText(spec),
+                          )
+                          .join(', ');
 
-                      const sourceText = sourceCode.getText(node.source);
-                      const newImport = `import type { ${specifiersText} } from ${sourceText};`;
+                        const sourceText = sourceCode.getText(node.source);
+                        const newImport = `import type { ${specifiersText} } from ${sourceText};`;
 
-                      return fixer.replaceText(node, newImport);
-                    },
+                        return fixer.replaceText(node, newImport);
+                      },
               });
             }
           }

@@ -226,24 +226,132 @@ ruleTester.run('export — declaration spaces', exportRule, {
         export interface Foo { b: number }
       `,
     },
+  ],
+  invalid: [
     {
-      // `export type { X }` is type-space, so it does not collide with a value.
+      // An export specifier is an alias, and TypeScript rejects two aliases
+      // of one name even when one is type-only (TS2300 Duplicate identifier).
+      name: 'type-only re-export beside a value export specifier of the same name',
       code: `
         const Foo = 1;
         export { Foo };
         export type { Foo } from './types';
       `,
+      errors: [{ messageId: 'duplicateExport' }],
     },
     {
-      // Inline `type` specifier, same reasoning.
+      name: 'inline type re-export beside a value export specifier of the same name',
       code: `
         const Foo = 1;
         export { Foo };
         export { type Foo } from './types';
       `,
+      errors: [{ messageId: 'duplicateExport' }],
     },
   ],
-  invalid: [],
+});
+
+/**
+ * Fidelity (benchmarks/suites/fidelity/models/import-next/export_rule.qnt):
+ * two exports of one name are a duplicate exactly when TypeScript's
+ * declaration-merging table rejects them.
+ */
+ruleTester.run('export — declaration merging table', exportRule, {
+  valid: [
+    {
+      name: 'two enums merge when one initializes its first member',
+      code: 'export enum E { A = 0 }\nexport enum E { B }',
+    },
+    {
+      name: 'a namespace merges with a function',
+      code: 'export function N() {}\nexport namespace N { export const z = 1; }',
+    },
+    {
+      name: 'a namespace merges with a class',
+      code: 'export class N {}\nexport namespace N { export const z = 1; }',
+    },
+    {
+      name: 'a namespace of types only declares no value: it merges with a const',
+      code: 'export const Status = 1;\nexport namespace Status {\n  export type Code = 1;\n  export interface I {}\n  export const enum E { A }\n  export namespace Inner { export type T = 1; }\n}',
+    },
+    {
+      name: 'a destructured value beside a type alias of the same name',
+      code: 'const o = { N: 1 };\nexport const { N } = o;\nexport type N = 1;',
+    },
+    {
+      name: 'function overload signatures are one export',
+      code: 'export function f(a: string): void;\nexport function f(a: unknown) {}',
+    },
+    {
+      name: 'a re-export beside a pure type depends on the other module: silent',
+      code: "export { x as N } from './m';\nexport interface N { a: 1 }",
+    },
+  ],
+  invalid: [
+    {
+      name: 'a destructured export beside a const of the same name',
+      code: 'const o = { N: 1 };\nexport const { N } = o;\nexport const N = 2;',
+      errors: [{ messageId: 'duplicateExport' }],
+    },
+    {
+      name: 'a nested destructured export beside a function of the same name',
+      code: 'const o = { a: [1] };\nexport const { a: [N] } = o;\nexport function N() {}',
+      errors: [{ messageId: 'duplicateExport' }],
+    },
+    {
+      name: 'every binding of a destructuring pattern is an export',
+      code: 'const o: any = {};\nconst arr: any[] = [];\nexport const { a = 1, ...rest } = o;\nexport const [, b, ...c] = arr;\nexport const rest = 1;\nexport const c = 2;',
+      errors: [
+        { messageId: 'duplicateExport' },
+        { messageId: 'duplicateExport' },
+      ],
+    },
+    {
+      name: 'a class beside a type alias of the same name (a class is a type too)',
+      code: 'export class N {}\nexport type N = 1;',
+      errors: [{ messageId: 'duplicateExport' }],
+    },
+    {
+      name: 'a namespace holding an enum declares a value',
+      code: 'export const S = 1;\nexport namespace S {\n  export enum E { A }\n}',
+      errors: [{ messageId: 'duplicateExport' }],
+    },
+    {
+      name: 'a namespace holding an instantiated namespace declares a value',
+      code: 'export const S = 1;\nexport namespace S {\n  namespace Inner { export const v = 1; }\n}',
+      errors: [{ messageId: 'duplicateExport' }],
+    },
+    {
+      name: 'export * as N beside a namespace of types only',
+      code: "export * as N from './m';\nexport namespace N { export type T = 1; }",
+      errors: [{ messageId: 'duplicateExport' }],
+    },
+    {
+      name: 'a namespace beside a const of the same name',
+      code: 'export namespace N { export const z = 1; }\nexport const N = 1;',
+      errors: [{ messageId: 'duplicateExport' }],
+    },
+    {
+      name: 'export * as N beside a namespace N',
+      code: "export * as N from './m';\nexport namespace N { export const z = 1; }",
+      errors: [{ messageId: 'duplicateExport' }],
+    },
+    {
+      name: 'a type-only export specifier beside a const of the same name',
+      code: 'type T = 1;\nexport type { T as N };\nexport const N = 1;',
+      errors: [{ messageId: 'duplicateExport' }],
+    },
+    {
+      name: 'a type-only export specifier beside a class of the same name',
+      code: 'export class N {}\ntype T = 1;\nexport type { T as N };',
+      errors: [{ messageId: 'duplicateExport' }],
+    },
+    {
+      name: 'a re-export beside a namespace of the same name',
+      code: "export { x as N } from './m';\nexport namespace N { export const z = 1; }",
+      errors: [{ messageId: 'duplicateExport' }],
+    },
+  ],
 });
 
 /**

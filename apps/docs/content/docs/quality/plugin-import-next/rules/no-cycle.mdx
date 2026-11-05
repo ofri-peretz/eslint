@@ -13,7 +13,53 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## Rule Details
 
-This rule aims to prevent issues related to cycle.
+Reports an import whose target imports the current module back, directly or
+through other modules, by runtime edges. Such a cycle makes the module loader
+hand one module to another while it is still initializing (an `undefined`
+binding or a TDZ error), and keeps both modules in every bundle that loads
+either.
+
+An edge is a runtime edge when it survives compilation:
+
+- value imports (default, named value, namespace), side-effect imports,
+  `export { x } from`, `export * from`, `export * as ns from`, `require()`
+  and TS `import x = require()` are runtime edges;
+- `import type` and `export type { T } from` are erased;
+- an inline `import { type T }` is erased, unless `verbatimModuleSyntax` is
+  `true` (tsc then emits `import {} from`, which still loads the module);
+- a plain `import { T }` that takes only types (interfaces, type aliases) is
+  elided by TypeScript, unless `verbatimModuleSyntax` is `true`;
+- `import()` loads lazily, after both modules have initialized, and does not
+  form an initialization cycle.
+
+Options:
+
+- `ignorePatterns` (default: test, spec and story files, `__tests__`,
+  `__mocks__`): files that are not checked;
+- `maxDepth` (default unlimited): how many imports deep the edge back may be;
+  `1` finds only `A -> B -> A`;
+- `verbatimModuleSyntax`: see above;
+- `barrelExports`, `fixStrategy`, `moduleNamingConvention`,
+  `coreModuleSuffix`, `extendedModuleSuffix` shape the suggested fix in the
+  message; `reportAllCycles` is accepted for compatibility. None of them
+  changes what is reported.
+
+Generated files (marked by a `@generated` header) are not checked.
+
+```ts
+// ❌ Incorrect
+// a.ts
+import { b } from './b';
+export const a = () => b();
+// b.ts
+import { a } from './a';
+export const b = () => a();
+
+// ✅ Correct
+// b.ts
+import type { A } from './a'; // erased: no runtime edge
+export const lazyA = () => import('./a');
+```
 
 ## Options
 
@@ -24,7 +70,7 @@ This rule aims to prevent issues related to cycle.
     "properties": {
       "maxDepth": {
         "type": "number",
-        "default": 5,
+        "default": 9007199254740991,
         "description": "Maximum depth to traverse when detecting cycles (performance optimization)"
       },
       "ignorePatterns": {

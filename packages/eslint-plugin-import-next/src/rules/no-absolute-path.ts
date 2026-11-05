@@ -15,6 +15,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  staticString,
 } from '@interlace/eslint-devkit';
 import * as path from 'node:path';
 
@@ -91,9 +92,10 @@ export const noAbsolutePath = createRule<RuleOptions, MessageIds>({
       return relativePath;
     }
 
-    function checkImport(node: TSESTree.Node, source: TSESTree.Literal) {
-      const importPath = source.value;
-      if (typeof importPath !== 'string') return;
+    /** `source` is any expression naming a module; only a static string is checked. */
+    function checkImport(source: TSESTree.Node | null | undefined) {
+      const importPath = staticString(source);
+      if (!source || importPath === null) return;
 
       if (isAbsolutePath(importPath)) {
         const relativePath = getRelativePath(importPath);
@@ -117,15 +119,27 @@ export const noAbsolutePath = createRule<RuleOptions, MessageIds>({
         ({ esmodule = true, commonjs = true, amd = false } = options);
         filename = context.filename;
       },
+      // `esmodule`: every ES spelling that names a module.
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        if (esmodule) {
-          checkImport(node, node.source);
-        }
+        if (esmodule) checkImport(node.source);
+      },
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        if (esmodule) checkImport(node.source);
+      },
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        if (esmodule) checkImport(node.source);
+      },
+      ImportExpression(node: TSESTree.ImportExpression) {
+        if (esmodule) checkImport(node.source);
       },
 
-      ImportExpression(node: TSESTree.ImportExpression) {
-        if (esmodule && node.source.type === 'Literal') {
-          checkImport(node, node.source as TSESTree.Literal);
+      // `commonjs`: TS `import x = require('m')` compiles to `require`.
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        if (
+          commonjs &&
+          node.moduleReference.type === 'TSExternalModuleReference'
+        ) {
+          checkImport(node.moduleReference.expression);
         }
       },
 
@@ -133,23 +147,24 @@ export const noAbsolutePath = createRule<RuleOptions, MessageIds>({
         if (node.callee.type !== 'Identifier') return;
         const calleeName = node.callee.name;
 
-        // CommonJS require
+        // CommonJS `require('m')`
         if (
           commonjs &&
           calleeName === 'require' &&
-          node.arguments.length === 1 &&
-          node.arguments[0].type === 'Literal'
+          node.arguments.length === 1
         ) {
-          checkImport(node, node.arguments[0] as TSESTree.Literal);
+          checkImport(node.arguments[0]);
         }
 
-        // AMD define/require
-        if (amd && (calleeName === 'define' || calleeName === 'require')) {
-          node.arguments.forEach((arg: TSESTree.CallExpressionArgument) => {
-            if (arg.type === 'Literal') {
-              checkImport(node, arg as TSESTree.Literal);
-            }
-          });
+        // AMD `define([...], f)` / `require([...], f)`: the modules are the
+        // elements of the dependency array.
+        const deps = node.arguments[0];
+        if (
+          amd &&
+          (calleeName === 'define' || calleeName === 'require') &&
+          deps?.type === 'ArrayExpression'
+        ) {
+          for (const element of deps.elements) checkImport(element);
         }
       },
     };

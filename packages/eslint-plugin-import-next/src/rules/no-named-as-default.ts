@@ -59,52 +59,71 @@ export const noNamedAsDefault = createRule<RuleOptions, MessageIds>({
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     /**
-     * The collision this rule can actually see is WITHIN one declaration: a
-     * module's default is bound to a name, and the same declaration also
-     * imports a named export spelled the same way. Deciding the general case —
-     * "is `foo` a named export of './module'" — needs to resolve and read the
-     * other module, which a type-unaware rule does not do.
+     * The collision this rule can see is in THIS file: a module's default is
+     * bound to a name, and the file also takes a named export spelled the
+     * same way from that module - in the same declaration
+     * (`import foo, { foo as f2 }`), in another import, or in a re-export
+     * (`export { foo } from './m'`). Deciding the general case - "is `foo` a
+     * named export of './m'" - needs to read the other module, which a
+     * type-unaware rule does not do.
      *
-     * An earlier version also walked every `export` in the importing file into
-     * two collections and then read neither: `Program:exit` held an `if` with
-     * an empty body. It looked like same-file detection and was forty lines of
-     * nothing, so the TN cases around exports passed because the rule had no
-     * opinion rather than because it had the right one.
+     * A TYPE of that name (`import type`, `{ type foo }`) is not evidence: a
+     * type and a default value sharing a name is a judgment call.
      */
-    return {
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        const named: TSESTree.ImportSpecifier[] = [];
-        let defaultName: string | null = null;
+    let defaults: Array<{ source: string; local: string; node: TSESTree.Node }>;
+    let namedBySource: Map<string, Set<string>>;
 
+    const addNamed = (source: string, name: string) => {
+      let names = namedBySource.get(source);
+      if (!names) {
+        names = new Set();
+        namedBySource.set(source, names);
+      }
+      names.add(name);
+    };
+
+    return {
+      before() {
+        defaults = [];
+        namedBySource = new Map();
+      },
+      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        if (node.importKind === 'type') return;
+        const source = node.source.value;
         for (const spec of node.specifiers) {
           if (spec.type === 'ImportDefaultSpecifier') {
-            defaultName = spec.local.name;
+            defaults.push({ source, local: spec.local.name, node: spec });
             continue;
           }
-          if (spec.type !== 'ImportSpecifier') continue;
+          if (spec.type !== 'ImportSpecifier' || spec.importKind === 'type') {
+            continue;
+          }
           // `import { default as foo }` binds the default export exactly as
-          // `import foo` does — it is the spelling required when the same
-          // declaration also needs `type` or a string-literal name, and it is
-          // the one TypeScript emits under `esModuleInterop: false`. Reading
-          // only ImportDefaultSpecifier missed every one of them.
+          // `import foo` does.
           if (nameOf(spec.imported) === 'default') {
-            defaultName = spec.local.name;
+            defaults.push({ source, local: spec.local.name, node: spec });
             continue;
           }
-          named.push(spec);
+          addNamed(source, nameOf(spec.imported));
         }
-
-        if (defaultName === null) return;
-        const collision = named.find(
-          (spec) => nameOf(spec.imported) === defaultName,
-        );
-        if (collision === undefined) return;
-
-        context.report({
-          node: collision,
-          messageId: 'namedAsDefault',
-          data: { name: defaultName },
-        });
+      },
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        if (!node.source || node.exportKind === 'type') return;
+        for (const spec of node.specifiers) {
+          if (spec.exportKind === 'type') continue;
+          const name = nameOf(spec.local);
+          if (name !== 'default') addNamed(node.source.value, name);
+        }
+      },
+      'Program:exit'() {
+        for (const { source, local, node } of defaults) {
+          if (!namedBySource.get(source)?.has(local)) continue;
+          context.report({
+            node,
+            messageId: 'namedAsDefault',
+            data: { name: local },
+          });
+        }
       },
     };
   },

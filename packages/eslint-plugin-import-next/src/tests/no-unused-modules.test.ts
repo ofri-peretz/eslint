@@ -80,3 +80,49 @@ ruleTester.run('no-unused-modules', noUnusedModules, {
     },
   ],
 });
+
+/**
+ * Fidelity (benchmarks/suites/fidelity/models/import-next/no_unused_modules.qnt):
+ * every CommonJS spelling of an export counts, by binding.
+ */
+describe('no-unused-modules — fidelity', () => {
+  ruleTester.run('CommonJS exports and imports', noUnusedModules, {
+    valid: [
+      {
+        name: 'module.exports.a = 1 exports',
+        code: 'module.exports.a = 1;',
+      },
+      {
+        name: "Object.defineProperty(exports, 'a', ...) exports",
+        code: "Object.defineProperty(exports, 'a', { value: 1 });",
+      },
+      {
+        name: 'Object.assign(module.exports, ...) exports',
+        code: 'Object.assign(module.exports, { a: 1 });',
+      },
+      {
+        name: 'allowImportOnly counts require() as an import',
+        code: "const setup = require('./setup');\nconsole.log(setup);",
+        options: [{ allowImportOnly: true }],
+      },
+      {
+        name: "allowImportOnly counts import x = require('...') as an import",
+        code: "import setup = require('./setup');\nconsole.log(setup);",
+        options: [{ allowImportOnly: true }],
+      },
+    ],
+    invalid: [
+      {
+        name: 'import A = NS.B aliases a namespace; it imports no module',
+        code: 'declare namespace NS {\n  const B: number;\n}\nimport A = NS.B;\nconsole.log(A);',
+        options: [{ allowImportOnly: true }],
+        errors: [{ messageId: 'missingExports' }],
+      },
+      {
+        name: 'a parameter named exports is not the module exports object',
+        code: 'function fill(exports: any) {\n  exports.a = 1;\n}\nfill({});',
+        errors: [{ messageId: 'missingExports' }],
+      },
+    ],
+  });
+});

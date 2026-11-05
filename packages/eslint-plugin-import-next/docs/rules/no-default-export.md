@@ -9,7 +9,32 @@ Prevents default exports
 
 ## Rule Details
 
-This rule aims to prevent issues related to default-export.
+A convention: modules publish named exports only, so every import names what it takes and renames are explicit. This rule reports anything that gives the module a default export:
+
+- `export default ...` (a value, a function, a class, an interface);
+- `export { x as default }`, also with the string name `"default"`;
+- `export { default } from 'm'` and `export { x as default } from 'm'`;
+- `export * as default from 'm'`;
+- TS `export = x`.
+
+Re-exporting another module's default under a name (`export { default as Widget } from './widget'`) is exactly the named export the convention asks for, and is not reported. `export * from 'm'` does not re-export a default.
+
+### ❌ Incorrect
+
+```ts
+export default function load() {}
+const value = 1;
+export { value as default };
+export { default } from './widget';
+```
+
+### ✅ Correct
+
+```ts
+export function load() {}
+export { default as Widget } from './widget';
+export * from './utils';
+```
 
 ## Options
 
@@ -43,11 +68,12 @@ This rule aims to prevent issues related to default-export.
 ]
 ```
 
-## Implementation
+- `allowInFiles` (default `[]`): file globs (or path substrings) where a default export is accepted, e.g. `["**/pages/**"]` for a framework that requires one.
+- `allowPatterns` (default `[]`): more file globs (or path substrings), same meaning as `allowInFiles`.
+- `suggestNamed` (default `true`): include a named-export equivalent in the message.
 
-- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-default-export.ts)
-- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-default-export.test.ts)
+A glob matches any run of whole path segments, so `src/pages/**` matches an absolute filename.
 
-## OWASP Foundation
+## When Not To Use It
 
-- **Category**: A00:2021 - General Security
+When your framework or tooling requires default exports throughout.

@@ -165,6 +165,68 @@ export const preferDirectImport = createRule<RuleOptions, MessageIds>({
     let mappings: DirectImportMapping[];
     let autoFix: boolean;
 
+    /**
+     * Report each named value binding `node` takes from a mapped barrel.
+     * `named` pairs the specifier with the name the barrel exports. Only a
+     * declaration whose single specifier is that binding is fixed: rewriting
+     * the source of a declaration that takes more would move the others too.
+     */
+    function checkNamed(
+      node: TSESTree.ImportDeclaration | TSESTree.ExportNamedDeclaration,
+      named: [TSESTree.Node, TSESTree.Identifier | TSESTree.StringLiteral][],
+    ): void {
+      const source = node.source as TSESTree.StringLiteral;
+      const importPath = source.value;
+      const mapping = findMapping(importPath, mappings);
+      if (!mapping || named.length === 0) return;
+
+      if (named.length === 1 && node.specifiers.length === 1) {
+        const [, nameNode] = named[0];
+        const importedName =
+          nameNode.type === 'Identifier' ? nameNode.name : nameNode.value;
+        const suggestedPath = generateDirectPath(
+          mapping.directPath,
+          importedName,
+        );
+        const data = { importedName, suggestedPath, barrelPath: importPath };
+        const fix = (fixer: TSESLint.RuleFixer) =>
+          fixer.replaceText(source, `'${suggestedPath}'`);
+        context.report({
+          node,
+          messageId: 'preferDirectImport',
+          data,
+          fix: autoFix ? fix : undefined,
+          suggest: !autoFix
+            ? [{ messageId: 'preferDirectImport', data, fix }]
+            : undefined,
+        });
+        return;
+      }
+
+      // Several bindings: report each; the split is a manual change.
+      for (const [spec, nameNode] of named) {
+        const importedName =
+          nameNode.type === 'Identifier' ? nameNode.name : nameNode.value;
+        const suggestedPath = generateDirectPath(
+          mapping.directPath,
+          importedName,
+        );
+        const data = { importedName, suggestedPath, barrelPath: importPath };
+        context.report({
+          node: spec,
+          messageId: 'preferDirectImport',
+          data,
+          suggest: [
+            {
+              messageId: 'preferDirectImport',
+              data,
+              fix: () => null, // Manual fix required for multi-import
+            },
+          ],
+        });
+      }
+    }
+
     return {
       before() {
         const [options = {}] = currentOptions();
@@ -173,103 +235,30 @@ export const preferDirectImport = createRule<RuleOptions, MessageIds>({
         autoFix = opts.autoFix ?? true;
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        const importPath = node.source.value;
-        if (typeof importPath !== 'string') return;
-
         // Skip type-only imports (they don't affect bundle size)
         if (node.importKind === 'type') return;
-
-        // Find matching barrel mapping
-        const mapping = findMapping(importPath, mappings);
-        if (!mapping) return;
-
-        // Only process named imports (not default or namespace)
-        const namedImports = node.specifiers.filter(
-          (spec: TSESTree.ImportClause): spec is TSESTree.ImportSpecifier =>
-            spec.type === 'ImportSpecifier',
+        // Only named value imports map to a direct path: not default or
+        // namespace ones, and not inline `type` ones (erased).
+        const named = node.specifiers.filter(
+          (spec): spec is TSESTree.ImportSpecifier =>
+            spec.type === 'ImportSpecifier' && spec.importKind !== 'type',
         );
+        checkNamed(
+          node,
+          named.map((spec) => [spec, spec.imported]),
+        );
+      },
 
-        if (namedImports.length === 0) return;
-
-        // For single named import, we can suggest/fix the direct path
-        if (namedImports.length === 1) {
-          const importedName =
-            namedImports[0].imported.type === 'Identifier'
-              ? namedImports[0].imported.name
-              : namedImports[0].imported.value;
-          const suggestedPath = generateDirectPath(
-            mapping.directPath,
-            importedName,
-          );
-
-          context.report({
-            node,
-            messageId: 'preferDirectImport',
-            data: {
-              importedName,
-              suggestedPath,
-              barrelPath: importPath,
-            },
-            fix: autoFix
-              ? (fixer: TSESLint.RuleFixer) => {
-                  // Replace the import path
-                  return fixer.replaceText(node.source, `'${suggestedPath}'`);
-                }
-              : undefined,
-            suggest: !autoFix
-              ? [
-                  {
-                    messageId: 'preferDirectImport',
-                    data: {
-                      importedName,
-                      suggestedPath,
-                      barrelPath: importPath,
-                    },
-                    fix: (fixer: TSESLint.RuleFixer) => {
-                      return fixer.replaceText(
-                        node.source,
-                        `'${suggestedPath}'`,
-                      );
-                    },
-                  },
-                ]
-              : undefined,
-          });
-        } else {
-          // Multiple named imports - suggest splitting them
-          for (const spec of namedImports) {
-            const importedName =
-              spec.imported.type === 'Identifier'
-                ? spec.imported.name
-                : spec.imported.value;
-            const suggestedPath = generateDirectPath(
-              mapping.directPath,
-              importedName,
-            );
-
-            context.report({
-              node: spec,
-              messageId: 'preferDirectImport',
-              data: {
-                importedName,
-                suggestedPath,
-                barrelPath: importPath,
-              },
-              // Don't auto-fix multiple imports as it requires splitting the statement
-              suggest: [
-                {
-                  messageId: 'preferDirectImport',
-                  data: {
-                    importedName,
-                    suggestedPath,
-                    barrelPath: importPath,
-                  },
-                  fix: () => null, // Manual fix required for multi-import
-                },
-              ],
-            });
-          }
-        }
+      // `export { Button } from '@/ui'` passes the barrel through the same way.
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        if (!node.source || node.exportKind === 'type') return;
+        const named = node.specifiers.filter(
+          (spec) => spec.exportKind !== 'type',
+        );
+        checkNamed(
+          node,
+          named.map((spec) => [spec, spec.local]),
+        );
       },
     };
   },

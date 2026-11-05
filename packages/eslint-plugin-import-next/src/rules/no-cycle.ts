@@ -32,7 +32,7 @@ import {
   isBarrelExport,
   shouldIgnoreFile,
 } from '@interlace/eslint-devkit';
-import { readFileSync, realpathSync } from 'node:fs';
+import { realpathSync } from 'node:fs';
 import {
   type ImportInfo,
   type FileSystemCache,
@@ -42,6 +42,9 @@ import {
   hasOnlyTypeImports,
   computeSCCsFromFile,
   findShortestCyclePath,
+  exportKindsOf,
+  type ExportKindResolver,
+  clearExportKindCache,
 } from '@interlace/eslint-devkit';
 import type { ResolverSetting } from '@interlace/eslint-devkit';
 
@@ -84,12 +87,12 @@ const verbatimGraphCache: FileSystemCache = createFileSystemCache();
 export function clearCircularDependencyCache(): void {
   clearCache(defaultGraphCache);
   clearCache(verbatimGraphCache);
-  // `exportKindCache` is module-level and separate from `sharedCache`, so
-  // clearing that alone leaves it stale. It caches whether each exported name
+  // The devkit's export-kind cache is module-level and separate from
+  // `sharedCache`, so clearing that alone leaves it stale. It caches whether each exported name
   // is a type or a value, and that is exactly what an edit changes: turn a
   // `class` into an `interface` in watch mode and a stale entry keeps calling
   // the import a runtime cycle, or the reverse — which SILENCES a real one.
-  exportKindCache.clear();
+  clearExportKindCache();
 }
 
 type FixStrategy =
@@ -272,46 +275,11 @@ export type RuleOptions = [Options?];
  * the devkit. The repo's rule against regexing printed source governs a rule
  * reading the file it is linting via `sourceCode.getText()`, which this is not.
  */
-const exportKindCache = new Map<string, Map<string, 'type' | 'value'>>();
-
-function exportKindsOf(target: string): Map<string, 'type' | 'value'> {
-  const hit = exportKindCache.get(target);
-  if (hit) return hit;
-
-  const kinds = new Map<string, 'type' | 'value'>();
-  let source: string;
-  try {
-    source = readFileSync(target, 'utf-8');
-  } catch {
-    exportKindCache.set(target, kinds);
-    return kinds; // unreadable: every lookup misses and is treated as a value
-  }
-
-  // Values first. A name that is both merges to 'value', which is the safe side.
-  // `namespace` and `module` belong on the VALUE side. A namespace holding any
-  // runtime entity emits a real JS object, and TypeScript lets it merge with an
-  // interface of the same name — `export interface Foo` beside
-  // `export namespace Foo`, the standard way to hang statics off a type. Match
-  // only the interface there and a genuine runtime cycle goes silent.
-  for (const m of source.matchAll(
-    /export\s+(?:declare\s+)?(?:abstract\s+)?(?:const|let|var|function|class|enum|namespace|module)\s+([A-Za-z_$][\w$]*)/g,
-  )) {
-    kinds.set(m[1], 'value');
-  }
-  for (const m of source.matchAll(
-    /export\s+(?:declare\s+)?(?:interface|type)\s+([A-Za-z_$][\w$]*)/g,
-  )) {
-    if (!kinds.has(m[1])) kinds.set(m[1], 'type');
-  }
-
-  exportKindCache.set(target, kinds);
-  return kinds;
-}
-
 function importsOnlyTypes(
   node: TSESTree.ImportDeclaration,
   target: string,
   verbatimModuleSyntax: boolean,
+  resolve: ExportKindResolver,
 ): boolean {
   // `?? []` is not defensive noise: a synthetic node without `specifiers`
   // reaches here from the coverage suite, and a rule that THROWS is worse than
@@ -320,7 +288,7 @@ function importsOnlyTypes(
   // is a genuine runtime edge.
   const specifiers = node.specifiers ?? [];
   if (!specifiers.length) return false;
-  const kinds = exportKindsOf(target);
+  const kinds = exportKindsOf(target, resolve);
   return specifiers.every((spec) => {
     if (spec.type !== 'ImportSpecifier') return false; // default / namespace
     // Inline `import { type Foo }`. Erased only when `verbatimModuleSyntax` is
@@ -531,7 +499,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
     let normalizedFilename: string;
     let workspaceRoot: string;
     let resolverSettings: ResolverSetting | undefined;
-    let reportedImportNodes: Set<TSESTree.ImportDeclaration>;
+    let reportedImportNodes: Set<TSESTree.Node>;
 
     /**
      * Select fix strategy based on cycle characteristics
@@ -693,6 +661,97 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       }
     }
 
+    /**
+     * Report `node`, an edge from the linted file to `importSource`, when the
+     * target imports the linted file back through runtime edges. `erased`
+     * says whether this edge itself carries only types into `resolved`.
+     */
+    function checkEdge(
+      node: TSESTree.Node,
+      importSource: string,
+      erased?: (resolved: string) => boolean,
+    ): void {
+      // Each import node should produce at most ONE error regardless of how
+      // many distinct cycle paths pass through this import.
+      if (reportedImportNodes.has(node)) return;
+
+      const resolved = resolveImportPath(importSource, {
+        fromFile: normalizedFilename,
+        workspaceRoot,
+        barrelExports,
+        cache: sharedCache,
+        resolverSettings,
+      });
+
+      if (!resolved) return;
+
+      if (erased?.(resolved)) return;
+
+      if (sharedCache.nonCyclicFiles.has(resolved)) return;
+
+      let tgtSCC = sharedCache.sccIndex.get(resolved);
+      if (tgtSCC === undefined) {
+        computeSCCsFromFile(resolved, {
+          maxDepth: Infinity,
+          workspaceRoot,
+          barrelExports,
+          cache: sharedCache,
+          resolverSettings,
+          verbatimModuleSyntax,
+        });
+        tgtSCC = sharedCache.sccIndex.get(resolved);
+      }
+
+      let srcSCC = sharedCache.sccIndex.get(normalizedFilename);
+      if (srcSCC === undefined) {
+        computeSCCsFromFile(normalizedFilename, {
+          maxDepth: Infinity,
+          workspaceRoot,
+          barrelExports,
+          cache: sharedCache,
+          resolverSettings,
+          verbatimModuleSyntax,
+        });
+        srcSCC = sharedCache.sccIndex.get(normalizedFilename);
+      }
+
+      if (srcSCC === undefined || tgtSCC === undefined || srcSCC !== tgtSCC) {
+        return;
+      }
+
+      const cyclePath = findShortestCyclePath(normalizedFilename, resolved, {
+        maxDepth,
+        workspaceRoot,
+        barrelExports,
+        cache: sharedCache,
+        resolverSettings,
+        verbatimModuleSyntax,
+      });
+
+      if (!cyclePath) return;
+
+      reportedImportNodes.add(node);
+
+      const cycleStart = cyclePath.indexOf(normalizedFilename);
+      const relevantCycle =
+        cycleStart >= 0
+          ? [...cyclePath.slice(cycleStart), ...cyclePath.slice(0, cycleStart)]
+          : cyclePath;
+
+      const strategy = selectFixStrategy(relevantCycle, fixStrategy);
+      const sourceImport: ImportInfo = {
+        path: resolved,
+        source: importSource,
+      };
+      const { messageId, data } = generateMessageData(
+        relevantCycle,
+        strategy,
+        sourceImport,
+      );
+
+      context.report({ node, messageId, data });
+    }
+
     return {
       before() {
         const options = context.options[0] || {};
@@ -765,7 +824,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
         // Per-file dedup set — keyed by import node to ensure each import
         // statement produces at most one error, even when multiple cycle paths
         // exist through the same import.
-        reportedImportNodes = new Set<TSESTree.ImportDeclaration>();
+        reportedImportNodes = new Set<TSESTree.Node>();
         return true;
       },
       // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -781,206 +840,73 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         // Type-only imports are erased at compile time — no runtime cycle risk.
         if (node.importKind === 'type') return;
-
-        // Each import node should produce at most ONE error regardless of how
-        // many distinct cycle paths pass through this import.
-        if (reportedImportNodes.has(node)) return;
-
-        const importSource = node.source.value;
-
-        // Resolve using normalizedFilename so resolver output paths match.
-        const resolved = resolveImportPath(importSource, {
-          fromFile: normalizedFilename,
-          workspaceRoot,
-          barrelExports,
-          cache: sharedCache,
-          resolverSettings,
-        });
-
-        if (!resolved) return;
-
-        // Erased before emit? Then this edge does not exist at runtime, and the
-        // cycle this rule would name through it cannot occur. See
-        // `importsOnlyTypes` — 70.8% of a stratified sample was this case.
-        if (importsOnlyTypes(node, resolved, verbatimModuleSyntax)) return;
-
-        // =====================================================================
-        // FAST PATH 1: nonCyclicFiles O(1) lookup
-        //
-        // Files in singleton SCCs are added to nonCyclicFiles during SCC
-        // computation. This check is slightly faster than the sccIndex lookup
-        // because it short-circuits before any SCC arithmetic.
-        // =====================================================================
-        if (sharedCache.nonCyclicFiles.has(resolved)) return;
-
-        // =====================================================================
-        // SCC PRE-CHECK (O(1)) — the proven eslint-plugin-import approach
-        //
-        // If source and target are in DIFFERENT SCCs, no cycle can exist
-        // between them — skip immediately without any graph traversal.
-        // Eliminates ~99% of imports without reading a single file.
-        //
-        // If the target file isn't in the SCC yet, extend the SCC from it
-        // lazily so we can make the correct determination.
-        // =====================================================================
-        // Fully lazy SCC: extend on-demand when source or target not yet covered.
-        // Extending from the TARGET is preferred — if target → source (cycle),
-        // extending from target will discover source and assign both to the same SCC.
-        // Only extend from source as a fallback when target extension doesn't cover it.
-        let tgtSCC = sharedCache.sccIndex.get(resolved);
-        if (tgtSCC === undefined) {
-          computeSCCsFromFile(resolved, {
-            maxDepth: Infinity,
-            workspaceRoot,
-            barrelExports,
-            cache: sharedCache,
-            resolverSettings,
+        checkEdge(node, node.source.value, (resolved) =>
+          importsOnlyTypes(
+            node,
+            resolved,
             verbatimModuleSyntax,
-          });
-          tgtSCC = sharedCache.sccIndex.get(resolved);
-        }
-
-        let srcSCC = sharedCache.sccIndex.get(normalizedFilename);
-        if (srcSCC === undefined) {
-          // Source still not covered after extending from target — source is in a
-          // different connected component. Extend from source to cover it.
-          computeSCCsFromFile(normalizedFilename, {
-            maxDepth: Infinity,
-            workspaceRoot,
-            barrelExports,
-            cache: sharedCache,
-            resolverSettings,
-            verbatimModuleSyntax,
-          });
-          srcSCC = sharedCache.sccIndex.get(normalizedFilename);
-        }
-
-        if (srcSCC === undefined || tgtSCC === undefined || srcSCC !== tgtSCC) {
-          return;
-        }
-
-        // =====================================================================
-        // BFS PATH-FINDING — only runs when SCC guarantees a cycle exists.
-        //
-        // findShortestCyclePath does BFS from `resolved` back to
-        // `normalizedFilename`, only traversing files within the same SCC.
-        // This is bounded by the SCC size, not the entire codebase.
-        // =====================================================================
-        const cyclePath = findShortestCyclePath(normalizedFilename, resolved, {
-          maxDepth,
-          workspaceRoot,
-          barrelExports,
-          cache: sharedCache,
-          resolverSettings,
-          verbatimModuleSyntax,
-        });
-
-        if (!cyclePath) return;
-
-        // Deduplicate: this import node produces exactly one error.
-        reportedImportNodes.add(node);
-
-        // Build the relevant cycle starting from normalizedFilename.
-        const cycleStart = cyclePath.indexOf(normalizedFilename);
-        const relevantCycle =
-          cycleStart >= 0
-            ? [
-                ...cyclePath.slice(cycleStart),
-                ...cyclePath.slice(0, cycleStart),
-              ]
-            : cyclePath;
-
-        const strategy = selectFixStrategy(relevantCycle, fixStrategy);
-        const sourceImport: ImportInfo = {
-          path: resolved,
-          source: importSource,
-        };
-        const { messageId, data } = generateMessageData(
-          relevantCycle,
-          strategy,
-          sourceImport,
+            (spec, fromFile) =>
+              resolveImportPath(spec, {
+                fromFile,
+                workspaceRoot,
+                barrelExports,
+                cache: sharedCache,
+                resolverSettings,
+              }),
+          ),
         );
-
-        context.report({ node, messageId, data });
       },
 
-      // Re-export statements (`export { X } from '...'`) create import edges
-      // just like `import { X } from '...'`. Without this handler, cycles
-      // that close through a re-export are invisible to the rule.
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
         if (!node.source) return; // no 'from' clause → not a re-export
+        // `export type { T } from` is erased like `import type`.
+        if (node.exportKind === 'type') return;
+        checkEdge(node, node.source.value);
+      },
 
-        // Reuse the same logic as ImportDeclaration
+      // `export * from './b'` and `export * as ns from './b'` load the module
+      // at runtime like an import does; `export type * from` is erased.
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        if (node.exportKind === 'type') return;
+        checkEdge(node, node.source.value);
+      },
+
+      // TS `import b = require('./b')` compiles to a top-level `require()`.
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
         if (
-          reportedImportNodes.has(node as unknown as TSESTree.ImportDeclaration)
-        )
+          node.importKind === 'type' ||
+          node.moduleReference.type !== 'TSExternalModuleReference'
+        ) {
           return;
-
-        const importSource = node.source.value as string;
-
-        const resolved = resolveImportPath(importSource, {
-          fromFile: normalizedFilename,
-          workspaceRoot,
-          barrelExports,
-          cache: sharedCache,
-          resolverSettings,
-        });
-
-        if (!resolved) return;
-        if (sharedCache.nonCyclicFiles.has(resolved)) return;
-
-        let tgtSCC = sharedCache.sccIndex.get(resolved);
-        if (tgtSCC === undefined) {
-          computeSCCsFromFile(resolved, {
-            maxDepth: Infinity,
-            workspaceRoot,
-            barrelExports,
-            cache: sharedCache,
-            resolverSettings,
-            verbatimModuleSyntax,
-          });
-          tgtSCC = sharedCache.sccIndex.get(resolved);
         }
+        const arg = node.moduleReference.expression as TSESTree.StringLiteral;
+        checkEdge(node, arg.value);
+      },
 
-        const srcSCC = sharedCache.sccIndex.get(normalizedFilename);
-        if (srcSCC === undefined || tgtSCC === undefined || srcSCC !== tgtSCC)
+      // A `require('./b')` that runs while the module initializes: one not
+      // nested in a function. A `require()` inside a function body runs later,
+      // after both modules initialized, like `import()`.
+      CallExpression(node: TSESTree.CallExpression) {
+        const arg = node.arguments[0];
+        if (
+          node.callee.type !== 'Identifier' ||
+          node.callee.name !== 'require' ||
+          node.arguments.length !== 1 ||
+          arg.type !== 'Literal' ||
+          typeof arg.value !== 'string'
+        ) {
           return;
-
-        const cyclePath = findShortestCyclePath(normalizedFilename, resolved, {
-          maxDepth,
-          workspaceRoot,
-          barrelExports,
-          cache: sharedCache,
-          resolverSettings,
-          verbatimModuleSyntax,
-        });
-
-        if (!cyclePath) return;
-
-        reportedImportNodes.add(node as unknown as TSESTree.ImportDeclaration);
-
-        const cycleStart = cyclePath.indexOf(normalizedFilename);
-        const relevantCycle =
-          cycleStart >= 0
-            ? [
-                ...cyclePath.slice(cycleStart),
-                ...cyclePath.slice(0, cycleStart),
-              ]
-            : cyclePath;
-
-        const strategy = selectFixStrategy(relevantCycle, fixStrategy);
-        const sourceImport: ImportInfo = {
-          path: resolved,
-          source: importSource,
-        };
-        const { messageId, data } = generateMessageData(
-          relevantCycle,
-          strategy,
-          sourceImport,
-        );
-
-        context.report({ node, messageId, data });
+        }
+        for (let p: TSESTree.Node | undefined = node.parent; p; p = p.parent) {
+          if (
+            p.type === 'FunctionDeclaration' ||
+            p.type === 'FunctionExpression' ||
+            p.type === 'ArrowFunctionExpression'
+          ) {
+            return;
+          }
+        }
+        checkEdge(node, arg.value);
       },
     };
   },

@@ -8,7 +8,24 @@ Prefer import patterns that enable effective tree-shaking
 
 ## Rule Details
 
-This rule aims to prevent issues related to prefer-tree-shakeable-imports.
+Prefers import forms a bundler can tree-shake. For each package in `targetPackages`, the rule reports a namespace import of the package or one of its subpaths, and a default import of the package itself. With `blockAllNamespaceImports` every namespace import is reported. `subpathPattern` and `preferNamed` only shape the message. When `targetPackages` is not set, a built-in list is used (lodash, @mui/material, @mui/icons-material, date-fns, rxjs, ramda, antd and others).
+
+Not reported: named imports, a default import of a subpath (`import debounce from 'lodash/debounce'`), side-effect imports, and type-only imports (`import type X from 'pkg'`, `import type * as X from 'pkg'`): they are erased and bundle nothing.
+
+### ❌ Incorrect
+
+```ts
+import * as _ from 'lodash';
+import dateFns from 'date-fns';
+```
+
+### ✅ Correct
+
+```ts
+import { debounce } from 'lodash';
+import format from 'date-fns/format';
+import type * as Fns from 'date-fns';
+```
 
 ## Options
 

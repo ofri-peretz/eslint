@@ -5,6 +5,29 @@ import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noUselessPathSegments } from '../rules/no-useless-path-segments';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+
+/**
+ * A small project on disk, for the cases whose verdict depends on what a
+ * specifier resolves to: `src/app.ts` imports its neighbours.
+ */
+const ROOT = fs.realpathSync(
+  fs.mkdtempSync(path.join(os.tmpdir(), 'useless-path-segments-')),
+);
+for (const rel of [
+  'src/dep.ts',
+  'src/index.ts',
+  'src/lib/index.ts',
+  'src/both.ts',
+  'src/both/index.ts',
+]) {
+  fs.mkdirSync(path.dirname(path.join(ROOT, rel)), { recursive: true });
+  fs.writeFileSync(path.join(ROOT, rel), 'export const a = 1;\n');
+}
+const APP = path.join(ROOT, 'src/app.ts');
+afterAll(() => fs.rmSync(ROOT, { recursive: true, force: true }));
 
 RuleTester.afterAll = afterAll;
 RuleTester.describe = describe;
@@ -99,8 +122,9 @@ ruleTester.run('no-useless-path-segments - noUselessIndex', noUselessPathSegment
   invalid: [
     // With noUselessIndex, should remove /index
     {
-      code: `import foo from './foo/index';`,
-      output: `import foo from './foo';`,
+      code: `import foo from './lib/index';`,
+      output: `import foo from './lib';`,
+      filename: APP,
       options: [{ noUselessIndex: true }],
       errors: [{ messageId: 'uselessPathSegments' }],
     },
@@ -109,6 +133,7 @@ ruleTester.run('no-useless-path-segments - noUselessIndex', noUselessPathSegment
     {
       code: `import current from './index';`,
       output: `import current from '.';`,
+      filename: APP,
       options: [{ noUselessIndex: true }],
       errors: [{ messageId: 'uselessPathSegments' }],
     },
@@ -184,6 +209,88 @@ ruleTester.run('no-useless-path-segments - parent paths', noUselessPathSegments,
     {
       code: `import bar from '../a/./b';`,
       output: `import bar from '../a/b';`,
+      errors: [{ messageId: 'uselessPathSegments' }],
+    },
+  ],
+});
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/import-next/
+// no_useless_path_segments): spellings the rule did not read, a parent path
+// that re-enters the file's own directory, and an `/index` whose removal
+// names a different module.
+ruleTester.run('no-useless-path-segments - fidelity', noUselessPathSegments, {
+  valid: [
+    {
+      name: '/index is kept when the shorter path names a sibling file instead',
+      code: `import a from './both/index';`,
+      filename: APP,
+      options: [{ noUselessIndex: true }],
+    },
+    {
+      name: '/index of a path that does not resolve proves nothing',
+      code: `import a from './missing/index';`,
+      filename: APP,
+      options: [{ noUselessIndex: true }],
+    },
+    {
+      name: 'a trailing slash only matches a directory and is left alone',
+      code: `import a from './lib/';`,
+      filename: APP,
+    },
+    {
+      name: 'a parent path that does not come back is clean',
+      code: `import a from '../shared/dep';`,
+      filename: APP,
+    },
+    {
+      name: 'import x = require() follows commonjs: false',
+      code: `import a = require('./lib/../dep');`,
+      options: [{ commonjs: false }],
+    },
+    {
+      name: 'export { a } without a source loads nothing',
+      code: `const a = 1;\nexport { a };`,
+    },
+    {
+      name: 'import x = Namespace.member is not a module specifier',
+      code: `namespace A { export const b = 1; }\nimport x = A.b;`,
+    },
+    {
+      name: 'a first segment that starts with a dot keeps its ./ prefix',
+      code: `import a from './.config/dep';`,
+    },
+  ],
+  invalid: [
+    {
+      name: 'a parent path that re-enters the file directory',
+      code: `import a from '../src/dep';`,
+      output: `import a from './dep';`,
+      filename: APP,
+      errors: [{ messageId: 'uselessPathSegments' }],
+    },
+    {
+      name: 'a parent path to the file directory itself',
+      code: `import a from '../src';`,
+      output: `import a from '.';`,
+      filename: APP,
+      errors: [{ messageId: 'uselessPathSegments' }],
+    },
+    {
+      name: 'export { a } from with a useless segment',
+      code: `export { a } from './lib/../dep';`,
+      output: `export { a } from './dep';`,
+      errors: [{ messageId: 'uselessPathSegments' }],
+    },
+    {
+      name: 'export * from with a useless segment',
+      code: `export * from './lib/./dep';`,
+      output: `export * from './lib/dep';`,
+      errors: [{ messageId: 'uselessPathSegments' }],
+    },
+    {
+      name: 'TS import x = require() with a useless segment',
+      code: `import a = require('./lib//dep');`,
+      output: `import a = require('./lib/dep');`,
       errors: [{ messageId: 'uselessPathSegments' }],
     },
   ],

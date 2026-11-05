@@ -23,10 +23,31 @@ ruleTester.run('unambiguous', unambiguous, {
     { code: `export default function() {}` },
     { code: `export { foo };` },
 
-    // Has dynamic import - module
-    { code: `const m = import('./module');` },
+    {
+      name: 'import.meta cannot appear in a script',
+      code: `console.log(import.meta.url);`,
+    },
+    {
+      name: 'a TS import-equals require makes the file a module',
+      code: `import fs = require('fs'); fs.readFileSync('a');`,
+    },
+    {
+      name: 'a .cjs file is a script by its extension',
+      code: `const a = require('./a'); module.exports = a;`,
+      filename: 'src/config.cjs',
+    },
 
     // Empty file - acceptable
+    {
+      name: 'a file the config parses as a script',
+      code: `const a = 1;`,
+      languageOptions: { sourceType: 'script' },
+    },
+    {
+      name: 'a file the config parses as CommonJS',
+      code: `const a = require('./a');`,
+      languageOptions: { sourceType: 'commonjs' },
+    },
     { code: `` },
 
     // Use strict - intentional script
@@ -41,6 +62,21 @@ ruleTester.run('unambiguous', unambiguous, {
   ],
 
   invalid: [
+    {
+      name: 'new.target is not import.meta',
+      code: `function F() { return new.target; }`,
+      errors: [{ messageId: 'ambiguous' }],
+    },
+    {
+      name: 'a namespace alias is not a module import',
+      code: `import Alias = NS.Inner; const x = Alias;`,
+      errors: [{ messageId: 'ambiguous' }],
+    },
+    {
+      name: 'a dynamic import() is legal in a script and does not disambiguate',
+      code: `const m = import('./module');`,
+      errors: [{ messageId: 'ambiguous' }],
+    },
     // Plain statement without module syntax
     {
       code: `const x = 1;`,

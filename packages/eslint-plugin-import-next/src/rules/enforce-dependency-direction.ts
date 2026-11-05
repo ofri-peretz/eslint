@@ -11,9 +11,11 @@
  *
  * @see https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html
  */
+import path from 'node:path';
+
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, staticString } from '@interlace/eslint-devkit';
 import { normalizePath } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -74,8 +76,7 @@ function getLayerOrder(layer: string | null, layers: string[]): number {
     return -1; // Unknown layer
   }
 
-  const index = layers.indexOf(layer);
-  return index >= 0 ? index : -1;
+  return layers.indexOf(layer); // -1 when the layer is not listed
 }
 
 export const enforceDependencyDirection = createRule<RuleOptions, MessageIds>({
@@ -217,104 +218,84 @@ export const enforceDependencyDirection = createRule<RuleOptions, MessageIds>({
       layerPatterns = defaultLayerPatterns;
     }
 
-    const sourceLayer = extractLayer(filename, layerPatterns);
+    // Layers are read from the path inside the project, so a directory above
+    // the project root named like a layer never counts.
+    const relative = path.relative(context.cwd, filename);
+    const projectPath =
+      path.isAbsolute(filename) &&
+      !relative.startsWith('..') &&
+      !path.isAbsolute(relative)
+        ? relative
+        : filename;
+    const sourceLayer = extractLayer(projectPath, layerPatterns);
     const sourceOrder = getLayerOrder(sourceLayer, layers);
 
     /**
-     * Check import declarations
+     * Every way a module is loaded or re-exported. A relative specifier's
+     * layer is that of the path it resolves to from this file; a package's
+     * layer is unknown without resolver configuration, so it is skipped.
      */
-    function checkImport(
-      node: TSESTree.ImportDeclaration | TSESTree.ImportExpression,
+    function check(
+      source: TSESTree.Node | null | undefined,
+      node: TSESTree.Node,
     ) {
-      let importPath = '';
+      if (!source || sourceOrder < 0) return;
+      const importPath = staticString(source);
+      if (importPath === null || !importPath.startsWith('.')) return;
 
-      if (node.type === 'ImportDeclaration') {
-        importPath = node.source.value as string;
-      } else if (node.type === 'ImportExpression') {
-        if (node.source.type === 'Literal') {
-          // `import(42)` is a Literal with a NUMBER value. Casting it to
-          // string and calling `.startsWith` below threw a TypeError and
-          // crashed ESLint for the file. Same defect as the one fixed in
-          // no-cross-domain-imports; same cast is why neither was caught.
-          if (typeof node.source.value !== 'string') return;
-          importPath = node.source.value;
-        } else {
-          return; // Dynamic import
-        }
-      }
-
-      // Only check relative imports
-      if (!importPath.startsWith('.')) {
-        return;
-      }
-
-      // For relative imports, check the import path string directly for layer patterns
-      // This works for test cases where paths like '../infrastructure/repository' contain the layer
-      // The early return above guarantees importPath starts with '.' here.
-      let targetLayer: string | null = null;
-
-      // Check if import path contains layer patterns
-      // e.g., '../infrastructure/repository' -> extract 'infrastructure'
-      const segments = importPath.split(/[/\\]/);
-      for (const segment of segments) {
-        if (layerPatterns.includes(segment.toLowerCase())) {
-          targetLayer = segment.toLowerCase();
-          break;
-        }
-      }
-
-      // Fallback: try regex matching
-      if (!targetLayer) {
-        for (const pattern of layerPatterns) {
-          const regex = new RegExp(`[/\\\\]${pattern}[/\\\\]`, 'i');
-          if (regex.test(importPath)) {
-            targetLayer = pattern;
-            break;
-          }
-        }
-      }
-
+      const target = path.posix.join(
+        path.posix.dirname(normalizePath(projectPath)),
+        importPath,
+      );
+      const targetLayer = extractLayer(target, layerPatterns);
       const targetOrder = getLayerOrder(targetLayer, layers);
+      if (targetOrder < 0) return;
 
-      // Skip if layers are unknown
-      if (sourceOrder < 0 || targetOrder < 0) {
-        return;
-      }
-
-      // Check if same layer (allowed by default)
-      if (allowSameLayer && sourceLayer === targetLayer) {
-        return;
-      }
-
-      // Check dependency direction: lower layers should not depend on higher layers
-      // Domain (0) should not depend on Application (1), etc.
-      if (targetOrder > sourceOrder) {
+      const sameLayer = targetLayer === sourceLayer;
+      if (targetOrder > sourceOrder || (sameLayer && !allowSameLayer)) {
         context.report({
           node,
           messageId: 'dependencyDirectionViolation',
           data: {
-            // Both are guaranteed non-null here: sourceOrder/targetOrder >= 0
-            // implies the layers were resolved (see the guard above).
+            // Both are known here: their orders are >= 0.
             sourceLayer: sourceLayer as string,
             targetLayer: targetLayer as string,
           },
           suggest: [
-            {
-              messageId: 'useDependencyInversion',
-              fix: () => null,
-            },
-            {
-              messageId: 'refactorDependency',
-              fix: () => null,
-            },
+            { messageId: 'useDependencyInversion', fix: () => null },
+            { messageId: 'refactorDependency', fix: () => null },
           ],
         });
       }
     }
 
     return {
-      ImportDeclaration: checkImport,
-      ImportExpression: checkImport,
+      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        check(node.source, node);
+      },
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        check(node.source, node);
+      },
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        check(node.source, node);
+      },
+      ImportExpression(node: TSESTree.ImportExpression) {
+        check(node.source, node);
+      },
+      CallExpression(node: TSESTree.CallExpression) {
+        if (
+          node.callee.type === 'Identifier' &&
+          node.callee.name === 'require' &&
+          node.arguments.length === 1
+        ) {
+          check(node.arguments[0], node);
+        }
+      },
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        if (node.moduleReference.type === 'TSExternalModuleReference') {
+          check(node.moduleReference.expression, node);
+        }
+      },
     };
   },
 });

@@ -9,7 +9,40 @@ Enforces a specific order for import statements
 
 ## Rule Details
 
-This rule aims to prevent issues related to order.
+Alias of `enforce-import-order`. Import declarations follow the configured group order, are alphabetized inside a group, and groups are separated as configured. The fix rewrites the import block in order.
+
+Groups, in the default order `builtin`, `external`, `internal`, `parent`, `sibling`, `index`, `side-effect`:
+
+- `builtin`: a Node.js builtin in any spelling - Node's own builtin list, subpaths included (`fs`, `crypto`, `fs/promises`), or the `node:` scheme;
+- `internal`: a specifier matching an `internalPatterns` regular expression (default `^@/`);
+- `parent`: `..` or `../x`; `sibling`: `./x`; `index`: the directory's own index (`.`, `./`, `./index`, `./index.js`);
+- `side-effect`: an import that binds nothing (`import './setup'`);
+- `type`: a statement-level `import type`, only when `groups` lists `type` - otherwise a type import is grouped by its path;
+- `external`: everything else. A group missing from `groups` sorts after the listed ones.
+
+`alphabetize.order` (`asc` default, `desc`, `ignore`) orders imports of one group by specifier; `alphabetize.caseInsensitive` (default `true`) compares lowercased, `false` compares code units (`Zed` before `react`). `newlinesBetween`: `always` (default) wants a blank line between groups, `never` forbids one, `ignore` checks neither. Imports separated by other code are reported once, as not contiguous, and not reordered.
+
+### ❌ Incorrect
+
+```ts
+import react from 'react';
+import crypto from 'crypto';
+import sib from './sib';
+import up from '..';
+```
+
+### ✅ Correct
+
+```ts
+import crypto from 'crypto';
+import fs from 'node:fs';
+
+import react from 'react';
+
+import up from '..';
+
+import sib from './sib';
+```
 
 ## Options
 

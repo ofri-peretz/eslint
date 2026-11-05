@@ -779,4 +779,28 @@ import { Button } from '@company/ui';
       },
     );
   });
+
+  // Found by the fidelity model (benchmarks/suites/fidelity/models/import-next).
+  describe('fidelity: trailing slashes and import x = require()', () => {
+    ruleTester.run('no-internal-modules fidelity', noInternalModules, {
+      valid: [
+        {
+          name: 'a trailing slash names the same module: ./utils/ is depth 1',
+          code: "import utils from './utils/';",
+        },
+        {
+          name: 'lodash/ is the package root',
+          code: "import _ from 'lodash/';",
+          options: [{ maxDepth: 0 }],
+        },
+      ],
+      invalid: [
+        {
+          name: 'import x = require() reaching into a module',
+          code: "import helpers = require('./utils/helpers');",
+          errors: [{ messageId: 'internalModuleImport' }],
+        },
+      ],
+    });
+  });
 });

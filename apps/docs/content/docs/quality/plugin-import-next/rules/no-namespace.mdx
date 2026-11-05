@@ -13,7 +13,24 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## Rule Details
 
-This rule aims to prevent issues related to namespace.
+A convention: modules are imported by name, so every import shows what it takes and bundlers can drop what is unused. This rule reports a namespace import, `import * as ns from 'm'`, also `import type * as ns from 'm'` and `import d, * as ns from 'm'`, unless an `ignore` glob matches the module specifier.
+
+Named and default imports are fine, and so is the re-export `export * as ns from 'm'` (not an import).
+
+### ❌ Incorrect
+
+```ts
+import * as utils from './utils';
+import type * as Models from './models';
+```
+
+### ✅ Correct
+
+```ts
+import { format, parse } from './utils';
+import type { User } from './models';
+export * as utils from './utils';
+```
 
 ## Options
 
@@ -34,11 +51,8 @@ This rule aims to prevent issues related to namespace.
 ]
 ```
 
-## Implementation
+- `ignore` (default `[]`): globs matched against the module specifier; `*` matches any run of characters. E.g. `["*.css", "lodash"]` keeps `import * as styles from './styles.css'`.
 
-- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-namespace.ts)
-- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-namespace.test.ts)
+## When Not To Use It
 
-## OWASP Foundation
-
-- **Category**: A00:2021 - General Security
+When namespace imports are your convention, or a library is designed to be used through one.

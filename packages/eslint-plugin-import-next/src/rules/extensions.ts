@@ -163,7 +163,7 @@ export const extensions = createRule<Options, MessageIds>({
      *
      *   - the specifier does not resolve at all → no evidence either way (a
      *     virtual file, an asset the resolver does not handle, a genuinely
-     *     wrong path), so nothing changes;
+     *     wrong path): an unknown target is not a finding, so it withholds;
      *   - it resolves to a file whose extension is NOT the one written → the
      *     written one is an EMIT extension. `./width.js` naming `width.ts` is
      *     the spelling `moduleResolution: NodeNext` requires, and stripping it
@@ -177,7 +177,7 @@ export const extensions = createRule<Options, MessageIds>({
      */
     function extensionIsLoadBearing(specifier: string, ext: string): boolean {
       const withExtension = resolveModule(specifier, context.filename);
-      if (!withExtension) return false;
+      if (!withExtension) return true;
       if (!withExtension.endsWith(`.${ext}`)) return true;
       const stripped = specifier.slice(0, -(ext.length + 1));
       return resolveModule(stripped, context.filename) !== withExtension;
@@ -195,14 +195,15 @@ export const extensions = createRule<Options, MessageIds>({
       const value = source.value;
       if (!value.startsWith('.')) return; // Only check relative imports
 
-      const ext = path.extname(value).slice(1); // remove dot
+      let ext = path.extname(value).slice(1); // remove dot
 
       // `path.extname` answers with whatever follows the last dot, so a filename
       // that merely CONTAINS one — `source.config`, `schema.v2`, `types.d` —
       // reads as an extension and the fixer strips it, naming a different module.
       // A token only counts as an extension when something claims it: the user's
       // own `pattern`, or the set of extensions this rule ships defaults for.
-      if (ext && !(ext in pattern) && !KNOWN_EXTENSIONS.has(ext)) return;
+      // Otherwise the specifier has NO extension written, and is judged as such.
+      if (ext && !(ext in pattern) && !KNOWN_EXTENSIONS.has(ext)) ext = '';
 
       // Most specific first: an extension the USER named in `pattern`, then the
       // USER's `default`, then the extension in the package's own declared
@@ -210,9 +211,7 @@ export const extensions = createRule<Options, MessageIds>({
       // specific thing in the room, so it must not beat a preference the user
       // stated — which is exactly how `{ default: 'always' }` came to be a
       // no-op.
-      const expected =
-        userPattern[ext] ??
-        (userSetDefault ? defaultBehavior : (pattern[ext] ?? defaultBehavior));
+      const expected = policyFor(ext);
 
       if (ext && expected === 'never' && !extensionIsLoadBearing(value, ext)) {
         // Removing a real extension can still leave a compound name behind
@@ -247,16 +246,47 @@ export const extensions = createRule<Options, MessageIds>({
               },
         });
       } else if (!ext) {
-        // Hard to know what the extension *should* be without checking file system
-        // But if default is 'always', we might flag it.
-        // For now, let's assume if it's missing and we expect 'always', it's a problem.
-        if (defaultBehavior === 'always') {
+        // A missing extension is judged by the file the specifier RESOLVES to:
+        // `./dep` naming dep.ts is missing `.ts` under a `ts: always` policy.
+        // A specifier that does not resolve, or that only resolves as a
+        // directory (`./lib` -> lib/index.ts, where `./lib.ts` names nothing),
+        // proves nothing and is not reported.
+        const resolved = resolveModule(value, context.filename);
+        if (!resolved) return;
+        const resolvedExt = path.extname(resolved).slice(1);
+        if (
+          resolvedExt &&
+          policyFor(resolvedExt) === 'always' &&
+          resolveModule(`${value}.${resolvedExt}`, context.filename) ===
+            resolved
+        ) {
           context.report({
             node: source,
             messageId: 'missingExtension',
             // Can't fix without knowing extension
           });
         }
+      }
+    }
+
+    /**
+     * The policy for one extension, most specific first: an extension the
+     * USER named in `pattern`, then the USER's `default`, then the extension in
+     * the package's own declared `pattern`, then the declared `default`. A
+     * package default is the least specific thing in the room, so it must not
+     * beat a preference the user stated — which is exactly how
+     * `{ default: 'always' }` came to be a no-op.
+     */
+    function policyFor(ext: string): 'always' | 'never' {
+      return (
+        userPattern[ext] ??
+        (userSetDefault ? defaultBehavior : (pattern[ext] ?? defaultBehavior))
+      );
+    }
+
+    function checkLiteral(node: TSESTree.Node): void {
+      if (node.type === 'Literal' && typeof node.value === 'string') {
+        checkSource(node as TSESTree.StringLiteral);
       }
     }
 
@@ -298,6 +328,22 @@ export const extensions = createRule<Options, MessageIds>({
       },
       ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
         checkSource(node.source);
+      },
+      // `require('./x')` and TS `import x = require('./x')` load a module by
+      // the same specifier an import does.
+      CallExpression(node: TSESTree.CallExpression) {
+        if (
+          node.callee.type === 'Identifier' &&
+          node.callee.name === 'require' &&
+          node.arguments.length === 1
+        ) {
+          checkLiteral(node.arguments[0]);
+        }
+      },
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        if (node.moduleReference.type === 'TSExternalModuleReference') {
+          checkLiteral(node.moduleReference.expression);
+        }
       },
       ImportExpression(node: TSESTree.ImportExpression) {
         // `import(expr)` accepts any expression. Only a string literal carries a

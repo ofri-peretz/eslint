@@ -14,7 +14,26 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## Rule Details
 
-This rule aims to prevent issues related to cross-domain-imports.
+A file inside a domain directory must not depend on another domain's files. A domain is the directory right below a `domainPatterns` directory (default `domains`, `features`, `modules`): `src/domains/user/handler.ts` is in domain `user`. Every way a module is loaded or re-exported is checked: `import`, side-effect `import`, `export … from`, `export * from`, `require()`, `import()` and TypeScript's `import x = require()`.
+
+A relative specifier is resolved against the importing file, and the target's domain is read from the path it resolves to: `../billing/service` from `src/domains/user/handler.ts` is `src/domains/billing/service`, domain `billing`, and is reported. Not reported: a file outside every domain; a target in the same domain, however it is spelled; a target outside every domain (`../../shared/x`); a target whose path passes through an `allowedSharedModules` directory (default `shared`, `common`, `utils`); a target a `customRules` entry allows (`from` matches the importing file, an `allowed` entry matches the resolved target); and packages - they never resolve into a domain directory, which is also why `ignoreNodeModules` has nothing to change.
+
+### ❌ Incorrect
+
+```ts
+// src/domains/user/handler.ts
+import { invoice } from '../billing/service';
+export * from '../../domains/billing/model';
+```
+
+### ✅ Correct
+
+```ts
+// src/domains/user/handler.ts
+import { repo } from './repo';
+import { money } from '../../shared/money';
+import { events } from '../billing/shared/events';
+```
 
 ## Options
 

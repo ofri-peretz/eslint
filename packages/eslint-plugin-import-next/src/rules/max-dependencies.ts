@@ -8,6 +8,8 @@
  * ESLint Rule: max-dependencies
  * Enforce the maximum number of dependencies a module can have (eslint-plugin-import inspired)
  */
+import { builtinModules } from 'node:module';
+
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
@@ -121,112 +123,25 @@ export const maxDependencies = createRule<RuleOptions, MessageIds>({
     let filename: string;
     let dependencies: Set<string>;
 
-    function shouldCountImport(
-      importPath: string,
-      node: TSESTree.ImportDeclaration,
-    ): boolean {
-      // Skip ignored imports
-      if (ignoreImports.includes(importPath)) {
+    /**
+     * Counts external packages only. Not a package: relative and absolute
+     * paths, `#` subpath imports (the package's own files), Node.js builtins
+     * in any spelling (Node's own list, subpaths included, or `node:`).
+     */
+    function shouldCount(importPath: string, isType: boolean): boolean {
+      if (ignoreImports.includes(importPath)) return false;
+      if (ignoreTypeImports && isType) return false;
+      if (/^[./#]/.test(importPath)) return false;
+      if (importPath.startsWith('node:') || builtinModules.includes(importPath))
         return false;
-      }
-
-      // Skip type-only imports if configured
-      if (ignoreTypeImports && node.importKind === 'type') {
-        return false;
-      }
-
-      // Skip relative imports (internal modules)
-      if (importPath.startsWith('./') || importPath.startsWith('../')) {
-        return false;
-      }
-
-      // Skip Node.js built-ins
-      const nodeBuiltins = [
-        'assert',
-        'buffer',
-        'child_process',
-        'cluster',
-        'crypto',
-        'dgram',
-        'dns',
-        'domain',
-        'events',
-        'fs',
-        'http',
-        'https',
-        'net',
-        'os',
-        'path',
-        'punycode',
-        'querystring',
-        'readline',
-        'stream',
-        'string_decoder',
-        'timers',
-        'tls',
-        'tty',
-        'url',
-        'util',
-        'v8',
-        'vm',
-        'zlib',
-      ];
-
-      if (nodeBuiltins.includes(importPath) || importPath.startsWith('node:')) {
-        return false;
-      }
-
       return true;
     }
 
-    function shouldCountRequire(importPath: string): boolean {
-      // Skip ignored imports
-      if (ignoreImports.includes(importPath)) {
-        return false;
+    function count(source: TSESTree.Node, isType = false) {
+      const importPath = staticString(source);
+      if (importPath !== null && shouldCount(importPath, isType)) {
+        addDependency(importPath);
       }
-
-      // Skip relative imports
-      if (importPath.startsWith('./') || importPath.startsWith('../')) {
-        return false;
-      }
-
-      // Skip Node.js built-ins
-      const nodeBuiltins = [
-        'assert',
-        'buffer',
-        'child_process',
-        'cluster',
-        'crypto',
-        'dgram',
-        'dns',
-        'domain',
-        'events',
-        'fs',
-        'http',
-        'https',
-        'net',
-        'os',
-        'path',
-        'punycode',
-        'querystring',
-        'readline',
-        'stream',
-        'string_decoder',
-        'timers',
-        'tls',
-        'tty',
-        'url',
-        'util',
-        'v8',
-        'vm',
-        'zlib',
-      ];
-
-      if (nodeBuiltins.includes(importPath) || importPath.startsWith('node:')) {
-        return false;
-      }
-
-      return true;
     }
 
     function addDependency(importPath: string) {
@@ -270,41 +185,35 @@ export const maxDependencies = createRule<RuleOptions, MessageIds>({
         return true;
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        const importPath = staticString(node.source);
+        count(node.source, node.importKind === 'type');
+      },
 
-        if (
-          typeof importPath === 'string' &&
-          shouldCountImport(importPath, node)
-        ) {
-          addDependency(importPath);
-        }
+      // `export { x } from 'pkg'` and `export * from 'pkg'` depend on it too.
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        if (node.source) count(node.source, node.exportKind === 'type');
+      },
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        count(node.source, node.exportKind === 'type');
       },
 
       CallExpression(node: TSESTree.CallExpression) {
-        // Check require() calls
         if (
           node.callee.type === 'Identifier' &&
           node.callee.name === 'require' &&
           node.arguments.length === 1
         ) {
-          const arg = node.arguments[0];
-          const staticText1 = staticString(arg);
-          if (staticText1 !== null) {
-            if (shouldCountRequire(staticText1)) {
-              addDependency(staticText1);
-            }
-          }
+          count(node.arguments[0]);
         }
       },
 
-      // Handle dynamic imports (import() expressions)
       ImportExpression(node: TSESTree.ImportExpression) {
-        const source = node.source;
-        const staticText2 = staticString(source);
-        if (staticText2 !== null) {
-          if (shouldCountRequire(staticText2)) {
-            addDependency(staticText2);
-          }
+        count(node.source);
+      },
+
+      // `import x = require('pkg')`
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        if (node.moduleReference.type === 'TSExternalModuleReference') {
+          count(node.moduleReference.expression, node.importKind === 'type');
         }
       },
 

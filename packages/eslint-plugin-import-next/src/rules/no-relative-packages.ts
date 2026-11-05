@@ -23,32 +23,57 @@ import * as fs from 'node:fs';
 type MessageIds = 'relativePackage';
 
 export interface Options {
-  /** Allow relative imports within the same package. Default: true */
+  /** Accepted for configuration compatibility: an import inside one package is never reported. */
   allowSamePackage?: boolean;
 }
 
 type RuleOptions = [Options?];
 
-// Cache for package.json lookups
-const packageJsonCache = new Map<string, string | null>();
+/** A package: a directory whose package.json declares a `name`. */
+interface PackageRoot {
+  dir: string;
+  name: string;
+}
 
-function findPackageJson(startDir: string): string | null {
-  if (packageJsonCache.has(startDir)) {
-    return packageJsonCache.get(startDir) ?? null;
+// Cache for package lookups, by start directory
+const packageCache = new Map<string, PackageRoot | null>();
+
+function packageName(pkgPath: string): string | null {
+  try {
+    const name = (
+      JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as {
+        name?: unknown;
+      }
+    ).name;
+    return typeof name === 'string' && name ? name : null;
+  } catch {
+    return null;
   }
+}
 
+/**
+ * The nearest package at or above `startDir`. A package.json without a
+ * `name` (a `{"type":"module"}` scope marker, a private tool folder) is not a
+ * package anyone imports by name, so the walk goes past it.
+ */
+function findPackage(startDir: string): PackageRoot | null {
+  const cached = packageCache.get(startDir);
+  if (cached !== undefined) return cached;
+
+  let found: PackageRoot | null = null;
   let currentDir = startDir;
   while (currentDir !== path.dirname(currentDir)) {
     const pkgPath = path.join(currentDir, 'package.json');
-    if (fs.existsSync(pkgPath)) {
-      packageJsonCache.set(startDir, currentDir);
-      return currentDir;
+    const name = fs.existsSync(pkgPath) ? packageName(pkgPath) : null;
+    if (name) {
+      found = { dir: currentDir, name };
+      break;
     }
     currentDir = path.dirname(currentDir);
   }
 
-  packageJsonCache.set(startDir, null);
-  return null;
+  packageCache.set(startDir, found);
+  return found;
 }
 
 export const noRelativePackages = createRule<RuleOptions, MessageIds>({
@@ -89,11 +114,10 @@ export const noRelativePackages = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{ allowSamePackage: true }],
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    let allowSamePackage: boolean;
     let currentDir: string;
-    let currentPackageRoot: string | null;
+    let currentPackage: PackageRoot | null;
 
-    function checkImport(node: TSESTree.Node, source: TSESTree.Literal) {
+    function checkImport(source: TSESTree.Literal) {
       const importPath = source.value;
       if (typeof importPath !== 'string') return;
 
@@ -102,72 +126,76 @@ export const noRelativePackages = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      // Resolve the import path
+      // The walk starts AT the resolved path: `../../other` names the package
+      // directory itself, whose own package.json is the boundary.
       const resolvedPath = path.resolve(currentDir, importPath);
-      const importPackageRoot = findPackageJson(path.dirname(resolvedPath));
+      const importPackage = findPackage(resolvedPath);
 
-      // Skip if we're in the same package
-      if (allowSamePackage && currentPackageRoot === importPackageRoot) {
+      // Only a crossing from one package into another is a finding. Inside
+      // one package nothing is reported, whatever `allowSamePackage` says.
+      // A package that CONTAINS the importing one (a workspace root reached
+      // past a nameless folder) is not another package to import by name.
+      if (
+        !currentPackage ||
+        !importPackage ||
+        currentPackage.dir === importPackage.dir ||
+        currentPackage.dir.startsWith(importPackage.dir + path.sep)
+      ) {
         return;
       }
 
-      // Skip if either path doesn't have a package.json
-      if (!currentPackageRoot || !importPackageRoot) {
-        return;
-      }
+      const subPath = path
+        .relative(importPackage.dir, resolvedPath)
+        .split(path.sep)
+        .join('/');
+      const newImport = subPath
+        ? `${importPackage.name}/${subPath.replace(/\.[^/.]+$/, '')}`
+        : importPackage.name;
 
-      // Different packages - report error
-      if (currentPackageRoot !== importPackageRoot) {
-        try {
-          const pkgJsonPath = path.join(importPackageRoot, 'package.json');
-          const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'));
-          const packageName = pkgJson.name || path.basename(importPackageRoot);
-
-          context.report({
-            node: source,
-            messageId: 'relativePackage',
-            data: {
-              importPath,
-              packageName,
-            },
-            fix(fixer: TSESLint.RuleFixer) {
-              // Calculate the subpath within the package
-              // subPath is never '' or '.': the package root is found by walking
-              // UP from the resolved path's parent, so it is a strict ancestor.
-              const subPath = path.relative(importPackageRoot, resolvedPath);
-              const newImport = `${packageName}/${subPath.replace(/\.[^/.]+$/, '')}`;
-              return fixer.replaceText(source, `'${newImport}'`);
-            },
-          });
-        } catch {
-          // If we can't read package.json, just report without fix
-          context.report({
-            node: source,
-            messageId: 'relativePackage',
-            data: {
-              importPath,
-              packageName: path.basename(importPackageRoot),
-            },
-          });
-        }
-      }
+      context.report({
+        node: source,
+        messageId: 'relativePackage',
+        data: {
+          importPath,
+          packageName: importPackage.name,
+        },
+        fix(fixer: TSESLint.RuleFixer) {
+          return fixer.replaceText(source, `'${newImport}'`);
+        },
+      });
     }
 
     return {
       before() {
-        const options = context.options[0] || {};
-        ({ allowSamePackage = true } = options);
+        // `allowSamePackage` is accepted for configuration compatibility; an
+        // import inside one package is never reported either way.
         const filename = context.filename;
         currentDir = path.dirname(filename);
-        currentPackageRoot = findPackageJson(currentDir);
+        currentPackage = findPackage(currentDir);
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        checkImport(node, node.source);
+        checkImport(node.source);
+      },
+
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        if (node.source) checkImport(node.source);
+      },
+
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        checkImport(node.source);
+      },
+
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        const ref = node.moduleReference;
+        // The parser only accepts a string literal inside `require(...)` here.
+        if (ref.type === AST_NODE_TYPES.TSExternalModuleReference) {
+          checkImport(ref.expression as TSESTree.Literal);
+        }
       },
 
       ImportExpression(node: TSESTree.ImportExpression) {
         if (node.source.type === AST_NODE_TYPES.Literal) {
-          checkImport(node, node.source as TSESTree.Literal);
+          checkImport(node.source as TSESTree.Literal);
         }
       },
 
@@ -178,7 +206,7 @@ export const noRelativePackages = createRule<RuleOptions, MessageIds>({
           node.arguments.length === 1 &&
           node.arguments[0].type === AST_NODE_TYPES.Literal
         ) {
-          checkImport(node, node.arguments[0] as TSESTree.Literal);
+          checkImport(node.arguments[0] as TSESTree.Literal);
         }
       },
     };

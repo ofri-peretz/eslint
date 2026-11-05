@@ -59,14 +59,30 @@ export const unambiguous = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         hasModuleSyntax = false;
+        // A file the config parses as a script, or a `.cjs` / `.cts` file
+        // (CommonJS by its extension), is not meant to be a module.
+        const sourceType = context.languageOptions?.sourceType;
+        return (
+          sourceType !== 'script' &&
+          sourceType !== 'commonjs' &&
+          !/\.c[jt]s$/.test(context.filename)
+        );
       },
       ImportDeclaration() {
         hasModuleSyntax = true;
       },
 
-      ImportExpression() {
-        // Dynamic import makes it a module
-        hasModuleSyntax = true;
+      // A dynamic `import()` is legal in a script: it does not tell the two
+      // parse goals apart. `import.meta` is a syntax error in a script.
+      MetaProperty(node: TSESTree.MetaProperty) {
+        if (node.meta.name === 'import') hasModuleSyntax = true;
+      },
+
+      // TS treats a file with `import x = require('m')` as a module.
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        if (node.moduleReference.type === 'TSExternalModuleReference') {
+          hasModuleSyntax = true;
+        }
       },
 
       ExportDefaultDeclaration() {

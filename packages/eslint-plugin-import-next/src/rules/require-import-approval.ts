@@ -16,6 +16,8 @@
  *
  * @see https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/
  */
+import { builtinModules } from 'node:module';
+
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
@@ -74,23 +76,31 @@ function matchPackage(packageName: string, pattern: string): boolean {
 }
 
 /**
- * Check if import path is a package (not relative)
+ * Is this specifier a third-party package? Not a package: a relative or
+ * absolute path, a `#` subpath import (the package's own files), a Node.js
+ * builtin (Node's own list, or the `node:` scheme), and a path alias npm
+ * cannot publish under - `~/x` (`~` is not allowed in a package name) and
+ * `@/x` (a scope is never empty).
  */
 function isPackageImport(importPath: string): boolean {
-  return !importPath.startsWith('.') && !importPath.startsWith('/');
+  if (/^[./#~]/.test(importPath)) return false;
+  if (importPath.startsWith('node:') || builtinModules.includes(importPath))
+    return false;
+  if (importPath.startsWith('@') && !/^@[^/]+\/[^/]/.test(importPath))
+    return false;
+  return true;
 }
 
 /**
  * Extract package name from import path
  */
 function getPackageName(importPath: string): string {
-  // Scoped packages: @org/package/path -> @org/package
-  if (importPath.startsWith('@')) {
-    const parts = importPath.split('/');
-    return parts.length >= 2 ? `${parts[0]}/${parts[1]}` : importPath;
-  }
-  // Regular packages: package/path -> package
-  return importPath.split('/')[0];
+  // A scoped name is two segments (`@scope/name`); isPackageImport has
+  // already rejected anything shorter.
+  return importPath
+    .split('/')
+    .slice(0, importPath.startsWith('@') ? 2 : 1)
+    .join('/');
 }
 
 export const requireImportApproval = createRule<RuleOptions, MessageIds>({
@@ -243,6 +253,26 @@ export const requireImportApproval = createRule<RuleOptions, MessageIds>({
         const importPath = node.source.value;
         if (typeof importPath === 'string') {
           checkImport(importPath, node);
+        }
+      },
+
+      // `export { x } from 'pkg'`, `export * from 'pkg'`
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        if (node.source) checkImport(node.source.value, node);
+      },
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        checkImport(node.source.value, node);
+      },
+
+      // `import x = require('pkg')`
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        if (
+          node.moduleReference.type === AST_NODE_TYPES.TSExternalModuleReference
+        ) {
+          // TypeScript only accepts a string literal here.
+          const literal = node.moduleReference
+            .expression as TSESTree.StringLiteral;
+          checkImport(literal.value, node);
         }
       },
 

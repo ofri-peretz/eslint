@@ -16,11 +16,17 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  objectKeyName,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'namedAsDefaultMember';
 
 type RuleOptions = [];
+
+/** An import name is an Identifier, or a string literal for an unspellable name. */
+const nameOf = (node: TSESTree.Identifier | TSESTree.StringLiteral): string =>
+  node.type === AST_NODE_TYPES.Identifier ? node.name : node.value;
 
 export const noNamedAsDefaultMember = createRule<RuleOptions, MessageIds>({
   name: 'no-named-as-default-member',
@@ -54,77 +60,100 @@ export const noNamedAsDefaultMember = createRule<RuleOptions, MessageIds>({
   defaultOptions: [],
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    let defaultImports: Map<
-      string,
-      { source: string; node: TSESTree.ImportDefaultSpecifier }
-    >;
-    let namedImportsBySource: Map<string, Set<string>>;
+    /**
+     * The default import's BINDING, and the names this file takes from the
+     * same module by name (an import, plain or renamed, or a re-export): the
+     * evidence that the module exports them. The rule does not read the
+     * other module. Accesses are followed through the scope manager, so a
+     * parameter that shadows the import is a different value.
+     */
+    let defaults: Array<{
+      source: string;
+      spec: TSESTree.ImportDefaultSpecifier | TSESTree.ImportSpecifier;
+    }>;
+    let namedBySource: Map<string, Set<string>>;
+
+    const addNamed = (source: string, name: string) => {
+      let names = namedBySource.get(source);
+      if (!names) {
+        names = new Set();
+        namedBySource.set(source, names);
+      }
+      names.add(name);
+    };
+
+    /** `foo.bar`, `foo['bar']` (a runtime key `foo[k]` names nothing). */
+    function memberRead(id: TSESTree.Identifier | TSESTree.JSXIdentifier): {
+      node: TSESTree.Node;
+      name: string;
+    }[] {
+      const parent = id.parent;
+      if (
+        parent.type === AST_NODE_TYPES.MemberExpression &&
+        parent.object === id
+      ) {
+        const name = propertyName(parent);
+        return name === null ? [] : [{ node: parent, name }];
+      }
+      // `const { bar } = foo` reads `bar` off the default.
+      // (A reference under a VariableDeclarator is always its `init`.)
+      if (
+        parent.type === AST_NODE_TYPES.VariableDeclarator &&
+        parent.id.type === AST_NODE_TYPES.ObjectPattern
+      ) {
+        return parent.id.properties.flatMap((property) => {
+          if (property.type !== AST_NODE_TYPES.Property) return [];
+          const name = objectKeyName(property);
+          return name === null ? [] : [{ node: property, name }];
+        });
+      }
+      return [];
+    }
 
     return {
       before() {
-        // Track default imports and their sources
-        defaultImports = new Map<
-          string,
-          { source: string; node: TSESTree.ImportDefaultSpecifier }
-        >();
-        // Track named imports per source
-        namedImportsBySource = new Map<string, Set<string>>();
+        defaults = [];
+        namedBySource = new Map();
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        const source = node.source.value as string;
-
-        node.specifiers.forEach((spec: TSESTree.ImportClause) => {
+        if (node.importKind === 'type') return;
+        const source = node.source.value;
+        for (const spec of node.specifiers) {
           if (spec.type === AST_NODE_TYPES.ImportDefaultSpecifier) {
-            defaultImports.set(spec.local.name, { source, node: spec });
+            defaults.push({ source, spec });
           } else if (spec.type === AST_NODE_TYPES.ImportSpecifier) {
-            if (!namedImportsBySource.has(source)) {
-              namedImportsBySource.set(source, new Set());
-            }
-            const importedName =
-              spec.imported.type === AST_NODE_TYPES.Identifier
-                ? spec.imported.name
-                : spec.imported.value;
-            namedImportsBySource.get(source)?.add(importedName);
+            const imported = nameOf(spec.imported);
+            // `import { default as foo }` binds the default like `import foo`.
+            if (imported === 'default') defaults.push({ source, spec });
+            else if (spec.importKind !== 'type') addNamed(source, imported);
           }
-        });
-      },
-
-      MemberExpression(node: TSESTree.MemberExpression) {
-        // Check if accessing property of default import
-        if (node.object.type !== AST_NODE_TYPES.Identifier) {
-          return;
         }
-
-        const defaultImportInfo = defaultImports.get(node.object.name);
-        if (!defaultImportInfo) return;
-
-        /**
-         * `foo['bar']` reaches the same property as `foo.bar`, and minifiers,
-         * codegen and any key that is not a valid identifier all write it that
-         * way. Skipping every computed access — which this rule did — meant
-         * one spelling of the mistake reported and the other did not.
-         *
-         * A computed key that is NOT a literal (`foo[k]`) still returns: the
-         * key is decided at runtime, and guessing which property it names is
-         * the data-flow question this rule deliberately does not ask.
-         */
-        const propertyName =
-          node.property.type === AST_NODE_TYPES.Identifier && !node.computed
-            ? node.property.name
-            : node.property.type === AST_NODE_TYPES.Literal &&
-                typeof node.property.value === 'string'
-              ? node.property.value
-              : null;
-        if (propertyName === null) return;
-
-        // Check if this property is a known named export from the same source
-        const namedExports = namedImportsBySource.get(defaultImportInfo.source);
-        if (namedExports && namedExports.has(propertyName)) {
-          context.report({
-            node,
-            messageId: 'namedAsDefaultMember',
-            data: { name: propertyName },
-          });
+      },
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        if (!node.source || node.exportKind === 'type') return;
+        for (const spec of node.specifiers) {
+          if (spec.exportKind === 'type') continue;
+          addNamed(node.source.value, nameOf(spec.local));
+        }
+      },
+      'Program:exit'() {
+        for (const { source, spec } of defaults) {
+          const named = namedBySource.get(source);
+          if (!named) continue;
+          for (const variable of context.sourceCode.getDeclaredVariables(
+            spec,
+          )) {
+            for (const reference of variable.references) {
+              for (const read of memberRead(reference.identifier)) {
+                if (!named.has(read.name)) continue;
+                context.report({
+                  node: read.node,
+                  messageId: 'namedAsDefaultMember',
+                  data: { name: read.name },
+                });
+              }
+            }
+          }
         }
       },
     };

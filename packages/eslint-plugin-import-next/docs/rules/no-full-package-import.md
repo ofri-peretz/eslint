@@ -8,7 +8,25 @@ Disallow full package imports from known large packages that prevent tree-shakin
 
 ## Rule Details
 
-This rule aims to prevent issues related to full-package-import.
+Binding a whole large package defeats tree-shaking. For each package in `blockedPackages` (by exact name), the rule reports a binding of the whole package object: a default import, a namespace import, `const x = require('pkg')` and `import x = require('pkg')`. Each entry carries a `suggestion` (and optional `example`) for the message. When `blockedPackages` is not set, a built-in list is used (lodash, lodash-es, rxjs, ramda, moment, underscore, Font Awesome icon packs, aws-sdk and others).
+
+Not reported: named imports, a destructured `require`, type-only imports (erased, they bundle nothing), side-effect imports, re-exports, and subpaths (`lodash/debounce`, the recommended form).
+
+### ❌ Incorrect
+
+```ts
+import _ from 'lodash';
+import * as R from 'ramda';
+const moment = require('moment');
+```
+
+### ✅ Correct
+
+```ts
+import debounce from 'lodash/debounce';
+import { map } from 'rxjs';
+import type Big from 'lodash';
+```
 
 ## Options
 

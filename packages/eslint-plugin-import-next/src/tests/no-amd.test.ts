@@ -47,8 +47,40 @@ describe('no-amd', () => {
           filename: '/src/utils/helpers.js',
         },
         // No AMD calls to allow
+        {
+          name: 'another function called with a dependency-shaped array is not AMD',
+          code: 'load(["helper"], function(helper) {});',
+          filename: '/src/utils/helpers.js',
+        },
+        {
+          name: 'an imported define is not the AMD global',
+          code: 'import { define } from "./loader"; define(["helper"], function(helper) {});',
+          filename: '/src/utils/helpers.js',
+        },
+        {
+          name: 'a declared require is not the AMD global',
+          code: 'function require(deps: string[], cb: () => void) {} require(["dep"], function() {});',
+          filename: '/src/utils/helpers.ts',
+        },
+        {
+          name: 'a member call named define is not AMD',
+          code: 'customElements.define("x-app", class extends HTMLElement {});',
+          filename: '/src/utils/helpers.js',
+        },
       ],
       invalid: [
+        {
+          name: 'an AMD require() with an arrow callback',
+          code: 'require(["dep"], (dep) => dep.start());',
+          filename: '/src/utils/helpers.js',
+          errors: [{ messageId: 'preferES6' }],
+        },
+        {
+          name: 'an AMD require() with a callback reference',
+          code: 'require(["dep"], onLoad);',
+          filename: '/src/utils/helpers.js',
+          errors: [{ messageId: 'preferES6' }],
+        },
         // Invalid AMD define calls
         {
           name: 'an AMD define() call',
@@ -175,6 +207,18 @@ describe('no-amd', () => {
           code: 'require(["dep"], function(dep) {});',
           filename: '/src/old/require.js',
           options: [{ allow: ['**/old/**'] }],
+        },
+        {
+          name: 'a ** glob matches an absolute path more than one folder deep',
+          code: 'define(["helper"], function(helper) {});',
+          filename: '/repo/packages/web/src/legacy/amd.js',
+          options: [{ allow: ['**/legacy/**'] }],
+        },
+        {
+          name: 'a relative folder glob matches an absolute filename',
+          code: 'define(["helper"], function(helper) {});',
+          filename: '/repo/vendor/amd/loader.js',
+          options: [{ allow: ['vendor/**'] }],
         },
       ],
       invalid: [

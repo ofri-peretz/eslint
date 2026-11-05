@@ -267,3 +267,66 @@ ruleTester.run('prefer-node-protocol - additionalModules', preferNodeProtocol, {
     },
   ],
 });
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/import-next).
+ruleTester.run('prefer-node-protocol fidelity', preferNodeProtocol, {
+  valid: [
+    {
+      name: 'FS is not a builtin: builtin names are case-sensitive',
+      code: `import fs from 'FS';`,
+    },
+    {
+      name: 'events/foo is not a builtin subpath: it resolves to the npm package',
+      code: `import foo from 'events/foo';`,
+    },
+    {
+      name: 'a trailing slash loads the npm package, not the builtin',
+      code: `const punycode = require('punycode/');`,
+    },
+  ],
+  invalid: [
+    {
+      name: 'export { x } from a builtin',
+      code: `export { readFile } from 'fs';`,
+      output: `export { readFile } from "node:fs";`,
+      errors: [{ messageId: 'preferNodeProtocol' }],
+    },
+    {
+      name: 'export * from a builtin subpath',
+      code: `export * from 'fs/promises';`,
+      output: `export * from "node:fs/promises";`,
+      errors: [{ messageId: 'preferNodeProtocol' }],
+    },
+    {
+      name: 'import x = require() of a builtin',
+      code: `import fs = require('fs');`,
+      output: `import fs = require("node:fs");`,
+      errors: [{ messageId: 'preferNodeProtocol' }],
+    },
+    {
+      name: 'a builtin outside the common few',
+      code: `import { Worker } from 'worker_threads';`,
+      output: `import { Worker } from "node:worker_threads";`,
+      errors: [{ messageId: 'preferNodeProtocol' }],
+    },
+  ],
+});
+
+// Spellings that load no module, or load one the rule does not judge.
+ruleTester.run('prefer-node-protocol fidelity (other spellings)', preferNodeProtocol, {
+  valid: [
+    {
+      name: "a local export loads nothing",
+      code: "export const v = 1;\nexport { v as w };",
+    },
+  ],
+  invalid: [
+    {
+      name: "a subpath of an additional module",
+      code: "import x from 'custom/sub';",
+      options: [{ additionalModules: ['custom'] }],
+      errors: [{ messageId: 'preferNodeProtocol' }],
+      output: "import x from \"node:custom/sub\";",
+    },
+  ],
+});

@@ -333,40 +333,54 @@ describe('namespace — Layer 2 (mock parser services)', () => {
     expect(checker.getTypeAtLocation).not.toHaveBeenCalled();
   });
 
-  it('bails when the namespace type cannot be resolved', () => {
-    const checker = {
-      getSymbolAtLocation: () => namespaceDeclSymbol,
-      getTypeAtLocation: () => undefined,
-      getPropertyOfType: vi.fn(),
-    };
-    const { listeners, reports } = createWithParserServices(
-      namespace,
-      makeServices(checker),
-    );
-    (listeners.MemberExpression as (n: unknown) => void)({
-      type: 'MemberExpression',
-      object: { type: 'Identifier', name: 'ns' },
-      property: { type: 'Identifier', name: 'x' },
-    });
-    expect(reports).toEqual([]);
-    expect(checker.getPropertyOfType).not.toHaveBeenCalled();
+  // The module behind the namespace import, as the checker resolves it from
+  // the import's module specifier.
+  const moduleSpecifier = { kind: 'moduleSpecifier' };
+  const resolvedNamespace = {
+    declarations: [
+      {
+        kind: ts.SyntaxKind.NamespaceImport,
+        parent: { parent: { moduleSpecifier } },
+      },
+    ],
+  };
+  const checkerFor = (moduleSymbol: unknown, exported: string[]) => ({
+    getSymbolAtLocation: (n: unknown) =>
+      n === moduleSpecifier ? moduleSymbol : resolvedNamespace,
+    getExportsOfModule: () => exported.map((name) => ({ name })),
+  });
+  const read = (name: string) => ({
+    type: 'MemberExpression',
+    computed: false,
+    object: { type: 'Identifier', name: 'ns' },
+    property: { type: 'Identifier', name },
   });
 
-  it('reports when the accessed property does not exist on the namespace', () => {
-    const checker = {
-      getSymbolAtLocation: () => namespaceDeclSymbol,
-      getTypeAtLocation: () => ({ kind: 'type' }),
-      getPropertyOfType: () => undefined,
-    };
+  it('bails when the module does not resolve', () => {
     const { listeners, reports } = createWithParserServices(
       namespace,
-      makeServices(checker),
+      makeServices(checkerFor(undefined, [])),
     );
-    (listeners.MemberExpression as (n: unknown) => void)({
-      type: 'MemberExpression',
-      object: { type: 'Identifier', name: 'ns' },
-      property: { type: 'Identifier', name: 'missing' },
-    });
+    (listeners.MemberExpression as (n: unknown) => void)(read('x'));
+    expect(reports).toEqual([]);
+  });
+
+  it('bails on a CommonJS export = module', () => {
+    const exports = new Map([['export=', {}]]);
+    const { listeners, reports } = createWithParserServices(
+      namespace,
+      makeServices(checkerFor({ exports }, [])),
+    );
+    (listeners.MemberExpression as (n: unknown) => void)(read('x'));
+    expect(reports).toEqual([]);
+  });
+
+  it('reports when the module does not export the name', () => {
+    const { listeners, reports } = createWithParserServices(
+      namespace,
+      makeServices(checkerFor({ exports: new Map() }, ['present'])),
+    );
+    (listeners.MemberExpression as (n: unknown) => void)(read('missing'));
     expect(reports).toHaveLength(1);
     expect(reports[0]).toMatchObject({
       messageId: 'namespace',
@@ -374,21 +388,12 @@ describe('namespace — Layer 2 (mock parser services)', () => {
     });
   });
 
-  it('does not report when the property exists on the namespace', () => {
-    const checker = {
-      getSymbolAtLocation: () => namespaceDeclSymbol,
-      getTypeAtLocation: () => ({ kind: 'type' }),
-      getPropertyOfType: () => ({ name: 'present' }),
-    };
+  it('does not report when the module exports the name', () => {
     const { listeners, reports } = createWithParserServices(
       namespace,
-      makeServices(checker),
+      makeServices(checkerFor({ exports: new Map() }, ['present'])),
     );
-    (listeners.MemberExpression as (n: unknown) => void)({
-      type: 'MemberExpression',
-      object: { type: 'Identifier', name: 'ns' },
-      property: { type: 'Identifier', name: 'present' },
-    });
+    (listeners.MemberExpression as (n: unknown) => void)(read('present'));
     expect(reports).toEqual([]);
   });
 });
@@ -423,12 +428,12 @@ ruleTester.run('no-absolute-path (coverage)', noAbsolutePath, {
       output: `import u from './utils';`,
     },
     {
-      name: 'AMD require with multiple literal arguments flags each one',
-      code: `require('/abs/a', '/abs/b');`,
+      name: 'AMD dependency array with several absolute paths flags each one',
+      code: `require(['/abs/a', '/abs/b'], function () {});`,
       filename: '/project/src/file.js',
       options: [{ amd: true, commonjs: false }],
       errors: [{ messageId: 'absolutePath' }, { messageId: 'absolutePath' }],
-      output: `require('../../abs/a', '../../abs/b');`,
+      output: `require(['../../abs/a', '../../abs/b'], function () {});`,
     },
   ],
 });
@@ -461,6 +466,10 @@ ruleTester.run(
   {
     valid: [
       {
+        name: 'a template literal is not an anonymous function or class',
+        code: 'export default `template`;',
+      },
+      {
         name: 'identifier default export is a named reference',
         code: `const x = 1; export default x;`,
       },
@@ -474,11 +483,6 @@ ruleTester.run(
       {
         name: 'parenthesized function expression',
         code: `export default (function () {});`,
-        errors: [{ messageId: 'anonymousDefaultExport' }],
-      },
-      {
-        name: 'template literal falls into the default switch arm',
-        code: 'export default `template`;',
         errors: [{ messageId: 'anonymousDefaultExport' }],
       },
     ],
@@ -521,12 +525,12 @@ describe('no-barrel-file — Layer 2 (synthetic exports)', () => {
     (listeners.ExportNamedDeclaration as (n: unknown) => void)({
       type: 'ExportAllDeclaration',
       source: { type: 'Literal', value: '' },
+      specifiers: [],
     });
-    // A synthetic non-export node routed through the default-export listener
-    // is not a local export.
+    // `export default x` of a binding no import declares is a local export.
     (listeners.ExportDefaultDeclaration as (n: unknown) => void)({
-      type: 'Identifier',
-      name: 'x',
+      type: 'ExportDefaultDeclaration',
+      declaration: { type: 'Identifier', name: 'x' },
     });
     (listeners['Program:exit'] as (n: unknown) => void)({ type: 'Program' });
     // Two re-exports with zero distinct sources → below threshold, no report.
@@ -571,26 +575,10 @@ describe('no-barrel-import — Layer 2', () => {
     (listeners.ImportDeclaration as (n: unknown) => void)({
       type: 'ImportDeclaration',
       source: { type: 'Literal', value: './utils/index' },
+      specifiers: [],
     });
     expect(reports).toHaveLength(1);
     expect(reports[0]).toMatchObject({ messageId: 'barrelImportDetected' });
-  });
-
-  it('ignores non-string sources on all three listeners', () => {
-    const { listeners, reports } = createWithMockContext(noBarrelImport);
-    (listeners.ImportDeclaration as (n: unknown) => void)({
-      type: 'ImportDeclaration',
-      source: { type: 'Literal', value: 42 },
-    });
-    (listeners.ExportAllDeclaration as (n: unknown) => void)({
-      type: 'ExportAllDeclaration',
-      source: { type: 'Literal', value: 42 },
-    });
-    (listeners.ExportNamedDeclaration as (n: unknown) => void)({
-      type: 'ExportNamedDeclaration',
-      source: { type: 'Literal', value: 42 },
-    });
-    expect(reports).toEqual([]);
   });
 });
 

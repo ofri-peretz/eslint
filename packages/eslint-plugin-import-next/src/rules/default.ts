@@ -12,11 +12,19 @@ import {
   hasParserServices,
   getParserServices,
 } from '@interlace/eslint-devkit';
+import type ts from 'typescript';
 import { loadTypeScript, aliasSymbolFlag } from '../utils/typescript-peer';
 
 type MessageIds = 'noDefaultExport';
 
 type RuleOptions = [];
+
+/** TypeScript's `InternalSymbolName.ExportEquals` / `.Default` keys. */
+const EXPORT_EQUALS = 'export=' as ts.__String;
+const DEFAULT = 'default' as ts.__String;
+
+const exportName = (node: TSESTree.Identifier | TSESTree.StringLiteral) =>
+  node.type === 'Identifier' ? node.name : node.value;
 
 export const defaultRule = createRule<RuleOptions, MessageIds>({
   name: 'default',
@@ -46,6 +54,22 @@ export const defaultRule = createRule<RuleOptions, MessageIds>({
 
     const services = getParserServices(context);
     const checker = services.program?.getTypeChecker?.();
+
+    /**
+     * Does the module `source` names resolve, and lack a default? A module
+     * that does not resolve is unknown, not missing a default; a CommonJS
+     * `export =` module has one through interop.
+     */
+    function lacksDefault(source: TSESTree.StringLiteral): boolean {
+      const moduleSymbol = checker?.getSymbolAtLocation?.(
+        services.esTreeNodeToTSNodeMap.get(source),
+      );
+      if (!moduleSymbol?.exports) return false;
+      return (
+        !moduleSymbol.exports.has(EXPORT_EQUALS) &&
+        !moduleSymbol.exports.has(DEFAULT)
+      );
+    }
 
     return {
       ImportDefaultSpecifier(node: TSESTree.ImportDefaultSpecifier) {
@@ -104,6 +128,40 @@ export const defaultRule = createRule<RuleOptions, MessageIds>({
               messageId: 'noDefaultExport',
             });
           }
+        }
+      },
+
+      // `import { default as x } from './m'` takes the default as surely as
+      // `import x` does.
+      ImportSpecifier(node: TSESTree.ImportSpecifier) {
+        const declaration = node.parent;
+        if (
+          declaration.type !== 'ImportDeclaration' ||
+          declaration.importKind === 'type' ||
+          node.importKind === 'type'
+        ) {
+          return;
+        }
+        if (exportName(node.imported) !== 'default') return;
+        if (lacksDefault(declaration.source)) {
+          context.report({ node, messageId: 'noDefaultExport' });
+        }
+      },
+
+      // `export { default } from './m'` re-exports the default.
+      ExportSpecifier(node: TSESTree.ExportSpecifier) {
+        const parent = node.parent;
+        if (
+          parent.type !== 'ExportNamedDeclaration' ||
+          !parent.source ||
+          parent.exportKind === 'type' ||
+          node.exportKind === 'type'
+        ) {
+          return;
+        }
+        if (exportName(node.local) !== 'default') return;
+        if (lacksDefault(parent.source)) {
+          context.report({ node, messageId: 'noDefaultExport' });
         }
       },
     };

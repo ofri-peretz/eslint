@@ -81,3 +81,52 @@ ruleTester.run('no-named-as-default', noNamedAsDefault, {
     },
   ],
 });
+
+/**
+ * Fidelity (benchmarks/suites/fidelity/models/import-next/no_named_as_default.qnt):
+ * the evidence of the named export is anywhere in the file, from the same
+ * module; a type is not evidence.
+ */
+describe('no-named-as-default — fidelity', () => {
+  ruleTester.run('evidence across declarations', noNamedAsDefault, {
+    valid: [
+      {
+        name: 'a type-only default import is not a value default',
+        code: "import type foo from './m';\nimport { foo as f2 } from './m';",
+      },
+      {
+        name: 'a type-only re-export of the name is not evidence',
+        code: "import foo from './m';\nexport { type foo } from './m';",
+      },
+      {
+        name: 're-exporting the default is not a named export',
+        code: "import foo from './m';\nexport { default } from './m';",
+      },
+      {
+        name: 'a type of the same name is not evidence',
+        code: "import foo, { type foo as Foo } from './m';",
+      },
+      {
+        name: 'the name from another module is not evidence',
+        code: "import foo from './m';\nimport { foo as f2 } from './n';",
+      },
+    ],
+    invalid: [
+      {
+        name: 'the named export taken in another import of the same module',
+        code: "import foo from './m';\nimport { foo as f2 } from './m';",
+        errors: [{ messageId: 'namedAsDefault' }],
+      },
+      {
+        name: 'the named export re-exported from the same module',
+        code: "import foo from './m';\nexport { foo } from './m';",
+        errors: [{ messageId: 'namedAsDefault' }],
+      },
+      {
+        name: 'import { default as foo } with the named foo in another import',
+        code: "import { default as foo } from './m';\nimport { foo as f2 } from './m';",
+        errors: [{ messageId: 'namedAsDefault' }],
+      },
+    ],
+  });
+});

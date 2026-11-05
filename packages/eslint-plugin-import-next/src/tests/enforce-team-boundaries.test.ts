@@ -146,3 +146,61 @@ ruleTester.run('enforce-team-boundaries', enforceTeamBoundaries, {
     },
   ],
 });
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/import-next).
+ruleTester.run('enforce-team-boundaries fidelity', enforceTeamBoundaries, {
+  valid: [
+    {
+      name: "a relative import into an allowed team's path",
+      code: `import { x } from '../../platform/x/y';`,
+      filename: 'src/payments/hooks/useSearch.tsx',
+      options: [defaultOptions],
+    },
+  ],
+  invalid: [
+    {
+      name: "a relative import into another team's internals",
+      code: `import { validateToken } from '../../auth/utils/token';`,
+      filename: 'src/platform/middleware/auth.ts',
+      options: [defaultOptions],
+      errors: [{ messageId: 'unauthorizedTeamImport' }],
+    },
+    {
+      name: "export * from another team's internals",
+      code: `export * from 'src/auth/utils/token';`,
+      filename: 'src/platform/middleware/auth.ts',
+      options: [defaultOptions],
+      errors: [{ messageId: 'unauthorizedTeamImport' }],
+    },
+    {
+      name: "import x = require() of another team's internals",
+      code: `import token = require('src/auth/utils/token');`,
+      filename: 'src/platform/middleware/auth.ts',
+      options: [defaultOptions],
+      errors: [{ messageId: 'unauthorizedTeamImport' }],
+    },
+  ],
+});
+
+// Spellings that load no module, or load one the rule does not judge.
+ruleTester.run(
+  'enforce-team-boundaries fidelity (other spellings)',
+  enforceTeamBoundaries,
+  {
+    valid: [
+      {
+        name: 'an absolute path belongs to no team',
+        code: "import x from '/abs/x';",
+        filename: 'src/platform/a.ts',
+        options: [defaultOptions],
+      },
+      {
+        name: 'an import alias loads nothing',
+        code: 'namespace NS { export const b = 1; }\nimport A = NS.b;\nexport const v = A;\nexport { A };',
+        filename: 'src/platform/a.ts',
+        options: [defaultOptions],
+      },
+    ],
+    invalid: [],
+  },
+);

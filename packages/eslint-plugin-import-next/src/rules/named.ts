@@ -11,6 +11,7 @@ import {
   hasParserServices,
   getParserServices,
 } from '@interlace/eslint-devkit';
+import type ts from 'typescript';
 import { aliasSymbolFlag } from '../utils/typescript-peer';
 
 type MessageIds = 'named';
@@ -59,6 +60,14 @@ export const named = createRule<RuleOptions, MessageIds>({
         )
           return;
 
+        // `{ default as x }` is the `default` rule's to judge.
+        if (
+          (node.imported.type === 'Identifier'
+            ? node.imported.name
+            : node.imported.value) === 'default'
+        )
+          return;
+
         const tsNode = services.esTreeNodeToTSNodeMap.get(node.imported);
         let symbol = checker?.getSymbolAtLocation?.(tsNode);
 
@@ -90,6 +99,35 @@ export const named = createRule<RuleOptions, MessageIds>({
             node: node.imported,
             messageId: 'named',
           });
+        }
+      },
+
+      // `export { a } from './m'` re-exports a name './m' must export.
+      ExportSpecifier(node: TSESTree.ExportSpecifier) {
+        const parent = node.parent;
+        if (
+          parent.type !== 'ExportNamedDeclaration' ||
+          !parent.source ||
+          parent.exportKind === 'type' ||
+          node.exportKind === 'type'
+        )
+          return;
+        const name =
+          node.local.type === 'Identifier' ? node.local.name : node.local.value;
+        if (name === 'default') return;
+
+        const moduleSymbol = checker?.getSymbolAtLocation?.(
+          services.esTreeNodeToTSNodeMap.get(parent.source),
+        );
+        // A module that does not resolve is unknown; a CommonJS `export =`
+        // module's names depend on interop.
+        if (!moduleSymbol?.exports) return;
+        if (moduleSymbol.exports.has('export=' as ts.__String)) return;
+        const exported = checker
+          ?.getExportsOfModule?.(moduleSymbol)
+          .some((symbol) => symbol.name === name);
+        if (exported === false) {
+          context.report({ node: node.local, messageId: 'named' });
         }
       },
     };

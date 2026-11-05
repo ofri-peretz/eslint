@@ -13,7 +13,31 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## Rule Details
 
-This rule aims to prevent issues related to anonymous-default-export.
+A default-exported function or class without a name shows up as `default` (or nothing) in stack traces, profilers and React DevTools, and editors cannot auto-import it under a stable name. This rule reports a default export that is an anonymous function or class:
+
+- an arrow function, also behind a TS wrapper (`(() => {}) as Handler`);
+- an anonymous function expression or declaration (`export default function () {}`);
+- an anonymous class expression or declaration (`export default class {}`).
+
+A named function or class (also a named expression, `export default (function load() {})`) is fine. Values that are not functions or classes (identifiers, member references, calls, `new`, literals, templates, objects, arrays, interfaces) are not this rule's concern.
+
+### ❌ Incorrect
+
+```ts
+export default () => {};
+export default function () {}
+export default class {}
+```
+
+### ✅ Correct
+
+```ts
+export default function load() {}
+export default class Store {}
+const handler = () => {};
+export default handler;
+export default { retries: 3 };
+```
 
 ## Options
 
@@ -43,11 +67,10 @@ This rule aims to prevent issues related to anonymous-default-export.
 ]
 ```
 
-## Implementation
+- `allowArrowFunction` (default `false`): accept an anonymous arrow function.
+- `allowFunctionExpression` (default `false`): accept an anonymous function expression or declaration.
+- `allowClassExpression` (default `false`): accept an anonymous class expression or declaration.
 
-- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-anonymous-default-export.ts)
-- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-anonymous-default-export.test.ts)
+## When Not To Use It
 
-## OWASP Foundation
-
-- **Category**: A00:2021 - General Security
+When your tooling names default exports from the file name and anonymous ones do not hurt debugging.

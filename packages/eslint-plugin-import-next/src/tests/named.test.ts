@@ -70,3 +70,73 @@ ruleTester.run('named', named, {
     }
   ],
 });
+
+/**
+ * Fidelity (benchmarks/suites/fidelity/models/import-next/named.qnt): a named
+ * re-export must name an export too; `{ default as x }` is the `default`
+ * rule's to judge.
+ */
+ruleTester.run('named — fidelity', named, {
+  valid: [
+    {
+      name: 'a re-export of a name the module exports',
+      code: `export { bar } from './files/foo.ts';`,
+      filename: 'src/valid_named.ts',
+    },
+    {
+      name: 'import { default as x } is judged by the default rule, not named',
+      code: `import { default as x } from './files/no-default.ts';`,
+      filename: 'src/valid_named.ts',
+    },
+    {
+      name: 'export { default } from is the default rule\'s to judge',
+      code: `export { default } from './files/no-default.ts';`,
+      filename: 'src/valid_named.ts',
+    },
+    {
+      name: 'a type-only re-export is checked by TypeScript',
+      code: `export type { baz } from './files/foo.ts';`,
+      filename: 'src/valid_named.ts',
+    },
+    {
+      name: 'a local export specifier names no other module',
+      code: `const q = 1;\nexport { q };`,
+      filename: 'src/valid_named.ts',
+    },
+    {
+      name: 'a re-export from an export = module depends on interop',
+      code: `export { render } from './files/export-equals.ts';`,
+      filename: 'src/valid_named.ts',
+    },
+    {
+      name: 'a re-export from a module that does not resolve',
+      code: `export { anything } from './files/missing.ts';`,
+      filename: 'src/valid_named.ts',
+    },
+    {
+      name: "the string-literal spelling import { 'default' as x }",
+      code: `import { 'default' as x } from './files/no-default.ts';`,
+      filename: 'src/valid_named.ts',
+    },
+  ],
+  invalid: [
+    {
+      name: 'a string-literal re-export of a missing name',
+      code: `export { 'baz' as qux } from './files/foo.ts';`,
+      filename: 'src/invalid_named.ts',
+      errors: [{ messageId: 'named' }],
+    },
+    {
+      name: 'a re-export of a name the module does not export',
+      code: `export { baz } from './files/foo.ts';`,
+      filename: 'src/invalid_named.ts',
+      errors: [{ messageId: 'named' }],
+    },
+    {
+      name: 'a renamed re-export of a name the module does not export',
+      code: `export { baz as qux } from './files/foo.ts';`,
+      filename: 'src/invalid_named.ts',
+      errors: [{ messageId: 'named' }],
+    },
+  ],
+});

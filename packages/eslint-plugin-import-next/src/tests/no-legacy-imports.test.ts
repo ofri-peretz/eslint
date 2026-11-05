@@ -144,3 +144,47 @@ ruleTester.run('no-legacy-imports', noLegacyImports, {
     },
   ],
 });
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/import-next).
+ruleTester.run('no-legacy-imports fidelity', noLegacyImports, {
+  valid: [],
+  invalid: [
+    {
+      name: 'export { x } from a deprecated path',
+      code: `export { format } from '@legacy/utils';`,
+      output: `export { format } from '@company/utils';`,
+      options: [defaultOptions],
+      errors: [{ messageId: 'legacyImport' }],
+    },
+    {
+      name: 'export * from a deprecated path',
+      code: `export * from '@legacy/utils';`,
+      output: `export * from '@company/utils';`,
+      options: [defaultOptions],
+      errors: [{ messageId: 'legacyImport' }],
+    },
+    {
+      name: 'import x = require() of a deprecated path',
+      code: `import utils = require('@legacy/utils');`,
+      output: `import utils = require('@company/utils');`,
+      options: [defaultOptions],
+      errors: [{ messageId: 'legacyImport' }],
+    },
+  ],
+});
+
+// Spellings that load no module, or load one the rule does not judge.
+ruleTester.run(
+  'no-legacy-imports fidelity (other spellings)',
+  noLegacyImports,
+  {
+    valid: [
+      {
+        name: 'a local export and an import alias load nothing',
+        code: 'namespace NS { export const b = 1; }\nimport A = NS.b;\nexport const v = A;\nexport { A };',
+        options: [defaultOptions],
+      },
+    ],
+    invalid: [],
+  },
+);

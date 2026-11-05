@@ -9,8 +9,15 @@
  * Forbid imported names marked with @deprecated documentation tag (eslint-plugin-import inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  getParserServices,
+  hasParserServices,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import type ts from 'typescript';
+import { aliasSymbolFlag, loadTypeScript } from '../utils/typescript-peer';
 
 /**
  * @vocabulary `deprecated` is the JSDoc block tag. It is defined by JSDoc and
@@ -119,10 +126,21 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
     let deprecationMarkers: string[];
     let checkJSDoc: boolean;
     let checkDecorators: boolean;
+    /**
+     * Deprecated declarations of THIS file, by binding: a parameter or an
+     * object key that happens to share the name is not the deprecated item.
+     */
     let deprecatedItems: Map<
-      string,
+      TSESLint.Scope.Variable,
       { location: TSESTree.Node; reason?: string; replacement?: string }
     >;
+    /** Type information, when the parser provides it (for imports). */
+    let typed:
+      | {
+          services: ReturnType<typeof getParserServices>;
+          checker: ts.TypeChecker;
+        }
+      | undefined;
 
     function isAllowed(name: string): boolean {
       return allow.includes(name);
@@ -177,24 +195,58 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
       return { deprecated: false };
     }
 
-    function checkComments(node: TSESTree.Node, name: string) {
+    /** Record the variable `declaration` declares as `name` as deprecated. */
+    function markDeprecated(
+      name: string,
+      declaration: TSESTree.Node | null,
+      info: { location: TSESTree.Node; reason?: string; replacement?: string },
+    ) {
+      if (declaration) {
+        for (const variable of context.sourceCode.getDeclaredVariables(
+          declaration,
+        )) {
+          if (variable.name === name) deprecatedItems.set(variable, info);
+        }
+        return;
+      }
+      // `export { a }` marks the binding `a` already declared in scope.
+      for (
+        let scope: TSESLint.Scope.Scope | null = context.sourceCode.getScope(
+          info.location,
+        );
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.set.get(name);
+        if (variable) {
+          deprecatedItems.set(variable, info);
+          return;
+        }
+      }
+    }
+
+    /**
+     * `node` carries the comments; `declaration` declares the binding
+     * (defaults to `node`; null for an export specifier of a binding in
+     * scope).
+     */
+    function checkComments(
+      node: TSESTree.Node,
+      name: string,
+      declaration: TSESTree.Node | null = node,
+    ) {
       if (!checkJSDoc) return;
 
       const sourceCode = context.sourceCode;
       const comments = sourceCode.getCommentsBefore(node);
-
-      // Also check leading comments attached to the node
       const allComments = [...comments];
-      if ('leadingComments' in node && Array.isArray(node.leadingComments)) {
-        allComments.push(...node.leadingComments);
-      }
 
       for (const comment of allComments) {
         if (comment.type === 'Block' && comment.value.includes('*')) {
           // JSDoc comment
           const deprecationInfo = parseJSDocDeprecated(comment.value);
           if (deprecationInfo.deprecated) {
-            deprecatedItems.set(name, {
+            markDeprecated(name, declaration, {
               location: node,
               reason: deprecationInfo.reason,
               replacement: deprecationInfo.replacement,
@@ -224,7 +276,7 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
             (dec.expression.type === 'Identifier' &&
               dec.expression.name === 'deprecated')
           ) {
-            deprecatedItems.set(name, {
+            markDeprecated(name, node, {
               location: node,
               reason: 'Marked with @deprecated decorator',
             });
@@ -238,11 +290,9 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
       node: TSESTree.Node,
       name: string,
       usage: string,
+      deprecationInfo: { reason?: string; replacement?: string },
     ) {
       if (isAllowed(name)) return;
-
-      const deprecationInfo = deprecatedItems.get(name);
-      if (!deprecationInfo) return;
 
       const { replacement } = deprecationInfo;
 
@@ -277,32 +327,118 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
       });
     }
 
+    /** A reference to a deprecated local, reported at the expression that uses it. */
+    function reportReference(
+      reference: TSESLint.Scope.Reference,
+      info: { reason?: string; replacement?: string },
+    ) {
+      if (reference.init || !reference.isRead()) return;
+      const id = reference.identifier as TSESTree.Identifier;
+      const parent = id.parent;
+      const name = id.name;
+      // `export { old }` re-exports the binding; it does not use it.
+      if (parent.type === 'ExportSpecifier') return;
+      if (parent.type === 'CallExpression' && parent.callee === id) {
+        reportDeprecatedUsage(parent, name, `${name}()`, info);
+      } else if (parent.type === 'NewExpression' && parent.callee === id) {
+        reportDeprecatedUsage(parent, name, `new ${name}()`, info);
+      } else if (parent.type === 'MemberExpression' && parent.object === id) {
+        // `obj['prop']` reads the same deprecated export `obj.prop` reads.
+        const member = propertyName(parent);
+        reportDeprecatedUsage(
+          parent,
+          name,
+          member === null ? name : `${name}.${member}`,
+          info,
+        );
+      } else {
+        reportDeprecatedUsage(id, name, name, info);
+      }
+    }
+
+    /** Tag names (`deprecated`) the configured markers stand for. */
+    function markerTags(): Set<string> {
+      return new Set(deprecationMarkers.map((m) => m.replace(/^@/, '')));
+    }
+
+    /**
+     * Is the export `symbol` (an import's target) deprecated, as TypeScript
+     * sees its declaration: a JSDoc tag, or a `@deprecated` decorator?
+     */
+    function isDeprecatedSymbol(
+      symbol: ts.Symbol | undefined,
+      typeChecker: ts.TypeChecker,
+    ): boolean {
+      if (!symbol) return false;
+      const target =
+        symbol.flags & aliasSymbolFlag()
+          ? typeChecker.getAliasedSymbol(symbol)
+          : symbol;
+      if (checkJSDoc) {
+        const tags = markerTags();
+        if (target.getJsDocTags(typeChecker).some((t) => tags.has(t.name))) {
+          return true;
+        }
+      }
+      const tsModule = loadTypeScript();
+      if (!checkDecorators || !tsModule) return false;
+      return (target.declarations ?? []).some((declaration) =>
+        (tsModule.canHaveDecorators(declaration)
+          ? (tsModule.getDecorators(declaration) ?? [])
+          : []
+        ).some((decorator) => {
+          const expression = tsModule.isCallExpression(decorator.expression)
+            ? decorator.expression.expression
+            : decorator.expression;
+          return (
+            tsModule.isIdentifier(expression) &&
+            expression.text === 'deprecated'
+          );
+        }),
+      );
+    }
+
+    /** The TS symbol behind an ESTree node, when type information exists. */
+    function symbolOf(
+      node: TSESTree.Node,
+      { services, checker }: NonNullable<typeof typed>,
+    ): ts.Symbol | undefined {
+      return checker.getSymbolAtLocation(
+        services.esTreeNodeToTSNodeMap.get(node),
+      );
+    }
+
     return {
       before() {
         const [options] = context.options;
         ({
           allow = [],
-          deprecationMarkers = ['@deprecated'],
+          deprecationMarkers = [],
           checkJSDoc = true,
           checkDecorators = true,
         } = options || {});
+        // Custom markers ADD to the standard JSDoc tag; they do not replace it.
+        deprecationMarkers = ['@deprecated', ...deprecationMarkers];
 
         const filename = context.filename;
         if (!filename) {
           return false;
         }
 
-        // Track deprecated items found in the current file
-        deprecatedItems = new Map<
-          string,
-          {
-            location: TSESTree.Node;
-            reason?: string;
-            replacement?: string;
-          }
-        >();
+        deprecatedItems = new Map();
+        typed = undefined;
+        // hasParserServices proves a program exists.
+        if (hasParserServices(context)) {
+          const services = getParserServices(context);
+          typed = {
+            services,
+            checker: (services.program as ts.Program).getTypeChecker(),
+          };
+        }
+
         return true;
       },
+
       // Check for deprecated declarations in the current file
       VariableDeclaration(node: TSESTree.VariableDeclaration) {
         node.declarations.forEach((decl: TSESTree.VariableDeclarator) => {
@@ -327,157 +463,95 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
         }
       },
 
-      MethodDefinition(node: TSESTree.MethodDefinition) {
-        if (node.key.type === 'Identifier') {
-          // For methods, check comments on both the method node and the key
-          checkComments(node, node.key.name);
-          checkComments(node.key, node.key.name);
-          checkDecoratorsForDeprecation(node, node.key.name);
-        }
-      },
-
       // Check for deprecated exports in the current file
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
-        if (node.declaration) {
-          if (node.declaration.type === 'VariableDeclaration') {
-            node.declaration.declarations.forEach(
+        const declaration = node.declaration;
+        if (declaration) {
+          if (declaration.type === 'VariableDeclaration') {
+            declaration.declarations.forEach(
               (decl: TSESTree.VariableDeclarator) => {
                 if (decl.id.type === 'Identifier') {
-                  checkComments(node, decl.id.name);
-                  checkDecoratorsForDeprecation(node.declaration, decl.id.name);
+                  checkComments(node, decl.id.name, declaration);
+                  checkDecoratorsForDeprecation(declaration, decl.id.name);
                 }
               },
             );
           } else if (
-            node.declaration.type === 'FunctionDeclaration' &&
-            node.declaration.id
+            (declaration.type === 'FunctionDeclaration' ||
+              declaration.type === 'ClassDeclaration') &&
+            declaration.id
           ) {
-            checkComments(node, node.declaration.id.name);
-            checkDecoratorsForDeprecation(
-              node.declaration,
-              node.declaration.id.name,
-            );
-          } else if (
-            node.declaration.type === 'ClassDeclaration' &&
-            node.declaration.id
-          ) {
-            checkComments(node, node.declaration.id.name);
-            checkDecoratorsForDeprecation(
-              node.declaration,
-              node.declaration.id.name,
+            checkComments(node, declaration.id.name, declaration);
+            checkDecoratorsForDeprecation(declaration, declaration.id.name);
+          }
+        }
+        // `/** @deprecated */ export { a };` deprecates the local `a`.
+        if (!node.source) {
+          for (const specifier of node.specifiers ?? []) {
+            // Without a source, the local is always an Identifier.
+            checkComments(
+              node,
+              (specifier.local as TSESTree.Identifier).name,
+              null,
             );
           }
         }
+      },
 
-        // Check exported specifiers
-        if (node.specifiers) {
-          node.specifiers.forEach((specifier: TSESTree.ExportSpecifier) => {
-            if (specifier.exported.type === 'Identifier') {
-              checkComments(node, specifier.exported.name);
-            }
+      // Imports of deprecated exports, when type information can see the
+      // other module. Without it, the other module is unknown: silent.
+      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        if (!typed) return;
+        for (const spec of node.specifiers) {
+          if (spec.type === 'ImportNamespaceSpecifier') continue;
+          const imported =
+            spec.type === 'ImportDefaultSpecifier'
+              ? 'default'
+              : spec.imported.type === 'Identifier'
+                ? spec.imported.name
+                : spec.imported.value;
+          if (isAllowed(imported)) continue;
+          if (isDeprecatedSymbol(symbolOf(spec.local, typed), typed.checker)) {
+            context.report({
+              node: spec,
+              messageId: 'deprecatedImport',
+              data: { name: imported },
+            });
+          }
+        }
+      },
+
+      // `ns.old` / `ns['old']` through a namespace import.
+      MemberExpression(node: TSESTree.MemberExpression) {
+        if (!typed || node.object.type !== 'Identifier') return;
+        const { checker } = typed;
+        const member = propertyName(node);
+        if (member === null || isAllowed(member)) return;
+        const objectSymbol = symbolOf(node.object, typed);
+        if (
+          !objectSymbol ||
+          objectSymbol.declarations?.[0]?.kind !==
+            loadTypeScript()?.SyntaxKind.NamespaceImport
+        ) {
+          return;
+        }
+        const moduleSymbol = checker.getAliasedSymbol(objectSymbol);
+        const exported = checker
+          .getExportsOfModule(moduleSymbol)
+          .find((symbol) => symbol.name === member);
+        if (isDeprecatedSymbol(exported, checker)) {
+          context.report({
+            node,
+            messageId: 'deprecatedExport',
+            data: { name: member },
           });
         }
       },
 
-      ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration) {
-        checkComments(node, 'default');
-        checkDecoratorsForDeprecation(node, 'default');
-      },
-
-      // Check for usage of deprecated imported items
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        // This would need cross-file analysis to check if imported items are deprecated
-        // For now, we'll focus on deprecated items within the same file
-      },
-
-      // Check for usage of deprecated items
-      MemberExpression(node: TSESTree.MemberExpression) {
-        // No has() pre-check: reportDeprecatedUsage bails out when the
-        // object name has no recorded deprecation info.
-        // `obj['prop']` reads the same deprecated export `obj.prop` reads.
-        const member =
-          node.object.type === 'Identifier' ? propertyName(node) : null;
-        if (member !== null) {
-          reportDeprecatedUsage(
-            node,
-            (node.object as TSESTree.Identifier).name,
-            `${(node.object as TSESTree.Identifier).name}.${member}`,
-          );
-        }
-      },
-
-      CallExpression(node: TSESTree.CallExpression) {
-        if (
-          node.callee.type === 'Identifier' &&
-          deprecatedItems.has(node.callee.name)
-        ) {
-          reportDeprecatedUsage(
-            node,
-            node.callee.name,
-            `${node.callee.name}()`,
-          );
-        }
-      },
-
-      NewExpression(node: TSESTree.NewExpression) {
-        if (
-          node.callee.type === 'Identifier' &&
-          deprecatedItems.has(node.callee.name)
-        ) {
-          reportDeprecatedUsage(
-            node,
-            node.callee.name,
-            `new ${node.callee.name}()`,
-          );
-        }
-      },
-
-      Identifier(node: TSESTree.Identifier) {
-        // Check if this identifier references a deprecated item
-        if (deprecatedItems.has(node.name)) {
-          // Only report if it's not part of a declaration
-          const parent = (node as { parent?: { type: string } }).parent;
-          if (
-            parent &&
-            ![
-              'VariableDeclarator',
-              'FunctionDeclaration',
-              'ClassDeclaration',
-              'ImportSpecifier',
-              'ExportSpecifier',
-              'MethodDefinition',
-            ].includes(parent.type)
-          ) {
-            // Don't report if this identifier is the callee of a CallExpression (handled separately)
-            if (
-              parent.type === 'CallExpression' &&
-              (parent as TSESTree.CallExpression).callee === node
-            ) {
-              return;
-            }
-            // Don't report if this identifier is the callee of a NewExpression (handled separately)
-            if (
-              parent.type === 'NewExpression' &&
-              (parent as TSESTree.NewExpression).callee === node
-            ) {
-              return;
-            }
-            // Don't report if this identifier is the object of a MemberExpression (handled separately)
-            if (
-              parent.type === 'MemberExpression' &&
-              (parent as TSESTree.MemberExpression).object === node
-            ) {
-              return;
-            }
-            // Don't report if this identifier is the property of a MemberExpression (handled separately)
-            if (
-              parent.type === 'MemberExpression' &&
-              (parent as TSESTree.MemberExpression).property === node
-            ) {
-              return;
-            }
-            reportDeprecatedUsage(node, node.name, node.name);
+      'Program:exit'() {
+        for (const [variable, info] of deprecatedItems) {
+          for (const reference of variable.references) {
+            reportReference(reference, info);
           }
         }
       },

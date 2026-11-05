@@ -184,12 +184,32 @@ export const noFullPackageImport = createRule<RuleOptions, MessageIds>({
   ) {
     let blockedPackages: BlockedPackage[];
 
+    /** A CommonJS binding of a whole blocked package (its exact name). */
+    function reportWholeBinding(node: TSESTree.Node, importPath: unknown) {
+      if (typeof importPath !== 'string') return;
+      const blocked = blockedPackages.find((b) =>
+        isFullPackageImport(importPath, b.name),
+      );
+      if (!blocked) return;
+      context.report({
+        node,
+        messageId: 'fullPackageImport',
+        data: {
+          packageName: blocked.name,
+          suggestion: blocked.suggestion,
+          example: blocked.example || 'Use subpath or named imports',
+        },
+      });
+    }
+
     return {
       before() {
         const [options = {}] = currentOptions();
         ({ blockedPackages = DEFAULT_BLOCKED_PACKAGES } = options || {});
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        // `import type` is erased: it bundles nothing.
+        if (node.importKind === 'type') return;
         const importPath = node.source.value;
         if (typeof importPath !== 'string') return;
 
@@ -212,6 +232,33 @@ export const noFullPackageImport = createRule<RuleOptions, MessageIds>({
               },
             });
           }
+        }
+      },
+
+      // `const pkg = require('pkg')` binds the whole module object.
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        const init = node.init;
+        if (
+          node.id.type === AST_NODE_TYPES.Identifier &&
+          init?.type === AST_NODE_TYPES.CallExpression &&
+          init.callee.type === AST_NODE_TYPES.Identifier &&
+          init.callee.name === 'require' &&
+          init.arguments.length === 1 &&
+          init.arguments[0].type === AST_NODE_TYPES.Literal
+        ) {
+          reportWholeBinding(node, init.arguments[0].value);
+        }
+      },
+
+      // `import pkg = require('pkg')`
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        if (
+          node.importKind !== 'type' &&
+          node.moduleReference.type ===
+            AST_NODE_TYPES.TSExternalModuleReference &&
+          node.moduleReference.expression.type === AST_NODE_TYPES.Literal
+        ) {
+          reportWholeBinding(node, node.moduleReference.expression.value);
         }
       },
     };

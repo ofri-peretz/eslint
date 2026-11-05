@@ -9,10 +9,21 @@
  * Forbid modules without exports
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  isGlobalReference,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingExports';
+
+/** `Object` methods that write their first argument's properties. */
+const EXPORT_WRITERS = new Set([
+  'defineProperty',
+  'defineProperties',
+  'assign',
+]);
 
 export interface Options {
   /** Allow modules that only contain imports */
@@ -67,6 +78,22 @@ export const noUnusedModules = createRule<RuleOptions, MessageIds>({
     let hasExports: boolean;
     let hasImports: boolean;
 
+    /** The real `exports` object, or the real `module.exports`. */
+    function isExportsObject(node: TSESTree.Node): boolean {
+      if (node.type === 'Identifier') {
+        return (
+          node.name === 'exports' && isGlobalReference(node, context.sourceCode)
+        );
+      }
+      return (
+        node.type === 'MemberExpression' &&
+        node.object.type === 'Identifier' &&
+        node.object.name === 'module' &&
+        propertyName(node) === 'exports' &&
+        isGlobalReference(node.object, context.sourceCode)
+      );
+    }
+
     return {
       before() {
         const [options] = context.options;
@@ -91,23 +118,49 @@ export const noUnusedModules = createRule<RuleOptions, MessageIds>({
       TSExportAssignment() {
         hasExports = true;
       },
-      AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        // Check for CommonJS exports
+      // `const x = require('m')` and TS `import x = require('m')` import too.
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        if (node.moduleReference.type === 'TSExternalModuleReference') {
+          hasImports = true;
+        }
+      },
+      CallExpression(node: TSESTree.CallExpression) {
         if (
-          node.left.type === 'MemberExpression' &&
-          node.left.object.type === 'Identifier' &&
-          node.left.object.name === 'module' &&
-          propertyName(node.left) === 'exports'
+          node.callee.type === 'Identifier' &&
+          node.callee.name === 'require' &&
+          isGlobalReference(node.callee, context.sourceCode)
+        ) {
+          hasImports = true;
+          return;
+        }
+        // Object.defineProperty(exports, 'a', ...) / Object.assign(module.exports, ...)
+        if (
+          node.callee.type === 'MemberExpression' &&
+          node.callee.object.type === 'Identifier' &&
+          node.callee.object.name === 'Object' &&
+          isGlobalReference(node.callee.object, context.sourceCode) &&
+          EXPORT_WRITERS.has(propertyName(node.callee) ?? '') &&
+          node.arguments[0] &&
+          isExportsObject(node.arguments[0])
         ) {
           hasExports = true;
         }
-        // Check for exports.xxx = ...
-        if (
-          node.left.type === 'MemberExpression' &&
-          node.left.object.type === 'Identifier' &&
-          node.left.object.name === 'exports'
+      },
+      AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        // CommonJS: `module.exports = x`, `module['exports'] = x`,
+        // `exports.a = x`, `module.exports.a.b = x`. Only the real
+        // `module` / `exports` count: a parameter named `exports` is not
+        // this module's exports object. `exports = x` alone rebinds the
+        // local and exports nothing.
+        for (
+          let target: TSESTree.Node = node.left;
+          target.type === 'MemberExpression';
+          target = target.object
         ) {
-          hasExports = true;
+          if (isExportsObject(target) || isExportsObject(target.object)) {
+            hasExports = true;
+            return;
+          }
         }
       },
       'Program:exit'() {

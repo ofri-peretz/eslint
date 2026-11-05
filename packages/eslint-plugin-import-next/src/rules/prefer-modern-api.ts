@@ -140,12 +140,6 @@ const BUILT_IN_MAPPINGS: ModernApiMapping[] = [
   },
 
   // UUID
-  {
-    deprecated: 'uuid/v4',
-    modern: 'crypto.randomUUID() or uuid',
-    reason: 'Node.js 16+ has built-in crypto.randomUUID().',
-    difficulty: 'easy',
-  },
 
   // State Management
   {
@@ -180,7 +174,13 @@ function matchPackage(importPath: string, deprecated: string): boolean {
     ? importPath.split('/').slice(0, 2).join('/')
     : importPath.split('/')[0];
 
-  return packageName === deprecated || importPath.startsWith(deprecated + '/');
+  // `deprecated` names a package or a path inside one (`kit/legacy`): match it
+  // exactly or anything below it.
+  return (
+    packageName === deprecated ||
+    importPath === deprecated ||
+    importPath.startsWith(deprecated + '/')
+  );
 }
 
 export const preferModernApi = createRule<RuleOptions, MessageIds>({
@@ -284,6 +284,26 @@ export const preferModernApi = createRule<RuleOptions, MessageIds>({
         const importPath = node.source.value;
         if (typeof importPath === 'string') {
           checkImport(importPath, node);
+        }
+      },
+
+      // `export { x } from 'pkg'`, `export * from 'pkg'`
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        if (node.source) checkImport(node.source.value, node);
+      },
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        checkImport(node.source.value, node);
+      },
+
+      // `import x = require('pkg')`
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        if (
+          node.moduleReference.type === AST_NODE_TYPES.TSExternalModuleReference
+        ) {
+          // TypeScript only accepts a string literal here.
+          const literal = node.moduleReference
+            .expression as TSESTree.StringLiteral;
+          checkImport(literal.value, node);
         }
       },
 
