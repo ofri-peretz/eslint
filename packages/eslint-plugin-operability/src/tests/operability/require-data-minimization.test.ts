@@ -154,3 +154,24 @@ ruleTester.run('require-data-minimization — a static literal collects nothing'
     },
   ],
 });
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/operability):
+// a spread counted as one more property, so ten written properties plus a
+// spread reported as eleven.
+ruleTester.run('require-data-minimization — a spread proves no breadth', requireDataMinimization, {
+  valid: [
+    {
+      name: 'max properties plus a spread is not over the limit',
+      code: 'const row = { email: b.email, f1: b.f1, f2: b.f2, ...extra };',
+      options: [{ piiFields: ['email'], maxProperties: 3 }],
+    },
+  ],
+  invalid: [
+    {
+      name: 'one written property over the limit still reports',
+      code: 'const row = { email: b.email, f1: b.f1, f2: b.f2, f3: b.f3, ...extra };',
+      options: [{ piiFields: ['email'], maxProperties: 3 }],
+      errors: 1,
+    },
+  ],
+});

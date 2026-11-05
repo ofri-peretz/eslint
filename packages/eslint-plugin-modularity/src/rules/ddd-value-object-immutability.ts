@@ -92,7 +92,10 @@ function usesObjectFreeze(
               statement.expression.callee.type === 'MemberExpression' &&
               statement.expression.callee.object.type === 'Identifier' &&
               statement.expression.callee.object.name === 'Object' &&
-              propertyName(statement.expression.callee) === 'freeze'
+              propertyName(statement.expression.callee) === 'freeze' &&
+              // `Object.freeze(this.items)` freezes a nested value; the
+              // instance's own fields stay writable. Only `this` counts.
+              statement.expression.arguments[0]?.type === 'ThisExpression'
             ) {
               return true;
             }
@@ -235,9 +238,23 @@ export const dddValueObjectImmutability = createRule<RuleOptions, MessageIds>({
       const mutableProperties: TSESTree.Node[] = [];
 
       for (const member of node.body.body) {
-        if (member.type === 'PropertyDefinition') {
+        // A static field is class state, not the value of an instance.
+        if (member.type === 'PropertyDefinition' && !member.static) {
           if (requireReadonly && !hasReadonlyModifier(member)) {
             mutableProperties.push(member);
+          }
+        }
+        // `constructor(public amount: number)` declares the same instance
+        // field as `amount: number;`, so it needs `readonly` just the same.
+        if (
+          requireReadonly &&
+          member.type === 'MethodDefinition' &&
+          member.kind === 'constructor'
+        ) {
+          for (const param of member.value.params) {
+            if (param.type === 'TSParameterProperty' && !param.readonly) {
+              mutableProperties.push(param);
+            }
           }
         }
       }

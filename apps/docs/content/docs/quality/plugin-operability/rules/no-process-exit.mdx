@@ -28,6 +28,10 @@ Prevents direct `process.exit()` calls to encourage graceful shutdown patterns. 
 
 Direct `process.exit()` calls terminate the process immediately without allowing cleanup operations, pending I/O, or graceful connection closing.
 
+The rule finds Node's `process.exit` by binding, in every spelling: the global `process` (`process.exit()`, `process['exit']()`), `globalThis.process.exit()`, a default or named import from `process` / `node:process` (renamed too: `import { exit as quit } from 'node:process'`), `require('process').exit()`, and `exit` destructured from the global (`const { exit } = process`).
+
+It does not report a `process` the code binds itself (a parameter, a local object): that is not Node's process. Setting `process.exitCode` is the graceful alternative and is not reported.
+
 ### Why This Matters
 
 | Issue                     | Impact                          | Solution                  |
@@ -57,8 +61,20 @@ process.on('uncaughtException', (err) => {
 ### ✅ Correct
 
 ```typescript
-process.cwd();
+// Let the event loop drain, then exit with the code
+process.exitCode = 1;
+
+// A process the code receives is not Node's
+function stop(proc: { exit(code: number): void }) {
+  proc.exit(1);
+}
 ```
+
+## Configuration
+
+| Option  | Type       | Default | Description                                         |
+| ------- | ---------- | ------- | --------------------------------------------------- |
+| `allow` | `string[]` | `[]`    | Reserved: accepted by the schema, has no effect yet |
 
 ## Configuration Examples
 

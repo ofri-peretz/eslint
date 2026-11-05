@@ -55,4 +55,33 @@ describe('no-instanceof-array', () => {
       ],
     });
   });
+
+  // Found by the fidelity model (benchmarks/suites/fidelity/models/modernization):
+  // the rule matched the NAME `Array`, so a file-bound `Array` reported and the
+  // spelled-out global did not.
+  describe('decides by binding, not by the name Array', () => {
+    ruleTester.run('binding', noInstanceofArray, {
+      valid: [
+        {
+          name: "an imported `Array` (effect's module) is not the built-in",
+          code: "import { Array } from 'effect';\nconst isList = (v: unknown) => v instanceof Array;",
+        },
+        {
+          name: 'a parameter named Array is not the built-in',
+          code: 'const isOf = (v: unknown, Array: Function) => v instanceof Array;',
+        },
+        {
+          name: 'Array on the left tests the constructor, not a value',
+          code: 'const isCtor = (F: Function) => Array instanceof F;',
+        },
+      ],
+      invalid: [
+        {
+          name: 'globalThis.Array is the same built-in',
+          code: 'const isList = (v: unknown) => v instanceof globalThis.Array;',
+          errors: [{ messageId: 'noInstanceofArray' }],
+        },
+      ],
+    });
+  });
 });

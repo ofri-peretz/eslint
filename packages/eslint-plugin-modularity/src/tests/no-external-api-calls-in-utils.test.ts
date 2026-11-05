@@ -260,3 +260,129 @@ describe('no-external-api-calls-in-utils', () => {
     });
   });
 });
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/modularity):
+// clients were a flat set of NAMES, so an injected client named `fetch` or
+// `axios` - the dependency injection this rule recommends - reported, and a
+// subscripted method did not.
+describe('no-external-api-calls-in-utils — clients by binding', () => {
+  const filename = '/src/utils/load.ts';
+  ruleTester.run('binding', noExternalApiCallsInUtils, {
+    valid: [
+      {
+        name: 'an injected fetch parameter is the recommended fix',
+        code: 'export function load(url: string, fetch: (u: string) => unknown) { return fetch(url); }',
+        filename,
+      },
+      {
+        name: 'an injected axios parameter is the recommended fix',
+        code: 'export function load(url: string, axios: { get(u: string): unknown }) { return axios.get(url); }',
+        filename,
+      },
+      {
+        name: 'a parameter shadowing an imported client in an inner scope',
+        code: "import axios from 'axios';\nexport const keep = axios;\nexport function load(url: string, axios: { get(u: string): unknown }) { return axios.get(url); }",
+        filename,
+      },
+      {
+        name: 'a type-only import is not a client',
+        code: "import type axios from 'axios';\nexport function load(url: string, client: typeof axios) { return client.get(url); }",
+        filename,
+      },
+      {
+        name: 'a function imported from a non-HTTP module',
+        code: "import { get } from 'lodash';\nexport const read = (o: object) => get(o, 'a');",
+        filename,
+      },
+      {
+        name: 'a require of a non-HTTP module',
+        code: "const { get } = require('lodash');\nexport const read = (o: object) => get(o, 'a');",
+        filename,
+      },
+      {
+        name: 'a let without an initialiser is not a client',
+        code: 'let client: any;\nexport const read = (u: string) => client.get(u);',
+        filename,
+      },
+      {
+        name: 'a destructured alias is not followed as a client',
+        code: "import axios from 'axios';\nconst { get } = axios;\nexport const read = (u: string) => get(u);",
+        filename,
+      },
+      {
+        name: 'a const derived from a non-client root',
+        code: 'const api = makeApi().client;\nexport const read = (u: string) => api.get(u);',
+        filename,
+      },
+      {
+        name: 'a dynamic member names no method',
+        code: "import axios from 'axios';\nexport const read = (u: string, m: string) => (axios as any)[m](u);",
+        filename,
+      },
+      {
+        name: '* stays inside one path segment',
+        code: "import axios from 'axios';\nexport const read = (u: string) => axios.get(u);",
+        filename: '/src/shared/a/b/load.ts',
+        options: [{ utilityPatterns: ['src/shared/*/load.ts'] }],
+      },
+      {
+        name: 'consts that refer to each other end the walk',
+        code: 'const a: any = b;\nconst b: any = a;\nexport const read = (u: string) => a.get(u);',
+        filename,
+      },
+      {
+        name: 'fetch read off a value the code builds is not the global',
+        code: 'const get = makeHost().fetch;\nexport const load = () => get(\'/api\');',
+        filename,
+      },
+      {
+        name: 'a run-time member of globalThis names no client',
+        code: 'const get = (globalThis as any)[key];\nexport const load = () => get(\'/api\');',
+        filename,
+      },
+      {
+        name: 'a run-time member read directly off globalThis names no client',
+        code: 'const get = globalThis[key as keyof typeof globalThis];\nexport const load = () => (get as any)(\'/api\');',
+        filename,
+      },
+      {
+        name: 'a window that the code declares is not the global',
+        code: 'export function load(url: string, window: { fetch(u: string): unknown }) { return window.fetch(url); }',
+        filename,
+      },
+    ],
+    invalid: [
+      {
+        name: '** spans several directories in utilityPatterns',
+        code: "import axios from 'axios';\nexport const read = (u: string) => axios.get(u);",
+        filename: '/src/shared/a/b/utils/load.ts',
+        options: [{ utilityPatterns: ['**/shared/**/utils/**'] }],
+        errors: [{ messageId: 'externalApiCallInUtils' }],
+      },
+      {
+        name: 'a const alias of globalThis.fetch',
+        code: "const get = globalThis.fetch;\nexport const load = () => get('/api');",
+        filename,
+        errors: [{ messageId: 'externalApiCallInUtils' }],
+      },
+      {
+        name: 'a client derived through nine consts',
+        code: "import axios from 'axios';\nconst a1 = axios; const a2 = a1; const a3 = a2; const a4 = a3; const a5 = a4; const a6 = a5; const a7 = a6; const a8 = a7; const a9 = a8;\nexport const read = (u: string) => a9.get(u);",
+        filename,
+        errors: [{ messageId: 'externalApiCallInUtils' }],
+      },
+      {
+        name: 'a subscripted method on an imported client',
+        code: "import axios from 'axios';\nexport const send = (u: string) => axios['post'](u);",
+        filename,
+        errors: [{ messageId: 'externalApiCallInUtils' }],
+      },
+      {
+        name: 'a client derived through two consts',
+        code: "import axios from 'axios';\nconst base = axios.create();\nconst api = base;\nexport const read = (u: string) => api.get(u);",
+        filename,
+        errors: [{ messageId: 'externalApiCallInUtils' }],
+      },
+    ],
+  });
+});

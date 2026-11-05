@@ -126,6 +126,7 @@ describe('ddd-value-object-immutability: constructor body is not a BlockStatemen
               // Synthetic: a FunctionExpression body is always a BlockStatement
               // in a real parse; here it is not, so usesObjectFreeze bails out.
               body: { type: 'ExpressionStatement' },
+              params: [],
             },
           },
           { type: 'PropertyDefinition', readonly: false },

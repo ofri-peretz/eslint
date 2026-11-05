@@ -9,7 +9,11 @@
  * Prefer Array.isArray() over instanceof Array
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  isGlobalReference,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noInstanceofArray';
@@ -66,13 +70,29 @@ export const noInstanceofArray = createRule<RuleOptions, MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let allowedContexts: Set<string>;
 
-    // oxlint-disable-next-line consistent-function-scoping
-    function isInstanceofArray(node: TSESTree.BinaryExpression): boolean {
+    /**
+     * Is this the built-in `Array` constructor? Decided by binding, not by the
+     * name: an `Array` the file declares itself (effect's `Array` module, a
+     * parameter, a local class) is not the global, and testing against it says
+     * nothing about realms. `globalThis.Array` is the same global, spelled out.
+     */
+    function isBuiltinArray(node: TSESTree.Node): boolean {
+      if (node.type === 'Identifier') {
+        return (
+          node.name === 'Array' && isGlobalReference(node, context.sourceCode)
+        );
+      }
       return (
-        node.operator === 'instanceof' &&
-        node.right.type === 'Identifier' &&
-        node.right.name === 'Array'
+        node.type === 'MemberExpression' &&
+        node.object.type === 'Identifier' &&
+        node.object.name === 'globalThis' &&
+        isGlobalReference(node.object, context.sourceCode) &&
+        propertyName(node) === 'Array'
       );
+    }
+
+    function isInstanceofArray(node: TSESTree.BinaryExpression): boolean {
+      return node.operator === 'instanceof' && isBuiltinArray(node.right);
     }
 
     function isInAllowedContext(): boolean {

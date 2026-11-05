@@ -31,7 +31,9 @@ ES modules export *live bindings*. When you write `export let count = 0`, every 
 
 The auto-fix replaces `let` or `var` with `const`. If the variable is later reassigned inside the module you will need to refactor that logic (e.g. encapsulate mutation behind an exported function), but the fix surfaces the issue immediately.
 
-`export const`, `export function`, and `export class` are all fine and are never flagged.
+An export list exports the same live binding, so `let count = 0; export { count }` (or `export { count as total }`) is reported too, on the specifier and without an auto-fix.
+
+`export const`, `export function`, and `export class` are all fine and are never flagged. Neither is `export default count`, which exports the value rather than the binding.
 
 ### Why This Matters
 
@@ -49,6 +51,9 @@ The auto-fix replaces `let` or `var` with `const`. If the variable is later reas
 // Mutable export creates a live binding
 export let count = 0;
 export var config = {};
+
+let total = 0;
+export { total };
 ```
 
 ### ✅ Correct

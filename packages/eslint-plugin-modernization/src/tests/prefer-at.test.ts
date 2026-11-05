@@ -370,4 +370,69 @@ describe('prefer-at', () => {
       ],
     });
   });
+
+  // Found by the fidelity model (benchmarks/suites/fidelity/models/modernization).
+  describe('receiver spellings and options the fidelity model found', () => {
+    ruleTester.run('fidelity', preferAt, {
+      valid: [
+        {
+          name: 'the implicit arguments object has no .at(), so it is not reported',
+          code: 'function last() { return arguments[arguments.length - 1]; }',
+        },
+        {
+          name: 'arguments from an arrow inside a function is still the implicit object',
+          code: 'function f() { const g = () => arguments[arguments.length - 2]; return g; }',
+        },
+        {
+          name: 'a fractional offset reads no element, so it is not a from-the-end read',
+          code: 'const v = xs[xs.length - 1.5];',
+        },
+        {
+          name: 'a non-null wrapped write target is still a write',
+          code: '(xs[xs.length - 1]!) = value;',
+        },
+        {
+          name: 'an as-wrapped write target is still a write',
+          code: '(xs[xs.length - 1] as number) = value;',
+        },
+        {
+          name: 'a dotted key and a nested path are different receivers',
+          code: "const v = obj['a.b'][obj.a.b.length - 1];",
+        },
+        {
+          name: 'checkLastElement: false stops the last-element report',
+          code: 'const last = xs[xs.length - 1];',
+          options: [{ checkLastElement: false }],
+        },
+      ],
+      invalid: [
+        {
+          name: 'a variable the code names arguments is an ordinary receiver',
+          code: 'const f = (args: string[]) => { const arguments_ = args; return arguments_[arguments_.length - 1]; };',
+          output:
+            'const f = (args: string[]) => { const arguments_ = args; return arguments_.at(-1); };',
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'a non-null asserted receiver is the same array',
+          code: 'const last = maybe![maybe!.length - 1];',
+          output: 'const last = maybe!.at(-1);',
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'non-null on the receiver only',
+          code: 'const prev = maybe![maybe.length - 2];',
+          output: 'const prev = maybe!.at(-2);',
+          errors: [{ messageId: 'preferAtMethod' }],
+        },
+        {
+          name: 'checkLastElement: false still reports other offsets',
+          code: 'const prev = xs[xs.length - 2];',
+          output: 'const prev = xs.at(-2);',
+          options: [{ checkLastElement: false }],
+          errors: [{ messageId: 'preferAtMethod' }],
+        },
+      ],
+    });
+  });
 });

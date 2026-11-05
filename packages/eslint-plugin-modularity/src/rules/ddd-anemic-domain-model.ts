@@ -13,7 +13,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, objectKeyName } from '@interlace/eslint-devkit';
 
 type MessageIds =
   | 'anemicDomainModel'
@@ -79,23 +79,60 @@ function isDto(className: string, dtoPatterns: string[]): boolean {
 }
 
 /**
+ * A method, written either way: `withdraw(n) { ... }` or the arrow-function
+ * class property `withdraw = (n) => { ... }`, which carries the same behaviour.
+ */
+type ClassMethod = {
+  /** `getBalance`, `'getBalance'` and `['getBalance']` name the same method. */
+  name: string;
+  value: TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression;
+};
+
+/** A class member that is a method, in either spelling. */
+function asClassMethod(member: TSESTree.ClassElement): ClassMethod | null {
+  // A method's value is always a function expression (or, for a TS overload
+  // signature, an empty-bodied one, which counts as nothing).
+  const value =
+    member.type === 'MethodDefinition' || member.type === 'PropertyDefinition'
+      ? member.value
+      : null;
+  if (
+    value?.type !== 'FunctionExpression' &&
+    value?.type !== 'ArrowFunctionExpression'
+  ) {
+    return null;
+  }
+  const named = member as
+    TSESTree.MethodDefinition | TSESTree.PropertyDefinition;
+  // A key chosen at run time (`[k]() {}`) names no getter or setter.
+  return { name: objectKeyName(named) ?? '', value };
+}
+
+/**
  * Check if a method is a simple getter/setter in disguise
  */
-function isSimpleGetterSetter(member: TSESTree.MethodDefinition): boolean {
-  if (member.value.type !== 'FunctionExpression') {
-    return false;
-  }
-
-  const methodName = member.key.type === 'Identifier' ? member.key.name : '';
+/**
+ * The statements a method runs. A concise arrow body (`() => this.balance`)
+ * is one `return` of its expression.
+ */
+function statementsOf(member: ClassMethod): TSESTree.Statement[] {
   const body = member.value.body;
+  return body.type === 'BlockStatement'
+    ? body.body
+    : [{ type: 'ReturnStatement', argument: body } as TSESTree.ReturnStatement];
+}
 
-  if (body.type !== 'BlockStatement' || body.body.length === 0) {
+function isSimpleGetterSetter(member: ClassMethod): boolean {
+  const methodName = member.name;
+  const statements = statementsOf(member);
+
+  if (statements.length === 0) {
     return false;
   }
 
   // Check if it's a simple getter (getName() { return this.name; })
-  if (methodName.startsWith('get') && body.body.length === 1) {
-    const statement = body.body[0];
+  if (methodName.startsWith('get') && statements.length === 1) {
+    const statement = statements[0];
     if (statement.type === 'ReturnStatement' && statement.argument) {
       // Simple return statement
       return true;
@@ -103,8 +140,8 @@ function isSimpleGetterSetter(member: TSESTree.MethodDefinition): boolean {
   }
 
   // Check if it's a simple setter (setName(name) { this.name = name; })
-  if (methodName.startsWith('set') && body.body.length === 1) {
-    const statement = body.body[0];
+  if (methodName.startsWith('set') && statements.length === 1) {
+    const statement = statements[0];
     if (
       statement.type === 'ExpressionStatement' &&
       statement.expression.type === 'AssignmentExpression'
@@ -122,18 +159,14 @@ function isSimpleGetterSetter(member: TSESTree.MethodDefinition): boolean {
  * e.g., save() { return this.repository.save(this); }
  * Does NOT count calls to array methods, built-ins, or methods on this
  */
-function isPureDelegation(member: TSESTree.MethodDefinition): boolean {
-  if (member.value.type !== 'FunctionExpression') {
+function isPureDelegation(member: ClassMethod): boolean {
+  const statements = statementsOf(member);
+
+  if (statements.length !== 1) {
     return false;
   }
 
-  const body = member.value.body;
-
-  if (body.type !== 'BlockStatement' || body.body.length !== 1) {
-    return false;
-  }
-
-  const statement = body.body[0];
+  const statement = statements[0];
 
   // Array/collection methods that are business logic, not delegation
   const builtInMethods = new Set([
@@ -263,42 +296,26 @@ function countBusinessMethods(
   let count = 0;
 
   for (const member of node.body.body) {
-    if (member.type === 'MethodDefinition') {
-      const methodName =
-        member.key.type === 'Identifier' ? member.key.name : '';
-
-      // Skip getters and setters
-      if (member.kind === 'get' || member.kind === 'set') {
-        continue;
-      }
-
-      // Skip constructor
-      if (methodName === 'constructor') {
-        continue;
-      }
-
-      // Skip simple getter/setter methods in disguise
-      if (isSimpleGetterSetter(member)) {
-        continue;
-      }
-
-      // Skip pure delegation methods (just calls external service)
-      if (isPureDelegation(member)) {
-        continue;
-      }
-
-      // Count methods (any method that's not a getter/setter/constructor/delegation is business logic)
-      const valueType = member.value.type as string;
-      if (
-        valueType === 'FunctionExpression' ||
-        valueType === 'ArrowFunctionExpression'
-      ) {
-        count++;
-      }
-    } else if (member.type === 'PropertyDefinition') {
-      // Property definitions are not business logic
+    // Skip accessors (`get x()` / `set x(v)`) and the constructor.
+    if (
+      member.type === 'MethodDefinition' &&
+      (member.kind === 'get' ||
+        member.kind === 'set' ||
+        member.kind === 'constructor')
+    ) {
       continue;
     }
+    // Plain fields are data, not behaviour.
+    const method = asClassMethod(member);
+    if (method === null) {
+      continue;
+    }
+    // Skip simple getter/setter methods in disguise, and pure delegation
+    // (a method that just calls an external service).
+    if (isSimpleGetterSetter(method) || isPureDelegation(method)) {
+      continue;
+    }
+    count++;
   }
 
   return count;

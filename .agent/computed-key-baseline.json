@@ -20,8 +20,6 @@
     "node-security/no-deprecated-buffer",
     "node-security/no-insecure-key-derivation",
     "node-security/no-math-random-crypto",
-    "operability/no-verbose-error-messages",
-    "operability/require-code-minification",
     "react-features/default-props-match-prop-types",
     "react-features/no-children-prop",
     "react-features/no-danger-with-children",

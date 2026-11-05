@@ -57,3 +57,60 @@ ruleTester.run('require-code-minification', requireCodeMinification, {
     },
   ],
 });
+
+// Found by the fidelity model (benchmarks/suites/fidelity/models/operability).
+ruleTester.run(
+  'require-code-minification — every spelling of the key',
+  requireCodeMinification,
+  {
+    valid: [
+      {
+        name: 'a value the code does not prove is not a finding',
+        code: 'export default (flag: boolean) => ({ build: { minify: flag } });',
+      },
+      {
+        name: 'a tool name keeps minification on',
+        code: "export default { build: { minify: 'esbuild' } };",
+      },
+      {
+        name: 'assigning true',
+        code: 'const config: any = {};\nconfig.minify = true;',
+      },
+      {
+        name: 'a compound assignment is not a setting',
+        code: 'let minify = 0;\nconst o: any = {};\no.minify += 1;\nvoid minify;',
+      },
+      {
+        name: 'a destructuring pattern names no setting',
+        code: 'const { minify = false } = opts as any;\nvoid minify;',
+      },
+    ],
+    invalid: [
+      {
+        name: 'quoted key',
+        code: "export default { build: { 'minify': false } };",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'static computed key',
+        code: "export default { optimization: { ['minimize']: false } };",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'a const bound to false',
+        code: 'const OFF = false;\nexport default { build: { minify: OFF } };',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'member assignment',
+        code: 'const config: any = { build: {} };\nconfig.build.minify = false;',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'subscript member assignment',
+        code: "const config: any = { optimization: {} };\nconfig.optimization['minimize'] = false;",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+    ],
+  },
+);
