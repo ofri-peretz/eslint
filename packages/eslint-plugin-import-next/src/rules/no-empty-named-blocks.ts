@@ -55,6 +55,28 @@ export const noEmptyNamedBlocks = createRule<RuleOptions, MessageIds>({
   defaultOptions: [],
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    // `import {} from 'm'` and `export {} from 'm'` still load and run `m`, so
+    // deleting the statement silently drops its side effects (a polyfill, a
+    // stylesheet, a registration). The safe fix keeps the load: `import 'm'`,
+    // with any import attributes and the semicolon carried over. A type-only
+    // statement loads nothing, so removing it is safe. Removing a value
+    // statement entirely stays available as a suggestion: an explicit choice.
+    const keepSideEffect = (
+      node: TSESTree.ImportDeclaration | TSESTree.ExportNamedDeclaration,
+      source: TSESTree.StringLiteral,
+    ) => {
+      const typeOnly =
+        node.type === 'ImportDeclaration'
+          ? node.importKind === 'type'
+          : node.exportKind === 'type';
+      return (fixer: TSESLint.RuleFixer) =>
+        typeOnly
+          ? fixer.remove(node)
+          : fixer.replaceText(
+              node,
+              `import ${context.sourceCode.text.slice(source.range[0], node.range[1])}`,
+            );
+    };
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         // Check if this import has empty named imports: import {} from 'foo'
@@ -85,10 +107,7 @@ export const noEmptyNamedBlocks = createRule<RuleOptions, MessageIds>({
             context.report({
               node,
               messageId: 'emptyNamedBlock',
-              fix(fixer: TSESLint.RuleFixer) {
-                // Remove the entire import statement
-                return fixer.remove(node);
-              },
+              fix: keepSideEffect(node, node.source),
               suggest: [
                 {
                   messageId: 'suggestRemove',
@@ -134,9 +153,7 @@ export const noEmptyNamedBlocks = createRule<RuleOptions, MessageIds>({
           context.report({
             node,
             messageId: 'emptyNamedBlock',
-            fix(fixer: TSESLint.RuleFixer) {
-              return fixer.remove(node);
-            },
+            fix: keepSideEffect(node, node.source),
             suggest: [
               {
                 messageId: 'suggestRemove',

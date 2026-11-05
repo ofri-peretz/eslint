@@ -50,7 +50,7 @@ ruleTester.run('no-empty-named-blocks', noEmptyNamedBlocks, {
           suggestions: [{ messageId: 'suggestRemove', output: `` }],
         },
       ],
-      output: ``,
+      output: `import 'foo';`,
     },
     {
       name: 'a default import with a commented empty block',
@@ -75,7 +75,7 @@ ruleTester.run('no-empty-named-blocks', noEmptyNamedBlocks, {
           suggestions: [{ messageId: 'suggestRemove', output: `` }],
         },
       ],
-      output: ``,
+      output: `import 'foo';`,
     },
 
     // Default import with empty braces - fixable (removes empty braces)
@@ -101,9 +101,42 @@ ruleTester.run('no-empty-named-blocks', noEmptyNamedBlocks, {
           suggestions: [{ messageId: 'suggestRemove', output: `` }],
         },
       ],
-      output: ``,
+      output: `import 'foo';`,
     },
 
+    {
+      name: 'the fix keeps import attributes when it keeps the load',
+      code: `import {} from './data.json' with { type: 'json' };`,
+      errors: [
+        {
+          messageId: 'emptyNamedBlock',
+          suggestions: [{ messageId: 'suggestRemove', output: `` }],
+        },
+      ],
+      output: `import './data.json' with { type: 'json' };`,
+    },
+    {
+      name: 'a type-only empty import loads nothing, so the fix removes it',
+      code: `import type {} from 'foo';`,
+      errors: [
+        {
+          messageId: 'emptyNamedBlock',
+          suggestions: [{ messageId: 'suggestRemove', output: `` }],
+        },
+      ],
+      output: ``,
+    },
+    {
+      name: 'a type-only empty re-export loads nothing, so the fix removes it',
+      code: `export type {} from 'foo';`,
+      errors: [
+        {
+          messageId: 'emptyNamedBlock',
+          suggestions: [{ messageId: 'suggestRemove', output: `` }],
+        },
+      ],
+      output: ``,
+    },
     // Empty braces with whitespace
     {
       code: `import {   } from 'foo';`,
@@ -113,7 +146,7 @@ ruleTester.run('no-empty-named-blocks', noEmptyNamedBlocks, {
           suggestions: [{ messageId: 'suggestRemove', output: `` }],
         },
       ],
-      output: ``,
+      output: `import 'foo';`,
     },
   ],
 });
