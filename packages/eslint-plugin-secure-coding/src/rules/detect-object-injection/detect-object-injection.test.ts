@@ -367,6 +367,13 @@ describe('detect-object-injection', () => {
           code: "obj['' + userInput] = value;",
           errors: 1,
         },
+        // Negative lock for the chain fix: `.map` can rewrite an Object.keys key
+        // into a new string (`'__pro' + 'to__'`), so the write must still report.
+        {
+          name: 'a write keyed by a .map()-rewritten Object.keys key still reports',
+          code: "export function f(target, source) { Object.keys(source).map((k) => k + 'x').forEach((k) => { target[k] = 1; }); }",
+          errors: [{ messageId: 'objectInjection' }],
+        },
         // Note: Rule may not detect all dynamic property access patterns
         // Rule checks for dangerous patterns but may miss some cases
         // These represent expected behavior - rule may need enhancement
@@ -2006,6 +2013,13 @@ ruleTester.run(
       // Same guarantee through `.map` and through the `Object.entries` destructuring.
       'export function names(usage) { return Object.keys(usage).map(function (k) { return usage[k].name; }); }',
       'export function pairs(usage) { return Object.entries(usage).map(([k]) => usage[k]); }',
+      // burgee packages/burgee/src/yargs-parser.ts:402 — `.filter` narrows the
+      // Object.keys set without changing where its keys come from, so the
+      // own-keys guarantee still holds one hop further down the chain.
+      {
+        name: 'an Object.keys key narrowed by .filter() is still an own key',
+        code: "export function strip(argv, dashed) { if (dashed) { Object.keys(argv).filter((key) => key !== '--' && key.includes('-')).forEach((key) => { delete argv[key]; }); } }",
+      },
       /**
        * Index arithmetic where nothing is named like an index. The result must
        * contain the numeric operand's rendering as a contiguous substring, and
