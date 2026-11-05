@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.9.3
+
+### Patch Changes
+
+- **🐛 Fix** — `no-empty-named-blocks` autofix no longer deletes `import {} from 'm'` / `export {} from 'm'`, which silently dropped the module's side effects. It rewrites them to `import 'm'` (import attributes kept); type-only statements are still removed, and removing a value statement entirely remains a suggestion.
+
 ## 2.9.2
 
 ### Patch Changes
