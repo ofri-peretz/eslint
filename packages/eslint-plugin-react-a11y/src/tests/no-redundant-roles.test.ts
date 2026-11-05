@@ -57,6 +57,14 @@ describe('no-redundant-roles', () => {
         { code: '<main></main>' },
         { code: '<div role="button"></div>' },
         { code: '<span role="link"></span>' },
+        {
+          name: 'an anchor without href has no link role, so role="link" is not redundant',
+          code: '<a role="link" tabIndex={0}>x</a>',
+        },
+        {
+          name: 'a text input is a textbox, not a checkbox',
+          code: '<input type="text" role="checkbox" />',
+        },
       ],
       invalid: [],
     });
@@ -81,6 +89,21 @@ describe('no-redundant-roles', () => {
         },
         {
           code: '<article role="article"></article>',
+          errors: [{ messageId: 'redundantRole' }],
+        },
+        {
+          name: 'role="link" on an anchor with href',
+          code: '<a href="/x" role="link">Home</a>',
+          errors: [{ messageId: 'redundantRole' }],
+        },
+        {
+          name: 'role="checkbox" on a native checkbox',
+          code: '<input type="checkbox" role="checkbox" />',
+          errors: [{ messageId: 'redundantRole' }],
+        },
+        {
+          name: 'a redundant role written as a braced string',
+          code: '<ul role={"list"}><li>x</li></ul>',
           errors: [{ messageId: 'redundantRole' }],
         },
       ],

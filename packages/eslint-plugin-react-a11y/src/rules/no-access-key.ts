@@ -13,6 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { attributeValue, intrinsicName } from '../utils/jsx-static';
 
 type MessageIds = 'noAccessKey';
 
@@ -48,15 +49,30 @@ export const noAccessKey = createRule<RuleOptions, MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
+        // React spells it accessKey; HTML attribute names are
+        // case-insensitive, so accesskey reaches the DOM too.
+        // On a component only `accessKey`: its prop may never reach the DOM,
+        // so that finding is not extended to a new spelling.
         if (
-          node.name.type === 'JSXIdentifier' &&
-          node.name.name === 'accessKey'
-        ) {
-          context.report({
-            node,
-            messageId: 'noAccessKey',
-          });
-        }
+          node.name.type !== 'JSXIdentifier' ||
+          (node.name.name !== 'accessKey' &&
+            !(
+              intrinsicName(node.parent as TSESTree.JSXOpeningElement) &&
+              node.name.name.toLowerCase() === 'accesskey'
+            ))
+        )
+          return;
+        // An empty string or {undefined} sets no access key.
+        const value = attributeValue(node);
+        if (
+          value === undefined ||
+          (typeof value === 'string' && value.trim() === '')
+        )
+          return;
+        context.report({
+          node,
+          messageId: 'noAccessKey',
+        });
       },
     };
   },

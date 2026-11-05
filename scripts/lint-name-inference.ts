@@ -342,6 +342,12 @@ const REGISTERED: RegistryEntry[] = [
       'startsWith("aria-") is the ARIA specification, not a guess: an attribute spelled aria-* IS an ARIA attribute by definition. Renaming it makes it a different attribute.',
   },
   {
+    file: 'eslint-plugin-react-a11y/src/utils/jsx-static.ts',
+    direction: 'suppress',
+    reason:
+      'A lowercase first letter IS the JSX specification for an intrinsic element: `<div>` compiles to the string "div", `<Div>` to a reference to the component `Div`. The spelling decides what is rendered, so it decides whether a rule can see the DOM element; components stay silent.',
+  },
+  {
     file: 'eslint-plugin-react-a11y/src/rules/aria-unsupported-elements.ts',
     direction: 'report',
     reason:

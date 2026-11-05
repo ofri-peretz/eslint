@@ -25,10 +25,18 @@ describe('no-access-key', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - no accessKey', noAccessKey, {
       valid: [
+        {
+          // @found corpus scan (okta-signin-widget): not extended to components
+          name: 'the lowercase accesskey prop on a component is not judged',
+          code: '<Comp accesskey="s" />',
+        },
         { name: 'no access key', code: '<button>Click</button>' },
         { code: '<a href="#">Link</a>' },
         { code: '<input />' },
         { code: '<div></div>' },
+        // No access key is set
+        { name: 'empty accessKey sets nothing', code: '<div accessKey="">x</div>' },
+        { name: 'undefined accessKey sets nothing', code: '<div accessKey={undefined}>x</div>' },
       ],
       invalid: [],
     });
@@ -41,6 +49,8 @@ describe('no-access-key', () => {
         { name: "accessKey collides with the screen reader's own shortcuts", code: '<button accessKey="s">Save</button>', errors: [{ messageId: 'noAccessKey' }] },
         { code: '<a href="#" accessKey="h">Home</a>', errors: [{ messageId: 'noAccessKey' }] },
         { code: '<input accessKey="i" />', errors: [{ messageId: 'noAccessKey' }] },
+        // HTML attribute names are case-insensitive: accesskey reaches the DOM too
+        { name: 'HTML accesskey spelling', code: '<div accesskey="s">x</div>', errors: [{ messageId: 'noAccessKey' }] },
       ],
     });
   });

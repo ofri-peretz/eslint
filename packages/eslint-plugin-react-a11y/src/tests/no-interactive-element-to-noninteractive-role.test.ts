@@ -62,6 +62,10 @@ describe('no-interactive-element-to-noninteractive-role', () => {
         {
           code: '<tr role="none"></tr>',
         },
+        {
+          name: 'an anchor without href is not interactive',
+          code: '<a role="img" aria-label="Logo">x</a>',
+        },
       ],
       invalid: [],
     });
@@ -71,6 +75,16 @@ describe('no-interactive-element-to-noninteractive-role', () => {
     ruleTester.run('invalid - interactive elements with non-interactive roles', noInteractiveElementToNoninteractiveRole, {
       valid: [],
       invalid: [
+        {
+          name: 'a button given the heading role',
+          code: '<button type="button" role="heading">Save</button>',
+          errors: [{ messageId: 'interactiveToNoninteractive' }],
+        },
+        {
+          name: 'a non-interactive role written as a braced string',
+          code: '<button type="button" role={"img"}>Save</button>',
+          errors: [{ messageId: 'interactiveToNoninteractive' }],
+        },
         {
           name: 'a button given a document role',
           code: '<button role="article">Click me</button>',
@@ -169,6 +183,10 @@ describe('no-interactive-element-to-noninteractive-role', () => {
         },
         {
           code: '<tr role="none"></tr>',
+        },
+        {
+          name: 'an anchor without href is not interactive',
+          code: '<a role="img" aria-label="Logo">x</a>',
         },
       ],
       invalid: [],

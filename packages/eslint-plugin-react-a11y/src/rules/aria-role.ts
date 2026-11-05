@@ -15,8 +15,10 @@ import {
   formatLLMMessage,
   MessageIcons,
   ARIA_ROLES,
+  AST_NODE_TYPES,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { intrinsicName, staticAttributeValue } from '../utils/jsx-static';
 
 type MessageIds = 'invalidRole';
 
@@ -74,27 +76,35 @@ export const ariaRole = createRule<RuleOptions, MessageIds>({
     currentOptions,
   ) {
     let allowedInvalidRoles: string[];
+    let ignoreNonDOM: boolean;
 
     return {
       before() {
         const [options = {} as Options] = currentOptions();
-        ({ allowedInvalidRoles = [] } = options ?? ({} as Options));
+        ({ allowedInvalidRoles = [], ignoreNonDOM = false } =
+          options ?? ({} as Options));
       },
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (node.name.type !== 'JSXIdentifier' || node.name.name !== 'role') {
           return;
         }
 
+        // `ignoreNonDOM`: a component's `role` prop is not a DOM attribute.
         if (
-          !node.value ||
-          node.value.type !== 'Literal' ||
-          typeof node.value.value !== 'string'
+          ignoreNonDOM &&
+          node.parent.type === AST_NODE_TYPES.JSXOpeningElement &&
+          !intrinsicName(node.parent)
         ) {
-          // Skip dynamic values or empty values
           return;
         }
 
-        const roles = node.value.value.split(/\s+/);
+        // Every static spelling (`"x"`, `{"x"}`, `` {`x`} ``, a conditional
+        // with equal branches); a dynamic role cannot be checked.
+        const value = staticAttributeValue(node);
+        if (value === null) return;
+
+        // Surrounding whitespace is not a token, and `role=""` names no role.
+        const roles = value.trim().split(/\s+/).filter(Boolean);
 
         for (const role of roles) {
           if (!ARIA_ROLES.has(role) && !allowedInvalidRoles.includes(role)) {

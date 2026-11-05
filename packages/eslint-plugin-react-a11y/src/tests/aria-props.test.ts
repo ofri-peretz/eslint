@@ -136,6 +136,14 @@ describe('aria-props', () => {
       valid: [
         // Spread attributes (might contain valid aria props)
         { code: '<div {...ariaProps}></div>' },
+        {
+          name: 'aria-description is a WAI-ARIA 1.3 property browsers ship',
+          code: '<button aria-description="Opens in a new tab">Docs</button>',
+        },
+        {
+          name: 'aria-braillelabel and aria-brailleroledescription are WAI-ARIA 1.3 properties',
+          code: '<div role="img" aria-label="Rating" aria-braillelabel="4/5" aria-brailleroledescription="rtg"></div>',
+        },
         // Dynamic attribute names - not caught (would need type info)
         // { code: '<div {...{[`aria-${type}`]: value}}></div>' },
       ],

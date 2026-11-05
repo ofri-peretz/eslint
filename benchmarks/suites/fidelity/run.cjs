@@ -61,6 +61,7 @@ const PLUGINS = [
   'operability',
   'modularity',
   'modernization',
+  'react-a11y',
 ];
 
 const loadPlugin = (short) => {

@@ -30,6 +30,11 @@ describe('role-supports-aria-props', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - elements with supported ARIA properties', roleSupportsAriaProps, {
       valid: [
+        {
+          // @found corpus scan (okta-signin-widget): not extended to components
+          name: 'a braced role on a component is not judged',
+          code: '<Comp role={"button"} aria-checked="true" />',
+        },
         // Elements without roles or ARIA properties
         {
           name: 'a div with no aria at all',
@@ -219,6 +224,38 @@ describe('role-supports-aria-props', () => {
         {
           code: '<textarea aria-multiline="true"></textarea>',
         },
+        {
+          name: 'a native checkbox has the checkbox role, which supports aria-checked',
+          code: '<input type="checkbox" aria-checked="mixed" />',
+        },
+        {
+          name: 'checkbox supports aria-expanded in WAI-ARIA 1.2',
+          code: '<input type="checkbox" aria-expanded="false" />; <div role="checkbox" aria-checked="false" aria-expanded="true"></div>',
+        },
+        {
+          name: 'heading supports aria-level',
+          code: '<h2 aria-level="3">Title</h2>',
+        },
+        {
+          name: 'an anchor without href has no link role to check against',
+          code: '<a aria-checked="true">x</a>',
+        },
+        {
+          name: 'an input whose type the file cannot know has no known role',
+          code: '<input type={kind} aria-checked="true" />',
+        },
+        {
+          name: 'an input type with no ARIA role (date) is not checked',
+          code: '<input type="date" aria-checked="true" />',
+        },
+        {
+          name: 'a text input with a list is a combobox, which supports aria-expanded',
+          code: '<input list="suggestions" aria-expanded="false" />',
+        },
+        {
+          name: 'a role the file cannot know is not checked against the implicit one',
+          code: '<button role={kind} aria-checked="true">x</button>',
+        },
       ],
       invalid: [
         // link role does NOT support aria-pressed
@@ -246,6 +283,21 @@ describe('role-supports-aria-props', () => {
               },
             },
           ],
+        },
+        {
+          name: 'heading (implicit for h1-h6) does not support aria-checked',
+          code: '<h1 aria-checked="true">Title</h1>',
+          errors: [{ messageId: 'unsupportedAriaProp', data: { role: 'heading', prop: 'aria-checked' } }],
+        },
+        {
+          name: 'an unsupported prop behind a braced role',
+          code: '<div role={"button"} aria-checked="true"></div>',
+          errors: [{ messageId: 'unsupportedAriaProp', data: { role: 'button', prop: 'aria-checked' } }],
+        },
+        {
+          name: 'a native checkbox (implicit checkbox) does not support aria-pressed',
+          code: '<input type="checkbox" aria-pressed="true" />',
+          errors: [{ messageId: 'unsupportedAriaProp', data: { role: 'checkbox', prop: 'aria-pressed' } }],
         },
         // textbox role (implicit for input) does NOT support aria-expanded
         {

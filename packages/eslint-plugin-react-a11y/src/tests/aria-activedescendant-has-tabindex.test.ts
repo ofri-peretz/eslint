@@ -124,12 +124,21 @@ describe('aria-activedescendant-has-tabindex', () => {
         {
           code: '<div aria-activedescendant={`${prefix}-item`} tabIndex={0}></div>',
         },
+        {
+          name: 'an anchor with href is natively focusable',
+          code: '<a href="/x" aria-activedescendant="opt-1">x</a>',
+        },
         // Custom components (not inherently focusable, but with tabindex)
         {
           code: '<CustomComponent aria-activedescendant="item1" tabIndex={0} />',
         },
       ],
       invalid: [
+        {
+          name: 'an anchor without href cannot take focus',
+          code: '<a aria-activedescendant="opt-1">x</a>',
+          errors: [{ messageId: 'missingTabIndex' }],
+        },
         // aria-activedescendant with JSX expression (but no tabindex)
         {
           code: '<div aria-activedescendant={activeItem}></div>',

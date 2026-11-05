@@ -11,12 +11,13 @@
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-redundant-roles.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import {
-  formatLLMMessage,
-  MessageIcons,
-  staticString,
-} from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import {
+  findAttribute,
+  inputImplicitRole,
+  staticAttributeValue,
+} from '../utils/jsx-static';
 
 type MessageIds = 'redundantRole';
 
@@ -123,7 +124,16 @@ export const noRedundantRoles = createRule<RuleOptions, MessageIds>({
         if (node.name.type !== 'JSXIdentifier') return;
 
         const element = node.name.name;
-        const implicitRole = IMPLICIT_ROLES[element];
+        // `a`/`area` are links only with `href`; an `input`'s role follows
+        // its `type` (HTML-AAM).
+        const implicitRole =
+          element === 'a' || element === 'area'
+            ? findAttribute(node, 'href')
+              ? 'link'
+              : ''
+            : element === 'input'
+              ? inputImplicitRole(node)
+              : IMPLICIT_ROLES[element];
 
         if (!implicitRole) return;
 
@@ -136,8 +146,9 @@ export const noRedundantRoles = createRule<RuleOptions, MessageIds>({
             attr.name.name === 'role',
         );
 
-        if (!roleAttr?.value) return;
-        const roleValue = staticString(roleAttr.value);
+        if (!roleAttr) return;
+        // Every static spelling of the role; a dynamic one is unknown.
+        const roleValue = staticAttributeValue(roleAttr);
         if (roleValue === null) return;
 
         // Some elements carry an explicit role by house style — `nav` with

@@ -13,6 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { attributeValue, intrinsicName } from '../utils/jsx-static';
 
 type MessageIds = 'noAutoFocus';
 
@@ -66,18 +67,52 @@ export const noAutofocus = createRule<RuleOptions, MessageIds>({
       ignoreNonDOM: false,
     },
   ],
-  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let ignoreNonDOM: boolean;
+
     return {
+      before() {
+        ignoreNonDOM = currentOptions()[0]?.ignoreNonDOM === true;
+      },
       JSXAttribute(node: TSESTree.JSXAttribute) {
+        // React spells it autoFocus; HTML attribute names are
+        // case-insensitive, so autofocus reaches the DOM too.
+        // On a component only `autoFocus`: its prop may never reach the DOM,
+        // so that finding is not extended to a new spelling.
         if (
-          node.name.type === 'JSXIdentifier' &&
-          node.name.name === 'autoFocus'
-        ) {
-          context.report({
-            node,
-            messageId: 'noAutoFocus',
-          });
-        }
+          node.name.type !== 'JSXIdentifier' ||
+          (node.name.name !== 'autoFocus' &&
+            !(
+              intrinsicName(node.parent as TSESTree.JSXOpeningElement) &&
+              node.name.name.toLowerCase() === 'autofocus'
+            ))
+        )
+          return;
+
+        // {undefined} and {false} focus nothing.
+        if (attributeValue(node) === undefined) return;
+        if (
+          node.value?.type === 'JSXExpressionContainer' &&
+          node.value.expression.type === 'Literal' &&
+          node.value.expression.value === false
+        )
+          return;
+
+        // ignoreNonDOM: a custom component's prop may never reach the DOM.
+        if (
+          ignoreNonDOM &&
+          node.parent.type === 'JSXOpeningElement' &&
+          !intrinsicName(node.parent)
+        )
+          return;
+
+        context.report({
+          node,
+          messageId: 'noAutoFocus',
+        });
       },
     };
   },

@@ -25,6 +25,11 @@ describe('click-events-have-key-events', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - has key handlers', clickEventsHaveKeyEvents, {
       valid: [
+        {
+          // @found corpus scan (okta-signin-widget): not extended to components
+          name: 'a component with an interactive role keeps its exemption (it may render a native control)',
+          code: '<MuiLink component="button" role="link" onClick={handleClick}>Back</MuiLink>',
+        },
         { name: 'both handlers present', code: '<div onClick={handler} onKeyDown={handler}></div>' },
         { code: '<div onClick={handler} onKeyUp={handler}></div>' },
         { code: '<div onClick={handler} onKeyPress={handler}></div>' },
@@ -32,9 +37,6 @@ describe('click-events-have-key-events', () => {
         { code: '<a href="#" onClick={handler}></a>' },
         { code: '<input onClick={handler} />' },
         { code: '<div></div>' },
-        // Interactive ARIA role — AT handles keyboard; no separate key handler needed
-        { code: '<div role="button" onClick={handler} />' },
-        { code: '<div role="menuitem" onClick={handler} />' },
       ],
       invalid: [],
     });
@@ -46,6 +48,11 @@ describe('click-events-have-key-events', () => {
       invalid: [
         { name: 'a click handler with no keyboard equivalent', code: '<div onClick={handler}></div>', errors: [{ messageId: 'missingKeyboardEvent' }] },
         { code: '<span onClick={handler}></span>', errors: [{ messageId: 'missingKeyboardEvent' }] },
+        // An ARIA role does not make an element keyboard-operable: the author must handle keys (WAI-ARIA APG).
+        { name: 'interactive ARIA role still needs a key handler', code: '<div role="button" tabIndex={0} onClick={handler} />', errors: [{ messageId: 'missingKeyboardEvent' }] },
+        { name: 'menuitem role still needs a key handler', code: '<div role="menuitem" onClick={handler} />', errors: [{ messageId: 'missingKeyboardEvent' }] },
+        // <a> without href is not focusable or keyboard-activated (HTML: placeholder link).
+        { name: 'anchor without href is not natively keyboard-operable', code: '<a onClick={handler}>x</a>', errors: [{ messageId: 'missingKeyboardEvent' }] },
       ],
     });
   });

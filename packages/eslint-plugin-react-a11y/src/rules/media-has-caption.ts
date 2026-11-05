@@ -13,6 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { attributeValue, DYNAMIC, findAttribute } from '../utils/jsx-static';
 
 type MessageIds = 'missingCaption';
 
@@ -89,10 +90,18 @@ export const mediaHasCaption = createRule<RuleOptions, MessageIds>({
         const name = openingElement.name.name;
         if (!audioElements.has(name) && !videoElements.has(name)) return;
 
-        // Check if muted is true for video (no captions needed if muted?) - arguably still needed for accessibility standards but often skipped in simplified rules.
-        // W3C says captions needed for audio content.
+        // A muted element plays no audio, so there is nothing to caption.
+        // `muted={false}` and `{undefined}` leave the sound on; a value the
+        // file cannot see is not proof the sound is on.
+        const muted = findAttribute(openingElement, 'muted');
+        if (muted) {
+          const v = attributeValue(muted);
+          if (v === DYNAMIC || v === 'true') return;
+        }
 
-        // Check children for track
+        // Check children for a captions track. `kind` is an enumerated
+        // attribute, so its ASCII case does not matter; a kind the file cannot
+        // see is not proof the track is something else.
         const hasCaption = node.children.some(
           (child: TSESTree.JSXChild): child is TSESTree.JSXElement => {
             if (child.type !== 'JSXElement') return false;
@@ -103,18 +112,13 @@ export const mediaHasCaption = createRule<RuleOptions, MessageIds>({
             )
               return false;
 
-            // Check kind attribute
-            return child.openingElement.attributes.some(
-              (
-                attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-              ): attr is TSESTree.JSXAttribute =>
-                attr.type === 'JSXAttribute' &&
-                attr.name.type === 'JSXIdentifier' &&
-                attr.name.name === 'kind' &&
-                attr.value?.type === 'Literal' &&
-                attr.value.type === 'Literal' &&
-                (attr.value.value === 'captions' ||
-                  attr.value.value === 'descriptions'),
+            const kind = findAttribute(child.openingElement, 'kind');
+            if (!kind) return false;
+            const v = attributeValue(kind);
+            return (
+              v === DYNAMIC ||
+              (typeof v === 'string' &&
+                ['captions', 'descriptions'].includes(v.trim().toLowerCase()))
             );
           },
         );

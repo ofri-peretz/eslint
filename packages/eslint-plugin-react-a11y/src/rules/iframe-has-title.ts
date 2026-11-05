@@ -13,6 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { findAttribute, givesValue } from '../utils/jsx-static';
 
 type MessageIds = 'missingTitle';
 
@@ -53,19 +54,10 @@ export const iframeHasTitle = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const hasTitle = node.attributes.some(
-          (
-            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-          ): attr is TSESTree.JSXAttribute =>
-            attr.type === 'JSXAttribute' &&
-            attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'title' &&
-            attr.value?.type === 'Literal' &&
-            // Presence is not the requirement — a VALUE is.
-            // an empty `title` announces nothing: the frame is still unlabelled in the
-            typeof attr.value.value === 'string' &&
-            attr.value.value.trim() !== '',
-        );
+        // Presence is not the requirement — a VALUE is: an empty `title` or
+        // `{undefined}` names nothing. A static value in braces or a template
+        // is a value, and so is a dynamic one the file cannot see.
+        const hasTitle = givesValue(findAttribute(node, 'title'));
 
         if (!hasTitle) {
           context.report({

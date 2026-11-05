@@ -13,6 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { findAttribute, staticAttributeValue } from '../utils/jsx-static';
 
 type MessageIds = 'interactiveToNoninteractive';
 
@@ -32,6 +33,7 @@ const NON_INTERACTIVE_ROLES = new Set([
   'article',
   'banner',
   'complementary',
+  'heading',
   'img',
   'listitem',
   'main',
@@ -108,6 +110,8 @@ export const noInteractiveElementToNoninteractiveRole = createRule<
 
         // Check if element is interactive
         if (!INTERACTIVE_ELEMENTS.has(element)) return;
+        // An anchor is interactive only as a link, i.e. with `href`.
+        if (element === 'a' && !findAttribute(node, 'href')) return;
 
         // Find role attribute
         const roleAttr = node.attributes.find(
@@ -119,16 +123,11 @@ export const noInteractiveElementToNoninteractiveRole = createRule<
             attr.name.name === 'role',
         );
 
-        if (
-          !roleAttr ||
-          roleAttr.type !== 'JSXAttribute' ||
-          !roleAttr.value ||
-          roleAttr.value.type !== 'Literal'
-        )
-          return;
+        if (!roleAttr) return;
 
-        const role = roleAttr.value.value;
-        if (typeof role !== 'string') return;
+        // Every static spelling of the role; a dynamic one is unknown.
+        const role = staticAttributeValue(roleAttr);
+        if (role === null) return;
 
         // Check if role is non-interactive
         if (!NON_INTERACTIVE_ROLES.has(role)) return;
