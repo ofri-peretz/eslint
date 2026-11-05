@@ -1,7 +1,7 @@
 {
-  "releaseCount": 972,
+  "releaseCount": 974,
   "packageCount": 66,
-  "entryCount": 2584,
+  "entryCount": 2586,
   "oldestYear": 2024,
   "releases": [
     {
@@ -22625,6 +22625,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "1.8.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "every rule decides by code structure and finds React's API by binding (a renamed, namespace or computed import is React's; a local or foreign function of the same name is not), found by the new Quint fidelity models. Preact (`preact`, `preact/hooks`, `preact/compat`) is React's drop-in and counts as React.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-supabase-security",
       "short": "eslint-plugin-supabase-security",
       "version": "1.0.0",
@@ -22640,6 +22655,21 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-react-features",
+      "short": "oxlint-plugin-react-features",
+      "version": "1.8.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-react-features@1.8.1`",
           "pr": null
         }
       ]
