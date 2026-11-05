@@ -245,7 +245,7 @@
       "rules": 61,
       "description": "ESLint plugin for React — hooks, prop-types, JSX correctness, render performance, and class-to-hooks migration rules for modern React codebases",
       "category": "react",
-      "version": "1.8.0",
+      "version": "1.8.1",
       "published": true
     },
     {
