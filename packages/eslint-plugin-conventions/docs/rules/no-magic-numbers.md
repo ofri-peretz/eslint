@@ -21,7 +21,24 @@ directly in logic and offers a suggestion to extract a named constant.
 
 Structural, allowlisted exceptions keep the rule quiet where a bare number IS
 the clearest spelling: `0`, `1`, `-1`, `2` (indexing, off-by-one arithmetic,
-parity), and any literal already assigned to a SCREAMING_CASE constant.
+parity), and any literal that initialises a named variable (`const retries =
+3`, `const WINDOW_MS = 60 * 1000`) — the name carries the meaning. A numeric
+object key (`{ 404: 'Not found' }`) is not reported either.
+
+Each further exemption has an option:
+
+| Option                     | Default | Exempts                                                     |
+| -------------------------- | ------- | ----------------------------------------------------------- |
+| `ignore`                   | `[]`    | These numbers; `-42` is matched as written (`ignore: [-42]`) |
+| `ignoreArrayIndexes`       | `true`  | An integer index: `items[42]`                               |
+| `detectObjects`            | `false` | When `true`, object values (`{ timeout: 5000 }`) are reported |
+| `ignoreLoopBounds`         | `true`  | A `for` loop's init, test and update: `i < 42`              |
+| `ignoreLengthComparisons`  | `true`  | An equality with a `.length`: `xs.length === 42`            |
+| `ignoreDefaultValues`      | `true`  | A default value: `(x = 42) => x`                            |
+| `ignoreEnums`              | `true`  | An enum member's value: `enum E { A = 42 }`                 |
+| `ignoreBitwiseExpressions` | `false` | When `true`, an operand of `&`, `\|`, `^`, `<<`, `>>`, `>>>` |
+| `ignoreNumericArrays`      | `true`  | A data array of two or more numbers: `[42, 43]`             |
+| `namedConstArithmetic`     | `true`  | Arithmetic of literals that initialises a named variable    |
 
 ## Examples
 
@@ -53,6 +70,19 @@ const first = items[0];   // structural allowlist: 0, 1, -1, 2
 {
   rules: {
     'conventions/no-magic-numbers': 'warn',
+  },
+}
+```
+
+### With options
+
+```js
+{
+  rules: {
+    'conventions/no-magic-numbers': [
+      'warn',
+      { ignore: [100], detectObjects: true, ignoreBitwiseExpressions: true },
+    ],
   },
 }
 ```

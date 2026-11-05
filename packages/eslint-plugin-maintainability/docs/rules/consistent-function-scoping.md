@@ -27,7 +27,30 @@ Move functions to the highest possible scope. This rule is part of [`eslint-plug
 
 ## Rule Details
 
-Functions that don't use variables from their parent scope should be moved to a higher scope.
+A helper declared inside a function - a function declaration, or a function or
+arrow expression bound to a variable - that references no binding of its
+enclosing function is recreated on every call and can move to module scope.
+
+What counts is the binding, resolved by scope, not the name:
+
+- a variable the helper declares itself under an outer name shadows the outer
+  one and is not a use;
+- a module-level binding is reachable after the move, so using only module
+  bindings still lets the helper move;
+- a use counts wherever it is: in a nested callback, a default parameter value,
+  a type annotation naming a type the enclosing function declares, or a call of
+  a sibling helper.
+
+It does not report a function at module level, a function passed as an
+argument (an inline callback), an object or class member, or an arrow that uses
+`this` (an arrow's `this` is the enclosing one). A `function` helper's `this`
+is its own, so using it does not tie the helper to the enclosing scope.
+
+## Configuration
+
+| Option                | Type      | Default | Description                                                          |
+| --------------------- | --------- | ------- | -------------------------------------------------------------------- |
+| `checkArrowFunctions` | `boolean` | `true`  | Check arrow helpers; `false` checks only function declarations and expressions |
 
 ### Why This Matters
 

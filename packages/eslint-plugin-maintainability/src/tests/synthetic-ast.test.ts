@@ -14,17 +14,13 @@ import indexDefault, { plugin as indexPlugin } from '../index';
 import oxlintPlugin from '../oxlint';
 import * as typeBarrel from '../types/index';
 
-import { errorMessage } from '../rules/error-handling/error-message';
 import { noSilentErrors } from '../rules/error-handling/no-silent-errors';
 import { noMissingErrorContext } from '../rules/error-handling/no-missing-error-context';
 import {
   noUnhandledPromise,
-  isPromiseExpression,
-  isInsidePromiseCallback,
   isPromiseHandled,
 } from '../rules/error-handling/no-unhandled-promise';
 import { cognitiveComplexity } from '../rules/maintainability/cognitive-complexity';
-import { consistentFunctionScoping } from '../rules/maintainability/consistent-function-scoping';
 import {
   identicalFunctions,
   buildGenericName,
@@ -127,49 +123,6 @@ describe('no-silent-errors — parser-unreachable catch shapes', () => {
   });
 });
 
-describe('error-message — listener called with a non-constructor node', () => {
-  it('ignores nodes that are neither NewExpression nor CallExpression', () => {
-    const { listeners, reports } = createWithMockContext(errorMessage);
-    invoke(listeners, 'NewExpression', { type: 'Identifier', name: 'Error' });
-    expect(reports).toEqual([]);
-  });
-});
-
-describe('consistent-function-scoping — degenerate scope stacks', () => {
-  it('ignores variable declarations once every scope has been popped', () => {
-    const { listeners, reports } = createWithMockContext(
-      consistentFunctionScoping,
-    );
-    // Pop the initial scope so the stack is empty.
-    (listeners['Program:exit'] as () => void)();
-    invoke(listeners, 'VariableDeclaration', {
-      type: 'VariableDeclaration',
-      declarations: [{ id: { type: 'Identifier', name: 'ghost' } }],
-    });
-    expect(reports).toEqual([]);
-  });
-
-  it('suppresses the report when the module scope already has the function name', () => {
-    const { listeners, reports } = createWithMockContext(
-      consistentFunctionScoping,
-    );
-    // Without a Program node, declarations land in the root scope, which is
-    // also the module scope consulted for name conflicts.
-    invoke(listeners, 'VariableDeclaration', {
-      type: 'VariableDeclaration',
-      declarations: [{ id: { type: 'Identifier', name: 'taken' } }],
-    });
-    invoke(listeners, 'FunctionDeclaration', {
-      type: 'FunctionDeclaration',
-      id: { type: 'Identifier', name: 'taken' },
-      params: [],
-      parent: { type: 'BlockStatement' },
-      body: { type: 'BlockStatement', body: [] },
-    });
-    expect(reports).toEqual([]);
-  });
-});
-
 describe('no-missing-error-context — throw without an argument (invalid JS, defensive)', () => {
   it('reports a missing message for `throw` with no argument', () => {
     const { listeners, reports } = createWithMockContext(noMissingErrorContext);
@@ -213,83 +166,6 @@ describe('no-missing-error-context — throw without an argument (invalid JS, de
 });
 
 describe('no-unhandled-promise — helper functions with synthetic AST', () => {
-  describe('isPromiseExpression', () => {
-    it('is true for CallExpression, false for AwaitExpression and anything else', () => {
-      expect(isPromiseExpression({ type: 'CallExpression' } as AnyNode)).toBe(
-        true,
-      );
-      expect(isPromiseExpression({ type: 'AwaitExpression' } as AnyNode)).toBe(
-        false,
-      );
-      expect(isPromiseExpression({ type: 'Identifier' } as AnyNode)).toBe(
-        false,
-      );
-    });
-  });
-
-  describe('isInsidePromiseCallback', () => {
-    function arrowInMethodCall(
-      methodName: string,
-      propertyType = 'Identifier',
-    ) {
-      const node: AnyNode = { type: 'CallExpression' };
-      const arrow: AnyNode = { type: 'ArrowFunctionExpression' };
-      const memberCall: AnyNode = {
-        type: 'CallExpression',
-        callee: {
-          type: 'MemberExpression',
-          property: { type: propertyType, name: methodName },
-        },
-      };
-      node.parent = arrow;
-      arrow.parent = memberCall;
-      return node;
-    }
-
-    it('detects callbacks of .then/.catch/.finally', () => {
-      expect(isInsidePromiseCallback(arrowInMethodCall('then'))).toBe(true);
-      expect(isInsidePromiseCallback(arrowInMethodCall('catch'))).toBe(true);
-      expect(isInsidePromiseCallback(arrowInMethodCall('finally'))).toBe(true);
-    });
-
-    it('rejects non-promise host methods and computed properties', () => {
-      expect(isInsidePromiseCallback(arrowInMethodCall('map'))).toBe(false);
-      expect(
-        isInsidePromiseCallback(arrowInMethodCall('then', 'Literal')),
-      ).toBe(false);
-    });
-
-    it('rejects a function whose parent is not a member call', () => {
-      const node: AnyNode = { type: 'CallExpression' };
-      const fn: AnyNode = { type: 'FunctionExpression' };
-      const plainCall: AnyNode = {
-        type: 'CallExpression',
-        callee: { type: 'Identifier', name: 'run' },
-      };
-      node.parent = fn;
-      fn.parent = plainCall;
-      expect(isInsidePromiseCallback(node)).toBe(false);
-    });
-
-    it('returns false when there is no parent at all', () => {
-      expect(
-        isInsidePromiseCallback({ type: 'CallExpression' } as AnyNode),
-      ).toBe(false);
-    });
-
-    it('gives up past the max traversal depth', () => {
-      // Build a 15-deep parent chain of plain statements.
-      const leaf: AnyNode = { type: 'CallExpression' };
-      let current: AnyNode = leaf;
-      for (let i = 0; i < 15; i++) {
-        const parent: AnyNode = { type: 'ExpressionStatement' };
-        current.parent = parent;
-        current = parent;
-      }
-      expect(isInsidePromiseCallback(leaf)).toBe(false);
-    });
-  });
-
   describe('isPromiseHandled — Identifier chains', () => {
     function identifierHandledBy(methodName: string) {
       const ident: AnyNode = { type: 'Identifier', name: 'p' };

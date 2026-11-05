@@ -28,74 +28,226 @@ export interface Options {
   /** Ignore promises in test files. Default: true */
   ignoreInTests?: boolean;
 
-  /** Ignore promises in void expressions. Default: false */
-  ignoreVoidExpressions?: boolean;
-
   /**
    * Report only calls the file itself shows to be promise-producing. Default: true.
    *
-   * Set `false` to restore the pre-2026-08 behaviour, in which every
-   * `CallExpression` was treated as a promise. That is what the rule did, and
-   * it is not a conservative default — measured over 200 TypeScript files of
-   * excalidraw it produced 7,061 findings, 35 per file, on lines like
-   * `<div className={clsx("col")} />` and `require("./tree.svg")`.
+   * Set `false` to restore the denylist-only behaviour, which produced 4,805
+   * findings across 200 files of excalidraw.
    */
   requirePromiseEvidence?: boolean;
 
   /**
-   * Names that return a promise and cannot be resolved from the file — platform
-   * APIs and the project's own conventions. Default: `['fetch']`.
-   *
-   * A list rather than a built-in vocabulary, because a rule that decides from
-   * a name has to let the consumer own that name. `fetch` is the default
-   * because it is the one promise-returning global that appears in every
-   * runtime this suite targets; `axios`, `got`, `prisma` and the rest belong to
-   * whoever uses them.
+   * Names that return a promise and cannot be resolved from the file.
+   * Default: `['fetch']`.
    */
   promiseReturning?: readonly string[];
+
+  /** Ignore promises in void expressions. Default: false */
+  ignoreVoidExpressions?: boolean;
 }
 
 type RuleOptions = [Options?];
 
 /**
- * Check if a node is a Promise-like expression
- * For now, we check all CallExpressions since we can't statically determine
- * which functions return promises. The isPromiseHandled function will filter out
- * non-promise calls that are inside handled promise chains.
+ * Built-in / library calls that are KNOWN to NOT return a promise.
+ *
+ * A DENYLIST, and that is the defect: it has to enumerate every synchronous
+ * function in the world, and everything it has not heard of is treated as a
+ * promise. Measured over 200 TypeScript files of excalidraw this rule produced
+ * 4,805 findings — on `useDocusaurusContext()`, `clsx("col")`,
+ * `require("./tree.svg")` and `dynamic(...)`, none of which is in the list
+ * below and none of which is a promise.
+ *
+ * The list is kept because it is still a cheap first filter, but the decision
+ * now belongs to `hasPromiseEvidence` below, which asks the opposite question:
+ * does the FILE show this call to produce a promise?
  */
-export function isPromiseExpression(node: TSESTree.Node): boolean {
-  // Function calls that might return promises
-  if (node.type === 'CallExpression') {
-    return true;
-  }
+const NEVER_RETURNS_PROMISE_FUNCTIONS = new Set<string>([
+  'setTimeout',
+  'clearTimeout',
+  'setInterval',
+  'clearInterval',
+  'setImmediate',
+  'clearImmediate',
+  'requestAnimationFrame',
+  'cancelAnimationFrame',
+  'queueMicrotask',
+  'String',
+  'Number',
+  'Boolean',
+  'Symbol',
+  'BigInt',
+  'parseInt',
+  'parseFloat',
+  'isNaN',
+  'isFinite',
+  'Array',
+  'Object',
+]);
 
-  // Await expressions (already handled)
-  if (node.type === 'AwaitExpression') {
-    return false; // Already handled
-  }
+const NEVER_RETURNS_PROMISE_METHODS = new Set<string>([
+  // console / logger
+  'log',
+  'error',
+  'warn',
+  'info',
+  'debug',
+  'trace',
+  'group',
+  'groupEnd',
+  'time',
+  'timeEnd',
+  'assert',
+  // Math
+  'floor',
+  'ceil',
+  'round',
+  'abs',
+  'min',
+  'max',
+  'pow',
+  'sqrt',
+  'random',
+  'sin',
+  'cos',
+  'tan',
+  'log2',
+  'log10',
+  // String / Array helpers
+  'slice',
+  'split',
+  'join',
+  'concat',
+  'includes',
+  'indexOf',
+  'lastIndexOf',
+  'startsWith',
+  'endsWith',
+  'replace',
+  'replaceAll',
+  'trim',
+  'toLowerCase',
+  'toUpperCase',
+  'repeat',
+  'padStart',
+  'padEnd',
+  'charAt',
+  'charCodeAt',
+  'codePointAt',
+  'push',
+  'pop',
+  'shift',
+  'unshift',
+  'splice',
+  'reverse',
+  'sort',
+  'map',
+  'filter',
+  'reduce',
+  'reduceRight',
+  'forEach',
+  'every',
+  'some',
+  'find',
+  'findIndex',
+  'flat',
+  'flatMap',
+  'fill',
+  'copyWithin',
+  'entries',
+  'keys',
+  'values',
+  // JSON
+  'parse',
+  'stringify',
+  // AbortController/AbortSignal
+  'abort',
+  'addEventListener',
+  'removeEventListener',
+  'dispatchEvent',
+  // Date / Buffer / Number / Array static helpers (sync)
+  'now',
+  'parse',
+  'UTC',
+  'from',
+  'of',
+  'isArray',
+  'isBuffer',
+  'isInteger',
+  'isFinite',
+  'isNaN',
+  'isSafeInteger',
+  'fromCharCode',
+  'fromCodePoint',
+  'raw',
+  // Object helpers (sync)
+  'assign',
+  'freeze',
+  'isFrozen',
+  'create',
+  'defineProperty',
+  'defineProperties',
+  'getOwnPropertyDescriptor',
+  'getOwnPropertyNames',
+  'getPrototypeOf',
+  'setPrototypeOf',
+  'preventExtensions',
+  'isExtensible',
+  'seal',
+  'isSealed',
+  'fromEntries',
+  // Promise constructors that are themselves a promise but the callee is OK
+]);
 
-  return false;
-}
+/**
+ * Globals whose methods are conventionally synchronous (no method on these
+ * namespaces returns a Promise in the standard library). Used in addition
+ * to `NEVER_RETURNS_PROMISE_METHODS` because matching by method name alone
+ * is too coarse: `from` is sync on `Array`/`Buffer`/`Date` but could be
+ * async on a user-defined object.
+ */
+const SYNC_NAMESPACE_OBJECTS = new Set<string>([
+  'Math',
+  'JSON',
+  'Date',
+  'Buffer',
+  'Array',
+  'Object',
+  'Number',
+  'String',
+  'Boolean',
+  'Symbol',
+  'BigInt',
+  'Reflect',
+  'console',
+  'process',
+]);
 
+/**
+ * Returns true if the call MIGHT return a Promise (default — we want to
+ * preserve detection for unknown calls). Returns false only when the
+ * callee is a known synchronous built-in (`setTimeout`, `console.log`,
+ * `Math.floor`, etc.) — those structurally never return promises and
+ * firing on them produces FPs. Keeping the default as "could be a
+ * promise" preserves recall on user-defined async functions.
+ *
+ * Exported for direct Layer-2 unit testing: the non-CallExpression early
+ * return is only reachable when called with a non-call node (kept for the
+ * future `checkIdentifier` listener), which the current CallExpression-only
+ * listener never produces.
+ */
 /**
  * Does the FILE show this call to produce a promise?
  *
- * Without type information the honest answer for most calls is "unknown", and
- * the rule used to resolve unknown as yes. This resolves it as no, and reports
- * only the four shapes a reader can verify from the source in front of them:
+ * The four shapes a reader can verify from the source in front of them:
  *
  *   new Promise(…)              the constructor
  *   Promise.all / resolve / …   the statics
- *   import("…")                 always a promise
+ *   x.then(…)                   the thenable protocol — the name IS the evidence
  *   f() where `async function f` or `const f = async () => …` is in scope
  *
- * A `.then()` chain is handled separately by the caller, which already knows
- * whether a `.catch` follows.
- *
- * The cost is real and is the point of `requirePromiseEvidence`: a promise
- * returned by an imported function is invisible here, so this misses it. A
- * miss the rule can explain is worth more than 35 findings a file that nobody
- * reads.
+ * plus any name the consumer configures in `promiseReturning`, because a rule
+ * that decides from a name has to let the consumer own the name.
  */
 const PROMISE_STATICS: ReadonlySet<string> = new Set([
   'all',
@@ -121,12 +273,6 @@ export function hasPromiseEvidence(
   promiseReturning: ReadonlySet<string>,
   resolveBinding: (name: string) => TSESTree.Node | null,
 ): boolean {
-  // No `NewExpression` branch: the rule listens for `CallExpression` only, so
-  // this function is never called with one. A branch that cannot be reached is
-  // not caution, it is a claim the tests cannot check — the miss is recorded as
-  // an `FN:` case instead.
-
-  // `import("…")` — the only call form that is a promise by grammar.
   // No `Import` branch: `import(x)` parses as an `ImportExpression`, not a
   // `CallExpression`, so this function is never called with one. A branch that
   // cannot be reached is not caution, it is a claim the tests cannot check —
@@ -146,14 +292,11 @@ export function hasPromiseEvidence(
     ) {
       return true;
     }
-    /**
-     * `.then` is the thenable protocol. A receiver that answers to it is a
-     * promise as far as any caller is concerned, and this is the one member
-     * call where the name IS the evidence rather than a guess about it.
-     */
     // `x.then(…)` and `x["then"](…)` are the same protocol; the second form
     // appears in minified and generated code, and reading only the Identifier
     // spelling meant the rule saw a promise in one and not the other.
+    // Named `member`, not `propertyName`: a local of that name shadows the
+    // imported helper, and the shadow only surfaces where something calls it.
     const member = propertyName(node.callee);
     if (member === 'then') return true;
     // `.finally` and `.catch` are chain LINKS, not evidence in themselves: the
@@ -167,7 +310,6 @@ export function hasPromiseEvidence(
     ) {
       return hasPromiseEvidence(object, promiseReturning, resolveBinding);
     }
-    // `axios.get(url)` — the RECEIVER is the configured name, not the method.
     return object.type === 'Identifier' && promiseReturning.has(object.name);
   }
 
@@ -200,12 +342,66 @@ function isPromiseReturningAnnotation(
   );
 }
 
+export function isLikelyPromiseExpression(node: TSESTree.Node): boolean {
+  if (node.type !== 'CallExpression') return false;
+  const callee = (node as TSESTree.CallExpression).callee;
+
+  // Direct calls — skip known synchronous built-ins
+  if (callee.type === 'Identifier') {
+    const name = (callee as TSESTree.Identifier).name;
+    if (NEVER_RETURNS_PROMISE_FUNCTIONS.has(name)) return false;
+    return true;
+  }
+
+  // Method calls — skip known synchronous methods (Math.*, Array.*,
+  // String.*, console.*, JSON.*)
+  if (callee.type === 'MemberExpression') {
+    const prop = (callee as TSESTree.MemberExpression).property;
+    if (prop.type === 'Identifier') {
+      if (NEVER_RETURNS_PROMISE_METHODS.has((prop as TSESTree.Identifier).name))
+        return false;
+    }
+    // Static helpers on known sync namespaces — `Buffer.from`, `Date.now`,
+    // `Array.isArray`, `Object.keys`, etc. The standard library never
+    // returns a Promise from any method on these globals.
+    const obj = (callee as TSESTree.MemberExpression).object;
+    if (
+      obj.type === 'Identifier' &&
+      SYNC_NAMESPACE_OBJECTS.has((obj as TSESTree.Identifier).name)
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  return true;
+}
+
+/**
+ * Returns true when the call's parent indicates the promise is delegated
+ * to a caller and therefore not "unhandled" at this site. This covers:
+ *   - `return fn()` — the enclosing function returns the promise; its
+ *     caller takes responsibility.
+ *   - `() => fn()` — concise-body arrow returns the promise.
+ *   - `.then(() => fn())` — already inside a promise chain (handled by
+ *     `isInsidePromiseCallback`, but the arrow-body case is the same).
+ */
+function isPromiseDelegatedToCaller(node: TSESTree.CallExpression): boolean {
+  const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+  if (!parent) return false;
+  if (parent.type === 'ReturnStatement') return true;
+  if (
+    parent.type === 'ArrowFunctionExpression' &&
+    (parent as TSESTree.ArrowFunctionExpression).body === node
+  )
+    return true;
+  return false;
+}
+
 /**
  * Check if a CallExpression is inside a promise chain callback
  */
-export function isInsidePromiseCallback(
-  node: TSESTree.CallExpression,
-): boolean {
+function isInsidePromiseCallback(node: TSESTree.CallExpression): boolean {
   let current: TSESTree.Node | null = node;
   let depth = 0;
   const maxDepth = 10;
@@ -443,7 +639,12 @@ function chainHasRejectionHandler(node: TSESTree.CallExpression): boolean {
 }
 
 /**
- * Check if promise is handled (has .catch, .then, or is in try/catch)
+ * Check if promise is handled (has .catch, .then, or is awaited)
+ *
+ * Exported for direct Layer-2 unit testing: the Identifier branch is only
+ * reachable when called with an Identifier node (kept for the future
+ * `checkIdentifier` listener), which the current CallExpression-only
+ * listener never produces.
  */
 export function isPromiseHandled(node: TSESTree.Node): boolean {
   // For identifiers, check if they're used in a promise chain
@@ -514,10 +715,10 @@ export function isPromiseHandled(node: TSESTree.Node): boolean {
       }
     }
 
-    // Check if in try/catch block
-    if (parent.type === 'TryStatement') {
-      return true;
-    }
+    // No `TryStatement` arm: a try block catches a rejection only through an
+    // `await` inside it — answered just below. `try { save(); } catch {}` has
+    // left the block by the time `save()` rejects, and a call in the catch or
+    // finally clause is not guarded by the try at all.
 
     // Check if in await expression
     if (parent.type === 'AwaitExpression') {
@@ -591,23 +792,23 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
             default: true,
             description: 'Ignore promises in test files',
           },
-          ignoreVoidExpressions: {
-            type: 'boolean',
-            default: false,
-            description: 'Ignore promises in void expressions',
-          },
           requirePromiseEvidence: {
             type: 'boolean',
             default: true,
             description:
-              'Report only calls the file itself shows to be promise-producing. False restores the pre-2026-08 behaviour of treating every call as a promise.',
+              'Report only calls the file itself shows to be promise-producing.',
           },
           promiseReturning: {
             type: 'array',
             items: { type: 'string' },
             default: ['fetch'],
             description:
-              'Names that return a promise and cannot be resolved from the file — platform APIs and project conventions.',
+              'Names that return a promise and cannot be resolved from the file.',
+          },
+          ignoreVoidExpressions: {
+            type: 'boolean',
+            default: false,
+            description: 'Ignore promises in void expressions',
           },
         },
         additionalProperties: false,
@@ -618,8 +819,6 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
     {
       ignoreInTests: true,
       ignoreVoidExpressions: false,
-      requirePromiseEvidence: true,
-      promiseReturning: ['fetch'],
     },
   ],
   createOnce(
@@ -633,10 +832,10 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
     let promiseNames: Set<string>;
 
     /**
-     * Resolve an identifier to the function it is bound to, through the scope
-     * chain. Only a binding whose initialiser is visible in this file can
-     * count as evidence — an imported name resolves to an ImportSpecifier,
-     * which says nothing about what it returns, and is correctly not evidence.
+     * Resolve an identifier to the function it is bound to. Only a binding
+     * whose initialiser is visible in this file counts — an imported name
+     * resolves to an ImportSpecifier, which says nothing about what it
+     * returns, and is correctly not evidence.
      */
     function resolveBinding(
       name: string,
@@ -689,6 +888,13 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
         return;
       }
 
+      // `return fn()` / `() => fn()` — the promise is delegated to the
+      // caller. Flagging here would force `await` everywhere a promise
+      // is forwarded, which is wrong: forwarding IS handling.
+      if (isPromiseDelegatedToCaller(node)) {
+        return;
+      }
+
       // Skip calls to promise methods (.then, .catch, .finally) as they are handled by definition
       // But only if they have meaningful callbacks
       if (
@@ -698,16 +904,20 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
         const methodName = node.callee.property.name;
         /**
          * `.catch` terminates a chain; `.then` and `.finally` do not.
-         * `.finally` does not handle a rejection —
-         * `Promise.reject(e).finally(f)` runs `f` and rejects with the same
-         * `e` — so treating it as a terminator silenced the documented ❌
-         * chain outright. It is chain-TRANSPARENT instead.
          *
-         * This used to include `then`, which meant `fetch(url).then(r => r.json())`
-         * returned here before `isPromiseHandled` could look for a `.catch`
-         * further along — so the rule missed the exact shape it exists to
-         * catch, while reporting `require("./tree.svg")`. Both directions
-         * wrong, from the same block.
+         * Including `then` here meant `fetch(url).then(r => r.json())` returned
+         * before the handled-check could look further along for a `.catch` — so
+         * the rule passed the exact shape it exists to catch, while reporting
+         * `require("./tree.svg")`.
+         *
+         * `.finally` was in that set too, on the premise that it "terminates a
+         * chain". It does not handle anything: `Promise.reject(e).finally(f)`
+         * runs `f` and then rejects with the same `e`. Appending `.finally`
+         * to the documented ❌ chain silenced it while leaving the rejection
+         * exactly as unhandled — the same mistake as `then`, on the other
+         * chain-transparent method. It is now transparent: the chain below it
+         * is searched for a real rejection handler, and only finding one
+         * returns.
          */
         if (methodName === 'finally' && !chainHasRejectionHandler(node)) {
           // Nothing downstream handles the rejection — fall through and report.
@@ -735,16 +945,12 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
       }
 
       // Check if it's a promise-returning function
-      if (!isPromiseExpression(node)) {
+      if (!isLikelyPromiseExpression(node)) {
         return;
       }
 
-      /**
-       * The gate. `isPromiseExpression` answers yes for every call — it says so
-       * in its own comment — so without this the rule reports every unhandled
-       * function call in the file. On excalidraw that was 35 findings per file,
-       * on lines like `<div className={clsx("col")} />`.
-       */
+      // The denylist above says what is definitely NOT a promise; this asks
+      // whether the file shows anything that IS one.
       if (
         requirePromiseEvidence &&
         !hasPromiseEvidence(node, promiseNames, (name) =>
@@ -825,14 +1031,17 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
             : null;
         const outerChainMethod =
           chainOn === null ? null : propertyName(chainOn);
-        // `then` only. A `.catch` or `.finally` on the wrapper means the chain
-        // is HANDLED, and the handled-check above has already returned by the
-        // time this runs — so arms for those two were unreachable, not merely
-        // untested. Verified by coverage: both were dead.
+        // All three, unlike the maintainability twin where `.catch`/`.finally`
+        // are unreachable here because its handled-check returns first. The
+        // two rules reached the same behaviour by different routes, and the
+        // difference is real: trimming these arms fails two cases in this
+        // plugin and none in that one.
         const inPromiseChain =
           chainOn !== null &&
           chainOn.property.type === 'Identifier' &&
-          outerChainMethod === 'then';
+          (outerChainMethod === 'then' ||
+            outerChainMethod === 'catch' ||
+            outerChainMethod === 'finally');
         // `arguments.includes` and not `callee ===`: in `getPromise()(x)` this
         // call is the CALLEE, where the outer call is the promise.
         const isArgument = parent.arguments.some((a) => a === (node as never));
@@ -883,7 +1092,14 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
       }
 
       // Check if it's a promise-like identifier
-      if (!isPromiseExpression(node)) {
+      if (!isLikelyPromiseExpression(node)) {
+        return;
+      }
+
+      if (
+        requirePromiseEvidence &&
+        !hasPromiseEvidence(node, promiseNames, (name) => resolveBinding(name, node))
+      ) {
         return;
       }
 

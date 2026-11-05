@@ -98,3 +98,30 @@ describe('analytics-event-naming', () => {
     },
   );
 });
+
+describe('analytics-event-naming: a const-bound event name', () => {
+  ruleTester.run('analytics-event-naming', analyticsEventNaming, {
+    valid: [
+      {
+        name: 'a const bound to a valid name',
+        code: "const EVENT = 'articles:card_click';\ntrack(EVENT, {});",
+      },
+      {
+        name: 'a parameter is an unknown name, not a finding',
+        code: 'function report(eventName: string) { track(eventName, {}); }',
+      },
+    ],
+    invalid: [
+      {
+        name: 'a const bound to an invalid name',
+        code: "const EVENT = 'articles:card_clicked';\ntrack(EVENT, {});",
+        errors: [{ messageId: 'invalidEventName' }],
+      },
+      {
+        name: 'a const bound to an interpolated template',
+        code: 'function f(slug: string) { const EVENT = `articles:${slug}_view`; posthog.capture(EVENT, {}); }',
+        errors: [{ messageId: 'interpolatedEventName' }],
+      },
+    ],
+  });
+});

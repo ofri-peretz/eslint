@@ -1,7 +1,7 @@
 ---
 title: no-silent-errors
-description: "ESLint Rule: no-silent-errors with LLM-optimized suggestions and auto-fix capabilities."
-tags: ['quality', 'maintainability']
+description: "Report catch blocks that do nothing, so an error is never silently swallowed."
+tags: ['quality', 'maintainability', 'error-handling']
 category: quality
 autofix: suggestions
 type_aware: false
@@ -12,102 +12,98 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+Report a `catch` block that does nothing. An empty handler swallows the error: nothing is logged, nothing is rethrown, and the failure vanishes.
+
+This rule is part of [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability).
+
 ## Quick Summary
 
-| Aspect          | Details                                 |
-| --------------- | --------------------------------------- |
-| **Severity**    | Error (code quality)                    |
-| **Auto-Fix**    | ❌ No                                   |
-| **Category**   | Quality |
-| **ESLint MCP**  | ✅ Optimized for ESLint MCP integration |
-| **Best For**    | Production applications                 |
-| **Suggestions** | ✅ 4 available                          |
+| Aspect          | Details                              |
+| --------------- | ------------------------------------ |
+| **Severity**    | Error (code quality)                 |
+| **Auto-Fix**    | ❌ No                                |
+| **Category**    | Error-handling                       |
+| **Suggestions** | ✅ Log, handle or rethrow the error  |
 
 ## Rule Details
 
-```mermaid
-%%{init: {
-  'theme': 'base',
-  'themeVariables': {
-    'primaryColor': '#f8fafc',
-    'primaryTextColor': '#1e293b',
-    'primaryBorderColor': '#334155',
-    'lineColor': '#475569',
-    'c0': '#f8fafc',
-    'c1': '#f1f5f9',
-    'c2': '#e2e8f0',
-    'c3': '#cbd5e1'
-  }
-}}%%
-flowchart TD
-    A["🔍 Detect no silent errors"] --> B{"Valid pattern?"}
-    B -->|❌ No| C["🚨 Report violation"]
-    B -->|✅ Yes| D["✅ Pass"]
+The rule reports a `catch` clause whose body holds no statement: an empty block,
+or one holding only empty statements (`;`). Every spelling of the clause counts:
+with a binding (`catch (err) {}`), without one (`catch {}`), followed by
+`finally`, inside an `async` function.
 
-    classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
-    classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
-
-    class A startNode
-    class C errorNode
-
-```
-
-
-### Why This Matters
-
-| Issue                        | Impact           | Solution            |
-| ---------------------------- | ---------------- | ------------------- |
-| 🔒 **Security/Code Quality** | [Specific issue] | [Solution approach] |
-| 🐛 **Maintainability**       | [Impact]         | [Fix]               |
-| ⚡ **Performance**           | [Impact]         | [Optimization]      |
+A catch block that does anything handles the error and is not reported: it logs
+it, rethrows it, returns a fallback value, or records a flag for the caller.
 
 ## Configuration
 
-**No configuration options available.**
+| Option             | Type      | Default | Description                                                                                       |
+| ------------------ | --------- | ------- | ------------------------------------------------------------------------------------------------- |
+| `allowWithComment` | `boolean` | `false` | Accept an empty catch with an explanatory comment inside the block or within two lines above it   |
+| `ignoreInTests`    | `boolean` | `true`  | Skip `*.test.*` / `*.spec.*` files                                                                |
+
+With `allowWithComment`, a comment counts as an explanation when it uses one of
+these words: `intentional`, `expected`, `ignore`, `silent`, `noop` / `no-op`,
+`by design`, `known issue`, `legacy`, `third-party`, `framework`, `library`,
+`not implemented`, `TODO`, `FIXME`. A comment far above the `try`, about
+something else, explains nothing.
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```typescript
-// Example of incorrect usage
+try {
+  data = readCache();
+} catch (err) {}
+
+try {
+  await flush();
+} catch {
+  ;
+}
 ```
 
 ### ✅ Correct
 
 ```typescript
-// Example of correct usage
+try {
+  data = readCache();
+} catch (err) {
+  console.error('cache read failed', err);
+}
+
+try {
+  data = readCache();
+} catch {
+  return null; // a cold cache is a valid state
+}
+
+// With { allowWithComment: true }
+try {
+  data = readCache();
+} catch {
+  // intentional: a missing cache file means a cold start
+}
 ```
 
 ## Configuration Examples
-
-### Basic Usage
 
 ```javascript
 // eslint.config.mjs
 export default [
   {
     rules: {
-      'maintainability/no-silent-errors': 'error',
+      'maintainability/no-silent-errors': ['error', { allowWithComment: true }],
     },
   },
 ];
 ```
 
-## LLM-Optimized Output
-
-```
-🚨 no silent errors | Description | MEDIUM
-   Fix: Suggestion | Reference
-```
-
 ## Related Rules
 
-- [`rule-name`](./rule-name) - Description
-
-## Further Reading
-
-- **[Reference](https://example.com)** - Description
+- [`no-missing-error-context`](./no-missing-error-context) - Thrown errors must carry a message
+- [`no-unhandled-promise`](./no-unhandled-promise) - Promise rejections must be handled
 
 <WhenNotToUse />
 
@@ -115,42 +111,16 @@ export default [
 
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
+The following patterns are **not detected**:
 
-### Dynamic Variable References
+### Promise `.catch` with an empty handler
 
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = externalSource();
-processValue(value); // Variable origin not tracked
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Wrapped or Aliased Functions
-
-**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
+**Why**: the rule inspects `catch` clauses; `.catch(() => {})` is a function
+argument, not a clause.
 
 ```typescript
-// ❌ NOT DETECTED - Custom wrapper
-function myWrapper(data) {
-  return internalApi(data); // Wrapper not analyzed
-}
-myWrapper(unsafeInput);
+// ❌ NOT DETECTED
+save().catch(() => {});
 ```
 
-**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+**Mitigation**: give the handler a body that logs or rethrows.

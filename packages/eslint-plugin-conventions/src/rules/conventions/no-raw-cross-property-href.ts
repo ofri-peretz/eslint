@@ -20,7 +20,7 @@
  * hatch — no separate detection needed.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'rawCrossPropertyHref';
@@ -91,18 +91,24 @@ export const noRawCrossPropertyHref = createRule<RuleOptions, MessageIds>({
         if (
           node.name.type !== 'JSXIdentifier' ||
           node.name.name !== 'href' ||
-          !node.value ||
-          node.value.type !== 'Literal' ||
-          typeof node.value.value !== 'string'
+          !node.value
         ) {
           return;
         }
-        const result = isCrossPropertyHref(node.value.value);
+        // `href="u"`, `href={'u'}` and `` href={`u`} `` are the same raw text;
+        // a call such as `buildUtmHref('u')` is not.
+        const valueNode =
+          node.value.type === 'JSXExpressionContainer'
+            ? node.value.expression
+            : node.value;
+        const href = staticString(valueNode);
+        if (href === null) return;
+        const result = isCrossPropertyHref(href);
         if (!result) return;
         context.report({
           node: node.value,
           messageId: 'rawCrossPropertyHref',
-          data: { href: node.value.value, host: result.host },
+          data: { href, host: result.host },
         });
       },
     };

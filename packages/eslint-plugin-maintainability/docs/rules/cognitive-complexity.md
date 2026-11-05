@@ -79,13 +79,13 @@ flowchart TD
 
 | Factor            | Weight         | Example                        |
 | ----------------- | -------------- | ------------------------------ |
-| Conditionals      | +1             | `if`, `else if`, `? :`, `??`   |
+| Conditionals      | +1             | `if`, `else if`, `else`, `? :`, `??` |
 | Loops             | +1             | `for`, `while`, `do-while`     |
 | Switches          | +1 per case    | `switch` statement cases       |
 | Nesting           | +nesting level | Nested `if` inside `for`       |
 | Logical Operators | +1             | `&&`, `\|\|` (sequence breaks) |
 | Catch blocks      | +1             | `catch` in try-catch           |
-| Recursion         | +1             | Function calling itself        |
+| Recursion         | +1             | A call that reaches the function's own binding (a local that shares its name does not count) |
 
 ## Error Message Format
 

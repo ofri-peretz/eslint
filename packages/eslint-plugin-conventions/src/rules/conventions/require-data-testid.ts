@@ -124,23 +124,38 @@ function hasSpreadingAllProps(node: TSESTree.JSXOpeningElement): boolean {
   return node.attributes.some((a) => a.type === 'JSXSpreadAttribute');
 }
 
-function isStableValue(attr: TSESTree.JSXAttribute): boolean {
-  if (!attr.value) return false; // <... data-testid />  — boolean shorthand
-  if (attr.value.type === 'Literal')
-    return typeof attr.value.value === 'string';
-  if (attr.value.type === 'JSXExpressionContainer') {
-    const expr = attr.value.expression;
-    if (expr.type === 'Literal') return typeof expr.value === 'string';
-    if (expr.type === 'TemplateLiteral') {
+function isStableExpression(expr: TSESTree.Node): boolean {
+  switch (expr.type) {
+    case 'Literal':
+      return typeof expr.value === 'string';
+    case 'TemplateLiteral':
       // Template literal is stable if all expressions are member/identifier
       // (no function calls / random values).
       return expr.expressions.every((e) =>
         ['Identifier', 'MemberExpression', 'Literal'].includes(e.type),
       );
-    }
-    // Identifier reference (likely a constant) — accept.
-    if (expr.type === 'Identifier') return true;
-    return false;
+    // A reference names a value the code fixes elsewhere (`TEST_ID`,
+    // `ids.submit`): nothing about it changes between renders.
+    case 'Identifier':
+    case 'MemberExpression':
+      return true;
+    // `ok ? 'save' : 'cancel'` picks between values that are each stable.
+    case 'ConditionalExpression':
+      return (
+        isStableExpression(expr.consequent) &&
+        isStableExpression(expr.alternate)
+      );
+    default:
+      return false;
+  }
+}
+
+function isStableValue(attr: TSESTree.JSXAttribute): boolean {
+  if (!attr.value) return false; // <... data-testid />  — boolean shorthand
+  if (attr.value.type === 'Literal')
+    return typeof attr.value.value === 'string';
+  if (attr.value.type === 'JSXExpressionContainer') {
+    return isStableExpression(attr.value.expression);
   }
   return false;
 }
@@ -258,13 +273,15 @@ export const requireDataTestId = createRule<RuleOptions, MessageIds>({
         // Decide whether this element is in-scope.
         let inScope = false;
 
-        if (ALWAYS_INTERACTIVE.has(name)) inScope = true;
+        // `requireOn` names are in scope whatever else they match, so a
+        // component listed there needs no event handler.
+        if (ALWAYS_INTERACTIVE.has(name) || requireOn.has(name)) inScope = true;
         else if (name === 'a' && isInteractiveAnchor(node)) inScope = true;
         else if (componentPattern && componentPattern.test(name)) {
           // PascalCase component. Only flag when it has an interactive
           // event handler, unless `componentRequiresHandler: false` is set.
           inScope = componentRequiresHandler ? hasEventHandler(node) : true;
-        } else if (requireOn.has(name)) inScope = true;
+        }
 
         if (!inScope) return;
 

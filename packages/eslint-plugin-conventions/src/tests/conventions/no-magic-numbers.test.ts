@@ -393,3 +393,34 @@ describe('no-magic-numbers — machine-packed output', () => {
     ],
   });
 });
+
+describe('no-magic-numbers: ignore matches the signed number', () => {
+  ruleTester.run('no-magic-numbers', noMagicNumbers, {
+    valid: [
+      {
+        name: 'a negative number listed in ignore',
+        code: 'move(-42);',
+        options: [{ ignore: [-42] }],
+      },
+    ],
+    invalid: [
+      {
+        name: 'a negative number whose positive twin is not listed',
+        code: 'move(-42);',
+        options: [{ ignore: [7] }],
+        errors: [
+          {
+            messageId: 'noMagicNumber',
+            suggestions: [
+              {
+                messageId: 'extractConst',
+                data: { value: '42', constName: 'MAGIC_42' },
+                output: 'const MAGIC_42 = 42;\nmove(-MAGIC_42);',
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+});

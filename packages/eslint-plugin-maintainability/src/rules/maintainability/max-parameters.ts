@@ -150,6 +150,7 @@ export const maxParameters = createRule<RuleOptions, MessageIds>({
   ) {
     let max: number;
     let ignoreConstructors: boolean;
+    let ignoreOverriddenMethods: boolean;
 
     /**
      * Check function parameters
@@ -160,6 +161,25 @@ export const maxParameters = createRule<RuleOptions, MessageIds>({
         | TSESTree.FunctionExpression
         | TSESTree.ArrowFunctionExpression,
     ) {
+      // A class member's function: a `constructor`, or a member marked
+      // `override` (a method, or an arrow-function class property).
+      const member = node.parent;
+      if (
+        ignoreConstructors &&
+        member?.type === 'MethodDefinition' &&
+        member.kind === 'constructor'
+      ) {
+        return;
+      }
+      if (
+        ignoreOverriddenMethods &&
+        (member?.type === 'MethodDefinition' ||
+          member?.type === 'PropertyDefinition') &&
+        member.override
+      ) {
+        return;
+      }
+
       // Check if it's a constructor
       if (ignoreConstructors) {
         if (
@@ -214,7 +234,7 @@ export const maxParameters = createRule<RuleOptions, MessageIds>({
         ({
           max = 4,
           ignoreConstructors = false,
-          // ignoreOverriddenMethods = false, // Not used
+          ignoreOverriddenMethods = false,
         } = options || {});
       },
       FunctionDeclaration: checkFunction,

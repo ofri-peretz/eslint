@@ -23,7 +23,11 @@ click becomes `$direct` noise on the destination.
 
 `buildUtmHref()` is the one blessed constructor: it appends the canonical
 `utm_source` / `utm_medium` pair for the property the code lives in. The rule
-flags raw href literals pointing at any sibling property.
+flags raw href literals pointing at any sibling property: a quoted attribute
+(`href="…"`) and the same text in an expression container (`href={'…'}`,
+``href={`…`}``) alike. The sibling properties are `ofriperetz.dev`,
+`interlace.tools` and its `eslint`, `serverless`, `ds` and `storybook`
+subdomains.
 
 External links (GitHub, npm, MDN, …), same-site paths and anchors are ignored —
 attribution is only our own cross-property problem.

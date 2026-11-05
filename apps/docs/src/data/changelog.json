@@ -1,9 +1,149 @@
 {
-  "releaseCount": 960,
+  "releaseCount": 967,
   "packageCount": 66,
-  "entryCount": 2567,
+  "entryCount": 2575,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "oxlint-plugin-react-a11y",
+      "short": "oxlint-plugin-react-a11y",
+      "version": "2.6.1",
+      "date": "2026-11-05T01:55:55Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-react-a11y@2.6.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-a11y",
+      "short": "eslint-plugin-react-a11y",
+      "version": "2.6.1",
+      "date": "2026-11-05T01:52:19Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "rules read every static spelling of a value, honour their documented options, and follow WAI-ARIA 1.2 / HTML-AAM, found by fidelity models for all 37 rules.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.21.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.21.5",
+      "date": "2026-11-05T01:52:17Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "rules read every static spelling of a value, honour their documented options, and follow WAI-ARIA 1.2 / HTML-AAM, found by fidelity models for all 37 rules.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-modernization",
+      "short": "oxlint-plugin-modernization",
+      "version": "3.2.1",
+      "date": "2026-11-05T01:11:57Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-modernization@3.2.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-operability",
+      "short": "oxlint-plugin-operability",
+      "version": "4.2.1",
+      "date": "2026-11-05T01:11:45Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-operability@4.2.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-modularity",
+      "short": "oxlint-plugin-modularity",
+      "version": "2.6.1",
+      "date": "2026-11-05T01:09:14Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-modularity@2.6.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modernization",
+      "short": "eslint-plugin-modernization",
+      "version": "3.2.1",
+      "date": "2026-11-05T01:07:40Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "rules now decide by code structure, found by the new Quint fidelity models.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modularity",
+      "short": "eslint-plugin-modularity",
+      "version": "2.6.1",
+      "date": "2026-11-05T01:07:37Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "rules now decide by code structure, found by the new Quint fidelity models.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-operability",
+      "short": "eslint-plugin-operability",
+      "version": "4.2.1",
+      "date": "2026-11-05T01:07:08Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "rules now decide by code structure, found by the new Quint fidelity models.",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "oxlint-plugin-reliability",
       "short": "oxlint-plugin-reliability",
@@ -22085,6 +22225,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-conventions",
+      "short": "eslint-plugin-conventions",
+      "version": "6.1.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "rules now decide by code structure, found by the new Quint fidelity models.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
@@ -22205,39 +22360,9 @@
       ]
     },
     {
-      "package": "eslint-plugin-modernization",
-      "short": "eslint-plugin-modernization",
-      "version": "3.2.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "rules now decide by code structure, found by the new Quint fidelity models.",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-modularity",
-      "short": "eslint-plugin-modularity",
-      "version": "2.6.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "rules now decide by code structure, found by the new Quint fidelity models.",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-operability",
-      "short": "eslint-plugin-operability",
-      "version": "4.2.1",
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.3.1",
       "date": null,
       "isApp": false,
       "isPrivate": false,
@@ -22395,46 +22520,31 @@
       ]
     },
     {
-      "package": "oxlint-plugin-modernization",
-      "short": "oxlint-plugin-modernization",
-      "version": "3.2.1",
+      "package": "oxlint-plugin-conventions",
+      "short": "oxlint-plugin-conventions",
+      "version": "6.1.1",
       "date": null,
       "isApp": false,
       "isPrivate": false,
       "entries": [
         {
           "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-modernization@3.2.1`",
+          "title": "updated workspace dependencies: `eslint-plugin-conventions@6.1.1`",
           "pr": null
         }
       ]
     },
     {
-      "package": "oxlint-plugin-modularity",
-      "short": "oxlint-plugin-modularity",
-      "version": "2.6.1",
+      "package": "oxlint-plugin-maintainability",
+      "short": "oxlint-plugin-maintainability",
+      "version": "3.3.1",
       "date": null,
       "isApp": false,
       "isPrivate": false,
       "entries": [
         {
           "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-modularity@2.6.1`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-operability",
-      "short": "oxlint-plugin-operability",
-      "version": "4.2.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-operability@4.2.1`",
+          "title": "updated workspace dependencies: `eslint-plugin-maintainability@3.3.1`",
           "pr": null
         }
       ]

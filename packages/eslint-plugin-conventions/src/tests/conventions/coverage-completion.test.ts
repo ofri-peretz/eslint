@@ -360,10 +360,9 @@ describe('expiring-todo-comments — extracted helpers', () => {
       expect(checkDependencyCondition(pkg, 'missing', true)).toBe(false);
     });
 
-    it('documents current behavior: `-pkg` also reports presence', () => {
-      // Both branches of the ternary return `hasPackage` today.
-      expect(checkDependencyCondition(pkg, 'lodash', false)).toBe(true);
-      expect(checkDependencyCondition(pkg, 'missing', false)).toBe(false);
+    it('`-pkg` comes due once the package is gone, not while it is present', () => {
+      expect(checkDependencyCondition(pkg, 'lodash', false)).toBe(false);
+      expect(checkDependencyCondition(pkg, 'missing', false)).toBe(true);
     });
   });
 
@@ -720,7 +719,7 @@ describe('no-console-spaces — template quasis and method-name fallback', () =>
     invalid: [
       // First quasi is clean (loop continues), second has spaces.
       {
-        code: 'console.log(`a${x} b `);',
+        code: 'console.log(`a${x} b `, n);',
         errors: [{ messageId: 'noConsoleSpaces' }],
         output: null,
       },
@@ -737,7 +736,7 @@ describe('no-json-schema-tags — tag on the last line without trailing newline'
     valid: [],
     invalid: [
       {
-        code: 'const x = 1;\n/** x @minimum 1 */',
+        code: 'const x = 1;\n/** @minimum 1 */',
         errors: [
           {
             messageId: 'jsonSchemaTag',

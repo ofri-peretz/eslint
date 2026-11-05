@@ -73,6 +73,20 @@ flowchart TD
 | ------- | ---------- | ------- | --------------------------------------- |
 | `allow` | `string[]` | `[]`    | Contexts where nested ternaries allowed |
 
+A ternary is nested when its test, consequent or alternate holds another
+ternary: bare, parenthesized, or behind a TypeScript wrapper (`as`,
+`satisfies`, `!`, `<T>`) that changes nothing at runtime.
+
+`allow` accepts these contexts; a nested ternary anywhere inside one of them is
+not reported:
+
+| Context      | Allows a nested ternary inside                  |
+| ------------ | ----------------------------------------------- |
+| `'variable'` | a variable declaration (`const label = ...`)    |
+| `'return'`   | a `return` statement                            |
+| `'argument'` | a call's arguments                              |
+| `'jsx'`      | a JSX expression container or element           |
+
 ## Examples
 
 ### ❌ Incorrect
@@ -155,12 +169,12 @@ function getStatusColor(status: string): string {
 }
 ```
 
-### Strict Mode
+### Allow in JSX
 
 ```javascript
 {
   rules: {
-    'maintainability/no-nested-ternary': 'error'
+    'maintainability/no-nested-ternary': ['warn', { allow: ['jsx'] }]
   }
 }
 ```

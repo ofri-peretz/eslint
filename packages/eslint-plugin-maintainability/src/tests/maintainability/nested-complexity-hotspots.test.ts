@@ -169,4 +169,54 @@ describe('nested-complexity-hotspots', () => {
       ],
     });
   });
+
+  // Fidelity divergences (nested_complexity_hotspots): turning a count off
+  // crashed the lint run on any file holding that kind, and a do...while was
+  // counted as a level but never reported itself.
+  describe('count options and do...while', () => {
+    const ifs5 =
+      'function f(a) { if (a) { if (a) { if (a) { if (a) { if (a) { a(); } } } } } }';
+    const loops5 =
+      'function f(x) { for (;;) { for (;;) { for (;;) { for (;;) { for (;;) { x(); } } } } } }';
+    const doWhile5 =
+      'function f(x) { do { do { do { do { do { x--; } while (x); } while (x); } while (x); } while (x); } while (x); }';
+    ruleTester.run('count options', nestedComplexityHotspots, {
+      valid: [
+        {
+          name: 'countConditionals: false does not report (or crash on) nested ifs',
+          code: ifs5,
+          options: [{ countConditionals: false }],
+        },
+        {
+          name: 'countLoops: false does not report (or crash on) nested loops',
+          code: loops5,
+          options: [{ countLoops: false }],
+        },
+        {
+          name: 'countLoops: false covers do...while',
+          code: doWhile5,
+          options: [{ countLoops: false }],
+        },
+      ],
+      invalid: [
+        {
+          name: 'countLoops: false still reports nested ifs',
+          code: ifs5,
+          options: [{ countLoops: false }],
+          errors: [{ messageId: 'nestedComplexity' }],
+        },
+        {
+          name: 'countConditionals: false still reports nested loops',
+          code: loops5,
+          options: [{ countConditionals: false }],
+          errors: [{ messageId: 'nestedComplexity' }],
+        },
+        {
+          name: 'a do...while five levels deep is reported',
+          code: doWhile5,
+          errors: [{ messageId: 'nestedComplexity' }],
+        },
+      ],
+    });
+  });
 });

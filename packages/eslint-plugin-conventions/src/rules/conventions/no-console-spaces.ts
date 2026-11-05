@@ -22,6 +22,7 @@ import {
  * went silent when written with a string subscript.
  */
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isGlobalObject } from '../../lib/global-binding';
 
 type MessageIds = 'noConsoleSpaces';
 
@@ -60,24 +61,15 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let consoleMethods: Set<string>;
 
-    // oxlint-disable-next-line consistent-function-scoping
-    function isInAllowedContext(): boolean {
-      // For simplicity, we'll skip the allow option for now
-      return false;
-    }
-
     function isConsoleMethodCall(node: TSESTree.CallExpression): boolean {
-      // Check if this is a call to a console method
-      if (
+      // The global `console`, decided by binding: `console.log`,
+      // `console['log']`, `globalThis.console.log`. A `console` the code binds
+      // itself (an injected logger) is not the global and may not join.
+      return (
         node.callee.type === 'MemberExpression' &&
-        node.callee.object.type === 'Identifier' &&
-        node.callee.object.name === 'console' &&
-        namesOneOf(propertyName(node.callee), consoleMethods)
-      ) {
-        return true;
-      }
-
-      return false;
+        namesOneOf(propertyName(node.callee), consoleMethods) &&
+        isGlobalObject(node.callee.object, 'console', context.sourceCode)
+      );
     }
 
     // oxlint-disable-next-line consistent-function-scoping
@@ -139,35 +131,36 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
      * `unicorn/no-console-spaces` — this rule's own documentationLink —
      * compares `charAt(0) === ' '` for exactly this reason.
      */
+    /**
+     * The sides of an argument the separator touches: a space before the
+     * argument (`leading`) is doubled only when another argument precedes it,
+     * a space after it (`trailing`) only when another follows. The first
+     * argument's leading space and the last one's trailing space are the
+     * message's own — an indented line, a prompt — and are kept.
+     */
+    interface Sides {
+      leading: boolean;
+      trailing: boolean;
+    }
+
     // oxlint-disable-next-line consistent-function-scoping
-    function hasLeadingOrTrailingSpaces(text: string): boolean {
-      // Still not a string that is ONLY padding: trimming that leaves nothing.
-      const trimmed = text.trim();
-      return trimmed.length > 0 && /^ | $/.test(text);
+    function redundantSides(first: string, last: string, joined: Sides): Sides {
+      return {
+        leading: joined.leading && first.startsWith(' '),
+        trailing: joined.trailing && last.endsWith(' '),
+      };
     }
 
     /**
      * Strip the literal spaces the separator makes redundant, and nothing else.
      *
-     * `trim()` cannot be used even once the predicate is narrowed: a string
-     * with BOTH a literal space and a newline (`'  banner\n'`) still loses the
-     * newline, because `trim()` does not stop at the space.
+     * `trim()` cannot be used: a string with BOTH a literal space and a newline
+     * (`'  banner\n'`) would lose the newline too, changing what it prints.
      */
     // oxlint-disable-next-line consistent-function-scoping
-    function trimSpaces(text: string): string {
-      return text.replace(/^ +/, '').replace(/ +$/, '');
-    }
-
-    // oxlint-disable-next-line consistent-function-scoping
-    function templateHasLeadingOrTrailingSpaces(
-      node: TSESTree.TemplateLiteral,
-    ): boolean {
-      // Only the edges of the whole literal are padding. The quasis around an
-      // interpolation (`at ${dir}`) are the interior of one string; checking
-      // every quasi reported every template that put a space beside `${}`.
-      const first = node.quasis[0].value.raw;
-      const last = node.quasis[node.quasis.length - 1].value.raw;
-      return /^\s/.test(first) || /\s$/.test(last);
+    function trimSpaces(text: string, sides: Sides): string {
+      const start = sides.leading ? text.replace(/^ +/, '') : text;
+      return sides.trailing ? start.replace(/ +$/, '') : start;
     }
 
     return {
@@ -186,49 +179,59 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
         ]);
       },
       CallExpression(node: TSESTree.CallExpression) {
-        if (isConsoleMethodCall(node) && !isInAllowedContext()) {
-          // Check each argument for leading/trailing spaces
-          for (const arg of node.arguments) {
-            // A template literal is NOT read here even though it names a
-            // static string, because this branch's fixer rewrites the argument
-            // as `'...'` — which would silently convert every backtick in the
-            // codebase to a quote. The `TemplateLiteral` branch below owns them
-            // and fixes them in place.
-            const staticText =
-              arg.type === 'TemplateLiteral' ? null : staticString(arg);
-            if (staticText !== null) {
-              if (hasLeadingOrTrailingSpaces(staticText)) {
-                context.report({
-                  node: arg,
-                  messageId: 'noConsoleSpaces',
-                  data: {
-                    method: getConsoleMethodName(node),
-                    arg: staticText,
-                  },
-                  fix(fixer: TSESLint.RuleFixer) {
-                    return fixer.replaceText(
-                      arg,
-                      quoteSingle(trimSpaces(staticText)),
-                    );
-                  },
-                });
-              }
-            } else if (arg.type === 'TemplateLiteral') {
-              if (templateHasLeadingOrTrailingSpaces(arg)) {
-                context.report({
-                  node: arg,
-                  messageId: 'noConsoleSpaces',
-                  data: {
-                    method: getConsoleMethodName(node),
-                    arg: 'template literal with spaces',
-                  },
-                  // Template literals are harder to fix automatically
-                  fix: null,
-                });
-              }
-            }
+        if (!isConsoleMethodCall(node)) return;
+        const args = node.arguments;
+        args.forEach((arg, index) => {
+          const joined: Sides = {
+            leading: index > 0,
+            trailing: index < args.length - 1,
+          };
+          // A template literal is NOT read here even though it names a
+          // static string, because this branch's fixer rewrites the argument
+          // as `'...'` — which would silently convert every backtick in the
+          // codebase to a quote. The `TemplateLiteral` branch below owns them.
+          const staticText =
+            arg.type === 'TemplateLiteral' ? null : staticString(arg);
+          if (staticText !== null) {
+            // A string that is ONLY padding is a deliberate spacer.
+            if (staticText.trim().length === 0) return;
+            const sides = redundantSides(staticText, staticText, joined);
+            if (!sides.leading && !sides.trailing) return;
+            context.report({
+              node: arg,
+              messageId: 'noConsoleSpaces',
+              data: {
+                method: getConsoleMethodName(node),
+                arg: staticText,
+              },
+              fix(fixer: TSESLint.RuleFixer) {
+                return fixer.replaceText(
+                  arg,
+                  quoteSingle(trimSpaces(staticText, sides)),
+                );
+              },
+            });
+          } else if (arg.type === 'TemplateLiteral') {
+            // Only the edges of the whole literal touch the separator; the
+            // quasis around an interpolation (`at ${dir}`) are its interior.
+            const sides = redundantSides(
+              arg.quasis[0].value.raw,
+              arg.quasis[arg.quasis.length - 1].value.raw,
+              joined,
+            );
+            if (!sides.leading && !sides.trailing) return;
+            context.report({
+              node: arg,
+              messageId: 'noConsoleSpaces',
+              data: {
+                method: getConsoleMethodName(node),
+                arg: 'template literal with spaces',
+              },
+              // Template literals are harder to fix automatically
+              fix: null,
+            });
           }
-        }
+        });
       },
     };
   },

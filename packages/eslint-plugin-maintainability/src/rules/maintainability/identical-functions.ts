@@ -155,12 +155,35 @@ const RESERVED_WORDS: ReadonlySet<string> = new Set([
  * pairs ALREADY known to be at or above the threshold — so a prune can
  * never fire on a value that reaches a message.
  */
+/**
+ * Drop whitespace that is only layout: every space except one between two
+ * word characters (`return x`, `const total`). String literals (restored as
+ * `"..."` in the normalized body) are kept whole, so two strings that differ
+ * only in their spacing still differ.
+ */
+function withoutLayout(text: string): string {
+  return text.replace(
+    /"(?:[^"\\]|\\.)*"| /g,
+    (match: string, offset: number, whole: string) =>
+      match !== ' ' ||
+      (/[\w$]/.test(whole.charAt(offset - 1)) &&
+        /[\w$]/.test(whole.charAt(offset + 1)))
+        ? match
+        : '',
+  );
+}
+
 export function calculateSimilarity(
   str1: string,
   str2: string,
   similarityThreshold: number,
 ): number {
   if (str1 === str2) return 1.0;
+  // Same tokens, different layout: one implementation. The normalized bodies
+  // keep a space wherever the source had whitespace, so `reduce((sum` and
+  // `reduce(\n  (sum` differed and a reformatted copy fell short of
+  // `similarityThreshold: 1`.
+  if (withoutLayout(str1) === withoutLayout(str2)) return 1.0;
 
   // str1 !== str2 here, so the longer string is never empty.
   const longer = str1.length > str2.length ? str1 : str2;

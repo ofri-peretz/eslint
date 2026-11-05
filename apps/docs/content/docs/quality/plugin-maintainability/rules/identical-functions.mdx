@@ -29,22 +29,10 @@ Detects duplicate function implementations with DRY refactoring suggestions. Thi
 
 ## Error Message Format
 
-The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
-
 ```text
-⚠️ CWE-1104 OWASP:A03 CVSS:5.3 | Unmaintainable Third-Party Components detected | MEDIUM
-   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A03_2021/
+📋 Code duplication: 1 duplicates (100% similar) | MEDIUM
+   Fix: Extract to reusable function | https://en.wikipedia.org/wiki/Don%27t_repeat_yourself
 ```
-
-### Message Components
-
-| Component                 | Purpose                | Example                                                                                                                                                                                                                           |
-| :------------------------ | :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Risk Standards**        | Security benchmarks    | [CWE-1104](https://cwe.mitre.org/data/definitions/1104.html) [OWASP:A03](https://owasp.org/Top10/A03_2021-Injection/) [CVSS:5.3](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description**     | Specific vulnerability | `Unmaintainable Third-Party Components detected`                                                                                                                                                                                  |
-| **Severity & Compliance** | Impact assessment      | `MEDIUM`                                                                                                                                                                                                                          |
-| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                              |
-| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A03_2021-Injection/)                                                                                                                                                                       |
 
 ## Rule Details
 
@@ -86,8 +74,17 @@ flowchart TD
 | Option                | Type      | Default | Description                               |
 | --------------------- | --------- | ------- | ----------------------------------------- |
 | `minLines`            | `number`  | `3`     | Minimum lines to consider for duplication |
-| `similarityThreshold` | `number`  | `0.85`  | Similarity threshold (0.5-1.0)            |
-| `ignoreTestFiles`     | `boolean` | `true`  | Ignore test files (_.test.ts, _.spec.ts)  |
+| `similarityThreshold` | `number`  | `0.9`   | Similarity threshold (0.5-1.0)            |
+| `ignoreTestFiles`     | `boolean` | `true`  | Ignore test files (`*.test.*`, `*.spec.*`, test directories) |
+| `ignoreGeneratedFiles` | `boolean` | `true` | Ignore files whose leading comment declares them generated (`@generated`) |
+
+Functions are compared within one file, as implementations: whitespace, line
+breaks and comments are layout, so a reformatted copy matches its original
+exactly. Local names are normalized away; property names, object keys and
+literal values are kept, because they are the operation. A body shorter than
+`minLines` lines is ignored, and a short body (under ~120 normalized
+characters) must match exactly whatever the threshold: one changed token in a
+three-line function is a different function.
 
 ## Examples
 
@@ -162,7 +159,7 @@ const processGuestOrder = (order: GuestOrder) => processOrder(order);
   rules: {
     'maintainability/identical-functions': ['error', {
       minLines: 3,
-      similarityThreshold: 0.85
+      similarityThreshold: 0.9
     }]
   }
 }

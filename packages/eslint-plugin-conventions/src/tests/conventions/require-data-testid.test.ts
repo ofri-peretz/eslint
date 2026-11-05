@@ -94,3 +94,31 @@ describe('require-data-testid', () => {
     ],
   });
 });
+
+describe('require-data-testid: references and requireOn', () => {
+  ruleTester.run('require-data-testid', requireDataTestId, {
+    valid: [
+      {
+        name: 'a member reference is a value the code fixes',
+        code: '<button data-testid={ids.submit}>Go</button>;',
+      },
+      {
+        name: 'a choice between two literals is stable',
+        code: "<button data-testid={ok ? 'save' : 'cancel'}>Go</button>;",
+      },
+    ],
+    invalid: [
+      {
+        name: 'a choice whose branch is not stable',
+        code: "<button data-testid={ok ? 'save' : make()}>Go</button>;",
+        errors: [{ messageId: 'dynamicDataTestId' }],
+      },
+      {
+        name: 'a component listed in requireOn needs no event handler',
+        code: '<Card>body</Card>;',
+        options: [{ requireOn: ['Card'] }],
+        errors: [{ messageId: 'missingDataTestId' }],
+      },
+    ],
+  });
+});

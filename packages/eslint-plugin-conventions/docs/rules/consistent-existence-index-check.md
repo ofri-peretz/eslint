@@ -34,6 +34,8 @@ Enforce one form for checking whether an object has a property — `Object.hasOw
 
 JavaScript has four ways to ask whether an object has a property, and they do not
 all answer the same question. This rule picks one and reports the others.
+`Object` is the built-in, found by binding: `Object.hasOwn` and
+`globalThis.Object.hasOwn` alike, but not a local variable named `Object`.
 
 | Form                                             | Answers for an inherited key | Looks the method up on `obj` |
 | ------------------------------------------------ | ---------------------------- | ---------------------------- |
@@ -163,28 +165,8 @@ one.
 
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = externalSource();
-processValue(value); // Variable origin not tracked
-```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+- `{}.hasOwnProperty.call(obj, key)` and a `hasOwnProperty` reached through a
+  variable (`const has = Object.prototype.hasOwnProperty; has.call(obj, key)`)
+  are not recognised.
+- `#field in obj` (a private brand check) and `for (const key in obj)`
+  (iteration) are never reported: no other form can express them.

@@ -26,22 +26,47 @@ Disallow unreadable IIFE (Immediately Invoked Function Expression) patterns. Thi
 
 ## Rule Details
 
-Complex IIFEs with multiple nested functions or unclear structure reduce readability.
+An immediately invoked function expression (IIFE) is a function or arrow
+expression called on the spot: `(() => { ... })()`, `(function () { ... })()`,
+`async` too, and through `.call(...)` / `.apply(...)`. A long one hides logic a
+named function would document. The rule reports an IIFE whose block body:
 
-### Why This Matters
+- holds more than `maxStatements` statements, or
+- nests control flow (`if`, loops, `switch`, `try`) more than `maxDepth`
+  levels deep.
 
-| Issue                     | Impact                          | Solution                  |
-| ------------------------- | ------------------------------- | ------------------------- |
-| 📖 **Readability**        | Hard to understand intent       | Named functions           |
-| 🐛 **Debugging**          | Confusing stack traces          | Clear structure           |
-| 🔄 **Maintainability**    | Difficult to modify             | Extract functions         |
+A short IIFE is not reported for holding a single `if` or `try`, declaring a
+helper, or taking several parameters: none of those exceeds a limit. The
+`(async () => { try { await main(); } catch (e) { ... } })()` entry point is the
+standard pattern.
+
+## Configuration
+
+| Option               | Type      | Default | Description                                                                 |
+| -------------------- | --------- | ------- | --------------------------------------------------------------------------- |
+| `maxStatements`      | `number`  | `3`     | Most statements the IIFE body may hold                                      |
+| `maxDepth`           | `number`  | `2`     | Deepest control-flow nesting allowed inside the IIFE                        |
+| `allowReturningIIFE` | `boolean` | `true`  | An IIFE that returns a value is a scoped initializer: its statement count is not checked (its nesting still is) |
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```typescript
-(() => { const a = 1; const b = 2; const c = 3; const d = 4; })();
+(() => {
+  const a = read();
+  const b = read();
+  use(a);
+  use(b);
+})();
+
+(function () {
+  if (ready()) {
+    for (const x of list()) {
+      if (x) use(x); // depth 3
+    }
+  }
+}).call(this);
 ```
 
 ### ✅ Correct
@@ -53,28 +78,35 @@ function processValue() {
 }
 const result = processValue();
 
-// Or simple IIFE when needed
+// A scoped initializer (allowReturningIIFE)
 const config = (() => {
-  const defaults = { a: 1 };
-  return Object.freeze(defaults);
+  const env = process.env.NODE_ENV;
+  const debug = env === 'development';
+  const level = debug ? 'debug' : 'info';
+  return { env, debug, level };
 })();
 
-// Async IIFE (common pattern)
+// The async entry point
 (async () => {
-  await initialize();
+  try {
+    await main();
+  } catch (error) {
+    fail(error);
+  }
 })();
 ```
 
 ## Configuration Examples
 
-### Basic Usage
-
 ```javascript
-{
-  rules: {
-    'maintainability/no-unreadable-iife': 'warn'
-  }
-}
+// eslint.config.mjs
+export default [
+  {
+    rules: {
+      'maintainability/no-unreadable-iife': ['warn', { maxStatements: 5 }],
+    },
+  },
+];
 ```
 
 ## Related Rules
@@ -84,48 +116,18 @@ const config = (() => {
 ## Further Reading
 
 - **[IIFE - MDN](https://developer.mozilla.org/en-US/docs/Glossary/IIFE)** - IIFE pattern explanation
+
 <WhenNotToUse />
 
 <FalseNegativeCTA />
 
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
+### Expression-bodied IIFEs
 
-### Dynamic Variable References
-
-**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
+**Why**: an arrow with an expression body is one expression, however long.
 
 ```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = externalSource();
-processValue(value); // Variable origin not tracked
+// ❌ NOT DETECTED
+const v = ((a) => a && a.b && a.b.c && a.b.c.d)(input);
 ```
-
-**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
-
-### Wrapped or Aliased Functions
-
-**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-function myWrapper(data) {
-  return internalApi(data); // Wrapper not analyzed
-}
-myWrapper(unsafeInput);
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
-
-### Imported Values
-
-**Why**: When values come from imports, the rule cannot analyze their origin or construction.
-
-```typescript
-// ❌ NOT DETECTED - Value from import
-import { getValue } from './helpers';
-processValue(getValue()); // Cross-file not tracked
-```
-
-**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
