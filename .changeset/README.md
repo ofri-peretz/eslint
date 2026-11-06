@@ -4,8 +4,8 @@ This directory holds [changesets](https://github.com/changesets/changesets) — 
 describing what changed in a PR and which workspaces should bump (and at what semver level).
 
 A changeset is the **only** input to release notes. Nothing is derived from commit messages, so a
-change with no changeset is invisible in the changelog, in the rollup release, and to anyone reading
-npm — regardless of how well the commit was written.
+change with no changeset is invisible in the changelog, in the package's GitHub Release, and to
+anyone reading npm — regardless of how well the commit was written.
 
 ## Writing one
 
@@ -81,21 +81,22 @@ changelog, a tag, or an analytics annotation. Private workspaces are versioned b
    reviewable before the merge that publishes it.
 3. **Merge the Version PR** → `release.yml` diffs each local version against npm, builds, runs the
    dist-integrity gate, and publishes the changed packages in parallel via Trusted Publishers (OIDC).
-   Each package gets its own tag and GitHub Release; the run also creates one **rollup release**
-   bundling everything, and annotates the release in PostHog.
+   Each package gets its own tag and GitHub Release (there is no cross-package rollup release —
+   [ADR 0009](../docs/adr/0009-github-releases-are-per-package-only.md)), and the run annotates the
+   release in PostHog.
 4. **App deploys** — `auto-deploy.yml` / `deploy-docs.yml` ship affected apps, tag the deployed
    version (`docs@1.2.0`), and annotate the deploy in PostHog.
 
 ## What a reader gets
 
-Both release surfaces lead with the same verdict, derived from the entries rather than asserted
-separately — so they can never disagree with the list underneath them:
+Both surfaces lead with the same verdict, derived from the entries rather than asserted separately —
+so they can never disagree with the list underneath them:
 
 - **Per-package GitHub Release** (`scripts/extract-changelog.ts`) — the version's entries, then
   either "✅ Safe to upgrade" or "⚠️ Breaking release", then the exact `npm install` line. Private
   workspaces get the verdict but no install line.
-- **Rollup GitHub Release** (`scripts/release-notes.ts`) — the verdict, the workspace counts, then
-  every change grouped by kind with breaking first, then the full version table.
+- **Release preview on the Version PR** (`scripts/release-notes.ts`) — the verdict, the workspace
+  counts, then every change grouped by kind with breaking first, then the full version table.
 
 The verdict comes from `### Major Changes` and the 💥 badge, both written by the release machinery
 from the changeset's declared bump. When a version cannot be found at all, the fallback stub carries
@@ -125,17 +126,13 @@ npm run release:verify-notes -- --latest=10
 
 ## GitHub Release conventions
 
-- **The rollup holds the "Latest" badge**, explicitly. Every per-package release
-  passes `--latest=false`; before this was set, GitHub awarded the badge to
-  whichever release happened to be created last, so the repo's front page
-  pointed at an arbitrary single package.
-- **Release discussions are opt-in.** Set the repo variable
-  `RELEASE_DISCUSSION_CATEGORY` to a Discussions category name (e.g. `Releases`)
-  and every rollup opens a feedback thread. Requires Discussions enabled on the
-  repository. If the variable is unset, or the category is missing, the release
-  is created exactly as before — the flag errors outright when Discussions is
-  off, and a feedback thread is not worth failing a release whose packages are
-  already on npm.
+- **Per-package releases only.** Each published package gets one `<name>@<version>` release; no
+  `release-<date>-<sha>` rollup is created. Packages that move together (each `eslint-plugin-X` and
+  its `oxlint-plugin-X`) stay paired through the changesets `fixed` groups, not through a shared
+  release page. See [ADR 0009](../docs/adr/0009-github-releases-are-per-package-only.md).
+- **The newest package release holds the "Latest" badge.** The publish jobs run in parallel and pass
+  `--latest=false`, so the badge does not land on whichever job finished last; `release.yml`'s
+  summarize job then marks the newest release that run created as Latest.
 
 Both are locked by `scripts/__tests__/release-workflow-lock.test.ts`.
 

@@ -257,9 +257,10 @@ jobs:
       #
       # The Version PR's own diff is ~20 package.json version bumps and ~20
       # CHANGELOG hunks — accurate, and unreadable as a description of what is
-      # about to ship. This posts the same grouped rollup that will become the
-      # release's GitHub Release, so the release notes are reviewed *before*
-      # the merge that publishes them rather than discovered after.
+      # about to ship. This posts one grouped view of every package's entries,
+      # so the release notes are reviewed *before* the merge that publishes
+      # them rather than discovered after. It is the only cross-package view:
+      # GitHub Releases are per package (docs/adr/0009).
       #
       # Runs against the pushed `changeset-release/main` branch, not the
       # runner's tree: changesets/action commits and pushes the bumps, and the
@@ -285,7 +286,7 @@ jobs:
             echo "<!-- release-rollup-preview -->"
             echo "## 📦 Release preview"
             echo ""
-            echo "What merging this PR will publish, grouped by kind. These are the notes that become the rollup GitHub Release."
+            echo "What merging this PR will publish, grouped by kind. Each package also gets its own GitHub Release when this merges."
             echo ""
             npx tsx scripts/release-notes.ts --since=origin/main
           } > rollup-preview.md

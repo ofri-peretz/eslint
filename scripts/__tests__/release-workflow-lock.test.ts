@@ -5,19 +5,18 @@
  */
 
 /**
- * Lock for two release-workflow intents that are invisible in review and
- * silent when they break.
+ * Lock for the release workflow's GitHub Release shape (docs/adr/0009).
  *
- * **The "Latest" badge.** Every per-package release passes `--latest=false`,
- * so if the rollup does not claim the badge explicitly, GitHub awards it to
- * whichever release happened to be created last — an arbitrary single package
- * rather than the release that describes the whole thing. Nothing fails when
- * that happens; the repo's front page just points somewhere unhelpful.
+ * **Per-package releases only.** Each published package gets one
+ * `<name>@<version>` release. There is no cross-package `release-<date>-<sha>`
+ * rollup release; one coming back would put a second "Latest" claimant on the
+ * releases page.
  *
- * **The discussion fallback.** `--discussion-category` errors outright when
- * Discussions is disabled or the category is missing. Without the fallback
- * path, turning that variable on would fail a release *after* the packages
- * were already published to npm.
+ * **The "Latest" badge.** The publish matrix runs in parallel, so every
+ * per-package `gh release create` passes `--latest=false`; otherwise the badge
+ * lands on whichever job finished last. The summarize job then gives it, once,
+ * to the newest release this run created. Nothing fails when either half
+ * breaks; the repo's front page just points somewhere unhelpful.
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
@@ -29,53 +28,52 @@ const WORKFLOW = join(
   '.github/workflows/release.yml',
 );
 
-describe('release.yml — GitHub Release intents', () => {
-  let source: string;
+const LATEST_STEP = 'Mark the newest package release Latest';
+
+function stripComments(block: string): string {
+  return block
+    .split('\n')
+    .filter((line) => !/^\s*#/.test(line))
+    .join('\n');
+}
+
+function stepBody(source: string, name: string): string {
+  const start = source.indexOf(`- name: ${name}`);
+  const next = source.indexOf('- name:', start + 1);
+  return source.slice(start, next === -1 ? undefined : next);
+}
+
+describe('release.yml — GitHub Release shape', () => {
+  let code: string;
   beforeAll(() => {
-    source = readFileSync(WORKFLOW, 'utf-8');
+    code = stripComments(readFileSync(WORKFLOW, 'utf-8'));
   });
 
-  it('per-package releases decline the Latest badge', () => {
-    expect(source).toContain('--latest=false');
+  it('creates no cross-package rollup release', () => {
+    expect(code).not.toMatch(/release-\$\(git log/);
+    expect(code).not.toContain('rollup-notes.md');
+    expect(code).not.toContain('--discussion-category');
   });
 
-  it('every rollup release call claims it — not just most of them', () => {
-    const rollup = source.slice(
-      source.indexOf('Publish rollup GitHub Release'),
-    );
-
-    // Counting with a floor is not enough. The block has three call sites
-    // (edit, create-with-discussion, create-fallback), so a `>= 2` assertion
-    // passes with one silently downgraded — verified by sabotage: the first
-    // version of this test went green on a workflow I had deliberately broken.
-    //
-    // Comments have to go first. The block explains *why* per-package releases
-    // pass `--latest=false`, and a naive scan counts that prose as code — the
-    // second version of this test failed on a correct workflow for exactly
-    // that reason.
-    const code = rollup
-      .split('\n')
-      .filter((line) => !/^\s*#/.test(line))
-      .join('\n');
-
-    expect(code).not.toContain('--latest=false');
-
-    const calls = code.match(/gh release (?:create|edit)\b/g)?.length ?? 0;
-    const claims = code.match(/--latest\b(?!=)/g)?.length ?? 0;
-
-    expect(calls).toBeGreaterThan(0);
-    expect(claims).toBe(calls);
+  it('every per-package release create declines the badge', () => {
+    const publish = stepBody(code, 'Create GitHub Release');
+    const creates = publish.match(/gh release create\b/g)?.length ?? 0;
+    const declines = publish.match(/--latest=false\b/g)?.length ?? 0;
+    expect(creates).toBeGreaterThan(0);
+    expect(declines).toBe(creates);
   });
 
-  it('a missing discussion category cannot fail a published release', () => {
-    const rollup = source.slice(
-      source.indexOf('Publish rollup GitHub Release'),
-    );
-    expect(rollup).toContain('--discussion-category');
-    // The guard: only attempted when set, and a failure warns rather than
-    // aborting — the packages are already on npm by this point.
-    expect(rollup).toContain('if [ -n "${DISCUSSION_CATEGORY:-}" ]');
-    expect(rollup).toContain('::warning::');
-    expect(rollup).toMatch(/created=false/);
+  it('the summarize job hands the badge to one of this run’s package releases', () => {
+    const step = stepBody(code, LATEST_STEP);
+    expect(step).toContain(LATEST_STEP);
+    expect(step).toMatch(/gh release edit "\$newest" --latest(?!=)/);
+    expect(step).toContain('max_by(.createdAt)');
+    expect(step).toContain('needs.detect.outputs.matrix');
+  });
+
+  it('only a latest-dist-tag, non-dry-run release moves the badge', () => {
+    const step = stepBody(code, LATEST_STEP);
+    expect(step).toContain('!inputs.dry-run');
+    expect(step).toContain("(inputs.dist-tag || 'latest') == 'latest'");
   });
 });
