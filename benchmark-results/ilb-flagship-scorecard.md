@@ -18,14 +18,19 @@
 | `jwt/no-algorithm-none`                           | supabase  |  78K |  T1  | 36,810 ms |  1,156 ms |             0 |         — |         — |             — |           — |           — |               — |
 | `browser-security/no-postmessage-wildcard-origin` | next.js   | 131K |  T1  | 43,269 ms |    574 ms |             2 |         — |         — |             — |           — |           — |               — |
 | `react-features/hooks-exhaustive-deps`            | next.js   | 131K |  T1  | 44,471 ms |    607 ms |           134 | 46,332 ms |    682 ms |            53 |      435 ms |      446 ms |              22 |
-| `react-a11y/alt-text`                             | shadcn-ui | 100K |  T1  |    262 ms |    265 ms |             0 | 10,823 ms |    686 ms |             0 |      146 ms |      145 ms |               0 |
+| `react-a11y/alt-text`                             | shadcn-ui | 100K |  T1  |         — |         — |             — | 10,823 ms |    686 ms |             0 |      146 ms |      145 ms |               0 |
 | `vercel-ai-security/no-unsafe-output-handling`    | vercel-ai |  15K |  T2  |  8,590 ms |    528 ms |             1 |         — |         — |             — |           — |           — |               — |
+
+**Failed runs** (linter exited with an error; shown as — above and left out of every median):
+
+- `react-a11y/alt-text` on shadcn-ui: oursEslint cold exited 2
+- `react-a11y/alt-text` on shadcn-ui: oursEslint warm exited 2
 
 ## 2. Cache effectiveness (median across rules)
 
 | Stack                | Median cold | Median warm |         Δ | Cache benefit |
 | :------------------- | ----------: | ----------: | --------: | ------------: |
-| Ours (ESLint)        |   22,314 ms |      587 ms | 21,727 ms |           97% |
+| Ours (ESLint)        |   35,914 ms |      598 ms | 35,316 ms |           98% |
 | Peer (ESLint)        |   10,823 ms |      642 ms | 10,181 ms |           94% |
 | oxlint native (peer) |      435 ms |      446 ms |    -11 ms |           -3% |
 

@@ -50,9 +50,22 @@ export const STACK_LABELS = {
 export type Stack = keyof typeof STACK_LABELS;
 const STACKS = Object.keys(STACK_LABELS) as Stack[];
 
+interface RawPhase {
+  ms: number;
+  findingsCount: number;
+  exitCode?: number;
+  filesProcessed?: number;
+}
+
 interface RawRun {
-  cold?: { ms: number; findingsCount: number };
-  warm?: { ms: number; findingsCount: number };
+  cold?: RawPhase;
+  warm?: RawPhase;
+}
+
+export interface FailedRun {
+  stack: Stack;
+  phase: 'cold' | 'warm';
+  exitCode: number;
 }
 
 export interface FlagshipResultRow {
@@ -62,6 +75,8 @@ export interface FlagshipResultRow {
   tier: string;
   runs: Partial<Record<Stack, RawRun>>;
   skipped?: string;
+  /** Phases whose linter exited fatally; removed from `runs` by the parser. */
+  failed?: FailedRun[];
 }
 
 export interface FlagshipSnapshot {
@@ -89,6 +104,32 @@ export interface CacheBenefit {
 
 const STRICT_DATED = /^\d{4}-\d{2}-\d{2}\.json$/;
 
+/**
+ * ESLint and oxlint exit 0 (clean) or 1 (findings); 2+ is a crash or config
+ * error. Such a run linted nothing, so its timing is the time to fail and its
+ * zero findings are not a result. Left in, it read as a fast, clean scan and
+ * pulled the per-stack medians down.
+ */
+function dropFailedPhases(row: FlagshipResultRow): FlagshipResultRow {
+  const failed: FailedRun[] = [];
+  const runs: Partial<Record<Stack, RawRun>> = {};
+  for (const stack of STACKS) {
+    const run = row.runs?.[stack];
+    if (!run) continue;
+    const kept: RawRun = {};
+    for (const phase of ['cold', 'warm'] as const) {
+      const p = run[phase];
+      if (p && typeof p.exitCode === 'number' && p.exitCode >= 2) {
+        failed.push({ stack, phase, exitCode: p.exitCode });
+      } else if (p) {
+        kept[phase] = p;
+      }
+    }
+    runs[stack] = kept;
+  }
+  return failed.length > 0 ? { ...row, runs, failed } : row;
+}
+
 export function parseFlagshipSnapshot(path: string): FlagshipSnapshot {
   const raw = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
   return {
@@ -101,7 +142,9 @@ export function parseFlagshipSnapshot(path: string): FlagshipSnapshot {
     schema: String(raw['schema'] ?? ''),
     filename: path.split('/').pop() ?? path,
     oosDir: typeof raw['oosDir'] === 'string' ? raw['oosDir'] : undefined,
-    results: (raw['results'] as FlagshipResultRow[] | undefined) ?? [],
+    results: ((raw['results'] as FlagshipResultRow[] | undefined) ?? []).map(
+      dropFailedPhases,
+    ),
   };
 }
 

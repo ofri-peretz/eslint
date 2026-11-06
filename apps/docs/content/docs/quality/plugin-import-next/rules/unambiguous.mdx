@@ -17,7 +17,7 @@ Tools that follow the Unambiguous JavaScript Grammar decide between script and m
 
 Module syntax is: an `import` declaration (also type-only and side-effect), any `export` (also `export {}` and TS `export =`), TS `import x = require('m')` (TypeScript treats the file as a module), and `import.meta` (a syntax error in a script). A dynamic `import()` is legal in a script, so it does not disambiguate.
 
-Not reported: an empty file, a file with a `'use strict'` directive (its author stated a parse mode), and a file the config parses as a script or CommonJS, or a `.cjs` / `.cts` file (CommonJS by its extension).
+Not reported: an empty file, a file with a `'use strict'` directive (its author stated a parse mode), and a file the config parses as a script or CommonJS, or a `.cjs` / `.cts` file (CommonJS by its extension). oxlint infers the parse goal from the content, so there a file counts as not-a-module only by a CommonJS `sourceType` or its extension.
 
 ### ❌ Incorrect
 

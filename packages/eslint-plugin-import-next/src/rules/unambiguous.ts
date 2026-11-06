@@ -22,6 +22,21 @@ type MessageIds = 'ambiguous';
 
 type RuleOptions = [];
 
+/**
+ * Whether the config, not the parser, says this file is not a module.
+ *
+ * The oxlint CLI infers `sourceType` from the content, so a .js or .ts file
+ * with no module syntax reports "script" there: the file this rule flags. On
+ * oxlint, "script" therefore says nothing about intent and only "commonjs" is
+ * trusted. oxlint's `languageOptions` carries `env`, which ESLint's flat
+ * `languageOptions` rejects; that is how the two are told apart.
+ */
+function configuredAsScript(languageOptions: object): boolean {
+  const { sourceType } = languageOptions as { sourceType?: unknown };
+  if ('env' in languageOptions) return sourceType === 'commonjs';
+  return sourceType === 'script' || sourceType === 'commonjs';
+}
+
 export const unambiguous = createRule<RuleOptions, MessageIds>({
   name: 'unambiguous',
   meta: {
@@ -61,10 +76,8 @@ export const unambiguous = createRule<RuleOptions, MessageIds>({
         hasModuleSyntax = false;
         // A file the config parses as a script, or a `.cjs` / `.cts` file
         // (CommonJS by its extension), is not meant to be a module.
-        const sourceType = context.languageOptions?.sourceType;
         return (
-          sourceType !== 'script' &&
-          sourceType !== 'commonjs' &&
+          !configuredAsScript(context.languageOptions) &&
           !/\.c[jt]s$/.test(context.filename)
         );
       },
