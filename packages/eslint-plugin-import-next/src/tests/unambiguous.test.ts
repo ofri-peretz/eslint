@@ -1,8 +1,15 @@
 /**
  * Tests for unambiguous
  */
+import { createRequire } from 'node:module';
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { unambiguous } from '../rules/unambiguous';
+
+// The vitest alias sends `@typescript-eslint/rule-tester` to the dual-engine
+// tester; `require` reaches the real one, for a case only ESLint can express.
+const eslintOnly = createRequire(import.meta.url)(
+  '@typescript-eslint/rule-tester',
+) as { RuleTester: typeof RuleTester };
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -38,11 +45,6 @@ ruleTester.run('unambiguous', unambiguous, {
     },
 
     // Empty file - acceptable
-    {
-      name: 'a file the config parses as a script',
-      code: `const a = 1;`,
-      languageOptions: { sourceType: 'script' },
-    },
     {
       name: 'a file the config parses as CommonJS',
       code: `const a = require('./a');`,
@@ -117,4 +119,20 @@ ruleTester.run('unambiguous', unambiguous, {
       errors: [{ messageId: 'ambiguous' }],
     },
   ],
+});
+
+// oxlint infers sourceType from the content, so on oxlint a configured
+// "script" is indistinguishable from a file with no module syntax, and the
+// rule reports both (unambiguous.oxlint.test.ts). Only ESLint carries intent.
+new eslintOnly.RuleTester({
+  languageOptions: { ecmaVersion: 2022, sourceType: 'module' },
+}).run('unambiguous (ESLint config)', unambiguous, {
+  valid: [
+    {
+      name: 'a file the config parses as a script',
+      code: `const a = 1;`,
+      languageOptions: { sourceType: 'script' },
+    },
+  ],
+  invalid: [],
 });
