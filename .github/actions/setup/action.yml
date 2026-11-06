@@ -305,8 +305,15 @@ runs:
       with:
         team: ${{ env.TURBO_TEAM }}
 
+    # `continue-on-error` is load-bearing here too, for the same reason as the
+    # OIDC exchange above: this step only warms a best-effort cache. #1353 —
+    # GitHub's archive host failed one download of this pinned SHA ("An action
+    # could not be found at the URI ... Failed to download archive"), and with
+    # no continue-on-error that killed the whole job before Typecheck ever
+    # ran, turning main red for a cache miss rather than a real defect.
     - name: Turborepo remote cache (GitHub Actions backend — no token)
       if: inputs.turbo-remote-cache == 'true' && env.TURBO_TOKEN == ''
+      continue-on-error: true
       uses: rharkor/caching-for-turbo@2238fae6eb9a9936f92356f54cb3660200d105e7 # v2.5.1
 
     - name: Turborepo remote cache (Vercel — token present)
