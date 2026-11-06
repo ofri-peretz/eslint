@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-1. **Node.js 18+**
+1. **Node.js 22.13+**
 2. **Claude CLI** (for fresh code generation)
 
 ## Installation

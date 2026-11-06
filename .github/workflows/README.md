@@ -23,6 +23,7 @@ Every GitHub Actions workflow for this repo. Triggered by PRs, pushes to `main`,
 | :--- | :--- |
 | [`benchmark.yml`](./benchmark.yml) | ILB regression gate — fails PRs that regress any benchmark above the threshold |
 | [`eslint-version-matrix.yml`](./eslint-version-matrix.yml) | Runs ILB-Arena + ILB-Juliet across **ESLint v8 / v9 / v10** matrix per [`../../docs/ESLINT_VERSION_SUPPORT.md`](../../docs/ESLINT_VERSION_SUPPORT.md) |
+| [`node-version-matrix.yml`](./node-version-matrix.yml) | Nightly node-lane unit tests on **Node 22.13.0 and 26** — the `engines.node` floor and the newest LTS; PRs run 24 ([ADR 0010](../../docs/adr/0010-published-packages-require-node-22-13.md)) |
 | [`oxlint-parity.yml`](./oxlint-parity.yml) | Oxlint shim parity check |
 | [`sdk-compatibility.yml`](./sdk-compatibility.yml) | Weekly check against latest published SDK versions per [`../../docs/SDK_COMPATIBILITY_OVERVIEW.md`](../../docs/SDK_COMPATIBILITY_OVERVIEW.md) |
 

@@ -25,7 +25,7 @@
 <!-- Stack facts — what you need to know before you install. -->
 <p align="center">
   <a href="./docs/ESLINT_VERSION_SUPPORT.md"><img src="https://img.shields.io/badge/ESLint-8.40%20%7C%209%20%7C%2010-4B32C3?logo=eslint&logoColor=white" alt="ESLint 8.40 | 9 | 10" /></a>
-  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-%E2%89%A518-5FA04E?logo=nodedotjs&logoColor=white" alt="Node.js 18+" /></a>
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-%E2%89%A522.13-5FA04E?logo=nodedotjs&logoColor=white" alt="Node.js 22.13+" /></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.9%2B-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5.9+" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
   <a href="https://github.com/changesets/changesets"><img src="https://img.shields.io/badge/maintained%20with-changesets-176de3.svg" alt="Maintained with Changesets" /></a>
@@ -637,13 +637,12 @@ consecutive refreshes below the gate _and_ a supported successor exists. Full po
 
 ### Node.js
 
-| Node.js      | Status                                                              |
-| :----------- | :------------------------------------------------------------------ |
-| **24.x**     | ✅ Active development — the repo's `engines.node` pin, what CI runs |
-| **22.x LTS** | ✅ Supported — recommended for production                           |
-| **20.x LTS** | ✅ Supported — long-term-stable baseline                            |
-| **18.x**     | ✅ Supported (minimum) — every package's `engines.node: ">=18.0.0"` |
-| ≤ 17         | ❌ Unsupported (EOL upstream)                                       |
+| Node.js      | Status                                                                       |
+| :----------- | :--------------------------------------------------------------------------- |
+| **26.x LTS** | ✅ Supported — unit tests run on 26 nightly                                  |
+| **24.x LTS** | ✅ Active development — the repo's `.nvmrc`, what every PR runs              |
+| **22.x LTS** | ✅ Supported (minimum) — every package's `engines.node: ">=22.13.0"`, tested |
+| ≤ 20         | ❌ Unsupported (end-of-life upstream; 18 and 20 dropped in the next major)   |
 
 ---
 
