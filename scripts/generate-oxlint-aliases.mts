@@ -95,6 +95,8 @@ function renderManifest(short: string, plugin: PluginManifest): string {
     types: './index.d.ts',
     exports: {
       '.': { types: './index.d.ts', default: './index.js' },
+      // A require of the file itself worked before this map existed; keep it working.
+      './index.js': { types: './index.d.ts', default: './index.js' },
       './package.json': './package.json',
     },
     files: ['index.js', 'index.d.ts', 'README.md', 'LICENSE'],
