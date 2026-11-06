@@ -49,7 +49,7 @@ withCanonicalDocsUrls('plugin-gemini-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-gemini-security',
-    version: '1.1.0',
+    version: '2.0.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
