@@ -49,7 +49,7 @@
     "typescript"
   ],
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.13.0"
   },
   "dependencies": {
     "@interlace/eslint-devkit": "^1.21.0"

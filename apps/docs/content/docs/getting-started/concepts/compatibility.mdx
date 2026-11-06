@@ -40,15 +40,14 @@ Compatibility here covers three axes: **which lint engine** runs your rules (ESL
 
 ## Node.js compatibility
 
-| Node.js      | Status                 | Notes                                              |
-| :----------- | :--------------------- | :------------------------------------------------- |
-| **24.x**     | ✅ Active development  | What this repo's CI runs against                   |
-| **22.x LTS** | ✅ Supported           | Recommended for production users                   |
-| **20.x LTS** | ✅ Supported           | Long-term-stable baseline                          |
-| **18.x**     | ✅ Supported (minimum) | Lowest declared `engines.node` across all packages |
-| ≤ 17         | ❌ Unsupported         | EOL upstream                                       |
+| Node.js      | Status                 | Notes                                                 |
+| :----------- | :--------------------- | :---------------------------------------------------- |
+| **26.x LTS** | ✅ Supported           | Unit tests run on Node 26 nightly                     |
+| **24.x LTS** | ✅ Active development  | What every pull request's CI runs against             |
+| **22.x LTS** | ✅ Supported (minimum) | 22.13.0 and later; unit tests run on 22.13.0 nightly  |
+| ≤ 20         | ❌ Unsupported         | End-of-life upstream                                  |
 
-The 18.x floor is set by every package's `engines.node: ">=18.0.0"`. Bumping the floor uses the same gate logic as ESLint majors — a deliberate decision, not silent drift.
+The 22.13 floor is set by every package's `engines.node: ">=22.13.0"`. Node 18 and 20 are end-of-life, so raising the floor to 22.13 shipped as a major for every package — a deliberate decision, not silent drift ([ADR 0010](https://github.com/ofri-peretz/eslint/blob/main/docs/adr/0010-published-packages-require-node-22-13.md)).
 
 ---
 

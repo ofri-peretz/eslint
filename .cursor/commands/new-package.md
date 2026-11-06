@@ -31,7 +31,7 @@ Apply [`ARCHITECTURE.md` § "Plugin organization"](../../ARCHITECTURE.md#plugin-
   "types": "./src/index.d.ts",
   "publishConfig": { "access": "public" },
   "files": ["src/", "dist/", "README.md", "LICENSE", "CHANGELOG.md"],
-  "engines": { "node": ">=18.0.0" },
+  "engines": { "node": ">=22.13.0" },
   "peerDependencies": {
     "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"        // REQUIRED — see ESLINT_VERSION_SUPPORT.md
   },

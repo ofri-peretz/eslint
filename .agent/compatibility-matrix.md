@@ -8,7 +8,7 @@ This document defines the supported versions of key dependencies and runtime env
 
 | Dependency                   | Supported Versions               | Notes                                |
 | :--------------------------- | :------------------------------- | :----------------------------------- |
-| **Node.js**                  | `>=18.0.0`                       | LTS versions recommended             |
+| **Node.js**                  | `>=22.13.0`                      | Tested on 22.13, 24 and 26           |
 | **ESLint**                   | `^8.40.0 \|\| ^9.0.0 \|\| ^10.0.0` | Legacy + flat config + v10           |
 | **TypeScript**               | `^4.7.0 \|\| ^5.0.0`             | **Optional** - JS projects supported |
 | **@typescript-eslint/utils** | `^7.0.0 \|\| ^8.0.0`             | Core AST utilities                   |
@@ -21,11 +21,11 @@ This document defines the supported versions of key dependencies and runtime env
 ### Node.js
 
 ```
-Minimum: Node.js 18.0.0
-Recommended: Node.js 20.x LTS or 22.x LTS
+Minimum: Node.js 22.13.0
+Tested: Node.js 22.13.0, 24.x (CI default) and 26.x
 ```
 
-All plugins use ES2020 features and require Node.js 18+ for:
+All plugins use ES2020 features and require Node.js 22.13+ for:
 
 - Native ESM support
 - Built-in fetch API

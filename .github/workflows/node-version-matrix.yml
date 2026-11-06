@@ -1,0 +1,88 @@
+name: Node Version Matrix
+
+# Runs every node-lane package's unit tests on the Node versions the published
+# packages claim but no pull request runs: the `engines.node` floor (22.13.0)
+# and Node 26. Node 24 is the `.nvmrc` Node, and Quality (Full) already runs
+# the whole battery on it on every push to main, so it is not repeated here.
+# docs/adr/0010-published-packages-require-node-22-13.md.
+#
+# Every published package declares `engines.node: ">=22.13.0"`. A floor is only
+# a claim if the floor itself is what runs, so the cell is the exact patch, not
+# `22`. 26 is the newest LTS line.
+#
+# NOT run on pull requests, for the same reason as eslint-version-matrix.yml:
+# it is drift detection across runtimes, not per-change correctness, and eight
+# more jobs on every PR would queue behind the account's 20 concurrent slots.
+# Run it on demand with `workflow_dispatch` when a change plausibly depends on
+# the Node version (a new `node:` API, a native dependency, an `engines` edit).
+#
+# Each cell installs on its own Node instead of using ./.github/actions/setup:
+# that action restores a node_modules archive keyed on the lockfile alone, and
+# a native addon built on 24 (better-sqlite3) does not load on 22 or 26. No
+# Turborepo cache is restored either, so every test really runs on the cell's
+# Node rather than replaying a result recorded on 24.
+on:
+  schedule:
+    # Nightly 09:50 UTC — inside the 08:00-11:00 UTC maintenance window at both
+    # DST offsets, and on a minute no other schedule uses.
+    - cron: '50 9 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: node-matrix-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Unit Tests · node ${{ matrix.node }} · node lane (${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      # A break on one Node should not hide the other Node's result.
+      fail-fast: false
+      matrix:
+        node: ['22.13.0', '26']
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      # tsx, not `node`: 22.13 does not strip types from the sharder's .mts.
+      - name: Run shard ${{ matrix.shard }} of 4 on Node ${{ matrix.node }}
+        env:
+          CI_TEST_SHARD_ALL: '1'
+        run: |
+          node --version
+          npx --no tsx scripts/ci-test-shard.mts ${{ matrix.shard }} 4 --lane node
+
+  # Aggregate failure reporting (ADR 0006): a report inside the matrix cannot
+  # see a sibling cell that failed.
+  report:
+    name: 🚨 Report a scheduled failure
+    needs: [test]
+    if: >-
+      always() && github.event_name == 'schedule' &&
+      contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/report-failure
+        with:
+          title: 'Node version matrix is failing'
+          body: >-
+            A unit test fails on Node 22.13.0 or Node 26, which every published package's `engines.node` (">=22.13.0") claims. This matrix is the only check that runs those versions, so a break here is a support claim we can no longer make.
+          token: ${{ github.token }}

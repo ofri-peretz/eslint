@@ -150,7 +150,7 @@ At 20 files × 2 rules, compact grouped output is **<30% the size** of the defau
 - ESLint 8.x ✓
 - ESLint 9.x ✓
 - ESLint 10.x ✓
-- Node.js ≥18
+- Node.js ≥22.13
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) for the support matrix and how versions are added or removed.
 

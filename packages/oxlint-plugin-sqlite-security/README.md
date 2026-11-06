@@ -93,7 +93,7 @@ Install [`eslint-plugin-sqlite-security`](https://www.npmjs.com/package/eslint-p
 | :------ | :--------------------------------------------------------------- |
 | oxlint  | verified on `1.90.0`: CI loads every rule ID through `jsPlugins` |
 | Vite+   | `lint.jsPlugins` in `vite.config.ts`                             |
-| Node.js | `>=18.0.0`                                                       |
+| Node.js | `>=22.13.0`                                                      |
 
 ## Rules
 

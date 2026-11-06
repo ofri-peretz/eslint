@@ -87,7 +87,7 @@ npm install eslint-plugin-react-features --save-dev
 | Package | Version |
 | :--- | :--- |
 | ESLint | `^8.40.0 \|\| ^9.0.0 \|\| ^10.0.0` |
-| Node.js | `>=18.0.0` |
+| Node.js | `>=22.13.0` |
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 

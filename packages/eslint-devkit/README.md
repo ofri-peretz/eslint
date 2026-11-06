@@ -509,7 +509,7 @@ const rule = createRule<[], 'messageId'>({
 | TypeScript                | >=4.0.0                       |
 | @typescript-eslint/parser | >=6.0.0                       |
 | @typescript-eslint/utils  | ^8.0.0                        |
-| Node.js                   | >=18.0.0                      |
+| Node.js                   | >=22.13.0                     |
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) for current ecosystem share data and the rules that determine which majors are supported.
 
