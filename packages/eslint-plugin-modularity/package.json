@@ -3,6 +3,7 @@
   "version": "2.6.1",
   "description": "ESLint plugin for module architecture \u2014 enforces DDD value objects and anemic-model checks, naming, REST conventions, and utility isolation.",
   "type": "commonjs",
+  "sideEffects": false,
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
   "exports": {
@@ -74,10 +75,6 @@
     "eslint": {
       "optional": true
     }
-  },
-  "funding": {
-    "type": "github",
-    "url": "git+https://github.com/ofri-peretz/eslint.git"
   },
   "interlace": {
     "surface": {

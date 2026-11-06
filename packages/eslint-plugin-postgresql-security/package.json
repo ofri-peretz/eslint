@@ -3,6 +3,7 @@
   "version": "2.7.1",
   "description": "ESLint plugin for the pg PostgreSQL driver \u2014 detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL.",
   "type": "commonjs",
+  "sideEffects": false,
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
   "exports": {
@@ -93,10 +94,6 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsgo -p tsconfig.lib.json --noEmit"
-  },
-  "funding": {
-    "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
   },
   "interlace": {
     "surface": {

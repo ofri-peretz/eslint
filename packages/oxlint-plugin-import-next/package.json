@@ -3,8 +3,16 @@
   "version": "2.9.4",
   "description": "The import-next rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-import-next.",
   "type": "commonjs",
+  "sideEffects": false,
   "main": "./index.js",
   "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "index.js",
     "index.d.ts",
@@ -58,10 +66,6 @@
   "license": "MIT",
   "engines": {
     "node": ">=22.13.0"
-  },
-  "funding": {
-    "type": "github",
-    "url": "git+https://github.com/ofri-peretz/eslint.git"
   },
   "publishConfig": {
     "access": "public"

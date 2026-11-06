@@ -3,8 +3,16 @@
   "version": "3.6.1",
   "description": "The jwt-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-jwt-security.",
   "type": "commonjs",
+  "sideEffects": false,
   "main": "./index.js",
   "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "index.js",
     "index.d.ts",
@@ -65,10 +73,6 @@
   "license": "MIT",
   "engines": {
     "node": ">=22.13.0"
-  },
-  "funding": {
-    "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
   },
   "publishConfig": {
     "access": "public"
