@@ -2,19 +2,19 @@
 
 > Time to lint **shadcn-ui** (`apps/**/*.{js,jsx,ts,tsx,mjs,cjs}`) from scratch with each stack's recommended preset. Median of 5 runs after a discarded warmup.
 
-- **Generated**: 2026-11-02T20:47:21.897Z · **ESLint**: v9.39.4 · **oxlint**: 1.63.0 · **Node**: v24.22.1
+- **Generated**: 2026-11-06T17:08:23.514Z · **ESLint**: v9.39.4 · **oxlint**: 1.63.0 · **Node**: v24.22.2
 
 ```text
-          Interlace (ESLint)  ██████████████████████ 1.39s
-  Community plugins (ESLint)  ████████████████████████████████████████ 2.57s
-             oxlint (native)  █████████████ 840ms
+          Interlace (ESLint)  █████████████████████ 1.77s
+  Community plugins (ESLint)  ████████████████████████████████████████ 3.33s
+             oxlint (native)  █████████████ 1.05s
 ```
 
 | Stack                      | Cold (median) | Spread (min–max) | Warm (median) | Findings | Files |
 | :------------------------- | ------------: | ---------------: | ------------: | -------: | ----: |
-| Interlace (ESLint)         |         1.39s |      1.37s–1.49s |         763ms |      704 |  3676 |
-| Community plugins (ESLint) |         2.57s |      2.49s–2.61s |         849ms |       19 |  3676 |
-| oxlint (native)            |         840ms |      795ms–863ms |         825ms |    46705 |  3682 |
+| Interlace (ESLint)         |         1.77s |      1.76s–1.80s |         937ms |      704 |  3676 |
+| Community plugins (ESLint) |         3.33s |      3.27s–3.45s |         1.03s |       19 |  3676 |
+| oxlint (native)            |         1.05s |      1.04s–1.06s |         1.06s |    46705 |  3682 |
 
 ## How to read this
 

@@ -1,25 +1,25 @@
 # ILB-Flagship Scorecard
 
-> Per-rule × per-repo: latency (cached + uncached), findings, head-to-head overlap, and synthetic-corpus P/R/F1. Generated from `2026-11-02.json`.
+> Per-rule × per-repo: latency (cached + uncached), findings, head-to-head overlap, and synthetic-corpus P/R/F1. Generated from `2026-11-06.json`.
 
-- **Generated**: 2026-11-02T20:47:22.583Z · **Schema**: ilb-flagship/v2
-- **ESLint**: v9.39.4 · **oxlint**: 1.63.0 · **Node**: v24.22.1
+- **Generated**: 2026-11-06T17:08:24.274Z · **Schema**: ilb-flagship/v2
+- **ESLint**: v9.39.4 · **oxlint**: 1.63.0 · **Node**: v24.22.2
 - **OOS root**: `/home/runner/work/eslint/eslint/oos`
 
 ## 1. Latency (cold → warm) and findings count
 
 | Rule                                              | Repo      |   ⭐ | Tier | Ours cold | Ours warm | Ours findings | Comp cold | Comp warm | Comp findings | oxlint cold | oxlint warm | oxlint findings |
 | :------------------------------------------------ | :-------- | ---: | :--: | --------: | --------: | ------------: | --------: | --------: | ------------: | ----------: | ----------: | --------------: |
-| `import-next/no-cycle`                            | next.js   | 131K |  T1  | 42,366 ms |    598 ms |            12 | 61,193 ms |    642 ms |             0 |    1,084 ms |    1,109 ms |              92 |
-| `pg/no-unsafe-query`                              | supabase  |  78K |  T1  | 35,914 ms |  1,095 ms |             0 |         — |         — |             — |           — |           — |               — |
-| `secure-coding/no-hardcoded-credentials`          | vercel-ai |  15K |  T2  |  8,457 ms |    575 ms |           953 | 10,069 ms |    516 ms |           532 |           — |           — |               — |
-| `secure-coding/no-redos-vulnerable-regex`         | lodash    |  60K |  T1  |    305 ms |    254 ms |             1 |    361 ms |    280 ms |             0 |           — |           — |               — |
-| `mongodb-security/no-unsafe-query`                | payload   |  35K |  T2  |  8,713 ms |    651 ms |           298 |         — |         — |             — |           — |           — |               — |
-| `jwt/no-algorithm-none`                           | supabase  |  78K |  T1  | 36,810 ms |  1,156 ms |             0 |         — |         — |             — |           — |           — |               — |
-| `browser-security/no-postmessage-wildcard-origin` | next.js   | 131K |  T1  | 43,269 ms |    574 ms |             2 |         — |         — |             — |           — |           — |               — |
-| `react-features/hooks-exhaustive-deps`            | next.js   | 131K |  T1  | 44,471 ms |    607 ms |           134 | 46,332 ms |    682 ms |            53 |      435 ms |      446 ms |              22 |
-| `react-a11y/alt-text`                             | shadcn-ui | 100K |  T1  |         — |         — |             — | 10,823 ms |    686 ms |             0 |      146 ms |      145 ms |               0 |
-| `vercel-ai-security/no-unsafe-output-handling`    | vercel-ai |  15K |  T2  |  8,590 ms |    528 ms |             1 |         — |         — |             — |           — |           — |               — |
+| `import-next/no-cycle`                            | next.js   | 131K |  T1  | 50,621 ms |    757 ms |            12 | 66,206 ms |    754 ms |             0 |    1,307 ms |    1,324 ms |              92 |
+| `pg/no-unsafe-query`                              | supabase  |  78K |  T1  | 43,096 ms |  1,452 ms |             0 |         — |         — |             — |           — |           — |               — |
+| `secure-coding/no-hardcoded-credentials`          | vercel-ai |  15K |  T2  | 10,057 ms |    734 ms |           973 | 12,744 ms |    647 ms |           550 |           — |           — |               — |
+| `secure-coding/no-redos-vulnerable-regex`         | lodash    |  60K |  T1  |    384 ms |    301 ms |             1 |    421 ms |    339 ms |             0 |           — |           — |               — |
+| `mongodb-security/no-unsafe-query`                | payload   |  35K |  T2  | 10,365 ms |    801 ms |           299 |         — |         — |             — |           — |           — |               — |
+| `jwt/no-algorithm-none`                           | supabase  |  78K |  T1  | 41,893 ms |  1,383 ms |             0 |         — |         — |             — |           — |           — |               — |
+| `browser-security/no-postmessage-wildcard-origin` | next.js   | 131K |  T1  | 47,615 ms |    727 ms |             2 |         — |         — |             — |           — |           — |               — |
+| `react-features/hooks-exhaustive-deps`            | next.js   | 131K |  T1  | 49,400 ms |    735 ms |           147 | 49,177 ms |    813 ms |            53 |      525 ms |      500 ms |              22 |
+| `react-a11y/alt-text`                             | shadcn-ui | 100K |  T1  |         — |         — |             — | 12,267 ms |    833 ms |             0 |      170 ms |      177 ms |               0 |
+| `vercel-ai-security/no-unsafe-output-handling`    | vercel-ai |  15K |  T2  |  9,882 ms |    645 ms |             1 |         — |         — |             — |           — |           — |               — |
 
 **Failed runs** (linter exited with an error; shown as — above and left out of every median):
 
@@ -30,9 +30,9 @@
 
 | Stack                | Median cold | Median warm |         Δ | Cache benefit |
 | :------------------- | ----------: | ----------: | --------: | ------------: |
-| Ours (ESLint)        |   35,914 ms |      598 ms | 35,316 ms |           98% |
-| Peer (ESLint)        |   10,823 ms |      642 ms | 10,181 ms |           94% |
-| oxlint native (peer) |      435 ms |      446 ms |    -11 ms |           -3% |
+| Ours (ESLint)        |   41,893 ms |      735 ms | 41,158 ms |           98% |
+| Peer (ESLint)        |   12,744 ms |      754 ms | 11,990 ms |           94% |
+| oxlint native (peer) |      525 ms |      500 ms |     25 ms |            5% |
 
 ## 3. Synthetic corpus — true precision / recall / F1
 
@@ -55,16 +55,16 @@ Set ops on `(file, line)` keys between our cold-run findings and the competitor'
 | Rule                                      | Repo      | Both | Ours-only | Theirs-only |
 | :---------------------------------------- | :-------- | ---: | --------: | ----------: |
 | `import-next/no-cycle`                    | next.js   |    0 |        12 |           0 |
-| `secure-coding/no-hardcoded-credentials`  | vercel-ai |   48 |       905 |         472 |
+| `secure-coding/no-hardcoded-credentials`  | vercel-ai |   55 |       918 |         483 |
 | `secure-coding/no-redos-vulnerable-regex` | lodash    |    0 |         1 |           0 |
-| `react-features/hooks-exhaustive-deps`    | next.js   |    3 |       127 |          28 |
+| `react-features/hooks-exhaustive-deps`    | next.js   |    3 |       140 |          28 |
 | `react-a11y/alt-text`                     | shadcn-ui |    0 |         0 |           0 |
 
 ## 5. Where competitors beat us (theirs-only samples, top 5 each)
 
 Each row is a finding the competitor caught that ours missed. Triage to determine FN-on-our-side vs FP-on-theirs.
 
-### `secure-coding/no-hardcoded-credentials` on vercel-ai — 472 theirs-only finding(s)
+### `secure-coding/no-hardcoded-credentials` on vercel-ai — 483 theirs-only finding(s)
 
 | File                                                       | Line | Message                                                                                                                                                                                                  |
 | :--------------------------------------------------------- | ---: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -98,7 +98,7 @@ Each row is a finding ours caught that theirs missed. Triage same way — could 
 | `packages/next/src/client/with-router.tsx`                              |    8 | 🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 \| Circular dependency detected \| MEDIUM · Fix: Extract shared types to - export type with-routerId, routerId · - export interface with-routerSummary, routerSummary file \| https://en.wikipedia.org/wiki/Dependency_inversion_principle          |
 | `packages/next/src/server/app-render/console-async-storage-instance.ts` |    2 | 🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 \| Circular dependency detected \| MEDIUM · Fix: Extract shared types to - export type console-async-storage-instanceId, console-async-storage.externalId · - export interface console-async-storage-instanceSummary, console-async-storage.externa |
 
-### `secure-coding/no-hardcoded-credentials` on vercel-ai — 905 ours-only finding(s)
+### `secure-coding/no-hardcoded-credentials` on vercel-ai — 918 ours-only finding(s)
 
 | File                                      | Line | Message                                                                                                                                                                                                                                                  |
 | :---------------------------------------- | ---: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -114,7 +114,7 @@ Each row is a finding ours caught that theirs missed. Triage same way — could 
 | :---------------------- | ---: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `lib/main/build-doc.js` |   65 | 🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 \| Nested Repetition: Quantifiers nested within groups with quantifiers \| CRITICAL · Fix: Flatten nested quantifiers \| https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS |
 
-### `react-features/hooks-exhaustive-deps` on next.js — 127 ours-only finding(s)
+### `react-features/hooks-exhaustive-deps` on next.js — 140 ours-only finding(s)
 
 | File                                           | Line | Message                                                                                                                                                                                                                                                                                  |
 | :--------------------------------------------- | ---: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -126,7 +126,7 @@ Each row is a finding ours caught that theirs missed. Triage same way — could 
 
 ## 7. Green-field rule samples (no competitor)
 
-### `mongodb-security/no-unsafe-query` on payload — 298 finding(s) (showing top 5)
+### `mongodb-security/no-unsafe-query` on payload — 299 finding(s) (showing top 5)
 
 | File                                                                    | Line | Message                                                                                                                                                                                                                                                                                    |
 | :---------------------------------------------------------------------- | ---: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -147,7 +147,7 @@ Each row is a finding ours caught that theirs missed. Triage same way — could 
 
 | File                                       | Line | Message                                                                                                                                                                                                                               |
 | :----------------------------------------- | ---: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `packages/ai/src/transcribe/transcribe.ts` |  240 | 🔒 CWE-94 OWASP:A03-Injection CVSS:9.8 \| AI-generated content "{ · startEvent, · execute: async () => { · const result = await retry(() => · resolvedModel.doGenerate({ · audio: audioData, · abortSignal, · headers: headersWithUse |
+| `packages/ai/src/transcribe/transcribe.ts` |  270 | 🔒 CWE-94 OWASP:A03-Injection CVSS:9.8 \| AI-generated content "{ · startEvent, · execute: async () => { · const result = await retry(async () => { · const callOptions = { · abortSignal, · headers: headersWithUserAgent, · provide |
 
 ---
 
