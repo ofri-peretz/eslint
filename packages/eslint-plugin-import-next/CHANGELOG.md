@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.9.4
+
+### Patch Changes
+
+- **🐛 Fix** — `unambiguous` reports again on oxlint. oxlint infers `sourceType` from a file's content, so every file without module syntax reported `script`, and the rule skipped exactly the files it exists to flag. On oxlint only a `commonjs` sourceType (or a `.cjs` / `.cts` extension) now skips the file; on ESLint a configured `script` still does.
+
 ## 2.9.3
 
 ### Patch Changes
