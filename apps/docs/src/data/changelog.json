@@ -1,7 +1,7 @@
 {
-  "releaseCount": 976,
+  "releaseCount": 978,
   "packageCount": 66,
-  "entryCount": 2588,
+  "entryCount": 2590,
   "oldestYear": 2024,
   "releases": [
     {
@@ -22440,6 +22440,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.9.4",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`unambiguous` reports again on oxlint. oxlint infers `sourceType` from a file's content, so every file without module syntax reported `script`, and the rule skipped exactly the files it exists to flag. On oxlint only a `commonjs` sourceType (or a `.cjs` / `.cts` extension) now skips the file; on ESLint a configured `script` still does.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
@@ -22700,6 +22715,21 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-import-next",
+      "short": "oxlint-plugin-import-next",
+      "version": "2.9.4",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-import-next@2.9.4`",
           "pr": null
         }
       ]
