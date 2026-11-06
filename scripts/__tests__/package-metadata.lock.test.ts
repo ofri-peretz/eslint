@@ -20,6 +20,8 @@
  *   - `publishConfig.provenance`. release.yml publishes with `--provenance`
  *     under OIDC; in the manifest it would make an emergency local publish
  *     fail (see check-published-artifacts.ts).
+ *
+ * @provenBy {"file":"packages/eslint-plugin-jwt-security/package.json","find":"  \"sideEffects\": false,\n","replace":""}
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
