@@ -75,6 +75,7 @@ export interface EcosystemStats {
     published: number;
     security: number;
     quality: number;
+    react: number;
     framework: number;
   };
   rules: {
@@ -165,13 +166,16 @@ export async function getEcosystemStats(): Promise<EcosystemStats> {
   };
 
   // Calculate stats from actual data
-  const securityPlugins = pluginStats.plugins.filter(
+  // Published plugins only, so the category counts add up to the headline
+  // total (an unpublished plugin once made "22 Security + 8 Quality" = 30 of 31).
+  const publishedPlugins = pluginStats.plugins.filter((p) => p.published);
+  const securityPlugins = publishedPlugins.filter(
     (p) => p.category === 'security' || p.category === 'framework'
   );
-  const qualityPlugins = pluginStats.plugins.filter(
+  const qualityPlugins = publishedPlugins.filter(
     (p) => p.category === 'quality' || p.category === 'architecture'
   );
-  const publishedPlugins = pluginStats.plugins.filter((p) => p.published);
+  const reactPlugins = publishedPlugins.filter((p) => p.category === 'react');
 
   const securityRules = securityPlugins.reduce((sum, p) => sum + p.rules, 0);
   const qualityRules = qualityPlugins.reduce((sum, p) => sum + p.rules, 0);
@@ -206,6 +210,7 @@ export async function getEcosystemStats(): Promise<EcosystemStats> {
       published: publishedPlugins.length,
       security: securityPlugins.length,
       quality: qualityPlugins.length,
+      react: reactPlugins.length,
       framework: pluginStats.plugins.filter((p) => p.category === 'framework').length,
     },
     rules: {
@@ -230,6 +235,7 @@ export async function getDisplayStats(): Promise<{
   rules: number;
   securityPlugins: number;
   qualityPlugins: number;
+  reactPlugins: number;
   coverage: number;
 }> {
   const stats = await getEcosystemStats();
@@ -239,6 +245,7 @@ export async function getDisplayStats(): Promise<{
     rules: stats.rules.total,
     securityPlugins: stats.plugins.security,
     qualityPlugins: stats.plugins.quality,
+    reactPlugins: stats.plugins.react,
     coverage: stats.coverage.average,
   };
 }

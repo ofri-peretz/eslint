@@ -222,16 +222,19 @@ describe('stats-loader unit tests', () => {
 
       // Fallback is the committed plugin-stats.json, never hand-typed numbers
       expect(result.plugins.total).toBe(committed.allPluginsCount);
+      const published = committed.plugins.filter((p) => p.published);
       expect(result.plugins.security).toBe(
-        committed.plugins.filter((p) =>
-          ['security', 'framework'].includes(p.category),
-        ).length,
+        published.filter((p) => ['security', 'framework'].includes(p.category))
+          .length,
       );
       expect(result.plugins.quality).toBe(
-        committed.plugins.filter((p) =>
+        published.filter((p) =>
           ['quality', 'architecture'].includes(p.category),
         ).length,
       );
+      expect(
+        result.plugins.security + result.plugins.quality + result.plugins.react,
+      ).toBe(result.plugins.published);
       expect(result.rules.total).toBe(committed.totalRules);
       expect(result.coverage.average).toBe(85);
     });

@@ -70,8 +70,11 @@ describe('Homepage: plain language, no slogans', () => {
     expect(page).toContain(
       '<StatCard value={stats.plugins} label="Plugins" />',
     );
-    expect(page).toContain(
-      '<StatCard value={stats.rules} label="Rules" suffix="+" />',
-    );
+    expect(page).toContain('<StatCard value={stats.rules} label="Rules" />');
+  });
+
+  it('shows exact counts, never "495+" style plus signs', () => {
+    const page = read('src/app/(home)/page.tsx');
+    expect(page).not.toMatch(/suffix="\+"|\$\{stats\.(?:rules|plugins)\}\+/);
   });
 });
