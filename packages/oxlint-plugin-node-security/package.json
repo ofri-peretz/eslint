@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-node-security",
-  "version": "5.8.4",
+  "version": "6.0.0",
   "description": "The node-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-node-security.",
   "type": "commonjs",
   "main": "./index.js",
@@ -73,6 +73,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-node-security": "5.8.4"
+    "eslint-plugin-node-security": "6.0.0"
   }
 }
