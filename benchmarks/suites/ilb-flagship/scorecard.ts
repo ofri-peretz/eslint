@@ -64,6 +64,20 @@ for (const r of snapshot.results) {
   lines.push(`| \`${r.rule}\` | ${r.repo} | ${r.starsK}K | ${r.tier} | ${formatMs(o?.cold?.ms)} | ${formatMs(o?.warm?.ms)} | ${formatCount(o?.cold?.findingsCount)} | ${formatMs(c?.cold?.ms)} | ${formatMs(c?.warm?.ms)} | ${formatCount(c?.cold?.findingsCount)} | ${formatMs(x?.cold?.ms)} | ${formatMs(x?.warm?.ms)} | ${formatCount(x?.cold?.findingsCount)} |`);
 }
 
+const failedRuns = snapshot.results.flatMap((r) =>
+  (r.failed ?? []).map(
+    (f) => `- \`${r.rule}\` on ${r.repo}: ${f.stack} ${f.phase} exited ${f.exitCode}`,
+  ),
+);
+if (failedRuns.length > 0) {
+  lines.push('');
+  lines.push(
+    '**Failed runs** (linter exited with an error; shown as — above and left out of every median):',
+  );
+  lines.push('');
+  lines.push(...failedRuns);
+}
+
 // ── Section 2: Cache effectiveness ──────────────────────────────────────
 lines.push('');
 lines.push('## 2. Cache effectiveness (median across rules)');
