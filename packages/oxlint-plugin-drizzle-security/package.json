@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-drizzle-security",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "The drizzle-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-drizzle-security.",
   "type": "commonjs",
   "sideEffects": false,
@@ -74,6 +74,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-drizzle-security": "2.0.0"
+    "eslint-plugin-drizzle-security": "2.0.1"
   }
 }
