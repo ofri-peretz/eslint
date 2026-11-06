@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-postgresql-security",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "ESLint plugin for the pg PostgreSQL driver \u2014 detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL.",
   "type": "commonjs",
   "sideEffects": false,
@@ -82,7 +82,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^2.0.0"
+    "@interlace/eslint-devkit": "^2.0.1"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.68.0",

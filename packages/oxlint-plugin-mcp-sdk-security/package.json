@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-mcp-sdk-security",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "The mcp-sdk-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-mcp-sdk-security.",
   "type": "commonjs",
   "sideEffects": false,
@@ -72,6 +72,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-mcp-sdk-security": "2.0.0"
+    "eslint-plugin-mcp-sdk-security": "2.0.1"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-react-features",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "The react-features rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-react-features.",
   "type": "commonjs",
   "sideEffects": false,
@@ -68,6 +68,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-react-features": "2.0.0"
+    "eslint-plugin-react-features": "2.0.1"
   }
 }

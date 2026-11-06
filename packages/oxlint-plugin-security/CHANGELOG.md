@@ -5,6 +5,12 @@ All notable changes to `oxlint-plugin-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.9
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-node-security@6.0.1`, `eslint-plugin-secure-coding@6.0.1`
+
 ## 0.2.8
 
 ### Patch Changes

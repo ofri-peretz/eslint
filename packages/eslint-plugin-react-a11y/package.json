@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-react-a11y",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "ESLint plugin for React accessibility \u2014 WCAG 2.1 rules for ARIA, alt text, keyboard interaction, and focus management, with auto-fixes.",
   "type": "commonjs",
   "sideEffects": false,
@@ -81,7 +81,7 @@
     "node": ">=22.13.0"
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^2.0.0"
+    "@interlace/eslint-devkit": "^2.0.1"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.68.0",

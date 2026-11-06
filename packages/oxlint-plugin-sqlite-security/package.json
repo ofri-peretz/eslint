@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-sqlite-security",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "The sqlite-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-sqlite-security.",
   "type": "commonjs",
   "sideEffects": false,
@@ -73,6 +73,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-sqlite-security": "2.0.0"
+    "eslint-plugin-sqlite-security": "2.0.1"
   }
 }

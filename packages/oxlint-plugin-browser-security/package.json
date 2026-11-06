@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-browser-security",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "The browser-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-browser-security.",
   "type": "commonjs",
   "sideEffects": false,
@@ -80,6 +80,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-browser-security": "3.0.0"
+    "eslint-plugin-browser-security": "3.0.1"
   }
 }
