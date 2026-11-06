@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-mysql-security",
-  "version": "1.1.1",
+  "version": "2.0.0",
   "description": "The mysql-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-mysql-security.",
   "type": "commonjs",
   "sideEffects": false,
@@ -69,6 +69,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-mysql-security": "1.1.1"
+    "eslint-plugin-mysql-security": "2.0.0"
   }
 }

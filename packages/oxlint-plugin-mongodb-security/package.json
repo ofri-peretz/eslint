@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-mongodb-security",
-  "version": "9.2.2",
+  "version": "10.0.0",
   "description": "The mongodb-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-mongodb-security.",
   "type": "commonjs",
   "sideEffects": false,
@@ -77,6 +77,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-mongodb-security": "9.2.2"
+    "eslint-plugin-mongodb-security": "10.0.0"
   }
 }

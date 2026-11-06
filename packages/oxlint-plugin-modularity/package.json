@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-modularity",
-  "version": "2.6.1",
+  "version": "3.0.0",
   "description": "The modularity rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-modularity.",
   "type": "commonjs",
   "sideEffects": false,
@@ -61,6 +61,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-modularity": "2.6.1"
+    "eslint-plugin-modularity": "3.0.0"
   }
 }

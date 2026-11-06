@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-modularity",
-  "version": "2.6.1",
+  "version": "3.0.0",
   "description": "ESLint plugin for module architecture \u2014 enforces DDD value objects and anemic-model checks, naming, REST conventions, and utility isolation.",
   "type": "commonjs",
   "sideEffects": false,
@@ -60,7 +60,7 @@
     "node": ">=22.13.0"
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^1.21.0"
+    "@interlace/eslint-devkit": "^2.0.0"
   },
   "scripts": {
     "build": "tsx ../../scripts/build-package.ts",

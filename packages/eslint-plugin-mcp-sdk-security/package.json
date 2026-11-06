@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-mcp-sdk-security",
-  "version": "1.1.1",
+  "version": "2.0.0",
   "description": "ESLint plugin for Model Context Protocol (MCP) SDK security \u2014 follows tool arguments into shells, file paths, URLs, SQL and eval; catches credential leaks, untrusted text in model-facing descriptions and prompts, unhardened HTTP transports, shared stateless servers, predictable session ids, untrusted stdio commands and schema/handler drift.",
   "type": "commonjs",
   "sideEffects": false,
@@ -80,7 +80,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^1.21.0"
+    "@interlace/eslint-devkit": "^2.0.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.68.0",
