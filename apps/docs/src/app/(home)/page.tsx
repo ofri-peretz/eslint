@@ -119,9 +119,9 @@ export default async function HomePage() {
       >
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
           <StatCard value={stats.plugins} label="Plugins" />
-          <StatCard value={stats.rules} label="Rules" suffix="+" />
+          <StatCard value={stats.rules} label="Rules" />
           <StatCard value={stats.securityPlugins} label="Security" />
-          <StatCard value={stats.qualityPlugins} label="Quality" />
+          <StatCard value={stats.qualityPlugins + stats.reactPlugins} label="Quality & React" />
         </div>
       </Section>
 
@@ -406,7 +406,7 @@ export default async function HomePage() {
             // Numbers templated from `stats` so they don't drift when the
             // ecosystem grows. The previous hardcoded "100% OWASP Top 10
             // coverage" claim was removed — it has no CLAIMS.md row.
-            description={`${stats.rules}+ rules across ${stats.plugins}+ plugins, with head-to-head data refreshed weekly from real npm download share.`}
+            description={`${stats.rules} rules across ${stats.plugins} plugins, with head-to-head data refreshed weekly from real npm download share.`}
             href="/docs/getting-started/concepts/benchmarks"
           />
           <Card
