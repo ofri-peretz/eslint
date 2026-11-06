@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "description": "ESLint plugin for drizzle-orm \u2014 detects SQL injection in raw queries built with string concatenation or template literals.",
   "type": "commonjs",
+  "sideEffects": false,
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
   "exports": {
@@ -92,10 +93,6 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsgo -p tsconfig.lib.json --noEmit"
-  },
-  "funding": {
-    "type": "github",
-    "url": "git+https://github.com/ofri-peretz/eslint.git"
   },
   "interlace": {
     "surface": {

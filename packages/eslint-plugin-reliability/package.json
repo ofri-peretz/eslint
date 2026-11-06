@@ -3,6 +3,7 @@
   "version": "5.0.0",
   "description": "ESLint plugin for runtime reliability \u2014 enforces error handling, network timeouts, null checks, and safe type narrowing.",
   "type": "commonjs",
+  "sideEffects": false,
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
   "exports": {
@@ -80,10 +81,6 @@
     "eslint": {
       "optional": true
     }
-  },
-  "funding": {
-    "type": "github",
-    "url": "git+https://github.com/ofri-peretz/eslint.git"
   },
   "interlace": {
     "surface": {

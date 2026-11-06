@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "description": "ESLint plugin for Supabase security — catches the service_role key reaching client code, RPC called with a computed function name, auth results whose error is discarded, and storage buckets created public.",
   "type": "commonjs",
+  "sideEffects": false,
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
   "exports": {
@@ -87,10 +88,6 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsgo -p tsconfig.lib.json --noEmit"
-  },
-  "funding": {
-    "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
   },
   "interlace": {
     "surface": {

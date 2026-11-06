@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "description": "Toolkit for building ESLint plugins in TypeScript — AST helpers, type utilities, rule-creation scaffolding, security benchmarks, and SARIF output.",
   "type": "commonjs",
+  "sideEffects": false,
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
   "exports": {
@@ -100,9 +101,5 @@
     "oxc-resolver": "^11.24.2",
     "recheck": "^4.6.2",
     "typescript": "^5.0.0 || ^6.0.0"
-  },
-  "funding": {
-    "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
   }
 }

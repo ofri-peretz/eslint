@@ -168,7 +168,6 @@ const REQUIRED_METADATA: { field: string; get: (j: PkgJson) => unknown }[] = [
   { field: 'author', get: (j) => j.author },
   { field: 'homepage', get: (j) => j.homepage },
   { field: 'bugs', get: (j) => j.bugs },
-  { field: 'funding', get: (j) => j.funding },
   { field: 'engines', get: (j) => j.engines },
   // Points npm at the right subdirectory of the monorepo, which is what makes
   // "Repository" on the package page deep-link correctly.
@@ -183,7 +182,6 @@ type PkgJson = {
   author?: unknown;
   homepage?: unknown;
   bugs?: unknown;
-  funding?: unknown;
   engines?: unknown;
   repository?: { directory?: string };
 };

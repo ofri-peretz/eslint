@@ -53,7 +53,6 @@ interface PluginManifest {
   author?: unknown;
   license?: string;
   engines?: unknown;
-  funding?: unknown;
   private?: boolean;
 }
 
@@ -90,8 +89,16 @@ function renderManifest(short: string, plugin: PluginManifest): string {
     description: `The ${short} rules for oxlint and Vite+. Same rules and rule IDs as ${plugin.name}.`,
     ...(PRIVATE.has(short) ? { private: true } : {}),
     type: 'commonjs',
+    // index.js only re-exports the plugin; loading it changes nothing else.
+    sideEffects: false,
     main: './index.js',
     types: './index.d.ts',
+    exports: {
+      '.': { types: './index.d.ts', default: './index.js' },
+      // A require of the file itself worked before this map existed; keep it working.
+      './index.js': { types: './index.d.ts', default: './index.js' },
+      './package.json': './package.json',
+    },
     files: ['index.js', 'index.d.ts', 'README.md', 'LICENSE'],
     // release.yml publishes every package from its dist/; this produces it.
     scripts: { build: 'tsx ../../scripts/build-package.ts' },
@@ -105,7 +112,6 @@ function renderManifest(short: string, plugin: PluginManifest): string {
     author: plugin.author,
     license: plugin.license,
     engines: plugin.engines,
-    funding: plugin.funding,
     publishConfig: { access: 'public' },
     dependencies: { [plugin.name]: plugin.version },
   };

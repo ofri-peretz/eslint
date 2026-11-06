@@ -3,8 +3,20 @@
   "version": "6.0.0",
   "description": "The secure-coding rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-secure-coding.",
   "type": "commonjs",
+  "sideEffects": false,
   "main": "./index.js",
   "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./index.js": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "index.js",
     "index.d.ts",
@@ -63,10 +75,6 @@
   "license": "MIT",
   "engines": {
     "node": ">=22.13.0"
-  },
-  "funding": {
-    "type": "github",
-    "url": "git+https://github.com/ofri-peretz/eslint.git"
   },
   "publishConfig": {
     "access": "public"

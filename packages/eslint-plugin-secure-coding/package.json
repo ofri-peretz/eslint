@@ -3,6 +3,7 @@
   "version": "6.0.0",
   "description": "ESLint plugin for secure coding \u2014 detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs.",
   "type": "commonjs",
+  "sideEffects": false,
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
   "exports": {
@@ -100,10 +101,6 @@
   "peerDependencies": {
     "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0",
     "recheck": "^4.6.2"
-  },
-  "funding": {
-    "type": "github",
-    "url": "git+https://github.com/ofri-peretz/eslint.git"
   },
   "peerDependenciesMeta": {
     "eslint": {

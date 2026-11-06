@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "description": "ESLint plugin for Model Context Protocol (MCP) SDK security \u2014 follows tool arguments into shells, file paths, URLs, SQL and eval; catches credential leaks, untrusted text in model-facing descriptions and prompts, unhardened HTTP transports, shared stateless servers, predictable session ids, untrusted stdio commands and schema/handler drift.",
   "type": "commonjs",
+  "sideEffects": false,
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
   "exports": {
@@ -90,10 +91,6 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsgo -p tsconfig.lib.json --noEmit"
-  },
-  "funding": {
-    "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
   },
   "interlace": {
     "surface": {
