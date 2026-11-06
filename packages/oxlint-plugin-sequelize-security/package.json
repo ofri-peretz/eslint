@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-sequelize-security",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "The sequelize-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-sequelize-security.",
   "type": "commonjs",
   "sideEffects": false,
@@ -74,6 +74,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-sequelize-security": "2.0.0"
+    "eslint-plugin-sequelize-security": "2.0.1"
   }
 }

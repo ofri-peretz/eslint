@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-conventions",
-  "version": "7.0.0",
+  "version": "7.0.1",
   "description": "The conventions rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-conventions.",
   "type": "commonjs",
   "sideEffects": false,
@@ -66,6 +66,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-conventions": "7.0.0"
+    "eslint-plugin-conventions": "7.0.1"
   }
 }

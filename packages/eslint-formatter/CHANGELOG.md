@@ -38,6 +38,14 @@ Latest ILB-Formatter v1.1 numbers (240-cell suite, 6 shapes × 5 scales × 8 for
 
 All four modes score 4 / 4 on the FP/FN-attribution signal contract on every fixture in the suite.
 
+## 1.0.1
+
+### Patch Changes
+
+- **🧹 Chore** — complete the npm metadata in every package manifest
+
+  Every manifest declares `"sideEffects": false`; no module changes state outside itself when it is loaded, so a bundler may drop what it does not use. The `funding` field is removed: it pointed at the source repository, not at a funding page, so `npm fund` led nowhere useful. Each `oxlint-plugin-*` alias also declares an `exports` map (`.` and `./index.js`, each with `types` first, and `./package.json`); every path that resolved before still resolves. No code changes.
+
 ## 1.0.0
 
 ### Major Changes

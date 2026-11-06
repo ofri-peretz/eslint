@@ -5,6 +5,16 @@ All notable changes to `eslint-plugin-sequelize-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.0.1
+
+### Patch Changes
+
+- **🧹 Chore** — complete the npm metadata in every package manifest
+
+  Every manifest declares `"sideEffects": false`; no module changes state outside itself when it is loaded, so a bundler may drop what it does not use. The `funding` field is removed: it pointed at the source repository, not at a funding page, so `npm fund` led nowhere useful. Each `oxlint-plugin-*` alias also declares an `exports` map (`.` and `./index.js`, each with `types` first, and `./package.json`); every path that resolved before still resolves. No code changes.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`
+
 ## 2.0.0
 
 ### Major Changes

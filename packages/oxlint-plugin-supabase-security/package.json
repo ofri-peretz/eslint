@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-supabase-security",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "The supabase-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-supabase-security.",
   "type": "commonjs",
   "sideEffects": false,
@@ -69,6 +69,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-supabase-security": "2.0.0"
+    "eslint-plugin-supabase-security": "2.0.1"
   }
 }
