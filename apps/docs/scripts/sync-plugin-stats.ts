@@ -11,6 +11,7 @@
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { execFileSync } from 'child_process';
 import { writeJsonIfChanged } from './lib/write-json-if-changed.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -125,6 +126,42 @@ export function countRulesInPackage(packagePath: string) {
   if (block === undefined) return 0;
 
   return countRuleKeys(block);
+}
+
+/**
+ * The version a user can install — npm's, not the manifest's.
+ *
+ * The manifest is bumped by the Version Packages merge, before publish runs
+ * and whether or not it succeeds, so the catalog used to advertise a version
+ * `npm install` could not find. Offline (`next dev` on a plane), the last
+ * catalog's npm-confirmed version stands in; only a package that has never
+ * been recorded falls back to its manifest, and says so.
+ */
+function previousVersions(): Map<string, string> {
+  if (!existsSync(OUTPUT_FILE)) return new Map();
+  const previous = JSON.parse(readFileSync(OUTPUT_FILE, 'utf-8')) as {
+    plugins?: { name: string; version: string }[];
+  };
+  return new Map((previous.plugins ?? []).map((p) => [p.name, p.version]));
+}
+
+function publishedVersion(
+  name: string,
+  previous: Map<string, string>,
+  manifestVersion: string,
+): string {
+  try {
+    return execFileSync('npm', ['view', name, 'version'], {
+      encoding: 'utf-8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 15_000,
+    }).trim();
+  } catch {
+    const known = previous.get(name);
+    if (known) return known;
+    console.warn(`  ⚠ ${name}: npm unreachable and no recorded version — using the manifest's ${manifestVersion}`);
+    return manifestVersion;
+  }
 }
 
 export function getPackageMetadata(packagePath: string) {
@@ -248,6 +285,7 @@ async function main() {
     .filter(name => name.startsWith('eslint-plugin-'))
     .map(name => join(PACKAGES_DIR, name));
 
+  const previous = previousVersions();
   const stats = [];
   let totalRules = 0;
 
@@ -274,7 +312,9 @@ async function main() {
       rules: ruleCount,
       description: firstSentence(metadata.description),
       category,
-      version: metadata.version,
+      version: published
+        ? publishedVersion(metadata.name, previous, metadata.version)
+        : metadata.version,
       published,
     });
 

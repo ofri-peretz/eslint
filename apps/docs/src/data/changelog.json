@@ -1,9 +1,1349 @@
 {
-  "releaseCount": 1043,
+  "releaseCount": 1113,
   "packageCount": 66,
-  "entryCount": 2717,
+  "entryCount": 2810,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "oxlint-plugin-postgresql-security",
+      "short": "oxlint-plugin-postgresql-security",
+      "version": "3.0.2",
+      "date": "2026-11-07T10:03:26Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-postgresql-security@3.0.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-vercel-ai-security",
+      "short": "oxlint-plugin-vercel-ai-security",
+      "version": "3.0.2",
+      "date": "2026-11-07T10:03:02Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-vercel-ai-security@3.0.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "short": "eslint-plugin-postgresql-security",
+      "version": "3.0.2",
+      "date": "2026-11-07T10:01:48Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Internal: test property names with the null-safe `namesOneOf` instead of casting `propertyName(...)` to `string`. No rule reports differently; a computed key that names nothing is now visibly \"no name\" rather than a cast that happens to miss.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-vercel-ai-security",
+      "short": "eslint-plugin-vercel-ai-security",
+      "version": "3.0.2",
+      "date": "2026-11-07T10:01:48Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Internal: test property names with the null-safe `namesOneOf` instead of casting `propertyName(...)` to `string`. No rule reports differently; a computed key that names nothing is now visibly \"no name\" rather than a cast that happens to miss.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "2.0.2",
+      "date": "2026-11-07T10:01:46Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Internal: test property names with the null-safe `namesOneOf` instead of casting `propertyName(...)` to `string`. No rule reports differently; a computed key that names nothing is now visibly \"no name\" rather than a cast that happens to miss.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-gemini-security",
+      "short": "oxlint-plugin-gemini-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:18:21Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-gemini-security@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-vercel-ai-security",
+      "short": "oxlint-plugin-vercel-ai-security",
+      "version": "3.0.1",
+      "date": "2026-11-06T22:17:22Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-vercel-ai-security@3.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-typeorm-security",
+      "short": "oxlint-plugin-typeorm-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:17:20Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-typeorm-security@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-sequelize-security",
+      "short": "oxlint-plugin-sequelize-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:17:11Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-sequelize-security@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-supabase-security",
+      "short": "oxlint-plugin-supabase-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:17:07Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-supabase-security@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-sqlite-security",
+      "short": "oxlint-plugin-sqlite-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:17:06Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-sqlite-security@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-modularity",
+      "short": "oxlint-plugin-modularity",
+      "version": "3.0.1",
+      "date": "2026-11-06T22:17:00Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-modularity@3.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-secure-coding",
+      "short": "oxlint-plugin-secure-coding",
+      "version": "6.0.1",
+      "date": "2026-11-06T22:16:57Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@6.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-reliability",
+      "short": "oxlint-plugin-reliability",
+      "version": "5.0.1",
+      "date": "2026-11-06T22:16:55Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-reliability@5.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-mcp-sdk-security",
+      "short": "oxlint-plugin-mcp-sdk-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:16:46Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-mcp-sdk-security@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-react-features",
+      "short": "oxlint-plugin-react-features",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:16:40Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-react-features@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-nestjs-security",
+      "short": "oxlint-plugin-nestjs-security",
+      "version": "4.0.1",
+      "date": "2026-11-06T22:16:39Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-nestjs-security@4.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-react-a11y",
+      "short": "oxlint-plugin-react-a11y",
+      "version": "3.0.1",
+      "date": "2026-11-06T22:16:34Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-react-a11y@3.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-prisma-security",
+      "short": "oxlint-plugin-prisma-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:16:29Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-prisma-security@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-postgresql-security",
+      "short": "oxlint-plugin-postgresql-security",
+      "version": "3.0.1",
+      "date": "2026-11-06T22:16:22Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-postgresql-security@3.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-node-security",
+      "short": "oxlint-plugin-node-security",
+      "version": "6.0.1",
+      "date": "2026-11-06T22:16:14Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-operability",
+      "short": "oxlint-plugin-operability",
+      "version": "5.0.1",
+      "date": "2026-11-06T22:16:03Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-operability@5.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-mongodb-security",
+      "short": "oxlint-plugin-mongodb-security",
+      "version": "10.0.1",
+      "date": "2026-11-06T22:16:00Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-mongodb-security@10.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-openai-security",
+      "short": "oxlint-plugin-openai-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:15:51Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-openai-security@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-mysql-security",
+      "short": "oxlint-plugin-mysql-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:15:34Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-mysql-security@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-modernization",
+      "short": "oxlint-plugin-modernization",
+      "version": "4.0.1",
+      "date": "2026-11-06T22:15:21Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-modernization@4.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-maintainability",
+      "short": "oxlint-plugin-maintainability",
+      "version": "4.0.1",
+      "date": "2026-11-06T22:15:05Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-maintainability@4.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-knex-security",
+      "short": "oxlint-plugin-knex-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:15:04Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-knex-security@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-express-security",
+      "short": "oxlint-plugin-express-security",
+      "version": "4.0.1",
+      "date": "2026-11-06T22:15:03Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-express-security@4.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-jwt-security",
+      "short": "oxlint-plugin-jwt-security",
+      "version": "4.0.1",
+      "date": "2026-11-06T22:15:02Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-jwt-security@4.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-lambda-security",
+      "short": "oxlint-plugin-lambda-security",
+      "version": "3.0.1",
+      "date": "2026-11-06T22:15:01Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-lambda-security@3.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-import-next",
+      "short": "oxlint-plugin-import-next",
+      "version": "3.0.1",
+      "date": "2026-11-06T22:14:53Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-import-next@3.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-drizzle-security",
+      "short": "oxlint-plugin-drizzle-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:14:41Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-drizzle-security@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-conventions",
+      "short": "oxlint-plugin-conventions",
+      "version": "7.0.1",
+      "date": "2026-11-06T22:14:34Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-conventions@7.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-browser-security",
+      "short": "oxlint-plugin-browser-security",
+      "version": "3.0.1",
+      "date": "2026-11-06T22:14:33Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-browser-security@3.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-vercel-ai-security",
+      "short": "eslint-plugin-vercel-ai-security",
+      "version": "3.0.1",
+      "date": "2026-11-06T22:14:31Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-anthropic-security",
+      "short": "oxlint-plugin-anthropic-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:14:31Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-anthropic-security@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-typeorm-security",
+      "short": "eslint-plugin-typeorm-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:14:24Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-supabase-security",
+      "short": "eslint-plugin-supabase-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:14:17Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-sequelize-security",
+      "short": "eslint-plugin-sequelize-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:14:11Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-sqlite-security",
+      "short": "eslint-plugin-sqlite-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:14:10Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "6.0.1",
+      "date": "2026-11-06T22:14:06Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-a11y",
+      "short": "eslint-plugin-react-a11y",
+      "version": "3.0.1",
+      "date": "2026-11-06T22:14:03Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-reliability",
+      "short": "eslint-plugin-reliability",
+      "version": "5.0.1",
+      "date": "2026-11-06T22:14:03Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:14:02Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-prisma-security",
+      "short": "eslint-plugin-prisma-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:13:55Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "short": "eslint-plugin-postgresql-security",
+      "version": "3.0.1",
+      "date": "2026-11-06T22:13:45Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-operability",
+      "short": "eslint-plugin-operability",
+      "version": "5.0.1",
+      "date": "2026-11-06T22:13:42Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "6.0.1",
+      "date": "2026-11-06T22:13:41Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-openai-security",
+      "short": "eslint-plugin-openai-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:13:39Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-nestjs-security",
+      "short": "eslint-plugin-nestjs-security",
+      "version": "4.0.1",
+      "date": "2026-11-06T22:13:37Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mongodb-security",
+      "short": "eslint-plugin-mongodb-security",
+      "version": "10.0.1",
+      "date": "2026-11-06T22:13:33Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mysql-security",
+      "short": "eslint-plugin-mysql-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:13:33Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modularity",
+      "short": "eslint-plugin-modularity",
+      "version": "3.0.1",
+      "date": "2026-11-06T22:13:25Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "4.0.1",
+      "date": "2026-11-06T22:13:14Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mcp-sdk-security",
+      "short": "eslint-plugin-mcp-sdk-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:13:13Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
+      "version": "4.0.1",
+      "date": "2026-11-06T22:13:11Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-lambda-security",
+      "short": "eslint-plugin-lambda-security",
+      "version": "3.0.1",
+      "date": "2026-11-06T22:13:09Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modernization",
+      "short": "eslint-plugin-modernization",
+      "version": "4.0.1",
+      "date": "2026-11-06T22:13:09Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-knex-security",
+      "short": "eslint-plugin-knex-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:13:06Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "3.0.1",
+      "date": "2026-11-06T22:13:03Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-gemini-security",
+      "short": "eslint-plugin-gemini-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:12:58Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "3.0.1",
+      "date": "2026-11-06T22:12:41Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-express-security",
+      "short": "eslint-plugin-express-security",
+      "version": "4.0.1",
+      "date": "2026-11-06T22:12:41Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-anthropic-security",
+      "short": "eslint-plugin-anthropic-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:12:40Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-conventions",
+      "short": "eslint-plugin-conventions",
+      "version": "7.0.1",
+      "date": "2026-11-06T22:12:40Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-drizzle-security",
+      "short": "eslint-plugin-drizzle-security",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:12:39Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "2.0.1",
+      "date": "2026-11-06T22:12:37Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "oxlint-plugin-vercel-ai-security",
       "short": "oxlint-plugin-vercel-ai-security",
@@ -729,46 +2069,6 @@
       "short": "eslint-plugin-reliability",
       "version": "5.0.0",
       "date": "2026-11-06T19:48:33Z",
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "breaking",
-          "title": "requires Node 22.13 or later; Node 18 and 20 are end-of-life",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.0`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-react-features",
-      "short": "eslint-plugin-react-features",
-      "version": "2.0.0",
-      "date": "2026-11-06T19:48:32Z",
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "breaking",
-          "title": "requires Node 22.13 or later; Node 18 and 20 are end-of-life",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.0`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-react-a11y",
-      "short": "eslint-plugin-react-a11y",
-      "version": "3.0.0",
-      "date": "2026-11-06T19:48:31Z",
       "isApp": false,
       "isPrivate": false,
       "entries": [
@@ -17631,11 +18931,6 @@
           "kind": "other",
           "title": "Package name aligned to `@interlace/eslint-devkit` (formerly eslint-plugin-utils).",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -20121,11 +21416,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -20286,11 +21576,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -20381,11 +21666,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -20456,11 +21736,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -20486,11 +21761,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -20515,11 +21785,6 @@
         {
           "kind": "other",
           "title": "fix changelog header format across all packages",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -20568,7 +21833,7 @@
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.1.0",
-      "date": "2026-05-03T00:00:00Z",
+      "date": "2026-05-11T00:35:17-05:00",
       "isApp": false,
       "isPrivate": false,
       "entries": [
@@ -20626,11 +21891,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -20650,11 +21910,6 @@
         {
           "kind": "other",
           "title": "fix changelog header format across all packages",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -20676,11 +21931,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -20701,11 +21951,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -20725,11 +21970,6 @@
         {
           "kind": "other",
           "title": "fix changelog header format across all packages",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -20761,11 +22001,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -20785,11 +22020,6 @@
         {
           "kind": "other",
           "title": "fix changelog header format across all packages",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -20811,11 +22041,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -20835,11 +22060,6 @@
         {
           "kind": "other",
           "title": "fix changelog header format across all packages",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -20861,11 +22081,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -20880,11 +22095,6 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -20901,11 +22111,6 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -20920,11 +22125,6 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -20941,11 +22141,6 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -20960,11 +22155,6 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -20981,11 +22171,6 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -21000,11 +22185,6 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -21021,11 +22201,6 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -21040,11 +22215,6 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -21071,11 +22241,6 @@
           "kind": "other",
           "title": "**rules:** Some previously flagged patterns are now correctly allowed",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -21090,11 +22255,6 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -21111,11 +22271,6 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -21130,11 +22285,6 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -21151,11 +22301,6 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -21170,11 +22315,6 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -21191,11 +22331,6 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -21211,11 +22346,6 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -21230,11 +22360,6 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -21575,11 +22700,6 @@
         {
           "kind": "other",
           "title": "align main README with Interlace branding",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22455,6 +23575,46 @@
       ]
     },
     {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "2.0.0",
+      "date": "2025-12-30T22:53:31Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "requires Node 22.13 or later; Node 18 and 20 are end-of-life",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-a11y",
+      "short": "eslint-plugin-react-a11y",
+      "version": "3.0.0",
+      "date": "2025-12-30T22:53:07Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "requires Node 22.13 or later; Node 18 and 20 are end-of-life",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-import-next",
       "short": "eslint-plugin-import-next",
       "version": "2.0.0",
@@ -23276,11 +24436,6 @@
           "kind": "other",
           "title": "Documentation improvements.",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -23306,11 +24461,6 @@
           "kind": "other",
           "title": "Added vitest to peerDependencies.",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -23325,11 +24475,6 @@
         {
           "kind": "other",
           "title": "Config and dependency-check adjustments.",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -23712,6 +24857,21 @@
     {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
+      "version": "1.0.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-formatter",
+      "short": "eslint-formatter",
       "version": "1.0.0",
       "date": null,
       "isApp": false,
@@ -23735,6 +24895,21 @@
         {
           "kind": "feature",
           "title": "the formatter is published. `eslint -f @interlace/eslint-formatter` emits ~408 tokens where `stylish` emits ~104,483, at the same measured signal score.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-formatter-sarif",
+      "short": "eslint-formatter-sarif",
+      "version": "1.0.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "complete the npm metadata in every package manifest",
           "pr": null
         }
       ]
@@ -23866,11 +25041,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -23990,11 +25160,6 @@
         {
           "kind": "other",
           "title": "fix changelog header format across all packages",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
