@@ -1,16 +1,16 @@
 {
   "$comment": "Written by drop-in.mjs --write. The README parity line is rendered from this file.",
-  "measuredOn": "2026-10-25",
-  "incumbent": "eslint-plugin-security@4.2.0",
-  "cases": 219,
+  "measuredOn": "2026-11-07",
+  "incumbent": "eslint-plugin-security@4.2.1",
+  "cases": 223,
   "liveInvalid": {
-    "detected": 104,
-    "total": 104
+    "detected": 106,
+    "total": 106
   },
   "validFindings": {
     "total": 12,
     "declared": 12,
-    "of": 112
+    "of": 114
   },
   "enginesAgree": true,
   "gate": "green"

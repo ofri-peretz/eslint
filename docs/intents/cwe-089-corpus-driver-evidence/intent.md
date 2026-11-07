@@ -3,7 +3,7 @@
 > Stage 1 artifact of the AI-native SDLC. Opened while carrying #414's rename into
 > the flagship benchmark, which made a long-standing false number visible.
 
-**Status:** review · **Opened:** 2026-08-26 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-08-26 · **Shipped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 ---
 
@@ -83,3 +83,30 @@ template-literal.js    pg-import=NO
 The evidence-gated rule therefore cannot fire on any of them, and the flagship
 benchmark scores this corpus at zero for a reason that has nothing to do with
 detection quality.
+
+## Closed — 2026-11-07
+
+Shipped. The open question is decided as **add the driver import to the
+existing fixtures**: `const { Pool } = require('pg'); const db = new Pool();`
+in all six of the original files. That is what every real node-postgres file
+does, and the competitor fixtures #1201 added already did it. The fixtures stay
+`@author`-ed (they predate ADR 0002). The edit adds the evidence a real call
+site carries and changes no query.
+
+Evidence against the success criteria:
+
+- `pg/no-unsafe-query` on `benchmarks/corpus/CWE-089/` with the shipped rule
+  (ESLint API, built `eslint-plugin-postgresql-security`): vulnerable 1/4 → 4/4,
+  safe 0/4 flagged before and after. The smoke assertion was not touched;
+  the scorer will read recall 100% and F1 1.00.
+- Every CWE corpus was checked for the same shape: a call on an undeclared
+  receiver with no import or require. Only CWE-943 has it (4 files, bare `db`).
+  `mongodb-security/no-unsafe-query` does not gate on a driver import and fires
+  on `user-input-in-find.js` as it is. Its miss on `where-string.js` (`$where`
+  through a template literal) is a known detection miss, already published as
+  such in the "ground truth" article, not a missing-evidence artefact.
+- Published numbers: the 2026-11-06 flagship scorecard published CWE-089 at
+  recall 25%, F1 0.40 (TP 1, FN 3). The weekly benchmark regenerates
+  `ilb-flagship-scorecard.md` from the corpus, so the next run replaces it.
+  No blog article cites a pg CWE-089 figure (the blog repo was grepped), so
+  nothing else needs re-deriving.

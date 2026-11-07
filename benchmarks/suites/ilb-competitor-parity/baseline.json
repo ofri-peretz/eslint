@@ -1,17 +1,17 @@
 {
   "source": {
     "package": "eslint-plugin-security",
-    "version": "4.2.0",
+    "version": "4.2.1",
     "license": "Apache-2.0",
     "upstream": "https://github.com/eslint-community/eslint-plugin-security",
     "extractedFrom": "test/rules/*.js via RuleTester capture",
-    "extractedOn": "2026-10-25"
+    "extractedOn": "2026-11-07"
   },
   "totals": {
-    "detected": 102,
-    "invalid": 107,
+    "detected": 104,
+    "invalid": 109,
     "firedOnValid": 15,
-    "valid": 112
+    "valid": 114
   },
   "summary": {
     "detect-bidi-characters": {
@@ -84,10 +84,10 @@
       "rules": ["node-security/detect-non-literal-fs-filename"]
     },
     "detect-non-literal-regexp": {
-      "detected": 1,
-      "invalid": 1,
+      "detected": 2,
+      "invalid": 2,
       "firedOnValid": 0,
-      "valid": 2,
+      "valid": 3,
       "rules": ["secure-coding/detect-non-literal-regexp"]
     },
     "detect-non-literal-require": {
@@ -122,10 +122,10 @@
       "rules": []
     },
     "detect-unsafe-regex": {
-      "detected": 1,
-      "invalid": 2,
+      "detected": 2,
+      "invalid": 3,
       "firedOnValid": 0,
-      "valid": 2,
+      "valid": 3,
       "rules": ["secure-coding/no-redos-vulnerable-regex"]
     }
   }
