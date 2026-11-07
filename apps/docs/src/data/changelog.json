@@ -5,6 +5,66 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "oxlint-plugin-node-security",
+      "short": "oxlint-plugin-node-security",
+      "version": "6.0.2",
+      "date": "2026-11-07T12:30:06Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.0.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "6.0.2",
+      "date": "2026-11-07T12:28:50Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-non-literal-fs-filename` honours `/* global NAME */` declarations under oxlint too. A path built from a declared global (configuration the environment provides) was silent under ESLint and reported under oxlint, whose scope manager does not read the comment.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-secure-coding",
+      "short": "oxlint-plugin-secure-coding",
+      "version": "6.0.2",
+      "date": "2026-11-07T12:26:37Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@6.0.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "6.0.2",
+      "date": "2026-11-07T12:24:59Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` puts a copy loop's single finding on its first write in source order. It walked the loop body in parser property order, so an `if … else` copy reported its `else` write under ESLint and its `then` write under oxlint.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "oxlint-plugin-postgresql-security",
       "short": "oxlint-plugin-postgresql-security",
       "version": "3.0.2",
@@ -25045,21 +25105,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-node-security",
-      "short": "eslint-plugin-node-security",
-      "version": "6.0.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`detect-non-literal-fs-filename` honours `/* global NAME */` declarations under oxlint too. A path built from a declared global (configuration the environment provides) was silent under ESLint and reported under oxlint, whose scope manager does not read the comment.",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
@@ -25180,21 +25225,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-secure-coding",
-      "short": "eslint-plugin-secure-coding",
-      "version": "6.0.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`detect-object-injection` puts a copy loop's single finding on its first write in source order. It walked the loop body in parser property order, so an `if … else` copy reported its `else` write under ESLint and its `then` write under oxlint.",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-supabase-security",
       "short": "eslint-plugin-supabase-security",
       "version": "1.0.0",
@@ -25210,36 +25240,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-node-security",
-      "short": "oxlint-plugin-node-security",
-      "version": "6.0.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.0.2`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-secure-coding",
-      "short": "oxlint-plugin-secure-coding",
-      "version": "6.0.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@6.0.2`",
           "pr": null
         }
       ]
