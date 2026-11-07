@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.0.2
+
+### Patch Changes
+
+- **🐛 Fix** — `detect-non-literal-fs-filename` honours `/* global NAME */` declarations under oxlint too. A path built from a declared global (configuration the environment provides) was silent under ESLint and reported under oxlint, whose scope manager does not read the comment.
+
 ## 6.0.1
 
 ### Patch Changes
