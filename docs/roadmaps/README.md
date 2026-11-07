@@ -5,6 +5,7 @@ Multi-quarter roadmaps for major rule families. These complement [`../../ROADMAP
 ## Current roadmaps
 
 - [`owasp-agentic-eslint-roadmap.md`](./owasp-agentic-eslint-roadmap.md) — full ESLint rule plan for **OWASP Top 10 for Agentic Applications 2026**. Drives `eslint-plugin-vercel-ai-security` and adjacent agentic rules.
+- [`intents-closing-list-2026-11.md`](./intents-closing-list-2026-11.md) — audit of every `docs/intents/` intent and the batches that close each to `shipped` or `dropped`.
 - [`owasp-llm-2025-eslint-rules-roadmap.md`](./owasp-llm-2025-eslint-rules-roadmap.md) — rule plan for **OWASP Top 10 for LLM Applications 2025**.
 
 ## Conventions
