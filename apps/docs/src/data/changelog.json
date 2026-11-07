@@ -1,9 +1,39 @@
 {
-  "releaseCount": 1117,
+  "releaseCount": 1119,
   "packageCount": 66,
-  "entryCount": 2814,
+  "entryCount": 2816,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "oxlint-plugin-node-security",
+      "short": "oxlint-plugin-node-security",
+      "version": "6.0.3",
+      "date": "2026-11-07T13:38:13Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.0.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "6.0.3",
+      "date": "2026-11-07T13:37:03Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-non-literal-fs-filename` reads `/* global */` directives the way ESLint does",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "oxlint-plugin-node-security",
       "short": "oxlint-plugin-node-security",
