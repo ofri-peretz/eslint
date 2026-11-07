@@ -4,7 +4,7 @@
  * MIT license that can be found in the LICENSE file.
  */
 
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '../types/estree/utils/index';
 // AST_NODE_TYPES comes from the local shim, not upstream: it is an enum, so a
 // value import of it would emit a runtime `require('@typescript-eslint/utils')`
 // into the published output — an optional peer npm does not install. The type

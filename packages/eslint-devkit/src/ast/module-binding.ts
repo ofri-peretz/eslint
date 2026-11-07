@@ -28,7 +28,7 @@
  * // => { module: 'fs', path: ['promises', 'readFile'] }
  * ```
  */
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESLint, TSESTree } from '../types/estree/utils/index';
 import { objectKeyName, propertyName } from './spellings';
 // The shim, not the package: `@typescript-eslint/utils` is an OPTIONAL peer,
 // so a runtime import of it makes devkit unloadable wherever the consumer

@@ -26,7 +26,7 @@
  *     the linter cannot read — is `'unknown'`, and the caller decides how much
  *     the call's own shape has to prove before it reports.
  */
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '../types/estree/utils/index';
 import { AST_NODE_TYPES } from '../ast-node-types';
 import { propertyName } from '../ast/spellings';
 import { unwrapTypeSyntax } from '../ast/type-syntax';

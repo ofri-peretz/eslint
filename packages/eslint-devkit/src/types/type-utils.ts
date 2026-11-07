@@ -10,7 +10,7 @@
  * Inspired by typescript-eslint's type-utils
  * Provides utilities for type-aware linting rules
  */
-import type { ParserServices, TSESTree } from '@typescript-eslint/utils';
+import type { ParserServices, TSESTree } from './estree/utils/index';
 import type * as ts from 'typescript';
 
 /**

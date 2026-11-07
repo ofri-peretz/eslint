@@ -35,7 +35,7 @@
  * `browser-security`.
  */
 
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESLint, TSESTree } from '../types/estree/utils/index';
 import { createRule } from './rule-creator';
 import { formatLLMMessage, MessageIcons } from '../messaging';
 import {

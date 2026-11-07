@@ -10,7 +10,6 @@ export interface CacheLike<Key, Value> {
  * A map with key-level expiration.
  */
 export declare class ExpiringCache<Key, Value> implements CacheLike<Key, Value> {
-    #private;
     constructor(cacheDurationSeconds: CacheDurationSeconds);
     clear(): void;
     get(key: Key): Value | undefined;

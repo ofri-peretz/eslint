@@ -50,7 +50,7 @@ import { RuleCreator } from './rule-creator';
 // does not install. See sql-injection-rule.ts for the full note.
 import { AST_NODE_TYPES } from '../ast-node-types';
 import { propertyName } from '../ast/spellings';
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESLint, TSESTree } from '../types/estree/utils/index';
 import { formatLLMMessage, MessageIcons } from '../messaging';
 import { unwrapTypeSyntax } from '../ast/type-syntax';
 import { isTestFilePath } from './rule-creator';
@@ -276,10 +276,20 @@ export function tagName(tag: TSESTree.Node): string | undefined {
   return undefined;
 }
 
+/**
+ * The rule createRawIdentifierRule returns, by a name plugins can reach through
+ * `@interlace/eslint-devkit`: a plugin's declarations then refer to this
+ * alias instead of to devkit's vendored typescript-eslint types.
+ */
+export type RawIdentifierRule = TSESLint.RuleModule<
+  RawIdentifierMessageIds,
+  []
+>;
+
 /** Build a CWE-89 identifier-interpolation rule for one driver's template API. */
 export function createRawIdentifierRule(
   config: RawIdentifierRuleConfig,
-): TSESLint.RuleModule<RawIdentifierMessageIds, []> {
+): RawIdentifierRule {
   const tags = new Set([...config.tags, ...(config.driverTags ?? [])]);
   const driverTags = new Set(config.driverTags ?? []);
 

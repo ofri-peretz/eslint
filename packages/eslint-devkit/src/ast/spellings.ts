@@ -35,7 +35,7 @@
  * node type and say why in a comment — that is a position, and positions are
  * fine. Silence by omission is not.
  */
-import type { TSESTree, TSESLint } from '@typescript-eslint/utils';
+import type { TSESTree, TSESLint } from '../types/estree/utils/index';
 // The shim, not the package: `@typescript-eslint/utils` is an OPTIONAL peer,
 // so a runtime import of it makes devkit unloadable wherever the consumer did
 // not install it. Only the type import above may name the package.

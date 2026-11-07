@@ -41,7 +41,7 @@
 
 import { AST_NODE_TYPES } from '../ast-node-types';
 import { propertyName } from '../ast/spellings';
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESLint, TSESTree } from '../types/estree/utils/index';
 
 /** A source whose messages are attacker-influenced, and which owns its own rule. */
 export type MessageSource =

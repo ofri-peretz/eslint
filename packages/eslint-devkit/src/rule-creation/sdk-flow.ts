@@ -33,7 +33,7 @@
  * file it cannot see, or a parameter.
  */
 
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESLint, TSESTree } from '../types/estree/utils/index';
 import { AST_NODE_TYPES } from '../ast-node-types';
 import { unwrapTypeSyntax } from '../ast/type-syntax';
 import { objectKeyName, propertyName } from '../ast/spellings';
