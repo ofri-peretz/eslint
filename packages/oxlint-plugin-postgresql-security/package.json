@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-postgresql-security",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "The postgresql-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-postgresql-security.",
   "type": "commonjs",
   "sideEffects": false,
@@ -74,6 +74,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-postgresql-security": "3.0.1"
+    "eslint-plugin-postgresql-security": "3.0.2"
   }
 }

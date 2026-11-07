@@ -47,7 +47,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-node-security` | 6.0.1 | `node-security/` | — | `plugin-node-security` | security | `node` | ✅ | ✅ | ✅ |
 | `eslint-plugin-openai-security` | 2.0.1 | `openai-security/` | — | `plugin-openai-security` | security | `openai` | ✅ | ✅ | ✅ |
 | `eslint-plugin-operability` | 5.0.1 | `operability/` | — | `plugin-operability` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-postgresql-security` | 3.0.1 | `postgresql-security/` | `pg/` | `plugin-postgresql-security` | security | `postgresql` | ✅ | ✅ | ✅ |
+| `eslint-plugin-postgresql-security` | 3.0.2 | `postgresql-security/` | `pg/` | `plugin-postgresql-security` | security | `postgresql` | ✅ | ✅ | ✅ |
 | `eslint-plugin-prisma-security` | 2.0.1 | `prisma-security/` | — | `plugin-prisma-security` | security | `prisma` | ✅ | ✅ | ✅ |
 | `eslint-plugin-react-a11y` | 3.0.1 | `react-a11y/` | — | `plugin-react-a11y` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-react-features` | 2.0.1 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
@@ -57,7 +57,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-sqlite-security` | 2.0.1 | `sqlite-security/` | — | `plugin-sqlite-security` | security | `sqlite` | ✅ | ✅ | ✅ |
 | `eslint-plugin-supabase-security` | 2.0.1 | `supabase-security/` | — | `plugin-supabase-security` | security | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-typeorm-security` | 2.0.1 | `typeorm-security/` | — | `plugin-typeorm-security` | security | `typeorm` | ✅ | ✅ | ✅ |
-| `eslint-plugin-vercel-ai-security` | 3.0.1 | `vercel-ai-security/` | — | `plugin-vercel-ai-security` | security | `vercel` | ✅ | ✅ | ✅ |
+| `eslint-plugin-vercel-ai-security` | 3.0.2 | `vercel-ai-security/` | — | `plugin-vercel-ai-security` | security | `vercel` | ✅ | ✅ | ✅ |
 
 **Unregistered directories:** `eslint-plugin-cli-floor`
 
