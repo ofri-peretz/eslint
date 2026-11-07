@@ -3063,13 +3063,15 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           });
           return;
         }
-        for (const key of Object.keys(n)) {
+        // Visitor keys, not `Object.keys(n)`: the finding goes on the FIRST
+        // write in source order, and property order is the parser's business.
+        // typescript-estree lists an IfStatement as `alternate, consequent,
+        // test`, oxlint's AST does not, so the same loop reported its `else`
+        // write under ESLint and its `then` write under oxlint.
+        for (const key of sourceCode.visitorKeys[n.type] as readonly string[]) {
           const child = (n as unknown as Record<string, unknown>)[key];
-          if (key === 'parent' || child === null || typeof child !== 'object')
-            continue;
           for (const c of Array.isArray(child) ? child : [child]) {
-            if (c && typeof (c as TSESTree.Node).type === 'string')
-              walk(c as TSESTree.Node);
+            if (c) walk(c as TSESTree.Node);
           }
         }
       };

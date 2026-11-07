@@ -40,10 +40,12 @@ jobs:
   watch:
     name: 🎛️ Watch control bands
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 10 → 15: the CI wall-clock reading adds ~1 min of Actions API calls.
+    timeout-minutes: 15
     permissions:
       contents: write # commit the appended series + the intent branch
       pull-requests: write # open the intent PR
+      actions: read # list workflow runs for the CI wall-clock reading
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -63,6 +65,14 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      # CI speed is a measurement, not a gate (ADR 0011): last week's median
+      # wall-clock and job count become a dated run the bands below can watch.
+      # A failure here fails the job, so the watcher-broke issue reports it.
+      - name: ⏱️ Record last week's CI wall-clock
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: npx tsx scripts/measure-ci-wall-clock.mts
 
       # Records first: a band cannot be evaluated against history it has not ingested.
       # `--backfill-git` also recovers runs that `check:benchmark-results-size` has
@@ -95,7 +105,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if [ -z "$(git status --porcelain docs/intents/ benchmark-results/control-band-series.json)" ]; then
+          if [ -z "$(git status --porcelain docs/intents/ benchmark-results/control-band-series.json benchmarks/results/ci-wall-clock/)" ]; then
             echo "Band breached but nothing new to commit — an intent is already open for it."
             exit 0
           fi
@@ -103,7 +113,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
-          git add docs/intents/ benchmark-results/control-band-series.json
+          git add docs/intents/ benchmark-results/control-band-series.json benchmarks/results/ci-wall-clock/
           git commit -m "docs(workspace): control-band breach — draft intent
 
           A metric left its control band. scripts/control-bands.ts wrote the
@@ -131,7 +141,7 @@ jobs:
           GH_TOKEN: ${{ secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || github.token }}
         with:
           branch: automated/control-band-series
-          paths: benchmark-results/control-band-series.json
+          paths: benchmark-results/control-band-series.json benchmarks/results/ci-wall-clock
           commit-message: "chore(benchmarks): record control-band observations"
           pr-title: "chore(benchmarks): record control-band observations"
           pr-body: |

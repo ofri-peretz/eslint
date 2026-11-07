@@ -185,6 +185,10 @@ is at 10.91 GB, over the 10 GB budget. The turbo hit rate is not measured
 anywhere. The remote cache is now Vercel over OIDC (`quality-full.yml`), which
 reverses this intent's "why not Vercel" reasoning.
 
-Per the ruling that measurements run on schedulers, not as roadmap gates, the
-wall-clock regression is owned by `concurrency-budget`, which adds the
-scheduled CI wall-clock recorder.
+Per ADR 0011 the ≤120s criterion is a scheduled measurement, not a standing
+target. `scripts/measure-ci-wall-clock.mts` records the weekly median of
+successful `quality.yml` pull-request runs as band `ci-quality-pr-seconds`,
+watched by `control-bands.yml`. It read 564s for the week of 2026-10-26, and
+the fix for the regression is owned by `concurrency-budget`. The cache budget
+(10.91 GB of 10) and the turbo hit rate are not measured by this recorder.
+They stay as notes, not criteria.

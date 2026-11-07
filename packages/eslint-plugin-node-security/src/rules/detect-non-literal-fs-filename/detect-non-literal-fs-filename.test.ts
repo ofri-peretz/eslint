@@ -96,7 +96,10 @@ describe('detect-non-literal-fs-filename', () => {
           // relative navigation; this change is only about not losing the
           // safe-construction verdict across a `const` hop.
           "const BUILD_DIR = path.resolve(__dirname, 'build');\nfs.readFileSync(`${BUILD_DIR}/package.json`);",
-          "const OUT = path.join(__dirname, 'dist');\nfs.writeFileSync(OUT, data);",
+          {
+            name: 'a const joined from __dirname and a literal is a build-time path',
+            code: "const OUT = path.join(__dirname, 'dist');\nfs.writeFileSync(OUT, data);",
+          },
           // A const chain, not just one hop.
           "const ROOT = path.resolve(__dirname, '..');\nconst SRC = path.join(ROOT, 'src');\nfs.readFileSync(SRC);",
           // process.cwd() is where the build was launched, not user input.

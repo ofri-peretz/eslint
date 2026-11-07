@@ -77,14 +77,14 @@ export function update(user, req) {
     ],
     invalid: [
       {
-        name: 'one copy loop is one finding, however many writes it has',
+        name: 'one copy loop is one finding, on its first write in source order',
         code: `export function update(user, req, defaults) {
   for (const key of Object.keys(req.body)) {
     if (req.body[key] !== undefined) user[key] = req.body[key];
     else user[key] = defaults[key];
   }
 }`,
-        errors: [{ messageId: 'massAssignment' }],
+        errors: [{ messageId: 'massAssignment', line: 3 }],
       },
       {
         name: 'the finding is on the write through the KEY, not an earlier write',

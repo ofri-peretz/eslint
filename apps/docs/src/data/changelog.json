@@ -1,94 +1,9 @@
 {
   "releaseCount": 1113,
   "packageCount": 66,
-  "entryCount": 2810,
+  "entryCount": 2851,
   "oldestYear": 2024,
   "releases": [
-    {
-      "package": "oxlint-plugin-postgresql-security",
-      "short": "oxlint-plugin-postgresql-security",
-      "version": "3.0.2",
-      "date": "2026-11-07T10:03:26Z",
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-postgresql-security@3.0.2`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-vercel-ai-security",
-      "short": "oxlint-plugin-vercel-ai-security",
-      "version": "3.0.2",
-      "date": "2026-11-07T10:03:02Z",
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-vercel-ai-security@3.0.2`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-postgresql-security",
-      "short": "eslint-plugin-postgresql-security",
-      "version": "3.0.2",
-      "date": "2026-11-07T10:01:48Z",
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Internal: test property names with the null-safe `namesOneOf` instead of casting `propertyName(...)` to `string`. No rule reports differently; a computed key that names nothing is now visibly \"no name\" rather than a cast that happens to miss.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.2`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-vercel-ai-security",
-      "short": "eslint-plugin-vercel-ai-security",
-      "version": "3.0.2",
-      "date": "2026-11-07T10:01:48Z",
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Internal: test property names with the null-safe `namesOneOf` instead of casting `propertyName(...)` to `string`. No rule reports differently; a computed key that names nothing is now visibly \"no name\" rather than a cast that happens to miss.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.2`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "@interlace/eslint-devkit",
-      "short": "eslint-devkit",
-      "version": "2.0.2",
-      "date": "2026-11-07T10:01:46Z",
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Internal: test property names with the null-safe `namesOneOf` instead of casting `propertyName(...)` to `string`. No rule reports differently; a computed key that names nothing is now visibly \"no name\" rather than a cast that happens to miss.",
-          "pr": null
-        }
-      ]
-    },
     {
       "package": "oxlint-plugin-gemini-security",
       "short": "oxlint-plugin-gemini-security",
@@ -2069,6 +1984,46 @@
       "short": "eslint-plugin-reliability",
       "version": "5.0.0",
       "date": "2026-11-06T19:48:33Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "requires Node 22.13 or later; Node 18 and 20 are end-of-life",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "2.0.0",
+      "date": "2026-11-06T19:48:32Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "requires Node 22.13 or later; Node 18 and 20 are end-of-life",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-a11y",
+      "short": "eslint-plugin-react-a11y",
+      "version": "3.0.0",
+      "date": "2026-11-06T19:48:31Z",
       "isApp": false,
       "isPrivate": false,
       "entries": [
@@ -18931,6 +18886,11 @@
           "kind": "other",
           "title": "Package name aligned to `@interlace/eslint-devkit` (formerly eslint-plugin-utils).",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -21416,6 +21376,11 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -21576,6 +21541,11 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -21666,6 +21636,11 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -21736,6 +21711,11 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -21761,6 +21741,11 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -21785,6 +21770,11 @@
         {
           "kind": "other",
           "title": "fix changelog header format across all packages",
+          "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -21833,7 +21823,7 @@
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.1.0",
-      "date": "2026-05-11T00:35:17-05:00",
+      "date": "2026-05-03T00:00:00Z",
       "isApp": false,
       "isPrivate": false,
       "entries": [
@@ -21891,6 +21881,11 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -21910,6 +21905,11 @@
         {
           "kind": "other",
           "title": "fix changelog header format across all packages",
+          "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -21931,6 +21931,11 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -21951,6 +21956,11 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -21970,6 +21980,11 @@
         {
           "kind": "other",
           "title": "fix changelog header format across all packages",
+          "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22001,6 +22016,11 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -22020,6 +22040,11 @@
         {
           "kind": "other",
           "title": "fix changelog header format across all packages",
+          "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22041,6 +22066,11 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -22060,6 +22090,11 @@
         {
           "kind": "other",
           "title": "fix changelog header format across all packages",
+          "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22081,6 +22116,11 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -22095,6 +22135,11 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
+          "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22111,6 +22156,11 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -22125,6 +22175,11 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
+          "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22141,6 +22196,11 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -22155,6 +22215,11 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
+          "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22171,6 +22236,11 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -22185,6 +22255,11 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
+          "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22201,6 +22276,11 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -22215,6 +22295,11 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
+          "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22241,6 +22326,11 @@
           "kind": "other",
           "title": "**rules:** Some previously flagged patterns are now correctly allowed",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -22255,6 +22345,11 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
+          "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22271,6 +22366,11 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -22285,6 +22385,11 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
+          "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22301,6 +22406,11 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -22315,6 +22425,11 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
+          "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22331,6 +22446,11 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -22346,6 +22466,11 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -22360,6 +22485,11 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
+          "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22700,6 +22830,11 @@
         {
           "kind": "other",
           "title": "align main README with Interlace branding",
+          "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -23575,46 +23710,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-react-features",
-      "short": "eslint-plugin-react-features",
-      "version": "2.0.0",
-      "date": "2025-12-30T22:53:31Z",
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "breaking",
-          "title": "requires Node 22.13 or later; Node 18 and 20 are end-of-life",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.0`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-react-a11y",
-      "short": "eslint-plugin-react-a11y",
-      "version": "3.0.0",
-      "date": "2025-12-30T22:53:07Z",
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "breaking",
-          "title": "requires Node 22.13 or later; Node 18 and 20 are end-of-life",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.0`",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-import-next",
       "short": "eslint-plugin-import-next",
       "version": "2.0.0",
@@ -24436,6 +24531,11 @@
           "kind": "other",
           "title": "Documentation improvements.",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -24461,6 +24561,11 @@
           "kind": "other",
           "title": "Added vitest to peerDependencies.",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -24475,6 +24580,11 @@
         {
           "kind": "other",
           "title": "Config and dependency-check adjustments.",
+          "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -24855,6 +24965,21 @@
       ]
     },
     {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "2.0.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Internal: test property names with the null-safe `namesOneOf` instead of casting `propertyName(...)` to `string`. No rule reports differently; a computed key that names nothing is now visibly \"no name\" rather than a cast that happens to miss.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "1.0.1",
@@ -25041,6 +25166,31 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "short": "eslint-plugin-postgresql-security",
+      "version": "3.0.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Internal: test property names with the null-safe `namesOneOf` instead of casting `propertyName(...)` to `string`. No rule reports differently; a computed key that names nothing is now visibly \"no name\" rather than a cast that happens to miss.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.2`",
+          "pr": null
         }
       ]
     },
@@ -25161,6 +25311,11 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
+        },
+        {
+          "kind": "other",
+          "title": "Ofri Peretz",
+          "pr": null
         }
       ]
     },
@@ -25180,6 +25335,56 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-vercel-ai-security",
+      "short": "eslint-plugin-vercel-ai-security",
+      "version": "3.0.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Internal: test property names with the null-safe `namesOneOf` instead of casting `propertyName(...)` to `string`. No rule reports differently; a computed key that names nothing is now visibly \"no name\" rather than a cast that happens to miss.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-postgresql-security",
+      "short": "oxlint-plugin-postgresql-security",
+      "version": "3.0.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-postgresql-security@3.0.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-vercel-ai-security",
+      "short": "oxlint-plugin-vercel-ai-security",
+      "version": "3.0.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-vercel-ai-security@3.0.2`",
           "pr": null
         }
       ]

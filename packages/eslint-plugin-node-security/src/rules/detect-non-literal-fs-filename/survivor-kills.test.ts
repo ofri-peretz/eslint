@@ -189,6 +189,19 @@ export function build(ctx) {
         code: `import fs from 'fs';\n${line}`,
         options: UNRESOLVED,
       })),
+      {
+        name: 'a base declared by a global comment is configuration, on every engine',
+        code: `/* global BASE */
+import fs from 'fs';
+fs.readFileSync(BASE + '/data.json');`,
+      },
+      {
+        name: 'a globals comment declares each listed name, with or without a writability flag',
+        code: `/* globals ROOT: readonly, BASE */
+import fs from 'fs';
+fs.readFileSync(BASE + '/data.json');
+fs.readFileSync(ROOT);`,
+      },
     ],
     invalid: [
       // ── BUG: depth budgets that dropped findings ────────────────────────
@@ -356,6 +369,20 @@ fs.readFileSync('/srv/data/' + req.query.file);`,
 let req;
 req = getRequest();
 fs.readFileSync('/srv/data/' + req.query.file);`,
+        errors: ERR,
+      },
+      {
+        name: 'a line comment that reads like a global declaration declares nothing',
+        code: `// global BASE
+import fs from 'fs';
+fs.readFileSync(BASE + '/data.json');`,
+        errors: ERR,
+      },
+      {
+        name: 'an ordinary block comment declares nothing',
+        code: `/* the base is configured elsewhere */
+import fs from 'fs';
+fs.readFileSync(BASE + '/data.json');`,
         errors: ERR,
       },
       {
