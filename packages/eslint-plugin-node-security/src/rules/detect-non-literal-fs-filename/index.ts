@@ -416,6 +416,9 @@ export const determineRiskLevel = (
   return 'MEDIUM';
 };
 
+/** The body of a `global` or `globals` directive block comment. */
+const GLOBAL_DIRECTIVE = /^\s*globals?\s([\s\S]*)/;
+
 export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
   name: 'detect-non-literal-fs-filename',
   meta: {
@@ -1065,19 +1068,28 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
      * for every file the engine lints (R9).
      */
     let commentGlobals: Set<string> | undefined;
+    // ESLint's own reading of the directive: names split on commas or
+    // whitespace, an optional `: value`, a `-- justification` ignored, and
+    // `off` meaning "not a global". Later comments win.
+    const readGlobalComments = (): Set<string> => {
+      const names = new Set<string>();
+      for (const comment of context.sourceCode.getAllComments()) {
+        const directive =
+          comment.type === 'Block' && GLOBAL_DIRECTIVE.exec(comment.value);
+        if (!directive) continue;
+        const body = directive[1]
+          .split(/\s-{2,}\s/)[0]
+          .replace(/\s*:\s*/g, ':');
+        for (const [item] of body.matchAll(/[^\s,]+/g)) {
+          const [global, value] = item.split(':');
+          if (value === 'off') names.delete(global);
+          else names.add(global);
+        }
+      }
+      return names;
+    };
     const declaredByGlobalComment = (name: string): boolean => {
-      commentGlobals ??= new Set(
-        context.sourceCode
-          .getAllComments()
-          .flatMap((comment) =>
-            comment.type === 'Block'
-              ? (/^\s*globals?\s([\s\S]*)$/
-                  .exec(comment.value)?.[1]
-                  .split(',') ?? [])
-              : [],
-          )
-          .map((entry) => entry.split(':')[0].trim()),
-      );
+      commentGlobals ??= readGlobalComments();
       return commentGlobals.has(name);
     };
 
@@ -1088,17 +1100,14 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
      * cannot drift from what ESLint believes about the binding.
      */
     function isFreeVariable(node: TSESTree.Node): boolean {
-      if (
-        node.type === AST_NODE_TYPES.Identifier &&
-        declaredByGlobalComment(node.name)
-      ) {
-        return false;
-      }
       // Only an Identifier can be a reference's `identifier`, so any other node
       // type finds no match below without a type test of its own.
       const through = context.sourceCode.getScope(node).through;
       return through.some(
-        (ref) => ref.identifier === node && ref.resolved === null,
+        (ref) =>
+          ref.identifier === node &&
+          !declaredByGlobalComment(ref.identifier.name) &&
+          ref.resolved === null,
       );
     }
 
@@ -1508,6 +1517,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       before() {
         const options = context.options[0] || {};
         ({ allowLiterals = false, additionalMethods = [] } = options);
+        // R9: `createOnce` keeps this closure across files; reset per file.
         commentGlobals = undefined;
 
         /**
