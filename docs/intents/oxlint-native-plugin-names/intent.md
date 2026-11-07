@@ -72,7 +72,7 @@ cases: []
 
 # Intent — an oxlint user installs our rules by an oxlint name, and gets no ESLint
 
-**Status:** approved · **Opened:** 2026-10-25 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-10-25 · **Shipped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 ---
 
@@ -178,3 +178,34 @@ decisions for both of us". Each decision is listed with the reason for it.
    when npm downloads show `oxlint-plugin-*` ahead.
    _Why:_ every existing user, doc and link points at the `eslint-plugin-*` names.
 6. **Scope.** The intent covers all **32** rule plugins on `origin/main` (2026-10-25), not 19.
+
+## Closed — 2026-11-07
+
+Shipped by #1299 (adjusted by #1312). Evidence against the success criteria:
+
+- `oxlint:aliases:check` runs in `lefthook.yml` and `oxlint-parity.yml`.
+- `scripts/verify-oxlint-aliases.mts` loads every alias through oxlint
+  `jsPlugins`, including a sentinel ID that must be rejected. It runs at
+  pre-push and in `oxlint-parity.yml`, and the "Alias smoke" step passed on run 42247554027.
+- `scripts/__tests__/eslint-peer-floor.test.ts` asserts that every package
+  oxlint can load marks its `eslint` peer optional.
+- `npm install oxlint-plugin-postgresql-security --dry-run` in an empty project
+  on 2026-11-07 adds 3 packages (the alias, the plugin, devkit) and no `eslint`.
+
+Design R9/R10 parity (issue #1327). The deep job's ten divergences on the
+re-harvested fixtures were each diagnosed, and fixed at the source rather than
+allowlisted. The allowlist stays empty:
+
+| Divergence                                                                                                  | Cause                                                                                                                     | Fix                                                                                 |
+| :---------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------- |
+| `no-bidi-characters` column 13 vs 15                                                                        | oxlint's JSON `column` counts UTF-8 bytes; ESLint's counts UTF-16 units                                                   | the parity runner derives the column from oxlint's byte `offset`                    |
+| `detect-object-injection` 4:10 vs 3:38                                                                      | the copy-loop walk followed parser property order (typescript-estree lists `alternate` before `consequent`)               | walk by `sourceCode.visitorKeys`; the finding is on the first write in source order |
+| 2 oxlint-only `detect-non-literal-fs-filename`                                                              | oxlint's scope manager ignores `/* global NAME */`                                                                        | the rule reads the comment itself, reset per file in `before()` (R9)                |
+| eslint-only `no-innerhtml`, `unambiguous`, `no-unused-modules` / `prefer-default-export`, `no-named-export` | two fixtures are not valid programs (`var x` + `function x` in a module; `src={}`), which oxlint refuses and ESLint lints | the harvester's TypeScript judge also drops early errors (codes 2300, 2451, 17000)  |
+
+Full deep run on the re-harvested corpus (13,947 fixtures): 42,624 shared, 0
+eslint-only, 0 oxlint-only, parity 100%. The two rule fixes ship as patches.
+
+Scoped down: 31 aliases ship, not 32. `oxlint-plugin-cli-floor` is held back
+while its plugin is private (#1312), and the generator recreates it when
+cli-floor ships.

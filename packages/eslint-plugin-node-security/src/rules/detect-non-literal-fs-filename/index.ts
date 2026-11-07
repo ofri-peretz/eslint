@@ -1054,12 +1054,46 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * Names a `/* global a, b: writable *\/` block comment declares.
+     *
+     * ESLint's scope manager turns those names into globals; oxlint's does not.
+     * Asking the scope alone made `/* global BASE *\/ fs.readFileSync(BASE + x)`
+     * silent under ESLint and a finding under oxlint. Reading the comment
+     * itself gives both engines the same answer.
+     *
+     * Per file: reset in `before()`, because `createOnce` keeps this closure
+     * for every file the engine lints (R9).
+     */
+    let commentGlobals: Set<string> | undefined;
+    const declaredByGlobalComment = (name: string): boolean => {
+      commentGlobals ??= new Set(
+        context.sourceCode
+          .getAllComments()
+          .flatMap((comment) =>
+            comment.type === 'Block'
+              ? (/^\s*globals?\s([\s\S]*)$/
+                  .exec(comment.value)?.[1]
+                  .split(',') ?? [])
+              : [],
+          )
+          .map((entry) => entry.split(':')[0].trim()),
+      );
+      return commentGlobals.has(name);
+    };
+
+    /**
      * Is this identifier a free variable — referenced but declared nowhere?
      *
      * `ref.resolved === null` is the scope analyser's own verdict, so this
      * cannot drift from what ESLint believes about the binding.
      */
     function isFreeVariable(node: TSESTree.Node): boolean {
+      if (
+        node.type === AST_NODE_TYPES.Identifier &&
+        declaredByGlobalComment(node.name)
+      ) {
+        return false;
+      }
       // Only an Identifier can be a reference's `identifier`, so any other node
       // type finds no match below without a type test of its own.
       const through = context.sourceCode.getScope(node).through;
@@ -1474,6 +1508,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       before() {
         const options = context.options[0] || {};
         ({ allowLiterals = false, additionalMethods = [] } = options);
+        commentGlobals = undefined;
 
         /**
          * Roots an attacker can actually reach.
