@@ -38,7 +38,7 @@ import { RuleCreator } from './rule-creator';
  */
 
 import { AST_NODE_TYPES } from '../ast-node-types';
-import { propertyName } from '../ast/spellings';
+import { namesOneOf, propertyName } from '../ast/spellings';
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import { formatLLMMessage, MessageIcons } from '../messaging';
 import { createModuleEvidence } from './module-evidence';
@@ -676,7 +676,7 @@ function heldThenScoped(
   return variable.references.some((reference) => {
     const use = reference.identifier.parent;
     if (use.type === AST_NODE_TYPES.MemberExpression)
-      return scopeMethods.includes(propertyName(use) as string);
+      return namesOneOf(propertyName(use), scopeMethods);
     // Handed to a helper that may scope it, as in `scopedElsewhere`.
     return (
       (use.type === AST_NODE_TYPES.CallExpression ||

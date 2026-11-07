@@ -20,6 +20,8 @@ packages:
 cases: []
 ---
 
+**Status:** shipped · **Closed:** 2026-11-07
+
 ## What
 
 Remove all **141 `propertyName(...) as string` sites across 82 rule files**
@@ -99,3 +101,16 @@ their `unconfigurable-vocabulary` finding while their word lists stayed exactly
 as unconfigurable as before — the helper-shaped evasion `CLAUDE.md` names for
 the name-inference gate, arriving unbidden. `namesOneOf(` is now in that
 detector's alternation.
+
+## Closed — 2026-11-07
+
+Shipped, after a regression. The sweep took the count to 0, but by November 10
+sites had come back: 3 in postgresql-security, 6 in vercel-ai-security, and 1 in
+the devkit's `unscoped-mutation-rule.ts`. They are converted with the same
+transforms: membership becomes `namesOneOf(propertyName(x), SET)`, and
+`sdk.ts`'s `method` keeps its `string | null` type. Criterion 1's grep
+returns nothing again, and the touched packages' tests and coverage are
+unchanged.
+
+Not added: a lock forbidding the cast. It would be a new gate (ADR 0011). The
+grep in criterion 1 is the check to run when touching these rules.
