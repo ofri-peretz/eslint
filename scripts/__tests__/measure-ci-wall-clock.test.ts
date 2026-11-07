@@ -1,4 +1,6 @@
 /**
+ * @provenBy {"file":"scripts/measure-ci-wall-clock.mts","find":"  return s.length % 2 === 1 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);","replace":"  return s[m];"}
+ *
  * Copyright (c) 2026 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
  * MIT license that can be found in the LICENSE file.
