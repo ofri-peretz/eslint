@@ -7,7 +7,6 @@ export interface VisitorOptions {
     visitChildrenEvenIfSelectorExists?: boolean;
 }
 export declare abstract class VisitorBase {
-    #private;
     constructor(options: VisitorOptions);
     /**
      * Default method for visiting children.

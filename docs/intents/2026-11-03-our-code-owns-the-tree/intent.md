@@ -138,3 +138,19 @@ into `dist/`, and all 37 type imports point at the vendored declarations:
 `RuleMetaDataDocs` augmentation targets the vendored module. Rebuilt `dist/`
 for devkit and the touched plugins has **0** `@typescript-eslint` import
 specifiers.
+
+Phases 1.3 and 1.4 shipped.
+
+- **1.3.** `scripts/__tests__/devkit-types-compat.lock.test.ts` compiles one
+  program that assigns every plugin to upstream `TSESLint.FlatConfig.Plugin`.
+  It passes for all 32. Getting there surfaced two facts:
+  - Private and protected class members make a type nominal, so the vendor
+    script now drops them (no rule can use them).
+  - Two copies of a generic conditional type (`SourceCode`'s
+    `ReturnTypeFromOptions<T>`) never compare equal. That is why the check
+    is at the config surface consumers use, not at strict `RuleModule`.
+    Upstream typescript-eslint's own `FlatConfig.Plugin` is not assignable to
+    ESLint's `ESLint.Plugin` either, so that comparison is not ours to pin.
+- **1.4.** `@typescript-eslint/utils` is gone from devkit's `peerDependencies`
+  and keywords (C3). No published package depends on any
+  `@typescript-eslint/*` package now.

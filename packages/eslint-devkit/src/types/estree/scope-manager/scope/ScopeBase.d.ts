@@ -14,7 +14,6 @@ import { Variable } from '../variable';
 import { ScopeType } from './ScopeType';
 type VariableScope = FunctionScope | GlobalScope | ModuleScope | TSModuleScope;
 export declare abstract class ScopeBase<Type extends ScopeType, Block extends TSESTree.Node, Upper extends Scope | null> {
-    #private;
     /**
      * A unique ID for this instance - primarily used to help debugging and testing
      */
@@ -43,7 +42,6 @@ export declare abstract class ScopeBase<Type extends ScopeType, Block extends TS
      * List of {@link Reference}s that are left to be resolved (i.e. which
      * need to be linked to the variable they refer to).
      */
-    protected leftToResolve: Reference[] | null;
     /**
      * Any variable {@link Reference} found in this scope.
      * This includes occurrences of local variables as well as variables from parent scopes (including the global scope).
@@ -78,17 +76,12 @@ export declare abstract class ScopeBase<Type extends ScopeType, Block extends TS
     readonly variables: Variable[];
     readonly variableScope: VariableScope;
     constructor(scopeManager: ScopeManager, type: Type, upperScope: Upper, block: Block, isMethodDefinition: boolean);
-    private isVariableScope;
     close(_scopeManager: ScopeManager): Scope | null;
     shouldStaticallyClose(): boolean;
     /**
      * To override by function scopes.
      * References in default parameters isn't resolved to variables which are in their function body.
      */
-    protected defineVariable(nameOrVariable: string | Variable, set: Map<string, Variable>, variables: Variable[], node: TSESTree.Identifier | null, def: Definition | null): void;
-    protected delegateToUpperScope(ref: Reference): void;
-    protected isValidResolution(_ref: Reference, _variable: Variable): boolean;
-    private addDeclaredVariablesOfNode;
     defineIdentifier(node: TSESTree.Identifier, def: Definition): void;
     defineLiteralIdentifier(node: TSESTree.StringLiteral, def: Definition): void;
     referenceDualValueType(node: TSESTree.Identifier): void;
