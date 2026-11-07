@@ -12,7 +12,7 @@ cases: []
 
 # Intent — a consumer turned seven rules off; the rules owe it a fix, not a workaround
 
-**Status:** review · **Opened:** 2026-09-07 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-09-07 · **Shipped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 ---
 
@@ -120,3 +120,17 @@ Every row marked **reports** fails a RuleTester case on the unfixed rule:
   `isPromiseDelegatedToCaller` arm its reliability sibling has (`return
 p.then(…)` reports in one plugin and not the other — `commander-command.ts:909`).
   Same class of drift as FP 10, found while measuring; not this intent's scope.
+
+## Closed — 2026-11-07
+
+Shipped by #939 (2026-09-08). Each false positive has a valid case and its
+twin an invalid case in all five packages, and `design.md` § Verification
+records red before the fix and green after it. Every fix has been released
+since, so the missing per-package changesets are moot.
+
+Scoped down: criterion 5 (burgee deletes its workarounds) is the consumer's
+step and lives in the burgee repo. On burgee `main` the FP 1, 7 and 11 blocks
+are gone. FP 8, 9 and 10 and the FP 12 hoist remain in
+`burgee/eslint.config.mjs` even though burgee already depends on the fixed
+versions. If one of them still fires after deletion, file it as a new false
+positive here rather than reopening this intent.

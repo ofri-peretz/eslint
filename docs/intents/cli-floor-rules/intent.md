@@ -10,7 +10,7 @@ cases: []
 
 # Intent — the lint half of burgee's F3, O3 and P1 lives here
 
-**Status:** review · **Opened:** 2026-09-24 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-09-24 · **Shipped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 ---
 
@@ -64,3 +64,18 @@ burgee's intent recorded is free.
 
 - The precision study that would promote `no-prompt-without-flag` into `recommended` has not
   run: the first real-code sweep contained no prompts at all.
+
+## Closed — 2026-11-07
+
+Shipped by #1137 (2026-09-25). Evidence against the success criteria:
+
+- Rules and tests: 226 tests at 100% statement and branch coverage, with each
+  mutation removal turning cases red, and a module-gate lock test (#1137 body).
+- Dogfood: burgee's demos and 9 OSS CLIs gave 30 findings, all true. P1 has no
+  reading because that corpus had no prompts.
+- Consumer: burgee `.sdlc/intents/burgee/spec.md` marks F3 and O3 **Built**
+  citing eslint#1137, and burgee dropped its own copy of this intent.
+
+Scoped down: "What is wanted" says a _published_ plugin. #1312 made
+`eslint-plugin-cli-floor` private, and publishing it is the owner's launch
+step. The rules, tests and consumer wiring this intent asked for are on main.

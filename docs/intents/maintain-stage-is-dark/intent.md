@@ -3,7 +3,7 @@
 > Stage 1 artifact of the AI-native SDLC. Opened after finding five open
 > failure issues filed by the maintenance crons, four of them with no comments.
 
-**Status:** draft · **Opened:** 2026-09-01 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-09-01 · **Shipped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 ---
 
@@ -86,3 +86,29 @@ success criteria are measured by one of these.
 - How long have these actually been failing? The issues are days old, but the
   underlying breakage may predate them — worth `--backfill-git` style archaeology
   before claiming a fix window.
+
+## Closed — 2026-11-07
+
+Shipped. Evidence against the success criteria:
+
+- `peer-health`, `resource-profile` and `comparison-refresh` each completed
+  their last scheduled run and landed a snapshot through
+  `.github/actions/commit-via-pr` (#1339, #1326, #1325). The bots no longer
+  push to `main`, so GH006 cannot recur.
+- #782, #784, #795, #802 and #803 are all closed with comments.
+- A check that goes red on GH006: `scripts/__tests__/no-bare-push-to-main.lock.test.ts`
+  and `ci-bot-push-lock.test.ts`.
+
+### Mechanism — how a watcher failure reaches a person
+
+1. A failed scheduled job runs `.github/actions/report-failure`, which opens
+   (or comments on) one issue per workflow. The aggregate-job shape is ADR 0006,
+   locked by `cron-alerting-shape.lock.test.ts`.
+2. A Claude Code Routine sweeps those issues. The cron moved out of
+   `issue-sweep.yml` on 2026-09-03; the Routine diagnoses each issue and opens
+   a fix PR.
+3. `issue-sweep.yml` arms auto-merge on the Routine's PR (e.g. #1340, #1197),
+   so the fix lands through the normal gate.
+
+Caveat: the sweep is slower than its nominal cadence. #1327 sat for six days
+without a comment.
