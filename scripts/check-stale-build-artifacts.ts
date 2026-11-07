@@ -120,6 +120,13 @@ try {
   process.exit(0);
 }
 
+/**
+ * Checked-in declarations, not build output: devkit's vendored AST and rule
+ * types (scripts/vendor-estree-types.ts). No `.ts` sits beside them, so they
+ * cannot shadow anything, and `--check` holds them to the pinned packages.
+ */
+const VENDORED_DECLARATIONS = join('eslint-devkit', 'src', 'types', 'estree');
+
 const shadowing: string[] = [];
 const dangling: string[] = [];
 
@@ -128,6 +135,8 @@ for (const pkgDir of packageDirs) {
     relativeTo: PACKAGES_DIR,
     extensions: STALE_EXTENSIONS,
   })) {
+    if (file.endsWith('.d.ts') && file.includes(VENDORED_DECLARATIONS))
+      continue;
     shadowing.push(file);
   }
 

@@ -155,6 +155,8 @@ benchmarks/results/ilb-oxlint-parity/.parity.oxlintrc.json
 packages/*/src/**/*.js
 packages/*/src/**/*.js.map
 packages/*/src/**/*.d.ts
+# …except devkit's vendored AST/rule types: hand-run snapshot, checked in (scripts/vendor-estree-types.ts).
+!packages/eslint-devkit/src/types/estree/**/*.d.ts
 .review-screens/
 .build-nocomments
 
