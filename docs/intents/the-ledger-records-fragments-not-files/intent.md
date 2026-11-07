@@ -76,3 +76,13 @@ definition of the wrong shape.
   same case.
 - **Proven by:** a round-trip check — take N cases at random, replay them from
   the ledger alone, and assert the verdict matches the suite's.
+
+## Progress — 2026-11-07
+
+Designed in [`design.md`](./design.md). Slice 1 has shipped: the
+under-measuring consumer now says so. `find-computed-key-blind-spots.mts`
+prints the TP cases that do not fire from their ledger fragment, instead of
+dropping them from its denominator without a word. First reading: **1,645 TP
+cases in 121 rules** not probed, against 4,466 probed. Next is slice 2: record
+each harness once per run block in `scripts/rule-case-ledger.ts` (design R1–R4),
+with the round-trip test.

@@ -173,6 +173,18 @@ function reports(
 
 const blind: { rule: string; description: string; code: string }[] = [];
 let probed = 0;
+/**
+ * TP cases that do not fire from the ledger's copy of their code.
+ *
+ * The suite says they report; the ledger holds the code WITHOUT the harness
+ * the test file wraps around it (`sdk()`, `lambda()`, `DRIVER +`), so an
+ * evidence-gated rule sees no framework and stays silent. Those cases cannot
+ * be probed, and they used to leave the denominator without a word — this
+ * instrument measured a smaller population than it printed. Counted and
+ * reported now, until the ledger can replay them
+ * (docs/intents/the-ledger-records-fragments-not-files).
+ */
+const unreplayable = new Map<string, number>();
 
 for (const entry of ledger.rules) {
   if (only !== null && entry.rule !== only) continue;
@@ -215,7 +227,11 @@ for (const entry of ledger.rules) {
       continue;
     }
     const before = reports(rule, name, c.code, options);
-    if (before === null || before === 0) continue; // only cases that DID fire
+    if (before === null) continue; // the case itself does not parse
+    if (before === 0) {
+      unreplayable.set(entry.rule, (unreplayable.get(entry.rule) ?? 0) + 1);
+      continue;
+    }
     const after = reports(rule, name, rewritten, options);
     if (after === null) continue; // the rewrite broke parsing; not evidence
     probed += 1;
@@ -237,6 +253,13 @@ for (const b of blind) {
 }
 
 console.log(`\n  probed ${probed} firing TP case(s) in both spellings.`);
+const unreplayed = [...unreplayable.values()].reduce((a, b) => a + b, 0);
+console.log(
+  `  ${unreplayed} TP case(s) in ${unreplayable.size} rule(s) did not fire from the ledger's copy of their code and were NOT probed —`,
+);
+console.log(
+  '  usually because the ledger records the case without its test harness (docs/intents/the-ledger-records-fragments-not-files).',
+);
 console.log(`  ${byRule.size} rule(s) go SILENT on a string subscript:\n`);
 for (const [rule, cases] of [...byRule.entries()].sort(
   (a, b) => b[1].length - a[1].length,
