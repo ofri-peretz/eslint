@@ -5,6 +5,91 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "oxlint-plugin-postgresql-security",
+      "short": "oxlint-plugin-postgresql-security",
+      "version": "3.0.2",
+      "date": "2026-11-07T10:03:26Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-postgresql-security@3.0.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-vercel-ai-security",
+      "short": "oxlint-plugin-vercel-ai-security",
+      "version": "3.0.2",
+      "date": "2026-11-07T10:03:02Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-vercel-ai-security@3.0.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "short": "eslint-plugin-postgresql-security",
+      "version": "3.0.2",
+      "date": "2026-11-07T10:01:48Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Internal: test property names with the null-safe `namesOneOf` instead of casting `propertyName(...)` to `string`. No rule reports differently; a computed key that names nothing is now visibly \"no name\" rather than a cast that happens to miss.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-vercel-ai-security",
+      "short": "eslint-plugin-vercel-ai-security",
+      "version": "3.0.2",
+      "date": "2026-11-07T10:01:48Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Internal: test property names with the null-safe `namesOneOf` instead of casting `propertyName(...)` to `string`. No rule reports differently; a computed key that names nothing is now visibly \"no name\" rather than a cast that happens to miss.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "2.0.2",
+      "date": "2026-11-07T10:01:46Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Internal: test property names with the null-safe `namesOneOf` instead of casting `propertyName(...)` to `string`. No rule reports differently; a computed key that names nothing is now visibly \"no name\" rather than a cast that happens to miss.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "oxlint-plugin-gemini-security",
       "short": "oxlint-plugin-gemini-security",
       "version": "2.0.1",
@@ -24965,21 +25050,6 @@
       ]
     },
     {
-      "package": "@interlace/eslint-devkit",
-      "short": "eslint-devkit",
-      "version": "2.0.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Internal: test property names with the null-safe `namesOneOf` instead of casting `propertyName(...)` to `string`. No rule reports differently; a computed key that names nothing is now visibly \"no name\" rather than a cast that happens to miss.",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "1.0.1",
@@ -25177,26 +25247,6 @@
     {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
-      "version": "3.0.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Internal: test property names with the null-safe `namesOneOf` instead of casting `propertyName(...)` to `string`. No rule reports differently; a computed key that names nothing is now visibly \"no name\" rather than a cast that happens to miss.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.2`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-postgresql-security",
-      "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
       "date": null,
       "isApp": false,
@@ -25335,56 +25385,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-vercel-ai-security",
-      "short": "eslint-plugin-vercel-ai-security",
-      "version": "3.0.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Internal: test property names with the null-safe `namesOneOf` instead of casting `propertyName(...)` to `string`. No rule reports differently; a computed key that names nothing is now visibly \"no name\" rather than a cast that happens to miss.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.0.2`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-postgresql-security",
-      "short": "oxlint-plugin-postgresql-security",
-      "version": "3.0.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-postgresql-security@3.0.2`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-vercel-ai-security",
-      "short": "oxlint-plugin-vercel-ai-security",
-      "version": "3.0.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-vercel-ai-security@3.0.2`",
           "pr": null
         }
       ]
