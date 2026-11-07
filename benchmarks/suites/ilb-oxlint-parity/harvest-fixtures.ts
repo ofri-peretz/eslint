@@ -193,7 +193,13 @@ let jsxFixtures = 0;
 // the public `SourceFile` type — cast rather than widen the whole file to `any`.
 const parseErrors = (file: string, src: string, kind: ts.ScriptKind) =>
   (
-    ts.createSourceFile(file, src, ts.ScriptTarget.Latest, false, kind) as ts.SourceFile & {
+    ts.createSourceFile(
+      file,
+      src,
+      ts.ScriptTarget.Latest,
+      false,
+      kind,
+    ) as ts.SourceFile & {
       parseDiagnostics?: ts.Diagnostic[];
     }
   ).parseDiagnostics ?? [];
@@ -229,6 +235,55 @@ const collect = (dir) => {
   }
 };
 collect(OUT_DIR);
+
+/*
+ * Early errors, the second half of "not a valid standalone module".
+ *
+ * TypeScript's parser accepts some programs the language forbids, and reports
+ * them only later, from the binder and checker: a `var` and a `function` of
+ * the same name at module top level, or `<script src={} />`. ESLint lints such
+ * a file anyway; oxlint, correctly, refuses it — so each surfaced in the parity
+ * report as eslint-only findings on a file oxlint never linted (#1327). Still
+ * TypeScript judging, never oxlint: one program over the whole corpus, with no
+ * lib, and only these codes, so a type error (every fixture has some) keeps its
+ * file.
+ *
+ *   2300   Duplicate identifier — a redeclaration that is an early error in a module
+ *   2451   Cannot redeclare block-scoped variable
+ *   17000  JSX attributes must only be assigned a non-empty expression
+ */
+const EARLY_ERRORS = new Set([2300, 2451, 17000]);
+const fixtureFiles: string[] = [];
+const listFixtures = (dir: string) => {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) listFixtures(full);
+    else if (/\.tsx?$/.test(full)) fixtureFiles.push(full);
+  }
+};
+listFixtures(OUT_DIR);
+const program = ts.createProgram(fixtureFiles, {
+  noLib: true,
+  noResolve: true,
+  types: [],
+  jsx: ts.JsxEmit.Preserve,
+  // Every fixture is its own module, as each engine lints it. Without this a
+  // file with no import is a SCRIPT, all scripts share one global scope, and
+  // `const t` in two unrelated fixtures read as a redeclaration.
+  moduleDetection: ts.ModuleDetectionKind.Force,
+});
+for (const file of fixtureFiles) {
+  const early = program
+    .getSemanticDiagnostics(program.getSourceFile(file))
+    .find((d) => EARLY_ERRORS.has(d.code));
+  if (!early) continue;
+  invalid.push({
+    file: path.relative(OUT_DIR, file),
+    reason: ts.flattenDiagnosticMessageText(early.messageText, ' '),
+  });
+  fs.rmSync(file);
+  summary.fixtures--;
+}
 
 console.log(
   `harvested ${summary.fixtures} fixtures from ${summary.rules} rule test files across ${summary.plugins} plugins`,

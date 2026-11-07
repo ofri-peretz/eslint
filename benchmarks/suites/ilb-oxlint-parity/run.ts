@@ -629,10 +629,33 @@ function lintOxlint(corpus, configPath) {
       file: rel,
       rule: ruleId,
       line: label.line ?? 0,
-      column: label.column ?? 0,
+      column: utf16Column(path.resolve(REPO_ROOT, filename), label),
     });
   }
   return findings;
+}
+
+/**
+ * oxlint's JSON `column` counts UTF-8 BYTES from the start of the line; ESLint's
+ * counts UTF-16 code units. They agree on ASCII and drift by two per BMP
+ * character (three bytes, one unit) earlier on the same line, so a finding
+ * after a `'\uFFFF'` or a CJK string read as a different position on each
+ * engine — the `no-bidi-characters` divergence in #1327 was this and nothing
+ * else. Re-derived from the byte `offset`, which oxlint also reports.
+ */
+const fileBytes = new Map<string, Buffer>();
+function utf16Column(
+  file: string,
+  span: { offset?: number; column?: number },
+): number {
+  if (span.offset === undefined) return span.column ?? 0;
+  let bytes = fileBytes.get(file);
+  if (!bytes) {
+    bytes = fs.readFileSync(file);
+    fileBytes.set(file, bytes);
+  }
+  const lineStart = bytes.lastIndexOf(0x0a, span.offset - 1) + 1;
+  return bytes.subarray(lineStart, span.offset).toString('utf8').length + 1;
 }
 
 // ── Diff + allowlist ──────────────────────────────────────────────────
