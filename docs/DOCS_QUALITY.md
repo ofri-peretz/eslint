@@ -106,6 +106,7 @@ The numbers we publish — benchmark results, peer health, download counts, cove
 | Resource profile refreshed | monthly | `resource-profile.yml` | monthly, files an issue |
 | Published claims match measured values | 100% | `npm run audit:claims` | PR (`docs-integrity`) |
 | Audit snapshots not stale | age-bounded | `npm run check:audit-freshness` | weekly, in `control-bands.yml` |
+| CI wall-clock and job count (PR fast loop, Quality (Full) on main and PRs) | measured, banded — not a gate (ADR 0011) | `npm run measure:ci-wall-clock` | weekly, in `control-bands.yml` |
 | Coverage reported per package | 30/30 | `codecov.yml` components | PR — 19/30, owned by `chore/coverage-100` |
 
 **Every refresher must file an issue when it fails.** A snapshot that stops moving
