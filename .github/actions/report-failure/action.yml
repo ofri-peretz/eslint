@@ -7,8 +7,9 @@ description: >-
 # red for months without anyone noticing. Rather than paste the same twenty lines a
 # seventh time, every cron calls this.
 #
-# One issue per title, reopened and commented — not a new issue every week, which is
-# how a channel becomes noise and then gets muted.
+# One OPEN issue per title, commented on each failure — not a new issue every week,
+# which is how a channel becomes noise and then gets muted. A closed issue is never
+# reopened: a failure after a close opens a fresh one, so the close stays a record.
 
 inputs:
   title:

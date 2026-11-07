@@ -1,6 +1,6 @@
 # Intent — `cron-failure-delivery`
 
-**Status:** draft · **Opened:** `2026-09-01` · **Owner:** `@ofri-peretz`
+**Status:** shipped · **Opened:** `2026-09-01` · **Shipped:** 2026-11-07 · **Owner:** `@ofri-peretz`
 
 ---
 
@@ -169,3 +169,30 @@ on 2026-09-01, so the channel demonstrably delivers; the shape was the failing
 half. Open question 1 (canary shape) therefore stays open with less urgency,
 and the R5 verification — revoke the canary's `issues: write` and require its
 assert job to go red — is still the only proposed check on the checker.
+
+## Closed — 2026-11-07
+
+Shipped. Evidence against the success criteria:
+
+- **C1.** Every scheduled job's failure reaches a reporter. The graph lock is
+  `scripts/__tests__/cron-alerting-shape.lock.test.ts`, and
+  `.github/cron-alerting-debt.json` has `uncovered: {}` (ADR 0006).
+- **C2.** No reporting condition depends on `inputs.*` without an event guard.
+  This holds in the files: the only such read, `weekly-benchmark.yml`'s commit
+  step, is not a reporter.
+- **C3.** `fail-fast` matrices report from an aggregate job. Holds, and is now
+  locked: the lock no longer counts a report step inside a fail-fast matrix leg
+  as coverage. Sabotage proof: deleting eslint-version-matrix's aggregate
+  `report` job fails the lock (`job(s) matrix can fail with nobody reporting
+it`); the previous lock passed that shape.
+- **C5.** The original eight failures are fixed or explained. Each is green on
+  its latest scheduled run, or has an open issue (#1327, #1213, #1474).
+- `report-failure`'s header no longer claims it reopens issues. It comments on
+  the open one, or opens a new one.
+
+Dropped criterion: **C4**, a live canary. #802 and #803 proved the channel
+delivers end to end, and a canary would be another scheduled job for nothing.
+
+Scoped down: **C6** (a sabotage-proven test per cause) is met for the
+benchmark, oxlint-parity and fail-fast causes. The `inputs` cause holds in the
+files but has no lock, since that would be a new gate (ADR 0011).

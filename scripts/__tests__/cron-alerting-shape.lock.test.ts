@@ -40,9 +40,25 @@ const debt = (
 ).uncovered;
 
 type Step = Record<string, unknown>;
-type Job = { steps?: Step[]; needs?: string | string[]; if?: string };
+type Job = {
+  steps?: Step[];
+  needs?: string | string[];
+  if?: string;
+  strategy?: { matrix?: unknown; 'fail-fast'?: boolean };
+};
+
+/**
+ * A matrix job fails fast unless it says otherwise. When one leg fails, its
+ * siblings are cancelled and `failure()` is false in them, so a report step
+ * inside a leg is exactly the eslint-version-matrix shape above. It reads as
+ * coverage and is not; only a reporter in another job that `needs` the
+ * matrix sees the failure.
+ */
+const failsFast = (j: Job) =>
+  j.strategy?.matrix !== undefined && j.strategy['fail-fast'] !== false;
 
 const reports = (j: Job) =>
+  !failsFast(j) &&
   (j.steps ?? []).some(
     (s) =>
       (typeof s.uses === 'string' && s.uses.includes('report-failure')) ||
@@ -61,8 +77,13 @@ describe('a scheduled workflow can reach a human when it fails', () => {
 
   it.each(files)('%s', (file) => {
     const raw = readFileSync(join(WORKFLOWS, file), 'utf8');
-    const doc = parse(raw) as { on?: unknown; true?: unknown; jobs?: Record<string, Job> };
-    const triggers = (doc.on ?? doc.true) as Record<string, unknown> | undefined;
+    const doc = parse(raw) as {
+      on?: unknown;
+      true?: unknown;
+      jobs?: Record<string, Job>;
+    };
+    const triggers = (doc.on ?? doc.true) as
+      Record<string, unknown> | undefined;
     if (!triggers || !Array.isArray(triggers.schedule)) return;
 
     const jobs = doc.jobs ?? {};

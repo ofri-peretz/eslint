@@ -3,7 +3,7 @@
 > Stage 1 artifact. Opened after a SpringRoll barrel fixture was cut, verified
 > not to fire, and deleted.
 
-**Status:** draft · **Opened:** 2026-09-03 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-09-03 · **Shipped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 ---
 
@@ -64,3 +64,18 @@ fixture that fires the WRONG rule is worse than worthless.
 - **Proven by:** cutting one fixture for `no-cycle` and demonstrating the rule
   reports on it with zero `no-unresolved` findings — or demonstrating that it
   cannot, and recording that instead.
+
+## Closed — 2026-11-07
+
+Shipped via the second branch of "Wanted". `check-corpus-coverage` classifies the
+six import-graph rules as out of the corpus's reach and says why. They are in
+`NOT_FIXTURABLE` in `scripts/check-corpus-coverage.ts`, under one shared reason
+(`IMPORT_GRAPH`), and they leave both the numerator and the denominator. The
+baseline was re-banked with `--update`: 136 to 127 unmeasured, which also banks
+three rules that had gained fixtures since September.
+
+Proven by the cut-and-delete this file records: the SpringRoll barrel fixture
+left its imports unresolved and fired `no-unresolved` instead of its target.
+`no-cycle` and its siblings stay measured on real code by the weekly real-source
+scan and the pinned corpus budget (#1076). No fixture was committed for any of
+the six, so the breach condition cannot occur.
