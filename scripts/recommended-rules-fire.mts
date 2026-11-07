@@ -27,29 +27,20 @@
  * the preset rather than through the rule. A rule whose own true positive does
  * not report under its own preset is not enabled in any useful sense.
  *
- * ## THE NUMBER THIS PRINTS IS NOT YET A FINDING
- *
- * It reports 96 rules SILENT under their own preset. Most of that is the probe,
- * not the rules, and the reason is worth the space:
+ * ## Each case runs under the harness its own suite wraps it in
  *
  * Many rules are EVIDENCE-GATED — they refuse to fire in a file that does not
  * import the framework they are about, because a bare `app.use(cors(…))` in a
  * file with no Express is somebody else's `app`. The test suites supply that
- * evidence through a harness (`sdk()`, `lambda()`, `xp()`), which wraps each
- * case before the RuleTester sees it. The ledger records the FRAGMENT, not the
- * wrapped file. Measured directly:
+ * evidence through a harness (`sdk()`, `lambda()`, `xp()`). The ledger used to
+ * record only the fragment, so this probe fed rules a file their own harness
+ * never produced, and it reported 96 rules silent. It now replays each case
+ * through the harness the ledger records (scripts/lib/case-harness.ts), and
+ * the count fell to 41 of 305 on 2026-11-07.
  *
- *     app.use(cors({ origin: '*', credentials: true }));                 -> 0
- *     import express from 'express'; … the same line                     -> 1
- *
- * So this probe feeds rules a file their own harness would never have produced,
- * and a correct abstention reads as a defect. Fixing it means the ledger
- * recording the harness each case runs under — which is a change to
- * `rule-case-ledger.ts`, not to this script.
- *
- * Until then: use the per-rule output as a LEAD, verify by hand, and do not
- * quote the total. It is exactly the kind of number this repository has spent
- * a quarter learning not to publish.
+ * What remains are LEADS, not findings: a preset's options can differ from
+ * the ones the case was written for, and 48 harnesses are still unresolved.
+ * Verify a lead by hand before quoting it.
  *
  * ## What it cannot tell you
  *
@@ -68,6 +59,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Linter } from 'eslint';
 import * as tsparser from '@typescript-eslint/parser';
+import { replayCode, type Harness } from './lib/case-harness.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -78,11 +70,23 @@ const only =
     .find((a) => a.startsWith('--plugin='))
     ?.slice('--plugin='.length) ?? null;
 
-type Case = { kind: string; code: string; options?: string };
-type Ledger = { rules: { rule: string; cases: Case[] }[] };
+type Case = {
+  kind: string;
+  code: string;
+  options?: string;
+  body?: string | null;
+  harness?: string;
+};
+type Ledger = {
+  rules: { rule: string; cases: Case[] }[];
+  harnesses?: Record<string, Harness>;
+};
 
 const ledger = JSON.parse(fs.readFileSync(LEDGER, 'utf8')) as Ledger;
 const casesByRule = new Map(ledger.rules.map((r) => [r.rule, r.cases]));
+/** The case as its suite runs it: harness put back around the fragment. */
+const runnable = (c: Case): string =>
+  replayCode(c, ledger.harnesses ?? {}) ?? c.code;
 const linter = new Linter();
 
 /** Two plugins publish under a prefix that differs from their directory. */
@@ -171,7 +175,7 @@ for (const dir of fs.readdirSync(path.join(ROOT, 'packages')).sort()) {
     let parsed = false;
     for (const c of cases.slice(0, 12)) {
       const messages = linter.verify(
-        c.code,
+        runnable(c),
         [
           {
             files: ['**/*.{ts,tsx}'],

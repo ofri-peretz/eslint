@@ -4,7 +4,7 @@
 > broken and every one of them turned out to be the probe feeding rules a file
 > their own harness would never have produced.
 
-**Status:** draft · **Opened:** 2026-09-03 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-09-03 · **Shipped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 ---
 
@@ -95,3 +95,32 @@ arguments. First reading: **27,239 of 27,414 cases replayable**, 316
 harnesses, 48 unresolved (runtime-built code, named by source text). Round
 trip: `scripts/__tests__/case-harness.test.ts` replays every harnessed invalid
 case in six files, one per shape, and each reports under its own rule.
+
+Slice 3 shipped: both consumers replay through the harness. The computed-key
+probe rewrites only the case's own code and puts the harness back around it.
+It now probes **6,960 TP cases** (was 4,466); 125 in 19 rules still cannot be
+probed. It found **38 more rules** that go silent on a string subscript, which
+were recorded in `.agent/computed-key-baseline.json` as found debt, the same
+way as the read and key extensions before them.
+`recommended-rules-fire.mts` falls from 96 silent rules to **41 of 305**.
+
+## Closed — 2026-11-07
+
+Shipped. Evidence against the success criteria:
+
+- **Every case can be replayed to its suite's verdict.** 27,239 of 27,414
+  cases replay from the ledger alone (`replayCode(case, ledger.harnesses)`),
+  and the round-trip test proves the verdict for every harnessed invalid case
+  in six files that cover each harness shape.
+- **No consumer differs from the suite without saying so.** Both consumers
+  replay through the harness and pass the case's own filename. The computed-key
+  probe prints what it still cannot probe instead of shrinking its denominator.
+- **Proven by** `scripts/__tests__/case-harness.test.ts`. It goes red when
+  `replayCode` strips the harness.
+
+Scoped down, and named rather than hidden: 175 cases (75 of them TP) are
+built by runtime logic (`nest(11, …)`, `Array.from`, imported helpers) and
+are recorded as `unresolved` harnesses with their source text. About 50
+more TP cases depend on a case-level `languageOptions` or `settings` the
+ledger does not record, because those hold parser objects, not data. Both
+populations are printed by `rule-cases` and by the probe on every run.
