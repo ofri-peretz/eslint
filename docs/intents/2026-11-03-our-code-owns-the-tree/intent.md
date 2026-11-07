@@ -116,3 +116,17 @@ anything for our consumers.
   algorithms, not glue code.
 - Which TypeScript parser should tests use once the typescript-eslint parser
   is not a dependency?
+
+## Progress — 2026-11-07
+
+Phase 1.1 shipped. `scripts/vendor-estree-types.ts` copies the type-only
+declarations devkit uses (118 files from `@typescript-eslint/{types,utils,scope-manager,typescript-estree,visitor-keys,project-service}`
+at 8.68.0) into `packages/eslint-devkit/src/types/estree/`, rewriting the
+cross-package specifiers to relative paths. `--check` holds the snapshot to the
+pin, enforced by `scripts/__tests__/vendored-estree-types.lock.test.ts`. The
+snapshot type-checks with `skipLibCheck: false`.
+
+Found while doing it: `.d.ts` files under `src/` are not emitted to `dist/`,
+so phase 1.2 (re-pointing imports) must first make the build copy
+`src/types/estree/**` into `dist/`. Otherwise the published declarations would
+reference files that do not exist.
