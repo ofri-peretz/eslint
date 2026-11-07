@@ -141,8 +141,10 @@ specifiers.
 
 Phases 1.3 and 1.4 shipped.
 
-- **1.3.** `scripts/__tests__/devkit-types-compat.lock.test.ts` compiles one
-  program that assigns every plugin to upstream `TSESLint.FlatConfig.Plugin`.
+- **1.3.** `tools/types-compat/src/compat.ts`, part of the whole-graph
+  `npm run typecheck`, assigns every plugin to upstream
+  `TSESLint.FlatConfig.Plugin`, and `types-compat-covers-every-plugin.lock.test.ts`
+  keeps the list complete.
   It passes for all 32. Getting there surfaced two facts:
   - Private and protected class members make a type nominal, so the vendor
     script now drops them (no rule can use them).
