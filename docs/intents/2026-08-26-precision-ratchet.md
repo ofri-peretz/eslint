@@ -28,6 +28,8 @@ cases:
   - ILB-0004
 ---
 
+**Status:** shipped · **Closed:** 2026-11-07
+
 > **Reconstructed on 2026-08-30, after the work.** This branch ran for five days
 > without an intent file, which is exactly the omission that produced this
 > directory. It is recorded as reconstruction rather than backdated, because an
@@ -112,3 +114,7 @@ Recorded because the drift is the interesting part:
   into `peer-health` came from a mid-flight request and belong to a different
   initiative. They are here because splitting the branch was declined, not
   because they were in scope.
+
+## Closed — 2026-11-07
+
+Shipped by #739. The precision benchmark runs and its check scripts are on main.

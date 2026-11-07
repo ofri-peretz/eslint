@@ -8,6 +8,8 @@ cases:
   - ILB-0123
 ---
 
+**Status:** shipped · **Closed:** 2026-11-07
+
 ## What
 
 Replace the taint model in `mongodb-security/no-unsafe-query`. Today it treats
@@ -156,3 +158,7 @@ Package suite 680 passing, coverage 100% on statements, branches, functions and
 lines. `case-registry --check`: 137 cases, 135 verified, **0 regressed**, 2
 uncovered — and those two are ILB-0040 and ILB-0042, which belong to a
 different intent.
+
+## Closed — 2026-11-07
+
+Shipped. ILB-0121 and ILB-0123 are in `benchmarks/cases/registry.json` and the verified baseline.

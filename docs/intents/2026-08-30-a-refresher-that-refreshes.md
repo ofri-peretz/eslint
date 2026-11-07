@@ -5,6 +5,8 @@ packages: []
 cases: []
 ---
 
+**Status:** shipped · **Closed:** 2026-11-07
+
 ## What
 
 Three artifacts in `check:audit-freshness` are stale, and at least one of them
@@ -62,3 +64,7 @@ pattern is: **the gate checks that a refresher is NAMED, never that it WORKS.**
   a stock runner, or a recorded reason it cannot.
 - `freshness-has-a-refresher.test.ts` checks that running the refresher changes
   the artifact's timestamp, and fails when the command is replaced by a no-op.
+
+## Closed — 2026-11-07
+
+Shipped, scoped down. `freshness-has-a-refresher.test.ts` ties every TTL artifact to a scheduled refresher. It does not assert that a no-op refresh fails. That assertion would be a new gate, and the current ruling is not to add gates.

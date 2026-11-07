@@ -5,6 +5,8 @@ packages: []
 cases: []
 ---
 
+**Status:** dropped · **Closed:** 2026-11-07
+
 ## What
 
 Measure **new repositories per week with an Interlace plugin in their
@@ -61,3 +63,7 @@ four that flatter.
   `UNREFRESHED` — the shrink-only list stays at six.
 - `AI_SDLC.md`'s funnel table shows Adoption as instrumented rather than
   `(gap)`, and gap 3 moves to Closed with the workflow named.
+
+## Closed — 2026-11-07
+
+Dropped. Never built: there is no `benchmark-results/adoption.json` and no adoption workflow. If the number is wanted, restart it as its own directory intent. It would be a scheduled measurement, not a gate.

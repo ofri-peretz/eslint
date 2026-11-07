@@ -1,6 +1,6 @@
 # Intent — `shard-count-from-measurement`
 
-**Status:** draft · **Opened:** `2026-08-30` · **Owner:** `@ofri-peretz`
+**Status:** dropped · **Opened:** `2026-08-30` · **Dropped:** 2026-11-07 · **Owner:** `@ofri-peretz`
 
 ---
 
@@ -97,3 +97,16 @@ every contributor and agent waiting on the gate. Nothing published moves.
 - Cold-cache cost per shard is unmeasured. Every timing above is from a warm
   turbo cache; the failing shard 4 on PR #769 had to build a package from
   scratch, which is the case that sets `timeout-minutes`.
+
+## Dropped — 2026-11-07
+
+Superseded, and its lever shipped. The node test matrix went from 10 shards to 4
+plus a 3-shard web lane (#773, #775). Shards are weighted by measured duration
+(ADR 0007, #871). The goal it has left, ≤60s and ≤12 jobs on a full run, is
+word for word criteria 1–2 of `concurrency-budget`, which owns CI wall-clock
+from here.
+
+Its premise, that queueing on about 6 runner slots is the cause, did not hold
+up. `concurrency-budget`'s 2026-08-31 correction refuted it, and so does run
+42301728928 on 2026-11-06, where the worst queue wait was 40s and the time went
+to slow jobs.

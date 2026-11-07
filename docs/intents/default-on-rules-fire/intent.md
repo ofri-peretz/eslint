@@ -5,7 +5,7 @@
 > findings across the eight-repository corpus, and hid a real suppression
 > defect that no corpus measurement could ever have surfaced.
 
-**Status:** draft · **Opened:** 2026-08-25 · **Owner:** @ofri-peretz
+**Status:** dropped · **Opened:** 2026-08-25 · **Dropped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 ---
 
@@ -135,3 +135,19 @@ been removed. The honest position is that we do not know.
 **287 is the figure with a method behind it**, and the method is
 `npm run measure:default-on-rules`. The 327 should be treated as unattributed
 and not quoted again.
+
+## Dropped — 2026-11-07
+
+Dropped on two grounds.
+
+- Criterion 3 asks for a new gate (refuse a new `recommended` rule without a
+  control). The current ruling is not to add gates.
+- Criteria 1–2 reduce to the silent-rule list the weekly real-source scan
+  already produces. That scan runs every rule through ESLint, not RuleTester,
+  on real code with the presets enabled. A rule that fires there or in the
+  corpus has the Linter-API control this intent wanted. A rule that fires in
+  neither is listed in `withoutMaterial`, the population
+  `forty-six-rules-fire-nowhere` was about, and is worked as backlog.
+
+The 327 opening figure stays unattributed, as this file's 2026-09-02 re-check
+says. `npm run measure:default-on-rules` remains as an on-demand probe.

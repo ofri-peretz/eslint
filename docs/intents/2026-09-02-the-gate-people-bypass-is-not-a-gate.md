@@ -5,6 +5,8 @@ packages: []
 cases: []
 ---
 
+**Status:** shipped · **Closed:** 2026-11-07
+
 ## What
 
 Make `build-and-test` and `tests-affected` pass or fail on the change, not on
@@ -76,3 +78,7 @@ rejected push is discovered later.
   watched rather than backgrounded and discovered.
 - `AI_SDLC.md` records the flake rate, so a return is visible as a number rather
   than as a growing pile of justified exclusions.
+
+## Closed — 2026-11-07
+
+Shipped, scoped down. `prepush-and-vitest-timeouts.lock.test.ts` locks the pre-push timeouts, and the shipped `docs/intents/scan-tests-on-the-default-timeout` carried the work on. No flake rate is recorded.

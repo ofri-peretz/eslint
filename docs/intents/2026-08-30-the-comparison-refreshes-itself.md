@@ -5,6 +5,8 @@ packages: []
 cases: []
 ---
 
+**Status:** shipped · **Closed:** 2026-11-07
+
 ## What
 
 Give the six artifacts that carry a TTL and nothing to reset it a scheduled
@@ -94,3 +96,7 @@ Three rows remain stale for reasons outside this intent: the API-surface
 manifest, the CVE→rule latency audit, and the per-rule p95 budget — the last of
 which advertises a prose instruction rather than a command, so no schedule can
 ever satisfy it.
+
+## Closed — 2026-11-07
+
+Shipped, scoped down. `UNREFRESHED` went from 6 to 2 (`audit:stock-overlap`, `real-source-scan`), each with a recorded reason, and `peer-health.yml` and `comparison-refresh.yml` run on schedule and land their snapshots.

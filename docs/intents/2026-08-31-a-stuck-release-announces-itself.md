@@ -5,6 +5,8 @@ packages: []
 cases: []
 ---
 
+**Status:** shipped · **Closed:** 2026-11-07
+
 ## What
 
 When a package's version on `main` is not the version on npm, something must
@@ -55,3 +57,7 @@ pipeline can both stop without a single red mark anywhere a human looks.
   is a stuck release.
 - A regression lock proves the check reports drift when drift exists, rather
   than passing over an empty list.
+
+## Closed — 2026-11-07
+
+Shipped. `release-drift.yml` runs daily, `scripts/check-release-drift.ts` reports the `behind` and `never-published` states, and `release-drift-reports-drift.test.ts` locks them.

@@ -12,6 +12,8 @@ cases:
   - ILB-0001
 ---
 
+**Status:** shipped · **Closed:** 2026-11-07
+
 ## What
 
 Give each of the nine flagship rules a registry case: an `ILB-nnnn` entry with
@@ -112,3 +114,7 @@ cases and the rationale carries the argument instead. `hooks-exhaustive-deps`
 earns its place through a stale closure showing another user's data;
 `no-cycle` through a `const` that is `undefined` at module-evaluation time. A
 CWE invented to fill the field would have been worse than an empty one.
+
+## Closed — 2026-11-07
+
+Shipped. `benchmarks/cases/registry.json` holds 168 cases covering 57 rules, and all 9 flagship rules appear in `coverage[]`.

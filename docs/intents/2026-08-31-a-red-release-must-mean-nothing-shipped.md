@@ -5,6 +5,8 @@ packages: []
 cases: []
 ---
 
+**Status:** shipped · **Closed:** 2026-11-07
+
 ## What
 
 A release job that reports `failure` must be readable as "nothing was
@@ -60,3 +62,7 @@ then failed to tag" is worse than no status, because it is believed.
   PUBLISHED — POST-STEPS FAILED.
 - A regression lock asserts the ordering: no step that can fail may sit between
   `npm publish` and the step that records the publish.
+
+## Closed — 2026-11-07
+
+Shipped. `scripts/__tests__/publish-is-recorded-before-it-can-fail.test.ts` and the `release.yml` step it guards are on main.

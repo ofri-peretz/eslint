@@ -56,6 +56,15 @@ and every check stayed green because each only looked at its own folder.
 | `shipped`  | merged                                                    |       **yes**        |
 | `dropped`  | deliberately not doing it — keep the file, it is a record |          no          |
 
+## Closing
+
+An intent ends `shipped` or `dropped`, with a dated `## Closed` or `## Dropped`
+section giving the evidence or the superseding reason. A criterion that is a
+number to reach is met by a scheduled measurement, not by the number. An intent
+does not add a gate to close itself. A flat per-PR record (`20*.md`) gains a
+`**Status:**` line after its frontmatter when it closes. See
+[ADR 0011](../adr/0011-intents-close-on-evidence-and-measurements-are-scheduled.md).
+
 ## Where intents come from
 
 Two sources, and the second is the one that makes this a loop:

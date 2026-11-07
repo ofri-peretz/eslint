@@ -5,6 +5,8 @@ packages: []
 cases: []
 ---
 
+**Status:** dropped · **Closed:** 2026-11-07
+
 ## What
 
 Raise the number of rules whose precision is measured against a fixture the
@@ -90,6 +92,7 @@ The 18% that stood here before was worse than no number: it was reassuring.
   `safe/` fixture was being counted as measured precision when it is a false
   positive. Both restatements moved the number down. That is the number
   working.
+
 - Every rule in a `recommended` preset either has a SOURCED fixture or a
   recorded reason it cannot.
 - Every `@source` pins a commit and a path — `owner/repo@<sha> path:line` — so
@@ -100,3 +103,7 @@ The 18% that stood here before was worse than no number: it was reassuring.
 - `benchmark-results/scorecard.md` shows fewer `⚠️ none` rows than it does
   today, and the SOURCED figure is the one quoted anywhere precision is
   claimed.
+
+## Closed — 2026-11-07
+
+Dropped, superseded by the same weekly scan and the corpus-coverage baseline. Precision per rule is measured where a rule has material. The rules without material are the backlog listed there.

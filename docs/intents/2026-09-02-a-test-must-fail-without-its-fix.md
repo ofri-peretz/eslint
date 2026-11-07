@@ -5,6 +5,8 @@ packages: []
 cases: []
 ---
 
+**Status:** dropped · **Closed:** 2026-11-07
+
 ## What
 
 Make it mechanical to show that a test would have caught the bug it was written
@@ -68,3 +70,7 @@ because every later decision rests on it.
 - The three failed drafts above are in the repo as a worked example, because the
   useful part is not that they were wrong — it is that each was wrong differently
   and all three looked right.
+
+## Closed — 2026-11-07
+
+Dropped, superseded by mutation testing. `mutation.yml` runs oxmutate weekly over every opted-in plugin and grades each rule against its banked score in `.agent/mutation-baseline.json`. That is a per-rule ratchet over whether the fixtures notice a change to the rule, which is the "non-discriminating case" measure this record wanted.

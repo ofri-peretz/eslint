@@ -5,6 +5,8 @@ packages: []
 cases: []
 ---
 
+**Status:** shipped · **Closed:** 2026-11-07
+
 ## What
 
 Make every gate distinguish **"I measured, and it is fine"** from **"I could not
@@ -67,3 +69,7 @@ five separate gates were doing it anyway.
   is that each gate had to remember separately.
 - Each of the seven rows above has a regression test that fails on the pre-fix
   behaviour.
+
+## Closed — 2026-11-07
+
+Shipped, scoped down. The gates this record named carry their own vacuity tests. A single cross-gate test was not built, because it would be a new gate.

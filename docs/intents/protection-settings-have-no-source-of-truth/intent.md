@@ -4,7 +4,7 @@
 > that was created and verified this morning was gone by the afternoon, with
 > nothing in the repository that manages it.
 
-**Status:** draft · **Opened:** 2026-09-01 · **Owner:** @ofri-peretz
+**Status:** dropped · **Opened:** 2026-09-01 · **Dropped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 ---
 
@@ -79,3 +79,17 @@ enforcement behind it at all.
   `AI_NATIVE_SDLC.md` living one level up.
 - Should the required reviewer go back on `production` immediately as a stopgap,
   accepting that it can vanish again until this ships?
+
+## Dropped — 2026-11-07
+
+The premise is resolved. The `required_reviewers` rule on the `production`
+environment did not vanish. It was removed on purpose after it parked 6 publish
+jobs for about 4.5 hours, and ADR 0002
+(`docs/adr/0002-npm-publish-is-not-gated-on-a-human.md`, #813) records that
+decision. That meets criterion 4 ("a deliberate deletion leaves a record") and
+makes criterion 3 (re-apply the reviewer) obsolete.
+
+A scheduled drift reporter (criterion 2) needs an admin-scoped token, so it
+would be a new secret and a new watcher. If it is wanted, it is its own intent.
+The stale `scripts/setup-branch-protection.sh`, which disagrees with the live
+settings, is aligned under `merge-latency`.
