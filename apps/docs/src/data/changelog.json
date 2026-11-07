@@ -1,7 +1,7 @@
 {
-  "releaseCount": 1113,
+  "releaseCount": 1117,
   "packageCount": 66,
-  "entryCount": 2851,
+  "entryCount": 2814,
   "oldestYear": 2024,
   "releases": [
     {
@@ -18971,11 +18971,6 @@
           "kind": "other",
           "title": "Package name aligned to `@interlace/eslint-devkit` (formerly eslint-plugin-utils).",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -21461,11 +21456,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -21626,11 +21616,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -21721,11 +21706,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -21796,11 +21776,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -21826,11 +21801,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -21855,11 +21825,6 @@
         {
           "kind": "other",
           "title": "fix changelog header format across all packages",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -21966,11 +21931,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -21990,11 +21950,6 @@
         {
           "kind": "other",
           "title": "fix changelog header format across all packages",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22016,11 +21971,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -22041,11 +21991,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -22065,11 +22010,6 @@
         {
           "kind": "other",
           "title": "fix changelog header format across all packages",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22101,11 +22041,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -22125,11 +22060,6 @@
         {
           "kind": "other",
           "title": "fix changelog header format across all packages",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22151,11 +22081,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -22175,11 +22100,6 @@
         {
           "kind": "other",
           "title": "fix changelog header format across all packages",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22201,11 +22121,6 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -22220,11 +22135,6 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22241,11 +22151,6 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -22260,11 +22165,6 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22281,11 +22181,6 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -22300,11 +22195,6 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22321,11 +22211,6 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -22340,11 +22225,6 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22361,11 +22241,6 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -22380,11 +22255,6 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22411,11 +22281,6 @@
           "kind": "other",
           "title": "**rules:** Some previously flagged patterns are now correctly allowed",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -22430,11 +22295,6 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22451,11 +22311,6 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -22470,11 +22325,6 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22491,11 +22341,6 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -22510,11 +22355,6 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22531,11 +22371,6 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -22551,11 +22386,6 @@
           "kind": "other",
           "title": "align codecov component names and update docs components",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -22570,11 +22400,6 @@
         {
           "kind": "other",
           "title": "align codecov component names and update docs components",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -22915,11 +22740,6 @@
         {
           "kind": "other",
           "title": "align main README with Interlace branding",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -24616,11 +24436,6 @@
           "kind": "other",
           "title": "Documentation improvements.",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -24646,11 +24461,6 @@
           "kind": "other",
           "title": "Added vitest to peerDependencies.",
           "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
-          "pr": null
         }
       ]
     },
@@ -24665,11 +24475,6 @@
         {
           "kind": "other",
           "title": "Config and dependency-check adjustments.",
-          "pr": null
-        },
-        {
-          "kind": "other",
-          "title": "Ofri Peretz",
           "pr": null
         }
       ]
@@ -25236,10 +25041,20 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "6.0.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
         {
-          "kind": "other",
-          "title": "Ofri Peretz",
+          "kind": "fix",
+          "title": "`detect-non-literal-fs-filename` honours `/* global NAME */` declarations under oxlint too. A path built from a declared global (configuration the environment provides) was silent under ESLint and reported under oxlint, whose scope manager does not read the comment.",
           "pr": null
         }
       ]
@@ -25361,10 +25176,20 @@
           "kind": "other",
           "title": "fix changelog header format across all packages",
           "pr": null
-        },
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "6.0.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
         {
-          "kind": "other",
-          "title": "Ofri Peretz",
+          "kind": "fix",
+          "title": "`detect-object-injection` puts a copy loop's single finding on its first write in source order. It walked the loop body in parser property order, so an `if … else` copy reported its `else` write under ESLint and its `then` write under oxlint.",
           "pr": null
         }
       ]
@@ -25385,6 +25210,36 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-node-security",
+      "short": "oxlint-plugin-node-security",
+      "version": "6.0.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.0.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-secure-coding",
+      "short": "oxlint-plugin-secure-coding",
+      "version": "6.0.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@6.0.2`",
           "pr": null
         }
       ]
