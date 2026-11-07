@@ -6,7 +6,8 @@
         "http://localhost:3000/",
         "http://localhost:3000/articles",
         "http://localhost:3000/articles?tag=jwt",
-        "http://localhost:3000/articles?page=2"
+        "http://localhost:3000/articles?page=2",
+        "http://localhost:3000/docs/security/plugin-vercel-ai-security"
       ],
       "numberOfRuns": 3,
       "settings": {

@@ -4,7 +4,7 @@
 > docs page is also the slowest and the highest-bouncing, and the three facts have
 > one cause.
 
-**Status:** draft · **Opened:** 2026-09-02 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-09-02 · **Shipped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 ---
 
@@ -100,3 +100,27 @@ the sampled sessions is Google.
   inputs, or does a scheduled redeploy carry freshness?
 - Is `fetchRuleDescriptions` needed at all, given `sync-rules-docs.ts` already
   generates rule data locally?
+
+## Closed — 2026-11-07
+
+Shipped. Evidence against the success criteria:
+
+- **No per-rule request at request time.** `RulesTable`
+  (`apps/docs/src/components/docs/rules-table.tsx`) takes each rule's
+  description from `src/data/rules-manifest.json`, built at build time from
+  each rule's `meta.docs.description`. `fetchRuleDescriptions` (one GitHub
+  fetch per rule) is gone. The plugin README is still fetched once per plugin
+  (6-hour ISR) to read the rules table, which is not a per-rule request.
+- **The `plugin-rules` cache is deleted.** No code read it. The writer half of
+  `apps/docs/scripts/sync-readme-rules.ts` and its `docs-data.yml` step are
+  removed. The README parsers stay because `sync-readme-rules.test.ts` pins
+  them.
+- **LCP of the index page is measured, not predicted.**
+  `/docs/security/plugin-vercel-ai-security` is now in `lighthouserc.json`, so
+  the weekly `lighthouse.yml` run reads its LCP against the 2500 ms `good`
+  band (`warn`).
+
+Dropped criterion: a budget check that **fails** on an index-page regression.
+Per ADR 0011 the LCP number is a scheduled measurement, and an intent adds no
+gate to close itself. The weekly run already fails and files an issue if the
+page's performance category drops below 0.85.
