@@ -4,7 +4,7 @@
 > while shipping `infra-metrics`: the fast-loop gate takes 3.2 minutes and 82%
 > of it is one build.
 
-**Status:** draft · **Opened:** 2026-08-30 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-08-30 · **Shipped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 ---
 
@@ -172,3 +172,19 @@ chosen for two reasons that outlive the price:
 It is enabled per job and defaults to off, because `release.yml` uses the same
 composite four times and a third-party action does not belong in the publish
 path. That invariant is locked in `scripts/__tests__/infra-metrics-lock.test.ts`.
+
+## Closed — 2026-11-07
+
+Shipped in August: the levers above took `quality.yml` from 194s to 37s
+(run 33328203701), with no check removed.
+
+Closed with a regression note, not as a standing target. Since then the
+wall-clock has grown to 138–659s end to end. The new `Format drift` job takes
+161–180s, jobs queue for up to 391s (run 42300784132), and the Actions cache
+is at 10.91 GB, over the 10 GB budget. The turbo hit rate is not measured
+anywhere. The remote cache is now Vercel over OIDC (`quality-full.yml`), which
+reverses this intent's "why not Vercel" reasoning.
+
+Per the ruling that measurements run on schedulers, not as roadmap gates, the
+wall-clock regression is owned by `concurrency-budget`, which adds the
+scheduled CI wall-clock recorder.

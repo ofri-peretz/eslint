@@ -3,7 +3,7 @@
 > Stage 1 artifact. Opened after reconciling the spelling-site count against
 > the computed-key probe and finding they disagree by two orders of magnitude.
 
-**Status:** draft · **Opened:** 2026-09-03 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-09-03 · **Shipped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 ---
 
@@ -64,3 +64,23 @@ move against a larger population.
   cannot exercise.
 - **Proven by:** the probed-case count rising, and every rule the extension
   finds either fixed or recorded in the baseline with a reason.
+
+## Closed — 2026-11-07
+
+Shipped. Evidence against the success criteria:
+
+- Object keys are rewritten and re-run: `KEY_SITE` in
+  `scripts/lib/computed-key-rewrite.ts` turns `{ k: v }` into `{ ['k']: v }`
+  and skips method shorthand and shorthand bindings, as the destructuring
+  constraint requires. CI runs it as `check:computed-keys` in
+  `.github/workflows/quality.yml`.
+- The probed-case count rose: the `why` field of
+  `.agent/computed-key-baseline.json` records keys reaching 3,130 cases and
+  50 more blind spots.
+- Each finding was fixed (#862, #875, #1349 and others) or baselined with a
+  reason. The baseline is down to 16 rules, plus a `known_probe_artefacts`
+  section.
+
+Scoped down: the 19-site `string-literal-only` class (11 sites today in
+`rule-spelling-baseline.json`) is still unprobed. Resolving a constant is a
+different instrument from rewriting a key, and is out of scope here.

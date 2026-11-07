@@ -3,7 +3,7 @@
 > Stage 1 artifact of the AI-native SDLC. Opened after enumerating the surfaces
 > the published coverage table claims to describe.
 
-**Status:** draft · **Opened:** 2026-09-02 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-09-02 · **Shipped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 ---
 
@@ -171,3 +171,23 @@ needed `@nestjs/core` installed beside it.
 **29 of 30 enumerable.** `@prisma/client` exports nothing until
 `prisma generate` runs against a schema, so its surface cannot be read from an
 install alone. Recorded in its declaration rather than counted as zero.
+
+## Closed — 2026-11-07
+
+Shipped by #959 (2026-09-10), on #824. Evidence against the success criteria:
+
+- Every figure is computed: `scripts/audit-api-surface.ts` reads
+  `scripts/measure-api-surface.mts`, and `.agent/api-surface-manifest.json`
+  holds no count.
+- The floor is judged against the measured basis only: curated denominators
+  are held to 60%, and raw denominators are published as upper bounds that
+  never pass or fail.
+- `outOfScope` must name a real API on the measured surface.
+- A hand-edited percentage fails:
+  `scripts/__tests__/api-surface-coverage-is-measured.lock.test.ts` rejects a
+  typed `coverage_pct` even when it agrees with the measurement.
+- Runs on PRs in `.github/workflows/api-surface.yml`.
+
+Scoped down: 4 denominators are curated today. The rest are honest upper
+bounds, not judged. `a-surface-figure-must-name-its-method` (shipped) carries
+this forward.
