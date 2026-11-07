@@ -36,7 +36,7 @@ import { RuleCreator } from './rule-creator';
 // so a *runtime value*, and `@typescript-eslint/utils` is an optional peer npm
 // does not install. See sql-injection-rule.ts for the full note.
 import { AST_NODE_TYPES } from '../ast-node-types';
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESLint, TSESTree } from '../types/estree/utils/index';
 import { formatLLMMessage, MessageIcons } from '../messaging';
 import { createModuleEvidence } from './module-evidence';
 import { isTestFilePath } from './rule-creator';

@@ -23,7 +23,7 @@
  * project-wide.
  */
 
-declare module '@typescript-eslint/utils/ts-eslint' {
+declare module './estree/utils/ts-eslint/Rule' {
   // Same type parameters as upstream, which declaration merging requires.
   interface RuleMetaData<
     MessageIds extends string,

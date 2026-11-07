@@ -23,7 +23,7 @@
  * this while the other does not is the failure that a shared resolver removes:
  * a new spelling is now learned once, by both.
  */
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { propertyName } from '@interlace/eslint-devkit';
 
 /**

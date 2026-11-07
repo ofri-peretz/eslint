@@ -95,8 +95,10 @@ export {
  * and so pulled a 24 MB compiler into every consumer install. `AST_NODE_TYPES`
  * is now an inlined table (`./ast-node-types`) and `ESLintUtils` is our own
  * ported shim (`./rule-creation/rule-creator`). Together they take this
- * package to zero runtime dependencies. The type-only re-exports below still
- * point at `utils` — erased at compile time, so they cost nothing.
+ * package to zero runtime dependencies. The type-only re-exports below point
+ * at devkit's own vendored declarations (`./types/estree`, generated from the
+ * pinned typescript-eslint packages by scripts/vendor-estree-types.ts), so a
+ * consumer type-checks without `@typescript-eslint/utils` installed.
  */
 export { AST_NODE_TYPES } from './ast-node-types';
 export { ESLintUtils } from './rule-creation/rule-creator';
@@ -105,4 +107,5 @@ export type {
   TSESLint,
   TSESTree,
   ParserServices,
-} from '@typescript-eslint/utils';
+} from './types/estree/utils/index';
+export type { JSONSchema4 } from './types/estree/utils/json-schema';

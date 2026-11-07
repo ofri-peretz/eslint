@@ -52,7 +52,7 @@ import { RuleCreator } from './rule-creator';
  */
 
 import { AST_NODE_TYPES } from '../ast-node-types';
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESLint, TSESTree } from '../types/estree/utils/index';
 import { formatLLMMessage, MessageIcons } from '../messaging';
 import { propertyKeyName } from './unscoped-mutation-rule';
 import { createModuleEvidence } from './module-evidence';

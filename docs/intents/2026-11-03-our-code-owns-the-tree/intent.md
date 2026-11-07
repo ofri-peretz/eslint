@@ -130,3 +130,11 @@ Found while doing it: `.d.ts` files under `src/` are not emitted to `dist/`,
 so phase 1.2 (re-pointing imports) must first make the build copy
 `src/types/estree/**` into `dist/`. Otherwise the published declarations would
 reference files that do not exist.
+
+Phase 1.2 shipped. `scripts/build-package.ts` copies `src/types/estree/**`
+into `dist/`, and all 37 type imports point at the vendored declarations:
+31 devkit files go through relative paths, and 6 plugin files import from
+`@interlace/eslint-devkit`, which now also exports `JSONSchema4`. The
+`RuleMetaDataDocs` augmentation targets the vendored module. Rebuilt `dist/`
+for devkit and the touched plugins has **0** `@typescript-eslint` import
+specifiers.

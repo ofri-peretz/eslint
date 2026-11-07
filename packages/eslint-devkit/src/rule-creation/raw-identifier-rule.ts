@@ -50,7 +50,7 @@ import { RuleCreator } from './rule-creator';
 // does not install. See sql-injection-rule.ts for the full note.
 import { AST_NODE_TYPES } from '../ast-node-types';
 import { propertyName } from '../ast/spellings';
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESLint, TSESTree } from '../types/estree/utils/index';
 import { formatLLMMessage, MessageIcons } from '../messaging';
 import { unwrapTypeSyntax } from '../ast/type-syntax';
 import { isTestFilePath } from './rule-creator';

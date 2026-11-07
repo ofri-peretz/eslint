@@ -19,7 +19,7 @@
  * the inbound request — `ORDER BY ${req.query.sort}` — not merely because it
  * is unproven.
  */
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '../types/estree/utils/index';
 import { AST_NODE_TYPES } from '../ast-node-types';
 import { staticString } from '../ast/spellings';
 import { unwrapTypeSyntax } from '../ast/type-syntax';

@@ -45,7 +45,7 @@ import { RuleCreator } from './rule-creator';
 import { AST_NODE_TYPES } from '../ast-node-types';
 import { objectKeyName, propertyName } from '../ast/spellings';
 import { unwrapTypeSyntax } from '../ast/type-syntax';
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESLint, TSESTree } from '../types/estree/utils/index';
 import { formatLLMMessage, MessageIcons } from '../messaging';
 import { createModuleEvidence } from './module-evidence';
 import { isTestFilePath } from './rule-creator';

@@ -35,7 +35,7 @@
  * unwrapping is always sound for provenance: `x as string` reads exactly what
  * `x` reads.
  */
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '../types/estree/utils/index';
 // The VALUE comes from the local shim, never from the peer. `@typescript-eslint/utils`
 // is an optional peer of this package, so a value import survives into the
 // published output as a runtime `require` that npm has not installed — the

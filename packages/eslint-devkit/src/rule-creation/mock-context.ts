@@ -12,7 +12,7 @@
  * Call the returned `listeners` directly with synthetic nodes and assert on
  * the recorded `reports`.
  */
-import type { TSESLint } from '@typescript-eslint/utils';
+import type { TSESLint } from '../types/estree/utils/index';
 
 /** Anything shaped like an ESLint rule module (`{ create(context) }`). */
 export interface RuleLike {

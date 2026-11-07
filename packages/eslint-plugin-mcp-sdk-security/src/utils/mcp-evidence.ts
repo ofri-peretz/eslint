@@ -24,7 +24,7 @@
  * module load.
  */
 import { createModuleEvidence } from '@interlace/eslint-devkit';
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '@interlace/eslint-devkit';
 
 /**
  * The SDK ships its surface under subpaths — `/server/mcp.js`, `/types.js` —

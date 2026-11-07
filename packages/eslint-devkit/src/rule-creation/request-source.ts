@@ -27,7 +27,7 @@
  * The property names are the frameworks' API (Express, Koa, Fastify, Lambda
  * proxy events), not a guess about what a variable is called.
  */
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '../types/estree/utils/index';
 import { AST_NODE_TYPES } from '../ast-node-types';
 import { objectKeyName, propertyName } from '../ast/spellings';
 import { unwrapTypeSyntax } from '../ast/type-syntax';
