@@ -50,9 +50,25 @@ const secureCoding = read(
 
 const ids = Object.keys(mapping.rules);
 
+/**
+ * Changesets owns the version once the package exists: a Version Packages PR
+ * bumps it like any other workspace. Writing a constant here reset it to
+ * 0.1.0 on every regeneration, which `--check` then reported as drift on a
+ * tree nobody had edited.
+ */
+const manifestPath = path.join(
+  ROOT,
+  'packages',
+  'oxlint-plugin-security',
+  'package.json',
+);
+const currentVersion = fs.existsSync(manifestPath)
+  ? (read(manifestPath).version as string)
+  : '0.1.0';
+
 const manifest = {
   name: 'oxlint-plugin-security',
-  version: '0.1.0',
+  version: currentVersion,
   description:
     "Drop-in replacement for eslint-plugin-security on oxlint and Vite+: the same security/<rule> IDs, backed by Interlace's security rules.",
   // Stays private until its ship gate holds — every incumbent rule mapped and

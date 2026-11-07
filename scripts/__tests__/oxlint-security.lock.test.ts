@@ -89,4 +89,13 @@ describe('oxlint-plugin-security', () => {
       `private was flipped while the gate is red:\n${gate.stdout}${gate.stderr}`,
     ).toBe(0);
   });
+
+  it('regenerating the derived files keeps the version changesets set', () => {
+    const check = spawnSync(
+      'npx',
+      ['tsx', 'scripts/generate-oxlint-security.mts', '--check'],
+      { cwd: ROOT, encoding: 'utf8' },
+    );
+    expect(check.status, `${check.stdout}${check.stderr}`).toBe(0);
+  });
 });
