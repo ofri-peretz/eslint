@@ -32,6 +32,7 @@ import { fileURLToPath } from 'node:url';
 import { Linter } from 'eslint';
 import * as tsparser from '@typescript-eslint/parser';
 import { contrastsSpellings, toComputed } from './lib/computed-key-rewrite.ts';
+import { replayCode, type Harness } from './lib/case-harness.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -45,10 +46,22 @@ type Case = {
   code: string;
   description: string;
   options?: string;
+  body?: string | null;
+  harness?: string;
+  filename?: string;
 };
-type Ledger = { rules: { rule: string; cases: Case[] }[] };
+type Ledger = {
+  rules: { rule: string; cases: Case[] }[];
+  harnesses?: Record<string, Harness>;
+};
 
 const ledger = JSON.parse(fs.readFileSync(LEDGER, 'utf8')) as Ledger;
+/**
+ * The code the case's own suite runs: the ledger's harness put back around
+ * the fragment. A case the ledger cannot replay falls back to its fragment.
+ */
+const runnable = (c: Case, body = c.body ?? c.code): string =>
+  replayCode({ ...c, body }, ledger.harnesses ?? {}) ?? body;
 const linter = new Linter();
 
 const plugins = new Map<string, Record<string, unknown>>();
@@ -118,12 +131,15 @@ function reports(
   name: string,
   code: string,
   options: unknown[] | null,
+  // The case's own filename: path-sensitive rules (test-file skips, `.tsx`
+  // only, a `domain/` folder) decide from it, as the RuleTester case did.
+  filename = 'case.tsx',
 ): number | null {
   const messages = linter.verify(
     code,
     [
       {
-        files: ['**/*.{ts,tsx}'],
+        files: ['**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'],
         plugins: { p: { rules: { [name]: rule } } as never },
         languageOptions: {
           parser: tsparser as never,
@@ -138,7 +154,7 @@ function reports(
         } as never,
       },
     ],
-    'case.tsx',
+    filename,
   );
   if (messages.some((m) => m.ruleId === null)) return null; // parse error
   return messages.length;
@@ -194,9 +210,14 @@ for (const entry of ledger.rules) {
 
   for (const c of entry.cases) {
     if (c.kind !== 'TP' || c.code.trim() === '') continue;
-    const rewritten = toComputed(c.code);
-    if (rewritten === c.code) continue;
-    if (contrastsSpellings(c.code)) continue;
+    // Rewrite the case's own code only, then put the harness back: the
+    // harness is test scaffolding, and rewriting its `express.Router()`
+    // would measure the rule on the scaffolding rather than on the case.
+    const body = c.body ?? c.code;
+    const code = runnable(c, body);
+    const rewritten = runnable(c, toComputed(body));
+    if (rewritten === code) continue;
+    if (contrastsSpellings(body)) continue;
 
     // A case that declares options it cannot parse is not measurable either
     // way; skipping beats probing it under a configuration it never asked for.
@@ -221,18 +242,18 @@ for (const entry of ledger.rules) {
     if (
       options !== null &&
       literalsIn(options).some(
-        (lit) => rewritten.includes(lit) && !c.code.includes(lit),
+        (lit) => rewritten.includes(lit) && !code.includes(lit),
       )
     ) {
       continue;
     }
-    const before = reports(rule, name, c.code, options);
+    const before = reports(rule, name, code, options, c.filename);
     if (before === null) continue; // the case itself does not parse
     if (before === 0) {
       unreplayable.set(entry.rule, (unreplayable.get(entry.rule) ?? 0) + 1);
       continue;
     }
-    const after = reports(rule, name, rewritten, options);
+    const after = reports(rule, name, rewritten, options, c.filename);
     if (after === null) continue; // the rewrite broke parsing; not evidence
     probed += 1;
     if (after === 0) {
@@ -255,10 +276,10 @@ for (const b of blind) {
 console.log(`\n  probed ${probed} firing TP case(s) in both spellings.`);
 const unreplayed = [...unreplayable.values()].reduce((a, b) => a + b, 0);
 console.log(
-  `  ${unreplayed} TP case(s) in ${unreplayable.size} rule(s) did not fire from the ledger's copy of their code and were NOT probed —`,
+  `  ${unreplayed} TP case(s) in ${unreplayable.size} rule(s) did not fire even replayed through their harness and were NOT probed —`,
 );
 console.log(
-  '  usually because the ledger records the case without its test harness (docs/intents/the-ledger-records-fragments-not-files).',
+  '  (an unresolved harness, or options/filename context the probe does not replay — docs/intents/the-ledger-records-fragments-not-files).',
 );
 console.log(`  ${byRule.size} rule(s) go SILENT on a string subscript:\n`);
 for (const [rule, cases] of [...byRule.entries()].sort(
