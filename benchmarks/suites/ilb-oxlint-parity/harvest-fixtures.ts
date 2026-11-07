@@ -253,6 +253,32 @@ collect(OUT_DIR);
  *   17000  JSX attributes must only be assigned a non-empty expression
  */
 const EARLY_ERRORS = new Set([2300, 2451, 17000]);
+/**
+ * 2300 also fires on a repeated TYPE member (`interface A { a: 1; a: 2 }`),
+ * which is legal JavaScript once types are erased and lints fine on both
+ * engines. Only a duplicated VALUE binding is an early error.
+ */
+const VALUE_DECLARATIONS = new Set([
+  ts.SyntaxKind.VariableDeclaration,
+  ts.SyntaxKind.FunctionDeclaration,
+  ts.SyntaxKind.ClassDeclaration,
+  ts.SyntaxKind.Parameter,
+  ts.SyntaxKind.ImportClause,
+  ts.SyntaxKind.ImportSpecifier,
+  ts.SyntaxKind.NamespaceImport,
+]);
+function declaresAValue(sourceFile: ts.SourceFile, position: number): boolean {
+  let found: ts.Node | undefined;
+  const visit = (node: ts.Node) => {
+    if (node.getStart(sourceFile) === position && ts.isIdentifier(node))
+      found = node;
+    else if (node.pos <= position && position < node.end)
+      ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return found !== undefined && VALUE_DECLARATIONS.has(found.parent.kind);
+}
+
 const fixtureFiles: string[] = [];
 const listFixtures = (dir: string) => {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -273,9 +299,14 @@ const program = ts.createProgram(fixtureFiles, {
   moduleDetection: ts.ModuleDetectionKind.Force,
 });
 for (const file of fixtureFiles) {
+  const sourceFile = program.getSourceFile(file)!;
   const early = program
-    .getSemanticDiagnostics(program.getSourceFile(file))
-    .find((d) => EARLY_ERRORS.has(d.code));
+    .getSemanticDiagnostics(sourceFile)
+    .find(
+      (d) =>
+        EARLY_ERRORS.has(d.code) &&
+        (d.code !== 2300 || declaresAValue(sourceFile, d.start ?? -1)),
+    );
   if (!early) continue;
   invalid.push({
     file: path.relative(OUT_DIR, file),
