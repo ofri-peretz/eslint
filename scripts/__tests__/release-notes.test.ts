@@ -333,6 +333,12 @@ describe('bulletsForVersion', () => {
     );
   });
 
+  it('skips the contributor names under a Thank You heading', () => {
+    const legacy =
+      '# pkg\n\n## 1.4.4\n\n### Bug Fixes\n\n- a fix\n\n### ❤️ Thank You\n\n- Ofri Peretz\n\n### Documentation\n\n- a doc\n';
+    expect(bulletsForVersion(legacy, '1.4.4')).toEqual(['- a fix', '- a doc']);
+  });
+
   it('reads a legacy dated heading too', () => {
     const dated = '# pkg\n\n## 1.2.3 — 2026-02-08\n\n- an entry\n';
     expect(bulletsForVersion(dated, '1.2.3')).toEqual(['- an entry']);

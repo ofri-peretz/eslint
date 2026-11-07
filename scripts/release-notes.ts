@@ -214,7 +214,15 @@ export function bulletsForVersion(
     }
   }
 
-  return lines.slice(start + 1, end).filter((l) => l.startsWith('- '));
+  // A legacy `### ❤️ Thank You` section lists contributors, not changes:
+  // counting `- Ofri Peretz` as an entry put a name in the release list.
+  const out: string[] = [];
+  let thanks = false;
+  for (const line of lines.slice(start + 1, end)) {
+    if (/^###\s/.test(line)) thanks = /thank you/i.test(line);
+    else if (!thanks && line.startsWith('- ')) out.push(line);
+  }
+  return out;
 }
 
 /**
