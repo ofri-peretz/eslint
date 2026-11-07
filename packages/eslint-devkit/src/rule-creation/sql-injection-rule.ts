@@ -275,6 +275,13 @@ function callableName(fn: TSESTree.FunctionLike): string | undefined {
 }
 
 /**
+ * The rule createSqlInjectionRule returns, by a name plugins can reach through
+ * `@interlace/eslint-devkit`: a plugin's declarations then refer to this
+ * alias instead of to devkit's vendored typescript-eslint types.
+ */
+export type SqlInjectionRule = TSESLint.RuleModule<SqlInjectionMessageIds, []>;
+
+/**
  * Build a CWE-89 rule for the given sinks and remediation copy.
  *
  * Detects: an unproven value concatenated or interpolated into a sink's SQL
@@ -285,7 +292,7 @@ function callableName(fn: TSESTree.FunctionLike): string | undefined {
  */
 export function createSqlInjectionRule(
   config: SqlInjectionRuleConfig,
-): TSESLint.RuleModule<SqlInjectionMessageIds, []> {
+): SqlInjectionRule {
   const statementSinks = new Set(config.methods);
   const fragmentSinks = new Map<string, Required<SqlFragmentSink>>();
   for (const sink of config.fragmentMethods ?? []) {

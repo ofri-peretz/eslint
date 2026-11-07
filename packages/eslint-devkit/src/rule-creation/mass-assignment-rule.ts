@@ -174,10 +174,20 @@ function isObjectAssign(node: TSESTree.Node): boolean {
 /** Drizzle statement verbs a write method follows in the chain. */
 const WRITE_VERBS: ReadonlySet<string> = new Set(['insert', 'update']);
 
+/**
+ * The rule createMassAssignmentRule returns, by a name plugins can reach through
+ * `@interlace/eslint-devkit`: a plugin's declarations then refer to this
+ * alias instead of to devkit's vendored typescript-eslint types.
+ */
+export type MassAssignmentRule = TSESLint.RuleModule<
+  MassAssignmentMessageIds,
+  []
+>;
+
 /** Build a CWE-915 rule for one driver's write surface. */
 export function createMassAssignmentRule(
   config: MassAssignmentRuleConfig,
-): TSESLint.RuleModule<MassAssignmentMessageIds, []> {
+): MassAssignmentRule {
   const methods = new Set(config.methods);
   const payloadKeys = new Set(config.payloadKeys ?? []);
   const usesModule = createModuleEvidence({ packages: config.modules });

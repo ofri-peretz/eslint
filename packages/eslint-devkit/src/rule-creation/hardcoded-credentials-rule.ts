@@ -224,10 +224,20 @@ export function isLiteralSecret(node: TSESTree.Node): boolean {
   return value !== undefined && value.length > 0;
 }
 
+/**
+ * The rule createHardcodedCredentialsRule returns, by a name plugins can reach through
+ * `@interlace/eslint-devkit`: a plugin's declarations then refer to this
+ * alias instead of to devkit's vendored typescript-eslint types.
+ */
+export type HardcodedCredentialsRule = TSESLint.RuleModule<
+  HardcodedCredentialsMessageIds,
+  []
+>;
+
 /** Build a CWE-798 rule for one driver's connection surface. */
 export function createHardcodedCredentialsRule(
   config: HardcodedCredentialsRuleConfig,
-): TSESLint.RuleModule<HardcodedCredentialsMessageIds, []> {
+): HardcodedCredentialsRule {
   const connectionKeys = [
     ...DEFAULT_CONNECTION_KEYS,
     ...(config.connectionKeys ?? []),
