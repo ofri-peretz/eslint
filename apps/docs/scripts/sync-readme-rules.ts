@@ -1,19 +1,19 @@
 /**
- * Sync README Rules Tables
- * 
- * Parses rules tables from each plugin's README.md and generates JSON files
- * with internal doc links for the ReadmeRulesTable component.
+ * README rules-table parsing.
+ *
+ * This used to also write a `plugin-rules/*.json` data cache for a
+ * ReadmeRulesTable component that no longer exists. No code read the cache,
+ * so it was deleted (docs/intents/docs-index-pages-fetch-at-request-time).
+ * The parsers stay because their tests pin the README table format.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { writeJsonIfChanged } from './lib/write-json-if-changed.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '../../../');
 const packagesDir = path.join(rootDir, 'packages');
-const outputDir = path.resolve(__dirname, '../src/data/plugin-rules');
 
 // Plugin slug to package name mapping
 // Plugin slug to package name mapping
@@ -289,59 +289,3 @@ export function processPlugin(pluginSlug, packageName) {
 /**
  * Main sync function
  */
-async function main() {
-  console.log('Syncing README rules tables...');
-  
-  // Ensure output directory exists
-  fs.mkdirSync(outputDir, { recursive: true });
-  
-  const results = {
-    success: [],
-    errors: [],
-  };
-  
-  for (const [pluginSlug, packageName] of Object.entries(PLUGIN_MAPPINGS)) {
-    try {
-      const data = processPlugin(pluginSlug, packageName);
-      
-      if (data && data.rules.length > 0) {
-        const outputPath = path.join(outputDir, `${pluginSlug}.json`);
-        // Content-diffed on `lastSynced` (see write-json-if-changed.ts) — this
-        // loop writes ~30 files, so an unconditional write meant every run
-        // rewrote the whole directory whether or not a README had moved.
-        writeJsonIfChanged(outputPath, data, `plugin-rules/${pluginSlug}.json`);
-        results.success.push(`${pluginSlug}: ${data.rules.length} rules`);
-        console.log(`✓ ${pluginSlug}: ${data.rules.length} rules synced`);
-      } else {
-        results.errors.push(`${pluginSlug}: No rules found`);
-        console.warn(`⚠ ${pluginSlug}: No rules found in README`);
-      }
-    } catch (error) {
-      results.errors.push(`${pluginSlug}: ${error.message}`);
-      console.error(`✗ ${pluginSlug}: ${error.message}`);
-    }
-  }
-  
-  // Write summary file
-  const summaryPath = path.join(outputDir, '_sync-summary.json');
-  writeJsonIfChanged(summaryPath, {
-    lastSynced: new Date().toISOString(),
-    plugins: Object.keys(PLUGIN_MAPPINGS).length,
-    success: results.success.length,
-    errors: results.errors.length,
-    details: results,
-  }, '_sync-summary.json');
-  
-  console.log(`\nSync complete: ${results.success.length} succeeded, ${results.errors.length} errors`);
-  
-  if (results.errors.length > 0) {
-    process.exit(1);
-  }
-}
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  main().catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
-}

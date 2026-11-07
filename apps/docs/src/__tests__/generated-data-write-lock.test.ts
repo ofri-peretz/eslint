@@ -220,7 +220,6 @@ describe('src/data generators route every write through writeJsonIfChanged', () 
       'sync-changelog.ts',
       'sync-devto-cache.ts',
       'sync-plugin-stats.ts',
-      'sync-readme-rules.ts',
       'sync-tweet-cache.ts',
       'update-articles-data.ts',
       'update-coverage-stats.ts',

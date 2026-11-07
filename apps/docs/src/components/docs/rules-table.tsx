@@ -6,6 +6,7 @@
  */
 
 import Link from 'next/link';
+import rulesManifest from '@/data/rules-manifest.json';
 import { Briefcase, Wrench, Lightbulb, AlertTriangle, Brain, ExternalLink } from 'lucide-react';
 
 const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/ofri-peretz/eslint/main/packages';
@@ -120,9 +121,7 @@ async function fetchRules(plugin: string): Promise<ParsedRule[]> {
     const rules = parseRulesFromReadme(markdown, plugin, category);
 
     // Fetch descriptions from individual rule docs (in parallel)
-    const rulesWithDescriptions = await fetchRuleDescriptions(plugin, rules);
-
-    return rulesWithDescriptions;
+    return withManifestDescriptions(plugin, rules);
   } catch (error) {
     console.error(`[RulesTable] Error fetching ${plugin}:`, error);
     return [];
@@ -130,86 +129,20 @@ async function fetchRules(plugin: string): Promise<ParsedRule[]> {
 }
 
 /**
- * Fetch descriptions from individual rule docs
- * Priority: 1) frontmatter.description  2) @rule-summary anchor  3) blockquote fallback
+ * Descriptions from the build-time rules manifest, each rule's own
+ * `meta.docs.description`. This used to be one GitHub fetch per rule at
+ * request time (a `/rules` page for a 40-rule plugin made 40 network calls
+ * before it could render), and the manifest already held the same text.
  */
-// Rule slug allow-list: lowercase alphanumeric + dashes. The values flow from
-// markdown READMEs (file data) into the fetch URL below — CodeQL flagged this
-// as "File data in outbound network request". Constraining the shape here
-// prevents any future README change from injecting a path-traversal segment
-// or arbitrary host into the constructed URL.
-const VALID_RULE_NAME = /^[a-z0-9][a-z0-9-]*$/;
+const MANIFEST_DESCRIPTIONS = new Map(
+  rulesManifest.rules.map((r) => [`${r.plugin}/${r.rule}`, r.description] as const),
+);
 
-async function fetchRuleDescriptions(plugin: string, rules: ParsedRule[]): Promise<ParsedRule[]> {
-  const packageName = `eslint-plugin-${plugin}`;
-
-  const fetchPromises = rules.map(async (rule) => {
-    if (!VALID_RULE_NAME.test(rule.name)) {
-      return rule;
-    }
-    try {
-      const ruleDocUrl = `${GITHUB_RAW_BASE}/${packageName}/docs/rules/${rule.name}.md`;
-      const res = await fetch(ruleDocUrl, {
-        next: { revalidate: 21600 }, // 6 hour cache
-      });
-      
-      if (!res.ok) {
-        return rule;
-      }
-      
-      const content = await res.text();
-      
-      // 1. Try to extract description from frontmatter
-      const frontmatterMatch = content.match(/^---\s*\n([\s\S]*?)\n---/);
-      if (frontmatterMatch) {
-        const frontmatter = frontmatterMatch[1];
-        // Look for description field (not just the title repeated)
-        const descMatch = frontmatter.match(/^description:\s*["']?(.+?)["']?\s*$/m);
-        if (descMatch && descMatch[1] && descMatch[1] !== rule.name && descMatch[1].length > 15) {
-          return { ...rule, description: descMatch[1].trim() };
-        }
-      }
-      
-      // 2. Try to extract from @rule-summary anchor
-      const anchorMatch = content.match(/<!--\s*@rule-summary\s*-->([\s\S]*?)<!--\s*@\/rule-summary\s*-->/);
-      if (anchorMatch && anchorMatch[1]) {
-        const desc = anchorMatch[1].replace(/[`*~_]/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').trim();
-        if (desc && desc.length > 10) {
-          // Take first sentence or first 150 chars
-          const firstSentence = desc.split(/\.\s/)[0];
-          return { ...rule, description: firstSentence.length < 150 ? firstSentence : desc.slice(0, 147) + '...' };
-        }
-      }
-      
-      // 3. Fallback: Find first paragraph after frontmatter (not a blockquote, not keywords)
-      const frontmatterEnd = content.indexOf('---', 3);
-      if (frontmatterEnd !== -1) {
-        const afterFrontmatter = content.slice(frontmatterEnd + 3).trim();
-        const lines = afterFrontmatter.split('\n');
-        
-        for (const line of lines) {
-          const trimmed = line.trim();
-          // Skip empty lines, blockquotes, headers, and badges
-          if (!trimmed || trimmed.startsWith('>') || trimmed.startsWith('#') || 
-              trimmed.startsWith('*') || trimmed.startsWith('|') ||
-              trimmed.toLowerCase().includes('keywords:')) {
-            continue;
-          }
-          // Found a regular paragraph
-          const desc = trimmed.replace(/[`*~_]/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').trim();
-          if (desc && desc.length > 20 && !desc.includes('🚨') && !desc.includes('💡')) {
-            return { ...rule, description: desc.length < 150 ? desc : desc.slice(0, 147) + '...' };
-          }
-        }
-      }
-      
-      return rule;
-    } catch {
-      return rule;
-    }
+function withManifestDescriptions(plugin: string, rules: ParsedRule[]): ParsedRule[] {
+  return rules.map((rule) => {
+    const description = MANIFEST_DESCRIPTIONS.get(`eslint-plugin-${plugin}/${rule.name}`);
+    return description ? { ...rule, description } : rule;
   });
-  
-  return Promise.all(fetchPromises);
 }
 
 /**
@@ -281,7 +214,7 @@ function parseRulesFromReadme(markdown: string, plugin: string, category: 'secur
 
       rules.push({
         name: ruleName,
-        description: '', // Will be filled by fetchRuleDescriptions
+        description: '', // Filled from the rules manifest
         recommended: row.includes('💼'),
         warns: row.includes('⚠️'),
         fixable: row.includes('🔧'),

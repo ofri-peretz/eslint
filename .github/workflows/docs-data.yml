@@ -77,10 +77,6 @@ jobs:
         if: inputs.targets == '' || contains(inputs.targets, 'changelog')
         run: npx tsx apps/docs/scripts/sync-changelog.ts
 
-      - name: Sync README rule tables
-        if: inputs.targets == '' || contains(inputs.targets, 'readme-rules')
-        run: npx tsx apps/docs/scripts/sync-readme-rules.ts
-
       - name: Sync articles
         if: inputs.targets == '' || contains(inputs.targets, 'articles')
         env:
