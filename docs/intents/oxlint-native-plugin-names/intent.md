@@ -74,6 +74,9 @@ cases: []
 
 **Status:** shipped · **Opened:** 2026-10-25 · **Shipped:** 2026-11-07 · **Owner:** @ofri-peretz
 
+> Shipped scope: 31 `oxlint-plugin-*` aliases. `oxlint-plugin-cli-floor` is not
+> published while its plugin is private — see Closed below.
+
 ---
 
 ## What is wanted

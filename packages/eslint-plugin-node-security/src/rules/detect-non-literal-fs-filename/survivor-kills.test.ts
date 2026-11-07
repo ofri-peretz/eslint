@@ -196,6 +196,24 @@ import fs from 'fs';
 fs.readFileSync(BASE + '/data.json');`,
       },
       {
+        name: 'a global directive with no space after the comment opener still declares',
+        code: `/*global BASE*/
+import fs from 'fs';
+fs.readFileSync(BASE + '/data.json');`,
+      },
+      {
+        name: 'a global directive may separate names with whitespace alone',
+        code: `/* global ROOT BASE */
+import fs from 'fs';
+fs.readFileSync(BASE + '/data.json');`,
+      },
+      {
+        name: 'a justification after -- is not a declared name',
+        code: `/* global BASE -- supplied by the host */
+import fs from 'fs';
+fs.readFileSync(BASE + '/data.json');`,
+      },
+      {
         name: 'a globals comment declares each listed name, with or without a writability flag',
         code: `/* globals ROOT: readonly, BASE */
 import fs from 'fs';
@@ -374,6 +392,42 @@ fs.readFileSync('/srv/data/' + req.query.file);`,
       {
         name: 'a line comment that reads like a global declaration declares nothing',
         code: `// global BASE
+import fs from 'fs';
+fs.readFileSync(BASE + '/data.json');`,
+        errors: ERR,
+      },
+      {
+        name: 'a comment that only mentions a global declares nothing',
+        code: `/* see the global BASE in the deploy notes */
+import fs from 'fs';
+fs.readFileSync(BASE + '/data.json');`,
+        errors: ERR,
+      },
+      {
+        name: 'a global turned off by its directive is not declared',
+        code: `/* global BASE: off */
+import fs from 'fs';
+fs.readFileSync(BASE + '/data.json');`,
+        errors: ERR,
+      },
+      {
+        name: 'the last directive for a name wins',
+        code: `/* global BASE */
+/* global BASE: off */
+import fs from 'fs';
+fs.readFileSync(BASE + '/data.json');`,
+        errors: ERR,
+      },
+      {
+        name: 'the words of a -- justification are not declared names',
+        code: `/* global BASE -- see dir */
+import fs from 'fs';
+fs.readFileSync(dir + '/data.json');`,
+        errors: ERR,
+      },
+      {
+        name: 'off after a spaced colon still turns the global off',
+        code: `/* global BASE :off */
 import fs from 'fs';
 fs.readFileSync(BASE + '/data.json');`,
         errors: ERR,

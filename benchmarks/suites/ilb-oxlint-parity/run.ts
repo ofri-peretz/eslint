@@ -654,7 +654,12 @@ function utf16Column(
     bytes = fs.readFileSync(file);
     fileBytes.set(file, bytes);
   }
-  const lineStart = bytes.lastIndexOf(0x0a, span.offset - 1) + 1;
+  // A line ends at LF or at a lone CR, as ESLint counts lines.
+  const lineStart =
+    Math.max(
+      bytes.lastIndexOf(0x0a, span.offset - 1),
+      bytes.lastIndexOf(0x0d, span.offset - 1),
+    ) + 1;
   return bytes.subarray(lineStart, span.offset).toString('utf8').length + 1;
 }
 
