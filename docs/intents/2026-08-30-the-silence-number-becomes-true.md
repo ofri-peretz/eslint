@@ -5,6 +5,8 @@ packages: []
 cases: []
 ---
 
+**Status:** shipped · **Closed:** 2026-11-07
+
 ## What
 
 Re-run the 112-repository real-source scan under the current config and commit
@@ -60,3 +62,7 @@ decide whether a rule keeps its place in a preset.
   purpose, candidate for review_.
 - The count and its date are quoted in `AI_SDLC.md` in place of the current
   "unknown until the scan is re-run".
+
+## Closed — 2026-11-07
+
+Shipped. The weekly real-source scan recomputes the silent-rule number with both hashes, so the number is now measured on a schedule rather than asserted.

@@ -5,6 +5,8 @@ packages: []
 cases: []
 ---
 
+**Status:** dropped · **Closed:** 2026-11-07
+
 ## What
 
 Take the rules that still decide from an identifier's spelling and either give
@@ -246,3 +248,7 @@ bindings still change a verdict. That is the softer number — those rules are
 name-dependent _by declared position_ now, not by accident. Driving it further
 is `the-spelling-debt-shrinks` and `precision-is-measured-not-asserted`, which
 attack the two halves of it separately.
+
+## Closed — 2026-11-07
+
+Dropped as a target, not as a measurement. `scripts/name-dependence-probe.mts` runs in `comparison-refresh.yml` on schedule and writes `benchmarks/budgets/name-dependence.json` (53 name-dependent rules on 2026-11-01, against a target below 25). The ruling is that a number to reach is measured on a schedule, not held open as a roadmap item.

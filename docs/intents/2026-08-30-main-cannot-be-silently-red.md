@@ -5,6 +5,8 @@ packages: []
 cases: []
 ---
 
+**Status:** shipped · **Closed:** 2026-11-07
+
 ## What
 
 Make a broken `main` visible within one merge instead of within one week.
@@ -85,3 +87,7 @@ silence. Verified by sabotage.
 Not done, and deliberately: no measurement of median time-to-detection. It
 needs a broken main to measure and manufacturing one to produce a number would
 be absurd. The next real occurrence is the measurement.
+
+## Closed — 2026-11-07
+
+Shipped. `quality-full.yml` runs on every push to `main`, and `claude-md-contract.test.ts` asserts the push run and the broken-main issue. Scoped down: the median-latency figure was never measured. CI wall-clock is owned by `docs/intents/concurrency-budget`.

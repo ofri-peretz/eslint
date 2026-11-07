@@ -5,6 +5,8 @@ packages: []
 cases: []
 ---
 
+**Status:** shipped · **Closed:** 2026-11-07
+
 ## What
 
 Make `real-world-rule-inventory.json` say which instrument produced it, and
@@ -141,3 +143,7 @@ Fixing it surfaced a second thing worth keeping. The test then timed out at 5s
 under full-suite load, because reading the gate three times means spawning a
 whole-suite walk three times. A timeout reads exactly like a logic failure and
 is not. Memoised to one spawn, with a timeout that admits the test shells out.
+
+## Closed — 2026-11-07
+
+Shipped. The inventory records `configHash` and `reposHash` and is re-run weekly (last #1324). The figures quoted in `AI_SDLC.md` are a snapshot. The inventory is the source.

@@ -4,7 +4,7 @@
 > spots as intended behaviour, in a suite where four fifths of cases carry no
 > description at all.
 
-**Status:** draft · **Opened:** 2026-09-03 · **Owner:** @ofri-peretz
+**Status:** dropped · **Opened:** 2026-09-03 · **Dropped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 ---
 
@@ -56,3 +56,17 @@ to read.
 - **Breach:** a rule whose source changes while its TN cases stay unnamed.
 - **Proven by:** editing a rule with undescribed TN cases fails the gate; the
   same edit with those cases named passes.
+
+## Dropped — 2026-11-07
+
+Superseded by the shipped `the-description-ratchet-cannot-reach-the-debt`.
+`check:rule-cases:touched` (`scripts/rule-case-ledger.ts`, run from
+`lefthook.yml`) already fails a change to a rule unless that rule's
+undescribed-case count strictly falls. Every touched rule now pays down its
+unexplained cases, valid ones included.
+
+What this intent wanted on top of that was ordering: valid (TN) cases before
+TP cases. That was never enforced, because `undescribedByRule` counts both
+kinds together. Enforcing it would make an existing gate stricter, and the
+current ruling is not to add gates. The undescribed-TN debt keeps shrinking
+through the ratchet, just not first.

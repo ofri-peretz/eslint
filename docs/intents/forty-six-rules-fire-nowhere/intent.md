@@ -3,7 +3,7 @@
 > Stage 1 artifact. Opened once an attributed inventory made the claim
 > falsifiable for the first time.
 
-**Status:** draft · **Opened:** 2026-09-03 · **Owner:** @ofri-peretz
+**Status:** dropped · **Opened:** 2026-09-03 · **Dropped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 ---
 
@@ -77,3 +77,18 @@ can attribute them.
 - **Proven by:** an artefact listing 46 rules, 46 reasons, and the two hashes —
   and at least one rule moved into category 4 and fixed, since a taxonomy that
   finds nothing broken has not been tested.
+
+## Dropped — 2026-11-07
+
+Superseded by a scheduled instrument. The premise has moved: today the set is
+96 of 492 rules, not 46 of 145. `benchmarks/budgets/real-world-rule-inventory.json`
+is regenerated weekly by `.github/workflows/real-source-scan.yml` (last refreshed in PR #1324), stamped with `configHash` and `reposHash`, and lists those rules in
+`withoutMaterial`. `corpus-coverage-baseline.json` lists the rules with no
+fixture.
+
+The hand classification this intent asked for (four categories, with evidence
+per rule) expires with every scan, as its own constraint says. A
+per-rule "why" kept beside a weekly list goes stale. Working down the silent
+list is ordinary backlog, measured every week. It is not a roadmap gate.
+`no-rule-may-claim-an-instance-it-cannot-show` (shipped) already separates
+"never ran" from "never fired".

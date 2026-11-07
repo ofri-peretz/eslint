@@ -5,6 +5,8 @@ packages: []
 cases: []
 ---
 
+**Status:** dropped · **Closed:** 2026-11-07
+
 ## What
 
 Close the residue. After the instrument is trustworthy and the corpus contains
@@ -63,3 +65,7 @@ will turn it on.
   new evidence-free rule impossible: `check:new-rule-cases` already refuses a
   new rule without a case — this extends the same bar to the ones that predate
   it.
+
+## Closed — 2026-11-07
+
+Dropped, superseded by the weekly real-source scan (`real-source-scan.yml`, `withoutMaterial`) and `corpus-coverage-baseline.json`, which list every rule with no evidence each run. See `docs/intents/forty-six-rules-fire-nowhere`.

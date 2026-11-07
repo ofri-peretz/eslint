@@ -5,6 +5,8 @@ packages: []
 cases: []
 ---
 
+**Status:** shipped · **Closed:** 2026-11-07
+
 ## What
 
 A rule can only be observed firing on code that contains its subject. Measure
@@ -61,3 +63,7 @@ reads as the worst bucket by default.
   they are not the same claim.
 - `mongodb-security`'s five rules are out of the no-evidence set, in one
   direction or the other.
+
+## Closed — 2026-11-07
+
+Shipped, scoped down. `real-world-rule-inventory.json` splits `withMaterial` from `withoutMaterial` and is regenerated weekly by `real-source-scan.yml`. 4 of the 5 mongodb-security rules are still without material, and that list is worked as backlog.

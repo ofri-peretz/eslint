@@ -5,6 +5,8 @@ packages: []
 cases: []
 ---
 
+**Status:** shipped · **Closed:** 2026-11-07
+
 ## What
 
 Drain the largest untouched ratchet in the repo. **839 spelling-sensitive
@@ -68,3 +70,7 @@ than a find-and-replace.
   tranche.
 - No new spelling-sensitive site enters the codebase (already enforced; this
   intent must not weaken it to move faster).
+
+## Closed — 2026-11-07
+
+Shipped. `rule-spelling-baseline.json` is down to 250 sites, against a target below 400. The 1,156 figure in the `spellings.ts` header is historical.

@@ -5,6 +5,8 @@ packages: []
 cases: []
 ---
 
+**Status:** shipped · **Closed:** 2026-11-07
+
 ## What
 
 Every rule we ship has at least one true positive taken from code we did not
@@ -25,12 +27,12 @@ found no false positives, and could not have.
 Five fixtures cut from real repositories found two — a 40% hit rate against
 0% from eighteen thousand:
 
-  `no-insecure-comparison` flagged `typeof x == 'string'`. `typeof` always
-  yields a string, so `==` cannot coerce; the rule was wrong every time. It
-  fired 60 times in one small repository and 12,303 across the inventory.
+`no-insecure-comparison` flagged `typeof x == 'string'`. `typeof` always
+yields a string, so `==` cannot coerce; the rule was wrong every time. It
+fired 60 times in one small repository and 12,303 across the inventory.
 
-  `no-unchecked-loop-condition` flagged `for (const k of Object.keys(o))`,
-  which cannot be unbounded.
+`no-unchecked-loop-condition` flagged `for (const k of Object.keys(o))`,
+which cannot be unbounded.
 
 Both were shipping. Both are now sealed. Neither was findable from inside our
 own fixtures, because we had already agreed with ourselves.
@@ -65,3 +67,7 @@ every instrument defect found on 2026-08-31.
   `@source`.
 - The scorecard reports the DENOMINATOR beside any precision figure, so a
   number computed over part of the ecosystem cannot read as covering all of it.
+
+## Closed — 2026-11-07
+
+Shipped, scoped down: the instrument. `real-source-scan.yml` runs weekly and commits the inventory. The backlog of rules with no real-code firing (136 unmeasured in `corpus-coverage-baseline.json`) is measured every week, and reaching 0 is not a roadmap gate.
