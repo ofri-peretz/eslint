@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-vercel-ai-security",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "The vercel-ai-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-vercel-ai-security.",
   "type": "commonjs",
   "sideEffects": false,
@@ -77,6 +77,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-vercel-ai-security": "3.0.1"
+    "eslint-plugin-vercel-ai-security": "3.0.2"
   }
 }

@@ -4,17 +4,13 @@
   "title": "ILB Result Envelope v1",
   "description": "Vocabulary contract for every Interlace bench result. Operationalizes roadmap item 1.11. Standard field names enforced; synonyms (`tokens`, `accuracy`, `time`) fail validation. See benchmarks/README.md \u00a71 'The three measurement aspects'.",
   "type": "object",
-  "required": [
-    "bench",
-    "benchVersion",
-    "timestamp",
-    "toolchain"
-  ],
+  "required": ["bench", "benchVersion", "timestamp", "toolchain"],
   "additionalProperties": true,
   "properties": {
     "bench": {
       "type": "string",
       "enum": [
+        "CI-Wall-Clock",
         "ILB-Arena",
         "ILB-Arena-Quality",
         "ILB-Juliet",
@@ -44,7 +40,7 @@
         "ILB-Landscape",
         "ILB-Remediation",
         "ILB-Corpus-Truth",
-    "ILB-CWE-Corpus",
+        "ILB-CWE-Corpus",
         "ILB-Preset-Budget"
       ],
       "description": "Bench identity. New benches added here MUST also be added to .agent/rules/bench-context.md and benchmarks/state.json."
@@ -78,13 +74,7 @@
     },
     "toolchain": {
       "type": "object",
-      "required": [
-        "node",
-        "eslint",
-        "typescript",
-        "tsCompiler",
-        "platform"
-      ],
+      "required": ["node", "eslint", "typescript", "tsCompiler", "platform"],
       "additionalProperties": true,
       "properties": {
         "node": {
@@ -92,30 +82,17 @@
           "description": "process.version without leading 'v'"
         },
         "eslint": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "typescript": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "tsCompiler": {
           "type": "string",
-          "enum": [
-            "tsc-classic",
-            "tsc-go",
-            "unknown"
-          ]
+          "enum": ["tsc-classic", "tsc-go", "unknown"]
         },
         "typescriptEslint": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "platform": {
           "type": "string"
@@ -128,24 +105,15 @@
       "additionalProperties": false,
       "properties": {
         "tokensO200k": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "description": "Headline. tiktoken o200k_base."
         },
         "tokensCl100k": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "description": "Sanity. tiktoken cl100k_base."
         },
         "meanTokensO200k": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "description": "Aggregate over fixtures."
         }
       }
@@ -156,125 +124,75 @@
       "additionalProperties": false,
       "properties": {
         "f1": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0,
           "maximum": 1
         },
         "precision": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0,
           "maximum": 1
         },
         "recall": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0,
           "maximum": 1
         },
         "ciLow": {
-          "type": [
-            "number",
-            "null"
-          ]
+          "type": ["number", "null"]
         },
         "ciHigh": {
-          "type": [
-            "number",
-            "null"
-          ]
+          "type": ["number", "null"]
         },
         "ciMethod": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "enum": [
-            "wilson",
-            "bootstrap",
-            "wilson+bootstrap",
-            null
-          ]
+          "type": ["string", "null"],
+          "enum": ["wilson", "bootstrap", "wilson+bootstrap", null]
         },
         "signalScore": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0,
           "maximum": 4
         },
         "passRate": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0,
           "maximum": 1
         },
         "vulnDetectionRate": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0,
           "maximum": 1
         },
         "activationRate": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0,
           "maximum": 1
         },
         "ruleSurvivalRate": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0,
           "maximum": 1
         },
         "recall1": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0,
           "maximum": 1,
           "description": "ILB-Discover: top-1 retrieval recall."
         },
         "recall5": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0,
           "maximum": 1,
           "description": "ILB-Discover: top-5 retrieval recall."
         },
         "ece": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0,
           "maximum": 1,
           "description": "ILB-Confidence: Expected Calibration Error."
         },
         "mce": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0,
           "maximum": 1,
           "description": "ILB-Confidence: Maximum Calibration Error."
@@ -307,53 +225,32 @@
       "additionalProperties": false,
       "properties": {
         "latencyMsP50": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0
         },
         "latencyMsP95": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0
         },
         "meanLatencyMs": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0
         },
         "msPerFile": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0
         },
         "peakRssMb": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0
         },
         "coldMedianMs": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0,
           "description": "ILB-Cache-Matrix: cold-cache median wall-clock."
         },
         "warmMedianMs": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0,
           "description": "ILB-Cache-Matrix: warm-cache median wall-clock."
         }

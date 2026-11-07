@@ -1,6 +1,6 @@
 # Intent — `concurrency-budget`
 
-**Status:** draft · **Opened:** `2026-08-31` · **Owner:** `@ofri-peretz`
+**Status:** shipped · **Opened:** `2026-08-31` · **Shipped:** `2026-11-07` · **Owner:** `@ofri-peretz`
 
 ---
 
@@ -119,3 +119,34 @@ push.
   so the 42s is mostly its four non-build checks plus setup.
 - Should the four non-build steps in that job (severity consistency, artifact
   size, devkit metrics, configs load) move to a job that needs no `dist`?
+
+## Closed — 2026-11-07
+
+Shipped as a scheduled measurement, per ADR 0011. The targets in the success
+criteria are numbers to reach, and each lever this intent and its siblings
+shipped (#773, #775, ADR 0007) moved them, after which they drifted back
+because nothing kept measuring them. The criteria are restated as follows:
+
+| Criterion                                           | Restated as                                                           | Reading, week of 2026-10-26 |
+| :-------------------------------------------------- | :-------------------------------------------------------------------- | --------------------------: |
+| 1. Push to `main` completes Quality (Full) in ≤ 60s | band `ci-full-push-seconds`                                           |                 594s median |
+| 2. Job count fits one wave, ≤ 12                    | band `ci-full-push-jobs`                                              |              19 jobs median |
+| 3. A broken `main` still goes red                   | unchanged; holds (`push: main` trigger, `claude-md-contract.test.ts`) |                           — |
+| 4. Narrow PRs don't regress past 78–102s            | band `ci-full-pr-seconds`                                             |                 474s median |
+
+`scripts/measure-ci-wall-clock.mts` runs weekly in `control-bands.yml` and
+writes one dated file per ISO week under `benchmarks/results/ci-wall-clock/`,
+backfilled 12 weeks from the Actions API. `scripts/control-bands.ts` watches
+the four bands (`.agent/control-bands.json`, `worse: higher`). The fourth band,
+`ci-quality-pr-seconds`, carries `ci-speed`'s 120s target.
+
+The 12-week backfill reads 183–2,082s for the push median and 18–20 jobs. The
+spike in the weeks of 2026-09-28 to 10-12 widens the bands, which is why
+`minPoints` is 8 and the window 12. All three wall-clock readings are far above
+their targets today. That is recorded, not hidden. A further rise is judged by the band rules: a 1σ drift is logged, and a 2σ or 3σ breach opens an intent PR. Not reaching a number is no longer a reason to keep this file
+open.
+
+Left to the owner: the open question above, whether a full re-verify on every
+main push is the right shape. Skipping the post-merge run when the PR gate
+already passed would remove most of the push-run cost. It also changes the
+backstop ADR 0012 relies on, so it is a decision, not a cleanup.

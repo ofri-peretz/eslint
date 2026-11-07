@@ -17,6 +17,7 @@ import {
   MessageIcons,
   nameHasWord,
   propertyName,
+  namesOneOf,
 } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 import { calleeChain } from '../../utils/sdk';
@@ -120,7 +121,7 @@ export const requireOutputValidation = createRule<RuleOptions, MessageIds>({
     function isOutputProperty(node: TSESTree.Node): boolean {
       return (
         node.type === 'MemberExpression' &&
-        AI_OUTPUT_PROPERTIES.has(propertyName(node) as string)
+        namesOneOf(propertyName(node), AI_OUTPUT_PROPERTIES)
       );
     }
 

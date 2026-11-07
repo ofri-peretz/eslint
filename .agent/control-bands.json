@@ -51,6 +51,46 @@
       "window": 20,
       "minPoints": 8,
       "worse": "lower"
+    },
+    {
+      "id": "ci-quality-pr-seconds",
+      "description": "Median wall-clock (s) of successful quality.yml pull_request runs, per week \u2014 ci-speed targeted 120s",
+      "collector": "benchmark-json",
+      "suite": "ci-wall-clock",
+      "jsonPath": "quality.prMedianSeconds",
+      "window": 12,
+      "minPoints": 8,
+      "worse": "higher"
+    },
+    {
+      "id": "ci-full-push-seconds",
+      "description": "Median wall-clock (s) of successful Quality (Full) push runs on main, per week \u2014 concurrency-budget targeted 60s",
+      "collector": "benchmark-json",
+      "suite": "ci-wall-clock",
+      "jsonPath": "qualityFull.pushMedianSeconds",
+      "window": 12,
+      "minPoints": 8,
+      "worse": "higher"
+    },
+    {
+      "id": "ci-full-push-jobs",
+      "description": "Median job count of Quality (Full) push runs on main, per week \u2014 concurrency-budget targeted 12 (one runner wave)",
+      "collector": "benchmark-json",
+      "suite": "ci-wall-clock",
+      "jsonPath": "qualityFull.pushMedianJobs",
+      "window": 12,
+      "minPoints": 8,
+      "worse": "higher"
+    },
+    {
+      "id": "ci-full-pr-seconds",
+      "description": "Median wall-clock (s) of successful Quality (Full) pull_request runs, per week",
+      "collector": "benchmark-json",
+      "suite": "ci-wall-clock",
+      "jsonPath": "qualityFull.prMedianSeconds",
+      "window": 12,
+      "minPoints": 8,
+      "worse": "higher"
     }
   ]
 }

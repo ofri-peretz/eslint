@@ -5,6 +5,12 @@ All notable changes to `@interlace/eslint-devkit` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.0.2
+
+### Patch Changes
+
+- **🐛 Fix** — Internal: test property names with the null-safe `namesOneOf` instead of casting `propertyName(...)` to `string`. No rule reports differently; a computed key that names nothing is now visibly "no name" rather than a cast that happens to miss.
+
 ## 2.0.1
 
 ### Patch Changes

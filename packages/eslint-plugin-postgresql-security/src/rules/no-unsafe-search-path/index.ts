@@ -14,6 +14,7 @@ import {
   isStaticExpression,
   staticString,
   propertyName,
+  namesOneOf,
   objectKeyName,
 } from '@interlace/eslint-devkit';
 import { NoUnsafeSearchPathOptions } from '../../types';
@@ -456,7 +457,7 @@ export const noUnsafeSearchPath: TSESLint.RuleModule<
       CallExpression(node: TSESTree.CallExpression) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          !SQL_SINK_METHODS.has(propertyName(node.callee) as string)
+          !namesOneOf(propertyName(node.callee), SQL_SINK_METHODS)
         ) {
           return;
         }

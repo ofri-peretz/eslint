@@ -20,6 +20,7 @@ import {
   nameHasWord,
   objectKeyName,
   propertyName,
+  namesOneOf,
 } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 import { isSystemPromptProp } from '../../utils/prompt-props';
@@ -206,7 +207,7 @@ export const noSystemPromptLeak = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          !RESPONSE_METHODS.has(propertyName(node.callee) as string)
+          !namesOneOf(propertyName(node.callee), RESPONSE_METHODS)
         )
           return;
 
