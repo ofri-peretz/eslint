@@ -19,6 +19,12 @@ on:
     branches: [main]
     paths:
       - "packages/**"
+  # The Version Packages push above runs before publish creates the release
+  # tags, so the changelog it writes has no dates for the new versions. Run
+  # again once the release workflow has finished and the tags exist.
+  workflow_run:
+    workflows: ["Release Affected Packages"]
+    types: [completed]
   workflow_dispatch:
     inputs:
       targets:
