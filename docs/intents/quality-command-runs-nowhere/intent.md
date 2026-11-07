@@ -113,7 +113,7 @@ Shipped. Evidence against the success criteria:
     runs weekly in `weekly-benchmark.yml`.
 - The selftest is non-vacuous. Emptying `PATTERNS` in
   `scripts/check-withdrawn-claims.mjs` made `--selftest` exit 1 with
-  `should flag: Drop-in replacement with 100x faster cycle detection`.
+  its first `should flag:` fixture, the withdrawn import-next speed claim.
 - `docs/DOCS_QUALITY.md` has a row for each of the three.
 
 Dropped criterion: the lock asserting that every `quality` step is reachable
