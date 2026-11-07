@@ -3,7 +3,7 @@
 > Stage 1 artifact. Opened after `ci-speed` shipped: check DURATION is largely
 > solved, and the bottleneck moved to how many times we run those checks.
 
-**Status:** draft · **Opened:** 2026-08-30 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-08-30 · **Shipped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 ---
 
@@ -86,3 +86,23 @@ Nothing here is a slow check. It is a slow _protocol_.
   it reorders a queue without reducing any duration, and the PRs it would have
   starved this session were themselves fixes landing on main — two of them
   spawned by this very work.
+
+## Closed — 2026-11-07
+
+Shipped, under ADR 0012. Evidence against the success criteria:
+
+- Full-gate runs per merged PR: about 1.3–1.8 PR runs per merge over
+  2026-10-27 to 11-06, 2.3–2.8 counting push runs, against the ~7 baseline.
+- Runs per day: 163 runs for 58 merges on 2026-11-04, far below the baseline's
+  rate per merge, at much higher volume.
+- Zero manual merge races: `main` has `strict: false`, so no branch has to
+  re-sync to win a slot.
+
+Scoped down: **criterion 4** ("nothing merges without having been tested
+against the main it lands on") is met as **detected after merge**. The
+push-to-main Quality (Full) run turns `main` red and files the broken-main
+issue. ADR 0012 records the live setting, and the merge queue this design chose
+is still available as the upgrade path; enabling it is a settings change for
+the owner. `scripts/setup-branch-protection.sh` and `AGENTS.md` now declare the
+live protection instead of `strict: true`, one review and a single
+`Quality Gate` check.

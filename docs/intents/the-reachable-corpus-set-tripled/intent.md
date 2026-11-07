@@ -4,7 +4,7 @@
 > attributed inventory, which made the reachability figure computable for the
 > first time.
 
-**Status:** draft · **Opened:** 2026-09-03 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-09-03 · **Shipped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 ---
 
@@ -84,3 +84,23 @@ with "cut fixtures" would have produced 33 files that score zero.
   hashes do not match disk.
 - **Proven by:** `check:audit-freshness` green on the inventory before any
   batch is cut, and each new fixture demonstrated to make its rule report.
+
+## Closed — 2026-11-07
+
+Shipped. Evidence against the success criteria:
+
+- The scorer hole is fixed: `eslint.benchmark.config.mjs` covers
+  `**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}` with the TypeScript parser and JSX
+  (#824).
+- `scripts/add-sourced-fixture.mts` now keeps its source's extension, and
+  parses a `.ts` snippet without JSX, so a `.tsx` fixture can be written.
+- The backlog is ordered by real-world frequency from the attributed inventory.
+  `check-corpus-coverage` prints the unmeasured rules ranked by
+  `real-world-rule-inventory.json` counts, with its `configHash`. On
+  2026-11-07: 83 reachable and 44 that fire nowhere, topped by
+  `react-a11y/click-events-have-key-events` (21,150 findings, 44 repos).
+- `check:audit-freshness` runs weekly in `control-bands.yml`, and the inventory
+  is refreshed by `real-source-scan.yml`.
+
+Scoped down: working that backlog is ongoing work, measured weekly per ADR 0011.
+It does not keep this intent open.

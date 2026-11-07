@@ -12,6 +12,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   propertyName,
+  namesOneOf,
   objectKeyName,
 } from '@interlace/eslint-devkit';
 import { CheckQueryParamsOptions } from '../../types';
@@ -388,7 +389,7 @@ export const checkQueryParams: TSESLint.RuleModule<
         // punctuation, not a dynamic method.
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          !SQL_SINK_METHODS.has(propertyName(node.callee) as string)
+          !namesOneOf(propertyName(node.callee), SQL_SINK_METHODS)
         ) {
           return;
         }

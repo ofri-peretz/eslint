@@ -105,6 +105,9 @@ The numbers we publish — benchmark results, peer health, download counts, cove
 | Peer-health snapshot refreshed | weekly | `peer-health.yml` | weekly, files an issue |
 | Resource profile refreshed | monthly | `resource-profile.yml` | monthly, files an issue |
 | Published claims match measured values | 100% | `npm run audit:claims` | PR (`docs-integrity`) |
+| The claims auditor still flags what it was written for | pass | `npm run audit:claims:selftest` | PR, before `audit:claims` |
+| Logo theme variants match their source | in sync | `npm run logos:variants:check` | local only, in `npm run quality`: logos change rarely, by hand, beside the source |
+| Flagship ILB smoke | pass | `npm run ilb:flagship:smoke` | local only, in `npm run quality`; the full flagship suite runs in `weekly-benchmark.yml` |
 | Audit snapshots not stale | age-bounded | `npm run check:audit-freshness` | weekly, in `control-bands.yml` |
 | CI wall-clock and job count (PR fast loop, Quality (Full) on main and PRs) | measured, banded — not a gate (ADR 0011) | `npm run measure:ci-wall-clock` | weekly, in `control-bands.yml` |
 | Coverage reported per package | 30/30 | `codecov.yml` components | PR — 19/30, owned by `chore/coverage-100` |

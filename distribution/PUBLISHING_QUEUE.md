@@ -263,6 +263,7 @@ _Publish all "Getting Started" guides first to establish the ecosystem foundatio
 | -------------------------------------- | -------------------------- | ---------- |
 | `trends/01-2025-security-landscape.md` | 2025 Security Landscape    | 🔮 Planned |
 | `react-a11y/*`                         | Accessibility Rules Series | 🔮 Planned |
+| `strategic/15-when-to-go-native.md`    | 17.9× on a Fixture, 1.3× on a Real Repo: When a Native Engine Pays (source: `ENGINES.md`; oxmutate M0/SC8 and oxlint 3.1×/8× measurements) | 🔮 Planned |
 | `react-features/*`                     | React Features Series      | 🔮 Planned |
 | `architecture/*`                       | Architecture Rules Series  | 🔮 Planned |
 

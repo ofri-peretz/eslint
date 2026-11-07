@@ -11,7 +11,7 @@ cases: []
 
 # Intent — `oxlint-plugin-security`: a drop-in for eslint-plugin-security, gated by its own tests
 
-**Status:** review · **Opened:** 2026-10-25 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-10-25 · **Shipped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 Decision record: [ADR 0008](../../adr/0008-oxlint-plugin-security-is-a-parity-gated-facade.md).
 Spec: [`design.md`](./design.md). This repo calls the Stage 2 artifact `design.md`;
@@ -149,3 +149,29 @@ pinned incumbent version.
 
 4. **Should eslint-community maintainers be told before the first publish?** This is
    outward-facing, so it is Ofri's call at Deploy.
+
+## Closed — 2026-11-07
+
+Shipped as a private, gated package (ADR 0008). Evidence against the success
+criteria, re-measured today against the current incumbent:
+
+1. `drop-in.mjs` exits 0 against `eslint-plugin-security@4.2.1`'s full corpus
+   on both engines. 106 of 106 live invalid cases are detected, and 12 of 114
+   valid cases report, all 12 declared in `divergences.json`. The corpus was
+   re-vendored from upstream's 4.2.0 → 4.2.1 diff, which adds four cases (two
+   rules now also catch `RegExp(...)` called without `new`). 223 cases in all;
+   `drop-in.result.json`, `baseline.json` and the README parity line were
+   regenerated from the run.
+2. The control run, with `--subject eslint-plugin-security`, scores 109 of 109
+   and 0 of 114.
+3. `scripts/__tests__/oxlint-security.lock.test.ts` (R9) fails if `private` is
+   `false` while (1) fails.
+4. The incumbent-drift step in `weekly-benchmark.yml` opened #1342 for 4.2.1.
+   #1354 bumped `mapping.json`, and this change brings the corpus to the same
+   version.
+
+Scoped down: **criterion 5** applies at Deploy. The package stays
+`"private": true`, and publishing it (flip `private`, add the Trusted Publisher)
+is the owner's launch step. The README parity line is generated from
+`drop-in.result.json` by `scripts/generate-oxlint-security.mts`, so it matches
+the gate's output by construction.

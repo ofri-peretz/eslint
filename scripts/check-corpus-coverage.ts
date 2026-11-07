@@ -47,6 +47,10 @@ const BASELINE = path.join(
 );
 const UPDATE = process.argv.includes('--update');
 
+/** docs/intents/a-flat-corpus-cannot-hold-an-import-graph */
+const IMPORT_GRAPH =
+  'Reads an import graph. A corpus fixture is one flattened file, so its imports resolve to nothing: the rule stays silent and import-next/no-unresolved fires instead. Measured on real code by the real-source scan and the weekly corpus budget.';
+
 /**
  * Rules a per-file code corpus cannot express, and never will.
  *
@@ -67,6 +71,12 @@ const NOT_FIXTURABLE: ReadonlyMap<string, string> = new Map([
     'node-security/lock-file',
     'Reports on the absence of a lock file at the project root. The defect is a missing FILE, not a syntax shape.',
   ],
+  ['import-next/no-barrel-file', IMPORT_GRAPH],
+  ['import-next/no-cycle', IMPORT_GRAPH],
+  ['import-next/no-relative-packages', IMPORT_GRAPH],
+  ['import-next/no-self-import', IMPORT_GRAPH],
+  ['import-next/no-cross-domain-imports', IMPORT_GRAPH],
+  ['import-next/no-named-as-default', IMPORT_GRAPH],
 ]);
 
 /** Every rule the suite ships, as `<plugin-short>/<rule>`. */
@@ -371,6 +381,44 @@ console.log(
         confirmedFalsePositives.map((m) => `    ${m}\n`).join('')
       : ''),
 );
+
+/*
+ * The backlog in the order real code exercises it. The inventory is the
+ * weekly real-source scan's (`real-source-scan.yml`), stamped with the
+ * config and repo hashes it was produced from; a rule absent from it fires
+ * nowhere on real code, and cutting a fixture for it would mean inventing one.
+ * docs/intents/the-reachable-corpus-set-tripled.
+ */
+const INVENTORY = path.join(
+  ROOT,
+  'benchmarks',
+  'budgets',
+  'real-world-rule-inventory.json',
+);
+if (fs.existsSync(INVENTORY) && unmeasured.length > 0) {
+  const inv = JSON.parse(fs.readFileSync(INVENTORY, 'utf8')) as {
+    configHash?: string;
+    rules?: Record<string, { count: number; repos: number }>;
+  };
+  const freq = inv.rules ?? {};
+  const reachable = unmeasured
+    .filter((r) => freq[r] !== undefined)
+    .sort((a, b) => freq[b].count - freq[a].count);
+  console.log(
+    `  Backlog by real-world frequency (inventory ${inv.configHash?.slice(0, 8) ?? 'unhashed'}): ` +
+      `${reachable.length} reachable, ${unmeasured.length - reachable.length} fire nowhere.
+` +
+      reachable
+        .slice(0, 15)
+        .map(
+          (
+            r,
+          ) => `    ${String(freq[r].count).padStart(8)}  ${String(freq[r].repos).padStart(3)} repos  ${r}
+`,
+        )
+        .join(''),
+  );
+}
 
 if (UPDATE) {
   const previous = readBaseline()?.unmeasured ?? null;

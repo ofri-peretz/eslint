@@ -135,8 +135,29 @@ const header = [
  * with this script was `if (…) { … } else {` — the closing brace of the block
  * shares a line with the `else` — and it went in unnoticed.
  */
+/*
+ * The fixture keeps its source's extension. Everything used to be written as
+ * `.js`, so a `.tsx` component lost its JSX-plus-types meaning and a `.ts`
+ * snippet with `satisfies` failed to parse — the corpus globs and the benchmark
+ * config read every extension, and only this writer did not.
+ */
+const SOURCE_EXTENSIONS = new Set([
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+  '.ts',
+  '.tsx',
+  '.mts',
+  '.cts',
+]);
+const sourceExt = path.extname(relPath).toLowerCase();
+const ext = SOURCE_EXTENSIONS.has(sourceExt) ? sourceExt : '.js';
+// In a `.ts` file `<T>(x) => x` is a generic, not JSX; parsing it as JSX fails.
+const jsx = !['.ts', '.mts', '.cts'].includes(ext);
+
 try {
-  parse(snippet, { ecmaVersion: 2022, sourceType: 'module', jsx: true });
+  parse(snippet, { ecmaVersion: 2022, sourceType: 'module', jsx });
 } catch (error) {
   die(
     `lines ${start}-${end} of ${relPath} do not parse on their own:\n` +
@@ -188,7 +209,7 @@ const dir = path.join(
   ...(under === null ? [] : under.split(/[\\/]/).filter(Boolean)),
 );
 fs.mkdirSync(dir, { recursive: true });
-const out = path.join(dir, `${slug}.js`);
+const out = path.join(dir, `${slug}${ext}`);
 // Exclusive create: "already exists?" and "create" are one atomic step, so a
 // fixture that appears concurrently is refused rather than overwritten.
 if (!createTextFileExclusive(out, `${header}${snippet}\n`)) {
