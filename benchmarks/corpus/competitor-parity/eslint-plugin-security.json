@@ -2,17 +2,17 @@
  "$schema": "./competitor-parity.schema.json",
  "source": {
   "package": "eslint-plugin-security",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "license": "Apache-2.0",
   "upstream": "https://github.com/eslint-community/eslint-plugin-security",
   "extractedFrom": "test/rules/*.js via RuleTester capture",
-  "extractedOn": "2026-10-25"
+  "extractedOn": "2026-11-07"
  },
  "notice": "Test cases below are derived from eslint-plugin-security (Apache-2.0). Retained for interoperability/parity benchmarking under Apache-2.0 s.4 attribution. Do not relicense.",
  "counts": {
-  "total": 219,
-  "invalid": 107,
-  "valid": 112
+  "total": 223,
+  "invalid": 109,
+  "valid": 114
  },
  "cases": [
   {
@@ -2133,9 +2133,28 @@
   },
   {
    "rule": "detect-non-literal-regexp",
+   "kind": "valid",
+   "i": 2,
+   "code": "var a = RegExp('ab+c', 'i')",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-regexp",
    "kind": "invalid",
    "i": 0,
    "code": "var a = new RegExp(c, 'i')",
+   "filename": null,
+   "errors": [
+    {
+     "message": "Found non-literal argument to RegExp Constructor"
+    }
+   ]
+  },
+  {
+   "rule": "detect-non-literal-regexp",
+   "kind": "invalid",
+   "i": 1,
+   "code": "var a = RegExp(c, 'i')",
    "filename": null,
    "errors": [
     {
@@ -2304,9 +2323,28 @@
   },
   {
    "rule": "detect-unsafe-regex (new RegExp)",
+   "kind": "valid",
+   "i": 1,
+   "code": "RegExp('^d+1337d+$')",
+   "filename": null
+  },
+  {
+   "rule": "detect-unsafe-regex (new RegExp)",
    "kind": "invalid",
    "i": 0,
    "code": "new RegExp('x+x+)+y')",
+   "filename": null,
+   "errors": [
+    {
+     "message": "Unsafe Regular Expression (new RegExp)"
+    }
+   ]
+  },
+  {
+   "rule": "detect-unsafe-regex (new RegExp)",
+   "kind": "invalid",
+   "i": 1,
+   "code": "RegExp('(x+x+)+y')",
    "filename": null,
    "errors": [
     {
