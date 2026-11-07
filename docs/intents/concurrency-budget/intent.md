@@ -143,9 +143,7 @@ the four bands (`.agent/control-bands.json`, `worse: higher`). The fourth band,
 The 12-week backfill reads 183–2,082s for the push median and 18–20 jobs. The
 spike in the weeks of 2026-09-28 to 10-12 widens the bands, which is why
 `minPoints` is 8 and the window 12. All three wall-clock readings are far above
-their targets today. That is
-recorded, not hidden: a further rise becomes a band breach, and the band writes
-its own intent. Not reaching a number is no longer a reason to keep this file
+their targets today. That is recorded, not hidden. A further rise is judged by the band rules: a 1σ drift is logged, and a 2σ or 3σ breach opens an intent PR. Not reaching a number is no longer a reason to keep this file
 open.
 
 Left to the owner: the open question above, whether a full re-verify on every

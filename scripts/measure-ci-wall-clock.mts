@@ -102,19 +102,43 @@ function gh(args: string[]): string {
   });
 }
 
+/**
+ * The Actions runs API returns at most 1,000 results for a filtered query and
+ * says nothing when it stops — a busy week of `quality-full.yml` reaches that
+ * (163 runs on 2026-11-04 alone). So the week is read one DAY at a time, and a
+ * day whose `total_count` exceeds what was fetched fails loudly rather than
+ * recording a median of a sample.
+ */
 function runs(workflow: string, from: Date, to: Date): Run[] {
-  const created = `${iso(from)}..${iso(new Date(to.getTime() - 86_400_000))}`;
-  const out = gh([
-    'api',
-    '--paginate',
-    `repos/${REPO}/actions/workflows/${workflow}/runs?status=success&created=${created}&per_page=100`,
-    '--jq',
-    '.workflow_runs[] | {id, event, head_branch, conclusion, run_started_at, updated_at}',
-  ]);
-  return out
-    .split('\n')
-    .filter(Boolean)
-    .map((l) => JSON.parse(l) as Run);
+  const out: Run[] = [];
+  for (let day = from.getTime(); day < to.getTime(); day += 86_400_000) {
+    const query = `repos/${REPO}/actions/workflows/${workflow}/runs?status=success&created=${iso(new Date(day))}&per_page=100`;
+    const total = Number(
+      gh([
+        'api',
+        `${query.replace('per_page=100', 'per_page=1')}`,
+        '--jq',
+        '.total_count',
+      ]).trim(),
+    );
+    const fetched = gh([
+      'api',
+      '--paginate',
+      query,
+      '--jq',
+      '.workflow_runs[] | {id, event, head_branch, conclusion, run_started_at, updated_at}',
+    ])
+      .split('\n')
+      .filter(Boolean)
+      .map((l) => JSON.parse(l) as Run);
+    if (fetched.length < total) {
+      throw new Error(
+        `${workflow} on ${iso(new Date(day))}: fetched ${fetched.length} of ${total} runs — the API truncated the result`,
+      );
+    }
+    out.push(...fetched);
+  }
+  return out;
 }
 
 function jobCount(runId: number): number {
@@ -178,6 +202,21 @@ function main(): void {
     const file = path.join(OUT_DIR, `${reading.week}.json`);
     // The benchmark-results vocabulary contract (scripts/ilb-validate-results.ts),
     // so the control-band collector can read this beside every other suite.
+    // A re-run in the same week must not rewrite an unchanged reading: a new
+    // timestamp alone would make the control-bands workflow open a PR.
+    if (fs.existsSync(file)) {
+      const previous = JSON.parse(fs.readFileSync(file, 'utf8'));
+      const { methodologyHash } = captureMethodology(import.meta.url);
+      if (
+        previous.methodologyHash === methodologyHash &&
+        JSON.stringify(previous.quality) === JSON.stringify(reading.quality) &&
+        JSON.stringify(previous.qualityFull) ===
+          JSON.stringify(reading.qualityFull)
+      ) {
+        console.log(`${path.relative(ROOT, file)}  unchanged`);
+        continue;
+      }
+    }
     const envelope = {
       bench: 'CI-Wall-Clock',
       benchVersion: '1.0.0',
