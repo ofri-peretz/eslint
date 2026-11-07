@@ -3,7 +3,7 @@
 > Stage 1 artifact of the AI-native SDLC. Opened after auditing which of the
 > quality command's twenty steps actually run in CI.
 
-**Status:** draft · **Opened:** 2026-09-01 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-09-01 · **Shipped:** 2026-11-07 · **Owner:** @ofri-peretz
 
 ---
 
@@ -97,3 +97,25 @@ logos:variants:check        NOT IN CI
 
 `audit:claims:selftest` is still the one that matters: an auditor whose own
 self-test never runs is an auditor nobody has checked.
+
+## Closed — 2026-11-07
+
+Shipped. Evidence against the success criteria:
+
+- All five steps are placed:
+  - `sync:root-readme:check` runs in `quality.yml`.
+  - `check-orphan-lockfiles` logic is locked by `orphan-lockfile-lock.test.ts`
+    under `test:scripts`.
+  - `audit:claims:selftest` now runs in `quality.yml`, just before
+    `audit:claims`.
+  - `logos:variants:check` and `ilb:flagship:smoke` are recorded in
+    `docs/DOCS_QUALITY.md` as local-only, with reasons. The full flagship suite
+    runs weekly in `weekly-benchmark.yml`.
+- The selftest is non-vacuous. Emptying `PATTERNS` in
+  `scripts/check-withdrawn-claims.mjs` made `--selftest` exit 1 with
+  `should flag: Drop-in replacement with 100x faster cycle detection`.
+- `docs/DOCS_QUALITY.md` has a row for each of the three.
+
+Dropped criterion: the lock asserting that every `quality` step is reachable
+from a workflow. It would be a new gate, and ADR 0011 says an intent adds no
+gate to close itself.

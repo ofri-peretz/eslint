@@ -4,15 +4,19 @@ set -euo pipefail
 # ─────────────────────────────────────────────────────────────────────────
 # Setup Branch Protection for main
 #
-# What this configures:
-#   - "Quality Gate" (the aggregate job in .github/workflows/quality.yml)
-#     is the SINGLE required status check. New gates added under quality.yml
-#     auto-propagate via the aggregate's `needs:` list — you do not need to
-#     update this script when adding a new check.
-#   - Force-push and branch deletion are blocked, even for admins.
-#   - Linear history required (squash/rebase only) — keeps `git log` clean
-#     for changesets-driven CHANGELOGs.
-#   - 1 PR review required, with stale review dismissal on new commits.
+# Declares the protection that is live on GitHub. Re-checked against
+# `gh api repos/ofri-peretz/eslint/branches/main/protection` on 2026-11-07.
+# A declaration that disagrees with GitHub is worse than none, so change
+# this file in the same PR as the setting.
+#
+#   - Required checks: "oxlint (fast pass)" (quality.yml), "Quality (Full)
+#     Gate" (quality-full.yml) and "review" (claude-code-review.yml).
+#   - `strict: false`: a PR need not be up to date with main. The push-to-main
+#     run of Quality (Full) is the backstop that turns a semantically broken
+#     merge red (ADR 0012). No merge queue.
+#   - No required human approval (0 reviews). The `review` check is the
+#     automated reviewer; conversations must be resolved before merge.
+#   - Enforce admins, linear history, no force-push, no deletion.
 #
 # Run: ./scripts/setup-branch-protection.sh
 # Re-run safe: idempotent — overwrites existing rules on each run.
@@ -22,13 +26,13 @@ REPO_OWNER="${GITHUB_REPOSITORY_OWNER:-ofri-peretz}"
 REPO_NAME="${GITHUB_REPOSITORY_NAME:-eslint}"
 BRANCH="main"
 
-# The single aggregate check from quality.yml. Match the job's `name:` field
-# exactly — GitHub's required-checks API matches on the displayed name.
-REQUIRED_CHECK="Quality Gate"
+# Match each job's displayed `name:` exactly — the required-checks API
+# matches on the displayed name.
+REQUIRED_CHECKS='["oxlint (fast pass)","Quality (Full) Gate","review"]'
 
 echo "🔒 Setting up branch protection for '$BRANCH'"
-echo "   Repo:           $REPO_OWNER/$REPO_NAME"
-echo "   Required check: $REQUIRED_CHECK"
+echo "   Repo:            $REPO_OWNER/$REPO_NAME"
+echo "   Required checks: $REQUIRED_CHECKS"
 echo ""
 
 if ! command -v gh &> /dev/null; then
@@ -42,24 +46,22 @@ fi
 
 echo "📋 Current protection state:"
 gh api "repos/$REPO_OWNER/$REPO_NAME/branches/$BRANCH/protection" 2>/dev/null \
-  | jq -r '"  required_checks: \(.required_status_checks.contexts // [] | join(", "))\n  enforce_admins: \(.enforce_admins.enabled)\n  allow_force_pushes: \(.allow_force_pushes.enabled)"' \
+  | jq -r '"  required_checks: \(.required_status_checks.contexts // [] | join(", "))\n  strict: \(.required_status_checks.strict)\n  enforce_admins: \(.enforce_admins.enabled)\n  allow_force_pushes: \(.allow_force_pushes.enabled)"' \
   2>/dev/null || echo "  (no rules yet)"
 echo ""
 
 echo "🔧 Applying protection rules..."
 
-# Build the JSON payload via heredoc + jq for robustness (avoids shell-quote
-# gymnastics on nested objects).
-PAYLOAD=$(jq -n --arg check "$REQUIRED_CHECK" '{
+PAYLOAD=$(jq -n --argjson checks "$REQUIRED_CHECKS" '{
   required_status_checks: {
-    strict: true,
-    contexts: [$check]
+    strict: false,
+    contexts: $checks
   },
   enforce_admins: true,
   required_pull_request_reviews: {
-    dismiss_stale_reviews: true,
-    require_code_owner_reviews: true,
-    required_approving_review_count: 1
+    dismiss_stale_reviews: false,
+    require_code_owner_reviews: false,
+    required_approving_review_count: 0
   },
   restrictions: null,
   allow_force_pushes: false,
@@ -81,24 +83,16 @@ echo "$PAYLOAD" \
 ⚠️  API call failed — fall back to manual configuration:
    https://github.com/$REPO_OWNER/$REPO_NAME/settings/branches
 
-   Required check:   $REQUIRED_CHECK
+   Required checks:  $REQUIRED_CHECKS (strict: off)
    Enforce admins:   ON
    Force pushes:     OFF
    Deletions:        OFF
    Linear history:   ON
-   PR reviews:       1 (with CODEOWNERS + stale-dismiss)
+   PR reviews:       0 required
    Conversations:    must resolve before merge
 EOF
         exit 1
       }
 
 echo ""
-echo "✅ Branch protection applied:"
-echo "   • Required:        '$REQUIRED_CHECK' (aggregate gate from quality.yml)"
-echo "   • Reviews:         1 approving review + CODEOWNERS"
-echo "   • Force-push:      blocked (even admins)"
-echo "   • Deletion:        blocked"
-echo "   • Linear history:  enforced (squash/rebase only)"
-echo ""
-echo "💡 Adding a new gate? Edit quality.yml, add to the aggregate's"
-echo "   \`needs:\` list — branch protection updates automatically."
+echo "✅ Branch protection applied (strict: off, backstop: push-to-main Quality (Full))."

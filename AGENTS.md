@@ -39,8 +39,9 @@ This is a **monorepo** containing ESLint plugins for security-focused static ana
 ## Quick Commands
 
 This repo uses **npm + Turborepo + Changesets**. There is **no** Nx, no pnpm.
-The Quality Gate (`.github/workflows/quality.yml`) is the single required
-status check on `main` — see its `needs:` list for what runs on every PR.
+`main` requires three checks: `oxlint (fast pass)` (`quality.yml`),
+`Quality (Full) Gate` (`quality-full.yml`) and `review` — see
+[Branch Protection](#branch-protection).
 
 ```bash
 # Tests / build / typecheck — affected only on PRs, full graph on push to main.
@@ -402,10 +403,11 @@ Each plugin's README contains an OWASP coverage matrix.
 
 - `main` is protected — no direct pushes; auto-managed via
   `scripts/setup-branch-protection.sh`.
-- Single required check: **Quality Gate** (the aggregate job from
-  `quality.yml`). New gates added under `quality.yml` auto-propagate via
-  the aggregate's `needs:` — branch protection updates automatically.
-- 1 PR review required, with CODEOWNERS + stale-review dismissal.
+- Required checks: **oxlint (fast pass)**, **Quality (Full) Gate** (the
+  aggregate job from `quality-full.yml`; new gates join its `needs:`) and
+  **review**. `strict: false` — a PR need not be up to date with `main`; the
+  push-to-main Quality (Full) run is the backstop (ADR 0012).
+- No required human approval; conversations must be resolved before merge.
 - Linear history enforced (squash/rebase only) — keeps changesets-driven
   CHANGELOGs clean.
 
