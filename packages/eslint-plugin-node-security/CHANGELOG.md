@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.0.3
+
+### Patch Changes
+
+- **🐛 Fix** — `detect-non-literal-fs-filename` reads `/* global */` directives the way ESLint does
+
+  Names may be separated by whitespace as well as commas, a `-- justification` is ignored, `: off` removes a global, and a later directive overrides an earlier one.
+
 ## 6.0.2
 
 ### Patch Changes
