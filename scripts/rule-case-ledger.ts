@@ -68,8 +68,17 @@ import {
   readFlatEntries,
 } from './lib/read-baseline.ts';
 import { changedRules } from './rule-audit-gate.ts';
+import {
+  arrayHarnessOf,
+  replayCode,
+  resolveCaseCode,
+  type Harness,
+} from './lib/case-harness.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
+
+/** Every resolved harness, once, keyed `<file>#<name>`. See scripts/lib/case-harness.ts. */
+const HARNESSES: Record<string, Harness> = {};
 const ROOT = path.resolve(HERE, '..');
 const OUT_JSON = path.join(ROOT, 'benchmarks', 'RULE_CASES.json');
 const OUT_MD = path.join(ROOT, 'benchmarks', 'RULE_CASES.md');
@@ -93,6 +102,13 @@ type Case = {
   file: string;
   source?: string;
   found?: string;
+  /**
+   * The fragment exactly as written (`code` is squashed and cut for display),
+   * or null when it cannot be evaluated statically.
+   */
+  body?: string | null;
+  /** Key into the ledger's `harnesses`: what the test file wraps around `body`. */
+  harness?: string;
 };
 
 /**
@@ -389,6 +405,21 @@ function filenameOf(element: ts.Expression): string {
   return '';
 }
 
+/** The expression a case's code comes from: the string itself, or its `code:`. */
+function codeInitializerOf(element: ts.Expression): ts.Expression | null {
+  if (ts.isStringLiteralLike(element)) return element;
+  if (!ts.isObjectLiteralExpression(element)) return null;
+  for (const prop of element.properties) {
+    if (
+      ts.isPropertyAssignment(prop) &&
+      (ts.isIdentifier(prop.name) || ts.isStringLiteral(prop.name)) &&
+      prop.name.text === 'code'
+    )
+      return prop.initializer;
+  }
+  return null;
+}
+
 function codeOf(element: ts.Expression): string {
   const squash = (text: string): string =>
     text.replace(/\s+/g, ' ').trim().slice(0, 200);
@@ -540,6 +571,7 @@ function casesIn(file: string, known: Set<string>): Map<string, Case[]> {
     true,
   );
   const rel = path.relative(ROOT, file);
+  const harnessCache = {};
   const byBinding = new Map<string, string>();
   const out = new Map<string, Case[]>();
 
@@ -568,6 +600,14 @@ function casesIn(file: string, known: Set<string>): Map<string, Case[]> {
       if (key !== 'valid' && key !== 'invalid') continue;
       const array = arrayIn(prop.initializer);
       if (array === null) continue;
+      // `invalid: xp([...])`: every case in the literal goes through `xp`.
+      const arrayHarness = arrayHarnessOf(
+        prop.initializer,
+        prop.getSourceFile(),
+        rel,
+        harnessCache,
+      );
+      if (arrayHarness) HARNESSES[arrayHarness.key] = arrayHarness.value;
       for (const element of array.elements) {
         // `...SHARED_CASES` contributes cases this file does not describe.
         if (ts.isSpreadElement(element)) continue;
@@ -579,6 +619,22 @@ function casesIn(file: string, known: Set<string>): Map<string, Case[]> {
         const caseCode = codeOf(element);
         const caseOptions = optionsOf(element, element.getSourceFile());
         const caseFilename = filenameOf(element);
+        const codeInit = codeInitializerOf(element);
+        const own =
+          codeInit === null
+            ? null
+            : resolveCaseCode(
+                codeInit,
+                element.getSourceFile(),
+                rel,
+                harnessCache,
+              );
+        const resolved =
+          own && arrayHarness && !own.harness
+            ? { body: own.body, harness: arrayHarness }
+            : own;
+        if (resolved?.harness)
+          HARNESSES[resolved.harness.key] = resolved.harness.value;
         list.push({
           id: caseId(rule, kind, element.getText()),
           kind,
@@ -592,6 +648,12 @@ function casesIn(file: string, known: Set<string>): Map<string, Case[]> {
           ...(caseFilename ? { filename: caseFilename } : {}),
           ...(source ? { source } : {}),
           ...(found ? { found } : {}),
+          ...(resolved
+            ? {
+                body: resolved.body,
+                ...(resolved.harness ? { harness: resolved.harness.key } : {}),
+              }
+            : {}),
         });
         out.set(rule, list);
       }
@@ -1208,7 +1270,7 @@ for (const { c } of sealedCases) {
 if (!CHECK) {
   fs.writeFileSync(
     OUT_JSON,
-    `${JSON.stringify({ counts, rules: entries }, null, 2)}\n`,
+    `${JSON.stringify({ counts, harnesses: HARNESSES, rules: entries }, null, 2)}\n`,
   );
 
   const md: string[] = [
@@ -1346,6 +1408,19 @@ if (!CHECK) {
     md.push('');
   }
   fs.writeFileSync(OUT_MD, `${md.join('\n')}\n`);
+  {
+    // How much of the ledger a consumer can replay to the suite's own verdict
+    // (docs/intents/the-ledger-records-fragments-not-files).
+    const all = entries.flatMap((e) => e.cases);
+    const replayable = all.filter((c) => replayCode(c, HARNESSES) !== null);
+    const unresolved = Object.values(HARNESSES).filter(
+      (h) => 'unresolved' in h,
+    );
+    console.log(
+      `\n  replayable from the ledger: ${replayable.length} of ${all.length} cases · ` +
+        `${Object.keys(HARNESSES).length} harnesses, ${unresolved.length} unresolved`,
+    );
+  }
   console.log(
     `\n  wrote ${path.relative(ROOT, OUT_MD)} and ${path.relative(ROOT, OUT_JSON)}`,
   );

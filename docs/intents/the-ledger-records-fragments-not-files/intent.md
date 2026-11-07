@@ -86,3 +86,12 @@ dropping them from its denominator without a word. First reading: **1,645 TP
 cases in 121 rules** not probed, against 4,466 probed. Next is slice 2: record
 each harness once per run block in `scripts/rule-case-ledger.ts` (design R1–R4),
 with the round-trip test.
+
+Slice 2 shipped: `scripts/rule-case-ledger.ts` records each case's exact `body`
+and a `harness` key into a top-level `harnesses` map, resolved by
+`scripts/lib/case-harness.ts`. That covers const prefixes, local wrappers,
+array mappers (`invalid: xp([...])`) and generators called with static
+arguments. First reading: **27,239 of 27,414 cases replayable**, 316
+harnesses, 48 unresolved (runtime-built code, named by source text). Round
+trip: `scripts/__tests__/case-harness.test.ts` replays every harnessed invalid
+case in six files, one per shape, and each reports under its own rule.
