@@ -30,6 +30,7 @@ import {
   memberPath,
   objectKeyName,
   propertyName,
+  namesOneOf,
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
@@ -142,7 +143,7 @@ export function isDerivationCall(node: TSESTree.Node): boolean {
   return (
     node.type === AST_NODE_TYPES.CallExpression &&
     node.callee.type === AST_NODE_TYPES.MemberExpression &&
-    DERIVATIONS.has(propertyName(node.callee) as string)
+    namesOneOf(propertyName(node.callee), DERIVATIONS)
   );
 }
 
@@ -331,7 +332,7 @@ export function derivesFrom(node: TSESTree.Node, flow: Flow): boolean {
     if (
       owner.type === AST_NODE_TYPES.CallExpression &&
       owner.callee.type === AST_NODE_TYPES.MemberExpression &&
-      ELEMENT_CALLBACKS.has(propertyName(owner.callee) as string)
+      namesOneOf(propertyName(owner.callee), ELEMENT_CALLBACKS)
     ) {
       return walk(owner.callee.object, depth + 1, EMPTY_ENV);
     }

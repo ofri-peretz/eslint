@@ -19,6 +19,7 @@ import {
   identifierWords,
   objectKeyName,
   propertyName,
+  namesOneOf,
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
@@ -145,7 +146,7 @@ function isRequestBody(
   if (target.type === AST_NODE_TYPES.CallExpression) {
     const callee = target.callee;
     if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
-    const method = propertyName(callee) as string;
+    const method = propertyName(callee);
     // `url.searchParams.get('q')` / `req.nextUrl.searchParams.get('q')` — the
     // query string is the caller's, whatever URL object it hangs off.
     if (
@@ -156,14 +157,14 @@ function isRequestBody(
       return true;
     }
     return (
-      ['json', 'formData', 'text'].includes(method) &&
+      namesOneOf(method, ['json', 'formData', 'text']) &&
       isParameter(callee.object, scope)
     );
   }
   // `req.body` / `req.query` — Express-style handlers expose both parsed.
   return (
     target.type === AST_NODE_TYPES.MemberExpression &&
-    REQUEST_INPUTS.has(propertyName(target) as string) &&
+    namesOneOf(propertyName(target), REQUEST_INPUTS) &&
     isParameter(target.object, scope)
   );
 }
