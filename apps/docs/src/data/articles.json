@@ -1,6 +1,26 @@
 {
   "articles": [
     {
+      "id": 4992513,
+      "title": "The Most Precise Plugin in My Benchmark Scored 10.8%",
+      "description": "Six ESLint security plugins, one labelled corpus, same harness, same day — F1 from 10.5% to 100%. I wrote the corpus, which is the most important sentence in the article and changes how every row should be read.",
+      "url": "https://dev.to/ofri-peretz/the-most-precise-plugin-in-my-benchmark-scored-108-p64",
+      "canonical_url": "https://ofriperetz.dev/articles/labelled-corpus-f1-leaderboard",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Flabelled-corpus-f1-leaderboard.jpg",
+      "published_at": "2026-11-07T07:59:36Z",
+      "readable_publish_date": "Nov 7",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 1,
+      "positive_reactions_count": 1,
+      "comments_count": 0,
+      "tag_list": [
+        "security",
+        "webdev",
+        "javascript"
+      ]
+    },
+    {
       "id": 4965984,
       "title": "My Harness Reported 0 Findings on 100 Files. All 100 Were Ignored.",
       "description": "Three separate mechanisms make an ESLint run report zero while reading nothing — and every one of them exits 0 with an empty stderr. A clean bill of health and a file nobody opened are the same output.",
@@ -2027,7 +2047,7 @@
       ]
     }
   ],
-  "total": 99,
-  "lastUpdated": "2026-11-05T11:27:52.350Z",
+  "total": 100,
+  "lastUpdated": "2026-11-08T10:35:27.841Z",
   "source": "public"
 }
