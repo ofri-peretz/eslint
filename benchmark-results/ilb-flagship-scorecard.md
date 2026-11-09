@@ -1,8 +1,8 @@
 # ILB-Flagship Scorecard
 
-> Per-rule × per-repo: latency (cached + uncached), findings, head-to-head overlap, and synthetic-corpus P/R/F1. Generated from `2026-11-06.json`.
+> Per-rule × per-repo: latency (cached + uncached), findings, head-to-head overlap, and synthetic-corpus P/R/F1. Generated from `2026-11-09.json`.
 
-- **Generated**: 2026-11-06T17:08:24.274Z · **Schema**: ilb-flagship/v2
+- **Generated**: 2026-11-09T21:27:50.386Z · **Schema**: ilb-flagship/v2
 - **ESLint**: v9.39.4 · **oxlint**: 1.63.0 · **Node**: v24.22.2
 - **OOS root**: `/home/runner/work/eslint/eslint/oos`
 
@@ -10,16 +10,16 @@
 
 | Rule                                              | Repo      |   ⭐ | Tier | Ours cold | Ours warm | Ours findings | Comp cold | Comp warm | Comp findings | oxlint cold | oxlint warm | oxlint findings |
 | :------------------------------------------------ | :-------- | ---: | :--: | --------: | --------: | ------------: | --------: | --------: | ------------: | ----------: | ----------: | --------------: |
-| `import-next/no-cycle`                            | next.js   | 131K |  T1  | 50,621 ms |    757 ms |            12 | 66,206 ms |    754 ms |             0 |    1,307 ms |    1,324 ms |              92 |
-| `pg/no-unsafe-query`                              | supabase  |  78K |  T1  | 43,096 ms |  1,452 ms |             0 |         — |         — |             — |           — |           — |               — |
-| `secure-coding/no-hardcoded-credentials`          | vercel-ai |  15K |  T2  | 10,057 ms |    734 ms |           973 | 12,744 ms |    647 ms |           550 |           — |           — |               — |
-| `secure-coding/no-redos-vulnerable-regex`         | lodash    |  60K |  T1  |    384 ms |    301 ms |             1 |    421 ms |    339 ms |             0 |           — |           — |               — |
-| `mongodb-security/no-unsafe-query`                | payload   |  35K |  T2  | 10,365 ms |    801 ms |           299 |         — |         — |             — |           — |           — |               — |
-| `jwt/no-algorithm-none`                           | supabase  |  78K |  T1  | 41,893 ms |  1,383 ms |             0 |         — |         — |             — |           — |           — |               — |
-| `browser-security/no-postmessage-wildcard-origin` | next.js   | 131K |  T1  | 47,615 ms |    727 ms |             2 |         — |         — |             — |           — |           — |               — |
-| `react-features/hooks-exhaustive-deps`            | next.js   | 131K |  T1  | 49,400 ms |    735 ms |           147 | 49,177 ms |    813 ms |            53 |      525 ms |      500 ms |              22 |
-| `react-a11y/alt-text`                             | shadcn-ui | 100K |  T1  |         — |         — |             — | 12,267 ms |    833 ms |             0 |      170 ms |      177 ms |               0 |
-| `vercel-ai-security/no-unsafe-output-handling`    | vercel-ai |  15K |  T2  |  9,882 ms |    645 ms |             1 |         — |         — |             — |           — |           — |               — |
+| `import-next/no-cycle`                            | next.js   | 131K |  T1  | 45,882 ms |    614 ms |            12 | 60,793 ms |    682 ms |             0 |    1,238 ms |    1,258 ms |              92 |
+| `pg/no-unsafe-query`                              | supabase  |  78K |  T1  | 38,691 ms |  1,136 ms |             0 |         — |         — |             — |           — |           — |               — |
+| `secure-coding/no-hardcoded-credentials`          | vercel-ai |  15K |  T2  |  8,686 ms |    576 ms |           973 | 10,821 ms |    550 ms |           550 |           — |           — |               — |
+| `secure-coding/no-redos-vulnerable-regex`         | lodash    |  60K |  T1  |    333 ms |    265 ms |             1 |    373 ms |    278 ms |             0 |           — |           — |               — |
+| `mongodb-security/no-unsafe-query`                | payload   |  35K |  T2  |  9,337 ms |    658 ms |           299 |         — |         — |             — |           — |           — |               — |
+| `jwt/no-algorithm-none`                           | supabase  |  78K |  T1  | 38,403 ms |  1,116 ms |             0 |         — |         — |             — |           — |           — |               — |
+| `browser-security/no-postmessage-wildcard-origin` | next.js   | 131K |  T1  | 44,831 ms |    597 ms |             2 |         — |         — |             — |           — |           — |               — |
+| `react-features/hooks-exhaustive-deps`            | next.js   | 131K |  T1  | 43,832 ms |    587 ms |           147 | 45,267 ms |    661 ms |            53 |      426 ms |      456 ms |              22 |
+| `react-a11y/alt-text`                             | shadcn-ui | 100K |  T1  |         — |         — |             — | 10,873 ms |    660 ms |             0 |      142 ms |      136 ms |               0 |
+| `vercel-ai-security/no-unsafe-output-handling`    | vercel-ai |  15K |  T2  |  8,685 ms |    507 ms |             1 |         — |         — |             — |           — |           — |               — |
 
 **Failed runs** (linter exited with an error; shown as — above and left out of every median):
 
@@ -30,9 +30,9 @@
 
 | Stack                | Median cold | Median warm |         Δ | Cache benefit |
 | :------------------- | ----------: | ----------: | --------: | ------------: |
-| Ours (ESLint)        |   41,893 ms |      735 ms | 41,158 ms |           98% |
-| Peer (ESLint)        |   12,744 ms |      754 ms | 11,990 ms |           94% |
-| oxlint native (peer) |      525 ms |      500 ms |     25 ms |            5% |
+| Ours (ESLint)        |   38,403 ms |      597 ms | 37,806 ms |           98% |
+| Peer (ESLint)        |   10,873 ms |      660 ms | 10,213 ms |           94% |
+| oxlint native (peer) |      426 ms |      456 ms |    -30 ms |           -7% |
 
 ## 3. Synthetic corpus — true precision / recall / F1
 
@@ -40,7 +40,7 @@ Labeled fixtures from `benchmarks/corpus/CWE-NNN/{vulnerable,safe}`. Tiny — 3 
 
 | Rule                                     | CWE     | Stack      | Precision | Recall |   F1 |  TP |  FP |  FN |  TN |
 | :--------------------------------------- | :------ | :--------- | --------: | -----: | ---: | --: | --: | --: | --: |
-| `pg/no-unsafe-query`                     | CWE-089 | ours       |      100% |    25% | 0.40 |   1 |   0 |   3 |   4 |
+| `pg/no-unsafe-query`                     | CWE-089 | ours       |      100% |   100% | 1.00 |   4 |   0 |   0 |   4 |
 | `secure-coding/no-hardcoded-credentials` | CWE-798 | ours       |       83% |    71% | 0.77 |   5 |   1 |   2 |   5 |
 | `secure-coding/no-hardcoded-credentials` | CWE-798 | competitor |      100% |    57% | 0.73 |   4 |   0 |   3 |   6 |
 
