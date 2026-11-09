@@ -1,0 +1,31 @@
+{
+  "bench": "CI-Wall-Clock",
+  "benchVersion": "1.0.0",
+  "timestamp": "2026-11-09T13:50:25.261Z",
+  "toolchain": {
+    "node": "24.22.2",
+    "eslint": "10.14.0",
+    "typescript": "6.0.3",
+    "tsCompiler": "tsc-go",
+    "typescriptEslint": "8.68.0",
+    "platform": "linux-x64"
+  },
+  "methodologyHash": "sha256:290f0a8f010b866af7ddbbcccc1d2bd620f2c87610d880d6e3ffcab8f670cedf",
+  "methodologyPaths": [
+    "scripts/measure-ci-wall-clock.mts",
+    "benchmarks/lib/methodology.ts",
+    "benchmarks/lib/toolchain.ts"
+  ],
+  "week": "2026-11-02",
+  "quality": {
+    "prRuns": 187,
+    "prMedianSeconds": 317
+  },
+  "qualityFull": {
+    "pushRuns": 102,
+    "pushMedianSeconds": 313,
+    "pushMedianJobs": 19,
+    "prRuns": 216,
+    "prMedianSeconds": 350
+  }
+}
