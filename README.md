@@ -92,7 +92,7 @@ helper. Machine-readable equivalents ship via the
 
 <!-- AUTO-GENERATED:NUMBERS:START - Do not edit manually -->
 
-**31 published plugins · 495 rules** — 22 security plugins (290 rules), 7 code-quality plugins (107 rules), 2 React plugins (98 rules). <sub>Counts generated 2026-10-27 from the source tree — never hand-typed.</sub>
+**31 published plugins · 496 rules** — 22 security plugins (291 rules), 7 code-quality plugins (107 rules), 2 React plugins (98 rules). <sub>Counts generated 2026-11-12 from the source tree — never hand-typed.</sub>
 
 <!-- AUTO-GENERATED:NUMBERS:END -->
 
@@ -129,13 +129,13 @@ that match your stack; ignore the other twenty-eight.
 
 ### 🏗️ Security — application frameworks
 
-<sub>3 plugins · 52 rules</sub>
+<sub>3 plugins · 53 rules</sub>
 
 | Package                                                                                          | Rules | What it catches                                                                                                                     | Docs                                                                                                                                     | Downloads                                                                                           |
 | :----------------------------------------------------------------------------------------------- | ----: | :---------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------- |
 | [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) |    28 | Detects permissive CORS, missing CSRF protection, missing helmet headers, insecure cookies, and GraphQL introspection in production | [docs](https://eslint.interlace.tools/docs/security/plugin-express-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-express-security?style=flat-square&label=) |
 | [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)   |    14 | Detects overly permissive IAM policies and CORS, unvalidated event bodies, secrets in env vars, and leaked error details            | [docs](https://eslint.interlace.tools/docs/security/plugin-lambda-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)  | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-lambda-security?style=flat-square&label=)  |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)   |    10 | Detects missing auth guards, missing validation pipes, unthrottled routes, and exposed private fields                               | [docs](https://eslint.interlace.tools/docs/security/plugin-nestjs-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)  | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security?style=flat-square&label=)  |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)   |    11 | Detects missing auth guards, missing validation pipes, unthrottled routes, and exposed private fields                               | [docs](https://eslint.interlace.tools/docs/security/plugin-nestjs-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)  | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security?style=flat-square&label=)  |
 
 ### 🧭 Architecture
 

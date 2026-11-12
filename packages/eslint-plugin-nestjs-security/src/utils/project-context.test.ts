@@ -641,6 +641,23 @@ describe('scanProject — which class a global provider binds', () => {
     expect(context.hasGlobalThrottler).toBe(true);
   });
 
+  it("follows an ESM '.js' specifier to the '.ts' file it names", () => {
+    // NestJS 12 is ESM: its own sources import './x.js'.
+    const context = scan({
+      'src/app.module.ts': bind(
+        'APP_GUARD',
+        'RateGuard',
+        "import { RateGuard } from './rate.guard.js';",
+      ),
+      'src/rate.guard.ts': `
+        import { ThrottlerGuard } from '@nestjs/throttler';
+        export class RateGuard extends ThrottlerGuard {}
+      `,
+    });
+    expect(context.hasGlobalThrottler).toBe(true);
+    expect(context.hasGlobalAuthGuard).toBe(false);
+  });
+
   it("resolves the rootDir spellings 'src/…' and '@/…' against the project", () => {
     // truthy and meimei-admin import their guard as 'src/common/guard/…'.
     const guard = `
@@ -798,6 +815,21 @@ describe('scanProject — an upload limit set in MulterModule', () => {
     ).toBe(false);
     expect(scan('MulterModule.register()')).toBe(false);
     expect(scan('OtherModule')).toBe(false);
+  });
+
+  it('reads the fileSize key, in either spelling, and not the word', () => {
+    expect(scan('MulterModule.register({ limits: { fileSize } })')).toBe(true);
+    expect(
+      scan('MulterModule.register({ limits: { fileSize, files: 1 } })'),
+    ).toBe(true);
+    expect(scan('MulterModule.register({ limits: { fileSize : 1 } })')).toBe(
+      true,
+    );
+    expect(
+      scan(
+        "MulterModule.register({ storage: diskStorage({ destination: './fileSize' }) })",
+      ),
+    ).toBe(false);
   });
 
   it('does not read a fileSize that belongs to something after the call', () => {

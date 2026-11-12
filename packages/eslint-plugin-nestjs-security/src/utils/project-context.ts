@@ -286,7 +286,8 @@ function registersUploadLimit(source: string): boolean {
       else if (source[end] === ')') depth--;
     }
     const args = source.slice(MULTER_MODULE_RE.lastIndex, end);
-    if (/\bfileSize\b/.test(args)) return true;
+    // The key, not the word: `destination: './fileSize'` sets no limit.
+    if (/\bfileSize\s*[:,}]/.test(args)) return true;
     if (call[1] !== undefined && !/\buseFactory\b/.test(args)) return true;
   }
   return false;
@@ -308,7 +309,10 @@ function readLocalModule(
         ? joinPath(root, 'src', specifier.slice(2))
         : null;
   if (base === null) return null;
-  for (const file of [`${base}.ts`, joinPath(base, 'index.ts')]) {
+  // An ESM project writes the specifier as the file it will be once compiled:
+  // `./rate-limit.guard.js` is `rate-limit.guard.ts` on disk.
+  const stem = base.replace(/\.js$/, '');
+  for (const file of [`${stem}.ts`, joinPath(base, 'index.ts')]) {
     const source = readFileSync(file);
     if (source !== null) return { source, file };
   }
