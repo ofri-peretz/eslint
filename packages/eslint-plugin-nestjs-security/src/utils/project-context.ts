@@ -286,8 +286,9 @@ function registersUploadLimit(source: string): boolean {
       else if (source[end] === ')') depth--;
     }
     const args = source.slice(MULTER_MODULE_RE.lastIndex, end);
-    // The key, not the word: `destination: './fileSize'` sets no limit.
-    if (/\bfileSize\s*[:,}]/.test(args)) return true;
+    // The key — bare, shorthand or quoted — not the word:
+    // `destination: './fileSize'` sets no limit.
+    if (/\bfileSize(?:\s*[:,}]|['"]\s*:)/.test(args)) return true;
     if (call[1] !== undefined && !/\buseFactory\b/.test(args)) return true;
   }
   return false;

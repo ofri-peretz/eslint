@@ -832,6 +832,15 @@ describe('scanProject — an upload limit set in MulterModule', () => {
     ).toBe(false);
   });
 
+  it('reads a quoted fileSize key, in either quote style', () => {
+    expect(scan("MulterModule.register({ limits: { 'fileSize': 1 } })")).toBe(
+      true,
+    );
+    expect(scan('MulterModule.register({ limits: { "fileSize" : 1 } })')).toBe(
+      true,
+    );
+  });
+
   it('does not read a fileSize that belongs to something after the call', () => {
     expect(
       scan(
