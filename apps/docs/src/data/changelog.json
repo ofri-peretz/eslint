@@ -7,6 +7,36 @@
     {
       "package": "oxlint-plugin-nestjs-security",
       "short": "oxlint-plugin-nestjs-security",
+      "version": "4.2.0",
+      "date": "2026-11-12T17:48:26Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-nestjs-security@4.2.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-nestjs-security",
+      "short": "eslint-plugin-nestjs-security",
+      "version": "4.2.0",
+      "date": "2026-11-12T17:44:28Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "`require-upload-size-limit`, and `require-throttler` now asks for a bound guard",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-nestjs-security",
+      "short": "oxlint-plugin-nestjs-security",
       "version": "4.1.1",
       "date": "2026-11-12T16:56:12Z",
       "isApp": false,
@@ -25245,21 +25275,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-nestjs-security",
-      "short": "eslint-plugin-nestjs-security",
-      "version": "4.2.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "feature",
-          "title": "`require-upload-size-limit`, and `require-throttler` now asks for a bound guard",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
@@ -25395,21 +25410,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-nestjs-security",
-      "short": "oxlint-plugin-nestjs-security",
-      "version": "4.2.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-nestjs-security@4.2.0`",
           "pr": null
         }
       ]
