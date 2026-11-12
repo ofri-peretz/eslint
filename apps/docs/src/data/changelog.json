@@ -1,9 +1,39 @@
 {
-  "releaseCount": 1126,
+  "releaseCount": 1128,
   "packageCount": 66,
-  "entryCount": 2824,
+  "entryCount": 2826,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "oxlint-plugin-nestjs-security",
+      "short": "oxlint-plugin-nestjs-security",
+      "version": "4.1.1",
+      "date": "2026-11-12T16:56:12Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-nestjs-security@4.1.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-nestjs-security",
+      "short": "eslint-plugin-nestjs-security",
+      "version": "4.1.1",
+      "date": "2026-11-12T16:54:40Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-missing-validation-pipe` no longer reports one named scalar",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "oxlint-plugin-nestjs-security",
       "short": "oxlint-plugin-nestjs-security",
@@ -25217,14 +25247,14 @@
     {
       "package": "eslint-plugin-nestjs-security",
       "short": "eslint-plugin-nestjs-security",
-      "version": "4.1.1",
+      "version": "4.2.0",
       "date": null,
       "isApp": false,
       "isPrivate": false,
       "entries": [
         {
-          "kind": "fix",
-          "title": "`no-missing-validation-pipe` no longer reports one named scalar",
+          "kind": "feature",
+          "title": "`require-upload-size-limit`, and `require-throttler` now asks for a bound guard",
           "pr": null
         }
       ]
@@ -25372,14 +25402,14 @@
     {
       "package": "oxlint-plugin-nestjs-security",
       "short": "oxlint-plugin-nestjs-security",
-      "version": "4.1.1",
+      "version": "4.2.0",
       "date": null,
       "isApp": false,
       "isPrivate": false,
       "entries": [
         {
           "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-nestjs-security@4.1.1`",
+          "title": "updated workspace dependencies: `eslint-plugin-nestjs-security@4.2.0`",
           "pr": null
         }
       ]
