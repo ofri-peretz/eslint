@@ -5,6 +5,41 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "oxlint-plugin-nestjs-security",
+      "short": "oxlint-plugin-nestjs-security",
+      "version": "4.1.0",
+      "date": "2026-11-12T09:30:11Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-nestjs-security@4.1.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-nestjs-security",
+      "short": "eslint-plugin-nestjs-security",
+      "version": "4.1.0",
+      "date": "2026-11-12T09:27:47Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "NestJS 12 — Standard Schema validation and serialization, returned web responses",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "install alongside NestJS 12",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "oxlint-plugin-secure-coding",
       "short": "oxlint-plugin-secure-coding",
       "version": "6.1.0",
@@ -25180,26 +25215,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-nestjs-security",
-      "short": "eslint-plugin-nestjs-security",
-      "version": "4.1.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "feature",
-          "title": "NestJS 12 — Standard Schema validation and serialization, returned web responses",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "install alongside NestJS 12",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
@@ -25335,21 +25350,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-nestjs-security",
-      "short": "oxlint-plugin-nestjs-security",
-      "version": "4.1.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-nestjs-security@4.1.0`",
           "pr": null
         }
       ]
