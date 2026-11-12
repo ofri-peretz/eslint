@@ -18,7 +18,7 @@ cases:
 
 ---
 
-## What is wanted
+## What
 
 Two defences this plugin took on trust are read from the code that enforces them.
 
@@ -28,7 +28,7 @@ Two defences this plugin took on trust are read from the code that enforces them
 - `require-throttler` stays quiet for a project only when a `ThrottlerGuard`, or
   a class extending it, is bound app-wide. Importing `ThrottlerModule` is not that.
 
-## Why now
+## Why
 
 Measured on 79 repositories (`tmp/nest-corpus*`), linting `origin/main` against
 this branch:
