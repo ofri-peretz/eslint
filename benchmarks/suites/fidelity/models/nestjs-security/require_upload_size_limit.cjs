@@ -35,9 +35,9 @@ const PRELUDE = {
 const base = {
   rule: 'require-upload-size-limit',
   // 5 interceptors x 8 options, of which 2 are crossed with
-  // 4 spellings x 3 projects x 2 validator
-  domain: 5 * 8 - 2 + 2 * 4 * 3 * 2,
-  traces: 3000,
+  // 5 spellings x 3 projects x 2 validator
+  domain: 5 * 8 - 2 + 2 * 5 * 3 * 2,
+  traces: 4000,
   key: (s) =>
     ['interceptor', 'opts', 'spelling', 'project', 'validator']
       .map((k) => `${k}=${tag(s[k])}`)
@@ -71,10 +71,16 @@ const base = {
       Named: `import { ${name} } from '@nestjs/platform-express';`,
       Aliased: `import { ${name} as Upload } from '@nestjs/platform-express';`,
       Namespace: "import * as express from '@nestjs/platform-express';",
+      NamespaceSubscript:
+        "import * as express from '@nestjs/platform-express';",
       OtherPackage: `import { ${name} } from './upload.interceptor';`,
     }[sp];
     const callee =
-      { Aliased: 'Upload', Namespace: `express.${name}` }[sp] ?? name;
+      {
+        Aliased: 'Upload',
+        Namespace: `express.${name}`,
+        NamespaceSubscript: `express['${name}']`,
+      }[sp] ?? name;
     const args = [...LEADING[tag(s.interceptor)], OPTIONS[opts]].filter(
       (a) => a !== null,
     );

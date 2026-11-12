@@ -258,6 +258,12 @@ class C { @UseInterceptors(express.FilesInterceptor('files')) upload() {} }`,
       errors: [error('FilesInterceptor')],
     },
     {
+      name: 'through a string subscript of the namespace',
+      code: `import * as express from '@nestjs/platform-express';
+class C { @UseInterceptors(express['FileInterceptor']('file')) upload() {} }`,
+      errors: [error('FileInterceptor')],
+    },
+    {
       name: 'a ParseFilePipe MaxFileSizeValidator runs after the upload and bounds nothing',
       code: `${IMPORT}
 class C {

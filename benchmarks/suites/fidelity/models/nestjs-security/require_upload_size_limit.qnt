@@ -22,7 +22,7 @@ module require_upload_size_limit {
     | ConstNoLimit      // const options = { dest: './uploads' }
     | Imported          // import { options } from './multer.config'
     | Spread            // { ...base, dest: './uploads' }
-  type Spelling = Named | Aliased | Namespace | OtherPackage
+  type Spelling = Named | Aliased | Namespace | NamespaceSubscript | OtherPackage
   type Project = NoModule | ModuleNoLimit | ModuleLimit
 
   pure def unbounded(o: Opts): bool =
@@ -47,7 +47,7 @@ module require_upload_size_limit {
     nondet o = Set(Absent, NoLimits, LimitsNoFileSize, InlineFileSize, ConstFileSize,
                    ConstNoLimit, Imported, Spread).oneOf()
     val full = i == File and (o == Absent or o == InlineFileSize)
-    nondet sp = (if (full) Set(Named, Aliased, Namespace, OtherPackage) else Set(Named)).oneOf()
+    nondet sp = (if (full) Set(Named, Aliased, Namespace, NamespaceSubscript, OtherPackage) else Set(Named)).oneOf()
     nondet p = (if (full) Set(NoModule, ModuleNoLimit, ModuleLimit) else Set(NoModule)).oneOf()
     nondet v = (if (full) Set(true, false) else Set(false)).oneOf()
     nondet tc = Set(Prod, TestDefault, TestFlip).oneOf()

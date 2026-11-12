@@ -49,6 +49,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { objectProperties } from '../../utils/nest-ast';
 import { getProjectContext } from '../../utils/project-context';
@@ -163,13 +164,13 @@ export const requireUploadSizeLimit = createRule<RuleOptions, MessageIds>({
     function interceptorName(callee: TSESTree.Node): string | undefined {
       if (callee.type === AST_NODE_TYPES.Identifier)
         return interceptors.get(callee.name);
+      // `express.FileInterceptor` and `express['FileInterceptor']` are the same
+      // member. Anything but an identifier has no `name`, and the set holds none.
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        !callee.computed &&
-        // Anything but an identifier has no `name`, and the set holds none.
         namespaces.has((callee.object as TSESTree.Identifier).name)
       )
-        return (callee.property as TSESTree.Identifier).name;
+        return propertyName(callee) ?? undefined;
       return undefined;
     }
 
