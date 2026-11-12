@@ -117,6 +117,10 @@ finds an app-wide registration, so this is _not_ a false positive:
 export class AppModule {}
 ```
 
+A `ThrottlerModule.forRoot()` or `forRoot([])` does not count: it declares no
+throttler, so the guard lets every request through (`@nestjs/throttler` 6.7.1
+warns about this at boot).
+
 Turn the scan off with `detectGlobalThrottler: false` if you want the routes reported anyway.
 What the scan still cannot resolve is a registration built at runtime or
 supplied by a library — `assumeGlobalThrottler: true` covers those.

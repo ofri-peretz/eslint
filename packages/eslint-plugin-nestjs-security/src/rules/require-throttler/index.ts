@@ -245,17 +245,18 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
      * trailing slashes. `@Post(['login', 'sign-in'])` serves every path in the
      * array, and a template with nothing interpolated is a string path.
      */
-    function routePaths(routeDecorator: TSESTree.Decorator): string[] {
+    function routePaths(routeDecorator: TSESTree.Decorator): Set<string> {
       const call = decoratorCall(routeDecorator);
-      if (!call) return [];
-      const paths: string[] = [];
+      const paths = new Set<string>();
+      // A bare `@Post` reference declares no path.
+      if (!call) return paths;
       for (const arg of call.arguments) {
         const declared =
           arg.type === AST_NODE_TYPES.ArrayExpression ? arg.elements : [arg];
         for (const element of declared) {
           const path = staticString(element);
           if (path !== null)
-            paths.push(path.split('/').filter(Boolean).join('/'));
+            paths.add(path.split('/').filter(Boolean).join('/'));
         }
       }
       return paths;
@@ -339,7 +340,7 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
         }
 
         const methodName = memberName(node) ?? '<anonymous>';
-        const paths = routePaths(routeDecorator);
+        const paths = [...routePaths(routeDecorator)];
 
         // `skipRoutes` lists route PATHS. Matching the handler name too let
         // `skipRoutes: ['login']` silence a `login()` handler served at

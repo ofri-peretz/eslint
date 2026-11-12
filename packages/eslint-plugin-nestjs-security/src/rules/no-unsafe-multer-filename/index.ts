@@ -53,6 +53,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  memberPath,
   objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
@@ -98,13 +99,15 @@ function filenameHandler(node: TSESTree.CallExpression): FunctionNode | null {
 }
 
 /**
- * The local `originalname` is bound to when the file parameter is
+ * Mark the local `originalname` is bound to when the file parameter is
  * destructured: `{ originalname }` → `originalname`, `{ originalname: name }`
- * → `name`, with or without a default. Empty for an identifier parameter.
+ * → `name`, with or without a default. Nothing for an identifier parameter.
  */
-function destructuredOriginalName(param: TSESTree.Parameter): string[] {
-  if (param.type !== AST_NODE_TYPES.ObjectPattern) return [];
-  const names: string[] = [];
+function taintDestructuredOriginalName(
+  param: TSESTree.Parameter,
+  tainted: Set<string>,
+): void {
+  if (param.type !== AST_NODE_TYPES.ObjectPattern) return;
   for (const prop of param.properties) {
     if (prop.type !== AST_NODE_TYPES.Property) continue;
     if (objectKeyName(prop) !== 'originalname') continue;
@@ -112,9 +115,16 @@ function destructuredOriginalName(param: TSESTree.Parameter): string[] {
       prop.value.type === AST_NODE_TYPES.AssignmentPattern
         ? prop.value.left
         : prop.value;
-    if (value.type === AST_NODE_TYPES.Identifier) names.push(value.name);
+    taintLocal(value, tainted);
   }
-  return names;
+}
+
+/**
+ * Mark the local a binding names. A nested pattern (`{ length }`, `[first]`)
+ * names none: it binds pieces of the value, not the value.
+ */
+function taintLocal(binding: TSESTree.Node, tainted: Set<string>): void {
+  memberPath(binding)?.forEach((name) => tainted.add(name));
 }
 
 export const noUnsafeMulterFilename = createRule<RuleOptions, MessageIds>({
@@ -186,7 +196,8 @@ export const noUnsafeMulterFilename = createRule<RuleOptions, MessageIds>({
        * (`let x = …; cb(null, x)`), or bound by destructuring the file
        * parameter (`filename(req, { originalname }, cb)`).
        */
-      const tainted = new Set<string>(destructuredOriginalName(fileParam));
+      const tainted = new Set<string>();
+      taintDestructuredOriginalName(fileParam, tainted);
 
       /**
        * Whether an expression carries the raw client name: `file.originalname`
@@ -232,15 +243,17 @@ export const noUnsafeMulterFilename = createRule<RuleOptions, MessageIds>({
        * means something else. Any other nested function (`fs.mkdir(dir, () =>
        * cb(null, file.originalname))`) still hands the client's name to multer
        * whenever it runs.
+       *
+       * Asked of the scope manager, so a default-valued or destructured
+       * parameter rebinds the name exactly as a plain one does.
        */
       const rebindsTrackedName = (fn: FunctionNode): boolean =>
-        fn.params.some(
-          (p) =>
-            p.type === AST_NODE_TYPES.Identifier &&
-            (p.name === callbackParam ||
-              p.name === fileName ||
-              tainted.has(p.name)),
-        );
+        context.sourceCode
+          .getDeclaredVariables(fn)
+          .some(
+            ({ name }) =>
+              name === callbackParam || name === fileName || tainted.has(name),
+          );
 
       let reported = false;
 
@@ -262,15 +275,19 @@ export const noUnsafeMulterFilename = createRule<RuleOptions, MessageIds>({
           node.type === AST_NODE_TYPES.VariableDeclarator &&
           isTainted(node.init)
         )
-          if (node.id.type === AST_NODE_TYPES.Identifier)
-            tainted.add(node.id.name);
+          taintLocal(node.id, tainted);
 
         if (
           node.type === AST_NODE_TYPES.AssignmentExpression &&
-          node.left.type === AST_NODE_TYPES.Identifier &&
           isTainted(node.right)
-        )
-          tainted.add(node.left.name);
+        ) {
+          // `name = file.originalname` taints the local. A member target
+          // (`this.last = …`, `meta.name = …`) stores the value somewhere this
+          // walk does not follow, and taints neither the object nor a local
+          // that happens to share the property's name.
+          const target = memberPath(node.left);
+          if (target?.length === 1) tainted.add(target[0]);
+        }
 
         if (
           node.type === AST_NODE_TYPES.CallExpression &&

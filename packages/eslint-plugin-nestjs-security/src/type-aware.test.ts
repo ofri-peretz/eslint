@@ -330,6 +330,23 @@ ruleTester.run(
       `,
         errors: [{ messageId: 'missingValidation' }],
       },
+      // `typeof BareDto` is the constructor, not an instance: only a plain
+      // type reference names the DTO a pipe would validate, so this half
+      // abstains on every other annotation and the syntax-only finding stands.
+      {
+        name: 'an annotation that is not a type reference is not resolved to a DTO',
+        filename: 'src/case.controller.ts',
+        code: `
+        import { BareDto } from './type-aware-fixtures/dtos';
+
+        @Controller('users')
+        class UsersController {
+          @Post()
+          create(@Body() dto: typeof BareDto) {}
+        }
+      `,
+        errors: [{ messageId: 'missingValidation' }],
+      },
       // A bare decorator reference (`@bareRule`, no parentheses) exercises the
       // non-call branch of the origin lookup. It resolves to a local module
       // rather than class-validator, so it is not a rule and the DTO is

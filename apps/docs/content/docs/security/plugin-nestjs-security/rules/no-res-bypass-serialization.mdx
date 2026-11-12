@@ -27,6 +27,29 @@ That means every `@Exclude()` on the object being written silently stops
 applying. The password hash that is stripped on every other route is serialized
 here, and nothing in the file says so.
 
+The same holds for NestJS 12's `StandardSchemaSerializerInterceptor`: it is an
+interceptor too, and a bare `@Res()` skips it just the same.
+
+### NestJS 12.4: a returned web `Response`
+
+From 12.4 a handler may return a web `Response`, and NestJS sends it as the
+whole answer. Both serializers pass one through untouched, so the object was
+serialized by hand before any `@Exclude()` or schema could apply:
+
+```typescript
+@UseInterceptors(ClassSerializerInterceptor)
+@Get(':id')
+async findOne(@Param('id') id: string) {
+  return Response.json(await this.users.findOne(id)); // ❌ passwordHash goes out
+}
+```
+
+Reported when `Response` is the global one (a binding of that name imported
+into the file is something else) and the handler itself returns
+`Response.json(value)` with a value that may be an object. `Response.json({})`,
+`Response.redirect(url)` and a `Response` returned from a callback inside the
+handler are not reported.
+
 This is NestJS-specific: it is not covered by any general-purpose security
 plugin, because the vulnerability is in the framework's response pipeline rather
 than in the code that writes the response.
@@ -76,9 +99,9 @@ export class UsersController {
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| Option                   | Type      | Default | Description                                           |
+| ------------------------ | --------- | ------- | ----------------------------------------------------- |
+| `allowInTests`           | `boolean` | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files       |
 | `assumeGlobalSerializer` | `boolean` | `false` | Report even when no serializer is visible in the file |
 
 ```typescript
@@ -146,6 +169,10 @@ res.send(JSON.stringify(dto)); // already a string; also String(x), x.toString()
 // res.type() / contentType() / set() / header() / setHeader():
 res.set('Content-Type', 'text/xml');
 res.send(buildSitemap(urls));
+// A different `res`: a nested function or catch clause that declares the name
+// again — as a plain, default-valued or destructured parameter — is not the
+// injected response.
+this.bus.on('done', ({ res }) => res.json(payload));
 ```
 
 ## When Not To Use It

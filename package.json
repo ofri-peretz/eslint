@@ -285,6 +285,7 @@
     "check:lock-proofs": "tsx scripts/prove-locks.mts",
     "check:lock-proofs:update": "tsx scripts/prove-locks.mts --update",
     "mutation": "tsx scripts/mutation.mts",
+    "nestjs:releases": "tsx scripts/nestjs-release-watch.mts",
     "fidelity": "node benchmarks/suites/fidelity/run.cjs"
   },
   "keywords": [
