@@ -1,6 +1,26 @@
 {
   "articles": [
     {
+      "id": 5020121,
+      "title": "Three of My Planned Articles Cited Numbers That Do Not Exist",
+      "description": "I audited twelve planned pieces against the benchmark JSON they cite. Two figures appear in no result file anywhere, one contradicts the source it names, and one real number is attached to the wrong set. Nothing caught it, because nothing recomputes prose.",
+      "url": "https://dev.to/ofri-peretz/three-of-my-planned-articles-cited-numbers-that-do-not-exist-3n00",
+      "canonical_url": "https://ofriperetz.dev/articles/numbers-in-prose-rot",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fnumbers-in-prose-rot.jpg",
+      "published_at": "2026-11-12T02:20:22Z",
+      "readable_publish_date": "Nov 12",
+      "reading_time_minutes": 3,
+      "page_views_count": 0,
+      "public_reactions_count": 1,
+      "positive_reactions_count": 1,
+      "comments_count": 1,
+      "tag_list": [
+        "webdev",
+        "testing",
+        "javascript"
+      ]
+    },
+    {
       "id": 4992513,
       "title": "The Most Precise Plugin in My Benchmark Scored 10.8%",
       "description": "Six ESLint security plugins, one labelled corpus, same harness, same day — F1 from 10.5% to 100%. I wrote the corpus, which is the most important sentence in the article and changes how every row should be read.",
@@ -33,7 +53,7 @@
       "page_views_count": 0,
       "public_reactions_count": 4,
       "positive_reactions_count": 4,
-      "comments_count": 1,
+      "comments_count": 2,
       "tag_list": [
         "javascript",
         "testing",
@@ -2024,30 +2044,9 @@
         "javascript",
         "devsecops"
       ]
-    },
-    {
-      "id": 3114770,
-      "title": "Every AI Model Ships a Vulnerability in Half the Code It Writes. Prompt Injection Has 3 Faces in Your Vercel AI SDK App — Here's the ESLint Rule for Each.",
-      "description": "Across 700 AI-generated functions from five models (measured 2026-02-09), every model shipped a vulnerability in 49–73% of them. Prompt injection has three faces in a Vercel AI SDK app: unvalidated input, a leaky system prompt, and unconfirmed tool calls. Three CWE-tagged ESLint rules catch each at write-time — plus the hardened pattern they want.",
-      "url": "https://dev.to/ofri-peretz/your-vercel-ai-sdk-app-has-a-prompt-injection-vulnerability-4g7p",
-      "canonical_url": "https://ofriperetz.dev/articles/vercel-ai-sdk-prompt-injection-vulnerability",
-      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fvercel-ai-sdk-prompt-injection-vulnerability.jpg%3Fv%3Db2",
-      "published_at": "2025-12-19T05:49:06Z",
-      "readable_publish_date": "Dec 19 '25",
-      "reading_time_minutes": 12,
-      "page_views_count": 0,
-      "public_reactions_count": 0,
-      "positive_reactions_count": 0,
-      "comments_count": 1,
-      "tag_list": [
-        "ai",
-        "security",
-        "javascript",
-        "devsecops"
-      ]
     }
   ],
   "total": 100,
-  "lastUpdated": "2026-11-08T10:35:27.841Z",
+  "lastUpdated": "2026-11-12T08:07:14.079Z",
   "source": "public"
 }
