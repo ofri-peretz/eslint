@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.1.0
+
+### Minor Changes
+
+- **✨ Feature** — `no-unchecked-loop-condition` no longer reports a loop whose bound is a literal, such as `for (let cp = 0; cp <= 0x10_ff_ff; cp++)`. The author chose that number and no input reaches it, so it is not CWE-400. The literal-bound check (`largeLoopBound`) still exists as an iteration budget, but it is now opt-in: set `maxStaticIterations` to turn it on. Bounds read from user input, and infinite loops with no exit, are reported as before.
+
 ## 6.0.2
 
 ### Patch Changes
