@@ -1275,7 +1275,7 @@
         },
         "no-missing-validation-pipe": {
           "score": 100,
-          "killed": 250,
+          "killed": 266,
           "survived": 0,
           "noCoverage": 0,
           "timeout": 0

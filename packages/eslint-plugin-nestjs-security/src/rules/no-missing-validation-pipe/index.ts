@@ -297,13 +297,18 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
     function readInputDecorator(decorator: TSESTree.Decorator): {
       pipes: TSESTree.Node[];
       hasSchema: boolean;
+      keyed: boolean;
     } {
       const pipes: TSESTree.Node[] = [];
       let hasSchema = false;
+      let keyed = false;
       decoratorCall(decorator)?.arguments.forEach((arg) => {
         // `'key'` and `` `key` `` are the same property key — and a string is
         // never a pipe, wherever it sits.
-        if (staticString(arg) !== null) return;
+        if (staticString(arg) !== null) {
+          keyed = true;
+          return;
+        }
         if (arg.type !== AST_NODE_TYPES.ObjectExpression) {
           pipes.push(arg);
           return;
@@ -332,7 +337,7 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
           );
         }
       });
-      return { pipes, hasSchema };
+      return { pipes, hasSchema, keyed };
     }
 
     /**
@@ -544,7 +549,8 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
           // of them. Two kinds of pipe do not count: the built-in `Parse*Pipe`
           // family coerces one scalar and cannot check a DTO's shape, and the
           // schema pipe validates only what a `schema` option tells it to.
-          const { pipes, hasSchema } = readInputDecorator(inputDecorator);
+          const { pipes, hasSchema, keyed } =
+            readInputDecorator(inputDecorator);
           const pipeNames = pipes.map(expressionName);
           if (
             pipeNames.some(
@@ -574,6 +580,23 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
                 param: `@${decoratorName(inputDecorator)}() ${paramLabel(param)}`,
               },
             });
+            continue;
+          }
+
+          // One named value, not an object of them. `@Param('id')` is a URL
+          // path segment: always a string, whatever it is annotated as. An
+          // unannotated `@Query('page') page = 1` is validated exactly as much
+          // as `page: string`, which is exempt just below — leaving the type
+          // off adds no exposure, and a ValidationPipe does nothing for a
+          // primitive either way. On 79 NestJS repositories these two shapes
+          // were 105 of this rule's 489 reports, every one of them advice to
+          // add a pipe that would change nothing. A keyed `@Body('x')` is not
+          // exempt: a body field is whatever JSON the client sent.
+          const input = decoratorName(inputDecorator);
+          if (
+            keyed &&
+            (input === 'Param' || (input === 'Query' && !param.typeAnnotation))
+          ) {
             continue;
           }
 
