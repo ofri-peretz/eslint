@@ -37,7 +37,11 @@ type MessageIds =
   | 'unsafeRecursion';
 
 export interface Options extends SecurityRuleOptions {
-  /** Maximum allowed loop iterations for static analysis */
+  /**
+   * Opt-in iteration budget. A literal bound is author-chosen, not input, so
+   * it is not CWE-400; set this to report literal bounds above it anyway.
+   * `0` (the default) turns the budget off.
+   */
   maxStaticIterations?: number;
 
   /** Variables that contain user input */
@@ -102,11 +106,12 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       }),
       largeLoopBound: formatLLMMessage({
         icon: MessageIcons.SECURITY,
-        issueName: 'Large Loop Bound',
+        issueName: 'Iteration Budget Exceeded',
         cwe: 'CWE-400',
-        description: 'Loop may iterate excessively',
+        description:
+          'Literal loop bound exceeds the configured maxStaticIterations budget',
         severity: 'MEDIUM',
-        fix: 'Limit maximum iterations',
+        fix: 'Lower the bound or raise maxStaticIterations',
         documentationLink: 'https://cwe.mitre.org/data/definitions/400.html',
       }),
       unsafeRecursion: formatLLMMessage({
@@ -125,10 +130,10 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
         properties: {
           maxStaticIterations: {
             type: 'number',
-            minimum: 100,
-            default: 10000,
+            minimum: 0,
+            default: 0,
             description:
-              'Literal iteration count above which a loop is reported',
+              'Opt-in budget: literal iteration count above which a loop is reported. 0 (the default) turns it off — a literal bound is not input.',
           },
           userInputVariables: {
             type: 'array',
@@ -182,7 +187,7 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      maxStaticIterations: 10000,
+      maxStaticIterations: 0,
       userInputVariables: [
         'req',
         'request',
@@ -868,11 +873,19 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
     const isConstantlyTrue = (test: TSESTree.Expression): boolean =>
       test.type === 'Literal' && Boolean(test.value);
 
-    /** A literal iteration bound above `maxStaticIterations`, for `for` and `while` alike. */
+    /**
+     * A literal iteration bound above `maxStaticIterations`, for `for` and
+     * `while` alike. Opt-in: a bound written as a literal is chosen by the
+     * author, not reachable by input, so by default it is bounded and quiet —
+     * `for (let cp = 0; cp <= 0x10_ff_ff; cp++)` is every code point, once.
+     */
     const checkLargeBound = (
       node: TSESTree.WhileStatement | TSESTree.ForStatement,
       test: TSESTree.Expression,
     ): void => {
+      if (maxStaticIterations === 0) {
+        return;
+      }
       const estimatedIterations = estimateIterations(test);
       if (estimatedIterations && estimatedIterations > maxStaticIterations) {
         if (safetyChecker.isSafe(node, context)) {
@@ -894,7 +907,7 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       before() {
         const options = context.options[0] || {};
         ({
-          maxStaticIterations = 10000,
+          maxStaticIterations = 0,
           userInputVariables = [
             'req',
             'request',

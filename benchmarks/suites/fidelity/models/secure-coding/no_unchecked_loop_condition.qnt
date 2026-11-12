@@ -4,8 +4,9 @@
 // break/return/throw that leaves the loop is an exit (a `break` while
 // allowWhileTrueWithBreak is false is reported anyway). A `break` that only
 // leaves a NESTED inner loop is not an exit. A loop bound reached from user
-// input, or a literal bound above maxStaticIterations (10000), is reported; a
-// clamped bound and a small literal are not. A bound destructured from the
+// input is reported; a clamped bound and a small literal are not. A literal
+// bound is author-chosen, not input: it is reported only when the opt-in
+// maxStaticIterations budget is set (`budget`) and the literal exceeds it. A bound destructured from the
 // request (`const { count } = req.query`) is user input, and a BigInt literal
 // bound (`1000000n`) is estimated like a number literal.
 module no_unchecked_loop_condition {
@@ -15,14 +16,15 @@ module no_unchecked_loop_condition {
 
   pure def infinite(l: Loop): bool = Set(WhileTrue, ForEver, DoWhileTrue, WhileOne).contains(l)
 
-  pure def reports(l: Loop, e: Exit, b: Bound, allowBreak: bool): bool =
+  pure def reports(l: Loop, e: Exit, b: Bound, allowBreak: bool, budget: bool): bool =
     if (infinite(l)) Set(NoExit, NestedBreak).contains(e) or (e == Break and not(allowBreak))
-    else Set(ReqDirect, ParseIntReq, DestructReq, HugeLit, HugeBigInt).contains(b)
+    else Set(ReqDirect, ParseIntReq, DestructReq).contains(b) or (budget and Set(HugeLit, HugeBigInt).contains(b))
 
   var loop: Loop
   var exit: Exit
   var bound: Bound
   var allowBreak: bool
+  var budget: bool
   var verdict: bool
 
   action step = {
@@ -30,7 +32,8 @@ module no_unchecked_loop_condition {
     nondet e = (if (infinite(l)) Set(NoExit, Break, Return, Throw, NestedBreak) else Set(NoExit)).oneOf()
     nondet b = (if (infinite(l)) Set(SmallLit) else Set(ReqDirect, ParseIntReq, DestructReq, Clamped, SmallLit, HugeLit, HugeBigInt)).oneOf()
     nondet a = (if (e == Break) Set(true, false) else Set(true)).oneOf()
-    all { loop' = l, exit' = e, bound' = b, allowBreak' = a, verdict' = reports(l, e, b, a) }
+    nondet g = (if (infinite(l)) Set(false) else Set(true, false)).oneOf()
+    all { loop' = l, exit' = e, bound' = b, allowBreak' = a, budget' = g, verdict' = reports(l, e, b, a, g) }
   }
 
   action init = step
