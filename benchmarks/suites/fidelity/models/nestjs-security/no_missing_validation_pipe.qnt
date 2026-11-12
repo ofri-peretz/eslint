@@ -14,7 +14,12 @@ module no_missing_validation_pipe {
   type TestCtx = Prod | TestDefault | TestFlip
   pure def exempt(t: TestCtx): bool = t == TestDefault
 
-  type Deco = BodyDeco | QueryDeco | NoDeco
+  // The keyed forms bind one named value: `@Param('id')` is a URL path segment
+  // (always a string), and an unannotated `@Query('page')` is validated exactly
+  // as much as one annotated `string`. Neither is reported. A keyed body field
+  // is whatever JSON the client sent, and is.
+  type Deco = BodyDeco | QueryDeco | NoDeco | ParamKey | QueryKey | BodyKey
+  pure def keyed(d: Deco): bool = d == ParamKey or d == QueryKey or d == BodyKey
   type ParamType = DtoClass | AnyT | UnknownT | ObjectT | InlineLiteral | NoAnnotation
   type Pipe =
     | NoPipe
@@ -41,6 +46,8 @@ module no_missing_validation_pipe {
     else if (hasValidationPipe(p)) false
     // A declared schema is enforced by the schema pipe, whatever the type.
     else if (schema) not(hasSchemaPipe(p) or (globalPipe and not(requireExplicit)))
+    else if (d == ParamKey) false
+    else if (d == QueryKey and t == NoAnnotation) false
     else if (globalPipe) requireExplicit or unvalidatable(t)
     else true
 
@@ -60,7 +67,8 @@ module no_missing_validation_pipe {
     // with every type and option (keeps the domain small enough for the
     // test-file dimension).
     nondet r = Set(true, false).oneOf()
-    nondet d = (if (r) Set(BodyDeco, QueryDeco, NoDeco) else Set(BodyDeco)).oneOf()
+    nondet d = (if (r) Set(BodyDeco, QueryDeco, NoDeco, ParamKey, QueryKey, BodyKey)
+                else Set(BodyDeco)).oneOf()
     nondet sc = (if (r and d != NoDeco) Set(true, false) else Set(false)).oneOf()
     // With a schema the declared type decides nothing, so two types stand for
     // all six there.
@@ -68,11 +76,15 @@ module no_missing_validation_pipe {
                   Set(DtoClass, AnyT, UnknownT, ObjectT, InlineLiteral, NoAnnotation)
                 else if (sc) Set(DtoClass, AnyT)
                 else Set(DtoClass)).oneOf()
-    nondet p = (if (r) Set(NoPipe, HandlerNew, HandlerRef, ClassLevel, ParamPipe, OtherPipe,
-                           SchemaHandler, SchemaClass, SchemaParam)
+    // The keyed forms differ from the whole-object ones in the type and schema
+    // dimensions only, so they are crossed with two pipes and one
+    // requireExplicit value rather than all nine and both.
+    nondet p = (if (r and keyed(d)) Set(NoPipe, SchemaHandler)
+                else if (r) Set(NoPipe, HandlerNew, HandlerRef, ClassLevel, ParamPipe, OtherPipe,
+                                SchemaHandler, SchemaClass, SchemaParam)
                 else Set(NoPipe)).oneOf()
     nondet g = (if (r and d != NoDeco) Set(true, false) else Set(false)).oneOf()
-    nondet x = (if (r and d != NoDeco) Set(true, false) else Set(false)).oneOf()
+    nondet x = (if (r and d != NoDeco and not(keyed(d))) Set(true, false) else Set(false)).oneOf()
     nondet tc = Set(Prod, TestDefault, TestFlip).oneOf()
     all {
       route' = r, deco' = d, paramType' = t, pipe' = p, schema' = sc,

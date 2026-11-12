@@ -11,9 +11,10 @@ const TYPES = {
 
 const base = {
   rule: 'no-missing-validation-pipe',
-  // route: 2 deco x (6 types without a schema + 2 with) x 9 pipes x 2 global
-  // x 2 explicit + NoDeco x 9 pipes; not a route: 1
-  domain: 576 + 9 + 1,
+  // route, whole-object: 2 deco x (6 types without a schema + 2 with) x 9 pipes
+  // x 2 global x 2 explicit; keyed: 3 deco x 8 x 2 pipes x 2 global; NoDeco x 9
+  // pipes; not a route: 1
+  domain: 576 + 96 + 9 + 1,
   traces: 16000,
   key: (s) =>
     [
@@ -42,12 +43,16 @@ const base = {
     ]
       .filter(Boolean)
       .join(', ');
-    const paramDeco =
-      deco === 'BodyDeco'
-        ? `@Body(${pipeArg}) `
-        : deco === 'QueryDeco'
-          ? `@Query(${pipeArg}) `
-          : '';
+    const DECO = {
+      BodyDeco: ['Body', ''],
+      QueryDeco: ['Query', ''],
+      ParamKey: ['Param', "'id'"],
+      QueryKey: ['Query', "'filter'"],
+      BodyKey: ['Body', "'user'"],
+    }[deco];
+    const paramDeco = DECO
+      ? `@${DECO[0]}(${[DECO[1], pipeArg].filter(Boolean).join(', ')}) `
+      : '';
     const methodDecos = [
       s.route ? '@Post()' : '',
       pipe === 'HandlerNew' ? '@UsePipes(new ValidationPipe())' : '',
@@ -65,7 +70,7 @@ const base = {
       .filter(Boolean)
       .join('\n');
     return [
-      "import { Body, Controller, ParseIntPipe, Post, Query, StandardSchemaValidationPipe, UsePipes, ValidationPipe } from '@nestjs/common';",
+      "import { Body, Controller, Param, ParseIntPipe, Post, Query, StandardSchemaValidationPipe, UsePipes, ValidationPipe } from '@nestjs/common';",
       "import { CreateUserDto, createUserSchema } from './create-user.dto';",
       classDecos,
       'export class UsersController {',

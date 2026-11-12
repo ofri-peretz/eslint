@@ -157,6 +157,14 @@ An options object is not itself a pipe. Its `pipes: [...]` entries are; an
 object with a `transform` member is (NestJS treats it as one); and an object
 built from a spread or a computed key gets the benefit of the doubt.
 
+One named value is not an object of them, so two keyed forms are never
+reported: `@Param('id') id` is a URL path segment and always a string, and an
+unannotated `@Query('page') page = 1` is validated exactly as much as
+`page: string`. A `ValidationPipe` does nothing for a primitive either way;
+reach for `ParseIntPipe`, `ParseUUIDPipe` or `ParseEnumPipe` when the value
+must be more than a string. A keyed body field (`@Body('code') code`) is still
+reported: it is whatever JSON the client sent.
+
 A scalar (`string`, `number`, `boolean`, literal types) is coerced by the
 framework and never reported. A `Parse*Pipe` in `@UsePipes` is not a
 ValidationPipe. `ValidationPipe` is recognised however `@nestjs/common` was

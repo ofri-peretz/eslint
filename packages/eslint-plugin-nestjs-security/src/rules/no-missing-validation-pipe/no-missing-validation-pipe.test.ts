@@ -808,3 +808,94 @@ ruleTester.run(
     ]),
   },
 );
+
+/**
+ * One named value is not an object of them. Measured on 79 NestJS
+ * repositories: `@Param('id') id` and `@Query('page') page = 1` were 105 of
+ * this rule's 489 reports, and the advice on each was to add a pipe that does
+ * nothing for a primitive.
+ */
+ruleTester.run(
+  'no-missing-validation-pipe (keyed scalars)',
+  noMissingValidationPipe,
+  {
+    valid: nest([
+      {
+        // @found real-source (brocoders/nestjs-boilerplate, files.controller)
+        name: 'FP: an unannotated path parameter is a URL segment, always a string',
+        code: route(`download(@Param('path') path) {}`),
+        options: NO_SCAN,
+      },
+      {
+        name: 'a path parameter is a string whatever it is annotated as',
+        code: route(`find(@Param('id') id: UserId) {}`),
+        options: NO_SCAN,
+      },
+      {
+        // @found real-source (novu, notification.controller)
+        name: 'FP: an unannotated query value with a default is as validated as a string one',
+        code: route(`graph(@Query('days') days = 32) {}`),
+        options: NO_SCAN,
+      },
+      {
+        // @found real-source (nestjs/nest, sample/03-microservices)
+        name: 'FP: an unannotated keyed query value is as validated as a string one',
+        code: route(`call(@Query('command') cmd) {}`),
+        options: NO_SCAN,
+      },
+      {
+        // @found real-source (bookorbit, book-metadata-fetch.controller)
+        name: 'FP: a parsed, default-valued query value is a number',
+        code: route(
+          `list(@Query('page', new ParseIntPipe({ optional: true })) page = 1) {}`,
+        ),
+        options: NO_SCAN,
+      },
+      {
+        name: 'requireExplicitPipe has no pipe to demand for a path parameter',
+        code: route(`find(@Param('id') id) {}`),
+        options: [{ assumeGlobalPipes: true, requireExplicitPipe: true }],
+      },
+    ]),
+    invalid: nest([
+      {
+        name: 'a whole query object with no annotation is still unvalidated',
+        code: route(`findAll(@Query() query) {}`),
+        options: NO_SCAN,
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      {
+        name: 'a whole params object with no annotation is still unvalidated',
+        code: route(`update(@Param() params) {}`),
+        options: NO_SCAN,
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      {
+        name: 'a keyed body field is whatever JSON the client sent',
+        code: route(`login(@Body('code') code) {}`),
+        options: NO_SCAN,
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      {
+        name: 'a keyed query value annotated as an object shape is still unvalidated',
+        code: route(
+          `find(@Query('projection') projection: { [field: string]: boolean }) {}`,
+        ),
+        options: NO_SCAN,
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      {
+        name: 'a keyed query value annotated as a DTO is still unvalidated',
+        code: route(`find(@Query('filter') filter: FilterDto) {}`),
+        options: NO_SCAN,
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      {
+        name: 'a schema on a path parameter is still a constraint nothing applies',
+        code: route(`find(@Param('id', { schema }) id) {}`),
+        options: NO_SCAN,
+        errors: [{ messageId: 'schemaWithoutPipe' }],
+      },
+    ]),
+  },
+);
