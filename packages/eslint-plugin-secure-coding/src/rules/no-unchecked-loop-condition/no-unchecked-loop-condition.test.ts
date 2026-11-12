@@ -176,7 +176,9 @@ describe('no-unchecked-loop-condition', () => {
         valid: [],
         invalid: [
           {
+            name: 'a for bound above an opted-in budget is a large loop bound',
             code: 'for (let i = 0; i < 100000; i++) { processItem(); }',
+            options: [{ maxStaticIterations: 10000 }],
             errors: [
               {
                 messageId: 'largeLoopBound',
@@ -184,7 +186,9 @@ describe('no-unchecked-loop-condition', () => {
             ],
           },
           {
+            name: 'an inclusive for bound above an opted-in budget is a large loop bound',
             code: 'for (let i = 0; i <= 50000; i++) { /* work */ }',
+            options: [{ maxStaticIterations: 10000 }],
             errors: [
               {
                 messageId: 'largeLoopBound',
@@ -683,6 +687,7 @@ describe('no-unchecked-loop-condition', () => {
         valid: [
           {
             code: 'for (let i = 0; iterator.hasNext(); i++) { advance(iterator); }',
+            options: [{ maxStaticIterations: 10000 }],
           },
         ],
         invalid: [],
@@ -696,6 +701,7 @@ describe('no-unchecked-loop-condition', () => {
         valid: [
           {
             code: 'for (let i = 0; i !== 10; i++) { console.log(i); }',
+            options: [{ maxStaticIterations: 10000 }],
           },
         ],
         invalid: [],
@@ -864,6 +870,7 @@ describe('no-unchecked-loop-condition', () => {
             /** @safe */
             for (let i = 0; i < 100000; i++) { processItem(); }
           `,
+            options: [{ maxStaticIterations: 10000 }],
           },
         ],
         invalid: [],
@@ -1173,6 +1180,7 @@ describe('no-unchecked-loop-condition', () => {
         noUncheckedLoopCondition,
         {
           sourceText: 'i < 1000000',
+          options: [{ maxStaticIterations: 10000 }],
         },
       );
       const forStatement = listeners.ForStatement as (node: unknown) => void;
@@ -1845,6 +1853,65 @@ describe('infinite-loop spellings share one exit contract', () => {
       {
         name: 'a while bound above maxStaticIterations is a large loop bound',
         code: 'let i = 0; while (i < 1000000) { doWork(i); i++; }',
+        options: [{ maxStaticIterations: 10000 }],
+        errors: [{ messageId: 'largeLoopBound' }],
+      },
+    ],
+  });
+});
+
+/**
+ * A bound the author wrote as a constant is not CWE-400: no input reaches it,
+ * and a monotonic counter walks it once. Reported in burgee on
+ * `for (let cp = 0; cp <= 0x10_ff_ff; cp++)` (every Unicode code point) and
+ * `for (let code = 0; code <= 0xffff; code++)` (every UTF-16 code unit).
+ * "Too many iterations" is a budget, not a vulnerability: it is reported only
+ * when `maxStaticIterations` is set.
+ */
+describe('a constant bound is bounded', () => {
+  ruleTester.run('constant bound', noUncheckedLoopCondition, {
+    valid: [
+      {
+        name: 'a literal bound over every Unicode code point is bounded',
+        code: 'for (let cp = 0; cp <= 0x10_ff_ff; cp++) { check(cp); }',
+      },
+      {
+        name: 'a literal bound over every UTF-16 code unit is bounded',
+        code: 'for (let code = 0; code <= 0xffff; code++) { check(code); }',
+      },
+      {
+        name: 'a const-declared numeric bound is bounded',
+        code: 'const MAX = 0x10_ff_ff; for (let cp = 0; cp <= MAX; cp++) { check(cp); }',
+      },
+      {
+        name: 'a literal while bound with a monotonic counter is bounded',
+        code: 'let i = 0; while (i < 1000000) { doWork(i); i++; }',
+      },
+      {
+        name: 'a literal BigInt bound is bounded',
+        code: 'let i = 0n; while (i < 10_000_000n) { i++; }',
+      },
+      {
+        name: 'with a budget set, a non-literal bound is not estimated against it',
+        code: 'for (let i = 0; i < items.length; i++) { check(items[i]); }',
+        options: [{ maxStaticIterations: 10000 }],
+      },
+    ],
+    invalid: [
+      {
+        name: 'a bound read from the request is still user-controlled',
+        code: 'for (let i = 0; i < req.body.count; i++) { work(); }',
+        errors: [{ messageId: 'userControlledLoopBound' }],
+      },
+      {
+        name: 'a loop with no condition and no exit is still infinite',
+        code: 'for (;;) { work(); }',
+        errors: [{ messageId: 'infiniteLoop' }],
+      },
+      {
+        name: 'a literal bound above an opted-in maxStaticIterations budget is reported',
+        code: 'for (let cp = 0; cp <= 0x10_ff_ff; cp++) { check(cp); }',
+        options: [{ maxStaticIterations: 10000 }],
         errors: [{ messageId: 'largeLoopBound' }],
       },
     ],

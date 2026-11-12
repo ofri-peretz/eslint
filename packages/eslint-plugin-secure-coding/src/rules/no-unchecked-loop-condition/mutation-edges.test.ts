@@ -31,6 +31,7 @@ describe('no-unchecked-loop-condition (mutation edges)', () => {
     valid: [
       {
         name: 'a BigInt loop bound under maxStaticIterations is not large',
+        options: [{ maxStaticIterations: 10000 }],
         code: 'let i = 0n; while (i < 100n) { i++; }',
       },
       {
@@ -81,6 +82,7 @@ describe('no-unchecked-loop-condition (mutation edges)', () => {
       },
       {
         name: 'a loop bound exactly at maxStaticIterations is within it',
+        options: [{ maxStaticIterations: 10000 }],
         code: 'for (let i = 0; i < 10000; i++) {}',
       },
       {
@@ -107,6 +109,7 @@ describe('no-unchecked-loop-condition (mutation edges)', () => {
         name: 'FN: a BigInt loop bound is estimated against maxStaticIterations',
         // @found mutation testing
         code: 'let i = 0n; while (i < 10_000_000n) { i++; }',
+        options: [{ maxStaticIterations: 10000 }],
         errors: large,
       },
       {
@@ -283,11 +286,13 @@ describe('no-unchecked-loop-condition (mutation edges)', () => {
       {
         name: 'a countdown to a large floor is a large bound',
         code: 'for (let i = 1e9; i > 20000; i--) {}',
+        options: [{ maxStaticIterations: 10000 }],
         errors: large,
       },
       {
         name: 'a countdown to a large inclusive floor is a large bound',
         code: 'for (let i = 1e9; i >= 20000; i--) {}',
+        options: [{ maxStaticIterations: 10000 }],
         errors: large,
       },
     ],
