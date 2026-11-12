@@ -16,14 +16,14 @@ cases: []
 
 ---
 
-## What
+## What is wanted
 
 `eslint-plugin-nestjs-security` installs in a NestJS 12 project, its rules give
 the right answer on NestJS 12's Standard Schema API and on a returned web
 `Response`, no mutant of the plugin survives its tests, and new NestJS releases
 are read on a schedule instead of by accident.
 
-## Why
+## Why now
 
 - `npm install -D eslint-plugin-nestjs-security@4.0.1` beside
   `@nestjs/common@^12.4.1` fails with `ERESOLVE`: the peer range stops at
@@ -57,7 +57,7 @@ models under `benchmarks/suites/fidelity/models/nestjs-security/`.
 - No mutation-disable comments; an equivalent mutant is removed by deleting the
   redundant code.
 
-## Done when
+## Success criteria
 
 - `src/peer-range.lock.test.ts` passes, and fails on the old range.
 - `npm run mutation -- --plugin nestjs-security --force` reports 0 survivors and
