@@ -1242,6 +1242,11 @@
       "environment": "nestjs",
       "detection": "structural-api",
       "confidence": "enforcement"
+    },
+    "require-upload-size-limit": {
+      "environment": "nestjs",
+      "detection": "structural-api",
+      "confidence": "enforcement"
     }
   },
   "eslint-plugin-node-security": {

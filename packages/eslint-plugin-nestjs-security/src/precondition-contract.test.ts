@@ -114,6 +114,12 @@ const CONTRACT: Record<string, Contract> = {
     shape: 'absence',
     asserts: 'this route can be called without rate limiting',
   },
+  'require-upload-size-limit': {
+    shape: 'absence',
+    // The limit may sit in front of the process (a proxy body cap), which no
+    // file here shows.
+    asserts: 'this route accepts an upload of any size',
+  },
   'no-missing-validation-pipe': {
     shape: 'absence',
     asserts: 'this body is not validated',

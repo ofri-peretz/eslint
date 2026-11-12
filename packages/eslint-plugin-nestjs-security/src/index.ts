@@ -34,6 +34,7 @@ import { noResBypassSerialization } from './rules/no-res-bypass-serialization';
 import { noUnguardedSwagger } from './rules/no-unguarded-swagger';
 import { noHybridAppConfigLoss } from './rules/no-hybrid-app-config-loss';
 import { noUnsafeMulterFilename } from './rules/no-unsafe-multer-filename';
+import { requireUploadSizeLimit } from './rules/require-upload-size-limit';
 
 /**
  * Collection of all NestJS security ESLint rules
@@ -55,6 +56,7 @@ export const rules: Record<
   'no-unguarded-swagger': noUnguardedSwagger,
   'no-hybrid-app-config-loss': noHybridAppConfigLoss,
   'no-unsafe-multer-filename': noUnsafeMulterFilename,
+  'require-upload-size-limit': requireUploadSizeLimit,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -105,6 +107,10 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // abstains the moment anything is done to the value, so a finding is never a
   // judgement call about whether the sanitiser was good enough.
   'nestjs-security/no-unsafe-multer-filename': 'error',
+  // Enters at 'warn': the finding is exact when the options are in the file,
+  // but a limit set in MulterModule.register() is matched per project, not per
+  // module, so a monorepo can still hide one.
+  'nestjs-security/require-upload-size-limit': 'warn',
 };
 
 /**
@@ -187,6 +193,7 @@ export type { Options as NoExposedPrivateFieldsOptions } from './rules/no-expose
 export type { Options as NoResBypassSerializationOptions } from './rules/no-res-bypass-serialization';
 export type { Options as NoUnguardedSwaggerOptions } from './rules/no-unguarded-swagger';
 export type { Options as NoHybridAppConfigLossOptions } from './rules/no-hybrid-app-config-loss';
+export type { Options as RequireUploadSizeLimitOptions } from './rules/require-upload-size-limit';
 
 /**
  * Combined options type for all rules
@@ -201,4 +208,5 @@ export interface AllNestjsSecurityRulesOptions {
   'no-res-bypass-serialization'?: import('./rules/no-res-bypass-serialization').Options;
   'no-unguarded-swagger'?: import('./rules/no-unguarded-swagger').Options;
   'no-hybrid-app-config-loss'?: import('./rules/no-hybrid-app-config-loss').Options;
+  'require-upload-size-limit'?: import('./rules/require-upload-size-limit').Options;
 }

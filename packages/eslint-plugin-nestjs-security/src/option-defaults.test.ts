@@ -99,6 +99,13 @@ const FIXTURES: Record<string, string> = {
     }
   `,
   'require-validation-pipe-whitelist': `app.useGlobalPipes(new ValidationPipe());`,
+  'require-upload-size-limit': `
+    import { FileInterceptor } from '@nestjs/platform-express';
+    class UploadController {
+      @UseInterceptors(FileInterceptor('file'))
+      upload() {}
+    }
+  `,
   'no-permissive-cors': `app.enableCors({ origin: '*' });`,
   'no-unguarded-swagger': `
     async function bootstrap() {

@@ -28,6 +28,15 @@ const RULES = Object.keys(plugin.rules);
 const SDK = "import '@nestjs/common';";
 
 /**
+ * Rules whose evidence is narrower than "some NestJS import": the binding they
+ * check has to come from one package, so that import is the difference.
+ */
+const RULE_SDK: Readonly<Record<string, string>> = {
+  'require-upload-size-limit':
+    "import { FileInterceptor } from '@nestjs/platform-express';",
+};
+
+/**
  * A real violation of `no-exposed-private-fields`. It appears twice on purpose: once
  * without the import (must be silent) and once with it (must report). One
  * fixture proving both directions is what stops this suite passing with the
@@ -84,6 +93,10 @@ const RULE_VIOLATIONS: Readonly<Record<string, string>> = {
        login() {}
      }`,
   'require-validation-pipe-whitelist': `app.useGlobalPipes(new ValidationPipe());`,
+  'require-upload-size-limit': `class UploadController {
+       @UseInterceptors(FileInterceptor('file'))
+       upload() {}
+     }`,
 };
 
 /** Files that use no NestJS at all. */
@@ -157,7 +170,9 @@ describe('NestJS module gate', () => {
     });
 
     it('reports once the file imports the SDK', () => {
-      expect(lint(`${SDK}\n${code}`, rule).length).toBeGreaterThan(0);
+      expect(
+        lint(`${RULE_SDK[rule] ?? SDK}\n${code}`, rule).length,
+      ).toBeGreaterThan(0);
     });
 
     it('is silent with the import removed', () => {

@@ -1,10 +1,10 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-11-05",
+  "generatedAt": "2026-11-12",
   "totalPlugins": 32,
-  "totalRules": 499,
-  "oxlintCompatible": 499,
+  "totalRules": 500,
+  "oxlintCompatible": 500,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1642,7 +1642,7 @@
       "short": "nestjs-security",
       "shim": "tools/oxlint-plugins/interlace-nestjs-security.cjs",
       "subpath": "eslint-plugin-nestjs-security/oxlint",
-      "ruleCount": 10,
+      "ruleCount": 11,
       "rules": [
         {
           "name": "no-exposed-private-fields",
@@ -1694,6 +1694,12 @@
         },
         {
           "name": "require-throttler",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-upload-size-limit",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -3595,6 +3601,7 @@
       "no-unsafe-multer-filename",
       "require-guards",
       "require-throttler",
+      "require-upload-size-limit",
       "require-validation-pipe-whitelist"
     ],
     "node-security": [

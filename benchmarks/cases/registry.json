@@ -4922,6 +4922,64 @@
           "control": "view.escapeMarkup = false;"
         }
       ]
+    },
+    {
+      "id": "ILB-0169",
+      "added": "2026-11-12",
+      "title": "Upload interceptor with no file size limit",
+      "rationale": "multer enforces only the limits it is given and `fileSize` defaults to Infinity; NestJS adds defaults for field-name limits and none for size. A route behind a bare `FileInterceptor('file')` stores however many bytes the client sends, in memory with the default storage. Seen in 11 of 79 NestJS repositories measured.",
+      "cwe": "CWE-770",
+      "severity": {
+        "cvss": 7.5,
+        "vector": null,
+        "source": "rule meta (nestjs-security/require-upload-size-limit)"
+      },
+      "references": [
+        {
+          "id": "CWE-770",
+          "url": "https://cwe.mitre.org/data/definitions/770.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { Controller, Post, UploadedFile, UseInterceptors } from '@nestjs/common';\nimport { FileInterceptor } from '@nestjs/platform-express';\n@Controller('users')\nexport class AvatarController {\n  @Post('avatar')\n  @UseInterceptors(FileInterceptor('file'))\n  upload(@UploadedFile() file: Express.Multer.File) { return file.size; }\n}",
+      "coverage": [
+        {
+          "rule": "nestjs-security/require-upload-size-limit",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-nestjs-security/src/rules/require-upload-size-limit/require-upload-size-limit.test.ts"
+        }
+      ],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0170",
+      "added": "2026-11-12",
+      "title": "Upload interceptor that bounds the file size",
+      "rationale": "The same route with `limits.fileSize` set on the interceptor: multer aborts the upload at the limit, so the allocation is bounded. Reporting it would be asking for a limit that is already there.",
+      "cwe": "CWE-770",
+      "severity": {
+        "cvss": 7.5,
+        "vector": null,
+        "source": "rule meta (nestjs-security/require-upload-size-limit)"
+      },
+      "references": [
+        {
+          "id": "CWE-770",
+          "url": "https://cwe.mitre.org/data/definitions/770.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { Controller, Post, UploadedFile, UseInterceptors } from '@nestjs/common';\nimport { FileInterceptor } from '@nestjs/platform-express';\n@Controller('users')\nexport class AvatarController {\n  @Post('avatar')\n  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))\n  upload(@UploadedFile() file: Express.Multer.File) { return file.size; }\n}",
+      "coverage": [
+        {
+          "rule": "nestjs-security/require-upload-size-limit",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-nestjs-security/src/rules/require-upload-size-limit/require-upload-size-limit.test.ts"
+        }
+      ],
+      "kind": "remedy"
     }
   ]
 }

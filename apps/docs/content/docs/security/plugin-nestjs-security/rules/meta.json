@@ -11,6 +11,7 @@
     "no-unsafe-multer-filename",
     "require-guards",
     "require-throttler",
+    "require-upload-size-limit",
     "require-validation-pipe-whitelist"
   ]
 }

@@ -28,7 +28,7 @@
 
 ## Covered natively by oxlint
 
-None of these 10 rules has an oxlint built-in equivalent. Every rule here is new to oxlint.
+None of these 11 rules has an oxlint built-in equivalent. Every rule here is new to oxlint.
 
 - **Why** — a linter nobody reads protects nothing. We would rather miss a finding
   than spend your attention on one that was never real.
@@ -123,6 +123,7 @@ Install [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-p
 | [no-unsafe-multer-filename](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-unsafe-multer-filename?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-nestjs-security)                 | CWE-22  | A01:2021 |      | Flags a multer diskStorage filename callback that stores an upload under the name the client chose.          | 🟢  | 💼  |     |     |     |     |
 | [require-guards](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-guards?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-nestjs-security)                                       | CWE-306 | A01:2021 |      | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:    | 🟢  | 💼  |     |     |     |     |
 | [require-throttler](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-throttler?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-nestjs-security)                                 | CWE-770 | A05:2021 |      | This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the applica… | 🟢  |     | ⚠️  |     |     |     |
+| [require-upload-size-limit](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-upload-size-limit?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-nestjs-security)                 | CWE-770 | A04:2021 |      | Flags a multer upload interceptor that sets no limits.fileSize, so the route accepts a file of any size.     | 🟢  |     | ⚠️  |     |     |     |
 | [require-validation-pipe-whitelist](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-validation-pipe-whitelist?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-nestjs-security) | CWE-915 | A03:2021 |      | Requires whitelist true on ValidationPipe, so properties the DTO never declared are stripped instead of rea… | 🟢  | 💼  |     |     |     |     |
 
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:START - Do not edit manually -->

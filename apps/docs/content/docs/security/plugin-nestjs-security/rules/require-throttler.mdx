@@ -100,7 +100,7 @@ export class AppModule {}
 
 ## When Not To Use It
 
-- If you have `ThrottlerModule.forRoot()` in `app.module.ts`, set `assumeGlobalThrottler: true`
+- If rate limiting is bound somewhere the scan cannot read (a library, a runtime-built provider), set `assumeGlobalThrottler: true`
 - For endpoints that intentionally skip throttling, use `@SkipThrottle()` decorator
 
 ## Cross-File Detection
@@ -117,6 +117,18 @@ finds an app-wide registration, so this is _not_ a false positive:
 })
 export class AppModule {}
 ```
+
+The `APP_GUARD` line is the one that counts. `ThrottlerModule.forRoot()` only
+configures limits; nothing is throttled until `ThrottlerGuard` runs, so a
+project that imports the module and binds the guard nowhere is reported. Of 21
+repositories measured that import the module, 3 bind no guard at all and one
+more binds it on a single route.
+
+A subclass counts as well, whatever it is called and whether it is bound as
+`APP_GUARD` or `APP_INTERCEPTOR`. The scan reads what the bound class extends,
+following relative imports, `src/…` and `@/…` paths and barrel files. Only when
+the class is out of reach — a package, a `tsconfig` path alias — does it fall
+back to the class name containing `Throttler`.
 
 Turn the scan off with `detectGlobalThrottler: false` if you want the routes reported anyway.
 What the scan still cannot resolve is a registration built at runtime or
