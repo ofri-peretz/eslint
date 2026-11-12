@@ -74,7 +74,7 @@ withCanonicalDocsUrls('plugin-nestjs-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-nestjs-security',
-    version: '4.0.1',
+    version: '4.1.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
