@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-12T07:54:33.140Z",
+  "generatedAt": "2026-11-12T16:13:13.021Z",
   "totals": {
     "plugins": 31,
     "rules": 497,
@@ -5745,7 +5745,7 @@
       "id": "nestjs-security/require-upload-size-limit",
       "description": "Requires a limits.fileSize on multer upload interceptors",
       "cwe": "CWE-770",
-      "cvss": 7.5,
+      "cvss": 6.5,
       "confidence": null,
       "type": "problem",
       "fixable": false,

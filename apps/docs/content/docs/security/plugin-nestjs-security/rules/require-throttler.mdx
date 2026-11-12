@@ -134,6 +134,25 @@ Turn the scan off with `detectGlobalThrottler: false` if you want the routes rep
 What the scan still cannot resolve is a registration built at runtime or
 supplied by a library — `assumeGlobalThrottler: true` covers those.
 
+### Routes behind an app-wide authentication guard
+
+The rule leaves a sensitive route alone when its own decorators show access
+control (`@UseGuards(JwtAuthGuard)`, `@Roles()`), because a route that needs
+credentials is not a brute-force target. It does **not** do the same for a route
+protected only by a global `APP_GUARD`: which routes opt out of that guard is
+spelled differently in every project (`@Public()`, `@ApiPublic()`, an opt-in
+`@RequireLogin()`), and nothing in the route file says which convention is in
+use.
+
+So in a project with a global authentication guard and no bound
+`ThrottlerGuard`, expect reports on signed-in routes such as "revoke a session"
+or "rotate a token" next to the public ones. Measured on one such project: 6 of
+15 reports were public entry points, 9 were routes only a signed-in user can
+reach. Assuming "authenticated unless `@Public()`" was tried and rejected: over
+79 repositories it removed 69 reports, and about half of those were real public
+`login`, `register` and `forgot-password` routes. List the signed-in routes in
+`skipRoutes`, or bind the guard.
+
 <WhenNotToUse />
 
 <FalseNegativeCTA />

@@ -97,7 +97,7 @@ export const requireUploadSizeLimit = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/require-upload-size-limit.md',
       description: 'Requires a limits.fileSize on multer upload interceptors',
       cwe: 'CWE-770',
-      cvss: 7.5,
+      cvss: 6.5,
     },
     messages: {
       missingFileSizeLimit: formatLLMMessage({
@@ -105,10 +105,10 @@ export const requireUploadSizeLimit = createRule<RuleOptions, MessageIds>({
         issueName: 'Unbounded File Upload',
         cwe: 'CWE-770',
         owasp: 'A04:2021',
-        cvss: 7.5,
+        cvss: 6.5,
         description:
           '{{name}} sets no limits.fileSize, and multer has no default for it: the route stores however many bytes the client sends, in memory unless a storage engine is configured. A ParseFilePipe with MaxFileSizeValidator does not bound it — the pipe runs after the whole file has been received',
-        severity: 'HIGH',
+        severity: 'MEDIUM',
         compliance: ['SOC2'],
         fix: "Pass the limit to the interceptor: FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }), or set limits.fileSize in MulterModule.register()",
         documentationLink: 'https://github.com/expressjs/multer#limits',

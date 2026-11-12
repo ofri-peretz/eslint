@@ -50,6 +50,19 @@ multer's `fileSize` default is `Infinity`, and `applyDefaultLimits`
 (`packages/platform-express/multer/multer/multer.utils.ts`, v12.4.1) adds
 defaults for field-name limits only.
 
+Every added finding was then read, not counted:
+
+- `require-upload-size-limit`, 40 findings: 38 are uploads with no bound in the
+  project, 2 are an admin database-restore route that is unbounded on purpose,
+  none is something other than an upload. Nearly all 38 sit behind
+  authentication, which is why the rule is rated medium (CVSS 6.5), not high.
+- `require-throttler`, 17 added findings: 8 are public entry points (login,
+  register, OTP, OAuth start, feedback), 9 are routes behind a global auth guard
+  that only a signed-in user can reach. No repository that binds a guard gained
+  a finding. The 9 are an existing limit of the rule that the import used to
+  hide; it is documented in the rule's doc, with the fix that was tried and
+  rejected.
+
 ## Constraints
 
 - A class is a throttler because of what it extends, read through relative

@@ -3,7 +3,7 @@ title: require-upload-size-limit
 description: "Flags a multer upload interceptor that sets no limits.fileSize, so the route accepts a file of any size."
 tags: ['security', 'nestjs']
 category: security
-severity: high
+severity: medium
 cwe: CWE-770
 owasp: 'A04:2021'
 autofix: false
@@ -37,6 +37,13 @@ upload(@UploadedFile() file: Express.Multer.File) {}
 
 Measured across 79 NestJS repositories: 77 upload interceptors in 21 of them,
 and 34 of the 49 files that call one name no size limit anywhere in the file.
+The rule reports 40 of those calls in 11 repositories. Read one by one: 38 are
+uploads with no bound in the project, 2 are an admin database-restore route that
+is unbounded on purpose, and none is something other than an upload.
+
+Rated medium rather than high because of who can reach it: all but a handful of
+the 38 sit behind authentication, so the client that can fill the disk or the
+heap is a signed-in one.
 
 ### `MaxFileSizeValidator` is not a limit
 
