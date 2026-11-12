@@ -1348,6 +1348,11 @@
       "failed": 0,
       "examples": []
     },
+    "eslint-plugin-nestjs-security/require-upload-size-limit": {
+      "cases": 43,
+      "failed": 0,
+      "examples": []
+    },
     "eslint-plugin-nestjs-security/require-validation-pipe-whitelist": {
       "cases": 31,
       "failed": 0,

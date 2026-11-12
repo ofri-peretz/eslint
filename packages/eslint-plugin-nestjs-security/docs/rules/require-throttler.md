@@ -99,7 +99,7 @@ export class AppModule {}
 
 ## When Not To Use It
 
-- If you have `ThrottlerModule.forRoot()` in `app.module.ts`, set `assumeGlobalThrottler: true`
+- If rate limiting is bound somewhere the scan cannot read (a library, a runtime-built provider), set `assumeGlobalThrottler: true`
 - For endpoints that intentionally skip throttling, use `@SkipThrottle()` decorator
 
 ## Cross-File Detection
@@ -117,13 +117,40 @@ finds an app-wide registration, so this is _not_ a false positive:
 export class AppModule {}
 ```
 
-A `ThrottlerModule.forRoot()` or `forRoot([])` does not count: it declares no
-throttler, so the guard lets every request through (`@nestjs/throttler` 6.7.1
-warns about this at boot).
+The `APP_GUARD` line is the one that counts. `ThrottlerModule.forRoot()` only
+configures limits; nothing is throttled until `ThrottlerGuard` runs, so a
+project that imports the module and binds the guard nowhere is reported. Of 21
+repositories measured that import the module, 3 bind no guard at all and one
+more binds it on a single route.
+
+A subclass counts as well, whatever it is called and whether it is bound as
+`APP_GUARD` or `APP_INTERCEPTOR`. The scan reads what the bound class extends,
+following relative imports, `src/…` and `@/…` paths and barrel files. Only when
+the class is out of reach — a package, a `tsconfig` path alias — does it fall
+back to the class name containing `Throttler`.
 
 Turn the scan off with `detectGlobalThrottler: false` if you want the routes reported anyway.
 What the scan still cannot resolve is a registration built at runtime or
 supplied by a library — `assumeGlobalThrottler: true` covers those.
+
+### Routes behind an app-wide authentication guard
+
+The rule leaves a sensitive route alone when its own decorators show access
+control (`@UseGuards(JwtAuthGuard)`, `@Roles()`), because a route that needs
+credentials is not a brute-force target. It does **not** do the same for a route
+protected only by a global `APP_GUARD`: which routes opt out of that guard is
+spelled differently in every project (`@Public()`, `@ApiPublic()`, an opt-in
+`@RequireLogin()`), and nothing in the route file says which convention is in
+use.
+
+So in a project with a global authentication guard and no bound
+`ThrottlerGuard`, expect reports on signed-in routes such as "revoke a session"
+or "rotate a token" next to the public ones. Measured on one such project: 6 of
+15 reports were public entry points, 9 were routes only a signed-in user can
+reach. Assuming "authenticated unless `@Public()`" was tried and rejected: over
+79 repositories it removed 69 reports, and about half of those were real public
+`login`, `register` and `forgot-password` routes. List the signed-in routes in
+`skipRoutes`, or bind the guard.
 
 ## Known False Negatives
 

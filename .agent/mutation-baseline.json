@@ -1322,6 +1322,13 @@
           "noCoverage": 0,
           "timeout": 0
         },
+        "require-upload-size-limit": {
+          "score": 100,
+          "killed": 128,
+          "survived": 0,
+          "noCoverage": 0,
+          "timeout": 0
+        },
         "require-validation-pipe-whitelist": {
           "score": 100,
           "killed": 92,

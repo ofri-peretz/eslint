@@ -44,8 +44,21 @@ export interface NestProjectContext {
   hasGlobalAuthGuard: boolean;
   /** A pipe (`APP_PIPE` / `useGlobalPipes`) is registered app-wide. */
   hasGlobalValidationPipe: boolean;
-  /** Rate limiting is configured app-wide (ThrottlerModule + guard). */
+  /**
+   * A `ThrottlerGuard`, or a class extending it, is bound app-wide.
+   *
+   * The binding is the fact, not the module import: `ThrottlerModule.forRoot()`
+   * only configures limits, and nothing is throttled until the guard runs.
+   * Measured on 79 repositories: 21 import the module, and 3 of those bind the
+   * guard nowhere — the import alone used to silence `require-throttler` there.
+   */
   hasGlobalThrottler: boolean;
+  /**
+   * Some `MulterModule.register()` sets `limits.fileSize`, or builds its options
+   * where this scan cannot read them. Module options are merged under every
+   * upload interceptor of that module's controllers.
+   */
+  hasModuleUploadLimit: boolean;
   /**
    * The project has an authentication system of some kind.
    *
@@ -114,20 +127,24 @@ const PROVIDE_RE = new RegExp(
 );
 /** `useClass: X` / `useExisting: X` inside a provider object. */
 const USE_CLASS_RE = /use(?:Class|Existing)\s*:\s*([A-Za-z_$][\w$]*)/;
-/** Guards that are not authentication guards. */
+/**
+ * A throttling guard, by name. Only consulted when the class itself is out of
+ * reach — see `isThrottlerGuard`, which reads what the class extends.
+ */
 const NON_AUTH_GUARD = /Throttler/i;
 /** `app.useGlobalPipes(...)` in the bootstrap file. */
 const USE_GLOBAL_PIPES_RE = /useGlobalPipes\s*\(/;
 /** `app.useGlobalGuards(...)` in the bootstrap file. */
 const USE_GLOBAL_GUARDS_RE = /useGlobalGuards\s*\(/;
-/**
- * `ThrottlerModule.forRoot(...)` / `.forRootAsync(...)` given something to
- * configure. `forRoot()` and `forRoot([])` declare no throttler, and the guard
- * then limits nothing — @nestjs/throttler 6.7.1 started warning about exactly
- * this at boot, because it "looked like a working setup".
- */
-const THROTTLER_MODULE_RE =
-  /ThrottlerModule\s*\.\s*forRoot(?:Async)?\s*\((?!\s*(?:\[\s*\]\s*)?\))/;
+/** `MulterModule.register(` / `.registerAsync(`, up to the opening paren. */
+const MULTER_MODULE_RE = /MulterModule\s*\.\s*register(Async)?\s*\(/g;
+/** `import { A, B as C } from 'x'` and `export { A } from 'x'`. */
+const NAMED_FROM_RE =
+  /(?:import|export)\s+(?:type\s+)?\{([^}]*)\}\s*from\s*['"]([^'"]+)['"]/g;
+/** `export * from './x'`. */
+const EXPORT_ALL_RE = /export\s*\*\s*from\s*['"]([^'"]+)['"]/g;
+/** How many files a class is followed through before giving up. */
+const MAX_HOPS = 6;
 
 /** Dependencies that only exist to authenticate or authorize. */
 const AUTH_DEPENDENCY =
@@ -213,19 +230,31 @@ function collectConfigFiles(root: string, limits: ScanLimits): string[] {
 }
 
 /** Fold one file's source into the accumulating project context. */
-function analyzeSource(source: string, into: MutableContext): void {
+function analyzeSource(
+  source: string,
+  file: string,
+  root: string,
+  into: MutableContext,
+): void {
   PROVIDE_RE.lastIndex = 0;
   let match: RegExpExecArray | null;
   while ((match = PROVIDE_RE.exec(source)) !== null) {
     const [, token, tail] = match;
     into.globalProviders.add(token);
 
-    if (token === 'APP_GUARD') {
+    if (token === 'APP_GUARD' || token === 'APP_INTERCEPTOR') {
+      const useClass = USE_CLASS_RE.exec(tail)?.[1];
+      // What the class extends decides; its name only when the class is out of
+      // reach. `ApiRateLimitInterceptor extends ThrottlerGuard`, bound as an
+      // interceptor, is a real one that no name pattern finds.
+      const throttles =
+        useClass !== undefined &&
+        (isThrottlerGuard(useClass, source, file, root) ??
+          NON_AUTH_GUARD.test(useClass));
+      if (throttles) into.hasGlobalThrottler = true;
       // A factory-provided guard has no class name to inspect; assume it
       // authenticates rather than reporting every route in the project.
-      const useClass = USE_CLASS_RE.exec(tail)?.[1] ?? '';
-      if (NON_AUTH_GUARD.test(useClass)) into.hasGlobalThrottler = true;
-      else into.hasGlobalAuthGuard = true;
+      else if (token === 'APP_GUARD') into.hasGlobalAuthGuard = true;
     } else if (token === 'APP_PIPE') {
       into.hasGlobalValidationPipe = true;
     }
@@ -233,10 +262,116 @@ function analyzeSource(source: string, into: MutableContext): void {
 
   if (USE_GLOBAL_PIPES_RE.test(source)) into.hasGlobalValidationPipe = true;
   if (USE_GLOBAL_GUARDS_RE.test(source)) into.hasGlobalAuthGuard = true;
-  if (THROTTLER_MODULE_RE.test(source)) into.hasGlobalThrottler = true;
+  if (registersUploadLimit(source)) into.hasModuleUploadLimit = true;
 
   if (AUTH_IN_MODULE.test(source)) into.sawAuthInModule = true;
   collectAuthMiddlewareTargets(source, into.authMiddlewareTargets);
+}
+
+/**
+ * Whether a `MulterModule.register()` in this file may bound upload size.
+ *
+ * `fileSize` anywhere in the call's arguments counts. So does a
+ * `registerAsync` with no inline `useFactory`: its options come from a class
+ * in another file, and assuming they are unlimited would be a guess.
+ */
+function registersUploadLimit(source: string): boolean {
+  MULTER_MODULE_RE.lastIndex = 0;
+  let call: RegExpExecArray | null;
+  while ((call = MULTER_MODULE_RE.exec(source)) !== null) {
+    let depth = 1;
+    let end = MULTER_MODULE_RE.lastIndex;
+    for (; end < source.length && depth > 0; end++) {
+      if (source[end] === '(') depth++;
+      else if (source[end] === ')') depth--;
+    }
+    const args = source.slice(MULTER_MODULE_RE.lastIndex, end);
+    // The key — bare, shorthand or quoted — not the word:
+    // `destination: './fileSize'` sets no limit.
+    if (/\bfileSize(?:\s*[:,}]|['"]\s*:)/.test(args)) return true;
+    if (call[1] !== undefined && !/\buseFactory\b/.test(args)) return true;
+  }
+  return false;
+}
+
+/** The file a project-local specifier names, read; null when there is none. */
+function readLocalModule(
+  specifier: string,
+  fromFile: string,
+  root: string,
+): { source: string; file: string } | null {
+  // `./x` is relative to the importer; `src/x` and `@/x` (the two rootDir
+  // spellings NestJS starters use) are relative to the project.
+  const base = specifier.startsWith('.')
+    ? resolvePath(getDirname(fromFile), specifier)
+    : specifier.startsWith('src/')
+      ? joinPath(root, specifier)
+      : specifier.startsWith('@/')
+        ? joinPath(root, 'src', specifier.slice(2))
+        : null;
+  if (base === null) return null;
+  // An ESM project writes the specifier as the file it will be once compiled:
+  // `./rate-limit.guard.js` is `rate-limit.guard.ts` on disk.
+  const stem = base.replace(/\.js$/, '');
+  for (const file of [`${stem}.ts`, joinPath(base, 'index.ts')]) {
+    const source = readFileSync(file);
+    if (source !== null) return { source, file };
+  }
+  return null;
+}
+
+/**
+ * Whether `name`, as bound in `source`, is `ThrottlerGuard` from
+ * `@nestjs/throttler` or a class extending it.
+ *
+ * Follows the class through its declaration, the import that brought it in and
+ * barrel re-exports, `MAX_HOPS` files deep. `null` means the answer is somewhere
+ * this cannot read — a package, a path alias — and the caller has to fall back.
+ */
+export function isThrottlerGuard(
+  name: string,
+  source: string,
+  file: string,
+  root: string,
+  hops = MAX_HOPS,
+): boolean | null {
+  if (hops === 0) return null;
+  const id = name.replace(/\$/g, String.raw`\$`);
+  const declared = new RegExp(
+    String.raw`class\s+${id}(?![\w$])(?:\s*<[^>{]*>)?(?:\s+extends\s+([\w$]+))?`,
+  ).exec(source);
+  if (declared !== null) {
+    const [, parent] = declared;
+    // A class with no parent is not a throttler, whatever it is called.
+    return parent === undefined
+      ? false
+      : isThrottlerGuard(parent, source, file, root, hops - 1);
+  }
+
+  for (const [, specifiers, from] of source.matchAll(NAMED_FROM_RE)) {
+    for (const specifier of specifiers.split(',')) {
+      const [imported, local = imported] = specifier
+        .trim()
+        .replace(/^type\s+/, '')
+        .split(/\s+as\s+/);
+      if (local !== name) continue;
+      if (from === '@nestjs/throttler') return imported === 'ThrottlerGuard';
+      const next = readLocalModule(from, file, root);
+      return (
+        next &&
+        isThrottlerGuard(imported, next.source, next.file, root, hops - 1)
+      );
+    }
+  }
+
+  // Not declared and not named here: a barrel may pass it through.
+  for (const [, from] of source.matchAll(EXPORT_ALL_RE)) {
+    const next = readLocalModule(from, file, root);
+    const answer =
+      next && isThrottlerGuard(name, next.source, next.file, root, hops - 1);
+    if (answer !== null) return answer;
+  }
+  return null;
 }
 
 /**
@@ -315,6 +450,7 @@ interface MutableContext {
   hasGlobalAuthGuard: boolean;
   hasGlobalValidationPipe: boolean;
   hasGlobalThrottler: boolean;
+  hasModuleUploadLimit: boolean;
   /** A module or bootstrap file names a guard, strategy or JWT module. */
   sawAuthInModule: boolean;
   authMiddlewareTargets: Set<string>;
@@ -330,13 +466,14 @@ export function scanProject(
     hasGlobalAuthGuard: false,
     hasGlobalValidationPipe: false,
     hasGlobalThrottler: false,
+    hasModuleUploadLimit: false,
     sawAuthInModule: false,
     authMiddlewareTargets: new Set<string>(),
   };
 
   for (const file of collectConfigFiles(root, limits)) {
     // An unreadable file reads as empty: nothing to learn from it.
-    analyzeSource(readFileSync(file) ?? '', accumulator);
+    analyzeSource(readFileSync(file) ?? '', file, root, accumulator);
   }
 
   const { sawAuthInModule, ...context } = accumulator;
@@ -375,6 +512,7 @@ export function getProjectContext(
       hasGlobalAuthGuard: false,
       hasGlobalValidationPipe: false,
       hasGlobalThrottler: false,
+      hasModuleUploadLimit: false,
       // A synthetic filename is not evidence that a project lacks auth.
       hasAuthMechanism: true,
       authMiddlewareTargets: new Set<string>(),
