@@ -43,7 +43,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-modularity` | 3.0.1 | `modularity/` | — | `plugin-modularity` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mongodb-security` | 10.0.1 | `mongodb-security/` | — | `plugin-mongodb-security` | security | `mongodb` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mysql-security` | 2.0.1 | `mysql-security/` | — | `plugin-mysql-security` | security | `mysql` | ✅ | ✅ | ✅ |
-| `eslint-plugin-nestjs-security` | 4.1.0 | `nestjs-security/` | — | `plugin-nestjs-security` | security | `nestjs` | ✅ | ✅ | ✅ |
+| `eslint-plugin-nestjs-security` | 4.1.1 | `nestjs-security/` | — | `plugin-nestjs-security` | security | `nestjs` | ✅ | ✅ | ✅ |
 | `eslint-plugin-node-security` | 6.0.3 | `node-security/` | — | `plugin-node-security` | security | `node` | ✅ | ✅ | ✅ |
 | `eslint-plugin-openai-security` | 2.0.1 | `openai-security/` | — | `plugin-openai-security` | security | `openai` | ✅ | ✅ | ✅ |
 | `eslint-plugin-operability` | 5.0.1 | `operability/` | — | `plugin-operability` | quality | `—` | ✅ | ✅ | ✅ |
