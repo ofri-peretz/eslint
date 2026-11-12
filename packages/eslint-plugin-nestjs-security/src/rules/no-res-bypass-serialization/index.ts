@@ -28,6 +28,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isGlobalReference,
   isTestFilePath,
   staticString,
 } from '@interlace/eslint-devkit';
@@ -46,7 +47,7 @@ import {
   objectProperties,
 } from '../../utils/nest-ast';
 
-type MessageIds = 'bypassesSerialization';
+type MessageIds = 'bypassesSerialization' | 'webResponseBypassesSerialization';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -109,6 +110,88 @@ const NON_JSON_TYPE_SHORTHANDS = new Set([
 ]);
 
 /**
+ * Interceptors that serialize what a handler returns: the class-transformer
+ * one, and NestJS 12's Standard Schema one. Both run on the returned value and
+ * neither sees a body written through a bare `@Res()`.
+ */
+/** Nodes that open a function body. */
+const FUNCTION_TYPES = new Set<string>([
+  AST_NODE_TYPES.FunctionExpression,
+  AST_NODE_TYPES.FunctionDeclaration,
+  AST_NODE_TYPES.ArrowFunctionExpression,
+]);
+
+/** `return Response.<member>(…)`, matched by shape; the listener checks the rest. */
+const RETURNED_RESPONSE_CALL =
+  'ReturnStatement > CallExpression[callee.type="MemberExpression"][callee.object.type="Identifier"][callee.object.name="Response"]';
+type ResponseCall = TSESTree.CallExpression & {
+  callee: TSESTree.MemberExpression & { object: TSESTree.Identifier };
+};
+
+const SERIALIZERS = new Set([
+  'ClassSerializerInterceptor',
+  'StandardSchemaSerializerInterceptor',
+]);
+
+/**
+ * Whether the expression is provably a string.
+ *
+ * Only the spellings that *say* string in the AST count — a call ending
+ * in `.toString()` or `String(x)`. Anything less certain stays in scope:
+ * the rule's premise is that an object went out unserialized, so proving
+ * the body is not an object is the only safe way to clear it.
+ */
+function isStringExpression(node: TSESTree.Node): boolean {
+  if (node.type !== AST_NODE_TYPES.CallExpression) return false;
+  const callee = node.callee;
+  if (callee.type === AST_NODE_TYPES.Identifier && callee.name === 'String') {
+    return true;
+  }
+  // `JSON.stringify(x)` returns a string. Handing a string to res.send()
+  // leaves nothing for ClassSerializerInterceptor to have stripped — the
+  // serialization already happened, in the handler, by hand. novu's
+  // `res.send(JSON.stringify(template, null, 2))` was reported as a
+  // disclosure of @Exclude()d fields on a value that is a string.
+  if (
+    callee.type === AST_NODE_TYPES.MemberExpression &&
+    expressionName(callee) === 'stringify' &&
+    callReceiver(callee)?.name === 'JSON'
+  ) {
+    return true;
+  }
+  // Any `toString()` returns a string — the method, and the bare global
+  // (`Object.prototype.toString`) alike.
+  return expressionName(callee) === 'toString';
+}
+
+/**
+ * Whether a response body has nothing in it a serializer could have stripped:
+ * no body at all, a literal, an empty object, or a value that is provably a
+ * string.
+ */
+function carriesNoObject(arg: TSESTree.Node | undefined): boolean {
+  return (
+    !arg ||
+    arg.type === AST_NODE_TYPES.Literal ||
+    arg.type === AST_NODE_TYPES.TemplateLiteral ||
+    // `res.status(204).json({})` carries nothing. An empty object
+    // literal has no property that any @Exclude() could have
+    // stripped, so the serialization bypass cannot leak through it —
+    // the same reasoning as the string-literal case above. This was
+    // 3 of 3 findings on a second corpus, i.e. the rule's entire
+    // precision on repos it had not been tuned against.
+    (arg.type === AST_NODE_TYPES.ObjectExpression &&
+      arg.properties.length === 0) ||
+    // A value that is provably a string is not a serialized object.
+    // `nest-framework/sample/28-sse` sends
+    // `readFileSync(index.html).toString()` — a static page, with no
+    // DTO and therefore no @Exclude() for the missing interceptor to
+    // have dropped. `.toString()`/`String(x)` say so in the AST.
+    isStringExpression(arg)
+  );
+}
+
+/**
  * Whether any of these decorators mounts a serializer over the handler.
  *
  * `@SerializeOptions()` counts on its own: it is inert without
@@ -122,11 +205,15 @@ function mountsSerializer(decorators: readonly TSESTree.Decorator[]): boolean {
     const name = decoratorName(decorator);
     if (name === 'SerializeOptions') return true;
     if (name !== 'UseInterceptors') continue;
-    for (const arg of decoratorCall(decorator)?.arguments ?? []) {
+    const call = decoratorCall(decorator);
+    // A bare `@UseInterceptors` reference names no interceptor at all.
+    if (!call) continue;
+    for (const arg of call.arguments) {
       // `@UseInterceptors(ClassSerializerInterceptor)`, the
       // `new ClassSerializerInterceptor(reflector)` spelling, and either one
-      // through a namespace import (`common.ClassSerializerInterceptor`).
-      if (expressionName(arg) === 'ClassSerializerInterceptor') return true;
+      // through a namespace import (`common.ClassSerializerInterceptor`) —
+      // likewise for `StandardSchemaSerializerInterceptor`.
+      if (SERIALIZERS.has(expressionName(arg))) return true;
     }
   }
   return false;
@@ -154,6 +241,17 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
           '@Res() without passthrough stops every interceptor, so @Exclude() does not apply to the object written by {{writer}}',
         severity: 'HIGH',
         fix: 'Use @Res({ passthrough: true }) and return the value, so ClassSerializerInterceptor still runs',
+        documentationLink: 'https://cwe.mitre.org/data/definitions/200.html',
+      }),
+      webResponseBypassesSerialization: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Response Serialization Bypassed',
+        cwe: 'CWE-200',
+        cvss: 7.5,
+        description:
+          'A returned web Response is sent as it is — no serializer touches it, so @Exclude() does not apply to the object given to Response.json()',
+        severity: 'HIGH',
+        fix: 'Return the value itself so the serializer runs; set the status and headers with @HttpCode() / @Header(), or through @Res({ passthrough: true })',
         documentationLink: 'https://cwe.mitre.org/data/definitions/200.html',
       }),
     },
@@ -213,59 +311,22 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
       let found: string | null = null;
 
       /**
-       * Whether a function node rebinds `binding` in its own parameters.
+       * Whether a node declares `binding` anew, so that inside it the name is
+       * a different value.
        *
        * `const transform = (res: Inner) => res.json(x)` inside a handler that
        * injected `@Res() res` is a *different* res, and writing to it says
        * nothing about the injected response. A closure that does not rebind the
        * name still refers to the outer one, so only shadowing stops the walk.
-       */
-      const shadowsBinding = (node: TSESTree.Node): boolean => {
-        if (
-          node.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
-          node.type !== AST_NODE_TYPES.FunctionExpression &&
-          node.type !== AST_NODE_TYPES.FunctionDeclaration
-        ) {
-          return false;
-        }
-        return node.params.some(
-          (p) => p.type === AST_NODE_TYPES.Identifier && p.name === binding,
-        );
-      };
-
-      /**
-       * Whether the expression is provably a string.
        *
-       * Only the spellings that *say* string in the AST count — a call ending
-       * in `.toString()` or `String(x)`. Anything less certain stays in scope:
-       * the rule's premise is that an object went out unserialized, so proving
-       * the body is not an object is the only safe way to clear it.
+       * Asked of the scope manager rather than read off the parameter list, so
+       * every way of declaring the name counts: a plain, default-valued or
+       * destructured parameter, and a `catch (res)` clause.
        */
-      function isStringExpression(node: TSESTree.Node): boolean {
-        if (node.type !== AST_NODE_TYPES.CallExpression) return false;
-        const callee = node.callee;
-        if (
-          callee.type === AST_NODE_TYPES.Identifier &&
-          callee.name === 'String'
-        ) {
-          return true;
-        }
-        // `JSON.stringify(x)` returns a string. Handing a string to res.send()
-        // leaves nothing for ClassSerializerInterceptor to have stripped — the
-        // serialization already happened, in the handler, by hand. novu's
-        // `res.send(JSON.stringify(template, null, 2))` was reported as a
-        // disclosure of @Exclude()d fields on a value that is a string.
-        if (
-          callee.type === AST_NODE_TYPES.MemberExpression &&
-          expressionName(callee) === 'stringify' &&
-          callReceiver(callee)?.name === 'JSON'
-        ) {
-          return true;
-        }
-        // Any `toString()` returns a string — the method, and the bare global
-        // (`Object.prototype.toString`) alike.
-        return expressionName(callee) === 'toString';
-      }
+      const shadowsBinding = (node: TSESTree.Node): boolean =>
+        context.sourceCode
+          .getDeclaredVariables(node)
+          .some((variable) => variable.name === binding);
 
       /**
        * Whether the handler declares a response type that is not JSON.
@@ -350,25 +411,7 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
           if (BODY_WRITERS.has(writer)) {
             const receiver = callReceiver(node.callee);
             const arg = node.arguments[0];
-            const literalBody =
-              !arg ||
-              arg.type === AST_NODE_TYPES.Literal ||
-              arg.type === AST_NODE_TYPES.TemplateLiteral ||
-              // `res.status(204).json({})` carries nothing. An empty object
-              // literal has no property that any @Exclude() could have
-              // stripped, so the serialization bypass cannot leak through it —
-              // the same reasoning as the string-literal case above. This was
-              // 3 of 3 findings on a second corpus, i.e. the rule's entire
-              // precision on repos it had not been tuned against.
-              (arg.type === AST_NODE_TYPES.ObjectExpression &&
-                arg.properties.length === 0) ||
-              // A value that is provably a string is not a serialized object.
-              // `nest-framework/sample/28-sse` sends
-              // `readFileSync(index.html).toString()` — a static page, with no
-              // DTO and therefore no @Exclude() for the missing interceptor to
-              // have dropped. `.toString()`/`String(x)` say so in the AST.
-              isStringExpression(arg);
-            if (receiver?.name === binding && !literalBody) {
+            if (receiver?.name === binding && !carriesNoObject(arg)) {
               found = writer;
               return;
             }
@@ -393,6 +436,33 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
       return found;
     }
 
+    /**
+     * Whether this method is a route handler whose return value a serializer
+     * processes.
+     *
+     * The harm this rule names — "@Exclude() stops applying" — needs a
+     * serializer to have been applying in the first place. Across eight
+     * production NestJS codebases, 23 of 27 findings were in repos with no
+     * `ClassSerializerInterceptor` and no `@Exclude()` anywhere: a real
+     * pattern with no disclosure behind it. A controller file can only see
+     * its own decorators, so a globally-registered serializer needs
+     * `assumeGlobalSerializer`.
+     */
+    function isSerializedHandler(node: TSESTree.MethodDefinition): boolean {
+      if (!isRouteHandler(node)) return false;
+      // A MethodDefinition is always a ClassBody child, so this is non-null.
+      const controller = enclosingClass(node)!;
+      if (!isControllerClass(controller)) return false;
+      return (
+        assumeGlobalSerializer ||
+        mountsSerializer(controller.decorators) ||
+        mountsSerializer(node.decorators)
+      );
+    }
+
+    /** Bodies of the route handlers a serializer covers, as they are entered. */
+    const serializedHandlers = new WeakSet<TSESTree.Node>();
+
     return {
       before() {
         const [options = {}] = currentOptions();
@@ -405,26 +475,8 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
         return true;
       },
       MethodDefinition(node: TSESTree.MethodDefinition) {
-        if (!isRouteHandler(node)) return;
-        // A MethodDefinition is always a ClassBody child, so this is non-null.
-        const controller = enclosingClass(node);
-        if (!isControllerClass(controller)) return;
-
-        // The harm this rule names — "@Exclude() stops applying" — needs a
-        // serializer to have been applying in the first place. Across eight
-        // production NestJS codebases, 23 of 27 findings were in repos with no
-        // `ClassSerializerInterceptor` and no `@Exclude()` anywhere: a real
-        // pattern with no disclosure behind it. A controller file can only see
-        // its own decorators, so a globally-registered serializer needs
-        // `assumeGlobalSerializer`.
-        if (
-          !assumeGlobalSerializer &&
-          // isControllerClass is false for null, so controller is non-null.
-          !mountsSerializer(controller!.decorators) &&
-          !mountsSerializer(node.decorators)
-        ) {
-          return;
-        }
+        if (!isSerializedHandler(node)) return;
+        serializedHandlers.add(node.value);
 
         const found = bareResponseParam(node);
         if (!found) return;
@@ -440,6 +492,36 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
           node: decorator,
           messageId: 'bypassesSerialization',
           data: { writer: `${binding}.${writer}()` },
+        });
+      },
+      /**
+       * `return Response.json(user)` — NestJS 12.4 sends a returned web
+       * `Response` as the whole answer, and both serializers pass one through
+       * untouched (`isStreamingBody`). The object was serialized by hand, in
+       * the handler, before any `@Exclude()` could apply.
+       *
+       * Only the global `Response` counts: a local or imported binding of that
+       * name is some other value (express's `Response` is a type and has no
+       * `json` static to call).
+       */
+      [RETURNED_RESPONSE_CALL](node: ResponseCall) {
+        const { callee } = node;
+        if (
+          expressionName(callee) !== 'json' ||
+          !isGlobalReference(callee.object, context.sourceCode) ||
+          carriesNoObject(node.arguments[0])
+        ) {
+          return;
+        }
+        // The handler itself must be returning it, not a callback inside it.
+        // A `return` is always inside a function.
+        const fn = context.sourceCode
+          .getAncestors(node)
+          .findLast((ancestor) => FUNCTION_TYPES.has(ancestor.type))!;
+        if (!serializedHandlers.has(fn)) return;
+        context.report({
+          node,
+          messageId: 'webResponseBypassesSerialization',
         });
       },
     };

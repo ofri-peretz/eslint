@@ -1260,81 +1260,81 @@
     "nestjs-security": {
       "rules": {
         "no-exposed-private-fields": {
-          "score": 99.2,
-          "killed": 132,
-          "survived": 1,
+          "score": 100,
+          "killed": 134,
+          "survived": 0,
           "noCoverage": 0,
           "timeout": 0
         },
         "no-hybrid-app-config-loss": {
           "score": 100,
-          "killed": 60,
+          "killed": 61,
           "survived": 0,
           "noCoverage": 0,
           "timeout": 0
         },
         "no-missing-validation-pipe": {
-          "score": 96,
-          "killed": 193,
-          "survived": 8,
+          "score": 100,
+          "killed": 250,
+          "survived": 0,
           "noCoverage": 0,
           "timeout": 0
         },
         "no-permissive-cors": {
-          "score": 94.2,
-          "killed": 262,
-          "survived": 16,
+          "score": 100,
+          "killed": 229,
+          "survived": 0,
           "noCoverage": 0,
           "timeout": 0
         },
         "no-res-bypass-serialization": {
-          "score": 97.3,
-          "killed": 256,
-          "survived": 7,
+          "score": 100,
+          "killed": 267,
+          "survived": 0,
           "noCoverage": 0,
           "timeout": 0
         },
         "no-unguarded-swagger": {
-          "score": 97.8,
-          "killed": 87,
-          "survived": 2,
+          "score": 100,
+          "killed": 86,
+          "survived": 0,
           "noCoverage": 0,
-          "timeout": 2
+          "timeout": 0
         },
         "no-unsafe-multer-filename": {
-          "score": 94.3,
-          "killed": 185,
-          "survived": 11,
+          "score": 100,
+          "killed": 190,
+          "survived": 0,
           "noCoverage": 0,
           "timeout": 0
         },
         "require-guards": {
-          "score": 95.9,
-          "killed": 374,
-          "survived": 16,
+          "score": 100,
+          "killed": 392,
+          "survived": 0,
           "noCoverage": 0,
-          "timeout": 5
+          "timeout": 3
         },
         "require-throttler": {
-          "score": 97,
-          "killed": 99,
-          "survived": 3,
+          "score": 100,
+          "killed": 102,
+          "survived": 0,
           "noCoverage": 0,
           "timeout": 0
         },
         "require-validation-pipe-whitelist": {
-          "score": 97.8,
-          "killed": 89,
-          "survived": 2,
+          "score": 100,
+          "killed": 92,
+          "survived": 0,
           "noCoverage": 0,
           "timeout": 0
         },
         "utils/nest-ast": {
-          "score": 90.8,
-          "killed": 242,
-          "survived": 25,
+          "score": 100,
+          "killed": 256,
+          "survived": 0,
           "noCoverage": 0,
-          "timeout": 5
+          "timeout": 1
         },
         "utils/nestjs-evidence": {
           "score": 100,
@@ -1344,23 +1344,23 @@
           "timeout": 0
         },
         "utils/project-context": {
-          "score": 74.6,
-          "killed": 191,
-          "survived": 67,
+          "score": 100,
+          "killed": 237,
+          "survived": 0,
           "noCoverage": 0,
-          "timeout": 6
+          "timeout": 0
         },
         "utils/sensitive-names": {
-          "score": 65.8,
-          "killed": 27,
-          "survived": 14,
+          "score": 100,
+          "killed": 41,
+          "survived": 0,
           "noCoverage": 0,
           "timeout": 0
         },
         "utils/typescript-peer": {
-          "score": 88.8,
-          "killed": 8,
-          "survived": 1,
+          "score": 100,
+          "killed": 9,
+          "survived": 0,
           "noCoverage": 0,
           "timeout": 0
         }

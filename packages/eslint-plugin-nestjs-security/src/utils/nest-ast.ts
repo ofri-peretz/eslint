@@ -26,6 +26,7 @@ import {
   AST_NODE_TYPES,
   objectKeyName,
   resolveModuleBinding,
+  staticString,
 } from '@interlace/eslint-devkit';
 
 /** Classes a member can live in. */
@@ -157,13 +158,9 @@ export function expressionName(node: TSESTree.Node): string {
     if (!computed && property.type === AST_NODE_TYPES.Identifier) {
       return property.name;
     }
-    if (
-      computed &&
-      property.type === AST_NODE_TYPES.Literal &&
-      typeof property.value === 'string'
-    ) {
-      return property.value;
-    }
+    // `a['b']` — and a template with nothing interpolated — names the same
+    // member; any other computed key is dynamic.
+    return staticString(property) ?? '';
   }
 
   return '';

@@ -126,6 +126,38 @@ controller, and:
   the pipe to validate against (no annotation, `any`, `unknown`, `object`, an
   inline type literal) — or always, under `requireExplicitPipe`.
 
+The parameter may be a name, a destructured object
+(`@Body() { email, password }: LoginDto`), or either with a default value
+(`@Body() dto: CreateDto = {}`) — all bind the same input.
+
+### NestJS 12: a `schema` nothing enforces
+
+NestJS 12 lets a parameter decorator carry a [Standard Schema](https://standardschema.dev/)
+(Zod, Valibot, ArkType):
+
+```typescript
+@Post()
+create(@Body({ schema: createUserSchema }) body: CreateUserDto) {}
+```
+
+The decorator only attaches the schema as metadata. It is enforced by
+`StandardSchemaValidationPipe` and by nothing else — `ValidationPipe` never
+reads it. So this rule reports a parameter that declares a `schema` when that
+pipe runs nowhere it can see: not on the parameter
+(`@Body({ schema, pipes: [StandardSchemaValidationPipe] })`), not in
+`@UsePipes(StandardSchemaValidationPipe)` on the handler or controller, and no
+global pipe detected or assumed. That holds for a scalar too:
+`@Param('id', { schema: z.coerce.number().int() }) id: number` is a constraint
+someone wrote and nothing applies.
+
+The reverse is not validation either: `StandardSchemaValidationPipe` passes a
+parameter with no `schema` straight through, so `@UsePipes(StandardSchemaValidationPipe)`
+does not clear a plain `@Body() dto: CreateDto`.
+
+An options object is not itself a pipe. Its `pipes: [...]` entries are; an
+object with a `transform` member is (NestJS treats it as one); and an object
+built from a spread or a computed key gets the benefit of the doubt.
+
 A scalar (`string`, `number`, `boolean`, literal types) is coerced by the
 framework and never reported. A `Parse*Pipe` in `@UsePipes` is not a
 ValidationPipe. `ValidationPipe` is recognised however `@nestjs/common` was

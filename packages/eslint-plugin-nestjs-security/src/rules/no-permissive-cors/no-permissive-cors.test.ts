@@ -708,6 +708,15 @@ ruleTester.run('no-permissive-cors (mutation audit)', noPermissiveCors, {
       name: 'a microservice serves no HTTP, so a cors key there is not CORS',
       code: `const app = await NestFactory.createMicroservice(AppModule, { cors: true });`,
     },
+    {
+      name: 'an options binding that is reassigned is not the object it was declared with',
+      code: `
+        let base = { origin: '*' };
+        base = safeOptions;
+        const corsOptions = base;
+        app.enableCors(corsOptions);
+      `,
+    },
   ]),
   invalid: nest([
     {
@@ -753,6 +762,22 @@ ruleTester.run('no-permissive-cors (mutation audit)', noPermissiveCors, {
       // @found mutation testing
       name: 'FN: a template-literal wildcard with nothing interpolated is the wildcard',
       code: 'app.enableCors({ origin: `*` });',
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+    {
+      // @found mutation testing
+      name: 'FN: an options object reached through a second const is still read',
+      code: `
+        const base = { origin: '*' };
+        const corsOptions = base;
+        app.enableCors(corsOptions);
+      `,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+    {
+      // @found mutation testing
+      name: 'FN: a type assertion on the options object does not hide it',
+      code: `app.enableCors({ origin: '*' } as CorsOptions);`,
       errors: [{ messageId: 'wildcardOrigin' }],
     },
   ]),

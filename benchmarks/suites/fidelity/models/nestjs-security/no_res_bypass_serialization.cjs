@@ -17,13 +17,22 @@ const WRITE = {
   HandOff: 'return this.usersService.stream(res);',
   NoWrite: 'return user;',
 };
+const RETURNED = {
+  Value: 'return user;',
+  WebJson: 'return Response.json(user);',
+  WebJsonEmpty: 'return Response.json({});',
+  WebRedirect: 'return Response.redirect(user.homepage);',
+  ShadowedJson: 'return Response.json(user);',
+};
 
 const base = {
   rule: 'no-res-bypass-serialization',
-  domain: 320, // 5 decorators x 8 writes x 4 serializers x 2 assume
-  traces: 4000,
+  // (4 response decorators x 8 writes + 5 returns with none) x 5 serializers
+  // x 2 assume
+  domain: 370,
+  traces: 6000,
   key: (s) =>
-    ['resDeco', 'write', 'serializer', 'assumeGlobal']
+    ['resDeco', 'write', 'returned', 'serializer', 'assumeGlobal']
       .map((k) => `${k}=${tag(s[k])}`)
       .join(' '),
   config: (s) => ({ assumeGlobalSerializer: s.assumeGlobal }),
@@ -36,12 +45,22 @@ const base = {
     ]
       .filter(Boolean)
       .join(', ');
-    const write = deco === 'NoRes' ? 'return user;' : WRITE[tag(s.write)];
+    const returned = tag(s.returned);
+    const write = deco === 'NoRes' ? RETURNED[returned] : WRITE[tag(s.write)];
+    // `Response` is Nest's decorator alias when imported; left out, the name
+    // is the global web Response.
+    const response =
+      deco === 'ResponseAlias' || returned === 'ShadowedJson'
+        ? ' Response,'
+        : '';
     return [
-      "import { ClassSerializerInterceptor, Controller, Get, Param, Res, Response, SerializeOptions, UseInterceptors } from '@nestjs/common';",
+      `import { ClassSerializerInterceptor, Controller, Get, Param, Res,${response} SerializeOptions, StandardSchemaSerializerInterceptor, UseInterceptors } from '@nestjs/common';`,
       "@Controller('users')",
       ser === 'ClassInterceptor'
         ? '@UseInterceptors(ClassSerializerInterceptor)'
+        : '',
+      ser === 'SchemaInterceptor'
+        ? '@UseInterceptors(StandardSchemaSerializerInterceptor)'
         : '',
       'export class UsersController {',
       '  constructor(private readonly usersService: any) {}',

@@ -41,6 +41,7 @@ import {
   isTestFilePath,
   objectKeyName,
   propertyName,
+  resolveObjectLiteral,
   staticString,
 } from '@interlace/eslint-devkit';
 import {
@@ -86,7 +87,10 @@ const IDENTIFIERS = /[A-Za-z_$][A-Za-z0-9_$]*/g;
  */
 function mentionsEnvironment(text: string, hints: readonly string[]): boolean {
   const wanted = new Set(hints);
-  return (text.match(IDENTIFIERS) ?? []).some((word) => wanted.has(word));
+  for (const [word] of text.matchAll(IDENTIFIERS)) {
+    if (wanted.has(word)) return true;
+  }
+  return false;
 }
 
 /**
@@ -145,30 +149,6 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
-/** Resolve a `const x = { … }` declared in this same file, or null. */
-function resolveLocalObject(
-  scope: TSESLint.Scope.Scope | null,
-  name: string,
-): TSESTree.ObjectExpression | null {
-  for (let s: TSESLint.Scope.Scope | null = scope; s; s = s.upper) {
-    const variable = s.variables.find((v) => v.name === name);
-    if (!variable) continue;
-    // Reassignment defeats this analysis: the value at the call site may not be
-    // the value at the declaration. `let o = { origin: '*' }; o = safe;` would
-    // otherwise report on a binding that is safe by the time it is used. Only
-    // a binding written exactly once — its initialiser — is safe to read.
-    if (variable.references.filter((ref) => ref.isWrite()).length > 1)
-      return null;
-    for (const def of variable.defs) {
-      if (def.node.type !== AST_NODE_TYPES.VariableDeclarator) continue;
-      const init = def.node.init;
-      if (init && init.type === AST_NODE_TYPES.ObjectExpression) return init;
-    }
-    return null;
-  }
-  return null;
-}
-
 /** The `origin` property of a CORS options object, or undefined when absent. */
 function findOriginProperty(
   options: TSESTree.ObjectExpression,
@@ -211,31 +191,25 @@ function isCorsOptionsAnnotation(
   declarator: TSESTree.VariableDeclarator,
   origins: ReadonlyMap<string, string>,
   importedNames: ReadonlyMap<string, string>,
+  sourceCode: Readonly<TSESLint.SourceCode>,
 ): boolean {
   const annotation = declarator.id.typeAnnotation?.typeAnnotation;
   if (annotation?.type !== AST_NODE_TYPES.TSTypeReference) return false;
-  // `typeName` is an EntityName — a bare `CorsOptions`, a qualified
-  // `ns.CorsOptions` from a namespace import, or something neither of those
-  // (a deeper qualification, a `this`-rooted type name). Only the first two
-  // forms can name an imported binding, so anything else resolves to nothing.
+  // `typeName` is a bare `CorsOptions` or a qualified `ns.CorsOptions` from a
+  // namespace import. The root is read as source text: for an identifier that
+  // is its name, and anything longer (the `a.b` of `a.b.CorsOptions`) is not a
+  // name an import can bind, so it resolves to nothing below.
   const name = annotation.typeName;
-  const [root, leaf] =
-    name.type === AST_NODE_TYPES.Identifier
-      ? [name.name, name.name]
-      : name.type === AST_NODE_TYPES.TSQualifiedName &&
-          name.left.type === AST_NODE_TYPES.Identifier
-        ? [name.left.name, name.right.name]
-        : [null, null];
-  if (root === null) return false;
+  const qualified = name.type === AST_NODE_TYPES.TSQualifiedName;
+  const root = sourceCode.getText(qualified ? name.left : name);
   // A bare reference may be an alias — `import { CorsOptions as Opts }` binds
   // `Opts` locally while still naming the imported interface, so the local
   // spelling is not the evidence. Resolve it back to the imported name; a
   // qualified `ns.CorsOptions` needs no resolution because the leaf is the
   // exported name as written in the module.
-  const exported =
-    name.type === AST_NODE_TYPES.Identifier
-      ? (importedNames.get(root) ?? leaf)
-      : leaf;
+  const exported = qualified
+    ? name.right.name
+    : (importedNames.get(root) ?? root);
   if (exported !== 'CorsOptions') return false;
   const source = origins.get(root);
   return source !== undefined && CORS_OPTIONS_MODULE.test(source);
@@ -534,7 +508,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
        * `export const corsOptions: CorsOptions = { origin: true, credentials: true }`
        *
        * The call that uses this lives in another file, so the `enableCors`
-       * visitor below never sees it: `resolveLocalObject` resolves same-file
+       * visitor below never sees it: `resolveObjectLiteral` follows same-file
        * bindings only, and an imported binding resolves to nothing. Measured on
        * juicycleff/ultimate-backend, where a reflected-origin credentialed
        * config in `libs/common/.../cors-config.util.ts` is consumed by
@@ -550,7 +524,15 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
        */
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (node.init?.type !== AST_NODE_TYPES.ObjectExpression) return;
-        if (!isCorsOptionsAnnotation(node, origins, importedNames)) return;
+        if (
+          !isCorsOptionsAnnotation(
+            node,
+            origins,
+            importedNames,
+            context.sourceCode,
+          )
+        )
+          return;
         if (insideEnvironmentBranch(node)) return;
         checkOptionsObject(node.init, node.init);
       },
@@ -573,20 +555,11 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        if (arg.type === AST_NODE_TYPES.ObjectExpression) {
-          checkOptionsObject(arg, node);
-          return;
-        }
-
-        // app.enableCors(corsOptions) — only when the object is declared in this
-        // file. An imported config is not knowable here, so it is left alone.
-        if (arg.type === AST_NODE_TYPES.Identifier) {
-          const resolved = resolveLocalObject(
-            context.sourceCode.getScope(node),
-            arg.name,
-          );
-          if (resolved) checkOptionsObject(resolved, node);
-        }
+        // app.enableCors({ … }) or app.enableCors(corsOptions) — the latter
+        // only when the object is declared in this file. An imported config is
+        // not knowable here, so it is left alone.
+        const options = resolveObjectLiteral(arg, context.sourceCode);
+        if (options) checkOptionsObject(options, node);
       },
     };
   },

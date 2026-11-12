@@ -14,6 +14,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
+  objectKeyName,
   AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
@@ -42,7 +43,7 @@ import type ts from 'typescript';
 import { loadTypeScript } from '../../utils/typescript-peer';
 import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 
-type MessageIds = 'missingValidation' | 'undecoratedDto';
+type MessageIds = 'missingValidation' | 'undecoratedDto' | 'schemaWithoutPipe';
 
 /** `app.useGlobalPipes(…)` or an `APP_PIPE` provider — the project scan's own test. */
 const GLOBAL_PIPE_REGISTRATION = /\buseGlobalPipes\s*\(|\bAPP_PIPE\b/;
@@ -161,6 +162,18 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
         fix: 'Decorate the DTO properties (@IsString() name: string;) AND apply a ValidationPipe — app.useGlobalPipes(new ValidationPipe()) or @UsePipes(new ValidationPipe()). Neither half validates anything on its own.',
         documentationLink: 'https://docs.nestjs.com/techniques/validation',
       }),
+      schemaWithoutPipe: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Schema Declared But Never Enforced',
+        cwe: 'CWE-20',
+        owasp: 'A03:2021',
+        cvss: 8.6,
+        description:
+          '{{param}} declares a schema, but no StandardSchemaValidationPipe runs on this route — the decorator only attaches the schema as metadata, so the input reaches the handler unvalidated',
+        severity: 'HIGH',
+        fix: 'Register the pipe that reads the schema: app.useGlobalPipes(new StandardSchemaValidationPipe()), or @UsePipes(StandardSchemaValidationPipe) on the controller or handler',
+        documentationLink: 'https://docs.nestjs.com/techniques/validation',
+      }),
     },
     schema: [
       {
@@ -238,11 +251,12 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
           getProjectContext(context).hasGlobalValidationPipe));
 
     /**
-     * Whether @UsePipes(...) on this node installs a ValidationPipe.
-     * Accepts `ValidationPipe`, `new ValidationPipe(...)` and `common.ValidationPipe`.
+     * Whether @UsePipes(...) on this node installs the named `@nestjs/common`
+     * pipe. Accepts `Pipe`, `new Pipe(...)` and `common.Pipe`.
      */
-    function hasValidationPipe(
+    function usesPipe(
       decorators: TSESTree.Decorator[] | undefined,
+      pipe: string,
     ): boolean {
       const dec = findDecorator(decorators, 'UsePipes');
       const call = dec ? decoratorCall(dec) : null;
@@ -255,8 +269,8 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
         // with no `ns` import) gets the benefit of the doubt: this check only
         // ever silences, and a guess here costs a false positive.
         return resolveModuleBinding(target, scope) === undefined
-          ? expressionName(target) === 'ValidationPipe'
-          : isModuleExport(target, scope, '@nestjs/common', 'ValidationPipe');
+          ? expressionName(target) === pipe
+          : isModuleExport(target, scope, '@nestjs/common', pipe);
       });
     }
 
@@ -264,26 +278,61 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
     const TRANSFORM_ONLY_PIPE = /^(Parse\w*Pipe|DefaultValuePipe)$/;
 
     /**
-     * Whether a parameter decorator carries a pipe.
-     *
-     * `@Body()` / `@Body('key')` do not; `@Body(SomePipe)`,
-     * `@Body(new ValidationPipe())` and `@Body('key', SomePipe)` do. The first
-     * argument is a property key only when it is a string literal, so anything
-     * else in that position — and anything at all after it — is a pipe.
-     *
-     * The built-in `Parse*Pipe` family is excluded: it coerces one scalar and
-     * cannot check a DTO's shape, so `@Body(new ParseIntPipe()) dto: CreateDto`
-     * is still unvalidated. Every other pipe is assumed to do its job — NestJS's
-     * own samples pass `@Param('id', UserByIdPipe)`, which resolves the id to an
-     * entity and throws when it cannot.
+     * The pipe NestJS 12 ships to enforce a `schema` option. Nothing else reads
+     * the option: `ValidationPipe` validates a class and ignores it.
      */
-    function hasParameterPipe(decorator: TSESTree.Decorator): boolean {
-      const args = decoratorCall(decorator)?.arguments ?? [];
-      return args.some((arg, index) => {
-        // `'key'` and `` `key` `` are the same property key.
-        if (index === 0 && staticString(arg) !== null) return false;
-        return !TRANSFORM_ONLY_PIPE.test(expressionName(arg));
+    const SCHEMA_PIPE = 'StandardSchemaValidationPipe';
+
+    /**
+     * What a parameter decorator's arguments say: the pipes it carries, and
+     * whether it declares a Standard Schema (NestJS 12).
+     *
+     * `@Body()` / `@Body('key')` carry nothing; `@Body(SomePipe)`,
+     * `@Body(new ValidationPipe())` and `@Body('key', SomePipe)` carry a pipe.
+     * A static string is the property key; every other argument is a pipe, with
+     * one exception: an options object, `{ schema, pipes }`. That object
+     * is not a pipe. Its `pipes` are, and its `schema` is metadata that only
+     * `StandardSchemaValidationPipe` enforces.
+     */
+    function readInputDecorator(decorator: TSESTree.Decorator): {
+      pipes: TSESTree.Node[];
+      hasSchema: boolean;
+    } {
+      const pipes: TSESTree.Node[] = [];
+      let hasSchema = false;
+      decoratorCall(decorator)?.arguments.forEach((arg) => {
+        // `'key'` and `` `key` `` are the same property key — and a string is
+        // never a pipe, wherever it sits.
+        if (staticString(arg) !== null) return;
+        if (arg.type !== AST_NODE_TYPES.ObjectExpression) {
+          pipes.push(arg);
+          return;
+        }
+        const entries = new Map(
+          arg.properties.map((p): [string | null, TSESTree.Node] =>
+            p.type === AST_NODE_TYPES.Property
+              ? [objectKeyName(p), p.value]
+              : [null, p],
+          ),
+        );
+        // An object with a `transform` member is itself a pipe (NestJS reads it
+        // that way too), and a spread or computed key may carry anything —
+        // both get the benefit of the doubt a pipe gets.
+        if (entries.has(null) || entries.has('transform')) {
+          pipes.push(arg);
+          return;
+        }
+        hasSchema ||= entries.has('schema');
+        const listed = entries.get('pipes');
+        if (listed) {
+          pipes.push(
+            ...(listed.type === AST_NODE_TYPES.ArrayExpression
+              ? listed.elements.flatMap((element) => element ?? [])
+              : [listed]),
+          );
+        }
       });
+      return { pipes, hasSchema };
     }
 
     /**
@@ -437,8 +486,13 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
         symbol !== undefined && symbol.flags & tsm.SymbolFlags.Alias
           ? checker.getAliasedSymbol(symbol)
           : symbol;
-      const file = resolved?.declarations?.[0]?.getSourceFile().fileName;
-      return file !== undefined && /[/\\]class-validator[/\\]/.test(file);
+      // `valueDeclaration`: a decorator is called, so what it resolves to is a
+      // value. A name that resolves to nothing has none.
+      const declaration = resolved?.valueDeclaration;
+      return (
+        declaration !== undefined &&
+        /[/\\]class-validator[/\\]/.test(declaration.getSourceFile().fileName)
+      );
     }
 
     return {
@@ -449,14 +503,24 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
 
         // Skip if class or method has ValidationPipe
         if (
-          hasValidationPipe(cls.decorators) ||
-          hasValidationPipe(node.decorators)
+          usesPipe(cls.decorators, 'ValidationPipe') ||
+          usesPipe(node.decorators, 'ValidationPipe')
         )
           return;
+        const routeSchemaPipe =
+          usesPipe(cls.decorators, SCHEMA_PIPE) ||
+          usesPipe(node.decorators, SCHEMA_PIPE);
 
         // TypeScript forbids decorating an overload, so a decorated route
         // handler always has a real body; both value shapes expose `params`.
-        for (const param of node.value.params) {
+        for (const declared of node.value.params) {
+          // `@Body() dto: CreateDto = {}` binds the same input as the parameter
+          // without a default: the decorator sits on the parameter, the name
+          // and the type on its left-hand side.
+          const param =
+            declared.type === AST_NODE_TYPES.AssignmentPattern
+              ? declared.left
+              : declared;
           // `@Body() { email, password }: LoginDto` binds the same DTO as
           // `@Body() dto: LoginDto`; only its label differs.
           if (
@@ -467,7 +531,7 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
           }
 
           const inputDecorator = findDecorator(
-            param.decorators,
+            declared.decorators,
             INPUT_DECORATORS,
           );
           if (!inputDecorator) continue;
@@ -477,9 +541,41 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
           // `@Param('id', UserByIdPipe)` resolves the id to an entity and
           // throws when it cannot — NestJS's own samples spell it that way,
           // and matching the literal name `ValidationPipe` reported every one
-          // of them. Any argument past the property key is a pipe: that is
-          // what the parameter decorator's signature means.
-          if (hasParameterPipe(inputDecorator)) continue;
+          // of them. Two kinds of pipe do not count: the built-in `Parse*Pipe`
+          // family coerces one scalar and cannot check a DTO's shape, and the
+          // schema pipe validates only what a `schema` option tells it to.
+          const { pipes, hasSchema } = readInputDecorator(inputDecorator);
+          const pipeNames = pipes.map(expressionName);
+          if (
+            pipeNames.some(
+              (name) => name !== SCHEMA_PIPE && !TRANSFORM_ONLY_PIPE.test(name),
+            )
+          ) {
+            continue;
+          }
+
+          // NestJS 12: `@Body({ schema })` only attaches the schema. It is
+          // enforced when StandardSchemaValidationPipe runs — on the parameter,
+          // the route, the controller, or globally — and by nothing otherwise.
+          // Checked before the scalar exemption: `@Param('id', { schema }) id:
+          // number` is a constraint someone wrote and nothing applies.
+          if (hasSchema) {
+            if (
+              pipeNames.includes(SCHEMA_PIPE) ||
+              routeSchemaPipe ||
+              (hasGlobalPipe && !requireExplicitPipe)
+            ) {
+              continue;
+            }
+            context.report({
+              node: param,
+              messageId: 'schemaWithoutPipe',
+              data: {
+                param: `@${decoratorName(inputDecorator)}() ${paramLabel(param)}`,
+              },
+            });
+            continue;
+          }
 
           // Scalars are coerced by the framework.
           if (isScalarTyped(param)) continue;

@@ -578,6 +578,16 @@ ruleTester.run(
         code: route(`list(...args: unknown[]) {}`),
         options: NO_SCAN,
       },
+      {
+        name: 'an array-destructured parameter is not a shape this rule reads',
+        code: route(`create(@Body() [first]: Item[]) {}`),
+        options: NO_SCAN,
+      },
+      {
+        name: 'a default-valued scalar parameter is still a scalar',
+        code: route(`list(@Query('page') page: number = 1) {}`),
+        options: NO_SCAN,
+      },
     ]),
     invalid: nest([
       {
@@ -590,6 +600,210 @@ ruleTester.run(
             data: { param: '@Body() { email, … }' },
           },
         ],
+      },
+      {
+        name: 'a nested destructuring is labelled by a placeholder, not by a missing name',
+        code: route(
+          `create(@Body() { email, profile: { name } }: LoginDto) {}`,
+        ),
+        options: NO_SCAN,
+        errors: [
+          {
+            messageId: 'missingValidation',
+            data: { param: '@Body() { email, … }' },
+          },
+        ],
+      },
+      {
+        // @found mutation testing
+        name: 'FN: a default-valued DTO body with no pipe is unvalidated',
+        code: route(`create(@Body() dto: CreateDto = {}) {}`),
+        options: NO_SCAN,
+        errors: [
+          { messageId: 'missingValidation', data: { param: '@Body() dto' } },
+        ],
+      },
+      {
+        // @found mutation testing
+        name: 'FN: a default-valued destructured body with no pipe is unvalidated',
+        code: route(`create(@Body() { email }: LoginDto = {}) {}`),
+        options: NO_SCAN,
+        errors: [
+          {
+            messageId: 'missingValidation',
+            data: { param: '@Body() { email }' },
+          },
+        ],
+      },
+    ]),
+  },
+);
+
+/**
+ * NestJS 12 Standard Schema. `@Body({ schema })` attaches the schema as
+ * metadata and nothing more: `StandardSchemaValidationPipe#transform` is the
+ * only reader (`if (!schema) return value`), and `ValidationPipe` never looks
+ * at it. So the schema is enforced exactly when that pipe runs on the route.
+ */
+ruleTester.run(
+  'no-missing-validation-pipe (NestJS 12 Standard Schema)',
+  noMissingValidationPipe,
+  {
+    valid: nest([
+      {
+        name: 'a schema is enforced by the schema pipe on the controller',
+        code: `
+          @Controller('users')
+          @UsePipes(StandardSchemaValidationPipe)
+          class UsersController {
+            @Post()
+            create(@Body({ schema: createUserSchema }) body: any) {}
+          }
+        `,
+        options: NO_SCAN,
+      },
+      {
+        name: 'a schema is enforced by the schema pipe on the handler',
+        code: route(
+          `@UsePipes(new StandardSchemaValidationPipe()) create(@Body({ schema }) body) {}`,
+        ),
+        options: NO_SCAN,
+      },
+      {
+        name: 'a schema is enforced by the schema pipe listed in the same options',
+        code: route(
+          `create(@Body({ schema, pipes: [StandardSchemaValidationPipe] }) body) {}`,
+        ),
+        options: NO_SCAN,
+      },
+      {
+        name: 'a schema is enforced by the schema pipe passed after the options',
+        code: route(
+          `find(@Param('id', { schema }, new StandardSchemaValidationPipe()) id: number) {}`,
+        ),
+        options: NO_SCAN,
+      },
+      {
+        name: 'a schema is taken as enforced when a global pipe is registered',
+        code: route(`create(@Body({ schema }) body: any) {}`),
+        options: [{ assumeGlobalPipes: true }],
+      },
+      {
+        name: 'a pipe listed in the options object is a parameter pipe',
+        code: route(
+          `create(@Body({ pipes: [UserByIdPipe] }) dto: CreateDto) {}`,
+        ),
+        options: NO_SCAN,
+      },
+      {
+        name: 'a pipe listed after a hole in the options list still counts',
+        code: route(
+          `create(@Body({ pipes: [, UserByIdPipe] }) dto: CreateDto) {}`,
+        ),
+        options: NO_SCAN,
+      },
+      {
+        name: 'a pipes list held in a variable gets the benefit of the doubt',
+        code: route(`create(@Body({ pipes: bodyPipes }) dto: CreateDto) {}`),
+        options: NO_SCAN,
+      },
+      {
+        name: 'an object with a transform member is itself a pipe',
+        code: route(
+          `create(@Body({ transform: (value) => parse(value) }) dto: CreateDto) {}`,
+        ),
+        options: NO_SCAN,
+      },
+      {
+        name: 'an options object built from a spread may carry a pipe',
+        code: route(`create(@Body({ ...bodyOptions }) dto: CreateDto) {}`),
+        options: NO_SCAN,
+      },
+      {
+        name: 'an options object with a computed key may carry a pipe',
+        code: route(`create(@Body({ [key]: value }) dto: CreateDto) {}`),
+        options: NO_SCAN,
+      },
+    ]),
+    invalid: nest([
+      {
+        // @found NestJS 12 release notes, verified in standard-schema-validation.pipe.ts
+        name: 'FN: a schema with no pipe to enforce it validates nothing',
+        code: route(
+          `create(@Body({ schema: createUserSchema }) body: CreateUserDto) {}`,
+        ),
+        options: NO_SCAN,
+        errors: [
+          { messageId: 'schemaWithoutPipe', data: { param: '@Body() body' } },
+        ],
+      },
+      {
+        // @found NestJS 12 release notes, verified in standard-schema-validation.pipe.ts
+        name: 'FN: a schema on a scalar parameter is still a constraint nothing applies',
+        code: route(
+          `find(@Param('id', { schema: z.coerce.number().int() }) id: number) {}`,
+        ),
+        options: NO_SCAN,
+        errors: [
+          { messageId: 'schemaWithoutPipe', data: { param: '@Param() id' } },
+        ],
+      },
+      {
+        name: 'a Parse*Pipe beside the schema does not enforce the schema',
+        code: route(
+          `find(@Param('id', { schema, pipes: [ParseIntPipe] }) id: number) {}`,
+        ),
+        options: NO_SCAN,
+        errors: [{ messageId: 'schemaWithoutPipe' }],
+      },
+      {
+        name: 'requireExplicitPipe does not accept a global pipe for a schema either',
+        code: route(`create(@Body({ schema }) body: any) {}`),
+        options: [{ assumeGlobalPipes: true, requireExplicitPipe: true }],
+        errors: [{ messageId: 'schemaWithoutPipe' }],
+      },
+      {
+        name: 'the schema pipe with no schema to read validates nothing',
+        code: route(
+          `create(@Body(new StandardSchemaValidationPipe()) dto: CreateDto) {}`,
+        ),
+        options: NO_SCAN,
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      {
+        name: 'the schema pipe on the route validates only parameters that declare a schema',
+        code: route(
+          `@UsePipes(StandardSchemaValidationPipe) create(@Body() dto: CreateDto) {}`,
+        ),
+        options: NO_SCAN,
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      {
+        // @found NestJS 12 release notes, verified in parameter-decorator-options.util.ts
+        name: 'FN: an options object with no pipe in it is not a pipe',
+        code: route(`create(@Body({ pipes: [] }) dto: CreateDto) {}`),
+        options: NO_SCAN,
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      {
+        name: 'a pipes list holding only a hole lists no pipe',
+        code: route(`create(@Body({ pipes: [,] }) dto: CreateDto) {}`),
+        options: NO_SCAN,
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      {
+        name: 'a string key named like an option is a key, and the options follow it',
+        code: route(`find(@Query('schema', { schema }) filter: Filter) {}`),
+        options: NO_SCAN,
+        errors: [{ messageId: 'schemaWithoutPipe' }],
+      },
+      {
+        name: 'a string-literal schema key is the same option',
+        code: route(
+          `create(@Body({ 'schema': createUserSchema }) body: any) {}`,
+        ),
+        options: NO_SCAN,
+        errors: [{ messageId: 'schemaWithoutPipe' }],
       },
     ]),
   },

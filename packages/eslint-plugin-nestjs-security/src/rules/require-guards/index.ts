@@ -470,8 +470,9 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
      */
     function pathSegments(decorator: TSESTree.Decorator): string[] {
       const call = decoratorCall(decorator);
-      if (!call) return [];
       const out: string[] = [];
+      // A bare `@Controller` reference declares no path.
+      if (!call) return out;
       const push = (node: TSESTree.Node): void => {
         const path = staticString(node);
         if (path !== null)
