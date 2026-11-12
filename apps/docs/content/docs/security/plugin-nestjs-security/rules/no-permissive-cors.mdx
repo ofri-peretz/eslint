@@ -74,7 +74,9 @@ statically decidable is left alone:
   something interpolated, array, regex, or callback (`` `*` `` with nothing
   interpolated is the string `'*'` and is reported)
 - an options object imported from another module — `enableCors(corsOptions)`
-  only reports when `corsOptions` is declared in the same file
+  only reports when `corsOptions` is declared in the same file. Within the file
+  the binding is followed through `const` aliases (`const opts = base`) and
+  type-only syntax (`opts as CorsOptions`, `satisfies`, `!`)
 - an options object with a spread (`{ ...base }`) and no visible `origin`, since
   the spread may supply it
 - a variable that is **reassigned** after its declaration. The value at the call

@@ -100,6 +100,18 @@ describe('decoratorName / expressionName', () => {
     ]);
   });
 
+  it('resolves a template key with nothing interpolated', () => {
+    const dec = classDecorators('@UseGuards(guards[`Admin`]) class C {}')[0];
+    expect(decoratorCall(dec)?.arguments.map(expressionName)).toEqual([
+      'Admin',
+    ]);
+  });
+
+  it('returns empty string for a numeric computed key', () => {
+    const dec = classDecorators('@UseGuards(guards[0]) class C {}')[0];
+    expect(decoratorCall(dec)?.arguments.map(expressionName)).toEqual(['']);
+  });
+
   it('returns empty string for a genuinely dynamic computed key', () => {
     const dec = classDecorators('@UseGuards(guards[key]) class C {}')[0];
     expect(decoratorCall(dec)?.arguments.map(expressionName)).toEqual(['']);
@@ -178,6 +190,11 @@ describe('hasDecoratorMatching', () => {
       true,
     );
     expect(hasDecoratorMatching(decs, (n) => n === 'IsString')).toBe(false);
+  });
+
+  it('matches when any one of several decorators satisfies the predicate', () => {
+    const decs = classDecorators('@ApiTags("x") @Controller() class C {}');
+    expect(hasDecoratorMatching(decs, (n) => n === 'Controller')).toBe(true);
   });
 
   it('treats missing decorators as no match', () => {

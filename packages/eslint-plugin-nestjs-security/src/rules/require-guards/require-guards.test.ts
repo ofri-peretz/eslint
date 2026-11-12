@@ -1051,6 +1051,12 @@ ruleTester.run('require-guards (mutation audit)', requireGuards, {
       code: ctl(`@Post('hook') receive(@Headers('x-api-key') key: string) {}`),
     },
     {
+      name: 'a credential header read through a pipe is still a credential header',
+      code: ctl(
+        `@Post('hook') receive(@Headers('x-api-key', TrimPipe) key: string) {}`,
+      ),
+    },
+    {
       name: 'a config read with a default value is still a secret source',
       code: ctl(`
         @Post('hook') receive(@Query('token') token: string) {
@@ -1085,6 +1091,18 @@ ruleTester.run('require-guards (mutation audit)', requireGuards, {
     },
   ]),
   invalid: nest([
+    {
+      name: 'the whole header bag is not a credential header',
+      code: ctl(
+        `@Post('hook') receive(@Headers() headers: Record<string, string>) {}`,
+      ),
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    {
+      name: 'a bare @Controller reference declares no path, and its routes are still checked',
+      code: ctl(`@Get('invoices') list() {}`, `@Controller`),
+      errors: [{ messageId: 'missingGuards' }],
+    },
     {
       name: 'a POST probe-named handler is a write, never a probe',
       code: ctl(`@Post('state') getStatus() {}`),

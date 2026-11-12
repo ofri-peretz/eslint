@@ -14,11 +14,11 @@ cases:
 > candidate rules, each checked against the v12.4.1 source and 79 NestJS
 > repositories before any was written.
 
-**Status:** shipped · **Opened:** 2026-11-12 · **Owner:** @ofri-peretz
+**Status:** review · **Opened:** 2026-11-12 · **Owner:** @ofri-peretz
 
 ---
 
-## What
+## What is wanted
 
 Two defences this plugin took on trust are read from the code that enforces them.
 
@@ -28,7 +28,7 @@ Two defences this plugin took on trust are read from the code that enforces them
 - `require-throttler` stays quiet for a project only when a `ThrottlerGuard`, or
   a class extending it, is bound app-wide. Importing `ThrottlerModule` is not that.
 
-## Why
+## Why now
 
 Measured on 79 repositories (`tmp/nest-corpus*`), linting `origin/main` against
 this branch:
@@ -60,7 +60,7 @@ defaults for field-name limits only.
   received the file.
 - No existing rule's mutation score is re-banked.
 
-## Done when
+## Success criteria
 
 - `require-upload-size-limit` ships with tests at 100% coverage, a Quint model
   (`npm run fidelity -- nestjs-security/require_upload_size_limit`), a 100%

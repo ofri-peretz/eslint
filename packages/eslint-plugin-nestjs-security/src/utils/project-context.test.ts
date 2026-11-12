@@ -15,10 +15,11 @@
  *    `app.useGlobalPipes(...)` in `main.ts`.
  */
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -32,6 +33,13 @@ import {
   isThrottlerGuard,
   scanProject,
 } from './project-context';
+
+// A pass-through spy: the real walk still runs, but a test can ask whether
+// one happened at all.
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>();
+  return { ...actual, readdirSync: vi.fn(actual.readdirSync) };
+});
 
 const roots: string[] = [];
 
@@ -106,7 +114,48 @@ describe('scanProject — global provider registration', () => {
         export class AppModule {}
       `,
     });
-    expect(scanProject(root).hasGlobalAuthGuard).toBe(true);
+    const context = scanProject(root);
+    expect(context.hasGlobalAuthGuard).toBe(true);
+    expect(context.hasGlobalThrottler).toBe(false);
+  });
+
+  it('a ThrottlerGuard APP_GUARD alone marks the project rate limited', () => {
+    // No ThrottlerModule in this file: the guard registration is the evidence.
+    const root = makeProject({
+      'src/security.module.ts': `
+        @Module({ providers: [{ provide: APP_GUARD, useClass: ThrottlerBehindProxyGuard }] })
+        export class SecurityModule {}
+      `,
+    });
+    const context = scanProject(root);
+    expect(context.hasGlobalThrottler).toBe(true);
+    expect(context.hasGlobalAuthGuard).toBe(false);
+  });
+
+  it('an APP_INTERCEPTOR or APP_FILTER is not a pipe', () => {
+    const root = makeProject({
+      'src/app.module.ts': `
+        @Module({ providers: [
+          { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
+          { provide: APP_FILTER, useClass: AllExceptionsFilter },
+        ] })
+        export class AppModule {}
+      `,
+    });
+    const context = scanProject(root);
+    expect(context.hasGlobalValidationPipe).toBe(false);
+    expect(context.hasGlobalAuthGuard).toBe(false);
+    expect(context.hasGlobalThrottler).toBe(false);
+  });
+
+  it('an APP_PIPE token alone registers a global pipe', () => {
+    const root = makeProject({
+      'src/app.module.ts': `
+        @Module({ providers: [{ provide: APP_PIPE, useClass: ValidationPipe }] })
+        export class AppModule {}
+      `,
+    });
+    expect(scanProject(root).hasGlobalValidationPipe).toBe(true);
   });
 
   it('assumes a factory-provided APP_GUARD authenticates', () => {
@@ -153,6 +202,27 @@ describe('scanProject — global provider registration', () => {
         @Module({ imports: [ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }])] })
         export class ThrottlingModule {}
       `,
+    });
+    expect(scanProject(root).hasGlobalThrottler).toBe(false);
+  });
+
+  it.each([
+    ['no arguments', 'ThrottlerModule.forRoot()'],
+    ['an empty throttler list', 'ThrottlerModule.forRoot([])'],
+    ['an empty list, spaced out', 'ThrottlerModule . forRoot ( [ ] )'],
+    [
+      'a spaced-out call',
+      'ThrottlerModule . forRoot ( [ { ttl: 60000, limit: 10 } ] )',
+    ],
+    [
+      'an options object',
+      'ThrottlerModule.forRoot({ throttlers: [{ ttl: 1, limit: 1 }] })',
+    ],
+    ['a list held in a variable', 'ThrottlerModule.forRoot(throttlers)'],
+  ])('a ThrottlerModule given %s binds nothing', (_label, call) => {
+    // However it is configured, the module throttles no route by itself.
+    const root = makeProject({
+      'src/app.module.ts': `@Module({ imports: [${call}] }) export class AppModule {}`,
     });
     expect(scanProject(root).hasGlobalThrottler).toBe(false);
   });
@@ -268,7 +338,18 @@ describe('getProjectContext', () => {
     const context = getProjectContext({ filename: 'file.ts', cwd: '/' });
     expect(context.root).toBe('/');
     expect(context.hasGlobalAuthGuard).toBe(false);
+    expect(context.hasGlobalValidationPipe).toBe(false);
+    expect(context.hasGlobalThrottler).toBe(false);
+    // A synthetic filename is not evidence that a project lacks auth.
+    expect(context.hasAuthMechanism).toBe(true);
     expect(context.globalProviders.size).toBe(0);
+    expect(context.authMiddlewareTargets.size).toBe(0);
+  });
+
+  it('answers for a filesystem root without reading a single directory', () => {
+    vi.mocked(readdirSync).mockClear();
+    getProjectContext({ filename: 'file.ts', cwd: '/' });
+    expect(readdirSync).not.toHaveBeenCalled();
   });
 });
 
@@ -743,5 +824,78 @@ describe('scanProject — an upload limit set in MulterModule', () => {
 
   it('survives a registration the file never closes', () => {
     expect(scan('MulterModule.register({ dest: "x"')).toBe(false);
+  });
+});
+
+describe('scanProject — where a forRoutes argument list starts and ends', () => {
+  const targetsOf = (source: string): string[] =>
+    [
+      ...scanProject(makeProject({ 'src/app.module.ts': source }))
+        .authMiddlewareTargets,
+    ].sort();
+
+  it('reads only the argument list, not the strings around it', () => {
+    expect(
+      targetsOf(
+        `import x from 'dogs'; consumer.apply(AuthMiddleware).forRoutes('cats'); other('birds', BirdsController);`,
+      ),
+    ).toEqual(['cats']);
+  });
+
+  it('an apply() that ends the file takes no routes from an earlier call', () => {
+    expect(targetsOf(`x('cats'); consumer.apply(AuthMiddleware);`)).toEqual([]);
+  });
+
+  it('a forRoutes with no call after it takes no routes from earlier text', () => {
+    expect(
+      targetsOf(`'cats') consumer.apply(AuthMiddleware).forRoutes`),
+    ).toEqual([]);
+  });
+
+  it('follows the chain through an exclude() between apply and forRoutes', () => {
+    expect(
+      targetsOf(
+        `consumer.apply(AuthMiddleware).exclude('health').forRoutes('cats');`,
+      ),
+    ).toEqual(['cats']);
+  });
+
+  it("takes the nearest forRoutes, not a later statement's", () => {
+    expect(
+      targetsOf(
+        `c.apply(AuthMiddleware).forRoutes('cats'); c.apply(Log).forRoutes('dogs');`,
+      ),
+    ).toEqual(['cats']);
+  });
+
+  it('accepts whitespace between forRoutes and its parenthesis', () => {
+    expect(
+      targetsOf(`consumer.apply(AuthMiddleware).forRoutes ('cats');`),
+    ).toEqual(['cats']);
+  });
+
+  it('accepts exactly 40 characters between apply and forRoutes, not 41', () => {
+    const chained = (gap: number): string =>
+      `consumer.apply(AuthMiddleware)${' '.repeat(gap)}.forRoutes('cats');`;
+    expect(targetsOf(chained(40))).toEqual(['cats']);
+    expect(targetsOf(chained(41))).toEqual([]);
+  });
+
+  it('ignores middleware whose name says nothing about authentication', () => {
+    expect(
+      targetsOf(`consumer.apply(RequestIdMiddleware).forRoutes('cats');`),
+    ).toEqual([]);
+  });
+
+  it('skips the empty segment a leading slash produces', () => {
+    expect(
+      targetsOf(`consumer.apply(AuthMiddleware).forRoutes('/cats/:id');`),
+    ).toEqual(['cats']);
+  });
+
+  it('takes nothing from a path that is only a slash', () => {
+    expect(targetsOf(`consumer.apply(AuthMiddleware).forRoutes('/');`)).toEqual(
+      [],
+    );
   });
 });

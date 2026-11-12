@@ -159,6 +159,12 @@ const AUTH_IN_MODULE =
  * class reference, so the arguments are a plain identifier list.
  */
 const APPLY_RE = /\.\s*apply\s*\(([^)]*)\)/g;
+/**
+ * The `.forRoutes(` chained to an `.apply(...)`, matched from the end of that
+ * apply (sticky). Only the chained call counts: more than 40 characters in
+ * between means we ran past this `.apply()` into an unrelated statement.
+ */
+const CHAINED_FOR_ROUTES_RE = /[\s\S]{0,40}?\.forRoutes[^(]*\(/y;
 /** Middleware whose job is authentication. */
 const AUTH_MIDDLEWARE = /(?:^|[a-z])(?:Auth|Jwt|Session|Passport|Token)/;
 /** …but these carry an auth-ish word without authenticating anything. */
@@ -224,16 +230,6 @@ function collectConfigFiles(root: string, limits: ScanLimits): string[] {
 }
 
 /** Fold one file's source into the accumulating project context. */
-/**
- * `whitelist: true` reachable from a file that registers a global pipe.
- *
- * Checked inline first, then in that file's own relative imports — one hop, no
- * recursion. The common real shape is a `ValidationPipeOptions` const in its own
- * module (`new ValidationPipe(validationOptions)`), which an inline-only check
- * misses. Scoping to the registering file's imports keeps a sibling app in a
- * monorepo from silencing this one.
- */
-
 function analyzeSource(
   source: string,
   file: string,
@@ -242,7 +238,6 @@ function analyzeSource(
 ): void {
   PROVIDE_RE.lastIndex = 0;
   let match: RegExpExecArray | null;
-  let registersPipeViaToken = false;
   while ((match = PROVIDE_RE.exec(source)) !== null) {
     const [, token, tail] = match;
     into.globalProviders.add(token);
@@ -262,18 +257,10 @@ function analyzeSource(
       else if (token === 'APP_GUARD') into.hasGlobalAuthGuard = true;
     } else if (token === 'APP_PIPE') {
       into.hasGlobalValidationPipe = true;
-      registersPipeViaToken = true;
     }
   }
 
-  const fileRegistersPipe =
-    USE_GLOBAL_PIPES_RE.test(source) || registersPipeViaToken;
-  if (fileRegistersPipe) into.hasGlobalValidationPipe = true;
-  // `whitelist: true` must appear in the SAME file that registers the pipe.
-  // Testing the accumulated `hasGlobalValidationPipe` instead was a real bug: in
-  // a monorepo, one app's whitelisting pipe silenced every other app's DTO
-  // findings, because the flag carries across files. Measured on a 5-app corpus
-  // where only one app whitelists — it zeroed all four others.
+  if (USE_GLOBAL_PIPES_RE.test(source)) into.hasGlobalValidationPipe = true;
   if (USE_GLOBAL_GUARDS_RE.test(source)) into.hasGlobalAuthGuard = true;
   if (registersUploadLimit(source)) into.hasModuleUploadLimit = true;
 
@@ -388,27 +375,19 @@ export function isThrottlerGuard(
  * Scanned with a paren counter rather than a regex: `forRoutes` takes object
  * literals (`{path: 'articles/:slug', method: RequestMethod.PUT}`) whose nesting
  * a regex cannot follow, and stopping at the first `)` would truncate the list
- * after its first entry.
+ * after its first entry. Empty when no `.forRoutes(...)` is chained: an empty
+ * list names no route, which is all the caller needs to know.
  */
-function forRoutesArguments(source: string, from: number): string | null {
-  const call = source.indexOf('.forRoutes', from);
-  if (call === -1) return null;
-  // Only the chained call counts. Anything longer means we ran past this
-  // `.apply()` into an unrelated statement.
-  if (!/^[\s\S]{0,40}$/.test(source.slice(from, call))) return null;
-
-  const open = source.indexOf('(', call);
-  if (open === -1) return null;
-  let depth = 0;
-  for (let i = open; i < source.length; i++) {
-    const char = source[i];
+function forRoutesArguments(source: string, from: number): string {
+  CHAINED_FOR_ROUTES_RE.lastIndex = from;
+  if (!CHAINED_FOR_ROUTES_RE.test(source)) return '';
+  const rest = source.slice(CHAINED_FOR_ROUTES_RE.lastIndex);
+  let depth = 1;
+  for (const [i, char] of rest.split('').entries()) {
     if (char === '(') depth++;
-    else if (char === ')') {
-      depth--;
-      if (depth === 0) return source.slice(open + 1, i);
-    }
+    else if (char === ')' && --depth === 0) return rest.slice(0, i);
   }
-  return null;
+  return '';
 }
 
 /**
@@ -430,7 +409,6 @@ function collectAuthMiddlewareTargets(source: string, into: Set<string>): void {
     if (NOT_AUTH_MIDDLEWARE.test(middleware)) continue;
 
     const args = forRoutesArguments(source, APPLY_RE.lastIndex);
-    if (args === null) continue;
 
     ROUTE_PATH_RE.lastIndex = 0;
     let path: RegExpExecArray | null;
@@ -489,10 +467,8 @@ export function scanProject(
   };
 
   for (const file of collectConfigFiles(root, limits)) {
-    const source = readFileSync(file);
-    if (source !== null) {
-      analyzeSource(source, file, root, accumulator);
-    }
+    // An unreadable file reads as empty: nothing to learn from it.
+    analyzeSource(readFileSync(file) ?? '', file, root, accumulator);
   }
 
   const { sawAuthInModule, ...context } = accumulator;
