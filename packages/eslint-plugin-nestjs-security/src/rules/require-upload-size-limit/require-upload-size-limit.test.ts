@@ -34,6 +34,10 @@ const error = (name: string) => ({
   messageId: 'missingFileSizeLimit' as const,
   data: { name },
 });
+const unlimited = (name: string) => ({
+  messageId: 'unlimitedFileSize' as const,
+  data: { name },
+});
 
 const ruleTester = new RuleTester({
   languageOptions: { ecmaVersion: 2022, sourceType: 'module' },
@@ -183,12 +187,74 @@ class C { @UseInterceptors(FileInterceptor('file')) upload() {} }`,
 FileInterceptor('file');`,
     },
     {
+      name: 'a fileSize this file cannot evaluate is taken as a limit',
+      code: route(
+        "FileInterceptor('file', { limits: { fileSize: Number(process.env.MAX_UPLOAD) } })",
+      ),
+    },
+    {
+      name: 'a name that is not Infinity, undefined or null is a value',
+      code: route(
+        "FileInterceptor('file', { limits: { fileSize: MAX } })",
+        'const MAX = 1e6;',
+      ),
+    },
+    {
+      name: 'a string is not the null literal',
+      code: route("FileInterceptor('file', { limits: { fileSize: 'null' } })"),
+    },
+    {
       name: 'a test file is exempt by default',
       code: route("FileInterceptor('file')"),
       filename: 'upload.controller.spec.ts',
     },
   ],
   invalid: [
+    // NestJS 12.5.0 / 11.2.10 `mergeMulterOptions`: a route option or limit
+    // that is `undefined` or `null` is left out of the merge, and `Infinity`
+    // is how a route lifts a limit.
+    {
+      name: 'fileSize: Infinity lifts the limit',
+      code: route(
+        "FileInterceptor('file', { limits: { fileSize: Infinity } })",
+      ),
+      errors: [unlimited('FileInterceptor')],
+    },
+    {
+      name: 'fileSize: Infinity through a const of this file, under a cast',
+      code: route(
+        "FilesInterceptor('files', 10, { limits })",
+        'const limits = { fileSize: Infinity as number };',
+      ),
+      errors: [unlimited('FilesInterceptor')],
+    },
+    {
+      name: 'fileSize: undefined sets nothing',
+      code: route(
+        "FileInterceptor('file', { limits: { fileSize: undefined } })",
+      ),
+      errors: [error('FileInterceptor')],
+    },
+    {
+      name: 'fileSize: null sets nothing',
+      code: route("FileInterceptor('file', { limits: { fileSize: null } })"),
+      errors: [error('FileInterceptor')],
+    },
+    {
+      name: 'limits: undefined sets nothing',
+      code: route("FileInterceptor('file', { limits: undefined })"),
+      errors: [error('FileInterceptor')],
+    },
+    {
+      name: 'limits: null sets nothing',
+      code: route("FileInterceptor('file', { limits: null })"),
+      errors: [error('FileInterceptor')],
+    },
+    {
+      name: 'undefined in place of the options sets nothing',
+      code: route("FileInterceptor('file', undefined)"),
+      errors: [error('FileInterceptor')],
+    },
     {
       name: 'no options at all',
       code: route("FileInterceptor('file')"),
@@ -316,5 +382,23 @@ describe('require-upload-size-limit — a limit set in MulterModule.register()',
     expect(count(route("FileInterceptor('file')"))).toBe(1);
     project.hasModuleUploadLimit = true;
     expect(count(route("FileInterceptor('file')"))).toBe(0);
+  });
+
+  it('covers a route that leaves its own fileSize undefined', () => {
+    const code = route(
+      "FileInterceptor('file', { limits: { fileSize: undefined } })",
+    );
+    expect(count(code)).toBe(1);
+    project.hasModuleUploadLimit = true;
+    expect(count(code)).toBe(0);
+  });
+
+  it('does not cover a route that lifts the limit with Infinity', () => {
+    project.hasModuleUploadLimit = true;
+    expect(
+      count(
+        route("FileInterceptor('file', { limits: { fileSize: Infinity } })"),
+      ),
+    ).toBe(1);
   });
 });
