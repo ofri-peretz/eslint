@@ -241,6 +241,23 @@ FileInterceptor('file');`,
       errors: [error('FileInterceptor')],
     },
     {
+      name: 'fileSize: undefined under a cast sets nothing',
+      code: route(
+        "FileInterceptor('file', { limits: { fileSize: undefined as number | undefined } })",
+      ),
+      errors: [error('FileInterceptor')],
+    },
+    {
+      name: 'limits: null under a cast sets nothing',
+      code: route("FileInterceptor('file', { limits: null as never })"),
+      errors: [error('FileInterceptor')],
+    },
+    {
+      name: 'undefined under a cast in place of the options sets nothing',
+      code: route("FileInterceptor('file', undefined as never)"),
+      errors: [error('FileInterceptor')],
+    },
+    {
       name: 'limits: undefined sets nothing',
       code: route("FileInterceptor('file', { limits: undefined })"),
       errors: [error('FileInterceptor')],

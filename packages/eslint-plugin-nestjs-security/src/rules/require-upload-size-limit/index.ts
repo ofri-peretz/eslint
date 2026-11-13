@@ -103,6 +103,7 @@ function unwrap(node: TSESTree.Node): TSESTree.Node {
 
 /** `undefined` or `null`: what `mergeMulterOptions` leaves out of the merge. */
 function isNil(node: TSESTree.Node): boolean {
+  node = unwrap(node);
   return (
     (node.type === AST_NODE_TYPES.Identifier && node.name === 'undefined') ||
     (node.type === AST_NODE_TYPES.Literal && node.raw === 'null')

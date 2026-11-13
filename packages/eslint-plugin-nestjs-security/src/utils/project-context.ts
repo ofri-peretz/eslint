@@ -290,7 +290,7 @@ function registersUploadLimit(source: string): boolean {
     // The key — bare, shorthand or quoted — not the word:
     // `destination: './fileSize'` sets no limit.
     if (
-      /\bfileSize(?:\s*[,}]|['"]?\s*:(?!\s*(?:Infinity|undefined|null)\b))/.test(
+      /\bfileSize(?:\s*[,}]|['"]?\s*:(?![\s(]*(?:Infinity|undefined|null)\b))/.test(
         args,
       )
     )

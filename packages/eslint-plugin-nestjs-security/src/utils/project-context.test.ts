@@ -858,12 +858,21 @@ describe('scanProject — an upload limit set in MulterModule', () => {
   it('does not take Infinity, undefined or null for a limit', () => {
     // NestJS 12.5.0 `mergeMulterOptions`: nil is left out, Infinity lifts.
     for (const value of ['Infinity', 'undefined', 'null'])
-      for (const key of ['fileSize: ', 'fileSize:', "'fileSize' : "])
+      for (const key of [
+        'fileSize: ',
+        'fileSize:',
+        "'fileSize' : ",
+        'fileSize: (',
+        'fileSize:( (',
+      ])
         expect(
           scan(`MulterModule.register({ limits: { ${key}${value} } })`),
         ).toBe(false);
     expect(
       scan('MulterModule.register({ limits: { fileSize: InfinityIsh } })'),
+    ).toBe(true);
+    expect(
+      scan('MulterModule.register({ limits: { fileSize: -Infinity } })'),
     ).toBe(true);
     expect(
       scan('MulterModule.register({ limits: { fileSize: nullable } })'),
