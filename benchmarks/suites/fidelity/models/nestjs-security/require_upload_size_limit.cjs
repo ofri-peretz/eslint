@@ -24,6 +24,10 @@ const OPTIONS = {
   ConstNoLimit: 'options',
   Imported: 'options',
   Spread: "{ ...base, dest: './uploads' }",
+  InfiniteFileSize: '{ limits: { fileSize: Infinity } }',
+  NilFileSize: '{ limits: { fileSize: undefined } }',
+  NilLimits: '{ limits: null }',
+  NilOptions: 'undefined',
 };
 const PRELUDE = {
   ConstFileSize: 'const options = { limits: { fileSize: 1e6 } };',
@@ -34,10 +38,10 @@ const PRELUDE = {
 
 const base = {
   rule: 'require-upload-size-limit',
-  // 5 interceptors x 8 options, of which 2 are crossed with
-  // 5 spellings x 3 projects x 2 validator
-  domain: 5 * 8 - 2 + 2 * 5 * 3 * 2,
-  traces: 4000,
+  // 5 interceptors x 12 options, of which 4 are crossed with
+  // 5 spellings x 4 projects x 2 validator
+  domain: 5 * 12 - 4 + 4 * 5 * 4 * 2,
+  traces: 12000,
   key: (s) =>
     ['interceptor', 'opts', 'spelling', 'project', 'validator']
       .map((k) => `${k}=${tag(s[k])}`)
@@ -48,6 +52,8 @@ const base = {
       NoModule: null,
       ModuleNoLimit: 'MulterModule.register({ storage: diskStorage({}) })',
       ModuleLimit: 'MulterModule.register({ limits: { fileSize: 1e6 } })',
+      ModuleInfinite:
+        'MulterModule.register({ limits: { fileSize: Infinity } })',
     }[tag(s.project)];
     return {
       'package.json': '{ "name": "app" }\n',

@@ -16,10 +16,20 @@
  * ```
  *
  * multer only checks a limit that is present in `limits`; `fileSize` defaults
- * to `Infinity`. NestJS adds defaults for two field-NAME limits
- * (`applyDefaultLimits` in `platform-express/multer/multer.utils.ts`, v12.4.1)
- * and nothing for the size of a file, so the route above buffers whatever the
- * client sends — into memory with the default storage.
+ * to `Infinity`. NestJS adds defaults for the field-NAME limits and the number
+ * of parts (`applyDefaultLimits` in
+ * `platform-express/multer/multer/multer.utils.ts`, v12.5.0) and nothing for the
+ * size of a file, so the route above buffers whatever the client sends — into
+ * memory with the default storage.
+ *
+ * ## `Infinity`, `undefined` and `null`
+ *
+ * `mergeMulterOptions` (same file, v12.5.0 and v11.2.10) leaves a route option
+ * or limit that is `undefined` or `null` out of the merge, so it sets nothing
+ * and the module's value, if there is one, stays. `Infinity` is how a route
+ * lifts a limit, the module's included — reported on its own, whatever the
+ * module sets. (Before those versions `undefined` lifted the module's limit
+ * too; the rule reads the current behaviour.)
  *
  * Measured over 79 NestJS repositories: 77 interceptor calls in 21 of them, and
  * 34 of the 49 files that call one name no size limit anywhere in the file.
@@ -54,7 +64,10 @@ import {
 import { objectProperties } from '../../utils/nest-ast';
 import { getProjectContext } from '../../utils/project-context';
 
-type MessageIds = 'missingFileSizeLimit';
+type MessageIds = 'missingFileSizeLimit' | 'unlimitedFileSize';
+
+/** What the options say about `limits.fileSize`; `unknown` when this file does not hold the answer. */
+type FileSize = 'set' | 'unset' | 'infinite' | 'unknown';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -88,6 +101,15 @@ function unwrap(node: TSESTree.Node): TSESTree.Node {
   return node;
 }
 
+/** `undefined` or `null`: what `mergeMulterOptions` leaves out of the merge. */
+function isNil(node: TSESTree.Node): boolean {
+  node = unwrap(node);
+  return (
+    (node.type === AST_NODE_TYPES.Identifier && node.name === 'undefined') ||
+    (node.type === AST_NODE_TYPES.Literal && node.raw === 'null')
+  );
+}
+
 export const requireUploadSizeLimit = createRule<RuleOptions, MessageIds>({
   name: 'require-upload-size-limit',
   meta: {
@@ -111,6 +133,19 @@ export const requireUploadSizeLimit = createRule<RuleOptions, MessageIds>({
         severity: 'MEDIUM',
         compliance: ['SOC2'],
         fix: "Pass the limit to the interceptor: FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }), or set limits.fileSize in MulterModule.register()",
+        documentationLink: 'https://github.com/expressjs/multer#limits',
+      }),
+      unlimitedFileSize: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Upload Size Limit Lifted',
+        cwe: 'CWE-770',
+        owasp: 'A04:2021',
+        cvss: 6.5,
+        description:
+          "{{name}} sets limits.fileSize to Infinity, which lifts the limit — a route's own value replaces one set in MulterModule.register() — so the route stores however many bytes the client sends",
+        severity: 'MEDIUM',
+        compliance: ['SOC2'],
+        fix: 'Replace Infinity with the largest size this route should accept, in bytes: limits: { fileSize: 50 * 1024 * 1024 }',
         documentationLink: 'https://github.com/expressjs/multer#limits',
       }),
     },
@@ -144,20 +179,24 @@ export const requireUploadSizeLimit = createRule<RuleOptions, MessageIds>({
       return node.type === AST_NODE_TYPES.ObjectExpression ? node : null;
     }
 
-    /**
-     * Whether multer options set `limits.fileSize`: true, false, or null when
-     * this file does not hold the answer.
-     */
-    function setsFileSize(options: TSESTree.Node | undefined): boolean | null {
-      if (!options) return false;
+    /** What multer options say about `limits.fileSize`. */
+    function fileSize(options: TSESTree.Node | undefined): FileSize {
+      if (!options || isNil(options)) return 'unset';
       const literal = objectLiteral(options);
       const props = literal && objectProperties(literal);
-      if (!props) return null;
+      if (!props) return 'unknown';
       const limits = props.get('limits');
-      if (!limits) return false;
+      if (!limits || isNil(limits)) return 'unset';
       const limitsLiteral = objectLiteral(limits);
       const limitProps = limitsLiteral && objectProperties(limitsLiteral);
-      return limitProps ? limitProps.has('fileSize') : null;
+      if (!limitProps) return 'unknown';
+      const size = limitProps.get('fileSize');
+      if (!size || isNil(size)) return 'unset';
+      const value = unwrap(size);
+      return value.type === AST_NODE_TYPES.Identifier &&
+        value.name === 'Infinity'
+        ? 'infinite'
+        : 'set';
     }
 
     /** The platform-express interceptor a callee names, or undefined. */
@@ -224,15 +263,16 @@ export const requireUploadSizeLimit = createRule<RuleOptions, MessageIds>({
         const name = interceptorName(node.callee);
         const index = name === undefined ? undefined : OPTIONS_INDEX.get(name);
         if (index === undefined) return;
-        if (setsFileSize(node.arguments[index]) !== false) return;
+        const size = fileSize(node.arguments[index]);
+        const data = { name: name as string };
+        // The route's Infinity replaces whatever the module set.
+        if (size === 'infinite')
+          return context.report({ node, messageId: 'unlimitedFileSize', data });
+        if (size !== 'unset') return;
         // Last, because it reads the project: a module that sets the limit
         // covers the interceptors of its controllers.
         if (getProjectContext(context).hasModuleUploadLimit) return;
-        context.report({
-          node,
-          messageId: 'missingFileSizeLimit',
-          data: { name: name as string },
-        });
+        context.report({ node, messageId: 'missingFileSizeLimit', data });
       },
     };
   },
