@@ -32,7 +32,7 @@
  */
 
 import { AST_NODE_TYPES } from '../ast-node-types';
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESLint, TSESTree } from '../types/estree/utils/index';
 import { createRule } from './rule-creator';
 import { formatLLMMessage, MessageIcons } from '../messaging';
 import {

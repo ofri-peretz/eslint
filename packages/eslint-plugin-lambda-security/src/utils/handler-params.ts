@@ -4,7 +4,7 @@
  * MIT license that can be found in the LICENSE file.
  */
 
-import type { JSONSchema4 } from '@typescript-eslint/utils/json-schema';
+import type { JSONSchema4 } from '@interlace/eslint-devkit';
 
 /**
  * "Does this function look like a Lambda handler?" — asked by name, because

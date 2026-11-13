@@ -26,7 +26,7 @@
  * }
  * ```
  */
-import type { TSESTree, TSESLint } from '@typescript-eslint/utils';
+import type { TSESTree, TSESLint } from '../types/estree/utils/index';
 
 /**
  * Common sanitization function names

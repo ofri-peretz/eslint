@@ -26,7 +26,7 @@
  * directions, so an upstream addition or rename fails the build rather than
  * silently shipping a node type our rules can never match.
  */
-import type { AST_NODE_TYPES as UpstreamASTNodeTypes } from '@typescript-eslint/utils';
+import type { AST_NODE_TYPES as UpstreamASTNodeTypes } from './types/estree/utils/index';
 
 const AST_NODE_TYPES_VALUES = {
   AccessorProperty: 'AccessorProperty',

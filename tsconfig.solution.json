@@ -53,6 +53,7 @@
     {
       "path": "./packages/eslint-plugin-postgresql-security/tsconfig.lib.json"
     },
-    { "path": "./packages/eslint-plugin-jwt-security/tsconfig.lib.json" }
+    { "path": "./packages/eslint-plugin-jwt-security/tsconfig.lib.json" },
+    { "path": "./tools/types-compat/tsconfig.json" }
   ]
 }
