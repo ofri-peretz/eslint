@@ -21,7 +21,9 @@
  *   accurate Funnels and Paths.
  * - PostHog-as-platform (per ANALYTICS_PHILOSOPHY intro): session replay,
  *   web vitals, and exception capture are all enabled with safe defaults.
- *   Opt-out by setting `NEXT_PUBLIC_POSTHOG_DISABLE_REPLAY=1`.
+ *   Opt-out by setting `NEXT_PUBLIC_POSTHOG_DISABLE_REPLAY=1`. The replay
+ *   recorder ships from this app, not from PostHog's CDN — see
+ *   `enableReplayWithBundledRecorder`.
  * - URL normalisation on every event via `before_send` strips consumed
  *   `utm_*` params + `ph_distinct_id` from `$current_url` (principle 7).
  */
@@ -195,6 +197,32 @@ function isNoisyException(properties?: Record<string, unknown>): boolean {
   );
 }
 
+/**
+ * Session replay runs on a recorder bundled into this app, never on
+ * `/ingest/static/posthog-recorder.js`.
+ *
+ * posthog-js fetches its recorder under the name remote config gives it, and
+ * that name is `posthog-recorder.js`. EasyPrivacy and AdGuard block that file
+ * name on every host, so the `/ingest` proxy does not help: the SDK sets
+ * `$sdk_debug_recording_script_not_loaded` and the session gets no replay.
+ * Measured on docs: most sessions with any interaction were blocked, and not
+ * one blocked session had a recording. Developers run ad blockers, so the
+ * readers Replay Vision exists to watch were the ones it could not see.
+ *
+ * posthog-js skips the fetch when the recorder is already on the page. The
+ * dynamic import ships it as a hashed first-party chunk, outside the main
+ * bundle. Recording stays off until that chunk is in, so the SDK cannot start
+ * the blocked fetch first. Remote replay settings still decide whether a
+ * session records.
+ */
+function enableReplayWithBundledRecorder(): void {
+  import('posthog-js/dist/posthog-recorder')
+    .then(() => posthog.set_config({ disable_session_recording: false }))
+    .catch(() => {
+      // Chunk failed to load: this page has no replay, nothing else changes.
+    });
+}
+
 let initialised = false;
 
 export function initPostHog(): void {
@@ -257,7 +285,9 @@ export function initPostHog(): void {
     capture_dead_clicks: true,
     autocapture: true,
     cross_subdomain_cookie: true,
-    disable_session_recording: disableReplay,
+    // Always off at init. `enableReplayWithBundledRecorder` turns it on once
+    // the bundled recorder is loaded.
+    disable_session_recording: true,
     ...(disableReplay
       ? {}
       : {
@@ -314,6 +344,7 @@ export function initPostHog(): void {
   try {
     posthog.init(key, config);
     initialised = true;
+    if (!disableReplay) enableReplayWithBundledRecorder();
   } catch (err) {
     if (process.env.NODE_ENV !== 'production') {
       // eslint-disable-next-line no-console
