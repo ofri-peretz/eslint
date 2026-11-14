@@ -1,12 +1,13 @@
 {
   "generatedAt": "2026-08-12T00:27:34.766Z",
-  "corpusHash": "sha256:c1702ff56fa9014b70c76ac34f5e40a212a4ec84e18e5578a80475b90cd98a11",
-  "filesScanned": 106002,
+  "corpusHash": "sha256:6f53d9298791d2d79d585b6bdbcf0465bec1a2bb70f877edca60f216ac3b4675",
+  "filesScanned": 105166,
   "note": "Per-rule off-SDK ceiling. Regenerate with --update-baseline only when the increase is understood and explained in the PR body.",
   "amendments": [
     "2026-10-19: autobe (wrtnlabs/autobe@f5de992) removed, upstream repository deleted. Its off-SDK contribution was 0 for every rule under both the baseline-commit rules (d4cbc1846) and current rules, so the per-rule ceilings are unchanged; corpusHash re-derived for the 106 remaining pins and filesScanned 107384 - 1382 = 106002. See CORPUS_CHANGES.md.",
     "2026-10-19: off-SDK regression triage (ILB-Corpus-Truth run 39338296858). Wrong verdicts fixed at the root, not absorbed; the ceilings raised here hold only findings in files that DO use the SDK through evidence the import probe cannot see (a relative wrapper module, a driver config-file shape, a DSN). Eight ceilings changed and eleven mcp-sdk-security rules added at their measured 0; per-rule evidence in CORPUS_CHANGES.md.",
-    "2026-11-03: off-SDK ceiling raise, no corpus change (ILB-Corpus-Truth run 41677813913, issue #1358). Two ceilings raised to the counts that run measured against the pinned, undrifted 106-repo corpus (filesScanned 106002, matching this baseline exactly); both are traced to already-merged, already-tested detection fixes, not to a new false positive. Per-rule evidence in CORPUS_CHANGES.md."
+    "2026-11-03: off-SDK ceiling raise, no corpus change (ILB-Corpus-Truth run 41677813913, issue #1358). Two ceilings raised to the counts that run measured against the pinned, undrifted 106-repo corpus (filesScanned 106002, matching this baseline exactly); both are traced to already-merged, already-tested detection fixes, not to a new false positive. Per-rule evidence in CORPUS_CHANGES.md.",
+    "2026-11-15: reactpress (fecommunity/reactpress@39ea6e0) removed, upstream repository deleted (the whole fecommunity account returns 404). Its off-SDK contribution under current rules was 2 for express-security/no-missing-security-headers (22 -> 20) and 0 for every other rule; corpusHash re-derived for the 105 remaining pins and filesScanned 106002 - 836 = 105166. See CORPUS_CHANGES.md."
   ],
   "rules": {
     "express-security/require-helmet": 0,
@@ -21,7 +22,7 @@
     "express-security/no-exposed-debug-endpoints": 0,
     "express-security/no-missing-cors-check": 1,
     "express-security/no-missing-csrf-protection": 9,
-    "express-security/no-missing-security-headers": 22,
+    "express-security/no-missing-security-headers": 20,
     "express-security/no-user-controlled-redirect": 0,
     "express-security/no-host-header-in-links": 0,
     "express-security/no-error-details-in-response": 2,
