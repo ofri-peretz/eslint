@@ -8,7 +8,7 @@ import {
   TabsList,
   TabsTrigger,
 } from 'fumadocs-ui/components/tabs';
-import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock';
+import { DynamicCodeBlock } from '@/components/docs/code-block';
 
 import { InstallSnippet } from '@/components/mdx/install-snippet';
 
