@@ -1,6 +1,12 @@
-import { defineConfig, defineDocs, frontmatterSchema, metaSchema } from 'fumadocs-mdx/config';
+import {
+  defineConfig,
+  defineDocs,
+  frontmatterSchema,
+  metaSchema,
+} from 'fumadocs-mdx/config';
 import { transformerTwoslash } from 'fumadocs-twoslash';
 import { rehypeCodeDefaultOptions } from 'fumadocs-core/mdx-plugins';
+import { CODE_HIGHLIGHT_OPTIONS } from './src/lib/code-highlight';
 
 // You can customise Zod schemas for frontmatter and `meta.json` here
 // see https://fumadocs.dev/docs/mdx/collections
@@ -31,20 +37,26 @@ export default defineConfig({
     // override in `src/mdx-components.tsx` — AST-level remark transforms
     // didn't survive fumadocs-mdx's recma stage cleanly.
     rehypeCodeOptions: {
-      // `github-light-default` / `github-dark-default` are the higher-
-      // contrast GitHub syntax themes that meet WCAG 2 AAA (7:1) on the
-      // matching code-block background. The older `github-light` /
-      // `github-dark` only meet AA — failed @axe-core color-contrast.
-      themes: {
-        light: 'github-light-default',
-        dark: 'github-dark-default',
-      },
+      // Themes and the AA colour fixes are shared with every other
+      // highlighter on the site — see `src/lib/code-highlight.ts`.
+      ...CODE_HIGHLIGHT_OPTIONS,
       transformers: [
         ...(rehypeCodeDefaultOptions.transformers ?? []),
         transformerTwoslash(),
       ],
       // Required: Shiki doesn't support lazy loading for Twoslash
-      langs: ['js', 'jsx', 'ts', 'tsx', 'json', 'bash', 'sh', 'yaml', 'md', 'mdx'],
+      langs: [
+        'js',
+        'jsx',
+        'ts',
+        'tsx',
+        'json',
+        'bash',
+        'sh',
+        'yaml',
+        'md',
+        'mdx',
+      ],
     },
   },
 });
