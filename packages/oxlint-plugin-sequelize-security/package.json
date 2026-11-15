@@ -1,7 +1,7 @@
 {
   "name": "oxlint-plugin-sequelize-security",
   "version": "2.0.1",
-  "description": "The sequelize-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-sequelize-security.",
+  "description": "Oxlint Sequelize security rules — detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials. Same rules and rule IDs as eslint-plugin-sequelize-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./index.js",

@@ -1,7 +1,7 @@
 {
   "name": "oxlint-plugin-jwt-security",
   "version": "4.0.1",
-  "description": "The jwt-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-jwt-security.",
+  "description": "Oxlint JWT security rules — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify. Same rules and rule IDs as eslint-plugin-jwt-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./index.js",
