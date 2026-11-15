@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-sqlite-security",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "ESLint SQLite security rules for better-sqlite3 and sqlite3 — detects SQL injection in raw queries built with string concatenation or template literals.",
   "type": "commonjs",
   "sideEffects": false,
@@ -86,7 +86,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^2.0.1"
+    "@interlace/eslint-devkit": "^2.0.4"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.68.0",

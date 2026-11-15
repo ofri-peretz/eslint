@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-anthropic-security",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Oxlint Anthropic SDK security rules — catches hardcoded Claude API keys, the browser escape hatch that ships them to every visitor, and system prompts assembled from untrusted input. Same rules and rule IDs as eslint-plugin-anthropic-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
@@ -69,6 +69,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-anthropic-security": "2.0.1"
+    "eslint-plugin-anthropic-security": "2.0.2"
   }
 }

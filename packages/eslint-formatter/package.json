@@ -1,6 +1,6 @@
 {
   "name": "@interlace/eslint-formatter",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "ESLint formatter that groups errors by rule — human, compact and JSON output modes, with before/after fix examples.",
   "type": "commonjs",
   "sideEffects": false,
