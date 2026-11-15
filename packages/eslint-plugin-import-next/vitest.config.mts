@@ -49,7 +49,11 @@ export default defineConfig({
     // Same rationale as testTimeout above, for setup/teardown: hookTimeout
     // defaults to 10s and is NOT covered by testTimeout, so a beforeAll/afterEach
     // starved by the parallel turbo fan-out fails as "Hook timed out in 10000ms".
-    hookTimeout: 30_000,
+    // 120s, as in eslint-devkit: the dual rule tester's afterAll runs every case
+    // through oxlint, and on a scanned laptop under load that took over 30s in
+    // extensions, no-relative-packages, no-cycle-type-only and no-cycle-fidelity,
+    // failing every pre-commit run that touched the lockfile (2026-11-15).
+    hookTimeout: 120_000,
     globalSetup: ['../../vitest.global-setup.ts'],
     coverage: {
       enabled: true,
