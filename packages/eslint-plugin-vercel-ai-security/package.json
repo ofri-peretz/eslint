@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-vercel-ai-security",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "ESLint AI SDK security rules for the Vercel AI SDK — detects prompt injection, system-prompt leaks, hardcoded API keys, and unvalidated model output in generateText and streamText.",
   "type": "commonjs",
   "sideEffects": false,
@@ -90,7 +90,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^2.0.2"
+    "@interlace/eslint-devkit": "^2.0.4"
   },
   "devDependencies": {
     "@ai-sdk/openai": "^4.0.106",
