@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-gemini-security",
   "version": "2.0.1",
-  "description": "ESLint plugin for Google Gemini SDK security \u2014 catches safety thresholds set to BLOCK_NONE, hardcoded API keys, and system instructions assembled from untrusted input.",
+  "description": "ESLint Gemini SDK security rules — catches safety thresholds set to BLOCK_NONE, hardcoded API keys, and system instructions assembled from untrusted input.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./dist/src/index.js",

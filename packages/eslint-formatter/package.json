@@ -1,7 +1,7 @@
 {
   "name": "@interlace/eslint-formatter",
   "version": "1.0.1",
-  "description": "Smart ESLint formatter \u2014 groups errors by rule, supports human/compact/JSON output modes, and includes before/after fix examples",
+  "description": "ESLint formatter that groups errors by rule — human, compact and JSON output modes, with before/after fix examples.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./dist/src/index.js",

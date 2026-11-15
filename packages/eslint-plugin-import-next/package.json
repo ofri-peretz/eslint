@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-import-next",
   "version": "3.0.1",
-  "description": "ESLint plugin for imports and module boundaries \u2014 drop-in replacement for eslint-plugin-import, 3.1x faster end-to-end, zero-config migration.",
+  "description": "ESLint import rules — a drop-in replacement for eslint-plugin-import covering imports and module boundaries, 3.1x faster end-to-end, zero-config migration.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./dist/src/index.js",

@@ -1,7 +1,7 @@
 {
   "name": "oxlint-plugin-maintainability",
   "version": "4.0.1",
-  "description": "The maintainability rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-maintainability.",
+  "description": "Oxlint maintainability rules — limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors. Same rules and rule IDs as eslint-plugin-maintainability, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./index.js",

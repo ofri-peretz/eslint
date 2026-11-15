@@ -86,7 +86,10 @@ function renderManifest(short: string, plugin: PluginManifest): string {
   const manifest = {
     name: alias,
     version: plugin.version,
-    description: `The ${short} rules for oxlint and Vite+. Same rules and rule IDs as ${plugin.name}.`,
+    // npm search ranks the description's opening phrase, so the alias reuses
+    // the plugin's search-first wording with the engine swapped
+    // (scripts/__tests__/npm-search-description.lock.test.ts).
+    description: `${(plugin.description ?? `ESLint ${short} rules`).replace(/^ESLint /, 'Oxlint ')} Same rules and rule IDs as ${plugin.name}, for oxlint and Vite+.`,
     ...(PRIVATE.has(short) ? { private: true } : {}),
     type: 'commonjs',
     // index.js only re-exports the plugin; loading it changes nothing else.
