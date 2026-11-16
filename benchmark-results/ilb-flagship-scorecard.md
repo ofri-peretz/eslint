@@ -1,8 +1,8 @@
 # ILB-Flagship Scorecard
 
-> Per-rule × per-repo: latency (cached + uncached), findings, head-to-head overlap, and synthetic-corpus P/R/F1. Generated from `2026-11-06.json`.
+> Per-rule × per-repo: latency (cached + uncached), findings, head-to-head overlap, and synthetic-corpus P/R/F1. Generated from `2026-11-16.json`.
 
-- **Generated**: 2026-11-06T17:08:24.274Z · **Schema**: ilb-flagship/v2
+- **Generated**: 2026-11-16T21:00:37.320Z · **Schema**: ilb-flagship/v2
 - **ESLint**: v9.39.4 · **oxlint**: 1.63.0 · **Node**: v24.22.2
 - **OOS root**: `/home/runner/work/eslint/eslint/oos`
 
@@ -10,16 +10,16 @@
 
 | Rule                                              | Repo      |   ⭐ | Tier | Ours cold | Ours warm | Ours findings | Comp cold | Comp warm | Comp findings | oxlint cold | oxlint warm | oxlint findings |
 | :------------------------------------------------ | :-------- | ---: | :--: | --------: | --------: | ------------: | --------: | --------: | ------------: | ----------: | ----------: | --------------: |
-| `import-next/no-cycle`                            | next.js   | 131K |  T1  | 50,621 ms |    757 ms |            12 | 66,206 ms |    754 ms |             0 |    1,307 ms |    1,324 ms |              92 |
-| `pg/no-unsafe-query`                              | supabase  |  78K |  T1  | 43,096 ms |  1,452 ms |             0 |         — |         — |             — |           — |           — |               — |
-| `secure-coding/no-hardcoded-credentials`          | vercel-ai |  15K |  T2  | 10,057 ms |    734 ms |           973 | 12,744 ms |    647 ms |           550 |           — |           — |               — |
-| `secure-coding/no-redos-vulnerable-regex`         | lodash    |  60K |  T1  |    384 ms |    301 ms |             1 |    421 ms |    339 ms |             0 |           — |           — |               — |
-| `mongodb-security/no-unsafe-query`                | payload   |  35K |  T2  | 10,365 ms |    801 ms |           299 |         — |         — |             — |           — |           — |               — |
-| `jwt/no-algorithm-none`                           | supabase  |  78K |  T1  | 41,893 ms |  1,383 ms |             0 |         — |         — |             — |           — |           — |               — |
-| `browser-security/no-postmessage-wildcard-origin` | next.js   | 131K |  T1  | 47,615 ms |    727 ms |             2 |         — |         — |             — |           — |           — |               — |
-| `react-features/hooks-exhaustive-deps`            | next.js   | 131K |  T1  | 49,400 ms |    735 ms |           147 | 49,177 ms |    813 ms |            53 |      525 ms |      500 ms |              22 |
-| `react-a11y/alt-text`                             | shadcn-ui | 100K |  T1  |         — |         — |             — | 12,267 ms |    833 ms |             0 |      170 ms |      177 ms |               0 |
-| `vercel-ai-security/no-unsafe-output-handling`    | vercel-ai |  15K |  T2  |  9,882 ms |    645 ms |             1 |         — |         — |             — |           — |           — |               — |
+| `import-next/no-cycle`                            | next.js   | 131K |  T1  | 49,690 ms |    773 ms |            12 | 65,183 ms |    789 ms |             0 |    1,268 ms |    1,284 ms |              92 |
+| `pg/no-unsafe-query`                              | supabase  |  78K |  T1  | 44,225 ms |  1,402 ms |             0 |         — |         — |             — |           — |           — |               — |
+| `secure-coding/no-hardcoded-credentials`          | vercel-ai |  15K |  T2  | 10,085 ms |    711 ms |           974 | 12,967 ms |    671 ms |           547 |           — |           — |               — |
+| `secure-coding/no-redos-vulnerable-regex`         | lodash    |  60K |  T1  |    386 ms |    309 ms |             1 |    423 ms |    335 ms |             0 |           — |           — |               — |
+| `mongodb-security/no-unsafe-query`                | payload   |  35K |  T2  | 10,955 ms |    840 ms |           323 |         — |         — |             — |           — |           — |               — |
+| `jwt/no-algorithm-none`                           | supabase  |  78K |  T1  | 43,287 ms |  1,404 ms |             0 |         — |         — |             — |           — |           — |               — |
+| `browser-security/no-postmessage-wildcard-origin` | next.js   | 131K |  T1  | 49,523 ms |    770 ms |             2 |         — |         — |             — |           — |           — |               — |
+| `react-features/hooks-exhaustive-deps`            | next.js   | 131K |  T1  | 48,780 ms |    772 ms |           147 | 48,515 ms |    845 ms |            53 |      487 ms |      484 ms |              22 |
+| `react-a11y/alt-text`                             | shadcn-ui | 100K |  T1  |         — |         — |             — | 11,976 ms |    809 ms |             0 |      172 ms |      169 ms |               0 |
+| `vercel-ai-security/no-unsafe-output-handling`    | vercel-ai |  15K |  T2  |  9,984 ms |    650 ms |             1 |         — |         — |             — |           — |           — |               — |
 
 **Failed runs** (linter exited with an error; shown as — above and left out of every median):
 
@@ -30,9 +30,9 @@
 
 | Stack                | Median cold | Median warm |         Δ | Cache benefit |
 | :------------------- | ----------: | ----------: | --------: | ------------: |
-| Ours (ESLint)        |   41,893 ms |      735 ms | 41,158 ms |           98% |
-| Peer (ESLint)        |   12,744 ms |      754 ms | 11,990 ms |           94% |
-| oxlint native (peer) |      525 ms |      500 ms |     25 ms |            5% |
+| Ours (ESLint)        |   43,287 ms |      772 ms | 42,515 ms |           98% |
+| Peer (ESLint)        |   12,967 ms |      789 ms | 12,178 ms |           94% |
+| oxlint native (peer) |      487 ms |      484 ms |      3 ms |            1% |
 
 ## 3. Synthetic corpus — true precision / recall / F1
 
@@ -40,7 +40,7 @@ Labeled fixtures from `benchmarks/corpus/CWE-NNN/{vulnerable,safe}`. Tiny — 3 
 
 | Rule                                     | CWE     | Stack      | Precision | Recall |   F1 |  TP |  FP |  FN |  TN |
 | :--------------------------------------- | :------ | :--------- | --------: | -----: | ---: | --: | --: | --: | --: |
-| `pg/no-unsafe-query`                     | CWE-089 | ours       |      100% |    25% | 0.40 |   1 |   0 |   3 |   4 |
+| `pg/no-unsafe-query`                     | CWE-089 | ours       |      100% |   100% | 1.00 |   4 |   0 |   0 |   4 |
 | `secure-coding/no-hardcoded-credentials` | CWE-798 | ours       |       83% |    71% | 0.77 |   5 |   1 |   2 |   5 |
 | `secure-coding/no-hardcoded-credentials` | CWE-798 | competitor |      100% |    57% | 0.73 |   4 |   0 |   3 |   6 |
 
@@ -55,7 +55,7 @@ Set ops on `(file, line)` keys between our cold-run findings and the competitor'
 | Rule                                      | Repo      | Both | Ours-only | Theirs-only |
 | :---------------------------------------- | :-------- | ---: | --------: | ----------: |
 | `import-next/no-cycle`                    | next.js   |    0 |        12 |           0 |
-| `secure-coding/no-hardcoded-credentials`  | vercel-ai |   55 |       918 |         483 |
+| `secure-coding/no-hardcoded-credentials`  | vercel-ai |   56 |       918 |         479 |
 | `secure-coding/no-redos-vulnerable-regex` | lodash    |    0 |         1 |           0 |
 | `react-features/hooks-exhaustive-deps`    | next.js   |    3 |       140 |          28 |
 | `react-a11y/alt-text`                     | shadcn-ui |    0 |         0 |           0 |
@@ -64,7 +64,7 @@ Set ops on `(file, line)` keys between our cold-run findings and the competitor'
 
 Each row is a finding the competitor caught that ours missed. Triage to determine FN-on-our-side vs FP-on-theirs.
 
-### `secure-coding/no-hardcoded-credentials` on vercel-ai — 483 theirs-only finding(s)
+### `secure-coding/no-hardcoded-credentials` on vercel-ai — 479 theirs-only finding(s)
 
 | File                                                       | Line | Message                                                                                                                                                                                                  |
 | :--------------------------------------------------------- | ---: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -126,7 +126,7 @@ Each row is a finding ours caught that theirs missed. Triage same way — could 
 
 ## 7. Green-field rule samples (no competitor)
 
-### `mongodb-security/no-unsafe-query` on payload — 299 finding(s) (showing top 5)
+### `mongodb-security/no-unsafe-query` on payload — 323 finding(s) (showing top 5)
 
 | File                                                                    | Line | Message                                                                                                                                                                                                                                                                                    |
 | :---------------------------------------------------------------------- | ---: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
