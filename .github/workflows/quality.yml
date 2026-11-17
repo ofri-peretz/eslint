@@ -75,6 +75,23 @@ jobs:
           turbo-cache: 'false'
       - run: npm run oxlint
 
+  dogfood:
+    # Our published security and quality plugins over our own plugin source
+    # (eslint.dogfood.config.mjs). Fails on any rule at `error`; the first-run
+    # backlog is held at `warn` there with its counts, and ratchets back up.
+    name: Dogfood (our plugins on our source)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+      # The published plugins resolve `@interlace/eslint-devkit` to the workspace
+      # copy, so it has to be built before they can load.
+      - run: npm run build --workspace=@interlace/eslint-devkit
+      - run: npm run lint:dogfood
+
   markdown:
     name: Markdown Lint
     runs-on: ubuntu-latest

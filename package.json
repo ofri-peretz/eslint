@@ -286,7 +286,8 @@
     "check:lock-proofs:update": "tsx scripts/prove-locks.mts --update",
     "mutation": "tsx scripts/mutation.mts",
     "nestjs:releases": "tsx scripts/nestjs-release-watch.mts",
-    "fidelity": "node benchmarks/suites/fidelity/run.cjs"
+    "fidelity": "node benchmarks/suites/fidelity/run.cjs",
+    "lint:dogfood": "eslint --config eslint.dogfood.config.mjs \"packages/*/src/**/*.ts\""
   },
   "keywords": [
     "eslint",
@@ -389,6 +390,15 @@
     "oxmutate": "1.5.0",
     "pg": "^8.23.1",
     "prettier": "^3.9.10",
+    "published-eslint-plugin-conventions": "npm:eslint-plugin-conventions@^7.0.2",
+    "published-eslint-plugin-import-next": "npm:eslint-plugin-import-next@^3.0.2",
+    "published-eslint-plugin-maintainability": "npm:eslint-plugin-maintainability@^4.0.2",
+    "published-eslint-plugin-modernization": "npm:eslint-plugin-modernization@^4.0.2",
+    "published-eslint-plugin-modularity": "npm:eslint-plugin-modularity@^3.0.2",
+    "published-eslint-plugin-node-security": "npm:eslint-plugin-node-security@^6.0.4",
+    "published-eslint-plugin-operability": "npm:eslint-plugin-operability@^5.0.2",
+    "published-eslint-plugin-reliability": "npm:eslint-plugin-reliability@^5.0.2",
+    "published-eslint-plugin-secure-coding": "npm:eslint-plugin-secure-coding@^6.1.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "remark-parse": "^11.0.0",
