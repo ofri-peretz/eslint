@@ -437,7 +437,7 @@ export interface GitHubFacts {
  * Separate from indexRepo so local indexing stays network-free and testable.
  * Cached by slug: a re-run costs zero API calls. Individual failures (404 on a
  * renamed repo, a rate-limited window) degrade that one entry to null rather
- * than failing the run -- 161 repos is too many to lose to one bad remote.
+ * than failing the run -- 131 repos is too many to lose to one bad remote.
  */
 export function enrichWithGitHub(
   entries: RepoEntry[],
