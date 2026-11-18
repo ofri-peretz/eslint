@@ -14,7 +14,7 @@ autofix: false
 Ensures acquired pool clients are released back to the pool.
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
+**CWE:** [CWE-404](https://cwe.mitre.org/data/definitions/404.html)
 
 Ensures acquired pool clients are released back to the pool.
 

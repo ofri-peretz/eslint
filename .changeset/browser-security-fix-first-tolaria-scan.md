@@ -19,3 +19,7 @@ fix(browser-security): worker globals, style-src and a named parameter in three 
 - `no-credentials-in-query-params`: the message names the matched parameter
   (``Credentials detected in URL query parameter `client_secret` ``), so a
   finding on a 1 MB generated literal can be found.
+
+Docs: four rule docs (`no-postmessage-wildcard-origin`, `no-postmessage-innerhtml`,
+`no-filereader-innerhtml`, `no-unencrypted-transmission`) named a template CWE-693;
+they now name the rule's own CWE.

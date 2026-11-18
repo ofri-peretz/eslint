@@ -17,3 +17,6 @@ On the MCP TypeScript SDK's examples this removes four false positives. Logging
 `accessToken`, `user.password` or `{ apiKey }` still reports, and a secret
 aliased into `.message` through a local object literal is now caught with no
 label at all.
+
+Docs: nine rule docs named a template CWE-693 in their header or front matter;
+they now name the rule's own CWE.
