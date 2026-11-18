@@ -1,4 +1,7 @@
 /**
+ * @provenBy {"file":"README.md","find":"eslint-config-hardcore/blob/master/package.json","replace":"eslint-config-hardcore/tree/master/package.json"}
+ */
+/**
  * Lock: the README's "Used by" table only names repositories that really ship our plugins.
  *
  * Offline (every PR): each row links to one file on GitHub and names plugins that exist
