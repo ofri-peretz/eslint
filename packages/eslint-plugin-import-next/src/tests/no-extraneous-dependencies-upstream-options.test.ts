@@ -53,6 +53,14 @@ write(
     bundleDependencies: ['winner'],
   }),
 );
+write(
+  'falsy/package.json',
+  JSON.stringify({
+    name: 'falsy',
+    bundleDependencies: false,
+    bundledDependencies: ['fallback'],
+  }),
+);
 write('other/package.json', JSON.stringify({ dependencies: { other: '1' } }));
 write('broken/package.json', '{{ "name": "broken" }');
 write('app/package.json', JSON.stringify({ name: 'app' }));
@@ -126,6 +134,11 @@ describe('no-extraneous-dependencies — eslint-plugin-import options', () => {
         name: 'bundleDependencies wins over bundledDependencies',
         filename: path.join(dir, 'both/a.js'),
         code: "import w from 'winner';",
+      },
+      {
+        name: 'bundleDependencies: false falls through to bundledDependencies',
+        filename: path.join(dir, 'falsy/a.js'),
+        code: "import f from 'fallback';",
       },
       {
         name: 'packageDir: the dependencies of the named folder',

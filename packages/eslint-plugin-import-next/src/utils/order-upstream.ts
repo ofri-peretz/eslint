@@ -229,8 +229,12 @@ const kindOf = (node: Node): string | undefined =>
  */
 function isInside(dir: string, file: string): boolean {
   const relative = path.relative(dir, file);
-  // `..` alone and `../x` are outside; `..cache/x` is not.
-  return !`${relative}${path.sep}`.startsWith(`..${path.sep}`);
+  // Another drive (Windows) comes back absolute: outside. `..` alone and
+  // `../x` are outside; `..cache/x` is not.
+  return (
+    !path.isAbsolute(relative) &&
+    !`${relative}${path.sep}`.startsWith(`..${path.sep}`)
+  );
 }
 
 const SCOPED = /^@[^/]+\/?[^/]+/;
@@ -968,10 +972,13 @@ export function createUpstreamOrder(context: UpstreamContext) {
       // Through a symlinked directory (macOS's /var → /private/var, a linked
       // checkout) every resolved path was otherwise "outside" the package, and
       // a symlinked local package ranked external instead of internal.
-      const dir = path.dirname(path.resolve(context.filename));
-      packageDir = packageDirOf(
-        fs.existsSync(dir) ? fs.realpathSync.native(dir) : dir,
-      );
+      let dir = path.dirname(path.resolve(context.filename));
+      try {
+        dir = fs.realpathSync.native(dir);
+      } catch {
+        // Not on disk (an unsaved buffer, or removed mid-run): as given.
+      }
+      packageDir = packageDirOf(dir);
       importMap = new Map();
       exportMap = new Map();
     },

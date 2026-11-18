@@ -132,9 +132,17 @@ describe('order — eslint-plugin-import options', () => {
         // their relative paths start with `..` (eslint-plugin-import tests the
         // prefix and gets both wrong).
         name: 'classification: a folder named ..x is inside, not a parent',
-        code: "import d from 'dotdot-pkg';\nimport w from 'weird-pkg';\n",
+        // The blank line and 'newlines-between': 'always' make the two groups
+        // observable: both external would report the blank line as extra.
+        code: "import d from 'dotdot-pkg';\n\nimport w from 'weird-pkg';\n",
         filename: at('app/src/file.ts'),
-        options: [{ groups: ['internal', 'external'], distinctGroup: true }],
+        options: [
+          {
+            groups: ['internal', 'external'],
+            distinctGroup: true,
+            'newlines-between': 'always',
+          },
+        ],
       },
       {
         name: 'alphabetize.orderImportKind selects the upstream engine: no newline is required between groups',

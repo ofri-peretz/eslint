@@ -52,8 +52,12 @@ const isGlob = (p: string): boolean => /[*?]|\[.*\]|\{.*\}|[!@+]\(/.test(p);
  */
 const containsPath = (file: string, dir: string): boolean => {
   const relative = path.relative(dir, file);
-  // `..` alone and `../x` are outside; `..cache/x` is not.
-  return !`${relative}${path.sep}`.startsWith(`..${path.sep}`);
+  // Another drive (Windows) comes back absolute: outside. `..` alone and
+  // `../x` are outside; `..cache/x` is not.
+  return (
+    !path.isAbsolute(relative) &&
+    !`${relative}${path.sep}`.startsWith(`..${path.sep}`)
+  );
 };
 
 /** One `from` entry of a zone, compiled once per file. */

@@ -100,12 +100,13 @@ interface PackageJson {
 }
 
 /**
- * The bundled list, as npm reads it: `bundleDependencies` wins over
- * `bundledDependencies`, and an object form (`{ "pkg": "latest" }`) names
+ * The bundled list, as eslint-plugin-import reads it: `bundleDependencies`
+ * wins over `bundledDependencies` unless it is falsy (`||`, so
+ * `bundleDependencies: false` falls through), and an object form (`{ "pkg": "latest" }`) names
  * its keys. `true` bundles every dependency, which are allowed anyway.
  */
 function bundledList(json: PackageJson): string[] {
-  const list = json.bundleDependencies ?? json.bundledDependencies;
+  const list = json.bundleDependencies || json.bundledDependencies;
   if (Array.isArray(list)) return list;
   return list && typeof list === 'object' ? Object.keys(list) : [];
 }
