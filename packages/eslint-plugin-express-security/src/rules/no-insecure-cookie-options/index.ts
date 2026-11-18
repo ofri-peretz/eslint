@@ -257,9 +257,14 @@ export const noInsecureCookieOptions = createRule<RuleOptions, MessageIds>({
         const callee = node.callee;
 
         // Check for res.cookie() calls
+        // res.cookie(name, value[, options]) always has a name and a value. A
+        // `.cookie()` with fewer arguments is some other API (`secrets.cookie()`,
+        // a getter) — reporting it was a false positive, and its suggestion
+        // crashed on the missing last argument.
         if (
           callee.type === 'MemberExpression' &&
-          propertyName(callee) === 'cookie'
+          propertyName(callee) === 'cookie' &&
+          node.arguments.length >= 2
         ) {
           // res.cookie(name, value, options)
           const optionsArg = node.arguments[2];
