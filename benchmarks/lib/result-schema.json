@@ -41,7 +41,8 @@
         "ILB-Remediation",
         "ILB-Corpus-Truth",
         "ILB-CWE-Corpus",
-        "ILB-Preset-Budget"
+        "ILB-Preset-Budget",
+        "ILB-Drop-In"
       ],
       "description": "Bench identity. New benches added here MUST also be added to .agent/rules/bench-context.md and benchmarks/state.json."
     },

@@ -92,9 +92,14 @@ npm install eslint-plugin-import-next --save-dev
 | `warnings`          | Matches eslint-plugin-import warnings preset     |
 
 ## 🔄 Parity with `eslint-plugin-import`
-| Rule      | Original Plugin                                                                                                                                                                                                    | Status       | Notes                    |
-| :-------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------- | :----------------------- |
-| All Rules | [`eslint-plugin-import`](https://www.npmjs.com/package/eslint-plugin-import) [![npm](https://img.shields.io/npm/v/eslint-plugin-import.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import) | ✅ Supported | Full drop-in replacement |
+
+**Not yet a drop-in replacement.** Graded by `eslint-plugin-import`'s own test suite, `import-next` passes **1,180 of 2,135** (55.3%) of `eslint-plugin-import`@2.32.0's own test cases, and **2 of its 45 tested rules are not implemented** (`enforce-node-protocol-usage`, `no-webpack-loader-syntax`). [Measured 2026-11-18](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/results/ilb-import-parity/2026-11-18.json).
+
+- **Options are the biggest gap.** 528 failing cases set an option `import-next` does not accept, so a config carried over from `eslint-plugin-import` fails to load. Examples: `extensions: ["always"]`, `order`'s `newlines-between`, and `no-restricted-paths`'s `zones`.
+- 240 invalid cases go unreported, 51 valid cases are reported, and 65 report a different number of times. 71 cases belong to the two missing rules.
+- 10 rules pass every graded case: `consistent-type-specifier-style`, `no-absolute-path`, `no-default-export`, `no-dynamic-require`, `no-empty-named-blocks`, `no-named-default`, `no-namespace`, `no-nodejs-modules`, `no-self-import`, `unambiguous`.
+- **How it is graded:** a valid case passes when the rule reports nothing, and an invalid case passes when it reports exactly the expected number of problems. Messages, positions and fixes are not compared. Only the cases `eslint-plugin-import` itself passes in the same harness are graded. That leaves out 682 of the 2,817 captured cases. Most are the 490 that need the `babel-eslint` parser and the 120 `no-unused-modules` cases, a rule `eslint-plugin-import` cannot load on ESLint 10.
+- To reproduce, run `npx tsx benchmarks/suites/ilb-competitor-parity/import-drop-in.mts --upstream <eslint-plugin-import v2.32.0 checkout>`.
 
 ## 🧬 Deep dependency graphs
 
