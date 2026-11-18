@@ -1,27 +1,27 @@
 // @ts-check
 /**
- * Dogfood: the plugins' own source, linted by the plugins as users install them.
+ * Dogfood: the plugins' own source, linted by the plugins themselves.
  *
  * `npm run lint:dogfood`. Until 2026-11-17 nothing in this repo ran our security or
  * quality plugins over our own code: the root config wires react-a11y and react-features
  * for packages/ui only, and the plugin packages have no lint script.
  *
- * The plugins come from npm (`published-eslint-plugin-*` aliases in package.json), not
- * from the workspace: linting a rule's source with a build of that same source would
- * make the gate depend on the code under test, and the published version is what users
- * run. Each plugin's own `recommended` preset, no hand-picked rule list, so this measures
- * the default experience.
+ * The plugins are imported by their real names and resolve to the workspace packages,
+ * the way ESLint and typescript-eslint lint themselves: CI builds them first, so every PR
+ * lints our source with the rules as they are in that PR. A rule change that breaks on our
+ * own code fails here, before it is released. Each plugin's own `recommended` preset, no
+ * hand-picked rule list, so this measures the default experience.
  */
 import tseslint from 'typescript-eslint';
-import { configs as secureCoding } from 'published-eslint-plugin-secure-coding';
-import { configs as nodeSecurity } from 'published-eslint-plugin-node-security';
-import { configs as maintainability } from 'published-eslint-plugin-maintainability';
-import { configs as reliability } from 'published-eslint-plugin-reliability';
-import { configs as conventions } from 'published-eslint-plugin-conventions';
-import { configs as operability } from 'published-eslint-plugin-operability';
-import { configs as modernization } from 'published-eslint-plugin-modernization';
-import { configs as modularity } from 'published-eslint-plugin-modularity';
-import { configs as importNext } from 'published-eslint-plugin-import-next';
+import { configs as secureCoding } from 'eslint-plugin-secure-coding';
+import { configs as nodeSecurity } from 'eslint-plugin-node-security';
+import { configs as maintainability } from 'eslint-plugin-maintainability';
+import { configs as reliability } from 'eslint-plugin-reliability';
+import { configs as conventions } from 'eslint-plugin-conventions';
+import { configs as operability } from 'eslint-plugin-operability';
+import { configs as modernization } from 'eslint-plugin-modernization';
+import { configs as modularity } from 'eslint-plugin-modularity';
+import { configs as importNext } from 'eslint-plugin-import-next';
 
 const SOURCE = ['packages/*/src/**/*.ts'];
 

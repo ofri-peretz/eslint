@@ -76,8 +76,8 @@ jobs:
       - run: npm run oxlint
 
   dogfood:
-    # Our published security and quality plugins over our own plugin source
-    # (eslint.dogfood.config.mjs). Fails on any rule at `error`; the first-run
+    # Our security and quality plugins, built from this PR, over our own plugin
+    # source (eslint.dogfood.config.mjs). Fails on any rule at `error`; the first-run
     # backlog is held at `warn` there with its counts, and ratchets back up.
     name: Dogfood (our plugins on our source)
     runs-on: ubuntu-latest
@@ -87,9 +87,19 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           turbo-cache: 'false'
-      # The published plugins resolve `@interlace/eslint-devkit` to the workspace
-      # copy, so it has to be built before they can load.
-      - run: npm run build --workspace=@interlace/eslint-devkit
+      # The config imports the workspace plugins by name; build them (and, via
+      # `...`, eslint-devkit they depend on) so they load from dist/.
+      - run: >-
+          npx turbo run build
+          --filter='eslint-plugin-secure-coding...'
+          --filter='eslint-plugin-node-security...'
+          --filter='eslint-plugin-maintainability...'
+          --filter='eslint-plugin-reliability...'
+          --filter='eslint-plugin-conventions...'
+          --filter='eslint-plugin-operability...'
+          --filter='eslint-plugin-modernization...'
+          --filter='eslint-plugin-modularity...'
+          --filter='eslint-plugin-import-next...'
       - run: npm run lint:dogfood
 
   markdown:
