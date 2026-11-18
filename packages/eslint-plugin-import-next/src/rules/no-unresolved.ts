@@ -66,25 +66,26 @@ function ignoreMatcher(pattern: string): (importPath: string) => boolean {
   // before (`'virtual:icons?raw'`) keeps matching that name.
   const literal = (importPath: string) =>
     importPath === pattern || importPath.startsWith(`${pattern}/`);
-  // Regex syntax first: eslint-plugin-import reads every entry as a regular
-  // expression, so `'^a.*z$'` is one as written — expanding its `*` as this
-  // rule's wildcard would turn it into `^a..*z$`. Only an entry with no other
-  // regex syntax (`'@scope/*'`) is this rule's own wildcard form.
-  const source = REGEX_SYNTAX.test(pattern)
-    ? pattern
-    : pattern.includes('*')
-      ? pattern.replace(/\*/g, '.*')
-      : null;
-  if (source !== null) {
+  // eslint-plugin-import reads an entry as a regular expression, as written;
+  // this rule's own form reads `*` as any run of characters. An entry with
+  // `*` is matched both ways, so neither an upstream config (`'ab*c'` ignores
+  // `ac`) nor an existing one (`'src/*.(js|ts)'` ignores `src/widget.ts`)
+  // loses an ignore. An entry that does not compile is a literal name only
+  // (`'pkg(v1'`), rather than a crash that takes the lint run down.
+  const hasStar = pattern.includes('*');
+  const sources = [
+    ...(hasStar || REGEX_SYNTAX.test(pattern) ? [pattern] : []),
+    ...(hasStar ? [pattern.replace(/\*/g, '.*')] : []),
+  ];
+  const regexes = sources.flatMap((source) => {
     try {
-      const regex = new RegExp(source);
-      return (importPath) => literal(importPath) || regex.test(importPath);
+      return [new RegExp(source)];
     } catch {
-      // Not a valid expression (`'pkg(v1'`, `'@scope/[bad*'`): a literal
-      // name after all, rather than a crash that takes the lint run down.
+      return [];
     }
-  }
-  return literal;
+  });
+  return (importPath) =>
+    literal(importPath) || regexes.some((regex) => regex.test(importPath));
 }
 
 type RuleOptions = [Options?];

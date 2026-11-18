@@ -151,6 +151,18 @@ describe('no-unresolved — eslint-plugin-import options', () => {
         options: [{ ignore: ['^a.*z$'] }],
       },
       {
+        name: 'ignore: a * entry as eslint-plugin-import reads it (b* matches no b)',
+        filename,
+        code: "import 'ac';",
+        options: [{ ignore: ['ab*c'] }],
+      },
+      {
+        name: 'ignore: a * entry as this rule read it before (* is any run)',
+        filename,
+        code: "import 'src/widget.ts';",
+        options: [{ ignore: ['src/*.(js|ts)'] }],
+      },
+      {
         name: 'ignore: a regular expression entry',
         filename,
         code: "import './test.png';\nimport './test.gif';",
