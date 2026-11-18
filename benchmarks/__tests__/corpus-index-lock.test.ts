@@ -9,7 +9,7 @@
  *    still reports success. Every name is checked against packages/ on disk.
  *
  * 2. Entries pointing at repos that have since been deleted or renamed. The
- *    corpus is 161 clones on one machine; paths rot. A suite handed a dead path
+ *    corpus is 131 clones on one machine; paths rot. A suite handed a dead path
  *    reports zero findings rather than failing.
  *
  * 3. Field drift. Consumers query these fields with jq; a renamed or dropped
@@ -164,7 +164,7 @@ describe.skipIf(!indexExists)('corpus index: generated artifact', () => {
       .map((r: { name: string }) => r.name);
     /*
      * `path` is an absolute path to a clone on the machine that built the index, so a
-     * runner that has never cloned the corpus fails all 161 at once. That is the corpus
+     * runner that has never cloned the corpus fails all 131 at once. That is the corpus
      * being absent, not the corpus having rotted, and the two need different answers:
      * none present means there is nothing here to check, some missing is the rot this
      * test exists for. Said out loud, because a check that quietly stops checking is the

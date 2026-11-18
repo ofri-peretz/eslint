@@ -162,7 +162,7 @@ withCanonicalDocsUrls('plugin-react-a11y', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-react-a11y',
-    version: '3.0.1',
+    version: '3.0.2',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

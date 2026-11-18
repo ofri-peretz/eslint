@@ -1,7 +1,7 @@
 {
   "name": "oxlint-plugin-browser-security",
-  "version": "3.0.1",
-  "description": "The browser-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-browser-security.",
+  "version": "3.0.2",
+  "description": "Oxlint browser security and XSS rules — detects DOM XSS, postMessage abuse, tokens in localStorage, insecure cookies, clickjacking, mixed content, and CSP gaps. Same rules and rule IDs as eslint-plugin-browser-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./index.js",
@@ -80,6 +80,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-browser-security": "3.0.1"
+    "eslint-plugin-browser-security": "3.0.2"
   }
 }

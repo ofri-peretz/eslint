@@ -1,7 +1,7 @@
 # Corpus index
 
 `corpus-index.json` is a generated index of the cloned open-source corpus at
-`~/repos/ofriperetz.dev/oos` (161 repos, ~35 GB). It exists so benchmark suites
+`~/repos/ofriperetz.dev/oos` (131 repos, ~33 GB). It exists so benchmark suites
 can **select repos by criteria** instead of hardcoding paths.
 
 Regenerate:
@@ -92,6 +92,6 @@ keyed by slug. Re-runs cost zero API calls. Delete it to refresh star counts.
 
 A failed lookup — renamed repo, 404, rate limit — degrades that entry's
 `stars`/`archived` to `null` and records a `warnings` entry. It never fails the
-run: 161 repos is too many to lose to one bad remote. On the first rate-limit
+run: 131 repos is too many to lose to one bad remote. On the first rate-limit
 response the network pass stops trying and lets the rest fall through to
 `null`, rather than hammering a limited endpoint.

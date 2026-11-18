@@ -1,7 +1,7 @@
 {
   "name": "oxlint-plugin-drizzle-security",
-  "version": "2.0.1",
-  "description": "The drizzle-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-drizzle-security.",
+  "version": "2.0.2",
+  "description": "Oxlint Drizzle ORM security rules — detects SQL injection in raw queries built with string concatenation or template literals. Same rules and rule IDs as eslint-plugin-drizzle-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./index.js",
@@ -74,6 +74,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-drizzle-security": "2.0.1"
+    "eslint-plugin-drizzle-security": "2.0.2"
   }
 }

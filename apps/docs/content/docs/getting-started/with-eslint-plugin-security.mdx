@@ -1,0 +1,74 @@
+---
+title: Use alongside eslint-plugin-security
+description: Keep eslint-plugin-security and add Interlace next to it. Measured on 100 vulnerable and 96 safe cases, what each one finds that the other doesn't.
+icon: Layers
+---
+
+If your project already runs [`eslint-plugin-security`](https://www.npmjs.com/package/eslint-plugin-security), keep it. This page shows what adding Interlace next to it finds, measured, and the config that does it.
+
+## The config
+
+Two imports and two lines in the `eslint.config.js` you already have:
+
+```js title="eslint.config.js"
+import security from 'eslint-plugin-security';
+import secureCoding from 'eslint-plugin-secure-coding';
+import nodeSecurity from 'eslint-plugin-node-security';
+
+export default [
+  security.configs.recommended,
+  secureCoding.configs.recommended,
+  nodeSecurity.configs.recommended,
+];
+```
+
+```bash
+npm install --save-dev eslint-plugin-secure-coding eslint-plugin-node-security
+```
+
+Those two cover general Node.js code. If you use Express, a browser front end, PostgreSQL, JWTs or MongoDB, add the plugin for it too. The table below shows which plugin found what.
+
+## What the measurement shows
+
+Both were run over the same corpus: 100 vulnerable and 96 safe code samples across 45 CWEs. Interlace ran with the `recommended` preset of each of its security plugins.
+
+| Vulnerable samples (100)               | Count |
+| :------------------------------------- | ----: |
+| Found by Interlace only                |    74 |
+| Found by both                          |    14 |
+| Found by `eslint-plugin-security` only |     1 |
+| Found by neither                       |    11 |
+
+| Safe samples (96) flagged anyway | Count |
+| :------------------------------- | ----: |
+| Interlace                        |     0 |
+| `eslint-plugin-security`         |    12 |
+
+### Which Interlace plugin found the 74
+
+A sample can be found by more than one plugin, so these add up to more than 74.
+
+| Plugin                                                             | Samples | Examples                                                        |
+| :----------------------------------------------------------------- | ------: | :-------------------------------------------------------------- |
+| [`node-security`](/docs/security/plugin-node-security)             |      19 | weak Diffie-Hellman and ECDH keys, TLS checks turned off, SSRF  |
+| [`secure-coding`](/docs/security/plugin-secure-coding)             |      18 | hardcoded credentials, log injection, failing open, homoglyphs  |
+| [`browser-security`](/docs/security/plugin-browser-security)       |      13 | incomplete URL sanitizing, `postMessage` to `*`                 |
+| [`express-security`](/docs/security/plugin-express-security)       |      13 | stack traces in responses, host-header poisoning in reset links |
+| [`mcp-sdk-security`](/docs/security/plugin-mcp-sdk-security)       |       9 | MCP token passthrough, DNS rebinding                            |
+| [`postgresql-security`](/docs/security/plugin-postgresql-security) |       4 | SQL built from strings                                          |
+| [`jwt-security`](/docs/security/plugin-jwt-security)               |       4 | `none` algorithm, tokens with no issued-at                      |
+| [`mongodb-security`](/docs/security/plugin-mongodb-security)       |       2 | NoSQL operator injection                                        |
+
+### The one only eslint-plugin-security found
+
+`security/detect-disable-mustache-escape` flags Mustache templates with escaping turned off. No Interlace rule catches that sample today, and that is one reason to keep `eslint-plugin-security` installed.
+
+### When both report the same line
+
+14 samples are found by both, so on those lines you will see two messages. If you prefer one, turn off the matching `security/*` rule after you have read both messages.
+
+## What this does and doesn't show
+
+- **We wrote this corpus.** It measures the cases our rules were built for, so it says more about what Interlace covers than about how often each tool is right on your code.
+- **On real code, both are noisy.** On 20 open-source projects (3.04M lines), Interlace's `recommended` findings were right 28.6% of the time and `eslint-plugin-security`'s 13.0% (24 findings sampled per side). See [benchmarks](/docs/benchmarks).
+- **Reproduce it:** `npm run ilb:cwe-corpus` in [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint). The run behind this page is [`benchmarks/results/ilb-cwe-corpus/2026-11-15.json`](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/results/ilb-cwe-corpus/2026-11-15.json), against `eslint-plugin-security` 4.2.1.

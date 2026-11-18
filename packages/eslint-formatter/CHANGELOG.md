@@ -38,6 +38,14 @@ Latest ILB-Formatter v1.1 numbers (240-cell suite, 6 shapes × 5 scales × 8 for
 
 All four modes score 4 / 4 on the FP/FN-attribution signal contract on every fixture in the suite.
 
+## 1.0.2
+
+### Patch Changes
+
+- **📚 Docs** — npm descriptions lead with what people search for
+
+  Each description now opens with the search phrase, such as "ESLint NestJS security rules — …" instead of "ESLint plugin for NestJS security — …". npm search ranks that opening phrase above download counts, so the old wording kept these packages out of the results for searches like "eslint security". The oxlint-plugin-* aliases open the same way, with "Oxlint". No rule or code changes.
+
 ## 1.0.1
 
 ### Patch Changes
