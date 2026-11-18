@@ -21,7 +21,7 @@
  */
 import { isGeneratedFile } from './generated-file';
 import { isMinifiedFile } from './minified-file';
-import type { TSESLint } from '@typescript-eslint/utils';
+import type { TSESLint } from '../types/estree/utils/index';
 
 // The `TSESLint` import above is type-only — it is erased at compile time and
 // never appears in the emitted JS. That is the whole point: the types stay,

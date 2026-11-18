@@ -101,6 +101,18 @@ if (tsconfig === null) {
     process.exit(tscResult.status ?? 1);
   }
 
+  // 2a. Ship checked-in declarations. tsc emits a .d.ts for every .ts it
+  //     compiles but never copies a .d.ts it was given, so devkit's vendored
+  //     AST and rule types (src/types/estree, scripts/vendor-estree-types.ts)
+  //     would be referenced by the published declarations and missing from
+  //     the tarball.
+  const vendored = resolve(pkgDir, 'src', 'types', 'estree');
+  if (existsSync(vendored)) {
+    cpSync(vendored, join(distDir, 'src', 'types', 'estree'), {
+      recursive: true,
+    });
+  }
+
   // 2b. Re-emit the JavaScript without comments.
   //
   //     JSDoc is 17% of the emitted .js across this ecosystem — 561 kB that no

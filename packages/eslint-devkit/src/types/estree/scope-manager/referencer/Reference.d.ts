@@ -21,7 +21,6 @@ export declare enum ReferenceTypeFlag {
  * A Reference represents a single occurrence of an identifier in code.
  */
 export declare class Reference {
-    #private;
     /**
      * A unique ID for this instance - primarily used to help debugging and testing
      */

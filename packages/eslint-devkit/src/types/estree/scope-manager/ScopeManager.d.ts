@@ -15,7 +15,6 @@ interface ScopeManagerOptions {
  * @see https://eslint.org/docs/latest/developer-guide/scope-manager-interface#scopemanager-interface
  */
 export declare class ScopeManager {
-    #private;
     currentScope: Scope | null;
     readonly declaredVariables: WeakMap<TSESTree.Node, Variable[]>;
     /**
@@ -74,6 +73,5 @@ export declare class ScopeManager {
     nestTSModuleScope(node: TSModuleScope['block']): TSModuleScope;
     nestTypeScope(node: TypeScope['block']): TypeScope;
     nestWithScope(node: WithScope['block']): WithScope;
-    protected nestScope<T extends Scope>(scope: T): T;
 }
 export {};

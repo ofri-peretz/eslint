@@ -20,7 +20,7 @@
  * rule in the plugin goes silent.
  */
 import { createModuleEvidence } from '@interlace/eslint-devkit';
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '@interlace/eslint-devkit';
 
 /**
  * The client package. `@supabase/ssr` is listed beside it because that is what a

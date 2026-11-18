@@ -34,7 +34,7 @@
  * Anything else — a parameter, request data, an unknown call — is unproven,
  * and an unproven value in a raw SQL string is the finding.
  */
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESLint, TSESTree } from '../types/estree/utils/index';
 import { AST_NODE_TYPES } from '../ast-node-types';
 import { propertyName, staticString } from '../ast/spellings';
 import { unwrapTypeSyntax } from '../ast/type-syntax';
