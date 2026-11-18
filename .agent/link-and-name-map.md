@@ -31,7 +31,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-browser-security` | 3.0.2 | `browser-security/` | — | `plugin-browser-security` | security | `chromium` | ✅ | ✅ | ✅ |
 | `eslint-plugin-conventions` | 7.0.2 | `conventions/` | — | `plugin-conventions` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-drizzle-security` | 2.0.2 | `drizzle-security/` | — | `plugin-drizzle-security` | security | `drizzle` | ✅ | ✅ | ✅ |
-| `eslint-plugin-express-security` | 4.0.2 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
+| `eslint-plugin-express-security` | 4.0.3 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
 | `eslint-plugin-gemini-security` | 2.0.2 | `gemini-security/` | — | `plugin-gemini-security` | security | `gemini` | ✅ | ✅ | ✅ |
 | `eslint-plugin-import-next` | 3.0.2 | `import-next/` | — | `plugin-import-next` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-jwt-security` | 4.0.2 | `jwt-security/` | `jwt/` | `plugin-jwt-security` | security | `jwt` | ✅ | ✅ | ✅ |
