@@ -621,15 +621,23 @@ describe('order — eslint-plugin-import options', () => {
           'module.exports = { a, b };\nexports = { c, d };\nmodule.exports = { ...s, a };\n',
       },
       {
-        name: 'named.cjsExports orders exports.x assignments',
-        code: "exports.b = 1;\nmodule.exports.a = 2;\nexports['c'] = 3;\nfoo.bar = 4;\nexports.a.z = 5;\n",
+        // `exports['c']` is the same export as `exports.c`, so it is ordered
+        // too (eslint-plugin-import reads only the dotted form); `exports[c]`
+        // names nothing static and is left alone.
+        name: "named.cjsExports orders exports.x and exports['x'] assignments alike",
+        code: "exports.b = 1;\nmodule.exports.a = 2;\nexports['c'] = 3;\nfoo.bar = 4;\nexports.a.z = 5;\nexports[d] = 6;\n",
         filename: at('app/src/file.ts'),
         options: [
           { named: { cjsExports: true }, alphabetize: { order: 'asc' } },
         ],
-        errors: [{ messageId: 'upstreamOutOfOrder' }],
-        output:
-          "module.exports.a = 2;\nexports['c'] = 3;\nfoo.bar = 4;\nexports.a.z = 5;\nexports.b = 1;\n",
+        errors: [
+          { messageId: 'upstreamOutOfOrder' },
+          { messageId: 'upstreamOutOfOrder' },
+        ],
+        output: [
+          "module.exports.a = 2;\nexports.b = 1;\nexports['c'] = 3;\nfoo.bar = 4;\nexports.a.z = 5;\nexports[d] = 6;\n",
+          "module.exports.a = 2;\nexports.a.z = 5;\nexports.b = 1;\nexports['c'] = 3;\nfoo.bar = 4;\nexports[d] = 6;\n",
+        ],
       },
       {
         name: 'differs from eslint-plugin-import: an export assignment is not moved across other code',

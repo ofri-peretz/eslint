@@ -98,6 +98,8 @@ Deliberate differences:
   platform), where `\` is not an escape.
 - Specifiers are classified with import-next's resolver; `import/resolver`
   settings are not consulted.
+- `named.cjsExports` orders `exports['a'] = …` like `exports.a = …` (the same
+  export; eslint-plugin-import reads only the dotted form).
 - `named.cjsExports` treats `exports` / `module` as shadowed when the
   enclosing block declares it or the enclosing function takes it as a
   parameter (no scope analysis, so the rule also runs under oxlint).

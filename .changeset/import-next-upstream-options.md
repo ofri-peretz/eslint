@@ -3,12 +3,12 @@
 'oxlint-plugin-import-next': minor
 ---
 
-feat(import-next): accept eslint-plugin-import's options, with their meaning — 80.2% of its own test cases now pass
+feat(import-next): accept eslint-plugin-import's options, with their meaning — 80.1% of its own test cases now pass
 
 A config carried over from `eslint-plugin-import` (which has no ESLint 10
 release) no longer fails to load on an option `import-next` did not know.
 Graded by eslint-plugin-import@2.32.0's own RuleTester cases, `import-next`
-now passes 1,713 of 2,135 (80.2%, up from 1,180 / 55.3%), and no graded case
+now passes 1,711 of 2,135 (80.1%, up from 1,180 / 55.3%), and no graded case
 sets an option it rejects (528 did).
 
 Options are honoured, not just accepted: `order`'s `newlines-between`,

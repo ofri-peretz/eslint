@@ -155,6 +155,12 @@ describe('no-unresolved — eslint-plugin-import options', () => {
         options: [{ ignore: ['virtual:icons?raw'] }],
       },
       {
+        name: 'ignore: a wildcard entry that is not a valid expression is a literal name',
+        filename,
+        code: "import '@scope/[bad*';",
+        options: [{ ignore: ['@scope/[bad*'] }],
+      },
+      {
         name: 'ignore: an entry that is not a valid expression is a literal name',
         filename,
         code: "import 'pkg(v1';\nimport 'pkg(v1/sub';",

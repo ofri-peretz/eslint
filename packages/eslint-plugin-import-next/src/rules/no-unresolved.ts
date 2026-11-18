@@ -62,20 +62,22 @@ const REGEX_SYNTAX = /[\^$\\()[\]{}|+?]/;
  * entry, is matched as one.
  */
 function ignoreMatcher(pattern: string): (importPath: string) => boolean {
-  if (pattern.includes('*')) {
-    const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-    return (importPath) => regex.test(importPath);
-  }
+  // Still matched literally too: an entry that was written as a name
+  // before (`'virtual:icons?raw'`) keeps matching that name.
   const literal = (importPath: string) =>
     importPath === pattern || importPath.startsWith(`${pattern}/`);
-  if (REGEX_SYNTAX.test(pattern)) {
+  const source = pattern.includes('*')
+    ? pattern.replace(/\*/g, '.*')
+    : REGEX_SYNTAX.test(pattern)
+      ? pattern
+      : null;
+  if (source !== null) {
     try {
-      const regex = new RegExp(pattern);
-      // Still matched literally too: an entry that was written as a name
-      // before (`'virtual:icons?raw'`) keeps matching that name.
+      const regex = new RegExp(source);
       return (importPath) => literal(importPath) || regex.test(importPath);
     } catch {
-      // Not a valid expression (`'pkg(v1'`): a literal name after all.
+      // Not a valid expression (`'pkg(v1'`, `'@scope/[bad*'`): a literal
+      // name after all, rather than a crash that takes the lint run down.
     }
   }
   return literal;

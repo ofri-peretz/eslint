@@ -1,7 +1,7 @@
 /**
- * @provenBy {"file":"packages/eslint-plugin-import-next/README.md","find":"passes **1,713 of 2,135** (80.2%)","replace":"passes **2,135 of 2,135** (100.0%)"}
+ * @provenBy {"file":"packages/eslint-plugin-import-next/README.md","find":"passes **1,711 of 2,135** (80.1%)","replace":"passes **2,135 of 2,135** (100.0%)"}
  * @provenBy {"file":"packages/eslint-plugin-import-next/README.md","find":"**2 of its 45 tested rules are not implemented**","replace":"**0 of its 45 tested rules are not implemented**"}
- * @provenBy {"file":"benchmarks/results/ilb-import-parity/2026-11-18-upstream-options.json","find":"\"passed\": 1713,","replace":"\"passed\": 2135,"}
+ * @provenBy {"file":"benchmarks/results/ilb-import-parity/2026-11-18-upstream-options.json","find":"\"passed\": 1711,","replace":"\"passed\": 2135,"}
  * @provenBy {"file":"packages/eslint-plugin-import-next/README.md","find":"No graded case sets an option","replace":"Hardly any graded case sets an option"}
  */
 

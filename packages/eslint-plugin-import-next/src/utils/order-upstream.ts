@@ -37,6 +37,8 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
+  objectKeyName,
+  propertyName,
   resolveModule,
 } from '@interlace/eslint-devkit';
 
@@ -288,14 +290,18 @@ function isRequireExpression(
   );
 }
 
-/** `{ a, b: c }` — every property a plain identifier, as upstream requires. */
+/**
+ * `{ a, b: c }` — every property a statically named key bound to a plain
+ * identifier. `{ ['a']: c }` and `{ 'a': c }` name the same key as
+ * `{ a: c }`, so they are read the same way.
+ */
 function plainProperties(
   properties: readonly Node[],
 ): properties is TSESTree.Property[] {
   return properties.every(
     (p) =>
       p.type === 'Property' &&
-      p.key.type === 'Identifier' &&
+      objectKeyName(p) !== null &&
       p.value.type === 'Identifier',
   );
 }
@@ -822,14 +828,16 @@ export function createUpstreamOrder(context: UpstreamContext) {
     );
   }
 
-  /** `module.exports` or `exports`, unshadowed. Dotted only, as upstream. */
+  /**
+   * `module.exports` or `exports`, unshadowed. `module['exports']` is the
+   * same object; `module[exports]` (a variable) is not.
+   */
   function isCJSExports(node: Node): boolean {
     if (
       node.type === 'MemberExpression' &&
       node.object.type === 'Identifier' &&
-      node.property.type === 'Identifier' &&
       node.object.name === 'module' &&
-      nameOf(node.property) === 'exports'
+      propertyName(node) === 'exports'
     ) {
       return !shadowed(node, 'module');
     }
@@ -846,11 +854,12 @@ export function createUpstreamOrder(context: UpstreamContext) {
     let root = node;
     let parent = node;
     while (root.type === 'MemberExpression') {
-      // `exports['a']` is deliberately not an export here: eslint-plugin-import
-      // reads only dotted names, and its own valid cases leave bracketed
-      // assignments unordered.
-      if (root.property.type !== 'Identifier') return undefined;
-      result.unshift(nameOf(root.property));
+      // `exports['a']` names the same export as `exports.a` (eslint-plugin-
+      // import reads only the dotted form). A computed key that is not a
+      // static string names nothing this rule can order.
+      const name = propertyName(root);
+      if (name === null) return undefined;
+      result.unshift(name);
       parent = root;
       root = root.object;
     }
@@ -1041,7 +1050,7 @@ export function createUpstreamOrder(context: UpstreamContext) {
       makeNamedReport(
         node.id.properties.map((p) => ({
           node: p,
-          value: nameOf(p.key),
+          value: objectKeyName(p)!,
           type: 'require',
           alias: aliasOf(p.key, p.value),
         })),

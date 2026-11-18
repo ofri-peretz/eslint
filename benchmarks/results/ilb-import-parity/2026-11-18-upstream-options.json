@@ -3,7 +3,7 @@
   "version": "1.0",
   "bench": "ILB-Drop-In",
   "benchVersion": "0.1",
-  "timestamp": "2026-11-18T08:29:14.502Z",
+  "timestamp": "2026-11-18T08:54:56.779Z",
   "toolchain": {
     "node": "24.12.0",
     "eslint": "10.14.0",
@@ -28,7 +28,7 @@
   "corpus": "benchmarks/corpus/competitor-parity/eslint-plugin-import.json",
   "scoring": "valid: rule reports nothing; invalid: rule reports exactly the expected number of problems. Messages, positions and fixes are not compared. Graded = cases eslint-plugin-import itself passes in this harness.",
   "headline": {
-    "passed": 1713,
+    "passed": 1711,
     "graded": 2135,
     "captured": 2817,
     "excluded": 682,
@@ -38,15 +38,15 @@
       "no-webpack-loader-syntax"
     ],
     "rulesFullyPassing": 14,
-    "implementedRulesPassed": 1713,
+    "implementedRulesPassed": 1711,
     "implementedRulesGraded": 2064,
     "failuresByOutcome": {
       "different-count": 70,
       "misses-invalid": 236,
       "not-implemented": 71,
-      "reports-valid": 45
+      "reports-valid": 47
     },
-    "verdictAgrees": 1783,
+    "verdictAgrees": 1781,
     "ungradedRan": 191,
     "ungradedMatchedUpstream": 53
   },
@@ -914,9 +914,9 @@
       "implemented": true,
       "cases": 317,
       "graded": 239,
-      "passed": 182,
+      "passed": 180,
       "validGraded": 123,
-      "validPassed": 114,
+      "validPassed": 112,
       "invalidGraded": 116,
       "invalidPassed": 68,
       "excluded": {
@@ -925,7 +925,7 @@
         "parser babel-eslint not installed": 75
       },
       "failures": {
-        "reports-valid": 9,
+        "reports-valid": 11,
         "misses-invalid": 42,
         "different-count": 6
       },
@@ -4383,6 +4383,24 @@
       "rule": "order",
       "kind": "valid",
       "i": 52,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 2499,
+      "rule": "order",
+      "kind": "valid",
+      "i": 64,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 2
+    },
+    {
+      "id": 2508,
+      "rule": "order",
+      "kind": "valid",
+      "i": 73,
       "outcome": "reports-valid",
       "expected": 0,
       "got": 1
