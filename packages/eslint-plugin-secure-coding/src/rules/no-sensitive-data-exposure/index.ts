@@ -535,8 +535,11 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
         // ``logger.debug(`token=${t}`)`` - an interpolation is exactly the
         // evidence the static-string guard looks for: unlike a constant, a
         // template splices a runtime value into the record.
+        // Each hole goes through the same analysis as an argument, so
+        // `${String(password)}` and `${isProd ? '***' : password}` read what
+        // `String(password)` and the conditional read on their own.
         const fromExpression = arg.expressions
-          .map((e) => namedValueExposure(e))
+          .map((e) => describeExposure(e))
           .find((m): m is { node: TSESTree.Node; pattern: string } =>
             Boolean(m),
           );
@@ -705,13 +708,63 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
       if (key === null) return null;
       const init = resolveBindingInit(member.object);
       if (init?.type !== AST_NODE_TYPES.ObjectExpression) return null;
-      const assigned = init.properties.find(
-        (property): property is TSESTree.Property =>
-          property.type === AST_NODE_TYPES.Property &&
-          !property.computed &&
-          objectKeyName(property) === key,
-      );
-      return assigned ? assigned.value : null;
+      // The object must still hold what the literal put there: every other
+      // reference is a plain property read. A property write
+      // (`entry.message = '[redacted]'`), a delete, or the object handed to
+      // other code may have replaced the value, and the initializer then
+      // proves nothing.
+      // `resolveBindingInit` found an initializer, so the binding exists.
+      if (
+        !onlyReadsProperties(
+          findBinding(member.object) as TSESLint.Scope.Variable,
+        )
+      )
+        return null;
+      // The LAST definition of the key is the one the object holds. A spread
+      // or a computed key met first, reading from the end, may overwrite it.
+      for (const property of [...init.properties].reverse()) {
+        if (property.type !== AST_NODE_TYPES.Property || property.computed)
+          return null;
+        if (objectKeyName(property) === key) return property.value;
+      }
+      return null;
+    }
+
+    /** Is every use of this binding, besides its declaration, `obj.key` read? */
+    function onlyReadsProperties(variable: TSESLint.Scope.Variable): boolean {
+      return variable.references.every((reference) => {
+        if (reference.init) return true;
+        const parent = reference.identifier.parent as TSESTree.Node;
+        if (
+          parent.type !== AST_NODE_TYPES.MemberExpression ||
+          parent.object !== reference.identifier
+        )
+          return false;
+        const use = parent.parent as TSESTree.Node;
+        const written =
+          (use.type === AST_NODE_TYPES.AssignmentExpression &&
+            use.left === parent) ||
+          use.type === AST_NODE_TYPES.UpdateExpression ||
+          (use.type === AST_NODE_TYPES.UnaryExpression &&
+            use.operator === 'delete');
+        return !written;
+      });
+    }
+
+    /** The variable this identifier resolves to, walking up the scopes. */
+    function findBinding(
+      node: TSESTree.Identifier,
+    ): TSESLint.Scope.Variable | null {
+      const scope = context.sourceCode.getScope(node);
+      for (
+        let current: typeof scope | null = scope;
+        current;
+        current = current.upper
+      ) {
+        const variable = current.variables.find((v) => v.name === node.name);
+        if (variable) return variable;
+      }
+      return null;
     }
 
     /**
@@ -723,22 +776,13 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
     function resolveBindingInit(
       node: TSESTree.Identifier,
     ): TSESTree.Expression | null {
-      const scope = context.sourceCode.getScope(node);
-      for (
-        let current: typeof scope | null = scope;
-        current;
-        current = current.upper
-      ) {
-        const variable = current.variables.find((v) => v.name === node.name);
-        if (!variable) continue;
-        if (variable.defs.length !== 1) return null;
-        const [def] = variable.defs;
-        if (def.type !== 'Variable' || !def.node.init) return null;
-        return variable.references.filter((r) => r.isWrite()).length === 1
-          ? def.node.init
-          : null;
-      }
-      return null;
+      const variable = findBinding(node);
+      if (!variable || variable.defs.length !== 1) return null;
+      const [def] = variable.defs;
+      if (def.type !== 'Variable' || !def.node.init) return null;
+      return variable.references.filter((r) => r.isWrite()).length === 1
+        ? def.node.init
+        : null;
     }
 
     /** Report the first argument that carries a secret; at most one per call. */

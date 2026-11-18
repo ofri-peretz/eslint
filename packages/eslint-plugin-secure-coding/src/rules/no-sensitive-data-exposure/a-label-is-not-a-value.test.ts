@@ -100,8 +100,49 @@ describe('no-sensitive-data-exposure — a label is not a value', () => {
         name: 'the same with + concatenation',
         code: 'export function f(value) { throw new Error("password: " + value); }',
       },
+      {
+        // Raised by CodeRabbit on #1581.
+        name: 'a property overwritten after the literal no longer holds the secret',
+        code: "export function f(accessToken) { const entry = { message: accessToken }; entry.message = '[redacted]'; console.log(`failed: ${entry.message}`); }",
+      },
+      {
+        name: 'a later spread may overwrite the key, so the earlier value proves nothing',
+        code: 'export function f(accessToken, scrubbed) { const entry = { message: accessToken, ...scrubbed }; console.log(`failed: ${entry.message}`); }',
+      },
+      {
+        name: 'a later definition of the key is the one the object holds',
+        code: "export function f(accessToken) { const entry = { message: accessToken, message: 'ok' }; console.log(`failed: ${entry.message}`); }",
+      },
+      {
+        name: 'an object handed to other code may have been scrubbed',
+        code: 'export function f(accessToken) { const entry = { message: accessToken }; scrub(entry); console.log(`failed: ${entry.message}`); }',
+      },
+      {
+        name: 'a deleted or updated property is not the initializer any more',
+        code: 'export function f(accessToken) { const entry = { message: accessToken, n: 0 }; entry.n++; delete entry.message; console.log(`failed: ${entry.message}`); }',
+      },
+      {
+        name: 'a computed key may be the one read',
+        code: "export function f(accessToken, k) { const entry = { message: accessToken, [k]: 'x' }; console.log(`failed: ${entry.message}`); }",
+      },
     ],
     invalid: [
+      {
+        name: 'copying the property out, or testing it, is a read and leaves it in place',
+        code: 'export function f(accessToken) { const entry = { message: accessToken }; let copy; copy = entry.message; if (typeof entry.message === "string") console.log(`failed: ${entry.message}`); }',
+        errors: exposure,
+      },
+      {
+        // Raised by CodeRabbit on #1581: a hole is analysed like an argument.
+        name: 'a named secret wrapped in String() inside a template still reports',
+        code: 'export function f(password) { console.log(`password: ${String(password)}`); }',
+        errors: exposure,
+      },
+      {
+        name: 'a conditional hole whose reachable branch is the secret still reports',
+        code: "export function f(password, isProd) { console.log(`password: ${isProd ? '***' : password}`); }",
+        errors: exposure,
+      },
       {
         // @source modelcontextprotocol/typescript-sdk examples/shared/src/auth.ts:158
         // A demo password printed on purpose so the reader can log in — but it
