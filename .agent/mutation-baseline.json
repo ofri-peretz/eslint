@@ -68,9 +68,9 @@
           "timeout": 0
         },
         "require-expiration": {
-          "score": 91.7,
-          "killed": 143,
-          "survived": 13,
+          "score": 100,
+          "killed": 153,
+          "survived": 0,
           "noCoverage": 0,
           "timeout": 1
         },

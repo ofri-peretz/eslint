@@ -9,11 +9,12 @@
  *
  * `this.jwtService.sign(payload)` takes its `expiresIn` from
  * `JwtModule.register({ signOptions })` (or `registerAsync`'s factory), and
- * that call lives in a `*.module.ts` somewhere else in the package. This
+ * that call lives in a `*.module.ts` (or, since @nestjs/core 12.5.1, in the
+ * root-module metadata in `main.ts`) somewhere else in the package. This
  * walks up from the linted file to the nearest `package.json`, reads every
- * `*.module.ts` under it that mentions `JwtModule`, parses each with the
- * parser ESLint is already using (falling back to `@typescript-eslint/parser`),
- * and reads each registration's `signOptions.expiresIn` structurally.
+ * `*.module.ts`, `main.ts` and `bootstrap.ts` under it that mentions
+ * `JwtModule`, parses each with the parser ESLint is already using (falling
+ * back to `@typescript-eslint/parser`), and reads each registration's `signOptions.expiresIn` structurally.
  *
  * The answer is cached per package root for the life of the process. Any file
  * that cannot be read or parsed is skipped; any registration whose options
@@ -44,8 +45,13 @@ const SKIPPED_DIRECTORIES: ReadonlySet<string> = new Set([
   'out',
 ]);
 
-/** A NestJS module file, by the framework's file convention. */
-const MODULE_FILE = /\.module\.ts$/;
+/**
+ * A file that can register a module: a `*.module.ts` by the framework's file
+ * convention, or the bootstrap. Since @nestjs/core 12.5.1, `NestFactory.create`
+ * takes module metadata as the root module (`create({ imports: [...] })`), so
+ * a registration can live in `main.ts` with no module file at all.
+ */
+const MODULE_FILE = /(?:\.module|[/\\](?:main|bootstrap))\.ts$/;
 
 /** Bounds the walk on a very large package. */
 const MAX_SCANNED_ENTRIES = 5000;

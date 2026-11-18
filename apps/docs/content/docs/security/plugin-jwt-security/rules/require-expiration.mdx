@@ -49,8 +49,10 @@ This rule mandates expiration in JWT tokens. Tokens without expiration are valid
 NestJS: `this.jwtService.sign(payload)` when the package's
 `JwtModule.register(...)` / `registerAsync(...)` sets no
 `signOptions.expiresIn`. The rule walks up to the nearest `package.json`,
-reads every `*.module.ts` under it that registers `JwtModule`, and reports
-only when every registration it finds can be read. No registration found, or
+reads every `*.module.ts`, `main.ts` and `bootstrap.ts` under it that
+registers `JwtModule` (NestJS 12.5.1 accepts module metadata as the root
+module, so `NestFactory.create({ imports: [JwtModule.register(...)] })` in
+`main.ts` is a registration too), and reports only when every registration it finds can be read. No registration found, or
 one it cannot read (a factory returning `config.get('jwt')`), means no
 report.
 

@@ -63,6 +63,37 @@ afterEach(() => {
 });
 
 describe('scanProject — global provider registration', () => {
+  it('reads root-module metadata passed to NestFactory.create in main.ts', () => {
+    // @nestjs/core 12.5.1 (nestjs/nest#18523): `NestFactory.create` accepts
+    // module metadata as the root module, so a project can register every
+    // global provider in main.ts with no @Module class and no *.module.ts.
+    const root = makeProject({
+      'src/main.ts': `
+        import { NestFactory, APP_GUARD, APP_PIPE } from '@nestjs/core';
+        import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+        import { MulterModule } from '@nestjs/platform-express';
+        const app = await NestFactory.create({
+          imports: [
+            ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }]),
+            MulterModule.register({ limits: { fileSize: 1_000_000 } }),
+          ],
+          controllers: [CatsController],
+          providers: [
+            { provide: APP_GUARD, useClass: ThrottlerGuard },
+            { provide: APP_GUARD, useClass: JwtAuthGuard },
+            { provide: APP_PIPE, useValue: new ValidationPipe() },
+          ],
+        });
+      `,
+    });
+
+    const context = scanProject(root);
+    expect(context.hasGlobalThrottler).toBe(true);
+    expect(context.hasGlobalAuthGuard).toBe(true);
+    expect(context.hasGlobalValidationPipe).toBe(true);
+    expect(context.hasModuleUploadLimit).toBe(true);
+  });
+
   it('finds APP_PIPE and APP_INTERCEPTOR registered in the same providers array', () => {
     // ack-nestjs-boilerplate: src/common/request/request.module.ts
     const root = makeProject({
