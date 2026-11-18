@@ -325,6 +325,22 @@ export const requireHttpTransportHardening = createRule<[], MessageIds>({
       )
         add(bind.callee.object);
       else if (bind.parent?.type === 'VariableDeclarator') add(bind.parent.id);
+      // `serve({ fetch: app.fetch, port })` serves `app`. Checked on its own,
+      // not as an `else`: a factory call bound to a variable
+      // (`const app = createMcpExpressApp({ host })`) also takes an object.
+      if (
+        bind.type === 'CallExpression' &&
+        bind.arguments[0]?.type === 'ObjectExpression'
+      ) {
+        for (const property of bind.arguments[0].properties) {
+          if (
+            property.type === 'Property' &&
+            propertyKey(property) === 'fetch' &&
+            property.value.type === 'MemberExpression'
+          )
+            add(property.value.object);
+        }
+      }
       return found;
     }
 
@@ -698,6 +714,21 @@ export const requireHttpTransportHardening = createRule<[], MessageIds>({
           if (
             init?.type === 'CallExpression' &&
             mcpExport(init.callee, scope) !== undefined
+          )
+            serveCalls.push(node);
+        }
+        // `handler.fetch(c.req.raw)` where `handler = createMcpHandler(…)` —
+        // the call that serves the transport, so an inline credential check in
+        // front of it counts like one in front of `handleRequest`.
+        if (
+          node.callee.type === 'MemberExpression' &&
+          propertyName(node.callee) === 'fetch' &&
+          node.callee.object.type === 'Identifier'
+        ) {
+          const init = constInitializer(node.callee.object, scope);
+          if (
+            init?.type === 'CallExpression' &&
+            mcpExport(init.callee, scope) === 'createMcpHandler'
           )
             serveCalls.push(node);
         }

@@ -80,8 +80,40 @@ describe('require-http-transport-hardening — @hono/node-server serve()', () =>
           HONO_EXAMPLE('serve({ fetch: app.fetch, port });') +
           'app.use(requireBearerAuth({ verifier }));',
       },
+      {
+        // Raised by CodeRabbit on #1581: a credential check in front of
+        // handler.fetch() is the same gate as one in front of handleRequest.
+        name: 'an inline credential check before handler.fetch() authenticates',
+        code: HONO_EXAMPLE('serve({ fetch: app.fetch, port });').replace(
+          "app.all('/mcp', (c) => handler.fetch(c.req.raw));",
+          "app.all('/mcp', (c) => { if (c.req.header('authorization') !== expected) return c.text('Unauthorized', 401); return handler.fetch(c.req.raw); });",
+        ),
+      },
+      {
+        // Raised by CodeRabbit on #1581: an app handed to imported setup may
+        // get its auth there, as with listen().
+        name: 'an app passed to imported setup code is not judged',
+        code:
+          "import { setupAuth } from './auth';\n" +
+          HONO_EXAMPLE('setupAuth(app);\nserve({ fetch: app.fetch, port });'),
+      },
     ],
     invalid: [
+      {
+        name: 'a fetch() on something other than the MCP handler is not a serve call',
+        code: HONO_EXAMPLE('serve({ fetch: app.fetch, port });').replace(
+          "app.all('/mcp', (c) => handler.fetch(c.req.raw));",
+          "const other = makeProxy(); app.all('/mcp', (c) => { if (c.req.header('authorization') !== expected) return c.text('no', 401); return other.fetch(c.req.raw); }); app.all('/raw', (c) => handler.fetch(c.req.raw)); this.client.fetch(c);",
+        ),
+        errors: [{ messageId: 'missingAuth', data: { host: '::' } }],
+      },
+      {
+        name: 'a fetch option that is not a member read names no app',
+        code: HONO_EXAMPLE(
+          'serve({ fetch: (req) => app.fetch(req), port, ...{} });',
+        ).replace('...{} ', ''),
+        errors: [{ messageId: 'missingAuth', data: { host: '::' } }],
+      },
       {
         // @source modelcontextprotocol/typescript-sdk examples/hono/server.ts:35
         // @found real-source scan
