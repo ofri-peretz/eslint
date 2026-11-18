@@ -42,12 +42,6 @@ describe('no-unused-modules — eslint-plugin-import options', () => {
         options: [{ missingExports: false }],
       },
       {
-        name: 'a file outside src is not checked',
-        filename: path.join(process.cwd(), 'lib/a.js'),
-        code: 'const a = 1;',
-        options: [{ missingExports: true, src: [at('src/**/*.js')] }],
-      },
-      {
         name: 'a file matching ignoreExports is not checked',
         filename: ignored,
         code: 'const a = 1;',
@@ -57,6 +51,15 @@ describe('no-unused-modules — eslint-plugin-import options', () => {
       },
     ],
     invalid: [
+      {
+        // eslint-plugin-import applies `src` to `unusedExports` only; its
+        // missing-exports check still reports a file outside `src`.
+        name: 'src does not narrow the missing-exports check',
+        filename: path.join(process.cwd(), 'lib/a.js'),
+        code: 'const a = 1;',
+        options: [{ missingExports: true, src: [at('src/**/*.js')] }],
+        errors: [{ messageId: 'missingExports' }],
+      },
       {
         name: 'missingExports: true reports a module with no exports',
         code: 'const a = 1;',

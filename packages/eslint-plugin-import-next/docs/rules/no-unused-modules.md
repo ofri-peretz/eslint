@@ -56,7 +56,7 @@ Object.defineProperty(exports, 'version', { value: '1.0.0' });
         "items": {
           "type": "string"
         },
-        "description": "eslint-plugin-import: globs, relative to the cwd; only files matching one are checked"
+        "description": "eslint-plugin-import: globs for its unusedExports check; like there, it does not narrow the missing-exports check"
       },
       "ignoreExports": {
         "type": "array",
@@ -73,7 +73,7 @@ Object.defineProperty(exports, 'version', { value: '1.0.0' });
 
 ### eslint-plugin-import options
 
-`missingExports`, `src` and `ignoreExports` load as in `import/no-unused-modules`. This rule's check is `missingExports`: `true` (or absent) runs it, `false` turns it off. `src` limits it to files matching one of its globs, and `ignoreExports` skips files matching one; globs are resolved against ESLint's cwd. `unusedExports` — which export no other file imports — is not implemented, so it is rejected rather than accepted and ignored.
+`missingExports`, `src` and `ignoreExports` load as in `import/no-unused-modules`. This rule's check is `missingExports`: `true` (or absent) runs it, `false` turns it off. `ignoreExports` skips files matching one of its globs, resolved against ESLint's cwd. `src` scopes only eslint-plugin-import's `unusedExports` check, so here, as there, it does not narrow the missing-exports check. `unusedExports` — which export no other file imports — is not implemented, so it is rejected rather than accepted and ignored.
 
 ## Implementation
 

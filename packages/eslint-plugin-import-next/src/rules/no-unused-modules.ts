@@ -34,7 +34,11 @@ export interface Options {
    * rule's check), `false` turns it off. Absent: on.
    */
   missingExports?: boolean;
-  /** eslint-plugin-import: globs; only files matching one are checked. */
+  /**
+   * eslint-plugin-import: globs for its `unusedExports` check, which this rule
+   * does not implement. Upstream does not apply it to `missingExports`, so
+   * it is accepted and has no effect here.
+   */
   src?: string[];
   /** eslint-plugin-import: globs; files matching one are not checked. */
   ignoreExports?: string[];
@@ -81,7 +85,7 @@ export const noUnusedModules = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             description:
-              'eslint-plugin-import: globs, relative to the cwd; only files matching one are checked',
+              'eslint-plugin-import: globs for its unusedExports check; like there, it does not narrow the missing-exports check',
           },
           ignoreExports: {
             type: 'array',
@@ -127,22 +131,19 @@ export const noUnusedModules = createRule<RuleOptions, MessageIds>({
       before() {
         const [options] = context.options;
         let missingExports: boolean;
-        let src: string[] | undefined;
         let ignoreExports: string[];
+        // `src` scopes eslint-plugin-import's `unusedExports` only, not this
+        // check (its `checkExportPresence` never reads it).
         ({
           allowImportOnly = false,
           missingExports = true,
-          src,
           ignoreExports = [],
         } = options || {});
         const matches = (globs: string[]) =>
           globs.some((glob) =>
             path.matchesGlob(context.filename, path.resolve(context.cwd, glob)),
           );
-        skipped =
-          !missingExports ||
-          (src !== undefined && !matches(src)) ||
-          matches(ignoreExports);
+        skipped = !missingExports || matches(ignoreExports);
 
         hasExports = false;
         hasImports = false;
