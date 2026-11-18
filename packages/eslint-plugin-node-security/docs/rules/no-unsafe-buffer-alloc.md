@@ -240,13 +240,16 @@ const bytesRead = fs.readSync(fd, buf, 0, n, 0); // returns the count
 return buf.toString('utf8', 0, bytesRead);
 ```
 
-What has to hold, and is checked: the read is `readSync(fd, buf, offset, …)` or
-an awaited `x.read(buf, offset, …)`, at offset `0` (or omitted); its count lands
-in a `const` (the returned number, `const { bytesRead } = …`, or `.bytesRead`
-off the `const` result); and every later look at the buffer is
-`subarray(0, count)`, `slice(0, count)` or `toString(enc, 0, count)`, a write,
-or a metadata read. Anything else — the whole buffer, a different bound, a read
-at an offset, an un-awaited `FileHandle.read` — is still reported.
+What has to hold, and is checked: the read is Node's — `readSync` resolved to
+`fs`, or `.read()` on a `const handle = await open(…)` whose `open` resolves to
+`fs/promises` (a local object with a `read` method proves nothing) — at offset
+`0` (or omitted), and awaited. Its count lands in a `const`: the returned number,
+`const { bytesRead } = …` with nothing else destructured, or `.bytesRead` off a
+`const` result that is never written to and never used for anything but
+`.bytesRead` (so `r.buffer` cannot carry the whole buffer out). Every later look
+at the buffer is `subarray(0, count)`, `slice(0, count)` or
+`toString(enc, 0, count)`, a write, or a metadata read. Anything else is still
+reported.
 
 ## Known False Positives
 

@@ -79,6 +79,7 @@ import {
   objectKeyName,
   propertyName,
   readsRequestShape,
+  resolveModuleBinding,
   unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 import {
@@ -1308,15 +1309,14 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
     ): ReadCount | null {
       const call = identifier.parent;
       if (call.type !== AST_NODE_TYPES.CallExpression) return null;
-      const callee = call.callee;
-      const method =
-        callee.type === AST_NODE_TYPES.Identifier
-          ? callee.name
-          : callee.type === AST_NODE_TYPES.MemberExpression
-            ? propertyName(callee)
-            : null;
 
-      if (method === 'readSync' && call.arguments[1] === identifier) {
+      // `fs.readSync(fd, buf, …)` — resolved to Node's fs, not a name match:
+      // a local `readSync` that returns a number without writing proves
+      // nothing about the buffer.
+      if (
+        isFsExport(call.callee, ['readSync']) &&
+        call.arguments[1] === identifier
+      ) {
         const offset = offsetOf(call.arguments[2]);
         if (offset !== 'start' && offset !== 0) return null;
         const declarator = call.parent;
@@ -1327,10 +1327,15 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
         return variable === null ? null : { via: 'binding', variable };
       }
 
+      // `handle.read(buf, …)` on a FileHandle this file opened with
+      // `fs/promises` `open()` — again resolved, so an object of our own with
+      // a `read` method is not mistaken for one.
+      const callee = call.callee;
       if (
-        method !== 'read' ||
         callee.type !== AST_NODE_TYPES.MemberExpression ||
-        call.arguments[0] !== identifier
+        propertyName(callee) !== 'read' ||
+        call.arguments[0] !== identifier ||
+        !isOpenedFileHandle(callee.object)
       ) {
         return null;
       }
@@ -1341,19 +1346,87 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
       if (declarator.type !== AST_NODE_TYPES.VariableDeclarator) return null;
       const target = declarator.id;
       if (target.type === AST_NODE_TYPES.ObjectPattern) {
-        // `const { bytesRead } = await handle.read(…)` — the count's own binding.
-        const property = target.properties.find(
-          (entry): entry is TSESTree.Property =>
-            entry.type === AST_NODE_TYPES.Property &&
-            objectKeyName(entry) === 'bytesRead',
-        );
-        const variable = property
-          ? constBinding(declarator, property.value)
-          : null;
+        // `const { bytesRead } = await handle.read(…)` — the count's own
+        // binding, and nothing else: `{ bytesRead, buffer }` hands the whole
+        // buffer out under a second name this walk does not follow.
+        const [property] = target.properties;
+        if (
+          target.properties.length !== 1 ||
+          property?.type !== AST_NODE_TYPES.Property ||
+          objectKeyName(property) !== 'bytesRead'
+        ) {
+          return null;
+        }
+        const variable = constBinding(declarator, property.value);
         return variable === null ? null : { via: 'binding', variable };
       }
       const variable = constBinding(declarator, target);
-      return variable === null ? null : { via: 'result', variable };
+      // The result object is mutable and carries the buffer: every other use
+      // must be an unwritten `.bytesRead` read, or `r.bytesRead = 16` /
+      // `return r.buffer` would pass.
+      return variable !== null && onlyReadsBytesRead(variable)
+        ? { via: 'result', variable }
+        : null;
+    }
+
+    /** Does this callee resolve to an export of Node's `fs` at `path`? */
+    function isFsExport(
+      callee: TSESTree.Node,
+      path: readonly string[],
+    ): boolean {
+      const binding = resolveModuleBinding(callee, sourceCode.getScope(callee));
+      if (binding === undefined) return false;
+      const full =
+        binding.module === 'fs/promises' ||
+        binding.module === 'node:fs/promises'
+          ? ['promises', ...binding.path]
+          : binding.module === 'fs' || binding.module === 'node:fs'
+            ? binding.path
+            : null;
+      return full !== null && full.join('.') === path.join('.');
+    }
+
+    /** `const handle = await open(…)` with `open` from `fs/promises`. */
+    function isOpenedFileHandle(receiver: TSESTree.Node): boolean {
+      if (receiver.type !== AST_NODE_TYPES.Identifier) return false;
+      const variable = findVariable(sourceCode, receiver);
+      const def = variable?.defs[0];
+      if (
+        variable?.defs.length !== 1 ||
+        def?.type !== 'Variable' ||
+        def.parent.kind !== 'const' ||
+        def.node.init?.type !== AST_NODE_TYPES.AwaitExpression
+      ) {
+        return false;
+      }
+      const opened = def.node.init.argument;
+      return (
+        opened.type === AST_NODE_TYPES.CallExpression &&
+        isFsExport(opened.callee, ['promises', 'open'])
+      );
+    }
+
+    /** Is every use of the result, besides its declaration, `r.bytesRead` read? */
+    function onlyReadsBytesRead(variable: TSESLint.Scope.Variable): boolean {
+      return variable.references.every((reference) => {
+        if (reference.init) return true;
+        const member = reference.identifier.parent;
+        if (
+          member.type !== AST_NODE_TYPES.MemberExpression ||
+          member.object !== reference.identifier ||
+          propertyName(member) !== 'bytesRead'
+        ) {
+          return false;
+        }
+        const use = member.parent;
+        if (use.type === AST_NODE_TYPES.AssignmentExpression)
+          return use.left !== member;
+        if (use.type === AST_NODE_TYPES.UpdateExpression) return false;
+        return !(
+          use.type === AST_NODE_TYPES.UnaryExpression &&
+          use.operator === 'delete'
+        );
+      });
     }
 
     /** Does this expression read the count `readCount` describes? */

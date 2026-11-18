@@ -73,7 +73,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
       {
         name: 'a destructured bytesRead, then slice(0, bytesRead)',
         code: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.allocUnsafe(n);
             const { bytesRead } = await handle.read(buf, 0, n, 0);
             return buf.slice(0, bytesRead);
@@ -94,7 +96,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
       {
         name: 'metadata reads between the read and the bounded read disclose nothing',
         code: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.allocUnsafe(n);
             const r = await handle.read(buf, 0, buf.length, 0);
             return buf.subarray(0, r.bytesRead);
@@ -104,7 +108,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
       {
         name: 'zeroing the tail after the read is a write, not a read',
         code: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.allocUnsafe(n);
             const r = await handle.read(buf, 0, n, 0);
             buf.fill(0, r.bytesRead);
@@ -115,15 +121,427 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
       {
         name: 'a renamed destructured count is the same count',
         code: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.allocUnsafe(n);
             const { bytesRead: got } = await handle.read(buf, 0, n, 0);
             return buf.subarray(0, got);
           }
         `,
       },
+      {
+        name: 'fs.promises.open through the fs namespace is the same FileHandle',
+        code: `
+          import fs from 'node:fs';
+          export async function head(file, n) {
+            const handle = await fs.promises.open(file, 'r');
+            const buf = Buffer.allocUnsafe(n);
+            const r = await handle.read(buf, 0, n, 0);
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+      },
+      {
+        name: 'copying the count out of the result is a read of it',
+        code: `
+          import { open } from 'node:fs/promises';
+          export async function head(file) {
+            const handle = await open(file, 'r');
+            const buf = Buffer.allocUnsafe(16);
+            const r = await handle.read(buf, 0, 16, 0);
+            let got;
+            got = r.bytesRead;
+            log(got);
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+      },
+      {
+        name: 'testing the count is a read of it',
+        code: `
+          import { open } from 'node:fs/promises';
+          export async function head(file) {
+            const handle = await open(file, 'r');
+            const buf = Buffer.allocUnsafe(16);
+            const r = await handle.read(buf, 0, 16, 0);
+            if (typeof r.bytesRead !== 'number') throw new Error('short');
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+      },
     ],
     invalid: [
+      {
+        name: 'nor one bumped',
+        code: `
+          import { open } from 'node:fs/promises';
+          export async function head(file) {
+            const handle = await open(file, 'r');
+            const buf = Buffer.allocUnsafe(16);
+            const r = await handle.read(buf, 0, 16, 0);
+            r.bytesRead++;
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+        errors: [
+          {
+            messageId: 'unsafeAlloc',
+            suggestions: [
+              {
+                messageId: 'useSafeAlloc',
+                output: `
+          import { open } from 'node:fs/promises';
+          export async function head(file) {
+            const handle = await open(file, 'r');
+            const buf = Buffer.alloc(16);
+            const r = await handle.read(buf, 0, 16, 0);
+            r.bytesRead++;
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'a handle reached through this is not one this file opened',
+        code: `
+          class Reader {
+            async head() {
+              const buf = Buffer.allocUnsafe(16);
+              const r = await this.handle.read(buf, 0, 16, 0);
+              return buf.subarray(0, r.bytesRead);
+            }
+          }
+        `,
+        errors: [
+          {
+            messageId: 'unsafeAlloc',
+            suggestions: [
+              {
+                messageId: 'useSafeAlloc',
+                output: `
+          class Reader {
+            async head() {
+              const buf = Buffer.alloc(16);
+              const r = await this.handle.read(buf, 0, 16, 0);
+              return buf.subarray(0, r.bytesRead);
+            }
+          }
+        `,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'a local object with a read method is not a FileHandle (raised by CodeRabbit on #1581)',
+        code: `
+          const reader = { async read() { return { bytesRead: 16 }; } };
+          export async function head() {
+            const buf = Buffer.allocUnsafe(16);
+            const r = await reader.read(buf, 0, 16, 0);
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+        errors: [
+          {
+            messageId: 'unsafeAlloc',
+            suggestions: [
+              {
+                messageId: 'useSafeAlloc',
+                output: `
+          const reader = { async read() { return { bytesRead: 16 }; } };
+          export async function head() {
+            const buf = Buffer.alloc(16);
+            const r = await reader.read(buf, 0, 16, 0);
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: "a local readSync is not Node's",
+        code: `
+          function readSync() { return 16; }
+          export function head(fd) {
+            const buf = Buffer.allocUnsafe(16);
+            const count = readSync(fd, buf, 0, 16, 0);
+            return buf.subarray(0, count);
+          }
+        `,
+        errors: [
+          {
+            messageId: 'unsafeAlloc',
+            suggestions: [
+              {
+                messageId: 'useSafeAlloc',
+                output: `
+          function readSync() { return 16; }
+          export function head(fd) {
+            const buf = Buffer.alloc(16);
+            const count = readSync(fd, buf, 0, 16, 0);
+            return buf.subarray(0, count);
+          }
+        `,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'a handle that was not opened in this file proves nothing',
+        code: `
+          export async function head(handle, n) {
+            const buf = Buffer.allocUnsafe(n);
+            const r = await handle.read(buf, 0, n, 0);
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+        errors: [
+          {
+            messageId: 'unsafeAlloc',
+            suggestions: [
+              {
+                messageId: 'useSafeAlloc',
+                output: `
+          export async function head(handle, n) {
+            const buf = Buffer.alloc(n);
+            const r = await handle.read(buf, 0, n, 0);
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'the result carries the whole buffer out as r.buffer',
+        code: `
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
+            const buf = Buffer.allocUnsafe(n);
+            const r = await handle.read(buf, 0, n, 0);
+            return r.buffer;
+          }
+        `,
+        errors: [
+          {
+            messageId: 'unsafeAlloc',
+            suggestions: [
+              {
+                messageId: 'useSafeAlloc',
+                output: `
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
+            const buf = Buffer.alloc(n);
+            const r = await handle.read(buf, 0, n, 0);
+            return r.buffer;
+          }
+        `,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'destructuring the buffer next to the count hands it out under a second name',
+        code: `
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
+            const buf = Buffer.allocUnsafe(n);
+            const { bytesRead, buffer } = await handle.read(buf, 0, n, 0);
+            send(buffer);
+            return buf.subarray(0, bytesRead);
+          }
+        `,
+        errors: [
+          {
+            messageId: 'unsafeAlloc',
+            suggestions: [
+              {
+                messageId: 'useSafeAlloc',
+                output: `
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
+            const buf = Buffer.alloc(n);
+            const { bytesRead, buffer } = await handle.read(buf, 0, n, 0);
+            send(buffer);
+            return buf.subarray(0, bytesRead);
+          }
+        `,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'a bytesRead overwritten after the read is not the count',
+        code: `
+          import { open } from 'node:fs/promises';
+          export async function head(file) {
+            const handle = await open(file, 'r');
+            const buf = Buffer.allocUnsafe(16);
+            const r = await handle.read(buf, 0, 16, 0);
+            r.bytesRead = 16;
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+        errors: [
+          {
+            messageId: 'unsafeAlloc',
+            suggestions: [
+              {
+                messageId: 'useSafeAlloc',
+                output: `
+          import { open } from 'node:fs/promises';
+          export async function head(file) {
+            const handle = await open(file, 'r');
+            const buf = Buffer.alloc(16);
+            const r = await handle.read(buf, 0, 16, 0);
+            r.bytesRead = 16;
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'nor one deleted',
+        code: `
+          import { open } from 'node:fs/promises';
+          export async function head(file) {
+            const handle = await open(file, 'r');
+            const buf = Buffer.allocUnsafe(16);
+            const r = await handle.read(buf, 0, 16, 0);
+            delete r.bytesRead;
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+        errors: [
+          {
+            messageId: 'unsafeAlloc',
+            suggestions: [
+              {
+                messageId: 'useSafeAlloc',
+                output: `
+          import { open } from 'node:fs/promises';
+          export async function head(file) {
+            const handle = await open(file, 'r');
+            const buf = Buffer.alloc(16);
+            const r = await handle.read(buf, 0, 16, 0);
+            delete r.bytesRead;
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'a let handle can be swapped for another object',
+        code: `
+          import { open } from 'node:fs/promises';
+          export async function head(file) {
+            let handle = await open(file, 'r');
+            const buf = Buffer.allocUnsafe(16);
+            const r = await handle.read(buf, 0, 16, 0);
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+        errors: [
+          {
+            messageId: 'unsafeAlloc',
+            suggestions: [
+              {
+                messageId: 'useSafeAlloc',
+                output: `
+          import { open } from 'node:fs/promises';
+          export async function head(file) {
+            let handle = await open(file, 'r');
+            const buf = Buffer.alloc(16);
+            const r = await handle.read(buf, 0, 16, 0);
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'a handle from a call that is not fs open is not a FileHandle',
+        code: `
+          export async function head(file) {
+            const handle = await openSomething(file);
+            const buf = Buffer.allocUnsafe(16);
+            const r = await handle.read(buf, 0, 16, 0);
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+        errors: [
+          {
+            messageId: 'unsafeAlloc',
+            suggestions: [
+              {
+                messageId: 'useSafeAlloc',
+                output: `
+          export async function head(file) {
+            const handle = await openSomething(file);
+            const buf = Buffer.alloc(16);
+            const r = await handle.read(buf, 0, 16, 0);
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'a handle that is not awaited is a promise',
+        code: `
+          import { open } from 'node:fs/promises';
+          export async function head(file) {
+            const handle = open(file, 'r');
+            const buf = Buffer.allocUnsafe(16);
+            const r = await handle.read(buf, 0, 16, 0);
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+        errors: [
+          {
+            messageId: 'unsafeAlloc',
+            suggestions: [
+              {
+                messageId: 'useSafeAlloc',
+                output: `
+          import { open } from 'node:fs/promises';
+          export async function head(file) {
+            const handle = open(file, 'r');
+            const buf = Buffer.alloc(16);
+            const r = await handle.read(buf, 0, 16, 0);
+            return buf.subarray(0, r.bytesRead);
+          }
+        `,
+              },
+            ],
+          },
+        ],
+      },
       {
         name: 'a reader reached through a call names no read this rule knows',
         code: `
@@ -212,7 +630,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
       {
         name: 'destructuring only the buffer gives no count to stop at',
         code: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.allocUnsafe(n);
             const { buffer } = await handle.read(buf, 0, n, 0);
             return buf.subarray(0, buffer.length);
@@ -225,7 +645,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
               {
                 messageId: 'useSafeAlloc',
                 output: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.alloc(n);
             const { buffer } = await handle.read(buf, 0, n, 0);
             return buf.subarray(0, buffer.length);
@@ -239,7 +661,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
       {
         name: 'a let result can be rebound before .bytesRead is read',
         code: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.allocUnsafe(n);
             let r = await handle.read(buf, 0, n, 0);
             return buf.subarray(0, r.bytesRead);
@@ -252,7 +676,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
               {
                 messageId: 'useSafeAlloc',
                 output: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.alloc(n);
             let r = await handle.read(buf, 0, n, 0);
             return buf.subarray(0, r.bytesRead);
@@ -266,7 +692,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
       {
         name: 'a defaulted count is not followed',
         code: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.allocUnsafe(n);
             const { bytesRead = n } = await handle.read(buf, 0, n, 0);
             return buf.subarray(0, bytesRead);
@@ -279,7 +707,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
               {
                 messageId: 'useSafeAlloc',
                 output: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.alloc(n);
             const { bytesRead = n } = await handle.read(buf, 0, n, 0);
             return buf.subarray(0, bytesRead);
@@ -293,7 +723,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
       {
         name: 'the result object itself is not the count',
         code: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.allocUnsafe(n);
             const r = await handle.read(buf, 0, n, 0);
             return buf.subarray(0, r.buffer.length);
@@ -306,7 +738,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
               {
                 messageId: 'useSafeAlloc',
                 output: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.alloc(n);
             const r = await handle.read(buf, 0, n, 0);
             return buf.subarray(0, r.buffer.length);
@@ -380,7 +814,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
       {
         name: 'the whole buffer is returned after a read: the tail is uninitialized',
         code: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.allocUnsafe(n);
             await handle.read(buf, 0, n, 0);
             return buf;
@@ -393,7 +829,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
               {
                 messageId: 'useSafeAlloc',
                 output: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.alloc(n);
             await handle.read(buf, 0, n, 0);
             return buf;
@@ -407,7 +845,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
       {
         name: 'a bound that is not the read count is not a bound',
         code: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.allocUnsafe(n);
             const r = await handle.read(buf, 0, n, 0);
             return buf.subarray(0, n);
@@ -420,7 +860,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
               {
                 messageId: 'useSafeAlloc',
                 output: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.alloc(n);
             const r = await handle.read(buf, 0, n, 0);
             return buf.subarray(0, n);
@@ -434,7 +876,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
       {
         name: 'a read at an offset leaves bytes before it uninitialized',
         code: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.allocUnsafe(n);
             const r = await handle.read(buf, 4, n - 4, 0);
             return buf.subarray(0, r.bytesRead);
@@ -447,7 +891,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
               {
                 messageId: 'useSafeAlloc',
                 output: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.alloc(n);
             const r = await handle.read(buf, 4, n - 4, 0);
             return buf.subarray(0, r.bytesRead);
@@ -492,7 +938,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
       {
         name: 'a bounded read followed by an unbounded one still reports',
         code: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.allocUnsafe(n);
             const r = await handle.read(buf, 0, n, 0);
             log(buf.subarray(0, r.bytesRead));
@@ -506,7 +954,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
               {
                 messageId: 'useSafeAlloc',
                 output: `
-          export async function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.alloc(n);
             const r = await handle.read(buf, 0, n, 0);
             log(buf.subarray(0, r.bytesRead));
@@ -552,7 +1002,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
       {
         name: 'the read result is not awaited: .bytesRead off a promise is undefined',
         code: `
-          export function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.allocUnsafe(n);
             const r = handle.read(buf, 0, n, 0);
             return buf.subarray(0, r.bytesRead);
@@ -565,7 +1017,9 @@ describe('no-unsafe-buffer-alloc — read only up to bytesRead', () => {
               {
                 messageId: 'useSafeAlloc',
                 output: `
-          export function head(handle, n) {
+          import { open } from 'node:fs/promises';
+          export async function head(file, n) {
+            const handle = await open(file, 'r');
             const buf = Buffer.alloc(n);
             const r = handle.read(buf, 0, n, 0);
             return buf.subarray(0, r.bytesRead);

@@ -151,6 +151,21 @@ const DEFAULT_SECRET_PATTERNS = [
   'auth_token',
   'auth-token',
   'authToken',
+  // Compounds of the short `token`, spelled out so a lowercase identifier
+  // (`config.apitoken`, `sessiontoken`) still matches: at six letters or more
+  // they match anywhere, which a whole-word `token` cannot.
+  'api_token',
+  'api-token',
+  'apiToken',
+  'session_token',
+  'session-token',
+  'sessionToken',
+  'id_token',
+  'id-token',
+  'idToken',
+  'csrf_token',
+  'csrf-token',
+  'csrfToken',
   'encryption_key',
   'encryption-key',
   'encryptionKey',

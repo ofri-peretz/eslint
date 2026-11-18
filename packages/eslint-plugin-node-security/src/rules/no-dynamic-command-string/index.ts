@@ -331,6 +331,10 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
       if (fn.type === AST_NODE_TYPES.FunctionDeclaration) {
         id = fn.id;
       } else if (
+        // A NAMED function expression has a second, internal binding that can
+        // call it recursively (`const run = function inner(c) { inner(x) }`),
+        // and those calls are not references to `run`.
+        !(fn.type === AST_NODE_TYPES.FunctionExpression && fn.id) &&
         fn.parent?.type === AST_NODE_TYPES.VariableDeclarator &&
         fn.parent.init === fn &&
         fn.parent.id.type === AST_NODE_TYPES.Identifier &&
@@ -373,6 +377,14 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
       const index = fn.params.indexOf(def.name as TSESTree.Parameter);
       // A destructured, defaulted or rest parameter is not the argument itself.
       if (index === -1) return false;
+      // In sloppy mode `arguments[0] = x` rewrites the first parameter without
+      // naming it. Any use of a non-arrow function's own `arguments` ends the
+      // proof; an arrow has none of its own.
+      const usesArguments =
+        fn.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
+        (sourceCode.scopeManager?.acquire(fn)?.set.get('arguments')?.references
+          .length ?? 0) > 0;
+      if (usesArguments) return false;
       const fnVariable = localFunctionVariable(fn);
       if (fnVariable === null) return false;
       // The `const f = …` initialisation is a write to the binding, not a use.
@@ -394,10 +406,51 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
             passed.every(
               (entry) => entry.type !== AST_NODE_TYPES.SpreadElement,
             ) &&
-            staticStringOf(argument) !== null
+            isProvenString(argument)
           );
         })
       );
+    }
+
+    /**
+     * `staticStringOf`, with a property of a `const` object accepted only while
+     * the object is untouched. `const` stops rebinding, not mutation:
+     * `const commands = { tool: 'git' }; commands.tool = argv[2]` holds argv,
+     * whatever the initializer said. Every other reference must be a plain
+     * property read — no write, update or delete, and the object never handed
+     * to other code.
+     */
+    function isProvenString(node: TSESTree.Node): boolean {
+      if (staticStringOf(node) === null) return false;
+      if (
+        node.type !== AST_NODE_TYPES.MemberExpression ||
+        node.object.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return true;
+      }
+      // `staticStringOf` resolved the object, so it is bound in this file.
+      const object = findVariable(
+        sourceCode,
+        node.object,
+      ) as TSESLint.Scope.Variable;
+      return object.references.every((reference) => {
+        if (reference.init) return true;
+        const member = reference.identifier.parent as TSESTree.Node;
+        if (
+          member.type !== AST_NODE_TYPES.MemberExpression ||
+          member.object !== reference.identifier
+        ) {
+          return false;
+        }
+        const use = member.parent as TSESTree.Node;
+        return !(
+          (use.type === AST_NODE_TYPES.AssignmentExpression &&
+            use.left === member) ||
+          use.type === AST_NODE_TYPES.UpdateExpression ||
+          (use.type === AST_NODE_TYPES.UnaryExpression &&
+            use.operator === 'delete')
+        );
+      });
     }
 
     /**
@@ -410,7 +463,7 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
       // descends into a node's own children, and this shape needs no guard.
       const pending: TSESTree.Node[] = [root];
       for (let node = pending.pop(); node !== undefined; node = pending.pop()) {
-        if (staticStringOf(node) !== null) continue;
+        if (isProvenString(node)) continue;
         if (node.type === AST_NODE_TYPES.TemplateLiteral) {
           pending.push(...node.expressions);
           continue;

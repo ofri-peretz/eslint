@@ -84,6 +84,28 @@ describe('no-timing-unsafe-compare — a short word must be a whole word', () =>
     ],
     invalid: [
       {
+        // Raised by CodeRabbit on #1581: `token` alone cannot reach a lowercase
+        // compound, so the compounds are patterns of their own.
+        name: 'a lowercase compound still reports: config.apitoken',
+        code: `
+          app.post('/x', async (req, res) => {
+            const config = await settings.load(req.params.tenant);
+            res.send(req.body.value === config.apitoken);
+          });
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'and sessiontoken',
+        code: `
+          app.post('/x', async (req, res) => {
+            const sessiontoken = await sessions.read(req.cookies.sid);
+            res.send(req.headers['x-session'] === sessiontoken);
+          });
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
         name: 'an acronym ends where the next capitalised word starts: storedJWTValue holds a JWT',
         code: `
           app.post('/x', async (req, res) => {

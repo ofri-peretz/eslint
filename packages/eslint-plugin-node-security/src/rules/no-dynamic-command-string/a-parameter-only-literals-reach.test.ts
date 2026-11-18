@@ -92,8 +92,83 @@ describe('no-dynamic-command-string — a parameter only literals reach', () => 
           run(userLabel, 'git');
         `,
       },
+      {
+        name: 'an anonymous function expression stays eligible',
+        code: `
+          import { spawn } from 'node:child_process';
+          const which = function (tool) { return spawn('sh', ['-c', 'command -v ' + tool]); };
+          which('git');
+        `,
+      },
+      {
+        name: 'a literal member of an untouched const object is a literal',
+        code: `
+          import { spawn } from 'node:child_process';
+          const TOOLS = { vcs: 'git' };
+          function which(tool) { return spawn('sh', ['-c', \`command -v \${tool}\`]); }
+          which(TOOLS.vcs);
+          spawn('sh', ['-c', \`\${TOOLS.vcs} --version\`]);
+        `,
+      },
     ],
     invalid: [
+      {
+        // Raised by CodeRabbit on #1581.
+        name: 'a named function expression can call itself through its inner name',
+        code: `
+          import { spawn } from 'node:child_process';
+          const run = function inner(command) {
+            spawn('sh', ['-c', \`echo \${command}\`]);
+            if (command === 'git') inner(process.argv[2]);
+          };
+          run('git');
+        `,
+        errors: shellFlag,
+      },
+      {
+        name: 'sloppy-mode arguments[0] rewrites the parameter without naming it',
+        code: `
+          import { spawn } from 'node:child_process';
+          function run(command) {
+            arguments[0] = process.argv[2];
+            spawn('sh', ['-c', \`echo \${command}\`]);
+          }
+          run('git');
+        `,
+        errors: shellFlag,
+      },
+      {
+        name: 'a const object property written after the literal holds the new value',
+        code: `
+          import { spawn } from 'node:child_process';
+          const commands = { tool: 'git' };
+          commands.tool = process.argv[2];
+          spawn('sh', ['-c', \`echo \${commands.tool}\`]);
+        `,
+        errors: shellFlag,
+      },
+      {
+        name: 'the same through a caller argument',
+        code: `
+          import { spawn } from 'node:child_process';
+          const commands = { tool: 'git' };
+          delete commands.tool;
+          function run(command) { return spawn('sh', ['-c', \`echo \${command}\`]); }
+          run(commands.tool);
+        `,
+        errors: shellFlag,
+      },
+      {
+        name: 'an object handed to other code may be changed there',
+        code: `
+          import { spawn } from 'node:child_process';
+          const commands = { tool: 'git', n: 0 };
+          configure(commands);
+          commands.n++;
+          spawn('sh', ['-c', \`echo \${commands.tool}\`]);
+        `,
+        errors: shellFlag,
+      },
       {
         name: 'a caller that passes a variable puts its value in the command line',
         code: `
