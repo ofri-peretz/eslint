@@ -45,9 +45,16 @@ export interface Options {
 /** A glob, as eslint-plugin-import's `is-glob` sees one. */
 const isGlob = (p: string): boolean => /[*?]|\[.*\]|\{.*\}|[!@+]\(/.test(p);
 
-/** `file` is `dir` or inside it. */
-const containsPath = (file: string, dir: string): boolean =>
-  !path.relative(dir, file).startsWith('..');
+/**
+ * `file` is `dir` or inside it — by path SEGMENT: a folder named `..cache`
+ * is inside, though its relative path starts with `..` (eslint-plugin-import
+ * tests the prefix, and calls it outside).
+ */
+const containsPath = (file: string, dir: string): boolean => {
+  const relative = path.relative(dir, file);
+  // `..` alone and `../x` are outside; `..cache/x` is not.
+  return !`${relative}${path.sep}`.startsWith(`..${path.sep}`);
+};
 
 /** One `from` entry of a zone, compiled once per file. */
 type FromCheck = {
@@ -218,6 +225,9 @@ export const noRestrictedPaths = createRule<RuleOptions, MessageIds>({
                 },
                 message: { type: 'string' },
               },
+              // Without either, `path.resolve(basePath, undefined)` throws
+              // mid-lint; a config error at load names the problem instead.
+              required: ['target', 'from'],
               additionalProperties: false,
             },
           },

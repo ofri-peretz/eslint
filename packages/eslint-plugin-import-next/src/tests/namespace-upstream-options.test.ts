@@ -16,7 +16,7 @@
  * namespace.test.ts.
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, afterAll, expect } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import * as path from 'node:path';
 import { namespace } from '../rules/namespace';
@@ -86,4 +86,105 @@ describe('namespace — eslint-plugin-import options', () => {
       },
     ],
   });
+});
+
+describe('namespace — each module’s exports are listed once', () => {
+  /**
+   * `allowComputed: false` used to list the module's whole export table for
+   * every `ns[key]` only to ask "is this a namespace import?", and every
+   * `ns.name` listed it again: O(accesses × exports) per file. This counts
+   * the listings through a parser that wraps the real type checker.
+   */
+  it('lists them at most once per module, and not at all for computed members', async () => {
+    const { Linter } = await import('eslint');
+    let listings = 0;
+    const counting = {
+      ...parser,
+      parseForESLint(code: string, options: Record<string, unknown>) {
+        const result = parser.parseForESLint(code, options as never);
+        const program = result.services.program!;
+        const checker = program.getTypeChecker();
+        const wrapped = new Proxy(checker, {
+          get(target, key, receiver) {
+            if (key === 'getExportsOfModule') {
+              return (
+                ...args: Parameters<typeof checker.getExportsOfModule>
+              ) => {
+                listings++;
+                return target.getExportsOfModule(...args);
+              };
+            }
+            const value = Reflect.get(target, key, receiver);
+            return typeof value === 'function' ? value.bind(target) : value;
+          },
+        });
+        const programProxy = new Proxy(program, {
+          get(target, key, receiver) {
+            if (key === 'getTypeChecker') return () => wrapped;
+            const value = Reflect.get(target, key, receiver);
+            return typeof value === 'function' ? value.bind(target) : value;
+          },
+        });
+        return {
+          ...result,
+          services: { ...result.services, program: programProxy },
+        };
+      },
+    };
+    const lint = (code: string) => {
+      listings = 0;
+      const linter = new Linter({
+        configType: 'flat',
+        cwd: path.resolve(__dirname, '../../'),
+      });
+      const messages = linter.verify(
+        code,
+        [
+          {
+            files: ['**/*.ts'],
+            languageOptions: {
+              parser: counting as never,
+              parserOptions: {
+                ecmaVersion: 2020,
+                sourceType: 'module',
+                tsconfigRootDir: path.resolve(__dirname, '../../'),
+                projectService: {
+                  allowDefaultProject: ['src/*.ts', 'src/files/*.ts'],
+                  defaultProject: 'tsconfig.json',
+                },
+              },
+            },
+            plugins: {
+              'import-next': { rules: { namespace: namespace as never } },
+            },
+            rules: {
+              'import-next/namespace': ['error', { allowComputed: false }],
+            },
+          },
+        ],
+        path.resolve(__dirname, '../namespace_computed.ts'),
+      );
+      return { messages, listings };
+    };
+
+    const computed = lint(
+      "import * as ns from './files/foo.ts';\nconst k = 'a';\nexport const x = [ns[k], ns[k], ns[k]];",
+    );
+    expect(computed.messages.map((m) => m.messageId)).toEqual([
+      'computedReference',
+      'computedReference',
+      'computedReference',
+    ]);
+    expect(computed.listings).toBe(0);
+
+    const named = lint(
+      "import * as ns from './files/foo.ts';\nexport const y = [ns.nope, ns.nope2, ns.nope3];",
+    );
+    expect(named.messages.map((m) => m.messageId)).toEqual([
+      'namespace',
+      'namespace',
+      'namespace',
+    ]);
+    expect(named.listings).toBe(1);
+  }, 120_000);
 });

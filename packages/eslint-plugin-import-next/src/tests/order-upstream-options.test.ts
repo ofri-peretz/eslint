@@ -65,6 +65,16 @@ fs.symlinkSync(
   path.join(root, 'app/vendor/vendored'),
   path.join(root, 'app/node_modules/vendored'),
 );
+pkg(path.join(root, 'app/..dotdot'), 'dotdot-pkg');
+fs.symlinkSync(
+  path.join(root, 'app/..dotdot'),
+  path.join(root, 'app/node_modules/dotdot-pkg'),
+);
+pkg(path.join(root, 'app/node_modules/..weird'), 'weird-pkg');
+fs.symlinkSync(
+  path.join(root, 'app/node_modules/..weird'),
+  path.join(root, 'app/node_modules/weird-pkg'),
+);
 fs.mkdirSync(path.join(root, 'orphan'));
 afterAll(() => {
   fs.unlinkSync(root);
@@ -106,6 +116,26 @@ describe('isUpstreamOrderForm', () => {
 describe('order — eslint-plugin-import options', () => {
   ts.run('order', enforceImportOrder, {
     valid: [
+      {
+        // The LAST of two equal keys is the export; sorting them would swap
+        // which value is exported. (`['z']` is the same key as `z`.)
+        name: 'named.cjsExports leaves an object with a repeated key alone',
+        code: "module.exports = { z: second, ['z']: first, a };\nmodule.exports = { y: b, y: a };\n",
+        filename: at('app/src/file.ts'),
+        options: [
+          { named: { cjsExports: true }, alphabetize: { order: 'asc' } },
+        ],
+      },
+      {
+        // `..dotdot` and `..weird` are folders whose names start with `..`:
+        // inside the package and inside node_modules respectively, though
+        // their relative paths start with `..` (eslint-plugin-import tests the
+        // prefix and gets both wrong).
+        name: 'classification: a folder named ..x is inside, not a parent',
+        code: "import d from 'dotdot-pkg';\nimport w from 'weird-pkg';\n",
+        filename: at('app/src/file.ts'),
+        options: [{ groups: ['internal', 'external'], distinctGroup: true }],
+      },
       {
         name: 'alphabetize.orderImportKind selects the upstream engine: no newline is required between groups',
         code: "import fs from 'fs';\nimport a from './a';\n",
@@ -640,7 +670,9 @@ describe('order — eslint-plugin-import options', () => {
         // too (eslint-plugin-import reads only the dotted form); `exports[c]`
         // names nothing static and is left alone.
         name: "named.cjsExports orders exports.x and exports['x'] assignments alike",
-        code: "exports.b = 1;\nmodule.exports.a = 2;\nexports['c'] = 3;\nfoo.bar = 4;\nexports.a.z = 5;\nexports[d] = 6;\n",
+        // `exports[d]` first: were it read as an export named `d`, sorting
+        // would move it, and the outputs below would not hold.
+        code: "exports[d] = 6;\nexports.b = 1;\nmodule.exports.a = 2;\nexports['c'] = 3;\nfoo.bar = 4;\nexports.a.z = 5;\n",
         filename: at('app/src/file.ts'),
         options: [
           { named: { cjsExports: true }, alphabetize: { order: 'asc' } },
@@ -650,8 +682,8 @@ describe('order — eslint-plugin-import options', () => {
           { messageId: 'upstreamOutOfOrder' },
         ],
         output: [
-          "module.exports.a = 2;\nexports.b = 1;\nexports['c'] = 3;\nfoo.bar = 4;\nexports.a.z = 5;\nexports[d] = 6;\n",
-          "module.exports.a = 2;\nexports.a.z = 5;\nexports.b = 1;\nexports['c'] = 3;\nfoo.bar = 4;\nexports[d] = 6;\n",
+          "exports[d] = 6;\nmodule.exports.a = 2;\nexports.b = 1;\nexports['c'] = 3;\nfoo.bar = 4;\nexports.a.z = 5;\n",
+          "exports[d] = 6;\nmodule.exports.a = 2;\nexports.a.z = 5;\nexports.b = 1;\nexports['c'] = 3;\nfoo.bar = 4;\n",
         ],
       },
       {

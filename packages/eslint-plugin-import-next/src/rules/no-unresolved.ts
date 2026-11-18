@@ -66,10 +66,14 @@ function ignoreMatcher(pattern: string): (importPath: string) => boolean {
   // before (`'virtual:icons?raw'`) keeps matching that name.
   const literal = (importPath: string) =>
     importPath === pattern || importPath.startsWith(`${pattern}/`);
-  const source = pattern.includes('*')
-    ? pattern.replace(/\*/g, '.*')
-    : REGEX_SYNTAX.test(pattern)
-      ? pattern
+  // Regex syntax first: eslint-plugin-import reads every entry as a regular
+  // expression, so `'^a.*z$'` is one as written — expanding its `*` as this
+  // rule's wildcard would turn it into `^a..*z$`. Only an entry with no other
+  // regex syntax (`'@scope/*'`) is this rule's own wildcard form.
+  const source = REGEX_SYNTAX.test(pattern)
+    ? pattern
+    : pattern.includes('*')
+      ? pattern.replace(/\*/g, '.*')
       : null;
   if (source !== null) {
     try {

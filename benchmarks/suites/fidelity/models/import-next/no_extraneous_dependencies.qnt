@@ -6,9 +6,12 @@
 // `{"type":"module"}` scope marker in a sub-folder is not one.
 //
 // Allowed: `dependencies`; `devDependencies`, `optionalDependencies`,
-// `peerDependencies`, `bundledDependencies` / `bundleDependencies` (npm
-// accepts both spellings) while their option is true (the default); the
-// package's own name (Node self-reference through `exports`).
+// `peerDependencies` and the bundled list while their option is true (the
+// default); the package's own name (Node self-reference through `exports`).
+// The bundled list is `bundleDependencies` when the manifest has it, else
+// `bundledDependencies` — npm's precedence, and eslint-plugin-import's
+// (`pkg.bundleDependencies || pkg.bundledDependencies`). The manifest here
+// has both, so a package listed only in `bundledDependencies` is undeclared.
 //
 // Never checked: Node builtins (`fs/promises`, `node:fs`), relative paths,
 // `#imports`, URL schemes (`virtual:x`). Erased at compile time, so never
@@ -41,7 +44,8 @@ module no_extraneous_dependencies {
       or (l == Dev and o != NoDev)
       or (l == Optional and o != NoOptional)
       or (l == Peer and o != NoPeer)
-      or ((l == Bundled or l == BundleAlt) and o != NoBundled)
+      // `bundleDependencies` (BundleAlt) wins; `bundledDependencies` is shadowed.
+      or (l == BundleAlt and o != NoBundled)
 
   pure def packageShape(sh: Shape): bool =
     Set(Bare, Subpath, Scoped, ScopedSubpath, Marker).contains(sh)

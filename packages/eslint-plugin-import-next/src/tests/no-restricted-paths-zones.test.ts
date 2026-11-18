@@ -16,7 +16,8 @@
  * `../server/db` and `@/server/db` are the same import.
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, afterAll, expect } from 'vitest';
+import { Linter } from 'eslint';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -26,6 +27,7 @@ const dir = fs.realpathSync(
   fs.mkdtempSync(path.join(os.tmpdir(), 'restricted-zones-')),
 );
 for (const name of [
+  'server/..secret/key.js',
   'client/a.js',
   'client/sub/b.js',
   'server/db.js',
@@ -123,6 +125,15 @@ describe('no-restricted-paths — zones', () => {
         ],
       },
       {
+        // A folder named `..secret` is inside `server`: its relative path
+        // starts with `..`, but not with the `..` segment.
+        name: 'a file in a folder whose name starts with .. is inside from',
+        filename: inClient,
+        code: "import key from '../server/..secret/key';",
+        options: [zone()],
+        errors: [{ messageId: 'zoneViolation' }],
+      },
+      {
         name: 'the zone message is appended',
         filename: inClient,
         code: "const db = require('../server/db');",
@@ -214,5 +225,37 @@ describe('no-restricted-paths — zones', () => {
         errors: [{ messageId: 'zoneViolation' }],
       },
     ],
+  });
+});
+
+describe('no-restricted-paths — zone schema', () => {
+  // Each zone needs `target` and `from`. Without them the rule used to throw a
+  // TypeError from `path.resolve(basePath, undefined)` partway through a lint.
+  it.each([
+    ['without from', { target: './client' }],
+    ['without target', { from: './server' }],
+  ])('a zone %s is a configuration error', (_name, badZone) => {
+    const linter = new Linter({ configType: 'flat', cwd: dir });
+    expect(() =>
+      linter.verify(
+        "import db from '../server/db';",
+        [
+          {
+            plugins: {
+              'import-next': {
+                rules: { 'no-restricted-paths': noRestrictedPaths as never },
+              },
+            },
+            rules: {
+              'import-next/no-restricted-paths': [
+                'error',
+                { zones: [badZone], basePath: dir },
+              ],
+            },
+          },
+        ],
+        inClient,
+      ),
+    ).toThrow(/must have required property|required property/);
   });
 });

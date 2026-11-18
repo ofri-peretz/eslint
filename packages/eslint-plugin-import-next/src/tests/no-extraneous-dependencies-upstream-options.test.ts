@@ -42,6 +42,17 @@ write(
     bundleDependencies: { bundled: 'latest' },
   }),
 );
+// Both npm spellings: `bundleDependencies` wins and `bundledDependencies` is
+// ignored — npm's precedence, and eslint-plugin-import's
+// (`pkg.bundleDependencies || pkg.bundledDependencies`).
+write(
+  'both/package.json',
+  JSON.stringify({
+    name: 'both',
+    bundledDependencies: ['shadowed'],
+    bundleDependencies: ['winner'],
+  }),
+);
 write('other/package.json', JSON.stringify({ dependencies: { other: '1' } }));
 write('broken/package.json', '{{ "name": "broken" }');
 write('app/package.json', JSON.stringify({ name: 'app' }));
@@ -111,6 +122,11 @@ const TYPE_ONLY = [
 describe('no-extraneous-dependencies — eslint-plugin-import options', () => {
   ruleTester.run('no-extraneous-dependencies', noExtraneousDependencies, {
     valid: [
+      {
+        name: 'bundleDependencies wins over bundledDependencies',
+        filename: path.join(dir, 'both/a.js'),
+        code: "import w from 'winner';",
+      },
       {
         name: 'packageDir: the dependencies of the named folder',
         filename: path.join(dir, 'elsewhere.js'),
@@ -187,6 +203,12 @@ describe('no-extraneous-dependencies — eslint-plugin-import options', () => {
       },
     ],
     invalid: [
+      {
+        name: 'a package only in bundledDependencies, beside bundleDependencies, is undeclared',
+        filename: path.join(dir, 'both/a.js'),
+        code: "import s from 'shadowed';",
+        errors: [missingDep('shadowed', "import s from 'shadowed';")],
+      },
       {
         name: 'packageDir: a folder with no package.json',
         filename: inPkg,

@@ -143,6 +143,14 @@ describe('no-unresolved — eslint-plugin-import options', () => {
         code: "require(['./nope'], function () {});",
       },
       {
+        // `.*` was expanded again as a wildcard, to `^a..*z$`, which needs two
+        // characters between `a` and `z` and so missed `az`.
+        name: 'ignore: a regular expression with .* is read as written',
+        filename,
+        code: "import 'az';",
+        options: [{ ignore: ['^a.*z$'] }],
+      },
+      {
         name: 'ignore: a regular expression entry',
         filename,
         code: "import './test.png';\nimport './test.gif';",

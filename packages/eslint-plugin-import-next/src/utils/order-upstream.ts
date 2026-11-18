@@ -222,6 +222,17 @@ const kindOf = (node: Node): string | undefined =>
   (node as { importKind?: string }).importKind;
 
 /** `@scope/name`, eslint-plugin-import's `isScoped`. */
+/**
+ * Is `file` inside `dir`? By path SEGMENT: a folder named `..cache` is
+ * inside, though its relative path starts with `..` (eslint-plugin-import
+ * tests the prefix, and calls it outside).
+ */
+function isInside(dir: string, file: string): boolean {
+  const relative = path.relative(dir, file);
+  // `..` alone and `../x` are outside; `..cache/x` is not.
+  return !`${relative}${path.sep}`.startsWith(`..${path.sep}`);
+}
+
 const SCOPED = /^@[^/]+\/?[^/]+/;
 const INDEX = new Set(['.', './', './index', './index.js']);
 
@@ -399,14 +410,12 @@ export function createUpstreamOrder(context: UpstreamContext) {
     if (/^\.[\\/]/.test(name)) return 'sibling';
     const resolved = resolveModule(name, context.filename);
     if (resolved) {
-      const fromPackage = path.relative(packageDir, resolved);
-      const inFolder = externalFolders.some(
-        (folder) =>
-          !path
-            .relative(path.resolve(packageDir, folder), resolved)
-            .startsWith('..'),
+      const inFolder = externalFolders.some((folder) =>
+        isInside(path.resolve(packageDir, folder), resolved),
       );
-      return fromPackage.startsWith('..') || inFolder ? 'external' : 'internal';
+      return !isInside(packageDir, resolved) || inFolder
+        ? 'external'
+        : 'internal';
     }
     const base = SCOPED.test(name)
       ? name.split('/').slice(0, 2).join('/')
@@ -1086,10 +1095,14 @@ export function createUpstreamOrder(context: UpstreamContext) {
           node.right.type === 'ObjectExpression' &&
           plainProperties(node.right.properties)
         ) {
+          const names = node.right.properties.map((p) => objectKeyName(p)!);
+          // A repeated key (`{ z: a, ['z']: b }`): the LAST one is the export,
+          // so sorting the two would change its value. Leave the object alone.
+          if (new Set(names).size !== names.length) return;
           makeNamedReport(
-            node.right.properties.map((p) => ({
+            node.right.properties.map((p, i) => ({
               node: p,
-              value: nameOf(p.key),
+              value: names[i],
               type: 'export',
               alias: aliasOf(p.key, p.value),
             })),

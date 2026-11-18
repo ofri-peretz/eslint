@@ -90,6 +90,7 @@ import utils from './server-utils';
               "type": "string"
             }
           },
+          "required": ["target", "from"],
           "additionalProperties": false
         }
       },

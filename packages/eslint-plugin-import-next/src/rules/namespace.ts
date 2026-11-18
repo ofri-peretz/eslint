@@ -85,12 +85,12 @@ export const namespace = createRule<RuleOptions, MessageIds>({
     const [{ allowComputed } = {}] = context.options;
 
     /**
-     * The names the module behind namespace import `id` exports, or null
-     * when `id` is not a namespace import, or the module does not resolve
-     * (unknown, not missing), or is a CommonJS `export =` module (its names
-     * depend on interop).
+     * The module behind namespace import `id`, or null when `id` is not a
+     * namespace import, or the module does not resolve (unknown, not
+     * missing), or is a CommonJS `export =` module (its names depend on
+     * interop). Cheap: it does not list the module's exports.
      */
-    function namespaceExports(id: TSESTree.Identifier): Set<string> | null {
+    function namespaceModule(id: TSESTree.Identifier): ts.Symbol | null {
       const symbol = checker?.getSymbolAtLocation(
         services.esTreeNodeToTSNodeMap.get(id),
       );
@@ -110,9 +110,24 @@ export const namespace = createRule<RuleOptions, MessageIds>({
       );
       if (!moduleSymbol?.exports) return null;
       if (moduleSymbol.exports.has('export=' as ts.__String)) return null;
-      return new Set(
-        checker?.getExportsOfModule(moduleSymbol).map((s) => s.name),
-      );
+      return moduleSymbol;
+    }
+
+    /** Export names per module, listed once per file rather than per access. */
+    const exportNames = new Map<ts.Symbol, Set<string>>();
+
+    /** The names the module behind namespace import `id` exports, or null. */
+    function namespaceExports(id: TSESTree.Identifier): Set<string> | null {
+      const moduleSymbol = namespaceModule(id);
+      if (!moduleSymbol) return null;
+      let names = exportNames.get(moduleSymbol);
+      if (!names) {
+        names = new Set(
+          checker!.getExportsOfModule(moduleSymbol).map((s) => s.name),
+        );
+        exportNames.set(moduleSymbol, names);
+      }
+      return names;
     }
 
     return {
@@ -122,7 +137,9 @@ export const namespace = createRule<RuleOptions, MessageIds>({
         // eslint-plugin-import's `allowComputed`, when set: a computed member
         // is skipped, or reported as unverifiable, whatever its key.
         if (node.computed && allowComputed !== undefined) {
-          if (!allowComputed && namespaceExports(node.object)) {
+          // Only whether it is a namespace import matters here, not its
+          // export list: listing it for every `ns[key]` was O(accesses × exports).
+          if (!allowComputed && namespaceModule(node.object)) {
             context.report({
               node: node.property,
               messageId: 'computedReference',
