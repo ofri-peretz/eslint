@@ -18,8 +18,12 @@ type MessageIds =
   'preferDefaultExport' | 'singleNamedExport' | 'multipleNamedToDefault';
 
 export interface Options {
-  /** Target file types to check */
-  target?: 'always' | 'single' | 'as-needed';
+  /**
+   * Target file types to check. `any` is eslint-plugin-import's spelling:
+   * `always`, except that an `export * from` (whose names this file cannot
+   * see) silences it.
+   */
+  target?: 'always' | 'single' | 'as-needed' | 'any';
   /** Ignore files matching patterns */
   ignoreFiles?: string[];
   /** Allow named exports in specific contexts */
@@ -77,10 +81,10 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
         properties: {
           target: {
             type: 'string',
-            enum: ['always', 'single', 'as-needed'],
+            enum: ['always', 'single', 'as-needed', 'any'],
             default: 'single',
             description:
-              'When to enforce default exports: always (any named export and no default), single (exactly one exported name), as-needed (same as single)',
+              'When to enforce default exports: always (any named export and no default), single (exactly one exported name), as-needed (same as single), any (eslint-plugin-import: always, unless the file has an `export * from`)',
           },
           ignoreFiles: {
             type: 'array',
@@ -106,7 +110,7 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
   ],
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    let target: 'always' | 'single' | 'as-needed';
+    let target: 'always' | 'single' | 'as-needed' | 'any';
     let ignoreFiles: string[];
     let allowNamedExports: boolean;
     let filename: string;
@@ -246,7 +250,7 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
       // At the end of the file, analyze the export pattern
       'Program:exit'(node: TSESTree.Program) {
         if (
-          target === 'always' &&
+          (target === 'always' || (target === 'any' && !hasStarExport)) &&
           namedExports.size > 0 &&
           !defaultExportNode
         ) {

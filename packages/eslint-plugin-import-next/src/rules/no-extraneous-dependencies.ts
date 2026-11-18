@@ -10,7 +10,12 @@
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { builtinModules } from 'node:module';
-import { createRule, staticString } from '@interlace/eslint-devkit';
+import path from 'node:path';
+import {
+  createRule,
+  resolveModule,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   readJsonFileSync,
@@ -25,17 +30,38 @@ type MessageIds =
   | 'devDependencyInProduction'
   | 'addToDependencies'
   | 'addToDevDependencies'
-  | 'moveToDependencies';
+  | 'moveToDependencies'
+  | 'packageJsonNotFound'
+  | 'packageJsonUnparsable';
+
+/**
+ * A dependency kind's switch: `true`/`false`, or eslint-plugin-import's list
+ * of globs naming the files that may import that kind (`['**\/*.test.js']`).
+ */
+type DependencyKindSetting = boolean | string[];
 
 export interface Options {
   /** Allow dev dependencies */
-  devDependencies?: boolean;
+  devDependencies?: DependencyKindSetting;
   /** Allow optional dependencies */
-  optionalDependencies?: boolean;
+  optionalDependencies?: DependencyKindSetting;
   /** Allow peer dependencies */
-  peerDependencies?: boolean;
+  peerDependencies?: DependencyKindSetting;
   /** Allow bundled dependencies */
-  bundledDependencies?: boolean;
+  bundledDependencies?: DependencyKindSetting;
+  /**
+   * eslint-plugin-import: the folder(s) whose package.json declares the
+   * dependencies, instead of the nearest one. Several are merged.
+   */
+  packageDir?: string | string[];
+  /**
+   * eslint-plugin-import: `false` skips internal modules (a bare specifier
+   * matching the `import/internal-regex` setting, or resolving to a file
+   * outside `node_modules`, such as a path alias). Absent or `true`: checked.
+   */
+  includeInternal?: boolean;
+  /** eslint-plugin-import: check type-only imports and exports too. */
+  includeTypes?: boolean;
   /** Package.json file name to use */
   packageJsonPath?: string;
   /** Direct package.json content for testing */
@@ -68,9 +94,69 @@ interface PackageJson {
   devDependencies?: Record<string, string>;
   optionalDependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
-  bundledDependencies?: string[] | boolean;
+  bundledDependencies?: string[] | boolean | Record<string, string>;
   /** npm accepts both spellings. */
-  bundleDependencies?: string[] | boolean;
+  bundleDependencies?: string[] | boolean | Record<string, string>;
+}
+
+/**
+ * The bundled list, as npm reads it: `bundleDependencies` wins over
+ * `bundledDependencies`, and an object form (`{ "pkg": "latest" }`) names
+ * its keys. `true` bundles every dependency, which are allowed anyway.
+ */
+function bundledList(json: PackageJson): string[] {
+  const list = json.bundleDependencies ?? json.bundledDependencies;
+  if (Array.isArray(list)) return list;
+  return list && typeof list === 'object' ? Object.keys(list) : [];
+}
+
+/**
+ * eslint-plugin-import's `packageDir` with several folders: one manifest
+ * whose dependency fields are the union of theirs.
+ */
+function mergeManifests(manifests: PackageJson[]): PackageJson {
+  const merged = {
+    dependencies: {},
+    devDependencies: {},
+    optionalDependencies: {},
+    peerDependencies: {},
+    bundledDependencies: [] as string[],
+  };
+  for (const json of manifests) {
+    Object.assign(merged.dependencies, json.dependencies);
+    Object.assign(merged.devDependencies, json.devDependencies);
+    Object.assign(merged.optionalDependencies, json.optionalDependencies);
+    Object.assign(merged.peerDependencies, json.peerDependencies);
+    merged.bundledDependencies.push(...bundledList(json));
+  }
+  return merged;
+}
+
+/**
+ * eslint-plugin-import's `testConfig`: a boolean is itself, absent is
+ * allowed, and a glob list allows the files it matches, written either
+ * relative to the working directory or as an absolute pattern.
+ */
+function allowedFor(
+  setting: DependencyKindSetting | undefined,
+  filename: string,
+): boolean {
+  if (!Array.isArray(setting)) return setting !== false;
+  return setting.some(
+    (glob) =>
+      path.matchesGlob(filename, glob) ||
+      path.matchesGlob(filename, path.join(process.cwd(), glob)),
+  );
+}
+
+/** A dependency kind's schema: a switch, or eslint-plugin-import's globs. */
+function kindSchema(kind: string) {
+  return {
+    type: ['boolean', 'array'] as ('boolean' | 'array')[],
+    items: { type: 'string' as const },
+    default: true,
+    description: `Allow imports from ${kind}: \`true\`/\`false\`, or globs of the files that may import them.`,
+  };
 }
 
 const DEPENDENCY_FIELDS = [
@@ -204,6 +290,26 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-extraneous-dependencies.md',
       }),
+      packageJsonNotFound: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'package.json Not Found',
+        description:
+          'The package.json file named by packageDir could not be found',
+        severity: 'HIGH',
+        fix: 'Point packageDir at a folder that contains package.json',
+        documentationLink:
+          'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-extraneous-dependencies.md',
+      }),
+      packageJsonUnparsable: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'package.json Not Parsable',
+        description:
+          'The package.json file named by packageDir could not be parsed',
+        severity: 'HIGH',
+        fix: 'Fix the JSON syntax of package.json',
+        documentationLink:
+          'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-extraneous-dependencies.md',
+      }),
       moveToDependencies: formatLLMMessage({
         icon: MessageIcons.ARCHITECTURE,
         issueName: 'Move to Dependencies',
@@ -218,25 +324,24 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
       {
         type: 'object',
         properties: {
-          devDependencies: {
-            type: 'boolean',
-            default: true,
-            description: 'Allow imports from devDependencies.',
+          devDependencies: kindSchema('devDependencies'),
+          optionalDependencies: kindSchema('optionalDependencies'),
+          peerDependencies: kindSchema('peerDependencies'),
+          bundledDependencies: kindSchema('bundledDependencies'),
+          packageDir: {
+            type: ['string', 'array'],
+            items: { type: 'string' },
+            description:
+              'Folder(s) whose package.json declares the dependencies, instead of the nearest one; several are merged.',
           },
-          optionalDependencies: {
+          includeInternal: {
             type: 'boolean',
-            default: true,
-            description: 'Allow imports from optionalDependencies.',
+            description:
+              'Check internal modules (`import/internal-regex`, or resolving outside node_modules). Absent: checked.',
           },
-          peerDependencies: {
+          includeTypes: {
             type: 'boolean',
-            default: true,
-            description: 'Allow imports from peerDependencies.',
-          },
-          bundledDependencies: {
-            type: 'boolean',
-            default: true,
-            description: 'Allow imports from bundledDependencies.',
+            description: 'Check type-only imports and exports too.',
           },
           packageJsonPath: {
             type: 'string',
@@ -299,8 +404,30 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
     let allowPatterns: string[];
     let ignore: string[];
     let verbatimModuleSyntax: boolean;
+    let includeTypes: boolean;
+    let skipInternal: boolean;
+    let coreModules: unknown[];
     let resolvedPackageJson: PackageJson | null;
     let allowedPackages: Set<string>;
+
+    /**
+     * eslint-plugin-import's "internal" module: a bare specifier the project
+     * maps to its own code, by the `import/internal-regex` setting or by
+     * resolving to a file outside `node_modules` (a path alias).
+     */
+    function isInternal(importPath: string): boolean {
+      const internalRegex = context.settings['import/internal-regex'];
+      if (
+        typeof internalRegex === 'string' &&
+        new RegExp(internalRegex).test(importPath)
+      ) {
+        return true;
+      }
+      const resolved = resolveModule(importPath, context.filename);
+      return (
+        resolved !== null && !resolved.split(path.sep).includes('node_modules')
+      );
+    }
 
     // oxlint-disable-next-line consistent-function-scoping
     function isExternalPackage(importPath: string): string | null {
@@ -385,6 +512,15 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
     function checkImport(importPath: string, node: TSESTree.Node) {
       const packageName = isExternalPackage(importPath);
       if (!packageName) {
+        return;
+      }
+
+      // `import/core-modules`: names the runtime provides (`electron`).
+      if (coreModules.includes(packageName)) {
+        return;
+      }
+
+      if (skipInternal && isInternal(importPath)) {
         return;
       }
 
@@ -541,23 +677,28 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options] = context.options;
+        const o = options || {};
         ({
-          devDependencies = true,
-          optionalDependencies = true,
-          peerDependencies = true,
-          bundledDependencies = true,
           packageJsonPath,
           packageJson,
           resolutionStrategy = 'strict',
           allowPatterns = [],
           ignore = [],
           verbatimModuleSyntax = false,
-        } = options || {});
+        } = o);
 
         const filename = context.filename;
         if (!filename) {
           return false;
         }
+        devDependencies = allowedFor(o.devDependencies, filename);
+        optionalDependencies = allowedFor(o.optionalDependencies, filename);
+        peerDependencies = allowedFor(o.peerDependencies, filename);
+        bundledDependencies = allowedFor(o.bundledDependencies, filename);
+        includeTypes = o.includeTypes === true;
+        skipInternal = o.includeInternal === false;
+        coreModules = (context.settings['import/core-modules'] ??
+          []) as unknown[];
 
         // Use provided package.json if available (for testing)
         resolvedPackageJson = null;
@@ -571,6 +712,27 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
             // Invalid package.json - skip
             return false;
           }
+        } else if (o.packageDir?.length) {
+          // eslint-plugin-import's `packageDir`, resolved from the working
+          // directory as it resolves it. One folder must hold a readable
+          // manifest — a config error is reported once, and the file is not
+          // linted against a guess; of several, the readable ones merge.
+          const manifests = ([] as string[])
+            .concat(o.packageDir)
+            .map((dir) => path.join(path.resolve(dir), 'package.json'));
+          const read = manifests.map(readManifest);
+          if (manifests.length === 1 && !read[0]) {
+            context.report({
+              loc: { line: 1, column: 0 },
+              messageId: statSync(manifests[0])
+                ? 'packageJsonUnparsable'
+                : 'packageJsonNotFound',
+            });
+            return false;
+          }
+          resolvedPackageJson = mergeManifests(
+            read.filter((json): json is PackageJson => json !== null),
+          );
         } else {
           // Find package.json automatically
           const packageJsonFile = findManifest(getDirname(filename));
@@ -622,13 +784,9 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
         // Add bundled dependencies if allowed (either npm spelling; `true`
         // bundles every dependency, which are already allowed above).
         if (bundledDependencies) {
-          for (const list of [
-            resolvedPackageJson?.bundledDependencies,
-            resolvedPackageJson?.bundleDependencies,
-          ]) {
-            if (Array.isArray(list))
-              list.forEach((pkg) => allowedPackages.add(pkg));
-          }
+          bundledList(resolvedPackageJson).forEach((pkg) =>
+            allowedPackages.add(pkg),
+          );
         }
 
         // The package's own name: Node resolves it to the package itself
@@ -645,12 +803,13 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
         // form is NOT erased under `verbatimModuleSyntax` (tsc emits
         // `import {} from 'pkg'`), so the option keeps it checked.
         if (
-          node.importKind === 'type' ||
-          (!verbatimModuleSyntax &&
-            node.specifiers.length > 0 &&
-            node.specifiers.every(
-              (s) => s.type === 'ImportSpecifier' && s.importKind === 'type',
-            ))
+          !includeTypes &&
+          (node.importKind === 'type' ||
+            (!verbatimModuleSyntax &&
+              node.specifiers.length > 0 &&
+              node.specifiers.every(
+                (s) => s.type === 'ImportSpecifier' && s.importKind === 'type',
+              )))
         ) {
           return;
         }
@@ -662,8 +821,10 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
       // A re-export loads the package at runtime like an import does; a
       // type-only one is erased.
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
-        if (!node.source || node.exportKind === 'type') return;
+        if (!node.source || (!includeTypes && node.exportKind === 'type'))
+          return;
         if (
+          !includeTypes &&
           !verbatimModuleSyntax &&
           node.specifiers.length > 0 &&
           node.specifiers.every((s) => s.exportKind === 'type')
@@ -674,14 +835,14 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
       },
 
       ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
-        if (node.exportKind === 'type') return;
+        if (!includeTypes && node.exportKind === 'type') return;
         checkImport(node.source.value, node.source);
       },
 
       // TS `import x = require('pkg')` compiles to `require('pkg')`.
       TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
         if (
-          node.importKind === 'type' ||
+          (!includeTypes && node.importKind === 'type') ||
           node.moduleReference.type !== 'TSExternalModuleReference'
         ) {
           return;

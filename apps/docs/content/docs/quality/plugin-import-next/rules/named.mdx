@@ -39,8 +39,27 @@ export { add as plus } from './math';
 ## Options
 
 ```json
-[]
+[
+  {
+    "type": "object",
+    "properties": {
+      "commonjs": {
+        "type": "boolean",
+        "description": "Also check the names destructured from a `require()` (`const { a } = require('./m')`)."
+      }
+    },
+    "additionalProperties": false
+  }
+]
 ```
+
+### eslint-plugin-import options
+
+`commonjs: true` (eslint-plugin-import's option, with its meaning) also checks
+the names destructured from a `require()` of a string:
+`const { a } = require('./m')` is reported when `./m` does not export `a`.
+Computed and string-literal keys and rest elements are not checked, and the
+module must be part of the TypeScript program, as for imports.
 
 ## Implementation
 

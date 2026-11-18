@@ -66,6 +66,8 @@ vi.mock('@interlace/eslint-devkit', async () => {
       const cycles = mocks.detectCycleFromImport(src, tgt);
       return cycles && cycles.length > 0 ? cycles[0] : null;
     },
+    // Nothing is on disk: the linted file's on-disk edges are empty.
+    getFileImports: () => [],
     getMinimalCycle: (c: any) => c, // eslint-disable-line @typescript-eslint/no-explicit-any
     getCycleHash: (c: any) => JSON.stringify(c), // eslint-disable-line @typescript-eslint/no-explicit-any
   };
