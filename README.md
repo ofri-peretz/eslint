@@ -86,6 +86,26 @@ lint errors" produces a parameterized query instead of a plausible-looking escap
 helper. Machine-readable equivalents ship via the
 [SARIF formatter](./packages/eslint-formatter-sarif) for GitHub code scanning.
 
+## Used by
+
+Public repositories that ship these plugins today. Each link opens the file where they do.
+Listed: repositories with 5 or more stars, checked 2026-11-18.
+
+| Repository                                                                                                                  | Plugins                         |
+| --------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| [EvgenyOrekhov/eslint-config-hardcore](https://github.com/EvgenyOrekhov/eslint-config-hardcore/blob/master/package.json)    | secure-coding, node-security    |
+| [Platform-Collective/platform](https://github.com/Platform-Collective/platform/blob/develop/common/scripts/package.json)    | secure-coding                   |
+| [stamhoofd/stamhoofd](https://github.com/stamhoofd/stamhoofd/blob/main/shared/eslint/package.json)                          | secure-coding, node-security    |
+| [manufosela/karajan-code](https://github.com/manufosela/karajan-code/blob/main/eslint.config.js)                            | node-security                   |
+| [laststance/eslint-config-ts-prefixer](https://github.com/laststance/eslint-config-ts-prefixer/blob/main/eslint.config.mjs) | browser-security                |
+| [IGNF/cartes.gouv.fr-entree-carto](https://github.com/IGNF/cartes.gouv.fr-entree-carto/blob/main/eslint.config.js)          | browser-security, secure-coding |
+| [TraceX-dev/TraceX](https://github.com/TraceX-dev/TraceX/blob/develop/common/scripts/package.json)                          | secure-coding                   |
+| [alexispurslane/vessel](https://github.com/alexispurslane/vessel/blob/main/package.json)                                    | secure-coding                   |
+| [laststance/gitbox](https://github.com/laststance/gitbox/blob/main/package.json)                                            | browser-security                |
+| [belyas/pubsub-mfe](https://github.com/belyas/pubsub-mfe/blob/main/eslint.config.js)                                        | browser-security                |
+
+Using one of these plugins in a public repository and want it listed? Open an issue.
+
 ---
 
 ## The ecosystem
