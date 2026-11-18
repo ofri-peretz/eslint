@@ -75,6 +75,7 @@ ruleTester.run('no-insecure-cookie-options', noInsecureCookieOptions, {
       code: `app.use(cookieSession({ name: 'session', sameSite: true, secret: secrets.cookie(), secure: env !== 'dev' }));`,
     },
     {
+      // @found reasoned while fixing the real-source FP above, not seen in real code
       name: 'FP: a one-argument .cookie(name) lookup is not res.cookie(name, value)',
       code: `const name = config.cookie('session');`,
     },
