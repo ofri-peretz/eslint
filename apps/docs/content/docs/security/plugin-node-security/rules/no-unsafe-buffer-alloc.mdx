@@ -209,6 +209,29 @@ a measured, reviewed performance decision and coverage is proved by an argument
 the rule cannot see — a pool whose bookkeeping lives in another module, or a
 codec that hands the buffer to native code to fill.
 
+## A read buffer read only up to `bytesRead`
+
+A buffer filled by a file read and then looked at only up to the read's count
+exposes exactly the bytes the read wrote, so it is not reported:
+
+```javascript
+const buffer = Buffer.allocUnsafe(byteLimit);
+const result = await handle.read(buffer, 0, byteLimit, 0); // FileHandle.read
+return buffer.subarray(0, result.bytesRead).toString('utf-8');
+
+const buf = Buffer.allocUnsafe(n);
+const bytesRead = fs.readSync(fd, buf, 0, n, 0); // returns the count
+return buf.toString('utf8', 0, bytesRead);
+```
+
+What has to hold, and is checked: the read is `readSync(fd, buf, offset, …)` or
+an awaited `x.read(buf, offset, …)`, at offset `0` (or omitted); its count lands
+in a `const` (the returned number, `const { bytesRead } = …`, or `.bytesRead`
+off the `const` result); and every later look at the buffer is
+`subarray(0, count)`, `slice(0, count)` or `toString(enc, 0, count)`, a write,
+or a metadata read. Anything else — the whole buffer, a different bound, a read
+at an offset, an un-awaited `FileHandle.read` — is still reported.
+
 ## Known False Positives
 
 - An allocation covered through a shape the rule does not model: filled by a
@@ -216,6 +239,9 @@ codec that hands the buffer to native code to fill.
   These stay reported; unresolved is not the same as safe.
 - Coverage proved only by execution order that differs from source order — a
   buffer written inside a callback declared above its first read.
+- A read-then-bounded-slice through the callback form of `fs.read`, a
+  promisified `fs.read`, or a stream: only `readSync` and an awaited
+  `FileHandle.read` are recognised.
 
 <WhenNotToUse />
 

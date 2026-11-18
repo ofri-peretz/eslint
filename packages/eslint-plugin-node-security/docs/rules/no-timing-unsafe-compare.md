@@ -46,6 +46,8 @@ This rule detects `===`, `==`, `!==`, and `!=` comparisons of a secret against a
 - one operand reads off a request (`req`, `request`, `ctx`, `event` — see `untrustedSources`), and
 - the other has a name suggesting it is a secret (`token`, `secret`, `password`, `hash`, `signature`, … — see `secretPatterns`).
 
+A secret pattern shorter than six letters (`token`, `auth`, `hash`, `jwt`, `mac`, …) matches only as a whole word of the identifier, on camelCase, acronym and separator boundaries: `accessToken`, `x_auth_token` and `JWTValue` match, `maxTokens`, `author` and `hashtag` do not. A longer pattern matches anywhere (`clientsecret`, `hashedpassword`). `authorization` is its own default pattern for that reason. A pattern with regex syntax in it keeps the substring semantics its author wrote.
+
 Two secret-named values with no request operand (`submittedToken === validToken`) are not reported: nothing shows an attacker can time the comparison. `reportUnverifiedComparisons: true` reports on the secret-looking name alone.
 
 The same comparison through a helper counts too: `buf.equals(other)`, `Buffer.compare(a, b)`, `_.isEqual(a, b)` and its siblings — whose first two arguments are the values even when a customizer or options bag follows (`_.isEqualWith(a, b, fn)`, `deepEqual(a, b, { strict: true })`) — and a local wrapper that compares two of its parameters. A crypto derivation (`createHmac(…).digest()`, a `.sign()` or `#hmac()` method) is a secret by shape whatever it is named, and so is a value read from `req.session`/`req.user`/`await`, however many aliases away. A value compared with itself or a reading of itself (`token !== token.trim()`, `token !== token`) is one value, and is not reported.
@@ -298,5 +300,6 @@ exclusions makes the widening unusable.
 
 `nonSecretWords` matches any word of the identifier; `nonSecretTails` matches
 only the last one. Setting either to `[]` removes that guard, which restores
-the collisions it exists to prevent (`authorId` matching `auth`, `tokenCount`
-matching `token`).
+the collisions it exists to prevent (`tokenCount` matching `token`, or
+`authorId` matching a regex pattern such as `^auth` — a plain `auth` no longer
+reaches `authorId`, because a short pattern must be a whole word).
