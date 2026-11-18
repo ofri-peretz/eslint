@@ -955,7 +955,14 @@ export function createUpstreamOrder(context: UpstreamContext) {
       coreModules = (settings['import/core-modules'] as string[]) ?? [];
       externalFolders = (settings['import/external-module-folders'] as
         string[] | undefined) ?? ['node_modules'];
-      packageDir = packageDirOf(path.dirname(path.resolve(context.filename)));
+      // resolveModule returns real paths, so the package dir must be one too.
+      // Through a symlinked directory (macOS's /var → /private/var, a linked
+      // checkout) every resolved path was otherwise "outside" the package, and
+      // a symlinked local package ranked external instead of internal.
+      const dir = path.dirname(path.resolve(context.filename));
+      packageDir = packageDirOf(
+        fs.existsSync(dir) ? fs.realpathSync.native(dir) : dir,
+      );
       importMap = new Map();
       exportMap = new Map();
     },

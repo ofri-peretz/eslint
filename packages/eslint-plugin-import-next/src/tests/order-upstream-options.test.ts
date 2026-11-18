@@ -38,7 +38,13 @@ RuleTester.describe = describe;
  * places a bare specifier can resolve to. `orphan/` has no package.json
  * anywhere above it.
  */
-const root = fs.mkdtempSync(path.join(os.tmpdir(), 'order-upstream-'));
+// Every file is linted through a symlink to the fixture, on every OS. The
+// resolver returns real paths; this pins that the rule compares like with like
+// (it did not, and the cases recorded on macOS — whose tmpdir is a symlink —
+// failed on Linux CI).
+const real = fs.mkdtempSync(path.join(os.tmpdir(), 'order-upstream-'));
+const root = `${real}-link`;
+fs.symlinkSync(real, root);
 const pkg = (dir: string, name: string) => {
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(
@@ -60,7 +66,10 @@ fs.symlinkSync(
   path.join(root, 'app/node_modules/vendored'),
 );
 fs.mkdirSync(path.join(root, 'orphan'));
-afterAll(() => fs.rmSync(root, { recursive: true, force: true }));
+afterAll(() => {
+  fs.unlinkSync(root);
+  fs.rmSync(real, { recursive: true, force: true });
+});
 
 const at = (file: string) => path.join(root, file);
 
@@ -101,6 +110,12 @@ describe('order — eslint-plugin-import options', () => {
         name: 'alphabetize.orderImportKind selects the upstream engine: no newline is required between groups',
         code: "import fs from 'fs';\nimport a from './a';\n",
         filename: at('app/src/file.ts'),
+        options: [{ alphabetize: { order: 'asc', orderImportKind: 'asc' } }],
+      },
+      {
+        name: 'a file in a directory that does not exist yet (an unsaved buffer) still lints',
+        code: "import fs from 'fs';\nimport a from './a';\n",
+        filename: at('not-on-disk/src/file.ts'),
         options: [{ alphabetize: { order: 'asc', orderImportKind: 'asc' } }],
       },
       {
@@ -320,8 +335,8 @@ describe('order — eslint-plugin-import options', () => {
           "import p from '../p';\nimport s from './s';\nimport i from './';\nimport u from '~/u';\nimport v from 'vendored';\nimport h from 'hoisted-pkg';\nimport fs from 'fs';\n",
           "import u from '~/u';\nimport p from '../p';\nimport s from './s';\nimport i from './';\nimport v from 'vendored';\nimport h from 'hoisted-pkg';\nimport fs from 'fs';\n",
           "import v from 'vendored';\nimport u from '~/u';\nimport p from '../p';\nimport s from './s';\nimport i from './';\nimport h from 'hoisted-pkg';\nimport fs from 'fs';\n",
-          "import fs from 'fs';\nimport v from 'vendored';\nimport u from '~/u';\nimport p from '../p';\nimport s from './s';\nimport i from './';\nimport h from 'hoisted-pkg';\n",
-          "import fs from 'fs';\nimport v from 'vendored';\nimport h from 'hoisted-pkg';\nimport u from '~/u';\nimport p from '../p';\nimport s from './s';\nimport i from './';\n",
+          "import h from 'hoisted-pkg';\nimport v from 'vendored';\nimport u from '~/u';\nimport p from '../p';\nimport s from './s';\nimport i from './';\nimport fs from 'fs';\n",
+          "import fs from 'fs';\nimport h from 'hoisted-pkg';\nimport v from 'vendored';\nimport u from '~/u';\nimport p from '../p';\nimport s from './s';\nimport i from './';\n",
         ],
       },
       {
