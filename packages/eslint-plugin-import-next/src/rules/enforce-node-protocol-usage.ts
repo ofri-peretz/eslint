@@ -28,7 +28,7 @@ import {
 type MessageIds = 'requireNodeProtocol' | 'forbidNodeProtocol';
 
 export type Mode = 'always' | 'never';
-type RuleOptions = [Mode];
+type RuleOptions = [Mode?];
 
 /**
  * Node's own list of builtin modules, subpaths included (`fs/promises`). A
@@ -42,6 +42,17 @@ const NODE_BUILT_INS = new Set(builtinModules);
 
 /** eslint-plugin-import's `import/node-version` format: `"16.0.0"`. */
 const NODE_VERSION = /^[0-9]+\.[0-9]+\.[0-9]+$/;
+
+/**
+ * Whether a Node.js version loads builtins by their `node:` name everywhere,
+ * `require()` included: 14.18 on the 14 line, and 16.0 onwards.
+ *
+ * @vocabulary Node.js — https://nodejs.org/api/modules.html#core-modules (history: v16.0.0, v14.18.0)
+ */
+function supportsScheme(version: string): boolean {
+  const [major, minor] = version.split('.').map(Number);
+  return major >= 16 || (major === 14 && minor >= 18);
+}
 
 export const enforceNodeProtocolUsage = createRule<RuleOptions, MessageIds>({
   name: 'enforce-node-protocol-usage',
@@ -74,18 +85,16 @@ export const enforceNodeProtocolUsage = createRule<RuleOptions, MessageIds>({
           'https://nodejs.org/api/modules.html#built-in-modules',
       }),
     },
-    // eslint-plugin-import's schema: the mode is required.
-    schema: {
-      type: 'array',
-      minItems: 1,
-      maxItems: 1,
-      items: [{ type: 'string', enum: ['always', 'never'] }],
-    },
+    // eslint-plugin-import's schema requires the mode; here it defaults to
+    // `'always'`, so a config that enables every rule by name still loads.
+    schema: [{ type: 'string', enum: ['always', 'never'] }],
   },
   defaultOptions: ['always'],
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let mode: Mode;
+    /** `'always'` asks for a spelling the configured Node.js cannot load. */
+    let schemeUnsupported: boolean;
 
     function check(source: TSESTree.Node | null | undefined) {
       // eslint-plugin-import reads a quoted specifier only; a template
@@ -108,7 +117,11 @@ export const enforceNodeProtocolUsage = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      if (moduleName.startsWith('node:') || !NODE_BUILT_INS.has(moduleName))
+      if (
+        schemeUnsupported ||
+        moduleName.startsWith('node:') ||
+        !NODE_BUILT_INS.has(moduleName)
+      )
         return;
       context.report({
         node: source,
@@ -134,6 +147,12 @@ export const enforceNodeProtocolUsage = createRule<RuleOptions, MessageIds>({
             '`import/node-version` setting must be a string in the format "10.23.45" (a semver version, with no leading zero)',
           );
         }
+        // `import/node-version` below 14.18 cannot load `node:fs` from
+        // require(), so `'always'` has nothing it can ask for there (as in
+        // eslint-plugin-import). Which builtins exist is the running Node's
+        // list, not the configured version's.
+        schemeUnsupported =
+          nodeVersion !== undefined && !supportsScheme(nodeVersion);
         mode = context.options[0] === 'never' ? 'never' : 'always';
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {

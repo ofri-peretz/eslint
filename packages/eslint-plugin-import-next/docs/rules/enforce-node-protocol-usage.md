@@ -13,7 +13,7 @@ Enforce either using, or omitting, the `node:` protocol when importing Node.js b
 - `'always'`: a builtin written without the `node:` scheme is reported (`fs`, `fs/promises`).
 - `'never'`: a builtin written with the scheme is reported (`node:fs`), but only when the bare name is itself a builtin. `node:test` exists only with the scheme, and `test` would load the npm package, so it is left alone.
 
-A specifier is a builtin when Node's own builtin module list names it exactly. Not reported: packages, relative paths, `punycode/` (Node's documented way to load the npm package instead of the builtin), and a template literal, which `eslint-plugin-import` does not read either. The `import/node-version` setting is accepted and checked for its format; the builtin list is the one of the Node.js running ESLint.
+A specifier is a builtin when Node's own builtin module list names it exactly. Not reported: packages, relative paths, `punycode/` (Node's documented way to load the npm package instead of the builtin), and a template literal, which `eslint-plugin-import` does not read either. The `import/node-version` setting is honoured as `eslint-plugin-import` honours it for the scheme: below 14.18 (where `require('node:fs')` does not load), `'always'` reports nothing. Which builtins exist is the list of the Node.js running ESLint.
 
 For a one-way rule with no option, see [`prefer-node-protocol`](./prefer-node-protocol.md).
 
@@ -43,20 +43,15 @@ import test from 'node:test';
 ## Options
 
 ```json
-{
-  "type": "array",
-  "minItems": 1,
-  "maxItems": 1,
-  "items": [
-    {
-      "type": "string",
-      "enum": ["always", "never"]
-    }
-  ]
-}
+[
+  {
+    "type": "string",
+    "enum": ["always", "never"]
+  }
+]
 ```
 
-The mode is required, as in `eslint-plugin-import`.
+`eslint-plugin-import` requires the mode; here it defaults to `'always'`.
 
 ## When Not To Use It
 

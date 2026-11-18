@@ -11,8 +11,9 @@ rules that suite tests is missing.
 
 Two new rules, with eslint-plugin-import's names and options:
 
-- `enforce-node-protocol-usage` (`['always']` or `['never']`): one spelling for
-  Node.js builtins, `node:fs` or `fs`, on every way a module is loaded. Fixable.
+- `enforce-node-protocol-usage` (`'always'`, the default, or `'never'`): one
+  spelling for Node.js builtins, `node:fs` or `fs`, on every way a module is
+  loaded. Honours `import/node-version`. Fixable.
 - `no-webpack-loader-syntax`: a `!` in a module specifier
   (`style!css!./app.css`) configures webpack loaders inline.
 

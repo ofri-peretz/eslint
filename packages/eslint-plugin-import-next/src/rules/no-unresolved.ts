@@ -285,6 +285,8 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
       // and TypeScript refuses a value import of it by that name (TS6137,
       // "import 'x' instead of '@types/x'"). Finding its `.d.ts` is not
       // resolving it. `import type` / `export type` are erased, and allowed.
+      // A `require('@types/x')` is a runtime load of a `.d.ts`, which fails
+      // the same way, so it is unresolved too.
       const declaration = node.parent as {
         importKind?: string;
         exportKind?: string;

@@ -214,7 +214,20 @@ describe('enforce-node-protocol-usage: settings and options', () => {
     );
   });
 
-  it('requires the mode, as eslint-plugin-import does', () => {
-    expect(() => lint({}, [])).toThrow(/should NOT have fewer than 1 items/);
+  it('defaults to always when no mode is given', () => {
+    expect(lint({}, []).map((m) => m.messageId)).toEqual([
+      'requireNodeProtocol',
+    ]);
+  });
+
+  it('asks for nothing under always when import/node-version predates node:', () => {
+    expect(lint({ 'import/node-version': '12.0.0' }, ['always'])).toEqual([]);
+    expect(lint({ 'import/node-version': '14.17.0' }, ['always'])).toEqual([]);
+    expect(lint({ 'import/node-version': '14.18.0' }, ['always'])).toHaveLength(
+      1,
+    );
+    expect(lint({ 'import/node-version': '16.0.0' }, ['always'])).toHaveLength(
+      1,
+    );
   });
 });
