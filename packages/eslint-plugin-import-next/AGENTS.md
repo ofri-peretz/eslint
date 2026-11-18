@@ -65,14 +65,14 @@ ESLint plugin for **dependency management** with 30 LLM-optimized rules. Covers 
 
 ## Rule Categories
 
-| Category              | Rules                                                                                                                                                             |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Module Resolution     | `no-unresolved`, `named`, `default`, `namespace`, `extensions`, `no-self-import`, `no-duplicates`                                                                 |
-| Module System         | `no-amd`, `no-commonjs`, `no-nodejs-modules`                                                                                                                      |
+| Category              | Rules                                                                                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Module Resolution     | `no-unresolved`, `named`, `default`, `namespace`, `extensions`, `no-self-import`, `no-duplicates`                                                 |
+| Module System         | `no-amd`, `no-commonjs`, `no-nodejs-modules`, `no-webpack-loader-syntax`                                                                          |
 | Dependency Boundaries | `no-cycle`, `no-internal-modules`, `no-cross-domain-imports`, `enforce-dependency-direction`, `no-restricted-paths`, `no-relative-parent-imports` |
-| Export Style          | `no-default-export`, `no-named-export`, `prefer-default-export`, `no-anonymous-default-export`, `no-mutable-exports`, `no-deprecated`                             |
-| Import Style          | `enforce-import-order`, `first`, `newline-after-import`, `no-unassigned-import`                                                                                   |
-| Dependency Management | `no-extraneous-dependencies`, `no-unused-modules`, `max-dependencies`, `prefer-node-protocol`                                                                     |
+| Export Style          | `no-default-export`, `no-named-export`, `prefer-default-export`, `no-anonymous-default-export`, `no-mutable-exports`, `no-deprecated`             |
+| Import Style          | `enforce-import-order`, `first`, `newline-after-import`, `no-unassigned-import`                                                                   |
+| Dependency Management | `no-extraneous-dependencies`, `no-unused-modules`, `max-dependencies`, `prefer-node-protocol`, `enforce-node-protocol-usage`                      |
 
 ## Common Fix Patterns
 

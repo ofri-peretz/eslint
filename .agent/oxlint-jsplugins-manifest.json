@@ -1,10 +1,10 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-11-12",
+  "generatedAt": "2026-11-18",
   "totalPlugins": 32,
-  "totalRules": 500,
-  "oxlintCompatible": 500,
+  "totalRules": 502,
+  "oxlintCompatible": 502,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -694,7 +694,7 @@
       "short": "import-next",
       "shim": "tools/oxlint-plugins/interlace-import-next.cjs",
       "subpath": "eslint-plugin-import-next/oxlint",
-      "ruleCount": 55,
+      "ruleCount": 57,
       "rules": [
         {
           "name": "consistent-type-specifier-style",
@@ -722,6 +722,12 @@
         },
         {
           "name": "enforce-import-order",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "enforce-node-protocol-usage",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -980,6 +986,12 @@
         },
         {
           "name": "no-useless-path-segments",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-webpack-loader-syntax",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false

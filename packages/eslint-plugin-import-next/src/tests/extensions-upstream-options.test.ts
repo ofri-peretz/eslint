@@ -32,6 +32,8 @@ const write = (name: string, text = 'export const x = 1;\n') => {
   fs.writeFileSync(path.join(dir, name), text);
 };
 write('foo.js');
+write('pick.js');
+write('pick.jsx');
 write('bar.json', '{}\n');
 write('only.mjs');
 write('index.js');
@@ -245,4 +247,38 @@ describe('extensions — eslint-plugin-import option shapes', () => {
       },
     ],
   });
+});
+
+// eslint-plugin-import's node resolver tries `import/resolve` (or
+// `import/resolver: { node }`) extensions in their order: with `.jsx` first,
+// `./pick` is pick.jsx, so `./pick.jsx` under `jsx: never` is decoration.
+ruleTester.run('extensions — the resolver settings', extensions, {
+  valid: [
+    {
+      name: 'the default order resolves ./pick to pick.js: the .jsx carries weight',
+      code: `import a from './pick.jsx';`,
+      filename,
+      options: [{ jsx: 'never' }],
+    },
+  ],
+  invalid: [
+    {
+      name: 'import/resolve extensions resolve ./pick to pick.jsx: the extension is decoration',
+      code: `import a from './pick.jsx';`,
+      filename,
+      options: [{ jsx: 'never' }],
+      settings: { 'import/resolve': { extensions: ['.jsx', '.js'] } },
+      errors: [{ messageId: 'unexpectedExtension' }],
+    },
+    {
+      name: 'the same order under import/resolver.node',
+      code: `import a from './pick.jsx';`,
+      filename,
+      options: ['never'],
+      settings: {
+        'import/resolver': { node: { extensions: ['.jsx', '.js'] } },
+      },
+      errors: [{ messageId: 'unexpectedExtension' }],
+    },
+  ],
 });

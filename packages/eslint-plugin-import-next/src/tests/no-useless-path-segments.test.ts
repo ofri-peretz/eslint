@@ -295,3 +295,51 @@ ruleTester.run('no-useless-path-segments - fidelity', noUselessPathSegments, {
     },
   ],
 });
+
+// `.` and `..` are directories however they are spelled, so a trailing slash
+// after them adds nothing (eslint-plugin-import reports `./` and `../`). A
+// trailing slash after a NAME still only matches a directory, and stays.
+ruleTester.run('no-useless-path-segments - dot directories', noUselessPathSegments, {
+  valid: [
+    {
+      name: 'a trailing slash after a name is left alone',
+      code: `import a from './lib/';`,
+      filename: APP,
+    },
+    {
+      name: 'the bare current directory',
+      code: `import a from '.';`,
+      filename: APP,
+    },
+  ],
+  invalid: [
+    {
+      name: './ is the current directory',
+      code: `import a from './';`,
+      output: `import a from '.';`,
+      filename: APP,
+      errors: [{ messageId: 'uselessPathSegments' }],
+    },
+    {
+      name: '../ is the parent directory',
+      code: `const a = require("../");`,
+      output: `const a = require("..");`,
+      filename: APP,
+      errors: [{ messageId: 'uselessPathSegments' }],
+    },
+    {
+      name: 'a path that walks into a directory and back ends at .',
+      code: `import('./lib/../');`,
+      output: `import('.');`,
+      filename: APP,
+      errors: [{ messageId: 'uselessPathSegments' }],
+    },
+    {
+      name: '../../ is two directories up',
+      code: `export * from '../../';`,
+      output: `export * from '../..';`,
+      filename: APP,
+      errors: [{ messageId: 'uselessPathSegments' }],
+    },
+  ],
+});

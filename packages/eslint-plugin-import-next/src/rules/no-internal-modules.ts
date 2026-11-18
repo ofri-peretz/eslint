@@ -9,7 +9,13 @@
  * Forbid importing the submodules of other modules (eslint-plugin-import inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule, staticString } from '@interlace/eslint-devkit';
+import * as path from 'node:path';
+
+import {
+  createRule,
+  resolveModule,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -31,22 +37,67 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
- * Simple glob pattern matching
- * Supports * (any chars) and ** (any path segments)
+ * A glob as a regular expression, minimatch's syntax for the parts an import
+ * path uses: `*` (within a segment), `**` (across segments), `?` (one
+ * character) and `{a,b}` alternatives (`**\/index{.js,}`). Every other
+ * character is literal.
  */
-function matchGlob(pattern: string, path: string): boolean {
-  // Escape special regex chars except *
-  const regexPattern = pattern
-    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    .replace(/\*\*/g, '{{DOUBLE_STAR}}')
-    .replace(/\*/g, '[^/]*')
-    .replace(/\{\{DOUBLE_STAR\}\}/g, '.*');
-
-  return new RegExp(`^${regexPattern}$`).test(path);
+function globToRegExp(pattern: string): RegExp {
+  let source = '';
+  let braces = 0;
+  for (let i = 0; i < pattern.length; i++) {
+    const char = pattern[i];
+    if (char === '*' && pattern[i + 1] === '*') {
+      i++;
+      source += '.*';
+    } else if (char === '*') source += '[^/]*';
+    else if (char === '?') source += '[^/]';
+    else if (char === '{') {
+      braces++;
+      source += '(?:';
+    } else if (char === '}' && braces > 0) {
+      braces--;
+      source += ')';
+    } else if (char === ',' && braces > 0) source += '|';
+    else source += char.replace(/[.+^$()|[\]\\{}]/g, '\\$&');
+  }
+  // An unclosed `{` is a literal brace in minimatch; closing the groups keeps
+  // the expression valid and matches the alternatives instead.
+  return new RegExp(`^${source}${')'.repeat(braces)}$`);
 }
 
 function matchesAnyPattern(path: string, patterns: string[]): boolean {
-  return patterns.some((pattern) => matchGlob(pattern, path));
+  return patterns.some((pattern) => globToRegExp(pattern).test(path));
+}
+
+/**
+ * The spellings of one import a pattern is matched against, as
+ * eslint-plugin-import matches them: the specifier as written, its path
+ * steps with `.` and `..` folded (`./app/../x/y` -> `x/y`) with and without a
+ * leading `/`, and the file it resolves to.
+ */
+function spellingsOf(importPath: string, resolved: () => string | null) {
+  const steps: string[] = [];
+  for (const step of importPath.split('/')) {
+    if (step === '..') steps.pop();
+    else if (step && step !== '.') steps.push(step);
+  }
+  const joined = steps.join('/');
+  return {
+    lexical: [importPath, joined, `/${joined}`],
+    resolved,
+  };
+}
+
+function matchesAnySpelling(
+  spellings: ReturnType<typeof spellingsOf>,
+  patterns: string[],
+): boolean {
+  if (patterns.length === 0) return false;
+  if (spellings.lexical.some((p) => matchesAnyPattern(p, patterns)))
+    return true;
+  const file = spellings.resolved();
+  return file !== null && matchesAnyPattern(file, patterns);
 }
 
 /**
@@ -266,14 +317,20 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
         return;
       }
 
+      // A pattern matches the specifier as written, its folded path steps, or
+      // the file it resolves to (eslint-plugin-import's reading).
+      const spellings = spellingsOf(importPath, () => {
+        const file = resolveModule(importPath, context.filename);
+        return file === null ? null : file.split(path.sep).join('/');
+      });
+
       // Skip if path is explicitly allowed
-      if (matchesAnyPattern(importPath, allow)) {
+      if (matchesAnySpelling(spellings, allow)) {
         return;
       }
 
       const depth = getImportDepth(importPath);
-      const isForbidden =
-        forbid.length > 0 && matchesAnyPattern(importPath, forbid);
+      const isForbidden = matchesAnySpelling(spellings, forbid);
       const exceedsDepth = depth > maxDepth;
 
       // No violation

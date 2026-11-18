@@ -80,8 +80,13 @@ export const noUselessPathSegments = createRule<RuleOptions, MessageIds>({
       }
       // A trailing slash only matches a directory, so `./lib/` can name a
       // different module than `./lib` (a sibling `lib.ts`). Not provably
-      // useless: leave it alone.
-      if (importPath.endsWith('/')) return null;
+      // useless: leave it alone. Except where the path already ends in `.`
+      // or `..`: those are directories however they are spelled, so `./` is
+      // `.` and `../` is `..` (eslint-plugin-import reports both).
+      if (importPath.endsWith('/')) {
+        const directory = path.posix.normalize(importPath).slice(0, -1);
+        return /(?:^|\/)\.\.?$/.test(directory) ? directory : null;
+      }
 
       // Lexical normalisation: `./a/./b`, `./a/../b`, `./a//b` -> `./b`.
       let simplified = path.posix.normalize(importPath);

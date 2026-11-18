@@ -706,6 +706,16 @@
       "detection": "structural-pattern",
       "confidence": "enforcement"
     },
+    "enforce-node-protocol-usage": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-webpack-loader-syntax": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
     "no-barrel-file": {
       "environment": "universal",
       "detection": "structural-pattern",

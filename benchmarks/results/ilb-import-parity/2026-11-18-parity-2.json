@@ -1,0 +1,3954 @@
+{
+  "suite": "ilb-import-parity",
+  "version": "1.0",
+  "bench": "ILB-Drop-In",
+  "benchVersion": "0.1",
+  "timestamp": "2026-11-18T20:44:36.781Z",
+  "toolchain": {
+    "node": "24.12.0",
+    "eslint": "10.14.0",
+    "typescript": "6.0.3",
+    "tsCompiler": "tsc-go",
+    "typescriptEslint": "8.68.0",
+    "platform": "darwin-arm64"
+  },
+  "methodologyHash": "sha256:db416b979f1779ac0d62c4e48d71836ca483b6680aa9481fbf9d55be4dd92b87",
+  "methodologyPaths": [
+    "benchmarks/suites/ilb-competitor-parity/import-drop-in.mts",
+    "benchmarks/scripts/extract-import-cases.cjs",
+    "benchmarks/corpus/competitor-parity/eslint-plugin-import.json",
+    "benchmarks/lib/methodology.ts",
+    "benchmarks/lib/toolchain.ts"
+  ],
+  "command": "npx tsx benchmarks/suites/ilb-competitor-parity/import-drop-in.mts --upstream <v2.32.0 checkout> --write",
+  "subject": "eslint-plugin-import-next@3.1.0",
+  "incumbent": "eslint-plugin-import@2.32.0",
+  "control": "eslint-plugin-import@2.32.0 via @eslint/compat@2.1.1 fixupPluginRules",
+  "upstreamCommit": "01c9eb04331d2efa8d63f2d7f4bfec3bc44c94f3",
+  "corpus": "benchmarks/corpus/competitor-parity/eslint-plugin-import.json",
+  "scoring": "valid: rule reports nothing; invalid: rule reports exactly the expected number of problems. Messages, positions and fixes are not compared. Graded = cases eslint-plugin-import itself passes in this harness.",
+  "headline": {
+    "passed": 1816,
+    "graded": 2135,
+    "captured": 2817,
+    "excluded": 682,
+    "rules": 45,
+    "rulesNotImplemented": [],
+    "rulesFullyPassing": 16,
+    "implementedRulesPassed": 1816,
+    "implementedRulesGraded": 2135,
+    "failuresByOutcome": {
+      "different-count": 70,
+      "misses-invalid": 211,
+      "reports-valid": 38
+    },
+    "verdictAgrees": 1886,
+    "ungradedRan": 191,
+    "ungradedMatchedUpstream": 53
+  },
+  "excludedByReason": {
+    "parser babel-eslint not installed": 490,
+    "incumbent different-count in harness": 22,
+    "parser @angular-eslint/template-parser not installed": 1,
+    "incumbent reports-valid in harness": 34,
+    "incumbent misses-invalid in harness": 12,
+    "incumbent parse-error in harness": 3,
+    "incumbent crash in harness": 120
+  },
+  "rules": [
+    {
+      "rule": "consistent-type-specifier-style",
+      "implemented": true,
+      "cases": 82,
+      "graded": 33,
+      "passed": 33,
+      "validGraded": 23,
+      "validPassed": 23,
+      "invalidGraded": 10,
+      "invalidPassed": 10,
+      "excluded": {
+        "parser babel-eslint not installed": 49
+      },
+      "failures": {},
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "default",
+      "implemented": true,
+      "cases": 68,
+      "graded": 54,
+      "passed": 46,
+      "validGraded": 46,
+      "validPassed": 46,
+      "invalidGraded": 8,
+      "invalidPassed": 0,
+      "excluded": {
+        "parser babel-eslint not installed": 14
+      },
+      "failures": {
+        "misses-invalid": 8
+      },
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "dynamic-import-chunkname",
+      "implemented": true,
+      "cases": 171,
+      "graded": 102,
+      "passed": 93,
+      "validGraded": 62,
+      "validPassed": 62,
+      "invalidGraded": 40,
+      "invalidPassed": 31,
+      "excluded": {
+        "parser babel-eslint not installed": 69
+      },
+      "failures": {
+        "misses-invalid": 9
+      },
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "enforce-node-protocol-usage",
+      "implemented": true,
+      "cases": 52,
+      "graded": 52,
+      "passed": 52,
+      "validGraded": 26,
+      "validPassed": 26,
+      "invalidGraded": 26,
+      "invalidPassed": 26,
+      "excluded": {},
+      "failures": {},
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "export",
+      "implemented": true,
+      "cases": 68,
+      "graded": 67,
+      "passed": 50,
+      "validGraded": 50,
+      "validPassed": 50,
+      "invalidGraded": 17,
+      "invalidPassed": 0,
+      "excluded": {
+        "parser babel-eslint not installed": 1
+      },
+      "failures": {
+        "misses-invalid": 6,
+        "different-count": 11
+      },
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "exports-last",
+      "implemented": true,
+      "cases": 13,
+      "graded": 13,
+      "passed": 11,
+      "validGraded": 9,
+      "validPassed": 9,
+      "invalidGraded": 4,
+      "invalidPassed": 2,
+      "excluded": {},
+      "failures": {
+        "misses-invalid": 1,
+        "different-count": 1
+      },
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "extensions",
+      "implemented": true,
+      "cases": 71,
+      "graded": 70,
+      "passed": 67,
+      "validGraded": 31,
+      "validPassed": 31,
+      "invalidGraded": 39,
+      "invalidPassed": 36,
+      "excluded": {
+        "incumbent different-count in harness": 1
+      },
+      "failures": {
+        "misses-invalid": 3
+      },
+      "ungraded": {
+        "ran": 1,
+        "matchedUpstream": 1
+      }
+    },
+    {
+      "rule": "first",
+      "implemented": true,
+      "cases": 14,
+      "graded": 13,
+      "passed": 13,
+      "validGraded": 6,
+      "validPassed": 6,
+      "invalidGraded": 7,
+      "invalidPassed": 7,
+      "excluded": {
+        "parser @angular-eslint/template-parser not installed": 1
+      },
+      "failures": {},
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "group-exports",
+      "implemented": true,
+      "cases": 39,
+      "graded": 0,
+      "passed": 0,
+      "validGraded": 0,
+      "validPassed": 0,
+      "invalidGraded": 0,
+      "invalidPassed": 0,
+      "excluded": {
+        "parser babel-eslint not installed": 39
+      },
+      "failures": {},
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "max-dependencies",
+      "implemented": true,
+      "cases": 13,
+      "graded": 11,
+      "passed": 5,
+      "validGraded": 5,
+      "validPassed": 5,
+      "invalidGraded": 6,
+      "invalidPassed": 0,
+      "excluded": {
+        "parser babel-eslint not installed": 2
+      },
+      "failures": {
+        "misses-invalid": 6
+      },
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "named",
+      "implemented": true,
+      "cases": 147,
+      "graded": 127,
+      "passed": 96,
+      "validGraded": 96,
+      "validPassed": 96,
+      "invalidGraded": 31,
+      "invalidPassed": 0,
+      "excluded": {
+        "incumbent reports-valid in harness": 1,
+        "parser babel-eslint not installed": 17,
+        "incumbent misses-invalid in harness": 2
+      },
+      "failures": {
+        "misses-invalid": 31
+      },
+      "ungraded": {
+        "ran": 3,
+        "matchedUpstream": 1
+      }
+    },
+    {
+      "rule": "namespace",
+      "implemented": true,
+      "cases": 101,
+      "graded": 79,
+      "passed": 57,
+      "validGraded": 57,
+      "validPassed": 57,
+      "invalidGraded": 22,
+      "invalidPassed": 0,
+      "excluded": {
+        "parser babel-eslint not installed": 21,
+        "incumbent reports-valid in harness": 1
+      },
+      "failures": {
+        "misses-invalid": 22
+      },
+      "ungraded": {
+        "ran": 1,
+        "matchedUpstream": 1
+      }
+    },
+    {
+      "rule": "newline-after-import",
+      "implemented": true,
+      "cases": 96,
+      "graded": 87,
+      "passed": 87,
+      "validGraded": 55,
+      "validPassed": 55,
+      "invalidGraded": 32,
+      "invalidPassed": 32,
+      "excluded": {
+        "parser babel-eslint not installed": 9
+      },
+      "failures": {},
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-absolute-path",
+      "implemented": true,
+      "cases": 35,
+      "graded": 35,
+      "passed": 35,
+      "validGraded": 24,
+      "validPassed": 24,
+      "invalidGraded": 11,
+      "invalidPassed": 11,
+      "excluded": {},
+      "failures": {},
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-amd",
+      "implemented": true,
+      "cases": 15,
+      "graded": 15,
+      "passed": 11,
+      "validGraded": 11,
+      "validPassed": 7,
+      "invalidGraded": 4,
+      "invalidPassed": 4,
+      "excluded": {},
+      "failures": {
+        "reports-valid": 4
+      },
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-anonymous-default-export",
+      "implemented": true,
+      "cases": 49,
+      "graded": 48,
+      "passed": 42,
+      "validGraded": 37,
+      "validPassed": 37,
+      "invalidGraded": 11,
+      "invalidPassed": 5,
+      "excluded": {
+        "parser babel-eslint not installed": 1
+      },
+      "failures": {
+        "misses-invalid": 6
+      },
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-commonjs",
+      "implemented": true,
+      "cases": 45,
+      "graded": 45,
+      "passed": 34,
+      "validGraded": 31,
+      "validPassed": 21,
+      "invalidGraded": 14,
+      "invalidPassed": 13,
+      "excluded": {},
+      "failures": {
+        "reports-valid": 10,
+        "misses-invalid": 1
+      },
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-cycle",
+      "implemented": true,
+      "cases": 140,
+      "graded": 102,
+      "passed": 94,
+      "validGraded": 34,
+      "validPassed": 34,
+      "invalidGraded": 68,
+      "invalidPassed": 60,
+      "excluded": {
+        "incumbent reports-valid in harness": 4,
+        "parser babel-eslint not installed": 34
+      },
+      "failures": {
+        "misses-invalid": 8
+      },
+      "ungraded": {
+        "ran": 4,
+        "matchedUpstream": 4
+      }
+    },
+    {
+      "rule": "no-default-export",
+      "implemented": true,
+      "cases": 29,
+      "graded": 24,
+      "passed": 24,
+      "validGraded": 17,
+      "validPassed": 17,
+      "invalidGraded": 7,
+      "invalidPassed": 7,
+      "excluded": {
+        "parser babel-eslint not installed": 5
+      },
+      "failures": {},
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-deprecated",
+      "implemented": true,
+      "cases": 54,
+      "graded": 53,
+      "passed": 31,
+      "validGraded": 31,
+      "validPassed": 31,
+      "invalidGraded": 22,
+      "invalidPassed": 0,
+      "excluded": {
+        "parser babel-eslint not installed": 1
+      },
+      "failures": {
+        "misses-invalid": 22
+      },
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-duplicates",
+      "implemented": true,
+      "cases": 96,
+      "graded": 66,
+      "passed": 12,
+      "validGraded": 14,
+      "validPassed": 12,
+      "invalidGraded": 52,
+      "invalidPassed": 0,
+      "excluded": {
+        "parser babel-eslint not installed": 25,
+        "incumbent reports-valid in harness": 2,
+        "incumbent different-count in harness": 3
+      },
+      "failures": {
+        "different-count": 49,
+        "misses-invalid": 3,
+        "reports-valid": 2
+      },
+      "ungraded": {
+        "ran": 5,
+        "matchedUpstream": 2
+      }
+    },
+    {
+      "rule": "no-dynamic-require",
+      "implemented": true,
+      "cases": 46,
+      "graded": 32,
+      "passed": 32,
+      "validGraded": 21,
+      "validPassed": 21,
+      "invalidGraded": 11,
+      "invalidPassed": 11,
+      "excluded": {
+        "parser babel-eslint not installed": 14
+      },
+      "failures": {},
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-empty-named-blocks",
+      "implemented": true,
+      "cases": 29,
+      "graded": 19,
+      "passed": 19,
+      "validGraded": 10,
+      "validPassed": 10,
+      "invalidGraded": 9,
+      "invalidPassed": 9,
+      "excluded": {
+        "incumbent parse-error in harness": 2,
+        "parser babel-eslint not installed": 8
+      },
+      "failures": {},
+      "ungraded": {
+        "ran": 2,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-extraneous-dependencies",
+      "implemented": true,
+      "cases": 127,
+      "graded": 107,
+      "passed": 106,
+      "validGraded": 83,
+      "validPassed": 82,
+      "invalidGraded": 24,
+      "invalidPassed": 24,
+      "excluded": {
+        "parser babel-eslint not installed": 10,
+        "incumbent reports-valid in harness": 2,
+        "incumbent misses-invalid in harness": 8
+      },
+      "failures": {
+        "reports-valid": 1
+      },
+      "ungraded": {
+        "ran": 10,
+        "matchedUpstream": 6
+      }
+    },
+    {
+      "rule": "no-import-module-exports",
+      "implemented": true,
+      "cases": 14,
+      "graded": 14,
+      "passed": 13,
+      "validGraded": 9,
+      "validPassed": 8,
+      "invalidGraded": 5,
+      "invalidPassed": 5,
+      "excluded": {},
+      "failures": {
+        "reports-valid": 1
+      },
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-internal-modules",
+      "implemented": true,
+      "cases": 46,
+      "graded": 44,
+      "passed": 38,
+      "validGraded": 26,
+      "validPassed": 22,
+      "invalidGraded": 18,
+      "invalidPassed": 16,
+      "excluded": {
+        "incumbent misses-invalid in harness": 2
+      },
+      "failures": {
+        "reports-valid": 4,
+        "misses-invalid": 2
+      },
+      "ungraded": {
+        "ran": 2,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-mutable-exports",
+      "implemented": true,
+      "cases": 30,
+      "graded": 28,
+      "passed": 26,
+      "validGraded": 19,
+      "validPassed": 19,
+      "invalidGraded": 9,
+      "invalidPassed": 7,
+      "excluded": {
+        "parser babel-eslint not installed": 2
+      },
+      "failures": {
+        "misses-invalid": 2
+      },
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-named-as-default",
+      "implemented": true,
+      "cases": 47,
+      "graded": 35,
+      "passed": 31,
+      "validGraded": 29,
+      "validPassed": 29,
+      "invalidGraded": 6,
+      "invalidPassed": 2,
+      "excluded": {
+        "parser babel-eslint not installed": 12
+      },
+      "failures": {
+        "misses-invalid": 4
+      },
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-named-as-default-member",
+      "implemented": true,
+      "cases": 29,
+      "graded": 28,
+      "passed": 23,
+      "validGraded": 23,
+      "validPassed": 23,
+      "invalidGraded": 5,
+      "invalidPassed": 0,
+      "excluded": {
+        "parser babel-eslint not installed": 1
+      },
+      "failures": {
+        "misses-invalid": 5
+      },
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-named-default",
+      "implemented": true,
+      "cases": 25,
+      "graded": 22,
+      "passed": 22,
+      "validGraded": 19,
+      "validPassed": 19,
+      "invalidGraded": 3,
+      "invalidPassed": 3,
+      "excluded": {
+        "parser babel-eslint not installed": 3
+      },
+      "failures": {},
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-named-export",
+      "implemented": true,
+      "cases": 26,
+      "graded": 21,
+      "passed": 20,
+      "validGraded": 8,
+      "validPassed": 8,
+      "invalidGraded": 13,
+      "invalidPassed": 12,
+      "excluded": {
+        "parser babel-eslint not installed": 5
+      },
+      "failures": {
+        "different-count": 1
+      },
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-namespace",
+      "implemented": true,
+      "cases": 11,
+      "graded": 11,
+      "passed": 11,
+      "validGraded": 5,
+      "validPassed": 5,
+      "invalidGraded": 6,
+      "invalidPassed": 6,
+      "excluded": {},
+      "failures": {},
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-nodejs-modules",
+      "implemented": true,
+      "cases": 34,
+      "graded": 34,
+      "passed": 34,
+      "validGraded": 24,
+      "validPassed": 24,
+      "invalidGraded": 10,
+      "invalidPassed": 10,
+      "excluded": {},
+      "failures": {},
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-relative-packages",
+      "implemented": true,
+      "cases": 11,
+      "graded": 11,
+      "passed": 10,
+      "validGraded": 7,
+      "validPassed": 7,
+      "invalidGraded": 4,
+      "invalidPassed": 3,
+      "excluded": {},
+      "failures": {
+        "misses-invalid": 1
+      },
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-relative-parent-imports",
+      "implemented": true,
+      "cases": 18,
+      "graded": 0,
+      "passed": 0,
+      "validGraded": 0,
+      "validPassed": 0,
+      "invalidGraded": 0,
+      "invalidPassed": 0,
+      "excluded": {
+        "parser babel-eslint not installed": 18
+      },
+      "failures": {},
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-restricted-paths",
+      "implemented": true,
+      "cases": 59,
+      "graded": 59,
+      "passed": 58,
+      "validGraded": 30,
+      "validPassed": 30,
+      "invalidGraded": 29,
+      "invalidPassed": 28,
+      "excluded": {},
+      "failures": {
+        "different-count": 1
+      },
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-self-import",
+      "implemented": true,
+      "cases": 24,
+      "graded": 24,
+      "passed": 24,
+      "validGraded": 17,
+      "validPassed": 17,
+      "invalidGraded": 7,
+      "invalidPassed": 7,
+      "excluded": {},
+      "failures": {},
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-unassigned-import",
+      "implemented": true,
+      "cases": 32,
+      "graded": 32,
+      "passed": 32,
+      "validGraded": 26,
+      "validPassed": 26,
+      "invalidGraded": 6,
+      "invalidPassed": 6,
+      "excluded": {},
+      "failures": {},
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-unresolved",
+      "implemented": true,
+      "cases": 153,
+      "graded": 100,
+      "passed": 94,
+      "validGraded": 74,
+      "validPassed": 72,
+      "invalidGraded": 26,
+      "invalidPassed": 22,
+      "excluded": {
+        "parser babel-eslint not installed": 13,
+        "incumbent reports-valid in harness": 22,
+        "incumbent different-count in harness": 18
+      },
+      "failures": {
+        "reports-valid": 2,
+        "misses-invalid": 3,
+        "different-count": 1
+      },
+      "ungraded": {
+        "ran": 40,
+        "matchedUpstream": 37
+      }
+    },
+    {
+      "rule": "no-unused-modules",
+      "implemented": true,
+      "cases": 151,
+      "graded": 14,
+      "passed": 14,
+      "validGraded": 12,
+      "validPassed": 12,
+      "invalidGraded": 2,
+      "invalidPassed": 2,
+      "excluded": {
+        "parser babel-eslint not installed": 17,
+        "incumbent crash in harness": 120
+      },
+      "failures": {},
+      "ungraded": {
+        "ran": 120,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-useless-path-segments",
+      "implemented": true,
+      "cases": 106,
+      "graded": 94,
+      "passed": 66,
+      "validGraded": 30,
+      "validPassed": 28,
+      "invalidGraded": 64,
+      "invalidPassed": 38,
+      "excluded": {
+        "parser babel-eslint not installed": 12
+      },
+      "failures": {
+        "reports-valid": 2,
+        "misses-invalid": 26
+      },
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "no-webpack-loader-syntax",
+      "implemented": true,
+      "cases": 19,
+      "graded": 19,
+      "passed": 19,
+      "validGraded": 11,
+      "validPassed": 11,
+      "invalidGraded": 8,
+      "invalidPassed": 8,
+      "excluded": {},
+      "failures": {},
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "order",
+      "implemented": true,
+      "cases": 317,
+      "graded": 239,
+      "passed": 180,
+      "validGraded": 123,
+      "validPassed": 112,
+      "invalidGraded": 116,
+      "invalidPassed": 68,
+      "excluded": {
+        "incumbent reports-valid in harness": 2,
+        "incumbent parse-error in harness": 1,
+        "parser babel-eslint not installed": 75
+      },
+      "failures": {
+        "reports-valid": 11,
+        "misses-invalid": 42,
+        "different-count": 6
+      },
+      "ungraded": {
+        "ran": 3,
+        "matchedUpstream": 1
+      }
+    },
+    {
+      "rule": "prefer-default-export",
+      "implemented": true,
+      "cases": 53,
+      "graded": 41,
+      "passed": 40,
+      "validGraded": 28,
+      "validPassed": 27,
+      "invalidGraded": 13,
+      "invalidPassed": 13,
+      "excluded": {
+        "parser babel-eslint not installed": 12
+      },
+      "failures": {
+        "reports-valid": 1
+      },
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    },
+    {
+      "rule": "unambiguous",
+      "implemented": true,
+      "cases": 12,
+      "graded": 11,
+      "passed": 11,
+      "validGraded": 10,
+      "validPassed": 10,
+      "invalidGraded": 1,
+      "invalidPassed": 1,
+      "excluded": {
+        "parser babel-eslint not installed": 1
+      },
+      "failures": {},
+      "ungraded": {
+        "ran": 0,
+        "matchedUpstream": 0
+      }
+    }
+  ],
+  "failing": [
+    {
+      "id": 127,
+      "rule": "default",
+      "kind": "invalid",
+      "i": 0,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 128,
+      "rule": "default",
+      "kind": "invalid",
+      "i": 1,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 133,
+      "rule": "default",
+      "kind": "invalid",
+      "i": 6,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 135,
+      "rule": "default",
+      "kind": "invalid",
+      "i": 0,
+      "suite": "default (path case-insensitivity)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 146,
+      "rule": "default",
+      "kind": "invalid",
+      "i": 0,
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 147,
+      "rule": "default",
+      "kind": "invalid",
+      "i": 1,
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 148,
+      "rule": "default",
+      "kind": "invalid",
+      "i": 2,
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 149,
+      "rule": "default",
+      "kind": "invalid",
+      "i": 3,
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 245,
+      "rule": "dynamic-import-chunkname",
+      "kind": "invalid",
+      "i": 30,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 249,
+      "rule": "dynamic-import-chunkname",
+      "kind": "invalid",
+      "i": 34,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 289,
+      "rule": "dynamic-import-chunkname",
+      "kind": "invalid",
+      "i": 0,
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 295,
+      "rule": "dynamic-import-chunkname",
+      "kind": "invalid",
+      "i": 6,
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 296,
+      "rule": "dynamic-import-chunkname",
+      "kind": "invalid",
+      "i": 7,
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 317,
+      "rule": "dynamic-import-chunkname",
+      "kind": "invalid",
+      "i": 28,
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 318,
+      "rule": "dynamic-import-chunkname",
+      "kind": "invalid",
+      "i": 29,
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 319,
+      "rule": "dynamic-import-chunkname",
+      "kind": "invalid",
+      "i": 30,
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 320,
+      "rule": "dynamic-import-chunkname",
+      "kind": "invalid",
+      "i": 31,
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 406,
+      "rule": "export",
+      "kind": "invalid",
+      "i": 0,
+      "outcome": "misses-invalid",
+      "expected": 2,
+      "got": 0
+    },
+    {
+      "id": 407,
+      "rule": "export",
+      "kind": "invalid",
+      "i": 1,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 408,
+      "rule": "export",
+      "kind": "invalid",
+      "i": 2,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 409,
+      "rule": "export",
+      "kind": "invalid",
+      "i": 3,
+      "outcome": "misses-invalid",
+      "expected": 2,
+      "got": 0
+    },
+    {
+      "id": 410,
+      "rule": "export",
+      "kind": "invalid",
+      "i": 4,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 429,
+      "rule": "export",
+      "kind": "invalid",
+      "i": 0,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 430,
+      "rule": "export",
+      "kind": "invalid",
+      "i": 1,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 431,
+      "rule": "export",
+      "kind": "invalid",
+      "i": 2,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 432,
+      "rule": "export",
+      "kind": "invalid",
+      "i": 3,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 4,
+      "got": 2
+    },
+    {
+      "id": 433,
+      "rule": "export",
+      "kind": "invalid",
+      "i": 4,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 434,
+      "rule": "export",
+      "kind": "invalid",
+      "i": 5,
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 2,
+      "got": 0
+    },
+    {
+      "id": 435,
+      "rule": "export",
+      "kind": "invalid",
+      "i": 6,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 436,
+      "rule": "export",
+      "kind": "invalid",
+      "i": 7,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 437,
+      "rule": "export",
+      "kind": "invalid",
+      "i": 8,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 438,
+      "rule": "export",
+      "kind": "invalid",
+      "i": 9,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 439,
+      "rule": "export",
+      "kind": "invalid",
+      "i": 10,
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 2,
+      "got": 0
+    },
+    {
+      "id": 440,
+      "rule": "export",
+      "kind": "invalid",
+      "i": 11,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 451,
+      "rule": "exports-last",
+      "kind": "invalid",
+      "i": 1,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 453,
+      "rule": "exports-last",
+      "kind": "invalid",
+      "i": 3,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 478,
+      "rule": "extensions",
+      "kind": "invalid",
+      "i": 0,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 513,
+      "rule": "extensions",
+      "kind": "invalid",
+      "i": 0,
+      "suite": "@typescript-eslint/parser extensions ignore type-only",
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 514,
+      "rule": "extensions",
+      "kind": "invalid",
+      "i": 1,
+      "suite": "@typescript-eslint/parser extensions ignore type-only",
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 582,
+      "rule": "max-dependencies",
+      "kind": "invalid",
+      "i": 0,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 583,
+      "rule": "max-dependencies",
+      "kind": "invalid",
+      "i": 1,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 584,
+      "rule": "max-dependencies",
+      "kind": "invalid",
+      "i": 2,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 585,
+      "rule": "max-dependencies",
+      "kind": "invalid",
+      "i": 3,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 589,
+      "rule": "max-dependencies",
+      "kind": "invalid",
+      "i": 0,
+      "suite": "max-dependencies (@typescript-eslint/parser)",
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 590,
+      "rule": "max-dependencies",
+      "kind": "invalid",
+      "i": 1,
+      "suite": "max-dependencies (@typescript-eslint/parser)",
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 670,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 0,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 671,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 1,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 672,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 2,
+      "outcome": "misses-invalid",
+      "expected": 2,
+      "got": 0
+    },
+    {
+      "id": 673,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 3,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 674,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 4,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 675,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 5,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 676,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 6,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 677,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 7,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 678,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 8,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 682,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 12,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 683,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 13,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 684,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 14,
+      "outcome": "misses-invalid",
+      "expected": 3,
+      "got": 0
+    },
+    {
+      "id": 685,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 15,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 689,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 19,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 690,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 20,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 691,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 21,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 692,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 22,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 693,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 23,
+      "outcome": "misses-invalid",
+      "expected": 2,
+      "got": 0
+    },
+    {
+      "id": 694,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 24,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 696,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 0,
+      "suite": "named (path case-insensitivity)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 698,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 0,
+      "suite": "named (export *)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 728,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 0,
+      "suite": "named [TypeScript]",
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 729,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 1,
+      "suite": "named [TypeScript]",
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 730,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 2,
+      "suite": "named [TypeScript]",
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 731,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 3,
+      "suite": "named [TypeScript]",
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 732,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 4,
+      "suite": "named [TypeScript]",
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 733,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 5,
+      "suite": "named [TypeScript]",
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 734,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 6,
+      "suite": "named [TypeScript]",
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 735,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 7,
+      "suite": "named [TypeScript]",
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 736,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 8,
+      "suite": "named [TypeScript]",
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 737,
+      "rule": "named",
+      "kind": "invalid",
+      "i": 9,
+      "suite": "named [TypeScript]",
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 810,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 0,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 811,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 1,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 812,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 2,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 813,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 3,
+      "outcome": "misses-invalid",
+      "expected": 2,
+      "got": 0
+    },
+    {
+      "id": 814,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 4,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 815,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 5,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 816,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 6,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 817,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 7,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 819,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 9,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 820,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 10,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 821,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 11,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 822,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 12,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 823,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 13,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 824,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 14,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 825,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 15,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 826,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 16,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 827,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 17,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 828,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 18,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 829,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 19,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 830,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 20,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 831,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 21,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 832,
+      "rule": "namespace",
+      "kind": "invalid",
+      "i": 22,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 977,
+      "rule": "no-amd",
+      "kind": "valid",
+      "i": 7,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 978,
+      "rule": "no-amd",
+      "kind": "valid",
+      "i": 8,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 979,
+      "rule": "no-amd",
+      "kind": "valid",
+      "i": 9,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 980,
+      "rule": "no-amd",
+      "kind": "valid",
+      "i": 10,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 1023,
+      "rule": "no-anonymous-default-export",
+      "kind": "invalid",
+      "i": 0,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1027,
+      "rule": "no-anonymous-default-export",
+      "kind": "invalid",
+      "i": 4,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1028,
+      "rule": "no-anonymous-default-export",
+      "kind": "invalid",
+      "i": 5,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1029,
+      "rule": "no-anonymous-default-export",
+      "kind": "invalid",
+      "i": 6,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1030,
+      "rule": "no-anonymous-default-export",
+      "kind": "invalid",
+      "i": 7,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1032,
+      "rule": "no-anonymous-default-export",
+      "kind": "invalid",
+      "i": 9,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1040,
+      "rule": "no-commonjs",
+      "kind": "valid",
+      "i": 6,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 1041,
+      "rule": "no-commonjs",
+      "kind": "valid",
+      "i": 7,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 1044,
+      "rule": "no-commonjs",
+      "kind": "valid",
+      "i": 10,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 1045,
+      "rule": "no-commonjs",
+      "kind": "valid",
+      "i": 11,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 1047,
+      "rule": "no-commonjs",
+      "kind": "valid",
+      "i": 13,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 1048,
+      "rule": "no-commonjs",
+      "kind": "valid",
+      "i": 14,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 1049,
+      "rule": "no-commonjs",
+      "kind": "valid",
+      "i": 15,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 1061,
+      "rule": "no-commonjs",
+      "kind": "valid",
+      "i": 27,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 1063,
+      "rule": "no-commonjs",
+      "kind": "valid",
+      "i": 29,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 1064,
+      "rule": "no-commonjs",
+      "kind": "valid",
+      "i": 30,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 1078,
+      "rule": "no-commonjs",
+      "kind": "invalid",
+      "i": 13,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1137,
+      "rule": "no-cycle",
+      "kind": "invalid",
+      "i": 2,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1138,
+      "rule": "no-cycle",
+      "kind": "invalid",
+      "i": 3,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1139,
+      "rule": "no-cycle",
+      "kind": "invalid",
+      "i": 4,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1140,
+      "rule": "no-cycle",
+      "kind": "invalid",
+      "i": 5,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1209,
+      "rule": "no-cycle",
+      "kind": "invalid",
+      "i": 74,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1210,
+      "rule": "no-cycle",
+      "kind": "invalid",
+      "i": 75,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1211,
+      "rule": "no-cycle",
+      "kind": "invalid",
+      "i": 76,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1212,
+      "rule": "no-cycle",
+      "kind": "invalid",
+      "i": 77,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1278,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 0,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1279,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 1,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1280,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 2,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1281,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 3,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1282,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 4,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1283,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 5,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1284,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 6,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1285,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 7,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1286,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 8,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1287,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 9,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1288,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 10,
+      "outcome": "misses-invalid",
+      "expected": 2,
+      "got": 0
+    },
+    {
+      "id": 1289,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 11,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1290,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 12,
+      "outcome": "misses-invalid",
+      "expected": 2,
+      "got": 0
+    },
+    {
+      "id": 1291,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 13,
+      "outcome": "misses-invalid",
+      "expected": 2,
+      "got": 0
+    },
+    {
+      "id": 1292,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 14,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1293,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 15,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1294,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 16,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1295,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 17,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1296,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 18,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1297,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 19,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1299,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 0,
+      "suite": "no-deprecated: hoisting",
+      "outcome": "misses-invalid",
+      "expected": 2,
+      "got": 0
+    },
+    {
+      "id": 1301,
+      "rule": "no-deprecated",
+      "kind": "invalid",
+      "i": 0,
+      "suite": "@typescript-eslint/parser",
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 2,
+      "got": 0
+    },
+    {
+      "id": 1310,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 0,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1311,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 1,
+      "outcome": "different-count",
+      "expected": 3,
+      "got": 2
+    },
+    {
+      "id": 1312,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 2,
+      "outcome": "misses-invalid",
+      "expected": 2,
+      "got": 0
+    },
+    {
+      "id": 1316,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 6,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1318,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 8,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1319,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 9,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1320,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 10,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1324,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 14,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1325,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 15,
+      "outcome": "different-count",
+      "expected": 3,
+      "got": 2
+    },
+    {
+      "id": 1326,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 16,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1327,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 17,
+      "outcome": "different-count",
+      "expected": 4,
+      "got": 3
+    },
+    {
+      "id": 1328,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 18,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1329,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 19,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1330,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 20,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1331,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 21,
+      "outcome": "different-count",
+      "expected": 4,
+      "got": 3
+    },
+    {
+      "id": 1332,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 22,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1333,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 23,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1334,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 24,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1335,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 25,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1336,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 26,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1337,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 27,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1338,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 28,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1339,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 29,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1340,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 30,
+      "outcome": "different-count",
+      "expected": 3,
+      "got": 2
+    },
+    {
+      "id": 1341,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 31,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1342,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 32,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1343,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 33,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1344,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 34,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1345,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 35,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1346,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 36,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1347,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 37,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1348,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 38,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1349,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 39,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1350,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 40,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1351,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 41,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1352,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 42,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1353,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 43,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1354,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 44,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1355,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 45,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1356,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 46,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1357,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 47,
+      "outcome": "different-count",
+      "expected": 6,
+      "got": 4
+    },
+    {
+      "id": 1364,
+      "rule": "no-duplicates",
+      "kind": "valid",
+      "i": 6,
+      "describe": "TypeScript",
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 1365,
+      "rule": "no-duplicates",
+      "kind": "valid",
+      "i": 7,
+      "describe": "TypeScript",
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 1367,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 0,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1368,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 1,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1369,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 2,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1370,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 3,
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 2,
+      "got": 0
+    },
+    {
+      "id": 1371,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 4,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1372,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 5,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1373,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 6,
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 2,
+      "got": 0
+    },
+    {
+      "id": 1374,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 7,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1375,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 8,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1376,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 9,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1377,
+      "rule": "no-duplicates",
+      "kind": "invalid",
+      "i": 10,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 1526,
+      "rule": "no-extraneous-dependencies",
+      "kind": "valid",
+      "i": 53,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 1605,
+      "rule": "no-import-module-exports",
+      "kind": "valid",
+      "i": 5,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 1624,
+      "rule": "no-internal-modules",
+      "kind": "valid",
+      "i": 10,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 1625,
+      "rule": "no-internal-modules",
+      "kind": "valid",
+      "i": 11,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 1636,
+      "rule": "no-internal-modules",
+      "kind": "valid",
+      "i": 22,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 1639,
+      "rule": "no-internal-modules",
+      "kind": "valid",
+      "i": 25,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 2
+    },
+    {
+      "id": 1644,
+      "rule": "no-internal-modules",
+      "kind": "invalid",
+      "i": 4,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1656,
+      "rule": "no-internal-modules",
+      "kind": "invalid",
+      "i": 16,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1687,
+      "rule": "no-mutable-exports",
+      "kind": "invalid",
+      "i": 6,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1688,
+      "rule": "no-mutable-exports",
+      "kind": "invalid",
+      "i": 7,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1714,
+      "rule": "no-named-as-default-member",
+      "kind": "invalid",
+      "i": 0,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1715,
+      "rule": "no-named-as-default-member",
+      "kind": "invalid",
+      "i": 1,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1716,
+      "rule": "no-named-as-default-member",
+      "kind": "invalid",
+      "i": 2,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1717,
+      "rule": "no-named-as-default-member",
+      "kind": "invalid",
+      "i": 3,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1718,
+      "rule": "no-named-as-default-member",
+      "kind": "invalid",
+      "i": 4,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1756,
+      "rule": "no-named-as-default",
+      "kind": "invalid",
+      "i": 0,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1760,
+      "rule": "no-named-as-default",
+      "kind": "invalid",
+      "i": 4,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1761,
+      "rule": "no-named-as-default",
+      "kind": "invalid",
+      "i": 5,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1764,
+      "rule": "no-named-as-default",
+      "kind": "invalid",
+      "i": 8,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1805,
+      "rule": "no-named-export",
+      "kind": "invalid",
+      "i": 5,
+      "outcome": "different-count",
+      "expected": 1,
+      "got": 2
+    },
+    {
+      "id": 1872,
+      "rule": "no-relative-packages",
+      "kind": "invalid",
+      "i": 3,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 1915,
+      "rule": "no-restricted-paths",
+      "kind": "invalid",
+      "i": 4,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 2023,
+      "rule": "no-unresolved",
+      "kind": "valid",
+      "i": 17,
+      "suite": "no-unresolved (node)",
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 2057,
+      "rule": "no-unresolved",
+      "kind": "invalid",
+      "i": 0,
+      "suite": "case sensitivity",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2079,
+      "rule": "no-unresolved",
+      "kind": "valid",
+      "i": 17,
+      "suite": "no-unresolved (webpack)",
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 2121,
+      "rule": "no-unresolved",
+      "kind": "invalid",
+      "i": 0,
+      "suite": "no-unresolved (import/resolve legacy)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2131,
+      "rule": "no-unresolved",
+      "kind": "invalid",
+      "i": 0,
+      "suite": "no-unresolved unknown resolver",
+      "outcome": "misses-invalid",
+      "expected": 2,
+      "got": 0
+    },
+    {
+      "id": 2132,
+      "rule": "no-unresolved",
+      "kind": "invalid",
+      "i": 1,
+      "suite": "no-unresolved unknown resolver",
+      "outcome": "different-count",
+      "expected": 3,
+      "got": 1
+    },
+    {
+      "id": 2310,
+      "rule": "no-useless-path-segments",
+      "kind": "valid",
+      "i": 0,
+      "suite": "no-useless-path-segments (node)",
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 2332,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 4,
+      "suite": "no-useless-path-segments (node)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2336,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 8,
+      "suite": "no-useless-path-segments (node)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2337,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 9,
+      "suite": "no-useless-path-segments (node)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2338,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 10,
+      "suite": "no-useless-path-segments (node)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2339,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 11,
+      "suite": "no-useless-path-segments (node)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2343,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 15,
+      "suite": "no-useless-path-segments (node)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2348,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 20,
+      "suite": "no-useless-path-segments (node)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2352,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 24,
+      "suite": "no-useless-path-segments (node)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2353,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 25,
+      "suite": "no-useless-path-segments (node)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2354,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 26,
+      "suite": "no-useless-path-segments (node)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2355,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 27,
+      "suite": "no-useless-path-segments (node)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2356,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 28,
+      "suite": "no-useless-path-segments (node)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2359,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 31,
+      "suite": "no-useless-path-segments (node)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2363,
+      "rule": "no-useless-path-segments",
+      "kind": "valid",
+      "i": 0,
+      "suite": "no-useless-path-segments (webpack)",
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 2385,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 4,
+      "suite": "no-useless-path-segments (webpack)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2389,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 8,
+      "suite": "no-useless-path-segments (webpack)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2390,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 9,
+      "suite": "no-useless-path-segments (webpack)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2391,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 10,
+      "suite": "no-useless-path-segments (webpack)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2392,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 11,
+      "suite": "no-useless-path-segments (webpack)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2396,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 15,
+      "suite": "no-useless-path-segments (webpack)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2401,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 20,
+      "suite": "no-useless-path-segments (webpack)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2405,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 24,
+      "suite": "no-useless-path-segments (webpack)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2406,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 25,
+      "suite": "no-useless-path-segments (webpack)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2407,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 26,
+      "suite": "no-useless-path-segments (webpack)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2408,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 27,
+      "suite": "no-useless-path-segments (webpack)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2409,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 28,
+      "suite": "no-useless-path-segments (webpack)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2412,
+      "rule": "no-useless-path-segments",
+      "kind": "invalid",
+      "i": 31,
+      "suite": "no-useless-path-segments (webpack)",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2436,
+      "rule": "order",
+      "kind": "valid",
+      "i": 1,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 2446,
+      "rule": "order",
+      "kind": "valid",
+      "i": 11,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 2452,
+      "rule": "order",
+      "kind": "valid",
+      "i": 17,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 2453,
+      "rule": "order",
+      "kind": "valid",
+      "i": 18,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 2484,
+      "rule": "order",
+      "kind": "valid",
+      "i": 49,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 2485,
+      "rule": "order",
+      "kind": "valid",
+      "i": 50,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 2486,
+      "rule": "order",
+      "kind": "valid",
+      "i": 51,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 2487,
+      "rule": "order",
+      "kind": "valid",
+      "i": 52,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 2499,
+      "rule": "order",
+      "kind": "valid",
+      "i": 64,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 2
+    },
+    {
+      "id": 2508,
+      "rule": "order",
+      "kind": "valid",
+      "i": 73,
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 2509,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 0,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2510,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 1,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2511,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 2,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2512,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 3,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2513,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 4,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2514,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 5,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2515,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 6,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2516,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 7,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2517,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 8,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2518,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 9,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2520,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 11,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2521,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 12,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2522,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 13,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2523,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 14,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2524,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 15,
+      "outcome": "misses-invalid",
+      "expected": 2,
+      "got": 0
+    },
+    {
+      "id": 2525,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 16,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2526,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 17,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2527,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 18,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2528,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 19,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2529,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 20,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2530,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 21,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2535,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 26,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2536,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 27,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2537,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 28,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2538,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 29,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2553,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 44,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2554,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 45,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2555,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 46,
+      "outcome": "misses-invalid",
+      "expected": 4,
+      "got": 0
+    },
+    {
+      "id": 2556,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 47,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2557,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 48,
+      "outcome": "misses-invalid",
+      "expected": 2,
+      "got": 0
+    },
+    {
+      "id": 2565,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 56,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2566,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 57,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2567,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 58,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2568,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 59,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2569,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 60,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2570,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 61,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2575,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 66,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2576,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 67,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2577,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 68,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2580,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 71,
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2591,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 82,
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 2602,
+      "rule": "order",
+      "kind": "valid",
+      "i": 8,
+      "describe": "TypeScript",
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    },
+    {
+      "id": 2643,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 0,
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2644,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 1,
+      "describe": "TypeScript",
+      "outcome": "misses-invalid",
+      "expected": 1,
+      "got": 0
+    },
+    {
+      "id": 2645,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 2,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 2646,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 3,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 2649,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 6,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 2,
+      "got": 1
+    },
+    {
+      "id": 2660,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 17,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 4,
+      "got": 1
+    },
+    {
+      "id": 2663,
+      "rule": "order",
+      "kind": "invalid",
+      "i": 20,
+      "describe": "TypeScript",
+      "outcome": "different-count",
+      "expected": 3,
+      "got": 1
+    },
+    {
+      "id": 2799,
+      "rule": "prefer-default-export",
+      "kind": "valid",
+      "i": 4,
+      "describe": "TypeScript",
+      "outcome": "reports-valid",
+      "expected": 0,
+      "got": 1
+    }
+  ]
+}

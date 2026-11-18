@@ -8,8 +8,8 @@
  * eslint-plugin-import-next
  *
  * An alternative to eslint-plugin-import: graded by that plugin's own test
- * suite it passes 1,711 of 2,135 cases (80.1%, eslint-plugin-import@2.32.0,
- * benchmarks/results/ilb-import-parity/2026-11-18-upstream-options.json).
+ * suite it passes 1,816 of 2,135 cases (85.1%, eslint-plugin-import@2.32.0,
+ * benchmarks/results/ilb-import-parity/2026-11-18-parity-2.json).
  * Covers import validation, module resolution, circular dependencies,
  * and export style enforcement.
  *
@@ -78,6 +78,8 @@ import { noExtraneousDependencies } from './rules/no-extraneous-dependencies';
 import { noUnusedModules } from './rules/no-unused-modules';
 import { maxDependencies } from './rules/max-dependencies';
 import { preferNodeProtocol } from './rules/prefer-node-protocol';
+import { enforceNodeProtocolUsage } from './rules/enforce-node-protocol-usage';
+import { noWebpackLoaderSyntax } from './rules/no-webpack-loader-syntax';
 
 // Bundle Optimization Rules (Phase 2)
 import { noBarrelFile } from './rules/no-barrel-file';
@@ -109,6 +111,7 @@ export const rules = {
   'no-dynamic-require': noDynamicRequire,
   'no-relative-packages': noRelativePackages,
   'no-useless-path-segments': noUselessPathSegments,
+  'no-webpack-loader-syntax': noWebpackLoaderSyntax,
 
   // Module System Rules
   'no-amd': noAmd,
@@ -155,6 +158,7 @@ export const rules = {
   'no-unused-modules': noUnusedModules,
   'max-dependencies': maxDependencies,
   'prefer-node-protocol': preferNodeProtocol,
+  'enforce-node-protocol-usage': enforceNodeProtocolUsage,
 
   // Bundle Optimization Rules (Phase 2)
   'no-barrel-file': noBarrelFile,

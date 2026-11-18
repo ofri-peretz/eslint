@@ -7,6 +7,8 @@ const COMMENT = {
   Placeholder: '/* webpackChunkName: "[request]" */ ',
   BadName: '/* webpackChunkName: "chunk a!" */ ',
   Eager: '/* webpackMode: "eager" */ ',
+  Unreadable: '/* webpackChunkName: "chunk-a" ; */ ',
+  BadOption: '/* webpackChunkName: "chunk-a", webpackMode: "fast" */ ',
 };
 const CALLEE = {
   ImportExpr: 'import',
@@ -16,8 +18,8 @@ const CALLEE = {
 
 module.exports = {
   rule: 'dynamic-import-chunkname',
-  domain: 3 * 5 * 2 * 2 * 2,
-  traces: 1000,
+  domain: 3 * 7 * 2 * 2 * 2,
+  traces: 1500,
   key: keyOf('callee', 'comment', 'allowEmpty', 'importFunctions', 'format'),
   config: (s) => ({
     ...(s.allowEmpty && { allowEmpty: true }),

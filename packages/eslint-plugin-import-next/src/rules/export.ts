@@ -163,7 +163,8 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let exportsByName: Map<string, ExportKind[]>;
-    let hasDefaultExport: TSESTree.Node | null;
+    /** The default export of each module: the file, or a `declare module`. */
+    let defaultsByScope: Set<string>;
 
     /**
      * The namespace path a declaration sits inside, as a key prefix.
@@ -229,23 +230,32 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
       previous.push(kind);
     }
 
+    /**
+     * Each `declare module 'x' {}` block is its own module with its own
+     * default, so the key is the enclosing module path, as for names.
+     */
     function checkDefaultExport(node: TSESTree.Node) {
-      if (hasDefaultExport) {
+      const scope = scopeKey(node);
+      if (defaultsByScope.has(scope)) {
         context.report({
           node,
           messageId: 'duplicateDefault',
         });
       } else {
-        hasDefaultExport = node;
+        defaultsByScope.add(scope);
       }
     }
 
     return {
       before() {
         exportsByName = new Map<string, ExportKind[]>();
-        hasDefaultExport = null;
+        defaultsByScope = new Set<string>();
       },
       ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration) {
+        // `export default function f(a: string): void;` is an overload
+        // signature of the one default function that follows, not a second
+        // default export.
+        if (node.declaration.type === AST_NODE_TYPES.TSDeclareFunction) return;
         checkDefaultExport(node);
       },
 

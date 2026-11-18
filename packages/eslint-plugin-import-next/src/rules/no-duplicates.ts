@@ -50,16 +50,26 @@ const hasNamespace = (d: TSESTree.ImportDeclaration) =>
 const hasNamed = (d: TSESTree.ImportDeclaration) =>
   d.specifiers.some((s) => s.type === 'ImportSpecifier');
 
+const hasDefault = (d: TSESTree.ImportDeclaration) =>
+  d.specifiers.some((s) => s.type === 'ImportDefaultSpecifier');
+
 /**
  * `import * as ns` beside `import { a }` of one module cannot be one
  * statement (`import * as ns, { a }` is not valid syntax), and neither adds
- * nothing to the other: not a duplicate. Every other pair of value imports
- * (or of `import type` statements) can be merged or is redundant.
+ * nothing to the other: not a duplicate. Nor can a type-only default beside
+ * a type-only named or namespace import: TypeScript rejects
+ * `import type D, { A }` (TS1363). Every other pair of value imports (or of
+ * `import type` statements) can be merged or is redundant.
  */
 const unmergeable = (
   a: TSESTree.ImportDeclaration,
   b: TSESTree.ImportDeclaration,
-) => (hasNamespace(a) && hasNamed(b)) || (hasNamespace(b) && hasNamed(a));
+) =>
+  (hasNamespace(a) && hasNamed(b)) ||
+  (hasNamespace(b) && hasNamed(a)) ||
+  (a.importKind === 'type' &&
+    b.importKind === 'type' &&
+    hasDefault(a) !== hasDefault(b));
 
 export const noDuplicates = createRule<RuleOptions, MessageIds>({
   name: 'no-duplicates',

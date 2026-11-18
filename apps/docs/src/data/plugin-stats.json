@@ -178,8 +178,8 @@
     },
     {
       "name": "eslint-plugin-import-next",
-      "rules": 55,
-      "description": "ESLint import rules — an alternative to eslint-plugin-import that passes 80% of its own test cases, covering imports and module boundaries, 3.1x faster end-to-end.",
+      "rules": 57,
+      "description": "ESLint import rules — an alternative to eslint-plugin-import that passes 85% of its own test cases, covering imports and module boundaries, 3.1x faster end-to-end.",
       "category": "architecture",
       "version": "3.0.1",
       "published": true
@@ -257,7 +257,7 @@
       "published": true
     }
   ],
-  "totalRules": 496,
+  "totalRules": 498,
   "totalPlugins": 31,
   "allPluginsCount": 32,
   "generatedAt": "2026-11-12"

@@ -21,7 +21,7 @@ const createSuggestion = (codeLine: string) => ({
 ruleTester.run('no-unresolved', noUnresolved, {
   valid: [
     { name: 'a resolvable builtin', code: `import fs from 'fs';` }, // builtin
-    { code: `import path from 'path';` }, // builtin
+    { name: 'another builtin', code: `import path from 'path';` }, // builtin
     
     // Ignored patterns
     { 
@@ -121,6 +121,45 @@ ruleTester.run('no-unresolved - fidelity', noUnresolved, {
         {
           messageId: 'moduleNotFound',
           suggestions: [createSuggestion(`import x from 'nope-pkg';`)],
+        },
+      ],
+    },
+  ],
+});
+
+// A `@types/*` package holds declarations only: Node cannot load it and
+// TypeScript refuses the import (TS6137). eslint-plugin-import reports it.
+ruleTester.run('no-unresolved - @types packages', noUnresolved, {
+  valid: [
+    {
+      name: 'import type from a @types package is erased, and allowed',
+      code: `import type { JSONSchema7Type } from '@types/json-schema';`,
+      filename: __filename,
+    },
+    {
+      name: 'export type from a @types package is erased, and allowed',
+      code: `export type { JSONSchema7Type } from '@types/json-schema';`,
+      filename: __filename,
+    },
+    {
+      name: 'a scoped name that is not @types is resolved as usual',
+      code: `import { RuleTester } from '@typescript-eslint/rule-tester';`,
+      filename: __filename,
+    },
+  ],
+  invalid: [
+    {
+      name: 'importing a @types package by name',
+      code: `import { JSONSchema7Type } from '@types/json-schema';`,
+      filename: __filename,
+      errors: [
+        {
+          messageId: 'moduleNotFound',
+          suggestions: [
+            createSuggestion(
+              `import { JSONSchema7Type } from '@types/json-schema';`,
+            ),
+          ],
         },
       ],
     },

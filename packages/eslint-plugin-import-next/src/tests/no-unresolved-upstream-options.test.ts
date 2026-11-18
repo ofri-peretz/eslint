@@ -36,6 +36,7 @@ const write = (name: string) => {
   fs.writeFileSync(path.join(dir, name), 'export const x = 1;\n');
 };
 write('bar.js');
+write('alt-root/in-alternate-root.js');
 write('case/Widget.js');
 write('case/Other.js');
 const filename = path.join(dir, 'importer.js');
@@ -259,4 +260,35 @@ describe('no-unresolved — eslint-plugin-import options', () => {
       },
     ],
   });
+});
+
+// eslint-plugin-import's node resolver looks a bare specifier up in
+// `import/resolve.paths` (or `import/resolver: { node: { paths } }`) too.
+ruleTester.run('no-unresolved — resolver paths', noUnresolved, {
+  valid: [
+    {
+      name: 'a bare specifier found in import/resolve.paths',
+      code: `import { DEEP } from 'in-alternate-root';`,
+      filename,
+      settings: { 'import/resolve': { paths: [path.join(dir, 'alt-root')] } },
+    },
+  ],
+  invalid: [
+    {
+      name: 'the same specifier with no paths configured',
+      code: `import { DEEP } from 'in-alternate-root';`,
+      filename,
+      errors: [
+        {
+          messageId: 'moduleNotFound',
+          suggestions: [
+            {
+              messageId: 'addIgnoreComment',
+              output: `// eslint-disable-next-line import-next/no-unresolved\nimport { DEEP } from 'in-alternate-root';`,
+            },
+          ],
+        },
+      ],
+    },
+  ],
 });

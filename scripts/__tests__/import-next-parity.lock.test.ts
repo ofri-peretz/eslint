@@ -1,7 +1,7 @@
 /**
- * @provenBy {"file":"packages/eslint-plugin-import-next/README.md","find":"passes **1,711 of 2,135** (80.1%)","replace":"passes **2,135 of 2,135** (100.0%)"}
- * @provenBy {"file":"packages/eslint-plugin-import-next/README.md","find":"**2 of its 45 tested rules are not implemented**","replace":"**0 of its 45 tested rules are not implemented**"}
- * @provenBy {"file":"benchmarks/results/ilb-import-parity/2026-11-18-upstream-options.json","find":"\"passed\": 1711,","replace":"\"passed\": 2135,"}
+ * @provenBy {"file":"packages/eslint-plugin-import-next/README.md","find":"passes **1,816 of 2,135** (85.1%)","replace":"passes **2,135 of 2,135** (100.0%)"}
+ * @provenBy {"file":"packages/eslint-plugin-import-next/README.md","find":"**all 45 of its tested rules are implemented**","replace":"**all 44 of its tested rules are implemented**"}
+ * @provenBy {"file":"benchmarks/results/ilb-import-parity/2026-11-18-parity-2.json","find":"\"passed\": 1816,","replace":"\"passed\": 2135,"}
  * @provenBy {"file":"packages/eslint-plugin-import-next/README.md","find":"No graded case sets an option","replace":"Hardly any graded case sets an option"}
  */
 
@@ -114,6 +114,19 @@ describe('the parity envelope agrees with itself', () => {
   });
 });
 
+/**
+ * The ratchet. The envelope the README cites may be replaced by a newer
+ * measurement, never by a lower one: a change that makes import-next pass
+ * fewer of eslint-plugin-import's own cases has to say so here.
+ */
+const PASSED_FLOOR = 1816;
+
+describe('the parity score only goes up', () => {
+  it(`passes at least ${PASSED_FLOOR} graded cases`, () => {
+    expect(RESULT.headline.passed).toBeGreaterThanOrEqual(PASSED_FLOOR);
+  });
+});
+
 describe('the envelope grades the committed corpus', () => {
   it('names the same upstream commit and case count', () => {
     expect(RESULT.upstreamCommit).toBe(CORPUS.source.commit);
@@ -166,12 +179,20 @@ describe('the README states the measured numbers', () => {
   });
 
   it('names how many rules, and which, are not implemented', () => {
+    const h = RESULT.headline;
+    // Every tested rule implemented: the README says so, in these words.
+    if (h.rulesNotImplemented.length === 0) {
+      expect(README).toContain(
+        `**all ${h.rules} of its tested rules are implemented**`,
+      );
+      expect(README).not.toMatch(/tested rules are not implemented/);
+      return;
+    }
     const m = README.match(
       /\*\*(\d+) of its (\d+) tested rules are not implemented\*\* \(([^)]*)\)/,
     );
     expect(m, 'not-implemented clause not found').not.toBeNull();
     const [, missing, of, names] = m!;
-    const h = RESULT.headline;
     expect(Number(missing)).toBe(h.rulesNotImplemented.length);
     expect(Number(of)).toBe(h.rules);
     expect(names.split(',').map((s) => s.trim().replace(/`/g, ''))).toEqual(
@@ -206,9 +227,15 @@ describe('the README states the measured numbers', () => {
     expect(README).toContain(
       `${fmt(f['different-count'])} report a different number of times`,
     );
-    expect(README).toContain(
-      `${fmt(f['not-implemented'])} cases belong to the two missing rules`,
-    );
+    // A rule that is not implemented fails every graded case it has; the
+    // README counts them, or says there are none.
+    if (f['not-implemented']) {
+      expect(README).toContain(
+        `${fmt(f['not-implemented'])} cases belong to the`,
+      );
+    } else {
+      expect(README).toContain('none is an unimplemented rule');
+    }
     expect(README).toContain(
       `${RESULT.headline.rulesFullyPassing} rules pass every graded case`,
     );

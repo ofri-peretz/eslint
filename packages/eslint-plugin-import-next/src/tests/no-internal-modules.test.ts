@@ -4,7 +4,18 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { noInternalModules } from '../rules/no-internal-modules';
+
+/** A file to import from, whose `./vault` resolves to vault.ts. */
+const DIR = fs.realpathSync(
+  fs.mkdtempSync(path.join(os.tmpdir(), 'no-internal-modules-')),
+);
+fs.writeFileSync(path.join(DIR, 'vault.ts'), 'export const a = 1;\n');
+const FILE = path.join(DIR, 'app.ts');
+afterAll(() => fs.rmSync(DIR, { recursive: true, force: true }));
 
 // Configure RuleTester for Vitest
 RuleTester.afterAll = afterAll;
@@ -802,5 +813,63 @@ import { Button } from '@company/ui';
         },
       ],
     });
+  });
+});
+
+// eslint-plugin-import matches `allow` / `forbid` with minimatch against the
+// specifier's folded path steps (`./a/../b/c` -> `b/c`, with and without a
+// leading `/`) and the file it resolves to, and minimatch reads `{a,b}`.
+describe('no-internal-modules: how a pattern matches', () => {
+  ruleTester.run('pattern spellings', noInternalModules, {
+    valid: [
+      {
+        name: 'allow matches the folded steps, not only the ./ spelling',
+        code: `import './plugin2/index.js';`,
+        options: [{ allow: ['*/index.js'] }],
+      },
+      {
+        name: 'allow reads {a,b} alternatives',
+        code: `import './app/index';\nimport './app/index.js';`,
+        options: [{ allow: ['**/index{.js,}'] }],
+      },
+      {
+        name: 'a ? in a pattern is one character',
+        code: `import './app/v1/x';`,
+        options: [{ allow: ['app/v?/x'] }],
+      },
+      {
+        name: 'an unclosed brace is matched as its alternatives',
+        code: `import './app/b/x';`,
+        options: [{ allow: ['app/{a,b/x'] }],
+      },
+      {
+        name: 'a forbid pattern the import does not match',
+        code: `import './vault';`,
+        filename: FILE,
+        options: [{ forbid: ['**/secret.ts'] }],
+      },
+    ],
+    invalid: [
+      {
+        name: 'forbid matches the steps with a leading slash',
+        code: `import './app/x';`,
+        options: [{ forbid: ['/app/*'], maxDepth: 5 }],
+        errors: [{ messageId: 'internalModuleImport' }],
+      },
+      {
+        name: 'forbid matches the file the specifier resolves to',
+        code: `import './vault';`,
+        filename: FILE,
+        options: [{ forbid: ['**/vault.ts'] }],
+        errors: [{ messageId: 'internalModuleImport' }],
+      },
+      {
+        name: 'forbid with an unresolvable specifier matches what is written',
+        code: `import './missing/x';`,
+        filename: FILE,
+        options: [{ forbid: ['missing/*'], maxDepth: 5 }],
+        errors: [{ messageId: 'internalModuleImport' }],
+      },
+    ],
   });
 });

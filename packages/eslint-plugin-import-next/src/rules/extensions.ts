@@ -5,7 +5,8 @@
  */
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, resolveModule } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+import { resolveWithSettings } from '../utils/settings-resolver';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { builtinModules } from 'node:module';
 import path from 'node:path';
@@ -283,7 +284,11 @@ export const extensions = createRule<Options, MessageIds>({
       const importPath = written.replace(/\?(.*)$/, '');
       if (!override && (isBuiltIn(importPath) || isRootPackage(importPath)))
         return;
-      const resolved = resolveModule(importPath, context.filename);
+      const resolved = resolveWithSettings(
+        importPath,
+        context.filename,
+        context.settings,
+      );
       const extension = path.extname(resolved ?? importPath).slice(1);
       const modifier = props.pattern[extension] ?? props.defaultConfig;
       if (!extension || !importPath.endsWith(`.${extension}`)) {
@@ -308,9 +313,10 @@ export const extensions = createRule<Options, MessageIds>({
         }
       } else if (
         modifier === 'never' &&
-        resolveModule(
+        resolveWithSettings(
           importPath.slice(0, -(extension.length + 1)),
           context.filename,
+          context.settings,
         ) === resolved
       ) {
         context.report({ node: source, messageId: 'unexpectedExtension' });
@@ -373,11 +379,18 @@ export const extensions = createRule<Options, MessageIds>({
      *     user this rule is for.
      */
     function extensionIsLoadBearing(specifier: string, ext: string): boolean {
-      const withExtension = resolveModule(specifier, context.filename);
+      const withExtension = resolveWithSettings(
+        specifier,
+        context.filename,
+        context.settings,
+      );
       if (!withExtension) return true;
       if (!withExtension.endsWith(`.${ext}`)) return true;
       const stripped = specifier.slice(0, -(ext.length + 1));
-      return resolveModule(stripped, context.filename) !== withExtension;
+      return (
+        resolveWithSettings(stripped, context.filename, context.settings) !==
+        withExtension
+      );
     }
 
     /**
@@ -456,14 +469,21 @@ export const extensions = createRule<Options, MessageIds>({
         // A specifier that does not resolve, or that only resolves as a
         // directory (`./lib` -> lib/index.ts, where `./lib.ts` names nothing),
         // proves nothing and is not reported.
-        const resolved = resolveModule(value, context.filename);
+        const resolved = resolveWithSettings(
+          value,
+          context.filename,
+          context.settings,
+        );
         if (!resolved) return;
         const resolvedExt = path.extname(resolved).slice(1);
         if (
           resolvedExt &&
           policyFor(resolvedExt) === 'always' &&
-          resolveModule(`${value}.${resolvedExt}`, context.filename) ===
-            resolved
+          resolveWithSettings(
+            `${value}.${resolvedExt}`,
+            context.filename,
+            context.settings,
+          ) === resolved
         ) {
           context.report({
             node: source,
