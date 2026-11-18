@@ -1,4 +1,8 @@
 /**
+ * @provenBy {"file":"packages/eslint-plugin-node-security/docs/rules/lock-file.md","find":"`npm`, `yarn`, or `pnpm`","replace":"`npm`, `yarn`, or `npm`"}
+ */
+
+/**
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
  * MIT license that can be found in the LICENSE file.
@@ -164,7 +168,7 @@ describe('rule docs agree with rule meta', () => {
     ];
     expect(lists.length).toBeGreaterThan(0);
     for (const list of lists) {
-      expect([...list.slice(1)].sort()).toEqual([...managers].sort());
+      expect(list.slice(1).sort()).toEqual([...managers].sort());
     }
   });
 
