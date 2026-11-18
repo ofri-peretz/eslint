@@ -60,6 +60,5 @@ describe('README "Used by"', () => {
       for (const plugin of plugins)
         expect(text, plugin).toContain(`eslint-plugin-${plugin}`);
     },
-    20_000,
   );
 });
