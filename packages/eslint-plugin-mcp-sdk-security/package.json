@@ -69,13 +69,45 @@
   },
   "peerDependencies": {
     "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0",
-    "@modelcontextprotocol/sdk": "^1.0.0"
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/server": "^2.0.0",
+    "@modelcontextprotocol/client": "^2.0.0",
+    "@modelcontextprotocol/core": "^2.0.0",
+    "@modelcontextprotocol/node": "^2.0.0",
+    "@modelcontextprotocol/express": "^2.0.0",
+    "@modelcontextprotocol/hono": "^2.0.0",
+    "@modelcontextprotocol/fastify": "^2.0.0",
+    "@modelcontextprotocol/server-legacy": "^2.0.0"
   },
   "peerDependenciesMeta": {
     "eslint": {
       "optional": true
     },
     "@modelcontextprotocol/sdk": {
+      "optional": true
+    },
+    "@modelcontextprotocol/server": {
+      "optional": true
+    },
+    "@modelcontextprotocol/client": {
+      "optional": true
+    },
+    "@modelcontextprotocol/core": {
+      "optional": true
+    },
+    "@modelcontextprotocol/node": {
+      "optional": true
+    },
+    "@modelcontextprotocol/express": {
+      "optional": true
+    },
+    "@modelcontextprotocol/hono": {
+      "optional": true
+    },
+    "@modelcontextprotocol/fastify": {
+      "optional": true
+    },
+    "@modelcontextprotocol/server-legacy": {
       "optional": true
     }
   },

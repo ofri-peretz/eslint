@@ -108,14 +108,17 @@ raw.post('/mcp', (req, res) =>
   installs one —
   no options (default `127.0.0.1`), a loopback host (`127.0.0.1`,
   `localhost`, `::1`), or any `allowedHosts`.
-- **`missingAuth`** reports the bind call when the file constructs an MCP HTTP
-  transport and binds every interface — explicitly (`.listen(port, '0.0.0.0')`,
-  `.listen(port, '::')`, `.listen({ host: '0.0.0.0' })`, or the
-  `createMcpExpressApp` call above), or implicitly: `.listen(port)` with no
-  host on an `express()` app, an app from `createMcpExpressApp()` (its `host`
-  option picks the Host validation, not the interface — and a network caller
-  can send `Host: 127.0.0.1` itself), or a Node `http(s).createServer(…)`
-  server binds `::` — and none of these is present:
+- **`missingAuth`** reports the bind call when the file serves MCP over HTTP
+  (it constructs an MCP HTTP transport or calls `createMcpHandler`) and binds
+  every interface — explicitly (`.listen(port, '0.0.0.0')`,
+  `.listen(port, '::')`, `.listen({ host: '0.0.0.0' })`,
+  `serve({ …, hostname: '0.0.0.0' })`, or the `createMcpExpressApp` call
+  above), or implicitly: `.listen(port)` with no host on an `express()` app, an
+  app from `createMcpExpressApp()` (its `host` option picks the Host
+  validation, not the interface — and a network caller can send
+  `Host: 127.0.0.1` itself), a Node `http(s).createServer(…)` server, or
+  `@hono/node-server`'s `serve({ fetch, port })` with no `hostname`, all of
+  which bind `::` — and none of these is present:
   - a call to an SDK auth export: `requireBearerAuth`, `mcpAuthRouter`,
     `mcpAuthMetadataRouter`;
   - a `.use(...)` passed custom middleware: an identifier or an inline
