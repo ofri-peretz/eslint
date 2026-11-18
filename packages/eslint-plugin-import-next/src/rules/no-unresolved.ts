@@ -14,7 +14,7 @@ import path from 'node:path';
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { resolveModule } from '@interlace/eslint-devkit';
+import { resolveWithSettings } from '../utils/settings-resolver';
 
 type MessageIds =
   | 'unresolvedImport'
@@ -275,9 +275,30 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
       }
 
       const filePath = context.filename;
-      const resolved = resolveModule(importPath, filePath, {
-        extensions: options?.extensions,
-      });
+      const found = resolveWithSettings(
+        importPath,
+        filePath,
+        context.settings,
+        options?.extensions,
+      );
+      // A `@types/*` package holds declarations only: Node cannot load it,
+      // and TypeScript refuses a value import of it by that name (TS6137,
+      // "import 'x' instead of '@types/x'"). Finding its `.d.ts` is not
+      // resolving it. `import type` / `export type` are erased, and allowed.
+      // A `require('@types/x')` is a runtime load of a `.d.ts`, which fails
+      // the same way, so it is unresolved too.
+      const declaration = node.parent as {
+        importKind?: string;
+        exportKind?: string;
+      };
+      const resolved =
+        found !== null &&
+        importPath.startsWith('@types/') &&
+        /\.d\.[cm]?ts$/.test(found) &&
+        declaration.importKind !== 'type' &&
+        declaration.exportKind !== 'type'
+          ? null
+          : found;
 
       if (!resolved) {
         context.report({

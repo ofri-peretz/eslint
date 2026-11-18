@@ -21,7 +21,10 @@ const ruleTester = new RuleTester({
 describe('no-duplicates', () => {
   ruleTester.run('no-duplicates', noDuplicates, {
     valid: [
-      "import { merge, find } from 'lodash';",
+      {
+        name: 'one import of a module',
+        code: "import { merge, find } from 'lodash';",
+      },
       "import foo from 'foo'; import bar from 'bar';",
     ],
     invalid: [
@@ -167,6 +170,43 @@ describe('no-duplicates — fidelity', () => {
         code: "import d from './m';\nimport { a } from './m';",
         errors: [{ messageId: 'noDuplicates' }],
         output: "import d, { a } from './m';\n",
+      },
+    ],
+  });
+});
+
+/**
+ * A type-only default and a type-only named (or namespace) import of one
+ * module cannot be one statement: TypeScript rejects `import type D, { A }`
+ * (TS1363). eslint-plugin-import keeps them apart too.
+ */
+describe('no-duplicates: type-only default beside type-only named', () => {
+  ruleTester.run('type-only default and named', noDuplicates, {
+    valid: [
+      {
+        name: 'a type-only default beside type-only named names',
+        code: "import type D from './m'; import type { A } from './m';",
+      },
+      {
+        name: 'type-only named names beside a type-only default',
+        code: "import type { A } from './m'; import type D from './m';",
+      },
+      {
+        name: 'a type-only default beside a type-only namespace',
+        code: "import type D from './m'; import type * as M from './m';",
+      },
+    ],
+    invalid: [
+      {
+        name: 'two type-only defaults of one module',
+        code: "import type D from './m'; import type E from './m';",
+        errors: [{ messageId: 'noDuplicates' }],
+      },
+      {
+        name: 'two type-only named imports of one module still merge',
+        code: "import type { A } from './m'; import type { B } from './m';",
+        output: "import type { A, B } from './m'; ",
+        errors: [{ messageId: 'noDuplicates' }],
       },
     ],
   });

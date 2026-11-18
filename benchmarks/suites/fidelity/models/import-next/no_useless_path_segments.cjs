@@ -14,6 +14,8 @@ const SPEC = {
   IndexShadowed: './both/index',
   DirIndex: './index',
   TrailingSlash: './lib/',
+  DotSlash: './',
+  ParentSlash: '../',
 };
 
 const FORM = {
@@ -37,8 +39,8 @@ const MOD = 'export const a = 1;\nexport default a;\n';
 
 module.exports = {
   rule: 'no-useless-path-segments',
-  domain: 8 * 12 * 3,
-  traces: 2400,
+  domain: 8 * 14 * 3,
+  traces: 3000,
   key: keyOf('form', 'spec', 'opts'),
   config: (s) => OPTS[tag(s.opts)],
   files: () => ({

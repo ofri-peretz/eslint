@@ -2,6 +2,7 @@
  * Tests for export rule
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
+import { describe } from 'vitest';
 import { exportRule } from '../rules/export';
 
 const ruleTester = new RuleTester({
@@ -15,7 +16,7 @@ ruleTester.run('export', exportRule, {
   valid: [
     // Single named exports
     { name: 'a single export', code: `export const foo = 1;` },
-    { code: `export function bar() {}` },
+    { name: 'a single exported function', code: `export function bar() {}` },
     { code: `export class Baz {}` },
 
     // Multiple distinct exports
@@ -403,7 +404,7 @@ describe('export — namespace scope is part of the identity', () => {
         // The same ambient module spelled with different quotes is the same
         // module to TypeScript. Keying on printed text would have put these in
         // different buckets and missed the duplicate.
-        code: 'declare module \'x\' { export type T = \'a\'; }\ndeclare module "x" { export type T = \'b\'; }',
+        code: "declare module 'x' { export type T = 'a'; }\ndeclare module \"x\" { export type T = 'b'; }",
         errors: [{ messageId: 'duplicateExport' }],
       },
       {
@@ -434,6 +435,80 @@ describe('export — namespace scope is part of the identity', () => {
         // what makes this reachable at all.
         code: "export namespace A {\n  export enum E { a }\n  export type E = 'x';\n}",
         errors: [{ messageId: 'duplicateExport' }],
+      },
+    ],
+  });
+});
+
+// A default export is per module: the file, and each `declare module 'x' {}`
+// block, has its own. An overload signature of a default function is not a
+// second default (eslint-plugin-import's own valid cases).
+describe('export — one default per module', () => {
+  ruleTester.run('default exports', exportRule, {
+    valid: [
+      {
+        name: 'overload signatures of a default function',
+        code: `
+          export default function foo(param: string): boolean;
+          export default function foo(param: string, param1?: number): boolean {
+            return !!param && !!param1;
+          }
+        `,
+      },
+      {
+        name: 'two ambient modules, one default each',
+        code: `
+          declare module "a" { const Foo = 1; export { Foo as default }; }
+          declare module "b" { const Bar = 2; export { Bar as default }; }
+        `,
+      },
+      {
+        name: 'an ambient module default beside the file default',
+        code: `
+          declare module "a" { const Foo = 1; export { Foo as default }; }
+          const Bar = 2;
+          export { Bar as default };
+        `,
+      },
+    ],
+    invalid: [
+      {
+        name: 'two defaults inside one ambient module',
+        code: `
+          declare module 'foo' {
+            const Foo = 1;
+            export default Foo;
+            export { Foo as default };
+          }
+        `,
+        errors: [{ messageId: 'duplicateDefault' }],
+      },
+      {
+        name: 'two ambient default functions of different names',
+        code: `
+          declare module 'x' {
+            export default function f(): void;
+            export default function g(): void;
+          }
+        `,
+        errors: [{ messageId: 'duplicateDefault' }],
+      },
+      {
+        name: 'an anonymous default function after an overload signature',
+        code: `
+          export default function f(a: string): void;
+          export default function (a: string) {}
+        `,
+        errors: [{ messageId: 'duplicateDefault' }],
+      },
+      {
+        name: 'a second default function after an overloaded one',
+        code: `
+          export default function foo(param: string): boolean;
+          export default function foo(param: string): boolean { return !!param; }
+          export { foo as default };
+        `,
+        errors: [{ messageId: 'duplicateDefault' }],
       },
     ],
   });

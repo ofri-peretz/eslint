@@ -1,7 +1,7 @@
 {
   "name": "oxlint-plugin-import-next",
   "version": "3.1.0",
-  "description": "Oxlint import rules — an alternative to eslint-plugin-import that passes 80% of its own test cases, covering imports and module boundaries, 3.1x faster end-to-end. Same rules and rule IDs as eslint-plugin-import-next, for oxlint and Vite+.",
+  "description": "Oxlint import rules — an alternative to eslint-plugin-import that passes 85% of its own test cases, covering imports and module boundaries, 3.1x faster end-to-end. Same rules and rule IDs as eslint-plugin-import-next, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./index.js",

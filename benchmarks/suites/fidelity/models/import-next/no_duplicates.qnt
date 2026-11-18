@@ -5,7 +5,9 @@
 //     namespace) of one module, EXCEPT a namespace import beside a named or
 //     inline-type import: `import * as ns, { a }` is not valid syntax, so the
 //     two cannot be merged and neither is redundant;
-//   - two `import type` statements of one module.
+//   - two `import type` statements of one module, EXCEPT a type-only default
+//     beside a type-only named import: TypeScript rejects
+//     `import type D, { A }` (TS1363), so the two cannot be merged.
 // `import type` beside a value import is NOT a duplicate: the type-only form
 // is erased, and folding it into the value import changes what is emitted.
 // The SAME module is the file the resolver sees: './m' and './m.js' (TS
@@ -14,17 +16,19 @@
 // Scope: imports in two different `declare module 'x' {}` blocks of a .d.ts
 // belong to two ambient modules - not a duplicate; two in one block are.
 module no_duplicates {
-  type Form = Named | Default | Namespace | SideEffect | TypeOnly | InlineType
+  type Form = Named | Default | Namespace | SideEffect | TypeOnly | TypeDefault | InlineType
   type Relation = Same | Other | Query | ExtJs | Index
   type Scope = TopLevel | SplitModules | OneModuleBlock
   type Focus = Forms | Relations | Scopes
 
-  pure def isType(f: Form): bool = f == TypeOnly
+  pure def isType(f: Form): bool = Set(TypeOnly, TypeDefault).contains(f)
   pure def unmergeable(a: Form, b: Form): bool =
     (a == Namespace and Set(Named, InlineType).contains(b))
     or (b == Namespace and Set(Named, InlineType).contains(a))
+    or (a == TypeDefault and b == TypeOnly)
+    or (b == TypeDefault and a == TypeOnly)
   pure def duplicate(a: Form, b: Form): bool =
-    if (isType(a) or isType(b)) isType(a) and isType(b)
+    if (isType(a) or isType(b)) isType(a) and isType(b) and not(unmergeable(a, b))
     else not(unmergeable(a, b))
   pure def sameModule(r: Relation): bool = Set(Same, ExtJs, Index).contains(r)
   pure def reports(a: Form, b: Form, r: Relation, s: Scope): bool =
@@ -39,9 +43,9 @@ module no_duplicates {
 
   action step = {
     nondet fo = Set(Forms, Relations, Scopes).oneOf()
-    val all6 = Set(Named, Default, Namespace, SideEffect, TypeOnly, InlineType)
-    nondet a = (if (fo == Forms) all6 else Set(Named)).oneOf()
-    nondet b = (if (fo == Forms) all6
+    val all7 = Set(Named, Default, Namespace, SideEffect, TypeOnly, TypeDefault, InlineType)
+    nondet a = (if (fo == Forms) all7 else Set(Named)).oneOf()
+    nondet b = (if (fo == Forms) all7
                 else if (fo == Relations) Set(Named, Default, SideEffect)
                 else Set(Named)).oneOf()
     nondet r = (if (fo == Relations) Set(Other, Query, ExtJs, Index) else Set(Same)).oneOf()

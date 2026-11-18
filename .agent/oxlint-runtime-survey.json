@@ -538,6 +538,11 @@
       "failed": 0,
       "examples": []
     },
+    "eslint-plugin-import-next/enforce-node-protocol-usage": {
+      "cases": 27,
+      "failed": 0,
+      "examples": []
+    },
     "eslint-plugin-import-next/enforce-team-boundaries": {
       "cases": 26,
       "failed": 0,
@@ -741,6 +746,11 @@
     },
     "eslint-plugin-import-next/no-useless-path-segments": {
       "cases": 35,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-import-next/no-webpack-loader-syntax": {
+      "cases": 16,
       "failed": 0,
       "examples": []
     },

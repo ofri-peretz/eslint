@@ -112,7 +112,7 @@ Using one of these plugins in a public repository and want it listed? Open an is
 
 <!-- AUTO-GENERATED:NUMBERS:START - Do not edit manually -->
 
-**31 published plugins · 496 rules** — 22 security plugins (291 rules), 7 code-quality plugins (107 rules), 2 React plugins (98 rules). <sub>Counts generated 2026-11-12 from the source tree — never hand-typed.</sub>
+**31 published plugins · 498 rules** — 22 security plugins (291 rules), 7 code-quality plugins (109 rules), 2 React plugins (98 rules). <sub>Counts generated 2026-11-18 from the source tree — never hand-typed.</sub>
 
 <!-- AUTO-GENERATED:NUMBERS:END -->
 
@@ -159,11 +159,11 @@ that match your stack; ignore the other twenty-eight.
 
 ### 🧭 Architecture
 
-<sub>1 plugin · 55 rules</sub>
+<sub>1 plugin · 57 rules</sub>
 
 | Package                                                                                | Rules | What it catches                                                                                                                               | Docs                                                                                                                               | Downloads                                                                                      |
 | :------------------------------------------------------------------------------------- | ----: | :-------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |    55 | An alternative to eslint-plugin-import that passes 80% of its own test cases, covering imports and module boundaries, 3.1x faster end-to-end. | [docs](https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-import-next?style=flat-square&label=) |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |    57 | An alternative to eslint-plugin-import that passes 85% of its own test cases, covering imports and module boundaries, 3.1x faster end-to-end. | [docs](https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-import-next?style=flat-square&label=) |
 
 ### ✨ Code quality
 

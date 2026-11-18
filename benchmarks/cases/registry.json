@@ -4980,6 +4980,60 @@
         }
       ],
       "kind": "remedy"
+    },
+    {
+      "id": "ILB-0171",
+      "added": "2026-11-18",
+      "title": "a Node.js builtin loaded without the node: scheme where the codebase requires it",
+      "rationale": "Under `enforce-node-protocol-usage: ['always']` every builtin is spelled `node:x`, so no same-named package in node_modules can shadow it. A bare `fs` breaks the convention the option states.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import fs from 'fs';",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "import-next/enforce-node-protocol-usage",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-import-next/src/tests/enforce-node-protocol-usage.test.ts",
+          "options": ["always"]
+        }
+      ]
+    },
+    {
+      "id": "ILB-0172",
+      "added": "2026-11-18",
+      "title": "webpack loaders configured inside an import specifier",
+      "rationale": "`style!css!./a.css` ties the module to webpack and hides its loader chain from the webpack config, where every other loader is declared.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import css from 'style!css!./app.css';",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "import-next/no-webpack-loader-syntax",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-import-next/src/tests/no-webpack-loader-syntax.test.ts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-import",
+          "rule": "no-webpack-loader-syntax",
+          "control": "import css from './app.css';"
+        }
+      ]
     }
   ]
 }
