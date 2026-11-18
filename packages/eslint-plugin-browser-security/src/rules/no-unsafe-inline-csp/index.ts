@@ -22,11 +22,101 @@ import {
   objectKeyName,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'unsafeInline';
+type MessageIds = 'unsafeInline' | 'unsafeInlineStyle';
 
 export interface Options {
   /** Allow in test files. Default: true */
   allowInTests?: boolean;
+  /**
+   * Also report `'unsafe-inline'` where it permits inline STYLES
+   * (`style-src`, or `default-src` with no `style-src`), under its own
+   * MEDIUM-severity message. Default: false — inline CSS is CSS injection, not
+   * the script execution this rule's CWE-79 finding asserts.
+   */
+  checkStyleSrc?: boolean;
+}
+
+/** A directive name, as a whole token: `script-src`, `style-src-elem`, `form-action`. */
+const DIRECTIVE_NAME =
+  /^(?:default|script|style|img|connect|font|frame|media|object|worker|child|manifest|prefetch|base|form)-(?:src|uri|action)(?:-elem|-attr)?$/i;
+
+/** @protocol-constant CSP3 §6.1 — the directives that govern script. */
+const SCRIPT_DIRECTIVES = new Set([
+  'script-src',
+  'script-src-elem',
+  'script-src-attr',
+]);
+
+/** @protocol-constant CSP3 §6.1 — the directives that govern style. */
+const STYLE_DIRECTIVES = new Set([
+  'style-src',
+  'style-src-elem',
+  'style-src-attr',
+]);
+
+/**
+ * What `'unsafe-inline'` enables in this policy text, by the directive it sits
+ * in, or `null` when the text names no directive.
+ *
+ * Each `;`-separated segment's directive is its first token that IS a
+ * directive name, and only the tokens after it are its sources — so
+ * `Content-Security-Policy: script-src …` reads as `script-src`, and prose
+ * that mentions a directive after the keyword (`add 'unsafe-inline' to
+ * script-src`) grants nothing. `default-src` is the fallback for script and
+ * style alike, and counts for each only where the policy has no `script-src`
+ * / `style-src` of its own.
+ */
+function inlineEnables(value: string): {
+  named: boolean;
+  script: boolean;
+  style: boolean;
+} {
+  // A header may carry several policies, comma-separated, and each is
+  // enforced on its own: `script-src 'unsafe-inline', img-src 'self'` still
+  // allows inline script through its first policy.
+  const policies = value.split(',').map(policyEnables);
+  return {
+    named: policies.some((policy) => policy.named),
+    script: policies.some((policy) => policy.script),
+    style: policies.some((policy) => policy.style),
+  };
+}
+
+/** `inlineEnables` for one policy (no commas). */
+function policyEnables(policy: string): {
+  named: boolean;
+  script: boolean;
+  style: boolean;
+} {
+  const directives = policy.split(';').flatMap((segment) => {
+    // Quotes, `=` and angle brackets delimit tokens too, so a policy inside
+    // generated markup — `content="script-src 'unsafe-inline'">` — reads as
+    // `script-src` and `'unsafe-inline'`.
+    const tokens = segment.split(/[\s"<>=]+/).filter(Boolean);
+    const at = tokens.findIndex((token) => DIRECTIVE_NAME.test(token));
+    if (at === -1) return [];
+    return [
+      {
+        name: (tokens[at] as string).toLowerCase(),
+        inline: tokens
+          .slice(at + 1)
+          .some((token) => token.toLowerCase() === "'unsafe-inline'"),
+      },
+    ];
+  });
+  const names = new Set(directives.map((directive) => directive.name));
+  const enables = (governing: ReadonlySet<string>, own: string): boolean =>
+    directives.some(
+      (directive) =>
+        directive.inline &&
+        (governing.has(directive.name) ||
+          (directive.name === 'default-src' && !names.has(own))),
+    );
+  return {
+    named: directives.length > 0,
+    script: enables(SCRIPT_DIRECTIVES, 'script-src'),
+    style: enables(STYLE_DIRECTIVES, 'style-src'),
+  };
 }
 
 type RuleOptions = [Options?];
@@ -50,22 +140,43 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
         owasp: 'A03:2021',
         cvss: 7.5,
         description:
-          "'unsafe-inline' in CSP allows inline scripts/styles to execute, defeating XSS protection.",
+          "'unsafe-inline' in a script-governing CSP directive allows inline scripts to execute, defeating XSS protection.",
         severity: 'HIGH',
         fix: "Use nonces or hashes instead: script-src 'nonce-abc123' or script-src 'sha256-...'",
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP',
       }),
+      unsafeInlineStyle: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: "CSP 'unsafe-inline' for Styles",
+        cwe: 'CWE-79',
+        owasp: 'A03:2021',
+        cvss: 4.3,
+        description:
+          "'unsafe-inline' in style-src allows inline styles, which an injected <style> or style attribute can use for CSS injection (data exfiltration through selectors, UI redressing).",
+        severity: 'MEDIUM',
+        fix: "Move styles to stylesheets, or allow them by nonce or hash: style-src 'nonce-abc123'",
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/style-src',
+      }),
     },
     schema: [
       {
         type: 'object',
-        properties: { allowInTests: { type: 'boolean', default: true } },
+        properties: {
+          allowInTests: { type: 'boolean', default: true },
+          checkStyleSrc: {
+            type: 'boolean',
+            default: false,
+            description:
+              "Also report 'unsafe-inline' that permits inline styles, under a MEDIUM-severity message.",
+          },
+        },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [{ allowInTests: true }],
+  defaultOptions: [{ allowInTests: true, checkStyleSrc: false }],
   createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     currentOptions,
@@ -76,17 +187,7 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
     // back false — then reset, so the third reported again. Every second
     // finding in a file was silently dropped by the flag alone.
     const UNSAFE_INLINE_PATTERN = /'unsafe-inline'/i;
-    /**
-     * Directive names that only appear in a Content-Security-Policy.
-     *
-     * Presence of one is what makes a string a POLICY rather than a string
-     * that happens to contain the token — `["'unsafe-inline'"]` in a table of
-     * CSP keywords, a docs example, a test name. Shape is not meaning: the
-     * rule asserts that inline scripts will execute, which is only true of a
-     * policy that is actually served.
-     */
-    const CSP_DIRECTIVES =
-      /\b(?:default|script|style|img|connect|font|frame|media|object|worker|child|manifest|prefetch|base|form)-(?:src|uri|action)(?:-elem|-attr)?\b/i;
+    let checkStyleSrc: boolean;
 
     /** Header and property names that name a Content-Security-Policy. */
     // oxlint-disable-next-line consistent-function-scoping
@@ -182,25 +283,35 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
      */
     function checkForUnsafeInline(node: TSESTree.Node, value: string): void {
       if (!UNSAFE_INLINE_PATTERN.test(value)) return;
-      // A policy names at least one directive, or is delivered somewhere this
-      // rule can see. Otherwise the token is just a string. Delivery alone is
-      // not enough, though: prose in a header value
-      // (`"Never add 'unsafe-inline' to your policy"`) enables nothing. At a
-      // sink without a directive the value must be a bare source list made only
-      // of keywords (`"'self' 'unsafe-inline'"`), not a sentence.
-      if (!CSP_DIRECTIVES.test(value) && !(atCspSink(node) && grants(value))) {
+      // A policy names at least one directive, and is judged by the directive
+      // the keyword sits in (`inlineEnables`). Presence of a directive is what
+      // makes a string a POLICY rather than a string that happens to contain
+      // the token — a keyword table, a docs example, a test name.
+      const enabled = inlineEnables(value);
+      if (enabled.named) {
+        if (enabled.script) {
+          context.report({ node, messageId: 'unsafeInline' });
+        } else if (checkStyleSrc && enabled.style) {
+          context.report({ node, messageId: 'unsafeInlineStyle' });
+        }
         return;
       }
-      context.report({
-        node,
-        messageId: 'unsafeInline',
-      });
+      // With no directive the string is a policy only where one is delivered,
+      // and delivery alone is not enough: prose in a header value
+      // (`"Never add 'unsafe-inline' to your policy"`) enables nothing. At a
+      // sink the value must be a bare source list made only of keywords
+      // (`"'self' 'unsafe-inline'"`). Which directive it fills is out of
+      // sight, so it is read as script — the case it is most often.
+      if (atCspSink(node) && grants(value)) {
+        context.report({ node, messageId: 'unsafeInline' });
+      }
     }
 
     return {
       before() {
         const [options = {}] = currentOptions();
         const { allowInTests } = options as Options;
+        ({ checkStyleSrc = false } = options as Options);
         const filename = context.filename;
         const isTestFile = isTestFilePath(filename);
 

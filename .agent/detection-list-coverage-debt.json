@@ -259,13 +259,11 @@
     "authoring",
     "authors",
     "authorship",
-    "hashtag",
     "hashtags"
   ],
   "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/index.ts#DEFAULT_NON_SECRET_TAILS": [
     "addresses",
     "hostname",
-    "limits",
     "origin",
     "pathnames",
     "paths",

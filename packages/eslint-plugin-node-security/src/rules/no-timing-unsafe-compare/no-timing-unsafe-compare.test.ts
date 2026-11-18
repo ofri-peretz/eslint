@@ -1074,21 +1074,29 @@ ruleTester.run(
   noTimingUnsafeCompare,
   {
     valid: [
-      // DEFAULT: `author` is a non-secret word, so `authorId` — which matches
-      // the `auth` pattern by collision — is excluded.
+      // DEFAULT: `authorId` does not match the default `auth` pattern at all —
+      // a four-letter pattern matches whole words only.
       'function h(req){ const authorId = req.query.a; if (authorId === expected) {} }',
+      // DEFAULT, regex pattern: a user regex keeps substring semantics, so
+      // `^auth` does reach `authorId`, and the `author` word excludes it.
+      {
+        name: 'a regex secretPattern reaches authorId, and the author word excludes it',
+        code: 'function h(req){ const authorId = req.query.a; if (authorId === expected) {} }',
+        options: [{ secretPatterns: ['^auth'] }],
+      },
       // WIDENING: a domain word of the consumer's own.
       {
+        name: 'nonSecretWords widens: a domain word of the consumer excludes casseroleToken',
         code: 'function h(req){ const casseroleToken = req.query.a; if (casseroleToken === expected) {} }',
         options: [{ nonSecretWords: ['casserole'] }],
       },
     ],
     invalid: [
-      // NARROWING: emptying the list restores the `auth` ⊂ `authorId` collision,
-      // which is the behaviour the guard exists to remove.
+      // NARROWING: emptying the list restores the `^auth` ⊂ `authorId`
+      // collision, which is the behaviour the guard exists to remove.
       {
         code: 'function h(req){ const authorId = req.query.a; if (authorId === expected) {} }',
-        options: [{ nonSecretWords: [] }],
+        options: [{ secretPatterns: ['^auth'], nonSecretWords: [] }],
         errors: [{ messageId: 'timingUnsafeCompare' }],
       },
       // CONTROL for the widening case: identical source, default word list.

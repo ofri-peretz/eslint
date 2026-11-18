@@ -78,6 +78,7 @@ describe('no-dynamic-command-string', () => {
       // every bare identifier in command position made `const BUILD = '…'` a
       // false positive — the shape a repo reaches for to keep scripts in one place.
       {
+        name: 'a command line hoisted to a const is written out, not assembled',
         code: `const BUILD = 'npm ci && npm run build'; spawn('bash', ['-c', BUILD]);`,
       },
       {

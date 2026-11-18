@@ -122,6 +122,10 @@ const DEFAULT_SECRET_PATTERNS = [
   'api_key',
   'api-key',
   'auth',
+  // `auth` is four letters and matches as a whole word only (see
+  // SHORT_PATTERN_LENGTH), so the header it used to reach by substring is
+  // named in full.
+  'authorization',
   'credential',
   'bearer',
   'jwt',
@@ -147,10 +151,81 @@ const DEFAULT_SECRET_PATTERNS = [
   'auth_token',
   'auth-token',
   'authToken',
+  // Compounds of the short `token`, spelled out so a lowercase identifier
+  // (`config.apitoken`, `sessiontoken`) still matches: at six letters or more
+  // they match anywhere, which a whole-word `token` cannot.
+  'api_token',
+  'api-token',
+  'apiToken',
+  'session_token',
+  'session-token',
+  'sessionToken',
+  'id_token',
+  'id-token',
+  'idToken',
+  'csrf_token',
+  'csrf-token',
+  'csrfToken',
   'encryption_key',
   'encryption-key',
   'encryptionKey',
 ];
+
+/**
+ * Patterns shorter than this match only as whole words of the identifier.
+ *
+ * `token` sits inside `maxTokens`, a count of LLM tokens — the MCP TypeScript
+ * SDK's CLI host compares `grantedMaxTokens === params.maxTokens` and was
+ * reported as a timing oracle (`examples/cli-client/host/host.ts:397`).
+ * `auth` sits inside `author`, `hash` inside `hashtag`. A word of six letters
+ * or more inside another identifier IS the secret it names (`clientsecret`,
+ * `hashedpassword`, `apikey`), so those keep matching anywhere. The same
+ * threshold as `utils/names.ts#makeNameTest`.
+ */
+const SHORT_PATTERN_LENGTH = 6;
+
+/** A pattern written as a plain word, not a regular expression. */
+const PLAIN_PATTERN = /^[A-Za-z0-9_-]+$/;
+
+/**
+ * Is `index` a word boundary of `name`? The start and end, a separator on
+ * either side, a lower-to-upper camelCase step (`max|Tokens`), and the last
+ * capital of an acronym run before a lowercase letter (`JWT|Token`). The same
+ * boundaries `identifierWords` splits on.
+ */
+function isWordBoundary(name: string, index: number): boolean {
+  if (index <= 0 || index >= name.length) return true;
+  const before = name[index - 1] as string;
+  const at = name[index] as string;
+  if (!/[A-Za-z0-9]/.test(before) || !/[A-Za-z0-9]/.test(at)) return true;
+  if (/[a-z0-9]/.test(before) && /[A-Z]/.test(at)) return true;
+  // `charAt` past the end is '', which no letter class matches.
+  return (
+    /[A-Z]/.test(before) &&
+    /[A-Z]/.test(at) &&
+    /[a-z]/.test(name.charAt(index + 1))
+  );
+}
+
+/**
+ * Does a plain-word pattern occur in `name`? A short one must start AND end on
+ * a word boundary; a long one may sit anywhere. Case-insensitive, as the regex
+ * form was — lowercasing ASCII keeps every index where it was.
+ */
+function containsWord(name: string, pattern: string): boolean {
+  const haystack = name.toLowerCase();
+  const needle = pattern.toLowerCase();
+  if (needle.length >= SHORT_PATTERN_LENGTH) return haystack.includes(needle);
+  for (
+    let at = haystack.indexOf(needle);
+    at !== -1;
+    at = haystack.indexOf(needle, at + 1)
+  ) {
+    if (isWordBoundary(name, at) && isWordBoundary(name, at + needle.length))
+      return true;
+  }
+  return false;
+}
 
 /**
  * Is this operand a constant that is already sitting in the source file?
@@ -684,6 +759,9 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     let nonSecretTailSet: ReadonlySet<string>;
     let sourceCode: Readonly<TSESLint.SourceCode>;
     let readsUntrusted: (node: TSESTree.Node) => boolean;
+    /** Patterns written as plain words, lower-cased — see `containsWord`. */
+    let wordPatterns: string[];
+    /** Anything else a user configured: their regex, their semantics. */
     let patterns: ReturnType<typeof compileUserPatterns>;
 
     function nameLooksSecret(name: string): boolean {
@@ -696,7 +774,10 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       ) {
         return false;
       }
-      return patterns.some((p) => p.test(name));
+      return (
+        wordPatterns.some((word) => containsWord(name, word)) ||
+        patterns.some((p) => p.test(name))
+      );
     }
 
     /**
@@ -1172,11 +1253,11 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
           sourceCode,
           new Set(untrustedSources.map((source) => source.toLowerCase())),
         );
-        // Substring-matched on purpose: `auth` has to match `authorization`, and
-        // `token` has to match `accessTokenValue`. Anchoring to word boundaries was
-        // tried and dropped — it fixed `firstKey` but stopped matching
-        // `req.headers.authorization`, trading one false positive for a worse false
-        // negative.
+        // A short pattern matches on word boundaries, a long one anywhere (see
+        // SHORT_PATTERN_LENGTH). Plain anchoring was tried once and dropped
+        // because it stopped `auth` matching `req.headers.authorization`; that
+        // header is now a pattern of its own, and `token` still matches
+        // `accessTokenValue` because `Token` sits between two boundaries there.
         //
         // Under the DEFAULT patterns `firstKey` never reaches the guard at all,
         // because `key` is not among them. The existence-check guard below is what
@@ -1187,7 +1268,16 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         // "Invalid regular expression" out of create(), killing the whole lint
         // run rather than just this rule. compileUserPattern degrades both to a
         // substring match.
-        patterns = compileUserPatterns(secretPatterns as string[], 'i');
+        //
+        // A plain-word pattern — every default is one — is matched by
+        // `containsWord` instead, so a short word has to be a whole word of
+        // the identifier. Only a pattern with regex syntax in it reaches the
+        // compiler, and it keeps the substring semantics its author wrote.
+        wordPatterns = secretPatterns.filter((p) => PLAIN_PATTERN.test(p));
+        patterns = compileUserPatterns(
+          secretPatterns.filter((p) => !PLAIN_PATTERN.test(p)),
+          'i',
+        );
       },
       BinaryExpression: checkBinaryExpression,
       CallExpression: checkCallExpression,

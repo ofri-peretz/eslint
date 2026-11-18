@@ -14,7 +14,7 @@ autofix: false
 Ensures the number of placeholders in SQL queries matches the provided parameters.
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
+**CWE:** [CWE-20](https://cwe.mitre.org/data/definitions/20.html)
 
 Ensures the number of placeholders in SQL queries matches the provided parameters.
 

@@ -3,7 +3,7 @@ title: no-math-random-crypto
 description: Disallow Math.random() for cryptographic purposes (tokens, keys, secrets, salts, IVs)
 tags: ['security', 'cryptography', 'cwe-338', 'nodejs']
 category: security
-severity: critical
+severity: high
 cwe: CWE-338
 owasp: 'A02:2021'
 autofix: false

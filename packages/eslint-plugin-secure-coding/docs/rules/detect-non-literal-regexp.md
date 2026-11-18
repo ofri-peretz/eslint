@@ -14,7 +14,7 @@ autofix: false
 Detects RegExp(variable), which might allow an attacker to DOS your server with a long-running regular expression
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**CWE:** [CWE-400](https://cwe.mitre.org/data/definitions/400.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects `RegExp(variable)`, which might allow an attacker to DOS your server with a long-running regular expression. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages with fix suggestions.

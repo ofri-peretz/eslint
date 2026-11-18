@@ -14,7 +14,7 @@ autofix: false
 Ensures query promises are awaited or handled.
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
+**CWE:** [CWE-391](https://cwe.mitre.org/data/definitions/391.html)
 
 Ensures query promises are awaited or handled.
 

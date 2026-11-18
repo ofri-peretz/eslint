@@ -1,6 +1,9 @@
 // Model of eslint-plugin-browser-security/no-unsafe-inline-csp (CWE-79).
 // Contract: a Content-Security-Policy string (a literal, template, setHeader
-// value or meta content) whose source list contains 'unsafe-inline' is reported.
+// value or meta content) whose SCRIPT-governing source list (script-src*, or
+// default-src with no script-src) contains 'unsafe-inline' is reported.
+// Under style-src the keyword permits inline CSS, not script execution, and is
+// reported only with checkStyleSrc (not modelled here: off by default).
 // CSP keywords are ASCII case-insensitive (CSP3). Prose that merely names the
 // keyword is not a policy; other keywords (nonces, hashes, 'unsafe-hashes') are fine.
 module no_unsafe_inline_csp {
@@ -10,7 +13,7 @@ module no_unsafe_inline_csp {
 
   pure def unsafe(p: Policy): bool = match p {
     | ScriptUI => true
-    | StyleUI => true
+    | StyleUI => false
     | Upper => true
     | _ => false
   }
