@@ -64,9 +64,16 @@ export const lazyA = () => import('./a');
     "type": "object",
     "properties": {
       "maxDepth": {
-        "type": "number",
-        "default": 9007199254740991,
-        "description": "Maximum depth to traverse when detecting cycles (performance optimization)"
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "string",
+            "enum": ["∞"]
+          }
+        ],
+        "description": "Maximum depth to traverse when detecting cycles. Default: unlimited (matches eslint-plugin-import and oxlint). Lower values are a performance escape hatch — but with our nonCyclicFiles cache, traversal cost is amortized, and a low cap silently misses cycles deeper than the limit. Set to a finite number only on huge graphs where the bench latency hurts you."
       },
       "ignorePatterns": {
         "type": "array",
@@ -89,12 +96,7 @@ export const lazyA = () => import('./a');
         "items": {
           "type": "string"
         },
-        "default": [
-          "index.ts",
-          "index.tsx",
-          "index.js",
-          "index.jsx"
-        ],
+        "default": ["index.ts", "index.tsx", "index.js", "index.jsx"],
         "description": "Files considered barrel exports"
       },
       "reportAllCycles": {
@@ -121,10 +123,7 @@ export const lazyA = () => import('./a');
       },
       "moduleNamingConvention": {
         "type": "string",
-        "enum": [
-          "semantic",
-          "numbered"
-        ],
+        "enum": ["semantic", "numbered"],
         "default": "semantic",
         "description": "Naming convention for split modules (semantic: .core, .api | numbered: .1, .2)"
       },
@@ -137,12 +136,60 @@ export const lazyA = () => import('./a');
         "type": "string",
         "default": "extended",
         "description": "Suffix for extended module when splitting (e.g., \"extended\", \"api\", \"helpers\")"
+      },
+      "ignoreExternal": {
+        "type": "boolean",
+        "description": "eslint-plugin-import: skip imports that resolve into an external module folder"
+      },
+      "allowUnsafeDynamicCyclicDependency": {
+        "type": "boolean",
+        "description": "eslint-plugin-import: true lets a dynamic import() anywhere in the chain break the cycle; false makes import() an edge like any other. Absent: import() breaks the cycle."
+      },
+      "disableScc": {
+        "type": "boolean",
+        "description": "eslint-plugin-import performance switch. Accepted for compatibility; findings are the same either way."
+      },
+      "commonjs": {
+        "type": "boolean",
+        "description": "eslint-plugin-import: true checks require() at any depth, false checks no require(). Absent: top-level require() only."
+      },
+      "amd": {
+        "type": "boolean",
+        "description": "eslint-plugin-import: also check AMD define([...]) / require([...]) dependencies"
+      },
+      "esmodule": {
+        "type": "boolean",
+        "description": "eslint-plugin-import: false skips import and export-from declarations"
+      },
+      "ignore": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "uniqueItems": true,
+        "description": "eslint-plugin-import: regular expressions; matching import specifiers are skipped"
       }
     },
     "additionalProperties": false
   }
 ]
 ```
+
+### eslint-plugin-import options
+
+A config carried over from `import/no-cycle` loads, and each option means what it meant there:
+
+- `maxDepth` also accepts `'∞'`.
+- `ignoreExternal`: skip imports that resolve into `node_modules` or an `import/external-module-folders` folder, in the linted file and along the chain.
+- `allowUnsafeDynamicCyclicDependency`: `true` lets an `import()` anywhere in the chain break the cycle; `false` makes `import()` an edge like any other. Absent, `import()` breaks the cycle — this rule's default, and a deliberate difference from eslint-plugin-import, whose default is `false`: a dynamic import runs after both modules have initialized.
+- `commonjs`: `true` checks every `require()`, `false` none. Absent, top-level `require()` only.
+- `amd`: `true` also checks `define([...])` / `require([...])` dependencies.
+- `esmodule`: `false` skips `import` and `export … from`.
+- `ignore`: regular expressions; a matching specifier is skipped.
+- `disableScc`: a performance switch upstream; accepted, and findings are the same either way.
+
+The linted file's own imports are read from the source being linted, not from disk, so an unsaved buffer or `--stdin` is checked as written.
 
 ## Implementation
 

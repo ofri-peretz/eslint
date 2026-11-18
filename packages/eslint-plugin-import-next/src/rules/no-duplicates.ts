@@ -16,6 +16,20 @@ type MessageIds = 'noDuplicates';
 
 export interface Options {
   additionalModules?: string[];
+  /**
+   * eslint-plugin-import: whether a query string names a different module.
+   * Absent or `true`, this rule's own reading: `./m?raw` and `./m?url` are
+   * two modules, while `./m?raw` and `./m.ts?raw` are one. `false`
+   * (eslint-plugin-import's default) ignores the query: `./m?raw`,
+   * `./m?url` and `./m` are one module.
+   */
+  considerQueryString?: boolean;
+  /**
+   * eslint-plugin-import: `import type { T }` beside a value import of the
+   * same module is a duplicate, merged as an inline `type` specifier
+   * (`import { v, type T }`).
+   */
+  'prefer-inline'?: boolean;
 }
 
 export type RuleOptions = [Options?];
@@ -71,16 +85,39 @@ export const noDuplicates = createRule<RuleOptions, MessageIds>({
           'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-duplicates.md',
       }),
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          considerQueryString: {
+            type: 'boolean',
+            description:
+              'Whether a query string names a different module. Absent or true: it does. false: the query is ignored.',
+          },
+          'prefer-inline': {
+            type: 'boolean',
+            description:
+              '`import type` beside a value import of the same module is a duplicate, merged as an inline `type` specifier.',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let imports: Map<string, TSESTree.ImportDeclaration[]>;
     let scopes: Map<TSESTree.Node | null, number>;
+    let ignoreQuery: boolean;
+    let preferInline: boolean;
+
     return {
       before() {
         imports = new Map<string, TSESTree.ImportDeclaration[]>();
         scopes = new Map<TSESTree.Node | null, number>();
+        const [options] = context.options;
+        ignoreQuery = options?.considerQueryString === false;
+        preferInline = options?.['prefer-inline'] === true;
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         // Keyed by source AND importKind. `import type { T } from 'm'` beside
@@ -94,7 +131,14 @@ export const noDuplicates = createRule<RuleOptions, MessageIds>({
         // The module is the file the resolver sees: './m' and './m.js' (for
         // m.ts) and './m/index' are one module. A relative specifier that does
         // not resolve, or carries a query ('./m?raw'), keeps its own spelling.
-        const spec = node.source.value;
+        //
+        // `prefer-inline` puts `import type` and value imports of one module
+        // in one group: the merge keeps the type-only names type-only, as
+        // inline `type` specifiers, so nothing new is emitted.
+        //
+        // `considerQueryString: false` drops the query before any of that.
+        const written = node.source.value;
+        const spec = ignoreQuery ? written.replace(/\?.*$/, '') : written;
         const target = spec.startsWith('.')
           ? (resolveModule(spec, context.filename) ?? spec)
           : spec;
@@ -104,7 +148,8 @@ export const noDuplicates = createRule<RuleOptions, MessageIds>({
           scopeId = scopes.size;
           scopes.set(owner, scopeId);
         }
-        const source = `${scopeId}\u0000${target}\u0000${node.importKind ?? 'value'}`;
+        const kind = preferInline ? 'any' : (node.importKind ?? 'value');
+        const source = `${scopeId}\u0000${target}\u0000${kind}`;
         let sourceNodes = imports.get(source);
         if (!sourceNodes) {
           sourceNodes = [];
@@ -162,14 +207,27 @@ export const noDuplicates = createRule<RuleOptions, MessageIds>({
 
                 // A default in the duplicate cannot be spliced into another
                 // statement's braces: `import { a, d }` would import a NAMED
-                // `d`, not the default.
-                if (duplicateHasDefault) {
+                // `d`, not the default. Nor can a value import be spliced
+                // into an `import type` statement (`prefer-inline`), which
+                // would make its names type-only.
+                if (
+                  duplicateHasDefault ||
+                  (first.importKind === 'type' &&
+                    duplicate.importKind !== 'type')
+                ) {
                   return null;
                 }
 
                 const sourceCode = context.sourceCode;
+                // `prefer-inline`: names from `import type` keep their
+                // meaning inside a value import as inline `type` specifiers.
+                const inline =
+                  duplicate.importKind === 'type' && first.importKind !== 'type'
+                    ? 'type '
+                    : '';
                 const specifiersToAdd = duplicate.specifiers.map(
-                  (s: TSESTree.ImportClause) => sourceCode.getText(s),
+                  (s: TSESTree.ImportClause) =>
+                    `${inline}${sourceCode.getText(s)}`,
                 );
                 const firstNamed = first.specifiers.filter(
                   (s: TSESTree.ImportClause) => s.type === 'ImportSpecifier',

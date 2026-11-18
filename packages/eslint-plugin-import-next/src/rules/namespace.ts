@@ -16,10 +16,17 @@ import {
 import type ts from 'typescript';
 import { loadTypeScript } from '../utils/typescript-peer';
 
-type MessageIds = 'namespace';
+type MessageIds = 'namespace' | 'computedReference';
 
 export interface Options {
   additionalModules?: string[];
+  /**
+   * eslint-plugin-import: a computed member of a namespace import
+   * (`ns[key]`, `ns['a']`). `true` checks none of them; `false` reports each
+   * one as a reference it cannot validate. Absent, this rule's own reading:
+   * a string key is checked like `ns.a`, a runtime key is not a finding.
+   */
+  allowComputed?: boolean;
 }
 
 export type RuleOptions = [Options?];
@@ -44,8 +51,30 @@ export const namespace = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/namespace.md',
       }),
+      computedReference: formatLLMMessage({
+        icon: MessageIcons.QUALITY,
+        issueName: 'Computed Namespace Reference',
+        description:
+          'Unable to validate computed reference to imported namespace',
+        severity: 'LOW',
+        fix: 'Read the member by name (ns.member), or set allowComputed: true',
+        documentationLink:
+          'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/namespace.md',
+      }),
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          allowComputed: {
+            type: 'boolean',
+            description:
+              'eslint-plugin-import: true skips computed members of a namespace import (ns[key]); false reports each one. Absent: a string key is checked, a runtime key is not.',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -53,14 +82,15 @@ export const namespace = createRule<RuleOptions, MessageIds>({
 
     const services = getParserServices(context);
     const checker = services.program?.getTypeChecker?.();
+    const [{ allowComputed } = {}] = context.options;
 
     /**
-     * The names the module behind namespace import `id` exports, or null
-     * when `id` is not a namespace import, or the module does not resolve
-     * (unknown, not missing), or is a CommonJS `export =` module (its names
-     * depend on interop).
+     * The module behind namespace import `id`, or null when `id` is not a
+     * namespace import, or the module does not resolve (unknown, not
+     * missing), or is a CommonJS `export =` module (its names depend on
+     * interop). Cheap: it does not list the module's exports.
      */
-    function namespaceExports(id: TSESTree.Identifier): Set<string> | null {
+    function namespaceModule(id: TSESTree.Identifier): ts.Symbol | null {
       const symbol = checker?.getSymbolAtLocation(
         services.esTreeNodeToTSNodeMap.get(id),
       );
@@ -80,15 +110,43 @@ export const namespace = createRule<RuleOptions, MessageIds>({
       );
       if (!moduleSymbol?.exports) return null;
       if (moduleSymbol.exports.has('export=' as ts.__String)) return null;
-      return new Set(
-        checker?.getExportsOfModule(moduleSymbol).map((s) => s.name),
-      );
+      return moduleSymbol;
+    }
+
+    /** Export names per module, listed once per file rather than per access. */
+    const exportNames = new Map<ts.Symbol, Set<string>>();
+
+    /** The names the module behind namespace import `id` exports, or null. */
+    function namespaceExports(id: TSESTree.Identifier): Set<string> | null {
+      const moduleSymbol = namespaceModule(id);
+      if (!moduleSymbol) return null;
+      let names = exportNames.get(moduleSymbol);
+      if (!names) {
+        names = new Set(
+          checker!.getExportsOfModule(moduleSymbol).map((s) => s.name),
+        );
+        exportNames.set(moduleSymbol, names);
+      }
+      return names;
     }
 
     return {
       // `ns.missing` and `ns['missing']`; a runtime key `ns[k]` names nothing.
       MemberExpression(node: TSESTree.MemberExpression) {
         if (node.object.type !== 'Identifier') return;
+        // eslint-plugin-import's `allowComputed`, when set: a computed member
+        // is skipped, or reported as unverifiable, whatever its key.
+        if (node.computed && allowComputed !== undefined) {
+          // Only whether it is a namespace import matters here, not its
+          // export list: listing it for every `ns[key]` was O(accesses × exports).
+          if (!allowComputed && namespaceModule(node.object)) {
+            context.report({
+              node: node.property,
+              messageId: 'computedReference',
+            });
+          }
+          return;
+        }
         const name = propertyName(node);
         if (name === null) return;
         const names = namespaceExports(node.object);

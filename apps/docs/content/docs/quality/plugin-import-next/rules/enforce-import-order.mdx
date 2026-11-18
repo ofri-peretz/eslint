@@ -51,64 +51,66 @@ import sib from './sib';
 
 ## Options
 
-```json
-[
-  {
-    "type": "object",
-    "properties": {
-      "groups": {
-        "type": "array",
-        "items": {
-          "type": "string",
-          "enum": [
-            "builtin",
-            "external",
-            "internal",
-            "parent",
-            "sibling",
-            "index",
-            "object",
-            "type",
-            "side-effect"
-          ]
-        }
-      },
-      "internalPatterns": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "alphabetize": {
-        "type": "object",
-        "properties": {
-          "order": {
-            "type": "string",
-            "enum": [
-              "asc",
-              "desc",
-              "ignore"
-            ]
-          },
-          "caseInsensitive": {
-            "type": "boolean"
-          }
-        },
-        "additionalProperties": false
-      },
-      "newlinesBetween": {
-        "type": "string",
-        "enum": [
-          "always",
-          "never",
-          "ignore"
-        ]
-      }
-    },
-    "additionalProperties": false
-  }
-]
+| Option             | Type                                  | Default                                                                        | Description                                                   |
+| ------------------ | ------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| `groups`           | `string[]`                            | `builtin`, `external`, `internal`, `parent`, `sibling`, `index`, `side-effect` | Group order. Also `object` and `type`.                        |
+| `internalPatterns` | `string[]`                            | `['^@/']`                                                                      | Regular expressions that mark a bare specifier as `internal`. |
+| `alphabetize`      | `{ order, caseInsensitive }`          | `{ order: 'asc', caseInsensitive: true }`                                      | Sort within a group; `order` is `asc`, `desc` or `ignore`.    |
+| `newlinesBetween`  | `'always'` \| `'never'` \| `'ignore'` | `'always'`                                                                     | Blank lines between groups.                                   |
+
+### eslint-plugin-import's options
+
+The rule also accepts every option of eslint-plugin-import's `import/order`
+(v2.32.0), with its meaning, so a config migrated from it loads and keeps
+its meaning (differences below).
+Options written that way run a port of eslint-plugin-import's own engine: one
+report per out-of-place import, its fixes, top-level `require()` calls, and
+its defaults (groups `builtin, external, parent, sibling, index`, no
+alphabetizing, `newlines-between: ignore`).
+
+That engine is used when the options object has a key import-next's own
+options do not (`pathGroups`, `pathGroupsExcludedImportTypes`,
+`distinctGroup`, `newlines-between`, `newlines-between-types`, `named`,
+`sortTypesGroup`, `consolidateIslands`, `warnOnUnassignedImports`), or
+`alphabetize.orderImportKind`, or a `groups` entry that is a nested array or
+`unknown`. Settings read: `import/internal-regex`, `import/core-modules`,
+`import/external-module-folders`.
+
+```js
+// eslint-plugin-import's reading: path groups, newlines-between, nested groups
+'import-next/order': ['error', {
+  groups: [['builtin', 'external'], 'internal', ['parent', 'sibling', 'index']],
+  pathGroups: [{ pattern: '@app/**', group: 'internal', position: 'before' }],
+  'newlines-between': 'always',
+  alphabetize: { order: 'asc', caseInsensitive: true },
+}]
 ```
+
+Deliberate differences:
+
+- `[{ groups }]` alone, `[{ alphabetize: { order, caseInsensitive } }]` alone,
+  or no options keep import-next's reading and defaults. To get
+  eslint-plugin-import's reading with nothing else changed, add
+  `distinctGroup: true` — its default value there.
+- `pathGroups[].patternOptions` accepts only `matchBase`, `nocase`, `nonegate`
+  and `nocomment`; any other minimatch switch is refused rather than ignored.
+  Patterns are matched by Node's `path.matchesGlob` (case-sensitive on every
+  platform), where `\` is not an escape.
+- Specifiers are classified with import-next's resolver; `import/resolver`
+  settings are not consulted.
+- `named.cjsExports` orders `exports['a'] = …` like `exports.a = …` (the same
+  export; eslint-plugin-import reads only the dotted form).
+- `named.cjsExports` treats `exports` / `module` as shadowed when the
+  enclosing block declares it or the enclosing function takes it as a
+  parameter (no scope analysis, so the rule also runs under oxlint).
+- The fix moves a CommonJS export assignment only across other assignment
+  statements. Unassigned imports are reported but never moved.
+- Beside an upstream key, import-next's own keys keep their meaning:
+  `internalPatterns` adds internal patterns, `newlinesBetween` stands in for
+  `newlines-between`, and a `side-effect` group ranks unassigned imports.
+- Where eslint-plugin-import crashes or misreports, this does not: a
+  destructured `require()` with a rest element, a file with no `package.json`
+  above it, and string-named specifiers (`import { 'a-b' as ab }`).
 
 ## Implementation
 

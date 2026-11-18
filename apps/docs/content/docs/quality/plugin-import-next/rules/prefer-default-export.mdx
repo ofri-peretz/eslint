@@ -18,6 +18,9 @@ A convention: a module that publishes a single value should make it the default 
 
 - `single` (default) and `as-needed`: report a module whose exports are exactly one value name and no default.
 - `always`: report a module with any value named export and no default.
+- `any` (eslint-plugin-import's spelling): as `always`, except that a module
+  with an `export * from` is not reported, since it publishes names this file
+  cannot see.
 
 Every value name the module publishes counts: inline declarations (also `enum`, and each name a destructuring declares), export lists (also string names), and `export { x } from 'm'` re-exports. A default in any spelling (`export default`, `export { x as default }`, `export { default } from 'm'`, `export * as default from 'm'`) satisfies the rule. `export * from 'm'` publishes names the file cannot see, so the count is unknown and `single` stays silent. Type-only exports and `const enum` do not count.
 
@@ -53,13 +56,9 @@ export * from './more';
     "properties": {
       "target": {
         "type": "string",
-        "enum": [
-          "always",
-          "single",
-          "as-needed"
-        ],
+        "enum": ["always", "single", "as-needed", "any"],
         "default": "single",
-        "description": "When to enforce default exports: always (any named export and no default), single (exactly one exported name), as-needed (same as single)"
+        "description": "When to enforce default exports: always (any named export and no default), single (exactly one exported name), as-needed (same as single), any (eslint-plugin-import: always, unless the file has an `export * from`)"
       },
       "ignoreFiles": {
         "type": "array",
@@ -79,7 +78,7 @@ export * from './more';
 ]
 ```
 
-- `target` (default `single`): `single` or `as-needed` (the same: one exported name), or `always`.
+- `target` (default `single`): `single` or `as-needed` (the same: one exported name), `always`, or `any` (eslint-plugin-import: `always` unless the module has an `export * from`).
 - `ignoreFiles` (default `[]`): file globs (or path substrings) to skip. A glob matches any run of whole path segments.
 - `allowNamedExports` (default `false`): turn the rule off for every file.
 

@@ -1,7 +1,8 @@
 /**
- * @provenBy {"file":"packages/eslint-plugin-import-next/README.md","find":"passes **1,180 of 2,135** (55.3%)","replace":"passes **2,135 of 2,135** (100.0%)"}
+ * @provenBy {"file":"packages/eslint-plugin-import-next/README.md","find":"passes **1,711 of 2,135** (80.1%)","replace":"passes **2,135 of 2,135** (100.0%)"}
  * @provenBy {"file":"packages/eslint-plugin-import-next/README.md","find":"**2 of its 45 tested rules are not implemented**","replace":"**0 of its 45 tested rules are not implemented**"}
- * @provenBy {"file":"benchmarks/results/ilb-import-parity/2026-11-18.json","find":"\"passed\": 1180,","replace":"\"passed\": 2135,"}
+ * @provenBy {"file":"benchmarks/results/ilb-import-parity/2026-11-18-upstream-options.json","find":"\"passed\": 1711,","replace":"\"passed\": 2135,"}
+ * @provenBy {"file":"packages/eslint-plugin-import-next/README.md","find":"No graded case sets an option","replace":"Hardly any graded case sets an option"}
  */
 
 /*
@@ -189,8 +190,12 @@ describe('the README states the measured numbers', () => {
 
   it('states the failure breakdown the envelope records', () => {
     const f = RESULT.headline.failuresByOutcome;
+    // An outcome with no cases is absent from the envelope, not zero.
+    const rejected = f['options-rejected'] ?? 0;
     expect(README).toContain(
-      `${fmt(f['options-rejected'])} failing cases set an option`,
+      rejected === 0
+        ? 'No graded case sets an option `import-next` rejects'
+        : `${fmt(rejected)} failing cases set an option`,
     );
     expect(README).toContain(
       `${fmt(f['misses-invalid'])} invalid cases go unreported`,

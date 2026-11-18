@@ -7,7 +7,9 @@
 /**
  * eslint-plugin-import-next
  *
- * Drop-in replacement for eslint-plugin-import with 46 LLM-optimized rules.
+ * An alternative to eslint-plugin-import: graded by that plugin's own test
+ * suite it passes 1,711 of 2,135 cases (80.1%, eslint-plugin-import@2.32.0,
+ * benchmarks/results/ilb-import-parity/2026-11-18-upstream-options.json).
  * Covers import validation, module resolution, circular dependencies,
  * and export style enforcement.
  *

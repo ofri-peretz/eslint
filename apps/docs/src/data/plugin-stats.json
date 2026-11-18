@@ -179,7 +179,7 @@
     {
       "name": "eslint-plugin-import-next",
       "rules": 55,
-      "description": "ESLint plugin for imports and module boundaries — drop-in replacement for eslint-plugin-import, 3.1x faster end-to-end, zero-config migration",
+      "description": "ESLint import rules — an alternative to eslint-plugin-import that passes 80% of its own test cases, covering imports and module boundaries, 3.1x faster end-to-end.",
       "category": "architecture",
       "version": "3.0.1",
       "published": true

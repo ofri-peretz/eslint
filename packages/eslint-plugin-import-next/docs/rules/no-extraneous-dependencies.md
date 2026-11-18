@@ -19,14 +19,15 @@ sub-folder is skipped. `packageJsonPath` or `packageJson` replace the lookup.
 
 A package is allowed when it is listed in `dependencies`, or in
 `devDependencies`, `optionalDependencies`, `peerDependencies`,
-`bundledDependencies` / `bundleDependencies` (npm accepts both spellings)
-while the matching option is `true` (the default). With
+`bundledDependencies` / `bundleDependencies` (npm accepts both spellings,
+and `bundleDependencies` wins when both are present; an object form names
+its keys) while the matching option is `true` (the default). With
 `devDependencies: false`, a package listed only in `devDependencies` is
 reported as a dev dependency used in production. The package's own `name` is
 always allowed (Node self-reference).
 
-Never checked: Node builtins (`fs/promises`, `node:fs`), relative and
-absolute paths, `#imports`, URL schemes (`virtual:x`), and names matched by
+Never checked: Node builtins (`fs/promises`, `node:fs`), names in the
+`import/core-modules` setting (`electron`), relative and absolute paths, `#imports`, URL schemes (`virtual:x`), and names matched by
 `ignore` (exact) or `allowPatterns` (regular expressions).
 
 Type-only imports are erased at compile time and never reported:
@@ -59,6 +60,22 @@ import { readFile } from 'node:fs/promises';
 import { feature } from 'app/feature';
 ```
 
+### eslint-plugin-import options
+
+A config carried over from `import/no-extraneous-dependencies` loads, and its
+options mean what they meant there:
+
+| Option                                                                               | Meaning                                                                                                                                                                                                                      |
+| ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `devDependencies`, `optionalDependencies`, `peerDependencies`, `bundledDependencies` | `true`/`false` as before, or a list of globs (`['**/*.test.js']`): that kind is allowed in the files a glob matches, written relative to the working directory or absolute. An empty list allows it nowhere.                 |
+| `packageDir`                                                                         | A folder, or a list of folders, whose `package.json` declares the dependencies, resolved from the working directory. Several merge; of several, a missing one is skipped. A single unreadable one is reported once per file. |
+| `includeTypes`                                                                       | `true` checks type-only imports and exports too.                                                                                                                                                                             |
+| `includeInternal`                                                                    | `false` skips internal modules: a bare specifier matching the `import/internal-regex` setting, or resolving to a file outside `node_modules` (a path alias). Absent or `true`: checked, this rule's own default.             |
+
+`whitelist` is not accepted: eslint-plugin-import 2.32.0 does not accept it
+either. Upstream skips a package that does not resolve; this rule reports it,
+since an undeclared package that is not installed is still missing.
+
 ## Options
 
 ```json
@@ -67,24 +84,51 @@ import { feature } from 'app/feature';
     "type": "object",
     "properties": {
       "devDependencies": {
-        "type": "boolean",
+        "type": ["boolean", "array"],
+        "items": {
+          "type": "string"
+        },
         "default": true,
-        "description": "Allow imports from devDependencies."
+        "description": "Allow imports from devDependencies: `true`/`false`, or globs of the files that may import them."
       },
       "optionalDependencies": {
-        "type": "boolean",
+        "type": ["boolean", "array"],
+        "items": {
+          "type": "string"
+        },
         "default": true,
-        "description": "Allow imports from optionalDependencies."
+        "description": "Allow imports from optionalDependencies: `true`/`false`, or globs of the files that may import them."
       },
       "peerDependencies": {
-        "type": "boolean",
+        "type": ["boolean", "array"],
+        "items": {
+          "type": "string"
+        },
         "default": true,
-        "description": "Allow imports from peerDependencies."
+        "description": "Allow imports from peerDependencies: `true`/`false`, or globs of the files that may import them."
       },
       "bundledDependencies": {
-        "type": "boolean",
+        "type": ["boolean", "array"],
+        "items": {
+          "type": "string"
+        },
         "default": true,
-        "description": "Allow imports from bundledDependencies."
+        "description": "Allow imports from bundledDependencies: `true`/`false`, or globs of the files that may import them."
+      },
+      "packageDir": {
+        "type": ["string", "array"],
+        "items": {
+          "type": "string"
+        },
+        "description": "Folder(s) whose package.json declares the dependencies, instead of the nearest one; several are merged."
+      },
+      "includeInternal": {
+        "type": "boolean",
+        "description": "Check internal modules (`import/internal-regex`, or resolving outside node_modules). Absent: checked."
+      },
+      "includeTypes": {
+        "type": "boolean",
+        "description": "Check type-only imports and exports too."
       },
       "packageJsonPath": {
         "type": "string",
@@ -96,11 +140,7 @@ import { feature } from 'app/feature';
       },
       "resolutionStrategy": {
         "type": "string",
-        "enum": [
-          "strict",
-          "workspace",
-          "monorepo"
-        ],
+        "enum": ["strict", "workspace", "monorepo"],
         "default": "strict",
         "description": "Dependency resolution strategy. 'strict' allows only packages declared in the nearest package.json. 'workspace' and 'monorepo' are aliases of each other: they additionally allow the literal '@workspace/' and '@company/' scopes, and do NOT read workspace-root or sibling manifests; for real monorepo scopes use allowPatterns."
       },

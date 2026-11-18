@@ -8,6 +8,7 @@
  * ESLint Rule: no-unused-modules
  * Forbid modules without exports
  */
+import path from 'node:path';
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import {
   createRule,
@@ -28,6 +29,19 @@ const EXPORT_WRITERS = new Set([
 export interface Options {
   /** Allow modules that only contain imports */
   allowImportOnly?: boolean;
+  /**
+   * eslint-plugin-import: `true` reports a module with no exports (this
+   * rule's check), `false` turns it off. Absent: on.
+   */
+  missingExports?: boolean;
+  /**
+   * eslint-plugin-import: globs for its `unusedExports` check, which this rule
+   * does not implement. Upstream does not apply it to `missingExports`, so
+   * it is accepted and has no effect here.
+   */
+  src?: string[];
+  /** eslint-plugin-import: globs; files matching one are not checked. */
+  ignoreExports?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -62,6 +76,23 @@ export const noUnusedModules = createRule<RuleOptions, MessageIds>({
             default: false,
             description: 'Allow modules that only contain imports.',
           },
+          missingExports: {
+            type: 'boolean',
+            description:
+              'eslint-plugin-import: true reports a module with no exports, false turns the check off. Absent: on. Its `unusedExports` (cross-file usage) is not implemented and is rejected rather than ignored.',
+          },
+          src: {
+            type: 'array',
+            items: { type: 'string' },
+            description:
+              'eslint-plugin-import: globs for its unusedExports check; like there, it does not narrow the missing-exports check',
+          },
+          ignoreExports: {
+            type: 'array',
+            items: { type: 'string' },
+            description:
+              'eslint-plugin-import: globs, relative to the cwd; files matching one are not checked',
+          },
         },
         additionalProperties: false,
       },
@@ -75,6 +106,8 @@ export const noUnusedModules = createRule<RuleOptions, MessageIds>({
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let allowImportOnly: boolean;
+    /** eslint-plugin-import's `missingExports`, `src` and `ignoreExports` exclude this file. */
+    let skipped: boolean;
     let hasExports: boolean;
     let hasImports: boolean;
 
@@ -97,7 +130,20 @@ export const noUnusedModules = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options] = context.options;
-        ({ allowImportOnly = false } = options || {});
+        let missingExports: boolean;
+        let ignoreExports: string[];
+        // `src` scopes eslint-plugin-import's `unusedExports` only, not this
+        // check (its `checkExportPresence` never reads it).
+        ({
+          allowImportOnly = false,
+          missingExports = true,
+          ignoreExports = [],
+        } = options || {});
+        const matches = (globs: string[]) =>
+          globs.some((glob) =>
+            path.matchesGlob(context.filename, path.resolve(context.cwd, glob)),
+          );
+        skipped = !missingExports || matches(ignoreExports);
 
         hasExports = false;
         hasImports = false;
@@ -168,7 +214,7 @@ export const noUnusedModules = createRule<RuleOptions, MessageIds>({
         // not a rule-level off switch: a module with no imports at all does not "only
         // contain imports", so it is still reported.
         const importOnly = allowImportOnly && hasImports;
-        if (!hasExports && !importOnly) {
+        if (!skipped && !hasExports && !importOnly) {
           context.report({
             node: context.sourceCode.ast,
             messageId: 'missingExports',

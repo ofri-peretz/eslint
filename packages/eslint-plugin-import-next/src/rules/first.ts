@@ -8,13 +8,14 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
-type MessageIds = 'first';
+type MessageIds = 'first' | 'absoluteFirst';
 
-export interface Options {
-  additionalModules?: string[];
-}
-
-export type RuleOptions = [Options?];
+/**
+ * eslint-plugin-import's option: `'absolute-first'` also reports a package
+ * (absolute) import that follows a relative one; `'disable-absolute-first'`
+ * is the default, which does not.
+ */
+export type RuleOptions = [('absolute-first' | 'disable-absolute-first')?];
 
 export const first = createRule<RuleOptions, MessageIds>({
   name: 'first',
@@ -38,8 +39,24 @@ export const first = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/first.md',
       }),
+      absoluteFirst: formatLLMMessage({
+        icon: MessageIcons.ARCHITECTURE,
+        issueName: 'Absolute Import After Relative',
+        description: 'Absolute imports should come before relative imports',
+        severity: 'LOW',
+        fix: 'Move package imports above relative imports',
+        documentationLink:
+          'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/first.md',
+      }),
     },
-    schema: [],
+    schema: [
+      {
+        type: 'string',
+        enum: ['absolute-first', 'disable-absolute-first'],
+        description:
+          "eslint-plugin-import: 'absolute-first' also reports a package import after a relative one.",
+      },
+    ],
   },
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -54,6 +71,8 @@ export const first = createRule<RuleOptions, MessageIds>({
     }
     return {
       Program(program: TSESTree.Program) {
+        const absoluteFirst = context.options[0] === 'absolute-first';
+        let seenRelative = false;
         // Every import after the first non-import statement is out of place,
         // not only the one right below it. The directive prologue ('use
         // client', 'use strict', any string directive) is not a statement of
@@ -63,6 +82,20 @@ export const first = createRule<RuleOptions, MessageIds>({
         for (const node of program.body) {
           if (isImport(node)) {
             if (seenStatement) context.report({ node, messageId: 'first' });
+            if (absoluteFirst) {
+              const source =
+                node.type === 'ImportDeclaration'
+                  ? node.source
+                  : ((node as TSESTree.TSImportEqualsDeclaration)
+                      .moduleReference as TSESTree.TSExternalModuleReference);
+              const specifier =
+                source.type === 'Literal'
+                  ? source.value
+                  : (source.expression as TSESTree.StringLiteral).value;
+              if (specifier.startsWith('.')) seenRelative = true;
+              else if (seenRelative)
+                context.report({ node: source, messageId: 'absoluteFirst' });
+            }
           } else if (
             !(node.type === 'ExpressionStatement' && node.directive) &&
             // `import x = N.y` aliases a namespace; it loads no module and is

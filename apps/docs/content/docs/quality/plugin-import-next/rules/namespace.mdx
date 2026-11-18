@@ -41,8 +41,28 @@ const run = (math: { subtract(): void }) => math.subtract();
 ## Options
 
 ```json
-[]
+[
+  {
+    "type": "object",
+    "properties": {
+      "allowComputed": {
+        "type": "boolean",
+        "description": "eslint-plugin-import: true skips computed members of a namespace import (ns[key]); false reports each one. Absent: a string key is checked, a runtime key is not."
+      }
+    },
+    "additionalProperties": false
+  }
+]
 ```
+
+### eslint-plugin-import options
+
+`allowComputed` (eslint-plugin-import's option, with its meaning) decides
+what happens to a computed member of a namespace import, `ns[key]` or
+`ns['a']`: `true` checks none of them; `false` reports each one as a
+reference that cannot be validated, whatever its key. Absent, this rule's own
+reading applies: a string key is checked like `ns.a`, and a runtime key is not
+a finding (eslint-plugin-import's default is `false`).
 
 ## Implementation
 
