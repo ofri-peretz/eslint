@@ -120,4 +120,15 @@ describe('the required check still reports', () => {
   it('review still triggers on merge_group', () => {
     expect(WORKFLOW).toMatch(/^ {2}merge_group:$/m);
   });
+
+  it('CodeRabbit comments stay out of the inlined prompt', () => {
+    // track_progress inlines every PR comment. On eslint#1574 CodeRabbit's
+    // reviews grew the prompt to 477K characters and the required check
+    // failed in under a second, four runs in a row, without calling the model.
+    if (/^\s+track_progress: true$/m.test(WORKFLOW)) {
+      expect(WORKFLOW).toMatch(
+        /^\s+exclude_comments_by_actor: '[^']*coderabbitai\[bot\][^']*'$/m,
+      );
+    }
+  });
 });
