@@ -149,11 +149,36 @@ const SERVICE_WORKER_EVENTS = new Set([
   'notificationclose',
 ]);
 
-/** The receiver key, with every non-`window` spelling of the global unified. */
-function globalAwareKey(node: TSESTree.Node): string | undefined {
+/** The variable this identifier is DECLARED as in the file, if any. */
+function declaredVariable(
+  identifier: TSESTree.Identifier,
+  sourceCode: TSESLint.SourceCode,
+): TSESLint.Scope.Variable | undefined {
+  for (
+    let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(identifier);
+    scope !== null;
+    scope = scope.upper
+  ) {
+    const variable = scope.variables.find((v) => v.name === identifier.name);
+    if (variable !== undefined)
+      return variable.defs.length > 0 ? variable : undefined;
+  }
+  return undefined;
+}
+
+/**
+ * The receiver key, with every non-`window` spelling of the global unified —
+ * but only the real global: `const self = new Worker(url)` is a local named
+ * `self`, and keeps its own key.
+ */
+function globalAwareKey(
+  node: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+): string | undefined {
   if (
     node.type === 'Identifier' &&
-    (node.name === 'self' || node.name === 'globalThis')
+    (node.name === 'self' || node.name === 'globalThis') &&
+    declaredVariable(node, sourceCode) === undefined
   ) {
     return GLOBAL_KEY;
   }
@@ -282,13 +307,29 @@ export const requirePostmessageOriginCheck = createRule<
     currentOptions,
   ) {
     let sourceCode: Readonly<TSESLint.SourceCode>;
-    let unverified: { handler: TSESTree.Node; receiver: string | undefined }[];
+    let unverified: {
+      handler: TSESTree.Node;
+      receiver: string | undefined;
+      binding?: TSESLint.Scope.Variable;
+    }[];
     let nonWindowReceivers: Set<string>;
+    /**
+     * Bindings that received a service-worker lifecycle listener. Keyed by the
+     * variable, not its name: `install(scope)` and `connect(scope)` in one file
+     * are two parameters, and evidence about one says nothing of the other.
+     */
+    let serviceWorkerScopes: Set<TSESLint.Scope.Variable>;
     let anchoredOriginTests: (readonly [number, number])[];
 
     function rememberIfNonWindow(key: string | undefined, typeName?: string) {
       if (key === undefined || typeName === undefined) return;
       if (NON_WINDOW_RECEIVERS.has(typeName)) nonWindowReceivers.add(key);
+    }
+
+    /** `const scope = window` — a local that holds the window itself. */
+    function aliasesWindow(identifier: TSESTree.Identifier): boolean {
+      const init = resolveInitializer(identifier, sourceCode);
+      return init?.type === 'Identifier' && init.name === 'window';
     }
 
     /** Is this argument an `.origin` read — `event.origin`, `e.origin`? */
@@ -333,6 +374,7 @@ export const requirePostmessageOriginCheck = createRule<
          * BELOW the listener in Shopify's ExtensionServerClient.
          */
         nonWindowReceivers = new Set<string>();
+        serviceWorkerScopes = new Set<TSESLint.Scope.Variable>();
 
         /**
          * Ranges of calls that prove the origin: `ALLOWED.test(x.origin)` with a
@@ -403,6 +445,8 @@ export const requirePostmessageOriginCheck = createRule<
         let isMessageListener = false;
         /** The object the listener was attached to, when it has a name. */
         let receiver: string | undefined;
+        /** The declared variable the listener was attached to, if any. */
+        let receiverBinding: TSESLint.Scope.Variable | undefined;
 
         // window.addEventListener('message', ...) or this.addEventListener('message', ...)
         if (
@@ -415,18 +459,25 @@ export const requirePostmessageOriginCheck = createRule<
           // `scope.addEventListener('fetch', …)` — only a service worker scope
           // is ever dispatched one, so `scope`'s `message` event is from a
           // same-origin client. `window` is never one, whatever it listens to.
-          const key = globalAwareKey(callee.object);
-          if (
-            eventName !== null &&
-            SERVICE_WORKER_EVENTS.has(eventName) &&
-            key !== undefined &&
-            key !== 'window'
-          ) {
-            nonWindowReceivers.add(key);
+          const key = globalAwareKey(callee.object, sourceCode);
+          const binding =
+            callee.object.type === 'Identifier'
+              ? declaredVariable(callee.object, sourceCode)
+              : undefined;
+          if (eventName !== null && SERVICE_WORKER_EVENTS.has(eventName)) {
+            if (key === GLOBAL_KEY) nonWindowReceivers.add(GLOBAL_KEY);
+            // A local bound to `window` is the window, whatever it listens
+            // to (`const scope = window; scope.addEventListener('fetch', …)`).
+            else if (
+              binding !== undefined &&
+              !aliasesWindow(callee.object as TSESTree.Identifier)
+            )
+              serviceWorkerScopes.add(binding);
           }
           if (isMessageEvent(node)) {
             isMessageListener = true;
             receiver = key;
+            receiverBinding = binding;
             // `new WebSocket(url).addEventListener('message', …)` — the
             // receiver names its own type and needs no binding to resolve.
             if (
@@ -470,7 +521,11 @@ export const requirePostmessageOriginCheck = createRule<
           handlerArg.type === 'ArrowFunctionExpression'
         ) {
           if (!hasOriginCheck(handlerArg, sourceCode)) {
-            unverified.push({ handler: handlerArg, receiver });
+            unverified.push({
+              handler: handlerArg,
+              receiver,
+              binding: receiverBinding,
+            });
           }
         }
 
@@ -501,19 +556,23 @@ export const requirePostmessageOriginCheck = createRule<
             // `onmessage` are the global's, which a worker entry clears.
             receiver:
               target.type === 'MemberExpression'
-                ? globalAwareKey(target.object)
+                ? globalAwareKey(target.object, sourceCode)
                 : GLOBAL_KEY,
           });
         }
       },
 
       'Program:exit'() {
-        for (const { handler, receiver } of unverified) {
+        for (const { handler, receiver, binding } of unverified) {
           // A WebSocket / EventSource / Worker / BroadcastChannel message has
           // no origin to check — see NON_WINDOW_RECEIVERS.
           // `rememberIfNonWindow` never records an unnameable receiver, so an
           // `undefined` one is never in the set.
           if (nonWindowReceivers.has(receiver as string)) {
+            continue;
+          }
+          // The same binding listens for a service-worker lifecycle event.
+          if (binding !== undefined && serviceWorkerScopes.has(binding)) {
             continue;
           }
           const guarded = anchoredOriginTests.some(

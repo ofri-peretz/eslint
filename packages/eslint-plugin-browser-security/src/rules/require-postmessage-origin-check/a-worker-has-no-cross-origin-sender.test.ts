@@ -93,8 +93,57 @@ describe('require-postmessage-origin-check — worker globals', () => {
         filename: 'src/parse.worker.mts',
         code: `onmessage = (e) => { postMessage(parse(e.data)); };`,
       },
+      {
+        // Raised by CodeRabbit on #1581: a LOCAL named self is not the global.
+        name: 'a local named self that holds a Worker keeps its own receiver',
+        filename: 'src/app.ts',
+        code: `
+          const self = new Worker('parse.js');
+          self.addEventListener('message', (e) => render(e.data));
+        `,
+      },
+      {
+        name: 'a configured global self (no declaration) is still the worker global',
+        filename: 'src/parse.worker.ts',
+        languageOptions: { globals: { self: 'readonly' } },
+        code: `self.onmessage = (event) => { self.postMessage(event.data); };`,
+      },
     ],
     invalid: [
+      {
+        // Raised by CodeRabbit on #1581.
+        name: 'a local alias of window is the window, whatever it listens to',
+        filename: 'src/app.ts',
+        code: `
+          const scope = window;
+          scope.addEventListener('fetch', () => {});
+          scope.addEventListener('message', (e) => render(e.data));
+        `,
+        errors: missing,
+      },
+      {
+        // Raised by CodeRabbit on #1581.
+        name: 'lifecycle evidence about one parameter says nothing of another with the same name',
+        filename: 'src/app.ts',
+        code: `
+          export function install(scope) {
+            scope.addEventListener('fetch', (event) => event.respondWith(fetch(event.request)));
+          }
+          export function connect(scope) {
+            scope.addEventListener('message', (e) => render(e.data));
+          }
+        `,
+        errors: missing,
+      },
+      {
+        name: 'a lifecycle listener on a member receiver is not tracked',
+        filename: 'src/app.ts',
+        code: `
+          this.scope.addEventListener('fetch', () => {});
+          this.scope.addEventListener('message', (e) => render(e.data));
+        `,
+        errors: missing,
+      },
       {
         name: 'the same self.onmessage in an ordinary module is a window listener',
         filename: 'src/hooks/editorFastMarkdownBlocks.ts',

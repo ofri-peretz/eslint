@@ -71,8 +71,28 @@ function inlineEnables(value: string): {
   script: boolean;
   style: boolean;
 } {
-  const directives = value.split(';').flatMap((segment) => {
-    const tokens = segment.trim().split(/\s+/);
+  // A header may carry several policies, comma-separated, and each is
+  // enforced on its own: `script-src 'unsafe-inline', img-src 'self'` still
+  // allows inline script through its first policy.
+  const policies = value.split(',').map(policyEnables);
+  return {
+    named: policies.some((policy) => policy.named),
+    script: policies.some((policy) => policy.script),
+    style: policies.some((policy) => policy.style),
+  };
+}
+
+/** `inlineEnables` for one policy (no commas). */
+function policyEnables(policy: string): {
+  named: boolean;
+  script: boolean;
+  style: boolean;
+} {
+  const directives = policy.split(';').flatMap((segment) => {
+    // Quotes, `=` and angle brackets delimit tokens too, so a policy inside
+    // generated markup — `content="script-src 'unsafe-inline'">` — reads as
+    // `script-src` and `'unsafe-inline'`.
+    const tokens = segment.split(/[\s"<>=]+/).filter(Boolean);
     const at = tokens.findIndex((token) => DIRECTIVE_NAME.test(token));
     if (at === -1) return [];
     return [

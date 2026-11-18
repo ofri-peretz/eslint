@@ -78,8 +78,24 @@ describe('no-unsafe-inline-csp — style-src is not script-src', () => {
         name: 'prose that names a directive after the keyword is not a policy',
         code: `const hint = "never add 'unsafe-inline' to script-src";`,
       },
+      {
+        name: 'meta markup that allows inline styles only stays quiet',
+        code: 'iframe.srcdoc = `<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'">`;',
+      },
     ],
     invalid: [
+      {
+        // Raised by CodeRabbit on #1581: each comma-separated policy is enforced.
+        name: 'a comma-separated header: the first policy still allows inline script',
+        code: `res.setHeader('Content-Security-Policy', "script-src 'unsafe-inline', img-src 'self'");`,
+        errors: script,
+      },
+      {
+        // Raised by CodeRabbit on #1581: a meta tag in generated HTML is a policy.
+        name: 'a policy inside generated meta markup still reports',
+        code: 'iframe.srcdoc = `<meta http-equiv="Content-Security-Policy" content="script-src \'unsafe-inline\'">`;',
+        errors: script,
+      },
       {
         // @source refactoringhq/tolaria src/utils/htmlBlockSandbox.ts:162
         // The opt-in "sandboxed scripts" mode. Inline script IS what
