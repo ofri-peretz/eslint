@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-import-next",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "ESLint import rules — an alternative to eslint-plugin-import that passes 85% of its own test cases, covering imports and module boundaries, 3.1x faster end-to-end.",
   "type": "commonjs",
   "sideEffects": false,
