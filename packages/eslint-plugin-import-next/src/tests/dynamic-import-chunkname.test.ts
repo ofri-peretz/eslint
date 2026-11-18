@@ -127,6 +127,14 @@ ruleTester.run(
         options: [{ webpackChunknameFormat: '.+' }],
       },
       {
+        name: 'a template literal name, a signed number and undefined are values webpack reads',
+        code: "import(/* webpackChunkName: `a`, webpackPrefetch: +1, webpackFoo: undefined */ './module');",
+      },
+      {
+        name: 'an inherited property name is an unknown option, not a crash',
+        code: `import(/* webpackChunkName: "a", __proto__: 1, hasOwnProperty: 1 */ './module');`,
+      },
+      {
         name: 'eager mode spread over two comments still names no chunk',
         code: `import(/* webpackChunkName: "a" */ /* webpackMode: 'eager' */ './module');`,
       },
@@ -150,6 +158,11 @@ ruleTester.run(
       {
         name: 'a key that is not a name',
         code: `import(/* 12: 1, webpackChunkName: "a" */ './module');`,
+        errors: [{ messageId: 'invalidMagicComment' }],
+      },
+      {
+        name: 'a template literal with a substitution is not a name webpack can know here',
+        code: "import(/* webpackChunkName: `a${b}` */ './module');",
         errors: [{ messageId: 'invalidMagicComment' }],
       },
       {

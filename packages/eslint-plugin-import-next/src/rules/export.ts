@@ -163,8 +163,12 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let exportsByName: Map<string, ExportKind[]>;
-    /** The default export of each module: the file, or a `declare module`. */
-    let defaultsByScope: Set<string>;
+    /**
+     * The default export of each module (the file, or a `declare module`):
+     * the name of the default function, so its overload signatures and
+     * implementation count once, or `''` for any other default.
+     */
+    let defaultsByScope: Map<string, string>;
 
     /**
      * The namespace path a declaration sits inside, as a key prefix.
@@ -234,29 +238,37 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
      * Each `declare module 'x' {}` block is its own module with its own
      * default, so the key is the enclosing module path, as for names.
      */
-    function checkDefaultExport(node: TSESTree.Node) {
+    function checkDefaultExport(node: TSESTree.Node, overloadOf = '') {
       const scope = scopeKey(node);
-      if (defaultsByScope.has(scope)) {
+      const previous = defaultsByScope.get(scope);
+      if (previous === undefined) {
+        defaultsByScope.set(scope, overloadOf);
+      } else if (!overloadOf || previous !== overloadOf) {
         context.report({
           node,
           messageId: 'duplicateDefault',
         });
-      } else {
-        defaultsByScope.add(scope);
       }
     }
 
     return {
       before() {
         exportsByName = new Map<string, ExportKind[]>();
-        defaultsByScope = new Set<string>();
+        defaultsByScope = new Map<string, string>();
       },
       ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration) {
-        // `export default function f(a: string): void;` is an overload
-        // signature of the one default function that follows, not a second
-        // default export.
-        if (node.declaration.type === AST_NODE_TYPES.TSDeclareFunction) return;
-        checkDefaultExport(node);
+        // `export default function f(a: string): void;` and the `f` that
+        // follows are one default function: overload signatures and the
+        // implementation share its name. An ambient one with no
+        // implementation (`declare module`, a `.d.ts`) is still the default.
+        const declaration = node.declaration;
+        const fn =
+          (declaration.type === AST_NODE_TYPES.TSDeclareFunction ||
+            declaration.type === AST_NODE_TYPES.FunctionDeclaration) &&
+          declaration.id
+            ? `function ${declaration.id.name}`
+            : '';
+        checkDefaultExport(node, fn);
       },
 
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {

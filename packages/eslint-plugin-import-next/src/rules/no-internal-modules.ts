@@ -43,8 +43,17 @@ type RuleOptions = [Options?];
  * character is literal.
  */
 function globToRegExp(pattern: string): RegExp {
+  // A `{` opens alternatives only when a `}` closes it, as in minimatch;
+  // otherwise both braces are literal characters.
+  const closing = new Map<number, number>();
+  const open: number[] = [];
+  for (let i = 0; i < pattern.length; i++) {
+    if (pattern[i] === '{') open.push(i);
+    else if (pattern[i] === '}' && open.length > 0) closing.set(open.pop()!, i);
+  }
+  const groups = new Set([...closing.keys(), ...closing.values()]);
   let source = '';
-  let braces = 0;
+  let depth = 0;
   for (let i = 0; i < pattern.length; i++) {
     const char = pattern[i];
     if (char === '*' && pattern[i + 1] === '*') {
@@ -52,18 +61,16 @@ function globToRegExp(pattern: string): RegExp {
       source += '.*';
     } else if (char === '*') source += '[^/]*';
     else if (char === '?') source += '[^/]';
-    else if (char === '{') {
-      braces++;
+    else if (char === '{' && groups.has(i)) {
+      depth++;
       source += '(?:';
-    } else if (char === '}' && braces > 0) {
-      braces--;
+    } else if (char === '}' && groups.has(i)) {
+      depth--;
       source += ')';
-    } else if (char === ',' && braces > 0) source += '|';
+    } else if (char === ',' && depth > 0) source += '|';
     else source += char.replace(/[.+^$()|[\]\\{}]/g, '\\$&');
   }
-  // An unclosed `{` is a literal brace in minimatch; closing the groups keeps
-  // the expression valid and matches the alternatives instead.
-  return new RegExp(`^${source}${')'.repeat(braces)}$`);
+  return new RegExp(`^${source}$`);
 }
 
 function matchesAnyPattern(path: string, patterns: string[]): boolean {

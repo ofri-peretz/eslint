@@ -838,8 +838,8 @@ describe('no-internal-modules: how a pattern matches', () => {
         options: [{ allow: ['app/v?/x'] }],
       },
       {
-        name: 'an unclosed brace is matched as its alternatives',
-        code: `import './app/b/x';`,
+        name: 'an unclosed brace is a literal brace, as in minimatch',
+        code: `import './app/{a,b/x';`,
         options: [{ allow: ['app/{a,b/x'] }],
       },
       {
@@ -850,6 +850,12 @@ describe('no-internal-modules: how a pattern matches', () => {
       },
     ],
     invalid: [
+      {
+        name: 'an unclosed brace offers no alternatives',
+        code: `import './app/b/x';`,
+        options: [{ allow: ['app/{a,b/x'] }],
+        errors: [{ messageId: 'internalModuleImport' }],
+      },
       {
         name: 'forbid matches the steps with a leading slash',
         code: `import './app/x';`,

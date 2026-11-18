@@ -404,7 +404,7 @@ describe('export — namespace scope is part of the identity', () => {
         // The same ambient module spelled with different quotes is the same
         // module to TypeScript. Keying on printed text would have put these in
         // different buckets and missed the duplicate.
-        code: 'declare module \'x\' { export type T = \'a\'; }\ndeclare module "x" { export type T = \'b\'; }',
+        code: "declare module 'x' { export type T = 'a'; }\ndeclare module \"x\" { export type T = 'b'; }",
         errors: [{ messageId: 'duplicateExport' }],
       },
       {
@@ -480,6 +480,24 @@ describe('export — one default per module', () => {
             export default Foo;
             export { Foo as default };
           }
+        `,
+        errors: [{ messageId: 'duplicateDefault' }],
+      },
+      {
+        name: 'two ambient default functions of different names',
+        code: `
+          declare module 'x' {
+            export default function f(): void;
+            export default function g(): void;
+          }
+        `,
+        errors: [{ messageId: 'duplicateDefault' }],
+      },
+      {
+        name: 'an anonymous default function after an overload signature',
+        code: `
+          export default function f(a: string): void;
+          export default function (a: string) {}
         `,
         errors: [{ messageId: 'duplicateDefault' }],
       },

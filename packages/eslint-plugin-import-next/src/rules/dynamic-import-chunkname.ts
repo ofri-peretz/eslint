@@ -80,10 +80,15 @@ function readMagicComment(text: string): Map<string, MagicValue> | null {
     space();
     const string = match(STRING);
     if (string !== null) return { kind: 'string', value: string.slice(1, -1) };
-    if (match(/-?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?(?![\w$])/iy) !== null)
+    // A template literal with no substitution is a string to webpack too.
+    const template = match(/`(?:[^`\\$]|\\.|\$(?!\{))*`/y);
+    if (template !== null)
+      return { kind: 'string', value: template.slice(1, -1) };
+    if (match(/[-+]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?(?![\w$])/iy) !== null)
       return { kind: 'number' };
-    const word = match(/(?:true|false|null)(?![\w$])/y);
-    if (word !== null) return { kind: word === 'null' ? 'null' : 'boolean' };
+    const word = match(/(?:true|false|null|undefined)(?![\w$])/y);
+    if (word !== null)
+      return { kind: word === 'true' || word === 'false' ? 'boolean' : 'null' };
     if (
       match(/\/(?![*/])(?:[^/\\\n[]|\\.|\[(?:[^\]\\\n]|\\.)*\])+\/[a-z]*/y) !==
       null
@@ -241,7 +246,7 @@ export const dynamicImportChunkname = createRule<RuleOptions, MessageIds>({
           entries === null ||
           [...entries].some(
             ([key, value]) =>
-              key in MAGIC_OPTIONS && !MAGIC_OPTIONS[key](value),
+              Object.hasOwn(MAGIC_OPTIONS, key) && !MAGIC_OPTIONS[key](value),
           );
         if (invalid) {
           context.report({ node, messageId: 'invalidMagicComment' });
