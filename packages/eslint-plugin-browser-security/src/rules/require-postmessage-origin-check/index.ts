@@ -109,6 +109,58 @@ function receiverKey(node: TSESTree.Node): string | undefined {
 const GLOBAL_RECEIVERS = new Set(['window', 'self', 'globalThis']);
 
 /**
+ * The receiver key for the global object when it is not spelled `window`:
+ * `self`, `globalThis`, or no receiver at all (`addEventListener(…)`,
+ * `onmessage = …`). In a page these are the window; in a worker they are the
+ * worker's global scope, which is the distinction `isWorkerEntry` and
+ * SERVICE_WORKER_EVENTS draw.
+ */
+const GLOBAL_KEY = '<global>';
+
+/**
+ * A worker entry module by the bundler convention: `parse.worker.ts`. Vite's
+ * `?worker` import and `new Worker(new URL('./x.worker.ts', import.meta.url))`
+ * and webpack's worker-loader all key on this suffix. In such a file the
+ * global is a `DedicatedWorkerGlobalScope`, and its `message` event comes only
+ * from the page that constructed the worker — there is no foreign origin to
+ * check. `window` in the same file is still the window, so only GLOBAL_KEY is
+ * cleared.
+ */
+const WORKER_ENTRY = /\.worker\.[cm]?[jt]sx?$/;
+
+/**
+ * Events the platform dispatches only to a `ServiceWorkerGlobalScope`.
+ *
+ * @protocol-constant Service Workers §4.6 (`install`, `activate`, `fetch`,
+ * `message`'s siblings), Push API (`push`, `pushsubscriptionchange`),
+ * Background Sync (`sync`) and Notifications API (`notificationclick`,
+ * `notificationclose`). A receiver that listens for one of them is a service
+ * worker scope — whatever the code calls it — and its `message` event comes
+ * only from same-origin clients it controls.
+ */
+const SERVICE_WORKER_EVENTS = new Set([
+  'install',
+  'activate',
+  'fetch',
+  'push',
+  'pushsubscriptionchange',
+  'sync',
+  'notificationclick',
+  'notificationclose',
+]);
+
+/** The receiver key, with every non-`window` spelling of the global unified. */
+function globalAwareKey(node: TSESTree.Node): string | undefined {
+  if (
+    node.type === 'Identifier' &&
+    (node.name === 'self' || node.name === 'globalThis')
+  ) {
+    return GLOBAL_KEY;
+  }
+  return receiverKey(node);
+}
+
+/**
  * Is `allowlist.includes(x.origin)` / `allowlist.has(x.origin)` an EXACT-match
  * test?
  *
@@ -288,6 +340,7 @@ export const requirePostmessageOriginCheck = createRule<
          * `ALLOWED.has(x.origin)` on a non-string allowlist.
          */
         anchoredOriginTests = [];
+        if (WORKER_ENTRY.test(filename)) nonWindowReceivers.add(GLOBAL_KEY);
         return true;
       },
       // `class C { connection!: WebSocket }` — the declared type names the
@@ -358,9 +411,22 @@ export const requirePostmessageOriginCheck = createRule<
           // unchecked listener.
           propertyName(callee) === 'addEventListener'
         ) {
+          const eventName = staticString(node.arguments[0]);
+          // `scope.addEventListener('fetch', …)` — only a service worker scope
+          // is ever dispatched one, so `scope`'s `message` event is from a
+          // same-origin client. `window` is never one, whatever it listens to.
+          const key = globalAwareKey(callee.object);
+          if (
+            eventName !== null &&
+            SERVICE_WORKER_EVENTS.has(eventName) &&
+            key !== undefined &&
+            key !== 'window'
+          ) {
+            nonWindowReceivers.add(key);
+          }
           if (isMessageEvent(node)) {
             isMessageListener = true;
-            receiver = receiverKey(callee.object);
+            receiver = key;
             // `new WebSocket(url).addEventListener('message', …)` — the
             // receiver names its own type and needs no binding to resolve.
             if (
@@ -376,10 +442,16 @@ export const requirePostmessageOriginCheck = createRule<
         // Direct addEventListener('message', ...) - global scope
         if (
           callee.type === 'Identifier' &&
-          callee.name === 'addEventListener' &&
-          isMessageEvent(node)
+          callee.name === 'addEventListener'
         ) {
-          isMessageListener = true;
+          const eventName = staticString(node.arguments[0]);
+          if (eventName !== null && SERVICE_WORKER_EVENTS.has(eventName)) {
+            nonWindowReceivers.add(GLOBAL_KEY);
+          }
+          if (eventName === 'message') {
+            isMessageListener = true;
+            receiver = GLOBAL_KEY;
+          }
         }
 
         if (!isMessageListener) {
@@ -423,7 +495,15 @@ export const requirePostmessageOriginCheck = createRule<
             handler.type === 'ArrowFunctionExpression') &&
           !hasOriginCheck(handler, sourceCode)
         ) {
-          unverified.push({ handler, receiver: undefined });
+          unverified.push({
+            handler,
+            // `window.onmessage` is the window's; `self.onmessage` and a bare
+            // `onmessage` are the global's, which a worker entry clears.
+            receiver:
+              target.type === 'MemberExpression'
+                ? globalAwareKey(target.object)
+                : GLOBAL_KEY,
+          });
         }
       },
 
