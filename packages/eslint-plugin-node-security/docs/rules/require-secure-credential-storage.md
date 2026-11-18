@@ -3,7 +3,7 @@ title: require-secure-credential-storage
 description: This rule detects a credential written to localStorage, sessionStorage, AsyncStorage or process.env without encryption
 tags: ['security', 'node']
 category: security
-severity: high
+severity: medium
 cwe: CWE-312
 autofix: false
 ---

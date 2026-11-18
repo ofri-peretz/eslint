@@ -6,6 +6,7 @@ category: security
 cwe: CWE-908
 owasp: A01:2021
 autofix: suggestions
+severity: high
 ---
 
 > **Keywords:** no-unsafe-buffer-alloc, Buffer.allocUnsafe, Buffer.allocUnsafeSlow, uninitialized memory, CWE-908, Buffer.alloc, Node.js, ESLint rule
@@ -61,20 +62,29 @@ return result;
 ```
 
 "Covering" is narrower than "any write", because proving full coverage is
-undecidable and the rule refuses to pretend otherwise. Two shapes cover by
-construction:
+undecidable and the rule refuses to pretend otherwise. These shapes are
+accepted as covering — the first and fourth by construction, the others only
+when the source is at least as long as the buffer (see the false negative
+below):
 
 | Shape                                                              | Covering? | Why                                                                  |
 | :----------------------------------------------------------------- | :-------- | :------------------------------------------------------------------- |
 | `buf.fill(v)`                                                      | ✅        | fills to the end of the buffer by definition                         |
-| `src.copy(buf)`, `buf.set(src)`, `buf.write(s)`                    | ✅        | one argument: starts at 0, runs for the source's whole length        |
-| `buf.write(s, 'utf8')`, `buf.fill(v, 'hex')`                       | ✅        | a string in the offset position is the encoding; still starts at 0   |
+| `src.copy(buf)`, `buf.set(src)`, `buf.write(s)`                    | ✅ \*     | starts at 0 and runs for the source's length — not the buffer's      |
+| `buf.write(s, 'utf8')`, `buf.fill(v, 'hex')`                       | ✅ \*     | a string in the offset position is the encoding; still starts at 0   |
 | `crypto.randomFillSync(buf)`, `crypto.getRandomValues(buf)`        | ✅        | fills its first argument (also as a named import from `node:crypto`) |
 | `buf.write(s, offset)` / `src.copy(buf, offset)` **inside a loop** | ✅        | a moving offset is a buffer being walked                             |
 | `buf.fill(0, 4)`                                                   | ❌        | starts at 4: bytes 0..3 stay uninitialized                           |
 | `buf.writeUInt32BE(v, 0)`                                          | ❌        | a fixed offset stamps one field and leaves the rest                  |
 | `src.copy(buf, 0, 0, 4)`                                           | ❌        | a fixed slice                                                        |
 | `buf[i] = v`                                                       | ❌        | one byte                                                             |
+
+\* Accepted, not proved. A source shorter than the buffer leaves the tail
+uninitialized — `Buffer.allocUnsafe(64)` then `buf.write('hi')` writes two
+bytes and exposes 62. Size the allocation from the source
+(`Buffer.allocUnsafe(src.length)` before `src.copy(buf)`), use `Buffer.alloc`,
+or hand on only the written prefix (`buf.subarray(0, written)`). This is a
+known false negative, listed below.
 
 A partial write does not _end_ the search — it is not a read either — so a
 fixed-offset write followed by a covering one is still accepted. Fixed-width
@@ -181,9 +191,15 @@ header.writeUInt32BE(len, 0); // remaining bytes are zeros
 
 const scratch = Buffer.allocUnsafe(64).fill(0); // zeroed at the call site
 
-const copy = Buffer.allocUnsafe(src.length); // covered before any read
+// Sized from the source, so the copy writes every byte before any read.
+const copy = Buffer.allocUnsafe(src.length);
 src.copy(copy);
 send(copy);
+
+// A string of unknown length: allocate zeroed, or send only what was written.
+const out = Buffer.alloc(256);
+const written = out.write(name);
+send(out.subarray(0, written));
 ```
 
 ## Options
@@ -245,6 +261,12 @@ at an offset, an un-awaited `FileHandle.read` — is still reported.
 
 ## Known False Negatives
 
+- A one-argument copy or write from a source **shorter than the buffer** —
+  `src.copy(buf)`, `buf.set(src)`, `buf.write(s)`, `buf.write(s, 'utf8')` — is
+  accepted as covering, but writes only the source's length; the rest of the
+  allocation is uninitialized and leaks if the whole buffer is read. The rule
+  cannot compare the two lengths in general. `Buffer.allocUnsafe(src.length)`
+  followed by `src.copy(buf)` is genuinely covered.
 - Dynamic dispatch (`global['Buffer'].allocUnsafe(n)`) is not resolved;
   a computed key that resolves to a constant (`Buffer['allocUnsafe'](n)`) is.
 - Member aliases (`const alloc = Buffer.allocUnsafe; alloc(n);`) are not

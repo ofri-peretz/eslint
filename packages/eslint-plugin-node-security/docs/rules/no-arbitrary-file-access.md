@@ -3,7 +3,7 @@ title: no-arbitrary-file-access
 description: Prevents file system access with unsanitized user input to protect against path traversal attacks.
 tags: ['security', 'node']
 category: security
-severity: medium
+severity: high
 cwe: CWE-22
 owasp: 'A01:2021'
 autofix: false

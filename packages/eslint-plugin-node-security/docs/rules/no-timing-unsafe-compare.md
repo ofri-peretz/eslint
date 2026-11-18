@@ -3,7 +3,7 @@ title: no-timing-unsafe-compare
 description: Disallow timing-unsafe comparison of secrets
 tags: ['security', 'timing-attack', 'cwe-208', 'nodejs']
 category: security
-severity: high
+severity: medium
 cwe: CWE-208
 owasp: 'A02:2021'
 autofix: false

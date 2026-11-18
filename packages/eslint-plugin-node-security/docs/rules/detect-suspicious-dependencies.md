@@ -3,7 +3,7 @@ title: detect-suspicious-dependencies
 description: This rule detects package imports that look like typosquatting attempts on popular npm packages
 tags: ['security', 'node']
 category: security
-severity: medium
+severity: critical
 cwe: CWE-506
 autofix: false
 ---

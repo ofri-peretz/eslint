@@ -5,6 +5,7 @@ tags: ['security', 'node-security', 'memory-safety']
 category: security
 cwe: CWE-676
 autofix: suggestions
+severity: high
 ---
 
 > **Keywords:** no-deprecated-buffer, Buffer, Node.js, uninitialized memory, CVE-2018-7166, CWE-676, Buffer.alloc, Buffer.from, ESLint rule

@@ -3,7 +3,7 @@ title: lock-file
 description: 'CWE: [CWE-829](https://cwe.mitre.org/data/definitions/829.html)'
 tags: ['security', 'node']
 category: security
-severity: medium
+severity: high
 cwe: CWE-829
 autofix: false
 ---
@@ -95,7 +95,7 @@ This rule supports the following configuration in your ESLint config:
 {
   "rules": {
     "node-security/lock-file": ["error", {
-      "packageManager": "npm" // "npm", "yarn", or "npm"
+      "packageManager": "npm" // "any", "npm", "yarn", or "pnpm"
     }]
   }
 }
@@ -151,7 +151,7 @@ The following patterns are **not detected** due to static analysis limitations:
 
 **Why**: If you use a non-standard or custom package manager that uses a different filename, the rule will not recognize it.
 
-**Mitigation**: Standardize on `npm`, `yarn`, or `npm`.
+**Mitigation**: Standardize on `npm`, `yarn`, or `pnpm`.
 
 ## References
 
