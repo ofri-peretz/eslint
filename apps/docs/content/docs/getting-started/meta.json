@@ -20,6 +20,7 @@
         "concepts/ecosystem",
         "---Migration---",
         "flat-config",
+        "with-eslint-plugin-security",
         "migrate-from-security-node",
         "---Reference---",
         "concepts/compatibility",
