@@ -5,6 +5,56 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.0.5
+
+### Patch Changes
+
+- **📚 Docs** — eight doc defects found by Codacy's reviewer, and every doc's CWE and severity now match the rule
+
+  Codacy renders these docs from the release tag (codacy/codacy-eslint#5025).
+
+  - `no-unsafe-buffer-alloc`: a one-argument `copy`/`set`/`write` from a source
+    shorter than the buffer leaves the tail uninitialized. The rule accepts it as
+    covering; that is now documented as a known false negative, and the safe
+    examples size from the source or send only `buf.subarray(0, written)`.
+  - `no-toctou-vulnerability`: the suggested fix was `access()` then
+    `readFile()`, the race itself. It is now one `open` (with `O_NOFOLLOW` or
+    `'wx'` as the case needs) and an `ENOENT` handler.
+  - `no-ssrf`: the safe example allowlisted a hostname and never checked where it
+    resolved. It now resolves, rejects private, loopback and link-local
+    addresses, and pins the socket to the checked address.
+  - `detect-non-literal-fs-filename`: `startsWith(baseDir)` accepted
+    `/safe-dir-evil`. Containment is now `path.relative`-based, with a realpath
+    check for symlinks.
+  - `no-static-iv`: the AES-GCM example dropped the auth tag. It now stores
+    `getAuthTag()` with the nonce and calls `setAuthTag()` on decrypt.
+  - `detect-child-process`, `detect-non-literal-fs-filename`, `no-buffer-overread`,
+    `no-zip-slip`: a template `CWE-693` header replaced by the rule's CWE.
+    Front-matter `cwe` and `severity` now match each rule's meta and CVSS band
+    across all node-security docs.
+  - `lock-file`: "npm, yarn, or npm" now reads "npm, yarn, or pnpm", the schema's
+    enum.
+
+- **🐛 Fix** — three false positives found scanning the MCP TypeScript SDK examples and tolaria
+
+  - `no-timing-unsafe-compare`: a secret pattern shorter than six letters (`token`,
+    `auth`, `hash`, `jwt`, …) now matches only as a whole word of the identifier,
+    so `grantedMaxTokens === params.maxTokens` (a count of LLM tokens) is no longer
+    a timing oracle. `accessToken`, `x_auth_token` and `JWTValue` still match;
+    `authorization` and lowercase-safe compounds (`apiToken`, `sessionToken`,
+    `idToken`, `csrfToken`) are default patterns of their own. A pattern with regex
+    syntax keeps substring semantics.
+  - `no-unsafe-buffer-alloc`: `Buffer.allocUnsafe(n)` filled by `fs.readSync(fd, buf, 0, …)`
+    or an awaited `handle.read(buf, 0, …)` on a handle from `fs/promises` `open()`,
+    whose count is never rewritten, and then read only through
+    `subarray(0, count)`, `slice(0, count)` or `toString(enc, 0, count)` is no
+    longer reported — the uninitialized tail is never looked at. Any other read,
+    bound or offset still reports.
+  - `no-dynamic-command-string`: a parameter of a file-local, unexported function
+    whose every call passes a string literal (`commandPath('axe')`) is treated as a
+    constant, like a `const`. `no-shell-injection` does not follow parameters, and
+    its docs now say why.
+
 ## 6.0.4
 
 ### Patch Changes

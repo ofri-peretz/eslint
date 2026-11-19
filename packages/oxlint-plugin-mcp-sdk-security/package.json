@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-mcp-sdk-security",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "description": "Oxlint MCP security rules for the Model Context Protocol SDK — follows tool arguments into shells, file paths, URLs, SQL and eval; catches credential leaks, untrusted text in model-facing descriptions and prompts, unhardened HTTP transports, shared stateless servers, predictable session ids, untrusted stdio commands and schema/handler drift. Same rules and rule IDs as eslint-plugin-mcp-sdk-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
@@ -72,6 +72,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-mcp-sdk-security": "2.0.2"
+    "eslint-plugin-mcp-sdk-security": "2.1.0"
   }
 }
