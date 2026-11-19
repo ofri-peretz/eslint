@@ -5,6 +5,21 @@ All notable changes to `oxlint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.0.6
+
+### Patch Changes
+
+- **🐛 Fix** — no-timing-unsafe-compare drops dead separator spellings of the token compounds
+
+  `api_token`, `x-session-token` and similar already match the whole-word
+  `token` default, because a separator is a word boundary. So the `_` and `-`
+  spellings of `apiToken`, `sessionToken`, `idToken` and `csrfToken` (added in
+  PR 1581, not yet published) matched nothing the rule did not already match.
+  The camelCase compounds stay: they catch a lowercase `apitoken`. No behaviour
+  change.
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-node-security@6.0.6`
+
 ## 6.0.5
 
 ### Patch Changes

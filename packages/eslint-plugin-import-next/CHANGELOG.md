@@ -5,6 +5,17 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.2.1
+
+### Patch Changes
+
+- **🐛 Fix** — dynamic-import-chunkname messages state CVSS 2.5, matching their LOW label
+
+  The three messages cited CWE-1078 and so rendered its generic score, 5.3 (the
+  MEDIUM band), beside a LOW label. A chunk-naming slip is hygiene, not a
+  vulnerability, so each message now states the 2.5 its `meta.docs.cvss` already
+  declared. Message text only; what the rule reports is unchanged.
+
 ## 3.2.0
 
 ### Minor Changes
