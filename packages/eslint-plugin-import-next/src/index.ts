@@ -193,16 +193,31 @@ export const rules = {
  */
 withCanonicalDocsUrls('plugin-import-next', rules);
 
-/**
- * ESLint Plugin object following the official plugin structure
- */
-export const plugin = {
+const base = {
   meta: {
     name: 'eslint-plugin-import-next',
     version: '4.0.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
+
+/**
+ * `meta` at the top level of the module, as eslint-plugin-import has it, so the
+ * module object itself is a complete plugin: `{ meta, rules }`.
+ */
+export const meta = base.meta;
+
+/**
+ * The ESLint plugin object: this module itself (`self`), not a separate inner
+ * object. Node hands an `eslint.config.mjs` default import the whole
+ * `module.exports`, while TypeScript/jiti/bundler interop read
+ * `exports.default`; making `plugin`, the default export, and every preset's
+ * `plugins` entry the SAME object means a consumer can register the plugin
+ * themselves next to any preset (`configs.*` under `import-next`,
+ * `flatConfigs.*` under `import`) without ESLint's "Cannot redefine plugin"
+ * error, whichever loader read the package.
+ */
+export const plugin = self as unknown as typeof base;
 
 /**
  * Preset configurations for common use cases
@@ -575,14 +590,6 @@ export const configs = {
   } satisfies TSESLint.FlatConfig.Config,
 };
 
-/**
- * `meta` at the top level of the module, as eslint-plugin-import has it, so the
- * module object itself is a complete plugin: `{ meta, rules }`. That is what a
- * consumer gets from `import importNext from 'eslint-plugin-import-next'` in an
- * `eslint.config.js`/`.mjs` (Node hands ESM the CommonJS `module.exports`).
- */
-export const meta = plugin.meta;
-
 /** The keys eslint-plugin-import@2.32.0 exposes on its `flatConfigs`. */
 export type FlatConfigName =
   | 'recommended'
@@ -612,7 +619,7 @@ const allExtensions = [...typeScriptExtensions, '.js', '.jsx', '.mjs', '.cjs'];
  *   import importPlugin from 'eslint-plugin-import-next';
  *   export default [importPlugin.flatConfigs.recommended, importPlugin.flatConfigs.typescript];
  *
- * `plugins.import` is this module itself (`self` below), the same object a
+ * `plugins.import` is `plugin`, i.e. this module itself, the same object a
  * consumer's default import or `require()` returns, so registering it again,
  * `{ plugins: { import: importPlugin } }`, next to a flat config does not trip
  * ESLint's "Cannot redefine plugin" check. (eslint-plugin-import registers a
@@ -623,7 +630,7 @@ const allExtensions = [...typeScriptExtensions, '.js', '.jsx', '.mjs', '.cjs'];
 export const flatConfigs: Record<FlatConfigName, TSESLint.FlatConfig.Config> = {
   recommended: {
     name: 'import/recommended',
-    plugins: { import: self as unknown as TSESLint.FlatConfig.Plugin },
+    plugins: { import: plugin },
     rules: {
       // analysis/correctness
       'import/no-unresolved': 'error',
@@ -643,7 +650,7 @@ export const flatConfigs: Record<FlatConfigName, TSESLint.FlatConfig.Config> = {
   },
   errors: {
     name: 'import/errors',
-    plugins: { import: self as unknown as TSESLint.FlatConfig.Plugin },
+    plugins: { import: plugin },
     rules: {
       'import/no-unresolved': 2,
       'import/named': 2,
@@ -654,7 +661,7 @@ export const flatConfigs: Record<FlatConfigName, TSESLint.FlatConfig.Config> = {
   },
   warnings: {
     name: 'import/warnings',
-    plugins: { import: self as unknown as TSESLint.FlatConfig.Plugin },
+    plugins: { import: plugin },
     rules: {
       'import/no-named-as-default': 1,
       'import/no-named-as-default-member': 1,
@@ -663,7 +670,7 @@ export const flatConfigs: Record<FlatConfigName, TSESLint.FlatConfig.Config> = {
   },
   react: {
     name: 'import/react',
-    plugins: { import: self as unknown as TSESLint.FlatConfig.Plugin },
+    plugins: { import: plugin },
     settings: {
       'import/extensions': ['.js', '.jsx', '.mjs', '.cjs'],
     },
@@ -675,7 +682,7 @@ export const flatConfigs: Record<FlatConfigName, TSESLint.FlatConfig.Config> = {
   },
   'react-native': {
     name: 'import/react-native',
-    plugins: { import: self as unknown as TSESLint.FlatConfig.Plugin },
+    plugins: { import: plugin },
     settings: {
       'import/resolver': {
         node: {
@@ -686,14 +693,14 @@ export const flatConfigs: Record<FlatConfigName, TSESLint.FlatConfig.Config> = {
   },
   electron: {
     name: 'import/electron',
-    plugins: { import: self as unknown as TSESLint.FlatConfig.Plugin },
+    plugins: { import: plugin },
     settings: {
       'import/core-modules': ['electron'],
     },
   },
   typescript: {
     name: 'import/typescript',
-    plugins: { import: self as unknown as TSESLint.FlatConfig.Plugin },
+    plugins: { import: plugin },
     settings: {
       'import/extensions': allExtensions,
       'import/external-module-folders': ['node_modules', 'node_modules/@types'],
@@ -717,13 +724,10 @@ export const flatConfigs: Record<FlatConfigName, TSESLint.FlatConfig.Config> = {
 export { clearCircularDependencyCache };
 
 /*
- * The default export is the module object itself (`self`), not the inner
- * `plugin`. Node already hands an `eslint.config.mjs` the whole
- * `module.exports` for a default import, while TypeScript/jiti/bundler interop
- * read `exports.default`; pointing `default` at the module makes every loader
- * return ONE object, and that object is the one `flatConfigs` registers. It is
- * a superset of `plugin` (`meta` and `rules` are the same values), so anything
- * that worked with the old default still does.
+ * The default export is the module object itself, the same object as `plugin`
+ * and as every preset's `plugins` entry (see `plugin` above). It carries
+ * `meta` and `rules` as before, so anything that worked with the old default
+ * still does.
  */
 export interface ImportNextPlugin {
   meta: typeof meta;

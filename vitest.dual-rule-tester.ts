@@ -242,44 +242,49 @@ export class RuleTester extends real.RuleTester {
       const failures: string[] = [];
       let unparsed = 0;
       const total = oxValid.length + oxInvalid.length;
-      describe(`${name} (oxlint survey)`, () => {
-        OxlintRuleTester.describe = describe;
-        OxlintRuleTester.it = ((text: string, fn: () => void) =>
-          it(text, () => {
-            try {
-              fn();
-            } catch (error) {
-              if (unparseable(error)) unparsed++;
-              else
-                failures.push(
-                  `${text}: ${String((error as Error).message).split('\n')[0]}`,
-                );
-            }
-          })) as typeof OxlintRuleTester.it;
-        try {
-          tester.run(name, rule, {
-            valid: oxValid,
-            invalid: oxInvalid,
-          } as never);
-        } catch (error) {
-          failures.push(
-            `(load) ${String((error as Error).message).split('\n')[0]}`,
-          );
-        }
-        afterAll(() => {
-          appendFileSync(
-            SURVEY,
-            JSON.stringify({
-              package: process.cwd().split('/').pop(),
-              rules: ruleIds.get(rule) ?? [],
-              testName: name,
-              cases: total - unparsed,
-              unparsed,
-              failures,
-            }) + '\n',
-          );
-        });
-      });
+      // Below Node 22 the tester cannot start; recording that as a rule failure
+      // would corrupt the survey, so the survey is skipped there too.
+      (OXLINT_TESTER_RUNS ? describe : describe.skip)(
+        `${name} (oxlint survey)`,
+        () => {
+          OxlintRuleTester.describe = describe;
+          OxlintRuleTester.it = ((text: string, fn: () => void) =>
+            it(text, () => {
+              try {
+                fn();
+              } catch (error) {
+                if (unparseable(error)) unparsed++;
+                else
+                  failures.push(
+                    `${text}: ${String((error as Error).message).split('\n')[0]}`,
+                  );
+              }
+            })) as typeof OxlintRuleTester.it;
+          try {
+            tester.run(name, rule, {
+              valid: oxValid,
+              invalid: oxInvalid,
+            } as never);
+          } catch (error) {
+            failures.push(
+              `(load) ${String((error as Error).message).split('\n')[0]}`,
+            );
+          }
+          afterAll(() => {
+            appendFileSync(
+              SURVEY,
+              JSON.stringify({
+                package: process.cwd().split('/').pop(),
+                rules: ruleIds.get(rule) ?? [],
+                testName: name,
+                cases: total - unparsed,
+                unparsed,
+                failures,
+              }) + '\n',
+            );
+          });
+        },
+      );
       return;
     }
 

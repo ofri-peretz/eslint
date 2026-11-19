@@ -31,8 +31,10 @@ import { ESLint, type Linter } from 'eslint';
 import tsParser from '@typescript-eslint/parser';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import importNext, {
+  configs as ownConfigs,
   flatConfigs as ownFlatConfigs,
   meta,
+  plugin,
   rules,
 } from './index';
 
@@ -275,6 +277,25 @@ describe('registering the plugin next to a flat config', () => {
       'main.js',
     );
     expect(findings.map((f) => f.ruleId)).toContain('import/no-unresolved');
+  });
+
+  it('`plugins: { "import-next": importNext }` next to an existing preset loads', async () => {
+    const preset = ownConfigs.recommended as unknown as Linter.Config;
+    const findings = await lint(
+      [preset, { plugins: { 'import-next': importNext as never } }],
+      'main.js',
+    );
+    expect(findings.filter((f) => f.fatal)).toEqual([]);
+    expect(findings.map((f) => f.ruleId)).toContain(
+      'import-next/no-unresolved',
+    );
+  });
+
+  it('`plugin`, the default export and every preset share one object', () => {
+    expect(plugin).toBe(importNext);
+    for (const preset of Object.values(ownConfigs)) {
+      expect(preset.plugins?.['import-next']).toBe(importNext);
+    }
   });
 
   it('the default export is the module: one object for every loader', () => {
