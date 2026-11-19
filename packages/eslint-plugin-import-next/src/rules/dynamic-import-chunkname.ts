@@ -167,6 +167,10 @@ export const dynamicImportChunkname = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.ARCHITECTURE,
         issueName: 'Missing Chunk Name',
         cwe: 'CWE-1078',
+        // CWE-1078's generic score is 5.3 (MEDIUM). A chunk-naming slip is
+        // hygiene, not a vulnerability, so the score stated here is the one
+        // in meta.docs and agrees with the LOW label.
+        cvss: 2.5,
         description: 'Dynamic import is missing webpackChunkName comment',
         severity: 'LOW',
         fix: 'Add /* webpackChunkName: "chunk-name" */ before the import path',
@@ -177,6 +181,7 @@ export const dynamicImportChunkname = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.ARCHITECTURE,
         issueName: 'Invalid Chunk Name',
         cwe: 'CWE-1078',
+        cvss: 2.5,
         description: 'webpackChunkName "{{chunkName}}" does not match pattern',
         severity: 'LOW',
         fix: 'Update chunk name to match the required pattern',
@@ -187,6 +192,7 @@ export const dynamicImportChunkname = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.ARCHITECTURE,
         issueName: 'Unreadable Magic Comment',
         cwe: 'CWE-1078',
+        cvss: 2.5,
         description:
           'webpack cannot read this magic comment, so it drops it and the chunk name with it',
         severity: 'LOW',
