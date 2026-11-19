@@ -17,7 +17,7 @@ A convention: a module that publishes a single value should make it the default 
   with an `export * from` is not reported, since it publishes names this file
   cannot see.
 
-Every value name the module publishes counts: inline declarations (also `enum`, and each name a destructuring declares), export lists (also string names), and `export { x } from 'm'` re-exports. A default in any spelling (`export default`, `export { x as default }`, `export { default } from 'm'`, `export * as default from 'm'`) satisfies the rule. `export * from 'm'` publishes names the file cannot see, so the count is unknown and `single` stays silent. Type-only exports and `const enum` do not count.
+Every value name the module publishes counts: inline declarations (also `enum`, and each name a destructuring declares), export lists (also string names), and `export { x } from 'm'` re-exports. A default in any spelling (`export default`, `export { x as default }`, `export { default } from 'm'`, `export * as default from 'm'`) satisfies the rule. `export * from 'm'` publishes names the file cannot see, so the count is unknown and `single` stays silent. A `const enum` does not count. A module that exports a type (`export type`, `export interface`, `export type { T }`, `export { type T }`) is not reported under any target: a type alias cannot be its default export, so the module needs named exports anyway. eslint-plugin-import leaves such a module alone too.
 
 ### ❌ Incorrect
 

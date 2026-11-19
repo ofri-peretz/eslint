@@ -31,10 +31,10 @@
  *     the rule reports them at the import (`Parse errors in imported
  *     module`), as eslint-plugin-import does.
  *
- * Specifiers resolve with eslint-plugin-import's node-resolver settings
- * (`import/resolver.node`, `import/resolve`) and its defaults: extensions
- * `.mjs, .js, .json, .node`, or TypeScript's when the config names a
- * TypeScript resolver.
+ * Specifiers resolve through eslint-plugin-import's resolver settings
+ * (`import/resolver`, `import/resolve`), each configured resolver in turn,
+ * with its defaults: extensions `.mjs, .js, .json, .node` for node,
+ * TypeScript's for a TypeScript resolver.
  *
  * Cost is bounded: a file is parsed once per lint run and settings (cached by
  * path, invalidated by mtime, at most `MAX_ENTRIES` maps kept); a file over
@@ -54,7 +54,7 @@ import { createRequire } from 'node:module';
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
-import { nodeResolverSettings, resolveWithSettings } from './settings-resolver';
+import { resolveWithSettings } from './settings-resolver';
 import { loadTypeScript } from './typescript-peer';
 
 /** A documentation tag, as JSDoc or TomDoc writes it. */
@@ -381,51 +381,28 @@ function childContextOf(context: AnyContext): ChildContext {
 
 // ── resolution ────────────────────────────────────────────────────────────
 
-const NODE_EXTENSIONS = ['.mjs', '.js', '.json', '.node'];
-const TYPESCRIPT_EXTENSIONS = [
-  '.ts',
-  '.tsx',
-  '.d.ts',
-  '.js',
-  '.jsx',
-  '.json',
-  '.node',
-];
-
-/** The names a config gives eslint-import-resolver-typescript. */
-const TYPESCRIPT_RESOLVERS = new Set([
-  'typescript',
-  'eslint-import-resolver-typescript',
-]);
-
-/** Does the config resolve with a TypeScript resolver? */
-function usesTypeScriptResolver(settings: Settings): boolean {
-  const resolver = settings['import/resolver'];
-  const names =
-    typeof resolver === 'string'
-      ? [resolver]
-      : Array.isArray(resolver)
-        ? resolver.flatMap((r) =>
-            typeof r === 'string' ? [r] : Object.keys(Object(r)),
-          )
-        : Object.keys(Object(resolver));
-  return names.some((name) => TYPESCRIPT_RESOLVERS.has(name));
-}
-
 const TS_FILE = /\.[cm]?tsx?$/;
 
-/** The file `specifier` names from `fromFile`, or null. */
+/** eslint-import-resolver-node's extensions, for a node resolver naming none. */
+const NODE_EXTENSIONS = ['.mjs', '.js', '.json', '.node'];
+
+/**
+ * The file `specifier` names from `fromFile`, or null: the configured
+ * resolvers in order, a node resolver without its own list on node's
+ * defaults, a TypeScript resolver on TypeScript's.
+ */
 export function resolveFor(
   specifier: string,
   fromFile: string,
   settings: Settings,
 ): string | null {
-  const extensions =
-    nodeResolverSettings(settings).extensions ??
-    (usesTypeScriptResolver(settings)
-      ? TYPESCRIPT_EXTENSIONS
-      : NODE_EXTENSIONS);
-  return resolveWithSettings(specifier, fromFile, settings, extensions);
+  return resolveWithSettings(
+    specifier,
+    fromFile,
+    settings,
+    undefined,
+    NODE_EXTENSIONS,
+  );
 }
 
 // ── which files are read ─────────────────────────────────────────────────

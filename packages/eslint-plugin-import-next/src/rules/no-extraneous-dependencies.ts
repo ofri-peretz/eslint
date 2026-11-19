@@ -11,11 +11,7 @@
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { builtinModules } from 'node:module';
 import path from 'node:path';
-import {
-  createRule,
-  resolveModule,
-  staticString,
-} from '@interlace/eslint-devkit';
+import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   readJsonFileSync,
@@ -23,6 +19,7 @@ import {
   statSync,
 } from '@interlace/eslint-devkit';
 import { getDirname } from '@interlace/eslint-devkit';
+import { resolveWithSettings } from '../utils/settings-resolver';
 
 type MessageIds =
   | 'extraneousDependency'
@@ -55,9 +52,11 @@ export interface Options {
    */
   packageDir?: string | string[];
   /**
-   * eslint-plugin-import: `false` skips internal modules (a bare specifier
-   * matching the `import/internal-regex` setting, or resolving to a file
-   * outside `node_modules`, such as a path alias). Absent or `true`: checked.
+   * eslint-plugin-import: `true` also checks internal modules — a bare
+   * specifier matching the `import/internal-regex` setting, or one the
+   * configured resolvers resolve to a file of this package outside
+   * `node_modules`, such as a tsconfig `paths` alias. Absent or `false`: an
+   * internal module is the project's own code, not a package, and is skipped.
    */
   includeInternal?: boolean;
   /** eslint-plugin-import: check type-only imports and exports too. */
@@ -338,7 +337,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
           includeInternal: {
             type: 'boolean',
             description:
-              'Check internal modules (`import/internal-regex`, or resolving outside node_modules). Absent: checked.',
+              'Check internal modules too (`import/internal-regex`, or resolving to a file of this package outside node_modules, such as a path alias). Absent: skipped.',
           },
           includeTypes: {
             type: 'boolean',
@@ -414,9 +413,17 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
     /**
      * eslint-plugin-import's "internal" module: a bare specifier the project
      * maps to its own code, by the `import/internal-regex` setting or by
-     * resolving to a file outside `node_modules` (a path alias).
+     * resolving — through the configured resolvers, tsconfig `paths`
+     * included — to a file of this package that is not in a module folder
+     * (`node_modules`, or the `import/external-module-folders` setting).
+     * A file outside the linted file's package is external
+     * (eslint-plugin-import's `isExternalPath`), and so is one that does not
+     * resolve: an unresolved package is still checked.
      */
-    function isInternal(importPath: string): boolean {
+    function isInternal(
+      importPath: string,
+      resolve: () => string | null,
+    ): boolean {
       const internalRegex = context.settings['import/internal-regex'];
       if (
         typeof internalRegex === 'string' &&
@@ -424,10 +431,35 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
       ) {
         return true;
       }
-      const resolved = resolveModule(importPath, context.filename);
-      return (
-        resolved !== null && !resolved.split(path.sep).includes('node_modules')
+      const resolved = resolve();
+      if (resolved === null) return false;
+      if (resolved.split(path.sep).includes('node_modules')) return false;
+      const inside = (dir: string) => {
+        const rel = path.relative(dir, resolved);
+        return !rel.startsWith('..') && !path.isAbsolute(rel);
+      };
+      const manifest = findManifest(getDirname(context.filename));
+      const root = manifest
+        ? getDirname(manifest)
+        : getDirname(context.filename);
+      if (!inside(root)) return false;
+      const folders = context.settings['import/external-module-folders'];
+      return !(Array.isArray(folders) ? folders : []).some(
+        (folder) =>
+          typeof folder === 'string' && inside(path.resolve(root, folder)),
       );
+    }
+
+    /**
+     * eslint-plugin-import's second look before it reports: the name in the
+     * package.json of the file the specifier resolves to. A path alias into
+     * another package of the repo (`@cli/constants` → a workspace package's
+     * file) is that package, declared under its own name.
+     */
+    function realPackageName(resolved: string | null): string | undefined {
+      if (resolved === null) return undefined;
+      const manifest = findManifest(getDirname(resolved));
+      return manifest ? readManifest(manifest)?.name : undefined;
     }
 
     // oxlint-disable-next-line consistent-function-scoping
@@ -521,10 +553,6 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      if (skipInternal && isInternal(importPath)) {
-        return;
-      }
-
       // Check allow patterns first
       const isAllowedByPattern = allowPatterns.some((pattern: string) => {
         try {
@@ -547,27 +575,47 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
       }
 
       // Apply resolution strategy
-      const shouldCheckDependency = () => {
+      const shouldCheckDependency = (name: string) => {
         switch (resolutionStrategy) {
           case 'workspace':
             // Allow packages that are in dependencies OR are workspace packages
-            return (
-              !allowedPackages.has(packageName) &&
-              !isWorkspacePackage(packageName)
-            );
+            return !allowedPackages.has(name) && !isWorkspacePackage(name);
           case 'monorepo':
             // Allow cross-package imports in monorepos
-            return (
-              !allowedPackages.has(packageName) &&
-              !isWorkspacePackage(packageName)
-            );
+            return !allowedPackages.has(name) && !isWorkspacePackage(name);
           case 'strict':
           default:
-            return !allowedPackages.has(packageName);
+            return !allowedPackages.has(name);
         }
       };
+      /**
+       * Asked last, since it costs a resolution that only a specifier about
+       * to be reported needs: is it the project's own code (internal), or a
+       * file of another package, declared under that package's name?
+       */
+      const ownCodeOrDeclared = () => {
+        let resolved: string | null | undefined;
+        const resolve = () =>
+          resolved === undefined
+            ? (resolved = resolveWithSettings(
+                importPath,
+                context.filename,
+                context.settings,
+              ))
+            : resolved;
+        if (skipInternal && isInternal(importPath, resolve)) return true;
+        const realName = realPackageName(resolve());
+        return (
+          realName !== undefined &&
+          realName !== packageName &&
+          // This package's own name is allowed for self-reference; a path
+          // alias back into this package is not a self-reference.
+          realName !== resolvedPackageJson?.name &&
+          !shouldCheckDependency(realName)
+        );
+      };
 
-      if (shouldCheckDependency()) {
+      if (shouldCheckDependency(packageName) && !ownCodeOrDeclared()) {
         // Check if it's in devDependencies but we're in production code
         const isInDevDeps =
           resolvedPackageJson?.devDependencies &&
@@ -697,7 +745,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
         peerDependencies = allowedFor(o.peerDependencies, filename);
         bundledDependencies = allowedFor(o.bundledDependencies, filename);
         includeTypes = o.includeTypes === true;
-        skipInternal = o.includeInternal === false;
+        skipInternal = o.includeInternal !== true;
         coreModules = (context.settings['import/core-modules'] ??
           []) as unknown[];
 
