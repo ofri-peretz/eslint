@@ -69,7 +69,7 @@
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
   "license": "MIT",
   "engines": {
-    "node": ">=22.13.0"
+    "node": "^20.19.0 || ^22.13.0 || >=24"
   },
   "publishConfig": {
     "access": "public"

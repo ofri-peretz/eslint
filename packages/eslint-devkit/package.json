@@ -64,7 +64,7 @@
     "auto-fix"
   ],
   "engines": {
-    "node": ">=22.13.0"
+    "node": "^20.19.0 || ^22.13.0 || >=24"
   },
   "scripts": {
     "build": "tsx ../../scripts/build-package.ts",

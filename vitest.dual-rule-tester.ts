@@ -51,6 +51,16 @@ type Tests = { valid: Case[]; invalid: Dict[] };
 const SURVEY = process.env.DUAL_ENGINE_SURVEY;
 
 /**
+ * oxlint's `RuleTester` refuses to run below Node 22 (it needs raw transfer:
+ * `oxlint/dist/plugins-dev.js` throws "not supported ... versions of NodeJS
+ * prior to v22.0.0"). The oxlint CLI still runs JS plugins on Node 20.19 (its
+ * `engines` is `^20.19.0 || >=22.12.0`); only the tester cannot. So on Node 20,
+ * where eslint-plugin-import-next is tested nightly (node-version-matrix.yml),
+ * the oxlint half is registered as SKIPPED, visibly, and the ESLint half runs.
+ */
+const OXLINT_TESTER_RUNS = Number(process.versions.node.split('.')[0]) >= 22;
+
+/**
  * Survey only: rule object → its ID in this package's rule map, so a failure
  * is recorded against `<package>/<rule>` whatever name the test passed.
  * vitest runs each package from its own directory.
@@ -285,7 +295,7 @@ export class RuleTester extends real.RuleTester {
           throw error;
         }
       })) as typeof OxlintRuleTester.it;
-    describe(`${name} (oxlint)`, () => {
+    (OXLINT_TESTER_RUNS ? describe : describe.skip)(`${name} (oxlint)`, () => {
       tester.run(name, rule, { valid: oxValid, invalid: oxInvalid } as never);
     });
   }

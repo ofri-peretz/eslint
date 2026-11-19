@@ -7,7 +7,9 @@ import { describe, it } from 'vitest';
 import { RuleTester } from 'oxlint/plugins-dev';
 import { unambiguous } from '../rules/unambiguous';
 
-RuleTester.describe = describe;
+// oxlint's RuleTester needs Node 22+ (raw transfer); skipped, visibly, below it.
+RuleTester.describe =
+  Number(process.versions.node.split('.')[0]) >= 22 ? describe : describe.skip;
 RuleTester.it = it;
 // Not `eslintCompat`: that mode pins sourceType to "module". The default,
 // "unambiguous", is what the oxlint CLI does with a .js or .ts file.

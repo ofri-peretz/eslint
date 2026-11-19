@@ -367,7 +367,7 @@ Install [\`${plugin.name}\`](https://www.npmjs.com/package/${plugin.name}) inste
 | Package | Version |
 | :--- | :--- |
 | oxlint | verified on \`${OXLINT_VERSION}\`: CI loads every rule ID through \`jsPlugins\` |
-| Vite+ | \`lint.jsPlugins\` in \`vite.config.ts\` |${node ? `\n| Node.js | \`${node}\` |` : ''}`,
+| Vite+ | \`lint.jsPlugins\` in \`vite.config.ts\` |${node ? `\n| Node.js | \`${node.replaceAll('|', '\\|')}\` |` : ''}`,
     unmark(rules),
     renderEcosystemTable(REGISTRY, alias),
     unmark(support),
