@@ -286,7 +286,8 @@
     "check:lock-proofs:update": "tsx scripts/prove-locks.mts --update",
     "mutation": "tsx scripts/mutation.mts",
     "nestjs:releases": "tsx scripts/nestjs-release-watch.mts",
-    "fidelity": "node benchmarks/suites/fidelity/run.cjs"
+    "fidelity": "node benchmarks/suites/fidelity/run.cjs",
+    "lint:dogfood": "eslint --config eslint.dogfood.config.mjs \"packages/*/src/**/*.ts\""
   },
   "keywords": [
     "eslint",
@@ -383,7 +384,7 @@
     "knex": "^3.3.0",
     "markdownlint-cli2": "^0.24.0",
     "mysql2": "^3.24.6",
-    "next": "^16.4.4",
+    "next": "^16.4.5",
     "openai": "^7.47.0",
     "oxlint": "^1.89.0",
     "oxmutate": "1.5.0",

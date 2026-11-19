@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-import-next",
-  "version": "3.0.2",
-  "description": "ESLint import rules — a drop-in replacement for eslint-plugin-import covering imports and module boundaries, 3.1x faster end-to-end, zero-config migration.",
+  "version": "4.1.0",
+  "description": "ESLint import rules — a drop-in replacement for eslint-plugin-import that passes 95% of its own test cases, covering imports and module boundaries, 3.1x faster end-to-end.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./dist/src/index.js",
@@ -73,14 +73,14 @@
     "agentic"
   ],
   "engines": {
-    "node": ">=22.13.0"
+    "node": "^20.19.0 || ^22.13.0 || >=24"
   },
   "peerDependencies": {
     "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0",
     "typescript": "^4.8.4 || ^5.0.0 || ^6.0.0"
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^2.0.4",
+    "@interlace/eslint-devkit": "^2.1.0",
     "oxc-resolver": "^11.24.2"
   },
   "devDependencies": {

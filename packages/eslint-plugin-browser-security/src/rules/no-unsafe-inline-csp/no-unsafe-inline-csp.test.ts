@@ -67,8 +67,10 @@ ruleTester.run('no-unsafe-inline-csp', noUnsafeInlineCsp, {
     },
     // Template literal
     {
-      name: 'unsafe-inline in a template-literal style-src CSP is reported',
-      code: `const csp = \`style-src 'unsafe-inline'\`;`,
+      // A `style-src` policy is not script execution — see
+      // style-src-is-not-script-src.test.ts.
+      name: 'unsafe-inline in a template-literal script-src CSP is reported',
+      code: `const csp = \`script-src 'unsafe-inline'\`;`,
       errors: [{ messageId: 'unsafeInline' }],
     },
     // In meta tag attribute
@@ -165,7 +167,7 @@ ruleTester.run('every policy in the file reports', noUnsafeInlineCsp, {
     {
       code: [
         `const a = "script-src 'unsafe-inline'";`,
-        `const b = "style-src 'unsafe-inline'";`,
+        `const b = "default-src 'unsafe-inline'";`,
       ].join('\n'),
       errors: [{ messageId: 'unsafeInline' }, { messageId: 'unsafeInline' }],
     },
@@ -173,8 +175,8 @@ ruleTester.run('every policy in the file reports', noUnsafeInlineCsp, {
     {
       code: [
         `const a = "script-src 'unsafe-inline'";`,
-        `const b = "style-src 'unsafe-inline'";`,
-        `const c = "img-src 'unsafe-inline'";`,
+        `const b = "default-src 'unsafe-inline'";`,
+        `const c = "script-src-elem 'unsafe-inline'";`,
       ].join('\n'),
       errors: [
         { messageId: 'unsafeInline' },

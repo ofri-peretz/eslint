@@ -14,8 +14,13 @@ import {
 } from '@interlace/eslint-devkit';
 import type ts from 'typescript';
 import { loadTypeScript, aliasSymbolFlag } from '../utils/typescript-peer';
+import { exportMapOf } from '../utils/export-map';
+import {
+  PARSE_ERROR_MESSAGE,
+  reportParseErrors,
+} from '../utils/export-map-rules';
 
-type MessageIds = 'noDefaultExport';
+type MessageIds = 'noDefaultExport' | 'parseError';
 
 type RuleOptions = [];
 
@@ -25,6 +30,38 @@ const DEFAULT = 'default' as ts.__String;
 
 const exportName = (node: TSESTree.Identifier | TSESTree.StringLiteral) =>
   node.type === 'Identifier' ? node.name : node.value;
+
+/**
+ * Without type information: eslint-plugin-import's reading. The module is
+ * parsed (`../utils/export-map`); a default import of a module that exports
+ * no default, not even through `export { default } from`, is reported. A
+ * module that is not known — unresolved, ignored, CommonJS — never is.
+ */
+function untyped(
+  context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+): TSESLint.RuleListener {
+  return {
+    ImportDeclaration(node: TSESTree.ImportDeclaration) {
+      if (node.importKind === 'type') return;
+      const specifier = node.specifiers.find(
+        (s) => s.type === 'ImportDefaultSpecifier',
+      );
+      if (!specifier) return;
+      const exports = exportMapOf(node.source.value, context);
+      if (!exports) return;
+      if (exports.errors.length > 0) {
+        reportParseErrors(context, node.source, node.source.value, exports);
+      } else if (
+        // A CommonJS module (only a dynamic `import()` made it readable)
+        // has its default by interop.
+        exports.parseGoal === 'Module' &&
+        exports.get('default') === undefined
+      ) {
+        context.report({ node: specifier, messageId: 'noDefaultExport' });
+      }
+    },
+  };
+}
 
 export const defaultRule = createRule<RuleOptions, MessageIds>({
   name: 'default',
@@ -45,12 +82,14 @@ export const defaultRule = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/default.md',
       }),
+      parseError: PARSE_ERROR_MESSAGE,
     },
     schema: [],
   },
   defaultOptions: [],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    if (!hasParserServices(context)) return {};
+    // No type information: read the other module by parsing it.
+    if (!hasParserServices(context)) return untyped(context);
 
     const services = getParserServices(context);
     const checker = services.program?.getTypeChecker?.();

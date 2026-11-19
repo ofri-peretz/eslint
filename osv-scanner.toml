@@ -14,3 +14,15 @@ benchmark/compat lockfiles that pin old ESLint on purpose, and the patterns it m
 this repo's own config globs, not user input. Revisit when eslint ships on minimatch 11, or
 by the date above.
 """
+
+[[IgnoredVulns]]
+id = "GHSA-fc5q-39xc-vjpf"
+ignoreUntil = 2026-12-18
+reason = """
+picomatch <= 4.0.7 (high, ReDoS on single-branch repeated extglobs). Published 2026-11-17 with
+no fixed version: every release is affected. It reaches only build, test and docs tooling
+(@changesets/cli, fumadocs-core, fumadocs-mdx, markdownlint-cli2, vite, vite-plugin-dts,
+vitest, and the cyclonedx and benchmark lockfiles). No published package of ours depends on
+it, and the globs it compiles are this repo's own config, not user input. Bump as soon as a
+fixed picomatch ships, or by the date above.
+"""

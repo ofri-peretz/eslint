@@ -4,7 +4,7 @@ description: Suggests using pool.query() for single-shot queries instead of manu
 tags: ['security', 'postgres']
 category: security
 severity: medium
-cwe: CWE-693
+cwe: CWE-400
 autofix: false
 ---
 
@@ -14,7 +14,7 @@ autofix: false
 Suggests using pool.query() for single-shot queries instead of manual connect/release.
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
+**CWE:** [CWE-400](https://cwe.mitre.org/data/definitions/400.html)
 
 Suggests using `pool.query()` for single-shot queries instead of manual connect/release.
 

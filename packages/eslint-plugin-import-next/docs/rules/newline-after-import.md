@@ -13,9 +13,9 @@ A blank line between the imports and the code that follows them separates a file
 
 - Import statements are `import ... from 'm'` (also `import type`) and TS `import x = require('m')`; consecutive ones form one block, and only the last needs the blank line.
 - The end of the file needs nothing after the last import.
-- A comment does not count as code: an import followed by a comment line and then code has its separating line.
+- A comment does not count as code: an import followed by a comment line and then code has its separating line (unless `considerComments` is set).
 
-Top-level `require()` calls are not import statements and are not checked.
+A block of top-level `require()` calls is checked the same way, as in `import/newline-after-import`. A `require()` inside a function, block, object or decorator runs later and is not an import.
 
 ### ❌ Incorrect
 
@@ -39,10 +39,38 @@ const b = a();
 ## Options
 
 ```json
-[]
+[
+  {
+    "type": "object",
+    "properties": {
+      "count": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "Empty lines required after the last import. Default 1."
+      },
+      "exactCount": {
+        "type": "boolean",
+        "description": "Require exactly `count` empty lines, not at least."
+      },
+      "considerComments": {
+        "type": "boolean",
+        "description": "Measure to a comment that follows the imports, not only to the next statement."
+      }
+    },
+    "additionalProperties": false
+  }
+]
 ```
 
-No options.
+### eslint-plugin-import options
+
+Ported from `import/newline-after-import`, so its options mean the same:
+
+- `count` (default 1): blank lines required after the last import, or the last top-level `require()`, that is not followed by another.
+- `exactCount`: exactly `count`, not at least. Too many blank lines is reported without a fix.
+- `considerComments`: measure to a comment that follows the import.
+
+A decorated class is measured to its first decorator. A namespace alias (`import A = NS.B`) loads no module and is not an import.
 
 ## When Not To Use It
 

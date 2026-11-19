@@ -8,9 +8,14 @@
 // calls are not imports. `allowEmpty: true` accepts an import with no chunk
 // name comment. `webpackMode: "eager"` puts the module in the parent chunk,
 // so there is no chunk to name: silent.
+// webpack reads a magic comment as an object-literal body; one it cannot
+// read (`webpackChunkName: "a" ;`) is dropped with its chunk name, and a
+// documented option with a value of the wrong type (`webpackMode: "fast"`)
+// is ignored with a warning. Both are reported on every checked call,
+// whatever `allowEmpty` and the format say.
 module dynamic_import_chunkname {
   type Callee = ImportExpr | CustomFn | OtherFn
-  type Comment = NoComment | ValidName | Placeholder | BadName | Eager
+  type Comment = NoComment | ValidName | Placeholder | BadName | Eager | Unreadable | BadOption
   type Format = DefaultFormat | CustomFormat
 
   // Does the chunk name in comment c match the format?
@@ -21,7 +26,8 @@ module dynamic_import_chunkname {
   pure def reports(cl: Callee, c: Comment, ae: bool, fns: bool, f: Format): bool =
     val checked = cl == ImportExpr or (cl == CustomFn and fns)
     checked and (
-      if (c == NoComment) not(ae)
+      if (Set(Unreadable, BadOption).contains(c)) true
+      else if (c == NoComment) not(ae)
       else if (c == Eager) false
       else not(nameOk(c, f)))
 
@@ -34,7 +40,7 @@ module dynamic_import_chunkname {
 
   action step = {
     nondet cl = Set(ImportExpr, CustomFn, OtherFn).oneOf()
-    nondet c = Set(NoComment, ValidName, Placeholder, BadName, Eager).oneOf()
+    nondet c = Set(NoComment, ValidName, Placeholder, BadName, Eager, Unreadable, BadOption).oneOf()
     nondet ae = Set(true, false).oneOf()
     nondet fns = Set(true, false).oneOf()
     nondet f = Set(DefaultFormat, CustomFormat).oneOf()

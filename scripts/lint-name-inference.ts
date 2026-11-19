@@ -330,6 +330,12 @@ const REGISTERED: RegistryEntry[] = [
 
   // --- The spelling IS the specification. Not a heuristic. ---
   {
+    file: 'eslint-plugin-import-next/src/utils/order-upstream.ts',
+    direction: 'report',
+    reason:
+      'The tested string is an import SOURCE value (`import x from "../a"`), not an identifier: `..`, `../` and `./` are relative-specifier syntax by the Node resolution grammar, and a bare `\\w` or `@scope/` start is a package name by the same grammar. Ported from eslint-plugin-import src/core/importType.js, whose test suite this file is graded against.',
+  },
+  {
     file: 'eslint-plugin-lambda-security/src/rules/no-exposed-debug-endpoints/index.ts',
     direction: 'report',
     reason:

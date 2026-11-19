@@ -140,9 +140,9 @@ describe('consistent-type-specifier-style — Layer 2 (string import names)', ()
 // default (parser-services rule) — Layer 2
 // ---------------------------------------------------------------------------
 describe('default rule — Layer 2 (mock parser services)', () => {
-  it('returns no listeners when parser services are unavailable', () => {
+  it('reads the module by parsing it when parser services are unavailable', () => {
     const { listeners, reports } = createWithMockContext(defaultRule);
-    expect(Object.keys(listeners)).toEqual([]);
+    expect(Object.keys(listeners)).toEqual(['ImportDeclaration']);
     expect(reports).toEqual([]);
   });
 
@@ -689,7 +689,7 @@ ruleTester.run('export (coverage)', exportRule, {
     {
       name: 'duplicate string-literal export name',
       code: `const foo = 1; const bar = 2; export { foo as "dup" }; export { bar as "dup" };`,
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
   ],
 });

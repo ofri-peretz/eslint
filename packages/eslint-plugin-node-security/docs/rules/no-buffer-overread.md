@@ -3,7 +3,7 @@ title: no-buffer-overread
 description: Detects buffer access beyond bounds
 tags: ['security', 'node']
 category: security
-severity: medium
+severity: high
 cwe: CWE-126
 autofix: false
 ---
@@ -15,7 +15,7 @@ autofix: false
 Detects buffer access beyond bounds
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**CWE:** [CWE-126](https://cwe.mitre.org/data/definitions/126.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects buffer access beyond bounds. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security).

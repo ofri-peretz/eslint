@@ -25,9 +25,74 @@ export interface Options {
   allowClassExpression?: boolean;
   /** Allow anonymous function expressions */
   allowFunctionExpression?: boolean;
+  /** eslint-plugin-import: allow `export default []`. */
+  allowArray?: boolean;
+  /** eslint-plugin-import's name for `allowClassExpression`. */
+  allowAnonymousClass?: boolean;
+  /** eslint-plugin-import's name for `allowFunctionExpression`. */
+  allowAnonymousFunction?: boolean;
+  /** eslint-plugin-import: allow `export default foo()` (its default). */
+  allowCallExpression?: boolean;
+  /** eslint-plugin-import: allow `export default new Foo()`. */
+  allowNew?: boolean;
+  /** eslint-plugin-import: allow a literal or template literal. */
+  allowLiteral?: boolean;
+  /** eslint-plugin-import: allow `export default {}`. */
+  allowObject?: boolean;
 }
 
 type RuleOptions = [Options?];
+
+/** The value kinds only eslint-plugin-import reports, by the option for each. */
+type ValueKindOption =
+  | 'allowArray'
+  | 'allowCallExpression'
+  | 'allowNew'
+  | 'allowLiteral'
+  | 'allowObject';
+const VALUE_KIND_OPTION: Record<string, ValueKindOption> = {
+  ArrayExpression: 'allowArray',
+  CallExpression: 'allowCallExpression',
+  NewExpression: 'allowNew',
+  Literal: 'allowLiteral',
+  TemplateLiteral: 'allowLiteral',
+  ObjectExpression: 'allowObject',
+};
+
+/**
+ * Options only eslint-plugin-import has. One of them means the config is
+ * written its way, and is read its way: every value kind it reports by
+ * default (arrays, literals, objects, `new`) is reported unless allowed.
+ * Without one, this rule's own reading: only functions and classes.
+ */
+const UPSTREAM_ONLY = new Set([
+  'allowArray',
+  'allowAnonymousClass',
+  'allowAnonymousFunction',
+  'allowCallExpression',
+  'allowNew',
+  'allowLiteral',
+  'allowObject',
+]);
+const VALUE_KINDS_UPSTREAM: Record<ValueKindOption, boolean> = {
+  allowArray: false,
+  allowCallExpression: true,
+  allowNew: false,
+  allowLiteral: false,
+  allowObject: false,
+};
+const VALUE_KINDS_OWN: Record<ValueKindOption, boolean> = {
+  allowArray: true,
+  allowCallExpression: true,
+  allowNew: true,
+  allowLiteral: true,
+  allowObject: true,
+};
+
+const UPSTREAM_SWITCH = (description: string) => ({
+  type: 'boolean' as const,
+  description: `eslint-plugin-import: ${description}`,
+});
 
 export const noAnonymousDefaultExport = createRule<RuleOptions, MessageIds>({
   name: 'no-anonymous-default-export',
@@ -98,6 +163,19 @@ export const noAnonymousDefaultExport = createRule<RuleOptions, MessageIds>({
             default: false,
             description: 'Allow anonymous function expression default exports.',
           },
+          allowArray: UPSTREAM_SWITCH('allow an array.'),
+          allowAnonymousClass: UPSTREAM_SWITCH(
+            'allow an anonymous class (`allowClassExpression`).',
+          ),
+          allowAnonymousFunction: UPSTREAM_SWITCH(
+            'allow an anonymous function (`allowFunctionExpression`).',
+          ),
+          allowCallExpression: UPSTREAM_SWITCH(
+            'allow a function call (default `true`).',
+          ),
+          allowNew: UPSTREAM_SWITCH('allow a `new` expression.'),
+          allowLiteral: UPSTREAM_SWITCH('allow a literal or template literal.'),
+          allowObject: UPSTREAM_SWITCH('allow an object expression.'),
         },
         additionalProperties: false,
       },
@@ -115,6 +193,7 @@ export const noAnonymousDefaultExport = createRule<RuleOptions, MessageIds>({
     let allowArrowFunction: boolean;
     let allowClassExpression: boolean;
     let allowFunctionExpression: boolean;
+    let valueKinds: Record<ValueKindOption, boolean>;
 
     /**
      * The exported function or class, through TS wrappers that do not change
@@ -153,7 +232,9 @@ export const noAnonymousDefaultExport = createRule<RuleOptions, MessageIds>({
         case 'ClassDeclaration':
           return !value.id && !allowClassExpression;
         default:
-          return false;
+          // Arrays, literals, objects, `new` and calls: reported only under
+          // eslint-plugin-import's reading, and only when not allowed.
+          return valueKinds[VALUE_KIND_OPTION[value.type]] === false;
       }
     }
 
@@ -181,11 +262,23 @@ export const noAnonymousDefaultExport = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options] = context.options;
-        ({
-          allowArrowFunction = false,
-          allowClassExpression = false,
-          allowFunctionExpression = false,
-        } = options || {});
+        const o = options || {};
+        const upstream = Object.keys(o).some((key) => UPSTREAM_ONLY.has(key));
+        const merged = {
+          ...(upstream ? VALUE_KINDS_UPSTREAM : VALUE_KINDS_OWN),
+          allowArrowFunction: false,
+          allowClassExpression: false,
+          allowFunctionExpression: false,
+          ...o,
+        };
+        ({ allowArrowFunction } = merged);
+        allowClassExpression = Boolean(
+          merged.allowAnonymousClass || merged.allowClassExpression,
+        );
+        allowFunctionExpression = Boolean(
+          merged.allowAnonymousFunction || merged.allowFunctionExpression,
+        );
+        valueKinds = merged;
       },
       ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration) {
         if (isAnonymous(node)) {

@@ -6,6 +6,10 @@
 // not resolve), the package.json `imports` map (`#util`) and tsconfig
 // `paths` aliases (`@/dep`).
 //
+// A value import of a `@types/*` package is reported too: it holds
+// declarations only, which Node cannot load and TypeScript refuses to import
+// by that name (TS6137). `import type` from it is erased, and allowed.
+//
 // Not reported:
 //   - Node builtins, bare or `node:`;
 //   - a specifier the resolver cannot judge: a bundler query suffix on a file
@@ -21,16 +25,18 @@ module no_unresolved {
   type Spec = RelExt | RelNoExt | RelJsMapped | RelDir | RelMissing | RelMissingJs
             | Pkg | PkgMissing | PkgExported | PkgNotExported | Scoped
             | Builtin | NodeBuiltin | HashImport | Alias | AliasMissing | QuerySuffix | Protocol
+            | TypesPkg
   type Opts = Default | IgnoreSome | AllowAll
 
-  pure def unresolved(p: Spec): bool =
+  pure def unresolved(f: Form, p: Spec): bool =
     Set(RelMissing, RelMissingJs, PkgMissing, PkgNotExported, AliasMissing).contains(p)
+      or (p == TypesPkg and f != TypeOnly)
 
   pure def ignored(p: Spec, o: Opts): bool =
     o == IgnoreSome and Set(PkgMissing, RelMissing).contains(p)
 
-  pure def reports(p: Spec, o: Opts): bool =
-    o != AllowAll and unresolved(p) and not(ignored(p, o))
+  pure def reports(f: Form, p: Spec, o: Opts): bool =
+    o != AllowAll and unresolved(f, p) and not(ignored(p, o))
 
   var form: Form
   var spec: Spec
@@ -41,9 +47,10 @@ module no_unresolved {
     nondet f = Set(Import, TypeOnly, SideEffect, ExportNamed, ExportAll, Dynamic, Require, ImportEquals).oneOf()
     nondet p = Set(RelExt, RelNoExt, RelJsMapped, RelDir, RelMissing, RelMissingJs,
                    Pkg, PkgMissing, PkgExported, PkgNotExported, Scoped,
-                   Builtin, NodeBuiltin, HashImport, Alias, AliasMissing, QuerySuffix, Protocol).oneOf()
+                   Builtin, NodeBuiltin, HashImport, Alias, AliasMissing, QuerySuffix, Protocol,
+                   TypesPkg).oneOf()
     nondet o = Set(Default, IgnoreSome, AllowAll).oneOf()
-    all { form' = f, spec' = p, opts' = o, verdict' = reports(p, o) }
+    all { form' = f, spec' = p, opts' = o, verdict' = reports(f, p, o) }
   }
 
   action init = step

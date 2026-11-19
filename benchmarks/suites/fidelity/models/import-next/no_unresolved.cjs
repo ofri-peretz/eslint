@@ -20,6 +20,7 @@ const SPEC = {
   AliasMissing: '@/missing',
   QuerySuffix: './style.css?inline',
   Protocol: 'virtual:routes',
+  TypesPkg: '@types/dep-a',
 };
 
 const FORM = {
@@ -44,8 +45,8 @@ const CJS = 'exports.a = 1;\n';
 
 module.exports = {
   rule: 'no-unresolved',
-  domain: 8 * 18 * 3,
-  traces: 4500,
+  domain: 8 * 19 * 3,
+  traces: 5000,
   key: keyOf('form', 'spec', 'opts'),
   config: (s) => OPTS[tag(s.opts)],
   files: () => ({
@@ -74,6 +75,11 @@ module.exports = {
       main: 'index.js',
     }),
     'node_modules/@scope/pkg/index.js': CJS,
+    'node_modules/@types/dep-a/package.json': pkg({
+      name: '@types/dep-a',
+      types: 'index.d.ts',
+    }),
+    'node_modules/@types/dep-a/index.d.ts': 'export declare const a: number;\n',
   }),
   code: (s) => src(importOf(FORM[tag(s.form)], SPEC[tag(s.spec)])),
 };

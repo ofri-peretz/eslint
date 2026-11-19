@@ -67,6 +67,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: README "Used by" rows still ship our plugins
+        if: github.event_name != 'pull_request'
+        env:
+          USED_BY_LIVE: "1"
+        run: npx vitest run --config scripts/__tests__/vitest.config.mts scripts/__tests__/readme-used-by.lock.test.ts
+
       - name: Run link checker
         id: linkcheck
         working-directory: apps/docs

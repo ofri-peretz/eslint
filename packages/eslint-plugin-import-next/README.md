@@ -92,9 +92,44 @@ npm install eslint-plugin-import-next --save-dev
 | `warnings`          | Matches eslint-plugin-import warnings preset     |
 
 ## 🔄 Parity with `eslint-plugin-import`
-| Rule      | Original Plugin                                                                                                                                                                                                    | Status       | Notes                    |
-| :-------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------- | :----------------------- |
-| All Rules | [`eslint-plugin-import`](https://www.npmjs.com/package/eslint-plugin-import) [![npm](https://img.shields.io/npm/v/eslint-plugin-import.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import) | ✅ Supported | Full drop-in replacement |
+
+**A drop-in replacement for `eslint-plugin-import`, measured.** Graded by `eslint-plugin-import`'s own test suite, `import-next` passes **2,035 of 2,135** (95.3%) of `eslint-plugin-import`@2.32.0's own test cases, and **all 45 of its tested rules are implemented**. [Measured 2026-11-19](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/results/ilb-import-parity/2026-11-19.json).
+
+- **Every graded option shape loads.** No graded case sets an option `import-next` rejects, so a config carried over from `eslint-plugin-import` loads, and the options mean what they meant there: `extensions: ["always"]`, `order`'s `newlines-between` and `pathGroups`, `no-restricted-paths`'s `zones`, `no-cycle`'s `commonjs` and `maxDepth: "∞"`, among others. Where an `eslint-plugin-import` default differs from this plugin's own, this plugin's default applies when the option is absent; each rule's docs say where. One option outside the graded cases is still rejected rather than accepted and ignored: `no-unused-modules`'s `unusedExports`, which is not implemented.
+- **Other modules are read without type information.** `named`, `namespace`, `default`, `no-deprecated`, `no-named-as-default`, `no-named-as-default-member` and `export` parse the imported module, as `eslint-plugin-import` does, when there is no TypeScript program; with one, they read it through TypeScript.
+- 71 invalid cases go unreported, 25 valid cases are reported, and 4 report a different number of times; none is an unimplemented rule. The largest groups: `no-useless-path-segments` (28), `no-commonjs` (11), `dynamic-import-chunkname` (9), `no-cycle` (8). Every failing case is listed, with what was expected and what was reported, in the measurement file.
+- 24 rules pass every graded case: `consistent-type-specifier-style`, `default`, `enforce-node-protocol-usage`, `first`, `named`, `newline-after-import`, `no-absolute-path`, `no-default-export`, `no-deprecated`, `no-duplicates`, `no-dynamic-require`, `no-empty-named-blocks`, `no-extraneous-dependencies`, `no-named-as-default`, `no-named-as-default-member`, `no-named-default`, `no-namespace`, `no-nodejs-modules`, `no-self-import`, `no-unassigned-import`, `no-unused-modules`, `no-webpack-loader-syntax`, `prefer-default-export`, `unambiguous`.
+- **How it is graded:** a valid case passes when the rule reports nothing, and an invalid case passes when it reports exactly the expected number of problems. Messages, positions and fixes are not compared. Only the cases `eslint-plugin-import` itself passes in the same harness are graded. That leaves out 682 of the 2,817 captured cases. Most are the 490 that need the `babel-eslint` parser and the 120 `no-unused-modules` cases, a rule `eslint-plugin-import` cannot load on ESLint 10.
+- To reproduce, run `npx tsx benchmarks/suites/ilb-competitor-parity/import-drop-in.mts --upstream <eslint-plugin-import v2.32.0 checkout>`.
+
+### Migrating from `eslint-plugin-import`
+
+Change the import line. The rest of the config stays as it is:
+
+```diff
+- import importPlugin from 'eslint-plugin-import';
++ import importPlugin from 'eslint-plugin-import-next';
+
+  export default [
+    importPlugin.flatConfigs.recommended,
+    importPlugin.flatConfigs.typescript,
+  ];
+```
+
+- `flatConfigs` has eslint-plugin-import 2.32.0's seven keys: `recommended`, `errors`, `warnings`, `react`, `react-native`, `electron` and `typescript`. Each has the same rule IDs (`import/…`), severities, `settings` and `languageOptions`, and registers this plugin as `import`, so `import/*` rule names, settings and `eslint-disable` comments keep working.
+- [`flat-configs.test.ts`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/src/flat-configs.test.ts) compares every key with the installed eslint-plugin-import 2.32.0. It lints a fixture through a real `ESLint` instance with each config and expects the same findings (rule, line, severity). It also checks the swap above. CI runs it on ESLint 10. The same comparison, run by hand on ESLint 9.39.5, matched on Node 20.19.0 and Node 24.
+- Registering the plugin yourself as well, `{ plugins: { import: importPlugin } }`, next to a flat config works. With eslint-plugin-import that combination throws `Cannot redefine plugin "import"`.
+- The eslintrc presets (`extends: ['plugin:import/recommended']`) are not provided. Use `flatConfigs`.
+
+### Migrating from 3.x
+
+4.0 changed three behaviours to match `eslint-plugin-import`. Each one can be undone per rule:
+
+| Rule | New in 4.0 | To keep the 3.x behaviour |
+| :--- | :--- | :--- |
+| `named`, `namespace`, `default`, `no-deprecated`, `no-named-as-default`, `no-named-as-default-member`, `export` | Without type information, the imported module is parsed: a missing name, a missing default, a deprecated import, a name clash through `export *`, or a module that does not parse is now reported. Only extensions the config parses are read (`.js`, `.mjs`, `.cjs`, plus `import/extensions` and `import/parsers`). | Lint with type information (`parserOptions.projectService`), which reads modules through TypeScript as before; or set `settings: { 'import/ignore': ['.'] }` to read no other module. |
+| `order` | eslint-plugin-import's defaults: no alphabetizing, no blank-line policy, one report per import out of place. `internalPatterns` and `newlinesBetween` are refused. | Rename the rule to `import-next/enforce-import-order`, which is unchanged (the `strict`, `typescript` and `import-style` presets already use it). |
+| `no-duplicates`, `export` | Every occurrence is reported, the first one included: three imports of one module are three reports. `no-duplicates` groups imports as `eslint-plugin-import` does (an inline `type` import goes with `import type`, a namespace import only with namespace imports). | Nothing to change in a config: the verdict per file is the same, only the count (and the inline-type grouping) differs. Baselines that count findings need refreshing. |
 
 ## 🧬 Deep dependency graphs
 
@@ -147,7 +182,7 @@ Detection parity is checked per shape before any timing is trusted, and every nu
 | Package | Version |
 | :--- | :--- |
 | ESLint | `^8.40.0 \|\| ^9.0.0 \|\| ^10.0.0` |
-| Node.js | `>=22.13.0` |
+| Node.js | `^20.19.0 \|\| ^22.13.0 \|\| >=24` (ESLint 10's own range) |
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) for the full matrix.
 
@@ -174,6 +209,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) fo
 | [dynamic-import-chunkname](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/dynamic-import-chunkname?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
 | [enforce-dependency-direction](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-dependency-direction?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
 | [enforce-import-order](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-import-order?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
+| [enforce-node-protocol-usage](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-node-protocol-usage?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
 | [enforce-team-boundaries](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-team-boundaries?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
 | [export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/export?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 | 💼 |  |  |  |  |
 | [exports-last](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/exports-last?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
@@ -195,7 +231,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) fo
 | [no-default-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-default-export?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
 | [no-deprecated](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-deprecated?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  | A09:2021 |  |  | 🟢 |  |  |  |  |  |
 | [no-duplicates](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-duplicates?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 | 💼 |  |  |  |  |
-| [no-dynamic-require](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-dynamic-require?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
+| [no-dynamic-require](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-dynamic-require?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) | CWE-829 |  |  |  | 🟢 |  |  |  |  |  |
 | [no-empty-named-blocks](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-empty-named-blocks?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  | ⚠️ |  |  |  |
 | [no-extraneous-dependencies](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-extraneous-dependencies?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  | ⚠️ |  |  |  |
 | [no-full-package-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-full-package-import?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
@@ -217,6 +253,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) fo
 | [no-unresolved](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-unresolved?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  | A03:2021 |  |  | 🟢 | 💼 |  |  |  |  |
 | [no-unused-modules](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-unused-modules?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
 | [no-useless-path-segments](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-useless-path-segments?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
+| [no-webpack-loader-syntax](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-webpack-loader-syntax?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
 | [order](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/order?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
 | [prefer-default-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-default-export?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
 | [prefer-direct-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-direct-import?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |

@@ -170,9 +170,12 @@ describe('named — Layer 2 (mock parser services)', () => {
     esTreeNodeToTSNodeMap: { get: (n: unknown) => n },
   });
 
-  it('returns no listeners when parser services are unavailable', () => {
+  it('reads the module by parsing it when parser services are unavailable', () => {
     const { listeners } = createWithMockContext(named);
-    expect(Object.keys(listeners)).toEqual([]);
+    expect(Object.keys(listeners)).toEqual([
+      'ImportDeclaration',
+      'ExportNamedDeclaration',
+    ]);
   });
 
   it('skips specifiers of type-only imports', () => {
@@ -263,9 +266,14 @@ describe('namespace — Layer 2 (mock parser services)', () => {
     declarations: [{ kind: ts.SyntaxKind.NamespaceImport }],
   };
 
-  it('returns no listeners when parser services are unavailable', () => {
+  it('reads the module by parsing it when parser services are unavailable', () => {
     const { listeners } = createWithMockContext(namespace);
-    expect(Object.keys(listeners)).toEqual([]);
+    expect(Object.keys(listeners)).toEqual([
+      'Program',
+      'MemberExpression',
+      'VariableDeclarator',
+      'JSXMemberExpression',
+    ]);
   });
 
   it('skips member expressions with non-identifier objects', () => {

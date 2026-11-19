@@ -86,13 +86,33 @@ lint errors" produces a parameterized query instead of a plausible-looking escap
 helper. Machine-readable equivalents ship via the
 [SARIF formatter](./packages/eslint-formatter-sarif) for GitHub code scanning.
 
+## Used by
+
+Public repositories that ship these plugins today. Each link opens the file where they do.
+Listed: repositories with 5 or more stars, checked 2026-11-18.
+
+| Repository                                                                                                                  | Plugins                         |
+| --------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| [EvgenyOrekhov/eslint-config-hardcore](https://github.com/EvgenyOrekhov/eslint-config-hardcore/blob/master/package.json)    | secure-coding, node-security    |
+| [Platform-Collective/platform](https://github.com/Platform-Collective/platform/blob/develop/common/scripts/package.json)    | secure-coding                   |
+| [stamhoofd/stamhoofd](https://github.com/stamhoofd/stamhoofd/blob/main/shared/eslint/package.json)                          | secure-coding, node-security    |
+| [manufosela/karajan-code](https://github.com/manufosela/karajan-code/blob/main/eslint.config.js)                            | node-security                   |
+| [laststance/eslint-config-ts-prefixer](https://github.com/laststance/eslint-config-ts-prefixer/blob/main/eslint.config.mjs) | browser-security                |
+| [IGNF/cartes.gouv.fr-entree-carto](https://github.com/IGNF/cartes.gouv.fr-entree-carto/blob/main/eslint.config.js)          | browser-security, secure-coding |
+| [TraceX-dev/TraceX](https://github.com/TraceX-dev/TraceX/blob/develop/common/scripts/package.json)                          | secure-coding                   |
+| [alexispurslane/vessel](https://github.com/alexispurslane/vessel/blob/main/package.json)                                    | secure-coding                   |
+| [laststance/gitbox](https://github.com/laststance/gitbox/blob/main/package.json)                                            | browser-security                |
+| [belyas/pubsub-mfe](https://github.com/belyas/pubsub-mfe/blob/main/eslint.config.js)                                        | browser-security                |
+
+Using one of these plugins in a public repository and want it listed? Open an issue.
+
 ---
 
 ## The ecosystem
 
 <!-- AUTO-GENERATED:NUMBERS:START - Do not edit manually -->
 
-**31 published plugins · 496 rules** — 22 security plugins (291 rules), 7 code-quality plugins (107 rules), 2 React plugins (98 rules). <sub>Counts generated 2026-11-12 from the source tree — never hand-typed.</sub>
+**31 published plugins · 499 rules** — 22 security plugins (291 rules), 7 code-quality plugins (110 rules), 2 React plugins (98 rules). <sub>Counts generated 2026-11-18 from the source tree — never hand-typed.</sub>
 
 <!-- AUTO-GENERATED:NUMBERS:END -->
 
@@ -139,11 +159,11 @@ that match your stack; ignore the other twenty-eight.
 
 ### 🧭 Architecture
 
-<sub>1 plugin · 55 rules</sub>
+<sub>1 plugin · 58 rules</sub>
 
-| Package                                                                                | Rules | What it catches                                                                             | Docs                                                                                                                               | Downloads                                                                                      |
-| :------------------------------------------------------------------------------------- | ----: | :------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |    55 | Drop-in replacement for eslint-plugin-import, 3.1x faster end-to-end, zero-config migration | [docs](https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-import-next?style=flat-square&label=) |
+| Package                                                                                | Rules | What it catches                                                                                                                                      | Docs                                                                                                                               | Downloads                                                                                      |
+| :------------------------------------------------------------------------------------- | ----: | :--------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |    58 | A drop-in replacement for eslint-plugin-import that passes 95% of its own test cases, covering imports and module boundaries, 3.1x faster end-to-end | [docs](https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-import-next?style=flat-square&label=) |
 
 ### ✨ Code quality
 
@@ -162,10 +182,10 @@ that match your stack; ignore the other twenty-eight.
 
 <sub>2 plugins · 98 rules</sub>
 
-| Package                                                                                      | Rules | What it catches                                                                                                       | Docs                                                                                                                                  | Downloads                                                                                         |
-| :------------------------------------------------------------------------------------------- | ----: | :-------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------ |
-| [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) |    61 | Hooks, prop-types, JSX correctness, render performance, and class-to-hooks migration rules for modern React codebases | [docs](https://eslint.interlace.tools/docs/quality/plugin-react-features?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-react-features?style=flat-square&label=) |
-| [`eslint-plugin-react-a11y`](https://www.npmjs.com/package/eslint-plugin-react-a11y)         |    37 | WCAG 2.1 rules for ARIA, alt text, keyboard interaction, and focus management, with auto-fixes                        | [docs](https://eslint.interlace.tools/docs/quality/plugin-react-a11y?utm_source=github&utm_medium=referral&utm_campaign=monorepo)     | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-react-a11y?style=flat-square&label=)     |
+| Package                                                                                      | Rules | What it catches                                                                                          | Docs                                                                                                                                  | Downloads                                                                                         |
+| :------------------------------------------------------------------------------------------- | ----: | :------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------ |
+| [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) |    61 | Prop-types, JSX correctness, render performance, and class-to-hooks migration for modern React codebases | [docs](https://eslint.interlace.tools/docs/quality/plugin-react-features?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-react-features?style=flat-square&label=) |
+| [`eslint-plugin-react-a11y`](https://www.npmjs.com/package/eslint-plugin-react-a11y)         |    37 | WCAG 2.1 rules for ARIA, alt text, keyboard interaction, and focus management, with auto-fixes           | [docs](https://eslint.interlace.tools/docs/quality/plugin-react-a11y?utm_source=github&utm_medium=referral&utm_campaign=monorepo)     | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-react-a11y?style=flat-square&label=)     |
 
 <!-- AUTO-GENERATED:PACKAGE_TABLE:END -->
 

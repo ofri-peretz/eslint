@@ -85,6 +85,8 @@ vi.mock('@interlace/eslint-devkit', async () => ({
   hasOnlyTypeImports: mocks.hasOnlyTypeImports,
   computeSCCsFromFile: mocks.computeSCCsFromFile,
   findShortestCyclePath: mocks.findShortestCyclePath,
+  // Nothing is on disk: the linted file's on-disk edges are empty.
+  getFileImports: () => [],
 }));
 
 import { noCycle, clearCircularDependencyCache } from '../rules/no-cycle';

@@ -16,6 +16,8 @@ const EXP = {
   ReexportDefault: (i) => [`export { default } from './m${i}';`],
   ExportAll: (i) => [`export * from './all${i}';`],
   TypeAlias: (i) => [`export type T${i} = string;`],
+  Interface: (i) => [`export interface I${i} { a: string }`],
+  TypeSpecifier: (i) => [`type U${i} = string;`, `export { type U${i} };`],
 };
 const DEFAULTISH = new Set(['AsDefault', 'Default', 'ReexportDefault']);
 const OPTS = {
@@ -28,8 +30,8 @@ const OPTS = {
 
 module.exports = {
   rule: 'prefer-default-export',
-  domain: 12 * 7 * 6,
-  traces: 4000,
+  domain: 14 * 7 * 6,
+  traces: 6000,
   key: keyOf('e1', 'e2', 'opts'),
   config: (s) => OPTS[tag(s.opts)],
   code: (s) => {

@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-express-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.0.3
+
+### Patch Changes
+
+- **🐛 Fix** — `no-insecure-cookie-options` no longer reports, or crashes the lint run on, a `.cookie()` call with fewer than two arguments, such as a `secrets.cookie()` getter. Express's `res.cookie(name, value[, options])` always takes a name and a value.
+
 ## 4.0.2
 
 ### Patch Changes

@@ -5,17 +5,35 @@
  */
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, resolveModule } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+import { resolveWithSettings } from '../utils/settings-resolver';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { builtinModules } from 'node:module';
 import path from 'node:path';
 
 type MessageIds = 'missingExtension' | 'unexpectedExtension';
-type Options = [
-  {
-    pattern?: Record<string, 'always' | 'never'>;
-    default?: 'always' | 'never';
-  },
-];
+
+/** eslint-plugin-import's per-extension and default setting. */
+type UpstreamMode = 'always' | 'ignorePackages' | 'never';
+
+/**
+ * The object option. `pattern` and `default` are this rule's own shape; the
+ * rest is eslint-plugin-import's, including its older form, a bare
+ * `{ js: 'never' }` map of extensions.
+ */
+type ObjectOption = {
+  pattern?: Record<string, 'always' | 'never'>;
+  default?: 'always' | 'never';
+  ignorePackages?: boolean;
+  checkTypeImports?: boolean;
+  pathGroupOverrides?: {
+    pattern: string;
+    patternOptions?: Record<string, unknown>;
+    action: 'enforce' | 'ignore';
+  }[];
+  [extension: string]: unknown;
+};
+type Options = [(UpstreamMode | ObjectOption)?, ObjectOption?];
 
 type RuleOptions = Options;
 
@@ -53,6 +71,103 @@ const KNOWN_EXTENSIONS = new Set([
   'node',
 ]);
 
+/** One JSON schema node, as ESLint's rule metadata types it. */
+type JSONSchema4 = Exclude<
+  NonNullable<TSESLint.RuleMetaData<string, unknown[]>['schema']>,
+  readonly unknown[]
+>;
+
+const MODE: JSONSchema4 = {
+  type: 'string',
+  enum: ['always', 'ignorePackages', 'never'],
+};
+const OBJECT_OPTION: JSONSchema4 = {
+  type: 'object',
+  properties: {
+    pattern: { type: 'object', additionalProperties: MODE },
+    default: { type: 'string', enum: ['always', 'never'] },
+    ignorePackages: { type: 'boolean' },
+    checkTypeImports: { type: 'boolean' },
+    pathGroupOverrides: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          pattern: { type: 'string' },
+          patternOptions: { type: 'object' },
+          action: { type: 'string', enum: ['enforce', 'ignore'] },
+        },
+        additionalProperties: false,
+        required: ['pattern', 'action'],
+      },
+    },
+  },
+  // eslint-plugin-import's older form: a bare `{ js: 'never' }` map.
+  additionalProperties: MODE,
+};
+
+/** eslint-plugin-import's reading of its options (`buildProperties`). */
+type UpstreamProps = {
+  defaultConfig: UpstreamMode;
+  pattern: Record<string, UpstreamMode>;
+  ignorePackages: boolean;
+  checkTypeImports: boolean;
+  pathGroupOverrides: NonNullable<ObjectOption['pathGroupOverrides']>;
+};
+
+/**
+ * Are these options written the way eslint-plugin-import writes them? A
+ * string first, or an object key this rule's own shape does not have.
+ * `[{ pattern }]` alone means the same in both, and keeps this rule's reading.
+ */
+function isUpstreamForm(options: readonly unknown[]): boolean {
+  return options.some(
+    (option) =>
+      typeof option === 'string' ||
+      Object.keys(option as object).some(
+        (key) => key !== 'pattern' && key !== 'default',
+      ),
+  );
+}
+
+/** eslint-plugin-import's `buildProperties`, line for line. */
+function upstreamProps(options: readonly unknown[]): UpstreamProps {
+  const result: UpstreamProps = {
+    defaultConfig: 'never',
+    pattern: {},
+    ignorePackages: false,
+    checkTypeImports: false,
+    pathGroupOverrides: [],
+  };
+  for (const option of options) {
+    if (typeof option === 'string') {
+      result.defaultConfig = option as UpstreamMode;
+      continue;
+    }
+    const o = option as ObjectOption;
+    if (
+      o.pattern === undefined &&
+      o.ignorePackages === undefined &&
+      o.checkTypeImports === undefined
+    ) {
+      Object.assign(result.pattern, o);
+      continue;
+    }
+    Object.assign(result.pattern, o.pattern);
+    result.ignorePackages = o.ignorePackages ?? result.ignorePackages;
+    result.checkTypeImports = o.checkTypeImports ?? result.checkTypeImports;
+    result.pathGroupOverrides = o.pathGroupOverrides ?? [];
+  }
+  if (result.defaultConfig === 'ignorePackages') {
+    result.defaultConfig = 'always';
+    result.ignorePackages = true;
+  }
+  return result;
+}
+
+/** `@scope/name` — eslint-plugin-import's `isScoped`. */
+const SCOPED = /^@[^/]+\/?[^/]+/;
+
 export const extensions = createRule<Options, MessageIds>({
   name: 'extensions',
   meta: {
@@ -86,19 +201,21 @@ export const extensions = createRule<Options, MessageIds>({
           'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/extensions.md',
       }),
     },
-    schema: [
-      {
-        type: 'object',
-        properties: {
-          pattern: {
-            type: 'object',
-            additionalProperties: { type: 'string', enum: ['always', 'never'] },
-          },
-          default: { type: 'string', enum: ['always', 'never'] },
-        },
-        additionalProperties: false,
-      },
-    ],
+    /*
+     * This rule's own `[{ pattern, default }]`, and every shape
+     * eslint-plugin-import accepts: `['always']`, `['never', { js: 'always' }]`,
+     * `[{ json: 'always' }]`, `['always', { ignorePackages, checkTypeImports,
+     * pathGroupOverrides, pattern }]`. A config carried over from
+     * `import/extensions` loads, and is linted with that plugin's semantics
+     * (see `upstreamProps`).
+     */
+    schema: {
+      anyOf: [
+        { type: 'array', items: [MODE], additionalItems: false },
+        { type: 'array', items: [MODE, OBJECT_OPTION], additionalItems: false },
+        { type: 'array', items: [OBJECT_OPTION], additionalItems: false },
+      ],
+    },
   },
   defaultOptions: [
     {
@@ -142,6 +259,92 @@ export const extensions = createRule<Options, MessageIds>({
     let pattern: Record<string, 'always' | 'never'>;
     let userPattern: Record<string, 'always' | 'never'>;
     let userSetDefault: boolean;
+    /** Set when the options are written eslint-plugin-import's way. */
+    let upstream: UpstreamProps | null;
+
+    /**
+     * eslint-plugin-import's `checkFileExtension`, for options written its way.
+     *
+     * Its semantics differ from this rule's own in three places, and a config
+     * carried over from it expects its own: it checks package subpaths
+     * (`pkg/file.js`), not only relative specifiers; it judges a specifier that
+     * does not resolve by the extension written; and `always` asks for the
+     * extension on a directory import (`.` → `./index.js`) too.
+     */
+    function checkUpstream(
+      props: UpstreamProps,
+      source: TSESTree.StringLiteral,
+      node: TSESTree.Node,
+    ): void {
+      const written = source.value;
+      const override = props.pathGroupOverrides.find((o) =>
+        path.matchesGlob(written, o.pattern),
+      )?.action;
+      if (override === 'ignore') return;
+      const importPath = written.replace(/\?(.*)$/, '');
+      if (!override && (isBuiltIn(importPath) || isRootPackage(importPath)))
+        return;
+      const resolved = resolveWithSettings(
+        importPath,
+        context.filename,
+        context.settings,
+      );
+      const extension = path.extname(resolved ?? importPath).slice(1);
+      const modifier = props.pattern[extension] ?? props.defaultConfig;
+      if (!extension || !importPath.endsWith(`.${extension}`)) {
+        if (
+          !props.checkTypeImports &&
+          ((node as { importKind?: string }).importKind === 'type' ||
+            (node as { exportKind?: string }).exportKind === 'type')
+        )
+          return;
+        // A package name that resolves into `node_modules`, or does not
+        // resolve at all (eslint-plugin-import's `isExternalModule`).
+        const isPackage =
+          SCOPED.test(importPath) ||
+          (/^\w/.test(importPath) &&
+            (resolved === null ||
+              resolved.includes(`${path.sep}node_modules${path.sep}`)));
+        if (
+          modifier === 'always' &&
+          !(props.ignorePackages && !override && isPackage)
+        ) {
+          context.report({ node: source, messageId: 'missingExtension' });
+        }
+      } else if (
+        modifier === 'never' &&
+        resolveWithSettings(
+          importPath.slice(0, -(extension.length + 1)),
+          context.filename,
+          context.settings,
+        ) === resolved
+      ) {
+        context.report({ node: source, messageId: 'unexpectedExtension' });
+      }
+    }
+
+    /** A Node builtin, or a name in the `import/core-modules` setting. */
+    function isBuiltIn(name: string): boolean {
+      const base = SCOPED.test(name)
+        ? name.split('/').slice(0, 2).join('/')
+        : name.split('/')[0];
+      const core = (context.settings['import/core-modules'] ?? []) as string[];
+      return (
+        name.startsWith('node:') ||
+        builtinModules.includes(base) ||
+        core.includes(base)
+      );
+    }
+
+    /**
+     * A package root, `pkg` or `@scope/pkg`: its name may itself end in `.js`
+     * (`decimal.js`), so eslint-plugin-import never checks one.
+     */
+    function isRootPackage(name: string): boolean {
+      if (name === '.' || name === '..') return false;
+      const slashes = name.split('/').length - 1;
+      return slashes === 0 || (slashes === 1 && SCOPED.test(name));
+    }
 
     /**
      * Would removing the extension change, or break, what the specifier
@@ -176,11 +379,18 @@ export const extensions = createRule<Options, MessageIds>({
      *     user this rule is for.
      */
     function extensionIsLoadBearing(specifier: string, ext: string): boolean {
-      const withExtension = resolveModule(specifier, context.filename);
+      const withExtension = resolveWithSettings(
+        specifier,
+        context.filename,
+        context.settings,
+      );
       if (!withExtension) return true;
       if (!withExtension.endsWith(`.${ext}`)) return true;
       const stripped = specifier.slice(0, -(ext.length + 1));
-      return resolveModule(stripped, context.filename) !== withExtension;
+      return (
+        resolveWithSettings(stripped, context.filename, context.settings) !==
+        withExtension
+      );
     }
 
     /**
@@ -190,8 +400,16 @@ export const extensions = createRule<Options, MessageIds>({
      * other for the same string, which left a file less consistent after `--fix` than
      * before it.
      */
-    function checkSource(source: TSESTree.StringLiteral | null): void {
+    function checkSource(
+      source: TSESTree.StringLiteral | null,
+      node: TSESTree.Node,
+    ): void {
       if (!source) return; // `export { foo };` re-exports nothing
+      if (upstream) {
+        // An empty specifier is half-typed code in an editor.
+        if (source.value) checkUpstream(upstream, source, node);
+        return;
+      }
       const value = source.value;
       if (!value.startsWith('.')) return; // Only check relative imports
 
@@ -251,14 +469,21 @@ export const extensions = createRule<Options, MessageIds>({
         // A specifier that does not resolve, or that only resolves as a
         // directory (`./lib` -> lib/index.ts, where `./lib.ts` names nothing),
         // proves nothing and is not reported.
-        const resolved = resolveModule(value, context.filename);
+        const resolved = resolveWithSettings(
+          value,
+          context.filename,
+          context.settings,
+        );
         if (!resolved) return;
         const resolvedExt = path.extname(resolved).slice(1);
         if (
           resolvedExt &&
           policyFor(resolvedExt) === 'always' &&
-          resolveModule(`${value}.${resolvedExt}`, context.filename) ===
-            resolved
+          resolveWithSettings(
+            `${value}.${resolvedExt}`,
+            context.filename,
+            context.settings,
+          ) === resolved
         ) {
           context.report({
             node: source,
@@ -284,9 +509,9 @@ export const extensions = createRule<Options, MessageIds>({
       );
     }
 
-    function checkLiteral(node: TSESTree.Node): void {
+    function checkLiteral(node: TSESTree.Node, parent: TSESTree.Node): void {
       if (node.type === 'Literal' && typeof node.value === 'string') {
-        checkSource(node as TSESTree.StringLiteral);
+        checkSource(node as TSESTree.StringLiteral, parent);
       }
     }
 
@@ -297,7 +522,7 @@ export const extensions = createRule<Options, MessageIds>({
         // both keys, so a fallback here would be a branch no input can reach — a
         // permanent hole in a package at a 100% coverage threshold.
         ({ default: defaultBehavior, pattern } = options as Required<
-          Options[0]
+          Pick<ObjectOption, 'default' | 'pattern'>
         >);
 
         /**
@@ -312,22 +537,25 @@ export const extensions = createRule<Options, MessageIds>({
          * documentation asks for, and which nobody reaching for "always" would
          * guess.
          */
-        const [userOptions = {}] = context.options;
+        const userOptions = (context.options[0] ?? {}) as ObjectOption;
         userPattern = userOptions.pattern ?? {};
         // A comparison, not a fallback: `defaultBehavior` above already carries the
         // user's `default` when they set one (`applyDefault` merges that key too).
         // What is needed here is only whether they set it, to place it correctly in
         // the precedence ladder below.
         userSetDefault = userOptions.default !== undefined;
+        upstream = isUpstreamForm(context.options)
+          ? upstreamProps(context.options)
+          : null;
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        checkSource(node.source);
+        checkSource(node.source, node);
       },
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
-        checkSource(node.source);
+        checkSource(node.source, node);
       },
       ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
-        checkSource(node.source);
+        checkSource(node.source, node);
       },
       // `require('./x')` and TS `import x = require('./x')` load a module by
       // the same specifier an import does.
@@ -337,12 +565,12 @@ export const extensions = createRule<Options, MessageIds>({
           node.callee.name === 'require' &&
           node.arguments.length === 1
         ) {
-          checkLiteral(node.arguments[0]);
+          checkLiteral(node.arguments[0], node);
         }
       },
       TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
         if (node.moduleReference.type === 'TSExternalModuleReference') {
-          checkLiteral(node.moduleReference.expression);
+          checkLiteral(node.moduleReference.expression, node);
         }
       },
       ImportExpression(node: TSESTree.ImportExpression) {
@@ -352,7 +580,7 @@ export const extensions = createRule<Options, MessageIds>({
         const source = node.source;
         if (source.type !== 'Literal' || typeof source.value !== 'string')
           return;
-        checkSource(source as TSESTree.StringLiteral);
+        checkSource(source as TSESTree.StringLiteral, node);
       },
     };
   },

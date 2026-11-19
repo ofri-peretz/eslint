@@ -15,7 +15,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 An import that binds nothing is loaded only for its side effects, which a reader cannot see. Reported: `import 'm'`, `import {} from 'm'`, and a `require('m')` whose result is discarded (an expression statement, or a non-final item of a sequence).
 
-Not reported: any form that binds or re-exports a name (default, namespace, named, type-only, `export … from`, a `require` whose result is used, `import x = require()`), and specifiers listed in `allowModules` (exact match).
+Not reported: any form that binds or re-exports a name (default, namespace, named, type-only, `export … from`, a `require` whose result is used, `import x = require()`), specifiers listed in `allowModules` (exact match), and specifiers matched by a glob in `allow`.
 
 ### ❌ Incorrect
 
@@ -34,6 +34,19 @@ const register = require('./register');
 import './polyfill';
 ```
 
+### eslint-plugin-import options
+
+A config carried over from `import/no-unassigned-import` loads, and its
+options mean what they meant there:
+
+- `allow`: globs of modules that may be imported without assignment. A
+  package specifier is matched as written (`'foo/**'`, `'*.css'`); a relative
+  or absolute one as the absolute path it names, against the glob as written
+  (`'**/*.css'`) or relative to the working directory (`'src/styles/**'`).
+- `devDependencies`, `optionalDependencies`, `peerDependencies`: in
+  eslint-plugin-import's schema but never read there; accepted here, with no
+  effect, so the config loads.
+
 ## Options
 
 ```json
@@ -47,6 +60,34 @@ import './polyfill';
           "type": "string"
         },
         "description": "Allow specific modules to be imported without assignment."
+      },
+      "allow": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Globs of modules that may be imported without assignment: a package as written, a relative path as the absolute path it names."
+      },
+      "devDependencies": {
+        "type": ["boolean", "array"],
+        "items": {
+          "type": "string"
+        },
+        "description": "Accepted for eslint-plugin-import compatibility; has no effect (as there)."
+      },
+      "optionalDependencies": {
+        "type": ["boolean", "array"],
+        "items": {
+          "type": "string"
+        },
+        "description": "Accepted for eslint-plugin-import compatibility; has no effect (as there)."
+      },
+      "peerDependencies": {
+        "type": ["boolean", "array"],
+        "items": {
+          "type": "string"
+        },
+        "description": "Accepted for eslint-plugin-import compatibility; has no effect (as there)."
       }
     },
     "additionalProperties": false

@@ -1,7 +1,7 @@
 {
   "name": "oxlint-plugin-import-next",
-  "version": "3.0.2",
-  "description": "Oxlint import rules — a drop-in replacement for eslint-plugin-import covering imports and module boundaries, 3.1x faster end-to-end, zero-config migration. Same rules and rule IDs as eslint-plugin-import-next, for oxlint and Vite+.",
+  "version": "4.1.0",
+  "description": "Oxlint import rules — a drop-in replacement for eslint-plugin-import that passes 95% of its own test cases, covering imports and module boundaries, 3.1x faster end-to-end. Same rules and rule IDs as eslint-plugin-import-next, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./index.js",
@@ -69,12 +69,12 @@
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
   "license": "MIT",
   "engines": {
-    "node": ">=22.13.0"
+    "node": "^20.19.0 || ^22.13.0 || >=24"
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-import-next": "3.0.2"
+    "eslint-plugin-import-next": "4.1.0"
   }
 }

@@ -48,6 +48,7 @@ import {
   constInitializerOf,
   resolveConstantString,
 } from '../../utils/const-value';
+import { findVariable } from '../../utils/provenance';
 
 type MessageIds = 'shellFlagInjection' | 'commandStringInterpolation';
 
@@ -316,9 +317,178 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
       return null;
     }
 
+    /**
+     * The variable a file-local function is bound to, when nothing outside
+     * this file can call it: a `function` declaration or a `const` arrow or
+     * function expression, not exported where it is declared. Methods,
+     * callbacks and anything else have callers this file cannot enumerate.
+     */
+    function localFunctionVariable(
+      fn: TSESTree.Node,
+    ): TSESLint.Scope.Variable | null {
+      let id: TSESTree.Identifier | null = null;
+      let declaration: TSESTree.Node = fn;
+      if (fn.type === AST_NODE_TYPES.FunctionDeclaration) {
+        id = fn.id;
+      } else if (
+        // A NAMED function expression has a second, internal binding that can
+        // call it recursively (`const run = function inner(c) { inner(x) }`),
+        // and those calls are not references to `run`.
+        !(fn.type === AST_NODE_TYPES.FunctionExpression && fn.id) &&
+        fn.parent?.type === AST_NODE_TYPES.VariableDeclarator &&
+        fn.parent.init === fn &&
+        fn.parent.id.type === AST_NODE_TYPES.Identifier &&
+        fn.parent.parent.kind === 'const'
+      ) {
+        id = fn.parent.id;
+        declaration = fn.parent.parent;
+      }
+      if (id === null) return null;
+      const exported = declaration.parent?.type;
+      if (
+        exported === AST_NODE_TYPES.ExportNamedDeclaration ||
+        exported === AST_NODE_TYPES.ExportDefaultDeclaration
+      ) {
+        return null;
+      }
+      return findVariable(sourceCode, id);
+    }
+
+    /**
+     * Is this identifier a parameter that only string literals ever reach?
+     *
+     * `function commandPath(command) { spawnSync('sh', ['-lc', \`command -v
+     * ${command}\`]) }` called only as `commandPath('axe')` (tolaria's iOS QA
+     * scripts). Sound only when every way into the parameter is visible: the
+     * function is file-local and not exported (`localFunctionVariable`), every
+     * reference to it is a direct call — so it is never exported by name or
+     * passed on as a value — every call passes a string literal (or a `const`
+     * the file resolves) in this position, and the parameter is never
+     * reassigned. A function with no calls proves nothing and stays assembled.
+     */
+    function isCallerConstantParameter(node: TSESTree.Identifier): boolean {
+      const variable = findVariable(sourceCode, node);
+      if (variable === null || variable.defs.length !== 1) return false;
+      const [def] = variable.defs;
+      if (def.type !== 'Parameter') return false;
+      if (variable.references.some((reference) => reference.isWrite()))
+        return false;
+      const fn = def.node as TSESTree.FunctionLike;
+      const index = fn.params.indexOf(def.name as TSESTree.Parameter);
+      // A destructured, defaulted or rest parameter is not the argument itself.
+      if (index === -1) return false;
+      // In sloppy mode `arguments[0] = x` rewrites the first parameter without
+      // naming it. Any use of a non-arrow function's own `arguments` ends the
+      // proof; an arrow has none of its own.
+      const usesArguments =
+        fn.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
+        (sourceCode.scopeManager?.acquire(fn)?.set.get('arguments')?.references
+          .length ?? 0) > 0;
+      if (usesArguments) return false;
+      const fnVariable = localFunctionVariable(fn);
+      if (fnVariable === null) return false;
+      // The `const f = …` initialisation is a write to the binding, not a use.
+      const uses = fnVariable.references.filter((reference) => !reference.init);
+      return (
+        uses.length > 0 &&
+        uses.every((reference) => {
+          const call = reference.identifier.parent;
+          if (
+            call?.type !== AST_NODE_TYPES.CallExpression ||
+            call.callee !== reference.identifier
+          ) {
+            return false;
+          }
+          const passed = call.arguments.slice(0, index + 1);
+          const argument = passed[index];
+          return (
+            argument !== undefined &&
+            passed.every(
+              (entry) => entry.type !== AST_NODE_TYPES.SpreadElement,
+            ) &&
+            isProvenString(argument)
+          );
+        })
+      );
+    }
+
+    /**
+     * `staticStringOf`, with a property of a `const` object accepted only while
+     * the object is untouched. `const` stops rebinding, not mutation:
+     * `const commands = { tool: 'git' }; commands.tool = argv[2]` holds argv,
+     * whatever the initializer said. Every other reference must be a plain
+     * property read — no write, update or delete, and the object never handed
+     * to other code.
+     */
+    function isProvenString(node: TSESTree.Node): boolean {
+      if (staticStringOf(node) === null) return false;
+      if (
+        node.type !== AST_NODE_TYPES.MemberExpression ||
+        node.object.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return true;
+      }
+      // `staticStringOf` resolved the object, so it is bound in this file.
+      const object = findVariable(
+        sourceCode,
+        node.object,
+      ) as TSESLint.Scope.Variable;
+      return object.references.every((reference) => {
+        if (reference.init) return true;
+        const member = reference.identifier.parent as TSESTree.Node;
+        if (
+          member.type !== AST_NODE_TYPES.MemberExpression ||
+          member.object !== reference.identifier
+        ) {
+          return false;
+        }
+        const use = member.parent as TSESTree.Node;
+        return !(
+          (use.type === AST_NODE_TYPES.AssignmentExpression &&
+            use.left === member) ||
+          use.type === AST_NODE_TYPES.UpdateExpression ||
+          (use.type === AST_NODE_TYPES.UnaryExpression &&
+            use.operator === 'delete')
+        );
+      });
+    }
+
+    /**
+     * Is every value this expression can hold written in this file? A proven
+     * string, a template or `+` whose every part is one, or a parameter only
+     * literals reach.
+     */
+    function isProvenConstant(root: TSESTree.Node): boolean {
+      // A worklist over the operands rather than recursion: the walk only ever
+      // descends into a node's own children, and this shape needs no guard.
+      const pending: TSESTree.Node[] = [root];
+      for (let node = pending.pop(); node !== undefined; node = pending.pop()) {
+        if (isProvenString(node)) continue;
+        if (node.type === AST_NODE_TYPES.TemplateLiteral) {
+          pending.push(...node.expressions);
+          continue;
+        }
+        if (
+          node.type === AST_NODE_TYPES.BinaryExpression &&
+          node.operator === '+'
+        ) {
+          pending.push(node.left, node.right);
+          continue;
+        }
+        if (
+          node.type === AST_NODE_TYPES.Identifier &&
+          isCallerConstantParameter(node)
+        ) {
+          continue;
+        }
+        return false;
+      }
+      return true;
+    }
+
     /** A command string the program builds, as opposed to one it spells out. */
     function isAssembled(node: TSESTree.Node): boolean {
-      if (staticStringOf(node) !== null) return false;
+      if (isProvenConstant(node)) return false;
       return isAssembledString(node);
     }
 

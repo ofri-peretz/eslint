@@ -2,8 +2,10 @@ name: Node Version Matrix
 
 # Runs every node-lane package's unit tests on the Node versions the published
 # packages claim but no pull request runs: the `engines.node` floor (22.13.0)
-# and Node 26. Node 24 is the `.nvmrc` Node, and Quality (Full) already runs
-# the whole battery on it on every push to main, so it is not repeated here.
+# and Node 26, plus Node 20.19.0 for eslint-plugin-import-next and its devkit,
+# whose floor is ESLint 10's (ADR 0013). Node 24 is the `.nvmrc` Node, and
+# Quality (Full) already runs the whole battery on it on every push to main, so
+# it is not repeated here.
 # docs/adr/0010-published-packages-require-node-22-13.md.
 #
 # Every published package declares `engines.node: ">=22.13.0"`. A floor is only
@@ -63,11 +65,50 @@ jobs:
           node --version
           npx --no tsx scripts/ci-test-shard.mts ${{ matrix.shard }} 4 --lane node
 
+  # eslint-plugin-import-next and the devkit it depends on declare ESLint 10's
+  # range, `^20.19.0 || ^22.13.0 || >=24` (ADR 0013), so their floor is 20.19.0,
+  # not 22.13.0. Only those two packages: every other published package stays
+  # on `>=22.13.0` and is not claimed to run here. Coverage is off because the
+  # thresholds are enforced on 24, and below Node 22 the dual rule tester skips
+  # the oxlint half (oxlint's RuleTester needs 22), so this cell runs the ESLint
+  # half of every rule test.
+  node20:
+    name: Unit Tests · node ${{ matrix.node }} · ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20.19.0']
+        package: [eslint-plugin-import-next, eslint-devkit]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Installed on the .nvmrc Node, unlike the cells above: the root
+      # `preinstall` runs `node --experimental-strip-types`, which Node 20 does
+      # not have, so `npm ci` cannot run on 20. Nothing these two packages load
+      # is a version-bound native addon (oxc-resolver is N-API), which is the
+      # reason the other cells install on their own Node.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Run ${{ matrix.package }} on Node ${{ matrix.node }}
+        working-directory: packages/${{ matrix.package }}
+        run: |
+          node --version
+          npx --no vitest run --coverage.enabled=false
+
   # Aggregate failure reporting (ADR 0006): a report inside the matrix cannot
   # see a sibling cell that failed.
   report:
     name: 🚨 Report a scheduled failure
-    needs: [test]
+    needs: [test, node20]
     if: >-
       always() && github.event_name == 'schedule' &&
       contains(needs.*.result, 'failure')
@@ -84,5 +125,5 @@ jobs:
         with:
           title: 'Node version matrix is failing'
           body: >-
-            A unit test fails on Node 22.13.0 or Node 26, which every published package's `engines.node` (">=22.13.0") claims. This matrix is the only check that runs those versions, so a break here is a support claim we can no longer make.
+            A unit test fails on Node 22.13.0 or Node 26, which every published package's `engines.node` (">=22.13.0") claims, or on Node 20.19.0, which eslint-plugin-import-next and @interlace/eslint-devkit claim (ADR 0013). This matrix is the only check that runs those versions, so a break here is a support claim we can no longer make.
           token: ${{ github.token }}

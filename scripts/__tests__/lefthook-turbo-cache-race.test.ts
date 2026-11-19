@@ -148,7 +148,7 @@ describe('lefthook: no two turbo processes share one cache', () => {
 });
 
 /** pre-push scripts that load built output rather than source. */
-const DIST_CONSUMERS = ['oxlint:shims:verify'];
+const DIST_CONSUMERS = ['oxlint:shims:verify', 'lint:severity-consistency'];
 
 describe('the lock itself', () => {
   it('flags two bare invocations', () => {

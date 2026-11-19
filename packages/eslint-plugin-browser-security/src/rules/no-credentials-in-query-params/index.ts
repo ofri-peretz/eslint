@@ -140,7 +140,7 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
         issueName: 'Credentials in Query Parameters',
         cwe: 'CWE-598',
         description:
-          'Credentials detected in URL query parameters - this is a security risk',
+          'Credentials detected in URL query parameter `{{param}}` - this is a security risk',
         severity: 'CRITICAL',
         fix: 'Use secure methods: POST body, headers (Authorization), or secure cookies',
         documentationLink: 'https://cwe.mitre.org/data/definitions/598.html',
@@ -198,16 +198,23 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
     /**
      * Does this URL carry a credential we should report?
      *
+     * Returns the first reportable parameter's name, or null.
+     *
      * Every present parameter is considered, not just the first: a reset link
      * that ALSO carries `&apikey=` is still a finding, and short-circuiting on
      * the exempt `token=` would have hidden it.
      */
-    function hasReportableCredential(url: string): boolean {
-      return [...url.matchAll(QUERY_PARAMETER)].some(
+    function reportableCredential(url: string): string | null {
+      const match = [...url.matchAll(QUERY_PARAMETER)].find(
         ([, name]) =>
           isCredentialParam(name, credentialSuffixWords) &&
           !(name.toLowerCase() === 'token' && OUT_OF_BAND_FLOWS.test(url)),
       );
+      // The matched NAME goes into the message. On a large literal — a
+      // generated HTML bundle with a framework inlined — the report sits at the
+      // literal's first character, and without the name nobody can find what
+      // matched in a megabyte of text.
+      return match === undefined ? null : (match[1] as string);
     }
 
     /**
@@ -247,10 +254,11 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
-    function report(node: TSESTree.Node) {
+    function report(node: TSESTree.Node, param: string) {
       context.report({
         node,
         messageId: 'violationDetected',
+        data: { param },
       });
     }
 
@@ -267,9 +275,8 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
         if (typeof node.value === 'string') {
           // Original case: `identifierWords` splits `apiKey` on the case
           // boundary, which lowercasing first would erase.
-          if (hasReportableCredential(node.value) && !isRequestBody(node)) {
-            report(node);
-          }
+          const param = reportableCredential(node.value);
+          if (param !== null && !isRequestBody(node)) report(node, param);
         }
       },
 
@@ -299,9 +306,8 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
         // Same test the Literal branch uses. The asymmetry was the bug: a
         // literal needed `?token=` or `&token=`, a template matched a bare
         // `token=` anywhere — including the `: token=` of a log line.
-        if (hasReportableCredential(text) && !isRequestBody(node)) {
-          report(node);
-        }
+        const param = reportableCredential(text);
+        if (param !== null && !isRequestBody(node)) report(node, param);
       },
     };
   },

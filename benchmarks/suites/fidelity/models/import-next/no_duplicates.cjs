@@ -8,6 +8,7 @@ const FORM = {
   Namespace: (q, i) => `import * as ns${i} from ${q};`,
   SideEffect: (q) => `import ${q};`,
   TypeOnly: (q, i) => `import type { T${i} } from ${q};`,
+  TypeDefault: (q, i) => `import type D${i} from ${q};`,
   InlineType: (q, i) => `import { type T${i} } from ${q};`,
 };
 
@@ -52,9 +53,9 @@ function code(s) {
 
 module.exports = {
   rule: 'no-duplicates',
-  // Forms 6 x 6, Relations 3 x 4, Scopes 2.
-  domain: 36 + 12 + 2,
-  traces: 600,
+  // Forms 7 x 7, Relations 3 x 4, Scopes 2.
+  domain: 49 + 12 + 2,
+  traces: 900,
   key: keyOf('focus', 'first', 'second', 'relation', 'scope'),
   filename: (s) =>
     tag(s.scope) === 'TopLevel' ? 'src/app.ts' : 'src/types.d.ts',

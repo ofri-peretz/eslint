@@ -8,7 +8,9 @@
 // `./utils`, `lodash/` is `lodash`). The rule reports every way a module is
 // loaded or re-exported whose depth exceeds `maxDepth` (default 1) or that
 // matches a `forbid` glob, unless it matches an `allow` or `ignorePaths`
-// glob. `strategy` only changes how a finding is fixed, never whether it is
+// glob. An `allow` / `forbid` glob (minimatch syntax, `{a,b}` included)
+// matches the specifier as written, its folded path steps (`./a/b` is `a/b`
+// and `/a/b`), or the file it resolves to, as in eslint-plugin-import. `strategy` only changes how a finding is fixed, never whether it is
 // reported.
 //
 // Left out (judgment): `./utils/index` - it is `./utils` only when `utils` is

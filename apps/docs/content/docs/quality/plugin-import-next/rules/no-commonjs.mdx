@@ -47,41 +47,63 @@ export { run };
 ## Options
 
 ```json
-[
-  {
-    "type": "object",
-    "properties": {
-      "allowRequire": {
-        "type": "boolean",
-        "default": false,
-        "description": "Allow require() calls."
-      },
-      "allowModuleExports": {
-        "type": "boolean",
-        "default": false,
-        "description": "Allow module.exports."
-      },
-      "allowExports": {
-        "type": "boolean",
-        "default": false,
-        "description": "Allow exports.* patterns."
-      },
-      "allowInFiles": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "Allow CommonJS in specific files."
-      },
-      "suggestES6": {
-        "type": "boolean",
-        "default": true,
-        "description": "Suggest ES6 alternatives."
-      }
+{
+  "anyOf": [
+    {
+      "type": "array",
+      "items": [
+        {
+          "type": "string",
+          "enum": ["allow-primitive-modules"]
+        }
+      ],
+      "additionalItems": false
     },
-    "additionalProperties": false
-  }
-]
+    {
+      "type": "array",
+      "items": [
+        {
+          "type": "object",
+          "properties": {
+            "allowRequire": {
+              "type": "boolean",
+              "description": "Allow require() calls (default false)."
+            },
+            "allowModuleExports": {
+              "type": "boolean",
+              "description": "Allow module.exports (default false)."
+            },
+            "allowExports": {
+              "type": "boolean",
+              "description": "Allow exports.* patterns (default false)."
+            },
+            "allowInFiles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Allow CommonJS in specific files."
+            },
+            "suggestES6": {
+              "type": "boolean",
+              "description": "Suggest ES6 alternatives (default true)."
+            },
+            "allowPrimitiveModules": {
+              "type": "boolean",
+              "description": "eslint-plugin-import: allow `module.exports = value` when the value is not an object literal."
+            },
+            "allowConditionalRequire": {
+              "type": "boolean",
+              "description": "eslint-plugin-import: allow require() inside an if, try, logical or conditional expression."
+            }
+          },
+          "additionalProperties": false
+        }
+      ],
+      "additionalItems": false
+    }
+  ]
+}
 ```
 
 - `allowRequire` (default `false`): accept `require()` and `import x = require()`.
@@ -89,6 +111,24 @@ export { run };
 - `allowExports` (default `false`): accept `exports.*` assignments.
 - `allowInFiles` (default `[]`): file globs (or path substrings) where CommonJS is accepted. A glob matches any run of whole path segments.
 - `suggestES6` (default `true`): offer an editor suggestion with the ES module equivalent.
+
+### eslint-plugin-import options
+
+A config carried over from `import/no-commonjs` loads, and its options mean
+what they meant there:
+
+- `allowPrimitiveModules` (or the older string form,
+  `['allow-primitive-modules']`): accept `module.exports = value` when the
+  value is not an object literal (a function, a class, a string).
+  `module.exports = {}` and `module.exports.x = …` are still reported.
+- `allowConditionalRequire`: accept a `require()` inside an `if`, a `try`, a
+  logical (`&&`, `||`, `??`) or a conditional (`?:`) expression.
+
+eslint-plugin-import's default for `allowConditionalRequire` is `true`; it
+applies here to a config written its way (the string form, or either option
+above). Otherwise this rule's own default, `false`, applies. This rule also
+reports a `require()` that eslint-plugin-import leaves alone: inside a
+function, with a computed argument, or with more than one argument.
 
 ## When Not To Use It
 

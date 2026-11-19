@@ -5,6 +5,18 @@ All notable changes to `oxlint-plugin-lambda-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.0.3
+
+### Patch Changes
+
+- **📚 Docs** — no-secrets-in-env docs name CWE-798, not a template CWE-693
+
+  A `**CWE:** [CWE-693]` header and front matter copied from a template
+  contradicted each rule's `meta.docs.cwe`. They now agree, and
+  `scripts/__tests__/rule-docs-agree-with-meta.lock.test.ts` keeps it that way.
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-lambda-security@3.0.3`
+
 ## 3.0.2
 
 ### Patch Changes

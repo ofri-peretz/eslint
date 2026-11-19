@@ -14,7 +14,7 @@ autofix: false
 Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern).
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
+**CWE:** [CWE-1049](https://cwe.mitre.org/data/definitions/1049.html)
 
 Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern).
 

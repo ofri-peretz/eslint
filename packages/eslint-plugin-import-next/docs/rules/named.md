@@ -12,7 +12,9 @@ A named import or named re-export of a name the module does not export is report
 
 The module's exports are what TypeScript sees: a direct export, a renamed export (`export { v as a }`), a name reached through `export * from`, and a type export all count. A name the module exports only as its default is missing.
 
-The rule needs type information (`parserOptions.project` or `projectService`); without it, it is silent. It is also silent when the module does not resolve, when the module is a CommonJS `export =` module (its names depend on interop), for `import type { a }` statements (TypeScript checks them), and for `import { default as x }`, which the `default` rule judges.
+With type information (`parserOptions.project` or `projectService`) the module's exports are what TypeScript sees. The rule is silent when the module does not resolve, when the module is a CommonJS `export =` module (its names depend on interop), for `import type { a }` statements (TypeScript checks them), and for `import { default as x }`, which the `default` rule judges.
+
+Without type information (no `parserOptions.project` or `projectService`), the rule reads the imported module itself, as eslint-plugin-import does: it resolves the specifier with the node-resolver settings (`import/resolver.node`, `import/resolve`; extensions `.mjs`, `.js`, `.json`, `.node`, or TypeScript's when the config names a TypeScript resolver), parses the file with the parser `import/parsers` maps its extension to (else the one linting this file), and lists what it exports, following `export { … } from` and `export * from`. Only files with an extension the config parses are read (`import/extensions`, default `.js`, `.mjs`, `.cjs`, plus every extension in `import/parsers`); files matching `import/ignore`, files over 1 MB, and files with no `import`/`export` syntax (CommonJS) are unknown, and an unknown module is never a finding. Each file is parsed once per run. A name reached only through an `export *` of a module that is not known (it does not resolve, is ignored, or does not parse) may be there, so it is not reported missing; and in a TypeScript file a JavaScript module is unknown, since its declaration file may add names its source does not show. On oxlint, which gives a plugin no parser to call, the rule does not read other modules. Read that way, `import { default as x }` is checked too, a module that does not parse is unknown, and with `commonjs: true` the names destructured from `require()` are checked against the module as well.
 
 ### ❌ Incorrect
 
@@ -34,8 +36,27 @@ export { add as plus } from './math';
 ## Options
 
 ```json
-[]
+[
+  {
+    "type": "object",
+    "properties": {
+      "commonjs": {
+        "type": "boolean",
+        "description": "Also check the names destructured from a `require()` (`const { a } = require('./m')`)."
+      }
+    },
+    "additionalProperties": false
+  }
+]
 ```
+
+### eslint-plugin-import options
+
+`commonjs: true` (eslint-plugin-import's option, with its meaning) also checks
+the names destructured from a `require()` of a string:
+`const { a } = require('./m')` is reported when `./m` does not export `a`.
+Computed and string-literal keys and rest elements are not checked, and the
+module must be part of the TypeScript program, as for imports.
 
 ## Implementation
 

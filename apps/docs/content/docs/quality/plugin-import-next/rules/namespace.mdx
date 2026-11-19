@@ -17,7 +17,9 @@ Reading a name off a namespace import that the module does not export is reporte
 
 The rule decides by binding: `ns` must be the namespace import itself. A default import that happens to be called `ns`, or a parameter `ns` that shadows the import, is a different value and is not checked.
 
-The rule needs type information (`parserOptions.project` or `projectService`); without it, it is silent. It is also silent for a key chosen at runtime (`ns[key]`), when the module does not resolve, and when the module is a CommonJS `export =` module.
+With type information (`parserOptions.project` or `projectService`) the module's exports are what TypeScript sees. The rule is silent for a key chosen at runtime (`ns[key]`), when the module does not resolve, and when the module is a CommonJS `export =` module.
+
+Without type information (no `parserOptions.project` or `projectService`), the rule reads the imported module itself, as eslint-plugin-import does: it resolves the specifier with the node-resolver settings (`import/resolver.node`, `import/resolve`; extensions `.mjs`, `.js`, `.json`, `.node`, or TypeScript's when the config names a TypeScript resolver), parses the file with the parser `import/parsers` maps its extension to (else the one linting this file), and lists what it exports, following `export { … } from` and `export * from`. Only files with an extension the config parses are read (`import/extensions`, default `.js`, `.mjs`, `.cjs`, plus every extension in `import/parsers`); files matching `import/ignore`, files over 1 MB, and files with no `import`/`export` syntax (CommonJS) are unknown, and an unknown module is never a finding. Each file is parsed once per run. A name reached only through an `export *` of a module that is not known (it does not resolve, is ignored, or does not parse) may be there, so it is not reported missing; and in a TypeScript file a JavaScript module is unknown, since its declaration file may add names its source does not show. On oxlint, which gives a plugin no parser to call, the rule does not read other modules. Read that way, the rule also follows a namespace the module re-exports (`import * as b from './b'; export { b }`), so `ns.b.missing` is reported; it reports an assignment to a member (`ns.a = 1`), a namespace import of a module that exports nothing, and a module that does not parse (`Parse errors in imported module`).
 
 ### ❌ Incorrect
 
@@ -41,8 +43,28 @@ const run = (math: { subtract(): void }) => math.subtract();
 ## Options
 
 ```json
-[]
+[
+  {
+    "type": "object",
+    "properties": {
+      "allowComputed": {
+        "type": "boolean",
+        "description": "eslint-plugin-import: true skips computed members of a namespace import (ns[key]); false reports each one. Absent: a string key is checked, a runtime key is not."
+      }
+    },
+    "additionalProperties": false
+  }
+]
 ```
+
+### eslint-plugin-import options
+
+`allowComputed` (eslint-plugin-import's option, with its meaning) decides
+what happens to a computed member of a namespace import, `ns[key]` or
+`ns['a']`: `true` checks none of them; `false` reports each one as a
+reference that cannot be validated, whatever its key. Absent, this rule's own
+reading applies: a string key is checked like `ns.a`, and a runtime key is not
+a finding (eslint-plugin-import's default is `false`).
 
 ## Implementation
 

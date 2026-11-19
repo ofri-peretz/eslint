@@ -75,6 +75,33 @@ jobs:
           turbo-cache: 'false'
       - run: npm run oxlint
 
+  dogfood:
+    # Our security and quality plugins, built from this PR, over our own plugin
+    # source (eslint.dogfood.config.mjs). Fails on any rule at `error`; the first-run
+    # backlog is held at `warn` there with its counts, and ratchets back up.
+    name: Dogfood (our plugins on our source)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+      # The config imports the workspace plugins by name; build them (and, via
+      # `...`, eslint-devkit they depend on) so they load from dist/.
+      - run: >-
+          npx turbo run build
+          --filter='eslint-plugin-secure-coding...'
+          --filter='eslint-plugin-node-security...'
+          --filter='eslint-plugin-maintainability...'
+          --filter='eslint-plugin-reliability...'
+          --filter='eslint-plugin-conventions...'
+          --filter='eslint-plugin-operability...'
+          --filter='eslint-plugin-modernization...'
+          --filter='eslint-plugin-modularity...'
+          --filter='eslint-plugin-import-next...'
+      - run: npm run lint:dogfood
+
   markdown:
     name: Markdown Lint
     runs-on: ubuntu-latest
@@ -489,6 +516,7 @@ jobs:
     needs:
       [
         oxlint,
+        dogfood,
         markdown,
         changelog,
         workflows,
@@ -505,6 +533,7 @@ jobs:
       - name: Render gate report
         env:
           R_OXLINT: ${{ needs.oxlint.result }}
+          R_DOGFOOD: ${{ needs.dogfood.result }}
           R_MARKDOWN: ${{ needs.markdown.result }}
           R_CHANGELOG: ${{ needs.changelog.result }}
           R_WORKFLOWS: ${{ needs.workflows.result }}
@@ -528,7 +557,7 @@ jobs:
           }
 
           all_pass=true
-          for r in "$R_OXLINT" "$R_MARKDOWN" "$R_CHANGELOG" "$R_WORKFLOWS" "$R_TAXONOMY" "$R_PUBLISH" "$R_LOCKFILE" "$R_SUPPLY" "$R_RECALL" "$R_BENCH_SIZE" "$R_FORMAT"; do
+          for r in "$R_OXLINT" "$R_DOGFOOD" "$R_MARKDOWN" "$R_CHANGELOG" "$R_WORKFLOWS" "$R_TAXONOMY" "$R_PUBLISH" "$R_LOCKFILE" "$R_SUPPLY" "$R_RECALL" "$R_BENCH_SIZE" "$R_FORMAT"; do
             [ "$r" = "success" ] || all_pass=false
           done
           if $all_pass; then
@@ -543,6 +572,7 @@ jobs:
             echo "| Gate | Result | Notes |"
             echo "|---|---|---|"
             echo "| oxlint              | $(icon "$R_OXLINT") $R_OXLINT           | fast lint pass (Rust-native) |"
+            echo "| dogfood             | $(icon "$R_DOGFOOD") $R_DOGFOOD          | our plugins on our source |"
             echo "| Markdown lint       | $(icon "$R_MARKDOWN") $R_MARKDOWN       | \`markdownlint-cli2\` |"
             echo "| CHANGELOG present   | $(icon "$R_CHANGELOG") $R_CHANGELOG     | every published package has CHANGELOG.md |"
             echo "| Workflow + script locks | $(icon "$R_WORKFLOWS") $R_WORKFLOWS | \`lint-workflows.ts\` + \`scripts/__tests__\` |"
