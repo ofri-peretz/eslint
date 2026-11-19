@@ -102,6 +102,25 @@ npm install eslint-plugin-import-next --save-dev
 - **How it is graded:** a valid case passes when the rule reports nothing, and an invalid case passes when it reports exactly the expected number of problems. Messages, positions and fixes are not compared. Only the cases `eslint-plugin-import` itself passes in the same harness are graded. That leaves out 682 of the 2,817 captured cases. Most are the 490 that need the `babel-eslint` parser and the 120 `no-unused-modules` cases, a rule `eslint-plugin-import` cannot load on ESLint 10.
 - To reproduce, run `npx tsx benchmarks/suites/ilb-competitor-parity/import-drop-in.mts --upstream <eslint-plugin-import v2.32.0 checkout>`.
 
+### Migrating from `eslint-plugin-import`
+
+Change the import line. The rest of the config stays as it is:
+
+```diff
+- import importPlugin from 'eslint-plugin-import';
++ import importPlugin from 'eslint-plugin-import-next';
+
+  export default [
+    importPlugin.flatConfigs.recommended,
+    importPlugin.flatConfigs.typescript,
+  ];
+```
+
+- `flatConfigs` has eslint-plugin-import 2.32.0's seven keys: `recommended`, `errors`, `warnings`, `react`, `react-native`, `electron` and `typescript`. Each has the same rule IDs (`import/…`), severities, `settings` and `languageOptions`, and registers this plugin as `import`, so `import/*` rule names, settings and `eslint-disable` comments keep working.
+- [`flat-configs.test.ts`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/src/flat-configs.test.ts) compares every key with the installed eslint-plugin-import 2.32.0. It lints a fixture through a real `ESLint` instance with each config and expects the same findings (rule, line, severity). It also checks the swap above. CI runs it on ESLint 10. The same comparison, run by hand on ESLint 9.39.5, matched on Node 20.19.0 and Node 24.
+- Registering the plugin yourself as well, `{ plugins: { import: importPlugin } }`, next to a flat config works. With eslint-plugin-import that combination throws `Cannot redefine plugin "import"`.
+- The eslintrc presets (`extends: ['plugin:import/recommended']`) are not provided. Use `flatConfigs`.
+
 ### Migrating from 3.x
 
 4.0 changed three behaviours to match `eslint-plugin-import`. Each one can be undone per rule:
@@ -163,7 +182,7 @@ Detection parity is checked per shape before any timing is trusted, and every nu
 | Package | Version |
 | :--- | :--- |
 | ESLint | `^8.40.0 \|\| ^9.0.0 \|\| ^10.0.0` |
-| Node.js | `>=22.13.0` |
+| Node.js | `^20.19.0 \|\| ^22.13.0 \|\| >=24` (ESLint 10's own range) |
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) for the full matrix.
 
