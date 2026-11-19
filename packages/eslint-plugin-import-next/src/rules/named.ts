@@ -19,6 +19,8 @@ import {
 } from '@interlace/eslint-devkit';
 import type ts from 'typescript';
 import { aliasSymbolFlag } from '../utils/typescript-peer';
+import { exportName } from '../utils/export-map-rules';
+import { exportMapOf } from '../utils/export-map';
 
 type MessageIds = 'named';
 
@@ -33,6 +35,86 @@ export interface Options {
 }
 
 export type RuleOptions = [Options?];
+
+/**
+ * Without type information: eslint-plugin-import's reading. The module is
+ * parsed (`../utils/export-map`) and every name is looked up through its
+ * re-exports. A module that is not known — unresolved, ignored, CommonJS —
+ * is never a finding.
+ */
+function untyped(
+  context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+): TSESLint.RuleListener {
+  const [{ commonjs = false } = {}] = context.options;
+
+  function check(
+    node: TSESTree.ImportDeclaration | TSESTree.ExportNamedDeclaration,
+    names: { node: TSESTree.Node; name: string }[],
+  ) {
+    if (names.length === 0 || !node.source) return;
+    // Not known, or not certainly an ES module: a module that does not
+    // parse is neither (its syntax errors are other rules' to report).
+    const exports = exportMapOf(node.source.value, context);
+    if (!exports || exports.parseGoal === 'ambiguous') return;
+    for (const { node: at, name } of names) {
+      if (!exports.hasDeep(name).found) {
+        context.report({ node: at, messageId: 'named' });
+      }
+    }
+  }
+
+  return {
+    ImportDeclaration(node: TSESTree.ImportDeclaration) {
+      if (node.importKind === 'type') return;
+      check(
+        node,
+        node.specifiers.flatMap((s) =>
+          s.type === 'ImportSpecifier' && s.importKind !== 'type'
+            ? [{ node: s.imported, name: exportName(s.imported) }]
+            : [],
+        ),
+      );
+    },
+    ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+      if (node.exportKind === 'type') return;
+      check(
+        node,
+        node.specifiers.flatMap((s) =>
+          s.exportKind !== 'type'
+            ? [{ node: s.local, name: exportName(s.local) }]
+            : [],
+        ),
+      );
+    },
+    ...(commonjs
+      ? {
+          VariableDeclarator(node: TSESTree.VariableDeclarator) {
+            const call = node.init;
+            if (
+              node.id.type !== 'ObjectPattern' ||
+              node.id.properties.length === 0 ||
+              call?.type !== 'CallExpression' ||
+              call.callee.type !== 'Identifier' ||
+              call.callee.name !== 'require' ||
+              call.arguments.length !== 1 ||
+              call.arguments[0].type !== 'Literal' ||
+              typeof call.arguments[0].value !== 'string'
+            )
+              return;
+            const exports = exportMapOf(call.arguments[0].value, context);
+            if (!exports || exports.parseGoal === 'ambiguous') return;
+            for (const property of node.id.properties) {
+              if (property.type !== 'Property') continue;
+              const name = objectKeyName(property);
+              if (name !== null && !exports.hasDeep(name).found) {
+                context.report({ node: property.key, messageId: 'named' });
+              }
+            }
+          },
+        }
+      : {}),
+  };
+}
 
 export const named = createRule<RuleOptions, MessageIds>({
   name: 'named',
@@ -71,7 +153,8 @@ export const named = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    if (!hasParserServices(context)) return {};
+    // No type information: read the other module by parsing it.
+    if (!hasParserServices(context)) return untyped(context);
 
     const services = getParserServices(context);
     const program = services.program as ts.Program;

@@ -10,7 +10,7 @@ Forbid use of exported name as identifier of default export
 
 A default import bound to the name of a named export of the same module is reported: after `import foo from './m'`, a reader cannot tell whether `foo` is the module's default or its named `foo`.
 
-The rule does not read the other module. The evidence that `./m` has a named export `foo` is this file taking that name from the same module: in the same declaration (`import foo, { foo as bar } from './m'`), in another import (`import { foo as bar } from './m'`), or in a re-export (`export { foo } from './m'`). The default can be spelled `import foo` or `import { default as foo }`.
+The evidence that `./m` has a named export `foo` is the module itself, parsed as eslint-plugin-import does (on ESLint; oxlint gives a plugin no parser), or this file taking that name from the same module: in the same declaration (`import foo, { foo as bar } from './m'`), in another import (`import { foo as bar } from './m'`), or in a re-export (`export { foo } from './m'`). The default can be spelled `import foo` or `import { default as foo }`. Read from the module, `foo` must be a named export and the module must have a default; a module that re-exports one binding as both (`export { a as default, a } from './x'`) is not a collision. A module that does not parse is reported once. Which files are read is described in the `named` rule's docs.
 
 Not reported: a default bound to any other name, the name taken from a different module, and evidence that is only a type (`import type { foo }`, `{ type foo }`), since a type and a default value sharing a name is a judgment call.
 

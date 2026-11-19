@@ -1,7 +1,7 @@
 /**
- * @provenBy {"file":"packages/eslint-plugin-import-next/README.md","find":"passes **1,816 of 2,135** (85.1%)","replace":"passes **2,135 of 2,135** (100.0%)"}
+ * @provenBy {"file":"packages/eslint-plugin-import-next/README.md","find":"passes **2,033 of 2,135** (95.2%)","replace":"passes **2,135 of 2,135** (100.0%)"}
  * @provenBy {"file":"packages/eslint-plugin-import-next/README.md","find":"**all 45 of its tested rules are implemented**","replace":"**all 44 of its tested rules are implemented**"}
- * @provenBy {"file":"benchmarks/results/ilb-import-parity/2026-11-18-parity-2.json","find":"\"passed\": 1816,","replace":"\"passed\": 2135,"}
+ * @provenBy {"file":"benchmarks/results/ilb-import-parity/2026-11-18-parity-3.json","find":"\"passed\": 2033,","replace":"\"passed\": 2135,"}
  * @provenBy {"file":"packages/eslint-plugin-import-next/README.md","find":"No graded case sets an option","replace":"Hardly any graded case sets an option"}
  */
 
@@ -119,7 +119,7 @@ describe('the parity envelope agrees with itself', () => {
  * measurement, never by a lower one: a change that makes import-next pass
  * fewer of eslint-plugin-import's own cases has to say so here.
  */
-const PASSED_FLOOR = 1816;
+const PASSED_FLOOR = 2033;
 
 describe('the parity score only goes up', () => {
   it(`passes at least ${PASSED_FLOOR} graded cases`, () => {

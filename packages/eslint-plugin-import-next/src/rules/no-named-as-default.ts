@@ -17,13 +17,36 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'namedAsDefault';
+import { exportMapOf } from '../utils/export-map';
+import type { ExportMap } from '../utils/export-map';
+import {
+  PARSE_ERROR_MESSAGE,
+  reportParseErrors,
+} from '../utils/export-map-rules';
+
+type MessageIds = 'namedAsDefault' | 'parseError';
 
 type RuleOptions = [];
 
 /** An import name is an Identifier, or a string literal for an unspellable name. */
 const nameOf = (node: TSESTree.Identifier | TSESTree.StringLiteral): string =>
   node.type === 'Identifier' ? node.name : node.value;
+
+/**
+ * Does the module, read by parsing it (`../utils/export-map`), export a
+ * default AND a different thing named `name`? A module that re-exports one
+ * binding as both (`export { a as default, a } from './x'`) does not: the
+ * two imports are the same value.
+ */
+function exportsAlsoNamed(exports: ExportMap, name: string): boolean {
+  if (!exports.hasDefault || !exports.has(name)) return false;
+  const named = exports.reexports.get(name);
+  const fallback = exports.reexports.get('default');
+  if (named && fallback && named.local === fallback.local) {
+    return named.getImport()?.path !== fallback.getImport()?.path;
+  }
+  return true;
+}
 
 export const noNamedAsDefault = createRule<RuleOptions, MessageIds>({
   name: 'no-named-as-default',
@@ -52,6 +75,7 @@ export const noNamedAsDefault = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-named-as-default.md',
       }),
+      parseError: PARSE_ERROR_MESSAGE,
     },
     schema: [],
   },
@@ -116,8 +140,27 @@ export const noNamedAsDefault = createRule<RuleOptions, MessageIds>({
         }
       },
       'Program:exit'() {
+        const parsed = new Set<string>();
         for (const { source, local, node } of defaults) {
-          if (!namedBySource.get(source)?.has(local)) continue;
+          const exports = exportMapOf(source, context);
+          if (exports && exports.errors.length > 0) {
+            if (!parsed.has(source)) {
+              parsed.add(source);
+              reportParseErrors(
+                context,
+                (node.parent as TSESTree.ImportDeclaration).source,
+                source,
+                exports,
+              );
+            }
+            continue;
+          }
+          if (
+            !namedBySource.get(source)?.has(local) &&
+            !(exports && exportsAlsoNamed(exports, local))
+          ) {
+            continue;
+          }
           context.report({
             node,
             messageId: 'namedAsDefault',

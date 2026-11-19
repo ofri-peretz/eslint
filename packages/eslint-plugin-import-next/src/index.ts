@@ -7,9 +7,9 @@
 /**
  * eslint-plugin-import-next
  *
- * An alternative to eslint-plugin-import: graded by that plugin's own test
- * suite it passes 1,816 of 2,135 cases (85.1%, eslint-plugin-import@2.32.0,
- * benchmarks/results/ilb-import-parity/2026-11-18-parity-2.json).
+ * A drop-in replacement for eslint-plugin-import: graded by that plugin's own
+ * test suite it passes 2,033 of 2,135 cases (95.2%, eslint-plugin-import@2.32.0,
+ * benchmarks/results/ilb-import-parity/2026-11-18-parity-3.json).
  * Covers import validation, module resolution, circular dependencies,
  * and export style enforcement.
  *
@@ -62,6 +62,7 @@ import { groupExports } from './rules/group-exports';
 
 // Import Style Rules
 import { enforceImportOrder } from './rules/enforce-import-order';
+import { order } from './rules/order';
 import { noUnassignedImport } from './rules/no-unassigned-import';
 import { first } from './rules/first';
 import { newlineAfterImport } from './rules/newline-after-import';
@@ -141,7 +142,9 @@ export const rules = {
 
   // Import Style Rules
   'enforce-import-order': enforceImportOrder,
-  order: enforceImportOrder, // Alias for backwards compat with eslint-plugin-import
+  // eslint-plugin-import's `import/order`, its options and its defaults.
+  // import-next's opinionated ordering is `enforce-import-order`.
+  order: order,
   'no-unassigned-import': noUnassignedImport,
   first: first,
   'newline-after-import': newlineAfterImport,
@@ -320,7 +323,7 @@ export const configs = {
       'import-next/group-exports': 'error',
 
       // Import Style
-      'import-next/order': 'error',
+      'import-next/enforce-import-order': 'error',
       'import-next/no-unassigned-import': 'error',
       'import-next/first': 'error',
       'import-next/newline-after-import': 'error',
@@ -363,7 +366,7 @@ export const configs = {
       'import-next/export': 'error',
       'import-next/no-cycle': 'error',
       'import-next/no-duplicates': 'error',
-      'import-next/order': 'warn',
+      'import-next/enforce-import-order': 'warn',
       'import-next/first': 'warn',
       'import-next/newline-after-import': 'warn',
       // `prefer-top-level` for the same reason as in `strict` above: this
@@ -405,7 +408,7 @@ export const configs = {
       'import-next': plugin,
     },
     rules: {
-      'import-next/order': 'error',
+      'import-next/enforce-import-order': 'error',
       'import-next/first': 'error',
       'import-next/newline-after-import': 'error',
       'import-next/no-duplicates': 'error',

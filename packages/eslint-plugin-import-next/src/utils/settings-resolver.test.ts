@@ -33,6 +33,17 @@ describe('nodeResolverSettings', () => {
     ).toEqual({ extensions: ['.jsx'], paths: ['x'] });
   });
 
+  it('reads node out of an array of resolvers', () => {
+    expect(
+      nodeResolverSettings({
+        'import/resolver': [
+          'typescript',
+          { node: { extensions: ['.jsx', '.js'] } },
+        ],
+      }),
+    ).toEqual({ extensions: ['.jsx', '.js'], paths: undefined });
+  });
+
   it('falls back to the older import/resolve key', () => {
     expect(
       nodeResolverSettings({ 'import/resolve': { paths: ['y'] } }),

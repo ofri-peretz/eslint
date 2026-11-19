@@ -885,7 +885,8 @@ export function createUpstreamOrder(context: UpstreamContext) {
     before(): void {
       sourceCode = context.sourceCode;
       text = sourceCode.text;
-      options = context.options[0] as UpstreamOrderOptions;
+      // No options: eslint-plugin-import's defaults, every one of them.
+      options = (context.options[0] ?? {}) as UpstreamOrderOptions;
       newlinesImports =
         options['newlines-between'] ?? options.newlinesBetween ?? 'ignore';
       newlinesTypes = options['newlines-between-types'] ?? newlinesImports;
