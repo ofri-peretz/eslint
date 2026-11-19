@@ -16,6 +16,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 Import declarations follow the configured group order, are alphabetized inside a group, and groups are separated as configured. The fix rewrites the import block in order.
 
+This is import-next's own, opinionated ordering, and the one the `strict`, `typescript` and `import-style` presets turn on. `order` is eslint-plugin-import's `import/order`, with its defaults (no alphabetizing, no blank-line policy); until 4.0 `order` was an alias of this rule, so a config that relied on these defaults under the name `order` keeps them by renaming the rule to `enforce-import-order`.
+
 Groups, in the default order `builtin`, `external`, `internal`, `parent`, `sibling`, `index`, `side-effect`:
 
 - `builtin`: a Node.js builtin in any spelling - Node's own builtin list, subpaths included (`fs`, `crypto`, `fs/promises`), or the `node:` scheme;

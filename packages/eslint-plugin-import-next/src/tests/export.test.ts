@@ -62,7 +62,7 @@ ruleTester.run('export', exportRule, {
         export const foo = 1;
         export const foo = 2;
       `,
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
 
     // Duplicate via export specifier
@@ -72,7 +72,7 @@ ruleTester.run('export', exportRule, {
         const bar = 2;
         export { bar as foo };
       `,
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
 
     // Multiple default exports
@@ -81,7 +81,7 @@ ruleTester.run('export', exportRule, {
         export default 1;
         export default 2;
       `,
-      errors: [{ messageId: 'duplicateDefault' }],
+      errors: [{ messageId: 'duplicateDefault' }, { messageId: 'duplicateDefault' }],
     },
 
     // Default via specifier
@@ -91,7 +91,7 @@ ruleTester.run('export', exportRule, {
         const foo = 2;
         export { foo as default };
       `,
-      errors: [{ messageId: 'duplicateDefault' }],
+      errors: [{ messageId: 'duplicateDefault' }, { messageId: 'duplicateDefault' }],
     },
 
     // Duplicate function exports
@@ -100,7 +100,7 @@ ruleTester.run('export', exportRule, {
         export function foo() {}
         export function foo() {}
       `,
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
 
     // Duplicate class exports
@@ -109,7 +109,7 @@ ruleTester.run('export', exportRule, {
         export class Foo {}
         export class Foo {}
       `,
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
 
     // Duplicate namespace re-export
@@ -118,7 +118,7 @@ ruleTester.run('export', exportRule, {
         export * as utils from './utils';
         export * as utils from './other-utils';
       `,
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
 
     // FN GUARD: two type aliases DO collide — only the type/value split is
@@ -128,7 +128,7 @@ ruleTester.run('export', exportRule, {
         export type Foo = A;
         export type Foo = B;
       `,
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
 
     // FN GUARD: `type X` beside `interface X` is an error, even though two
@@ -138,14 +138,14 @@ ruleTester.run('export', exportRule, {
         export interface Foo { a: string }
         export type Foo = B;
       `,
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
     {
       code: `
         export type Foo = B;
         export interface Foo { a: string }
       `,
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
 
     // FN GUARD: an enum occupies BOTH spaces, so it collides with a value…
@@ -154,7 +154,7 @@ ruleTester.run('export', exportRule, {
         export const Foo = 1;
         export enum Foo { A }
       `,
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
 
     // …and with a type.
@@ -163,7 +163,7 @@ ruleTester.run('export', exportRule, {
         export type Foo = A;
         export enum Foo { A }
       `,
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
 
     // An enum occupies both spaces, so enum-vs-enum conflicts in both — but it
@@ -176,7 +176,7 @@ ruleTester.run('export', exportRule, {
         export enum Foo { A }
         export enum Foo { B }
       `,
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
     {
       // Same one-report rule when the earlier declaration is an interface.
@@ -184,7 +184,7 @@ ruleTester.run('export', exportRule, {
         export interface Foo { a: string }
         export enum Foo { A }
       `,
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
   ],
 });
@@ -238,7 +238,7 @@ ruleTester.run('export — declaration spaces', exportRule, {
         export { Foo };
         export type { Foo } from './types';
       `,
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
     {
       name: 'inline type re-export beside a value export specifier of the same name',
@@ -247,7 +247,7 @@ ruleTester.run('export — declaration spaces', exportRule, {
         export { Foo };
         export { type Foo } from './types';
       `,
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
   ],
 });
@@ -292,12 +292,12 @@ ruleTester.run('export — declaration merging table', exportRule, {
     {
       name: 'a destructured export beside a const of the same name',
       code: 'const o = { N: 1 };\nexport const { N } = o;\nexport const N = 2;',
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
     {
       name: 'a nested destructured export beside a function of the same name',
       code: 'const o = { a: [1] };\nexport const { a: [N] } = o;\nexport function N() {}',
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
     {
       name: 'every binding of a destructuring pattern is an export',
@@ -305,52 +305,54 @@ ruleTester.run('export — declaration merging table', exportRule, {
       errors: [
         { messageId: 'duplicateExport' },
         { messageId: 'duplicateExport' },
+        { messageId: 'duplicateExport' },
+        { messageId: 'duplicateExport' },
       ],
     },
     {
       name: 'a class beside a type alias of the same name (a class is a type too)',
       code: 'export class N {}\nexport type N = 1;',
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
     {
       name: 'a namespace holding an enum declares a value',
       code: 'export const S = 1;\nexport namespace S {\n  export enum E { A }\n}',
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
     {
       name: 'a namespace holding an instantiated namespace declares a value',
       code: 'export const S = 1;\nexport namespace S {\n  namespace Inner { export const v = 1; }\n}',
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
     {
       name: 'export * as N beside a namespace of types only',
       code: "export * as N from './m';\nexport namespace N { export type T = 1; }",
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
     {
       name: 'a namespace beside a const of the same name',
       code: 'export namespace N { export const z = 1; }\nexport const N = 1;',
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
     {
       name: 'export * as N beside a namespace N',
       code: "export * as N from './m';\nexport namespace N { export const z = 1; }",
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
     {
       name: 'a type-only export specifier beside a const of the same name',
       code: 'type T = 1;\nexport type { T as N };\nexport const N = 1;',
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
     {
       name: 'a type-only export specifier beside a class of the same name',
       code: 'export class N {}\ntype T = 1;\nexport type { T as N };',
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
     {
       name: 'a re-export beside a namespace of the same name',
       code: "export { x as N } from './m';\nexport namespace N { export const z = 1; }",
-      errors: [{ messageId: 'duplicateExport' }],
+      errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
     },
   ],
 });
@@ -405,36 +407,36 @@ describe('export — namespace scope is part of the identity', () => {
         // module to TypeScript. Keying on printed text would have put these in
         // different buckets and missed the duplicate.
         code: "declare module 'x' { export type T = 'a'; }\ndeclare module \"x\" { export type T = 'b'; }",
-        errors: [{ messageId: 'duplicateExport' }],
+        errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
       },
       {
         // POSITIVE CONTROL: a real duplicate at module scope. Without it the
         // valid cases pass on a rule that stopped reporting.
         code: "export type T = 'a';\nexport type T = 'b';",
-        errors: [{ messageId: 'duplicateExport' }],
+        errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
       },
       {
         // FN GUARD: a duplicate INSIDE one namespace is still a duplicate. This
         // is why the fix prefixes the key instead of skipping the declaration.
         code: "export namespace A {\n  export type T = 'a';\n  export type T = 'b';\n}",
-        errors: [{ messageId: 'duplicateExport' }],
+        errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
       },
       {
         // FN GUARD: same nested namespace, twice.
         code: "export namespace A { export namespace B {\n  export type T = 'a';\n  export type T = 'b';\n} }",
-        errors: [{ messageId: 'duplicateExport' }],
+        errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
       },
       {
         // FN GUARD: two enums of the same name inside ONE namespace.
         code: 'export namespace A {\n  export enum E { a }\n  export enum E { b }\n}',
-        errors: [{ messageId: 'duplicateExport' }],
+        errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
       },
       {
         // FN GUARD: an enum creates a type AND a value, so it collides with a
         // same-named type in the same namespace. Scoping the enum branch is
         // what makes this reachable at all.
         code: "export namespace A {\n  export enum E { a }\n  export type E = 'x';\n}",
-        errors: [{ messageId: 'duplicateExport' }],
+        errors: [{ messageId: 'duplicateExport' }, { messageId: 'duplicateExport' }],
       },
     ],
   });
@@ -481,7 +483,7 @@ describe('export — one default per module', () => {
             export { Foo as default };
           }
         `,
-        errors: [{ messageId: 'duplicateDefault' }],
+        errors: [{ messageId: 'duplicateDefault' }, { messageId: 'duplicateDefault' }],
       },
       {
         name: 'two ambient default functions of different names',
@@ -491,7 +493,7 @@ describe('export — one default per module', () => {
             export default function g(): void;
           }
         `,
-        errors: [{ messageId: 'duplicateDefault' }],
+        errors: [{ messageId: 'duplicateDefault' }, { messageId: 'duplicateDefault' }],
       },
       {
         name: 'an anonymous default function after an overload signature',
@@ -499,7 +501,16 @@ describe('export — one default per module', () => {
           export default function f(a: string): void;
           export default function (a: string) {}
         `,
-        errors: [{ messageId: 'duplicateDefault' }],
+        errors: [{ messageId: 'duplicateDefault' }, { messageId: 'duplicateDefault' }],
+      },
+      {
+        name: 'an overload signature after the implementation is still one default',
+        code: `
+          export default function foo(param: string): boolean { return !!param; }
+          export default function foo(param: number): boolean;
+          export { bar as default };
+        `,
+        errors: [{ messageId: 'duplicateDefault', line: 2 }, { messageId: 'duplicateDefault', line: 4 }],
       },
       {
         name: 'a second default function after an overloaded one',
@@ -508,7 +519,7 @@ describe('export — one default per module', () => {
           export default function foo(param: string): boolean { return !!param; }
           export { foo as default };
         `,
-        errors: [{ messageId: 'duplicateDefault' }],
+        errors: [{ messageId: 'duplicateDefault' }, { messageId: 'duplicateDefault' }],
       },
     ],
   });

@@ -41,14 +41,14 @@ const strings = (value: unknown): string[] | undefined =>
 export function nodeResolverSettings(
   settings: Readonly<Record<string, unknown>>,
 ): NodeResolverSettings {
-  const resolver = settings['import/resolver'];
   const legacy = settings['import/resolve'];
-  const config =
-    isRecord(resolver) && isRecord(resolver['node'])
-      ? resolver['node']
-      : isRecord(legacy)
-        ? legacy
-        : {};
+  // `import/resolver` is an object, or an array of resolver names and
+  // objects tried in order; the node resolver's options are in `node`.
+  const resolvers = [settings['import/resolver']].flat();
+  const node = resolvers.find(
+    (r): r is Record<string, unknown> => isRecord(r) && isRecord(r['node']),
+  )?.['node'];
+  const config = isRecord(node) ? node : isRecord(legacy) ? legacy : {};
   return {
     extensions: strings(config['extensions']),
     paths: strings(config['paths']),

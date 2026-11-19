@@ -1,15 +1,17 @@
 // Model of eslint-plugin-import-next/no-duplicates (import/no-duplicates).
-// Two import statements of the SAME module in one scope are a duplicate when
-// they could be one statement, or one of them adds nothing:
-//   - two value imports (named, default, inline `type`, side-effect,
-//     namespace) of one module, EXCEPT a namespace import beside a named or
-//     inline-type import: `import * as ns, { a }` is not valid syntax, so the
-//     two cannot be merged and neither is redundant;
-//   - two `import type` statements of one module, EXCEPT a type-only default
-//     beside a type-only named import: TypeScript rejects
-//     `import type D, { A }` (TS1363), so the two cannot be merged.
+// Two import statements of the SAME module in one scope are duplicates when
+// they land in the same one of eslint-plugin-import's four buckets:
+//   - value imports: named, default, side-effect;
+//   - namespace imports: `import * as ns` cannot share a statement with
+//     `{ a }`, so it is a duplicate only of another namespace import;
+//   - type-only named imports: `import type { T }`, and an import with an
+//     inline `type` specifier (`import { type T }`), which merge as inline
+//     types;
+//   - type-only defaults: `import type D` cannot share a statement with
+//     `import type { A }` (TypeScript rejects `import type D, { A }`).
 // `import type` beside a value import is NOT a duplicate: the type-only form
 // is erased, and folding it into the value import changes what is emitted.
+// Both statements of a duplicate are reported.
 // The SAME module is the file the resolver sees: './m' and './m.js' (TS
 // source m.ts) and './m' and './m/index' name one file; './m?raw' is a
 // different module to a bundler, and './other' is another file.
@@ -21,15 +23,12 @@ module no_duplicates {
   type Scope = TopLevel | SplitModules | OneModuleBlock
   type Focus = Forms | Relations | Scopes
 
-  pure def isType(f: Form): bool = Set(TypeOnly, TypeDefault).contains(f)
-  pure def unmergeable(a: Form, b: Form): bool =
-    (a == Namespace and Set(Named, InlineType).contains(b))
-    or (b == Namespace and Set(Named, InlineType).contains(a))
-    or (a == TypeDefault and b == TypeOnly)
-    or (b == TypeDefault and a == TypeOnly)
-  pure def duplicate(a: Form, b: Form): bool =
-    if (isType(a) or isType(b)) isType(a) and isType(b) and not(unmergeable(a, b))
-    else not(unmergeable(a, b))
+  pure def bucket(f: Form): int =
+    if (Set(Named, Default, SideEffect).contains(f)) 0
+    else if (f == Namespace) 1
+    else if (Set(TypeOnly, InlineType).contains(f)) 2
+    else 3
+  pure def duplicate(a: Form, b: Form): bool = bucket(a) == bucket(b)
   pure def sameModule(r: Relation): bool = Set(Same, ExtJs, Index).contains(r)
   pure def reports(a: Form, b: Form, r: Relation, s: Scope): bool =
     duplicate(a, b) and sameModule(r) and s != SplitModules

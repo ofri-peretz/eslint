@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-18T20:56:08.625Z",
+  "generatedAt": "2026-11-18T23:24:38.579Z",
   "totals": {
     "plugins": 31,
     "rules": 499,
@@ -2752,7 +2752,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "recommended": null,
-      "docsUrl": "https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/order",
+      "docsUrl": "https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-import-order",
       "corpusFindings": null,
       "budgetReason": null,
       "seal": null,
@@ -3668,7 +3668,7 @@
       "prefix": "import-next",
       "rule": "order",
       "id": "import-next/order",
-      "description": "Enforces a specific order for import statements",
+      "description": "Enforce a convention in module import order, with eslint-plugin-import's options and defaults",
       "cwe": null,
       "cvss": null,
       "confidence": null,

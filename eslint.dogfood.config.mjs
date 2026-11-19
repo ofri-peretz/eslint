@@ -72,6 +72,8 @@ export default [
       // 257, true positives: one module imported in 2-4 statements in the same file
       // (mostly @interlace/eslint-devkit in rule sources). Autofixable; a follow-up
       // because the fix touches ~200 rule files and each trips the per-rule gates.
+      // 501 reports since import-next 4.0, which reports every statement of a
+      // duplicated module, the first included (eslint-plugin-import's count).
       'import-next/no-duplicates': 'warn',
       // 17, true positives in the strict sense: ambiguous quantifiers in regexes
       // that rules run over the source they lint. Worth fixing — linted code is
