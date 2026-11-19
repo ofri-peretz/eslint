@@ -24,6 +24,7 @@ import { withCanonicalDocsUrls } from '@interlace/eslint-devkit';
 // CommonJS, the module namespace under vitest. `flatConfigs` and the default
 // export use it so that every way of loading the package yields one plugin
 // object. See `flatConfigs` below.
+// eslint-disable-next-line import-next/no-self-import -- deliberate: the plugin is this module
 import * as self from './index';
 
 // Module Resolution Rules
