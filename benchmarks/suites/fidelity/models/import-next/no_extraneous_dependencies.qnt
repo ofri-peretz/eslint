@@ -14,7 +14,11 @@
 // has both, so a package listed only in `bundledDependencies` is undeclared.
 //
 // Never checked: Node builtins (`fs/promises`, `node:fs`), relative paths,
-// `#imports`, URL schemes (`virtual:x`). Erased at compile time, so never
+// `#imports`, URL schemes (`virtual:x`), and an internal module: a specifier
+// that resolves to a file of this package outside `node_modules`, such as a
+// tsconfig `paths` alias (`@/local`) - eslint-plugin-import's default
+// (`includeInternal: false`). An alias that resolves to nothing is checked
+// like any package name. Erased at compile time, so never
 // reported: `import type`, `export type ... from`, and an import whose
 // specifiers are all inline `type` (unless `verbatimModuleSyntax`, which keeps
 // it as `import {} from 'pkg'`).
@@ -34,7 +38,7 @@ module no_extraneous_dependencies {
   type Listing = Deps | Dev | Optional | Peer | Bundled | BundleAlt | None | Self
   type Opts = Defaults | NoDev | NoOptional | NoPeer | NoBundled | Verbatim | Workspace
   type Shape = Bare | Subpath | Scoped | ScopedSubpath | Marker
-             | Builtin | NodeBuiltin | Relative | Hash | Protocol
+             | Builtin | NodeBuiltin | Relative | Hash | Protocol | Alias | AliasMissing
 
   pure def erased(f: Form, o: Opts): bool =
     f == TypeOnly or f == ExportType or (f == InlineType and o != Verbatim)
@@ -48,10 +52,11 @@ module no_extraneous_dependencies {
       or (l == BundleAlt and o != NoBundled)
 
   pure def packageShape(sh: Shape): bool =
-    Set(Bare, Subpath, Scoped, ScopedSubpath, Marker).contains(sh)
+    Set(Bare, Subpath, Scoped, ScopedSubpath, Marker, AliasMissing).contains(sh)
 
+  // `@/nope` is declared nowhere, whatever the listing.
   pure def reports(f: Form, l: Listing, o: Opts, sh: Shape): bool =
-    packageShape(sh) and not(erased(f, o)) and not(allowed(l, o))
+    packageShape(sh) and not(erased(f, o)) and (sh == AliasMissing or not(allowed(l, o)))
 
   var focus: Focus
   var form: Form
@@ -66,7 +71,8 @@ module no_extraneous_dependencies {
                     ExportNamed, ExportAll, ExportAllAs, Require, Dynamic, ImportEquals).oneOf()
     nondet l0 = Set(Deps, Dev, Optional, Peer, Bundled, BundleAlt, None, Self).oneOf()
     nondet o0 = Set(Defaults, NoDev, NoOptional, NoPeer, NoBundled, Verbatim, Workspace).oneOf()
-    nondet sh0 = Set(Subpath, Scoped, ScopedSubpath, Marker, Builtin, NodeBuiltin, Relative, Hash, Protocol).oneOf()
+    nondet sh0 = Set(Subpath, Scoped, ScopedSubpath, Marker, Builtin, NodeBuiltin, Relative, Hash, Protocol,
+                     Alias, AliasMissing).oneOf()
     nondet l1 = Set(Deps, None).oneOf()
     val f = if (fc == Grid) f0 else Default
     val l = if (fc == Grid) l0 else l1

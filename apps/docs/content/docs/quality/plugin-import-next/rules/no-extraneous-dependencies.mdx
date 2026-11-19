@@ -70,12 +70,12 @@ import { feature } from 'app/feature';
 A config carried over from `import/no-extraneous-dependencies` loads, and its
 options mean what they meant there:
 
-| Option                                                                               | Meaning                                                                                                                                                                                                                      |
-| ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `devDependencies`, `optionalDependencies`, `peerDependencies`, `bundledDependencies` | `true`/`false` as before, or a list of globs (`['**/*.test.js']`): that kind is allowed in the files a glob matches, written relative to the working directory or absolute. An empty list allows it nowhere.                 |
-| `packageDir`                                                                         | A folder, or a list of folders, whose `package.json` declares the dependencies, resolved from the working directory. Several merge; of several, a missing one is skipped. A single unreadable one is reported once per file. |
-| `includeTypes`                                                                       | `true` checks type-only imports and exports too.                                                                                                                                                                             |
-| `includeInternal`                                                                    | `false` skips internal modules: a bare specifier matching the `import/internal-regex` setting, or resolving to a file outside `node_modules` (a path alias). Absent or `true`: checked, this rule's own default.             |
+| Option                                                                               | Meaning                                                                                                                                                                                                                                                                                                                               |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `devDependencies`, `optionalDependencies`, `peerDependencies`, `bundledDependencies` | `true`/`false` as before, or a list of globs (`['**/*.test.js']`): that kind is allowed in the files a glob matches, written relative to the working directory or absolute. An empty list allows it nowhere.                                                                                                                          |
+| `packageDir`                                                                         | A folder, or a list of folders, whose `package.json` declares the dependencies, resolved from the working directory. Several merge; of several, a missing one is skipped. A single unreadable one is reported once per file.                                                                                                          |
+| `includeTypes`                                                                       | `true` checks type-only imports and exports too.                                                                                                                                                                                                                                                                                      |
+| `includeInternal`                                                                    | `true` also checks internal modules: a bare specifier matching the `import/internal-regex` setting, or one the configured resolvers (tsconfig `paths` included) resolve to a file of this package outside `node_modules` and `import/external-module-folders`, such as `@/utils`. Absent or `false`: skipped, as upstream skips them. |
 
 `whitelist` is not accepted: eslint-plugin-import 2.32.0 does not accept it
 either. Upstream skips a package that does not resolve; this rule reports it,
@@ -129,7 +129,7 @@ since an undeclared package that is not installed is still missing.
       },
       "includeInternal": {
         "type": "boolean",
-        "description": "Check internal modules (`import/internal-regex`, or resolving outside node_modules). Absent: checked."
+        "description": "Check internal modules too (`import/internal-regex`, or resolving to a file of this package outside node_modules, such as a path alias). Absent: skipped."
       },
       "includeTypes": {
         "type": "boolean",

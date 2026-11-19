@@ -8,8 +8,8 @@
  * eslint-plugin-import-next
  *
  * A drop-in replacement for eslint-plugin-import: graded by that plugin's own
- * test suite it passes 2,033 of 2,135 cases (95.2%, eslint-plugin-import@2.32.0,
- * benchmarks/results/ilb-import-parity/2026-11-18-parity-3.json).
+ * test suite it passes 2,035 of 2,135 cases (95.3%, eslint-plugin-import@2.32.0,
+ * benchmarks/results/ilb-import-parity/2026-11-19.json).
  * Covers import validation, module resolution, circular dependencies,
  * and export style enforcement.
  *

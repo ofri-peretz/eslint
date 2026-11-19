@@ -34,6 +34,10 @@ function specOf(shape, listing) {
       return './local';
     case 'Hash':
       return '#internal';
+    case 'Alias':
+      return '@/local';
+    case 'AliasMissing':
+      return '@/nope';
     default:
       return 'virtual:routes';
   }
@@ -79,7 +83,7 @@ const MANIFEST = pkg({
 
 module.exports = {
   rule: 'no-extraneous-dependencies',
-  domain: 13 * 8 * 7 + 9 * 2,
+  domain: 13 * 8 * 7 + 11 * 2,
   traces: 14000,
   key: keyOf('form', 'listing', 'opts', 'shape'),
   config: (s) => OPTS[tag(s.opts)],
@@ -89,6 +93,9 @@ module.exports = {
     'package.json': MANIFEST,
     'src/esm/package.json': '{ "type": "module" }\n',
     'src/local.ts': 'export const a = 1;\n',
+    'tsconfig.json': JSON.stringify({
+      compilerOptions: { baseUrl: '.', paths: { '@/*': ['./src/*'] } },
+    }),
   }),
   code: (s) => src(FORM[tag(s.form)](specOf(tag(s.shape), tag(s.listing)))),
 };
