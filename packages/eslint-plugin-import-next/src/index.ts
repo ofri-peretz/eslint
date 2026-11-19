@@ -194,7 +194,7 @@ withCanonicalDocsUrls('plugin-import-next', rules);
 export const plugin = {
   meta: {
     name: 'eslint-plugin-import-next',
-    version: '3.2.1',
+    version: '4.0.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
