@@ -62,6 +62,7 @@ describe('detect-eval-with-expression', () => {
             errors: [{ messageId: 'strategyRefactor' }],
           },
           {
+            name: 'eval of a template literal that interpolates a value is reported',
             code: 'eval(`code: ${value}`);',
             errors: [{ messageId: 'useTemplateLiteral' }],
           },

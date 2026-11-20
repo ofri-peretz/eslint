@@ -204,8 +204,8 @@ function isGlobalObjectProbe(
   args: readonly TSESTree.CallExpressionArgument[],
 ): boolean {
   if (args.length !== 1) return false;
-  const body = staticString(args[0]);
-  return body !== null && GLOBAL_PROBE.test(body);
+  // `null` (an argument that is not a static string) has no `match`.
+  return staticString(args[0])?.match(GLOBAL_PROBE) != null;
 }
 
 /**

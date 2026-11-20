@@ -1015,18 +1015,20 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
 
     /** Is this read of the binding part of a file name? */
     function isFileNameUse(id: TSESTree.Node): boolean {
-      const parent = id.parent;
-      if (parent?.type === AST_NODE_TYPES.TemplateLiteral) {
+      // Every read of a declared binding sits under a parent.
+      const parent = id.parent as TSESTree.Node;
+      if (parent.type === AST_NODE_TYPES.TemplateLiteral) {
         const index = parent.expressions.indexOf(id as TSESTree.Expression);
-        const next = parent.quasis[index + 1];
-        return next !== undefined && FILE_EXTENSION_AFTER.test(next.value.raw);
+        // `quasis` is one longer than `expressions`: the next one always exists.
+        return FILE_EXTENSION_AFTER.test(parent.quasis[index + 1].value.raw);
       }
+      // A read that is a call's argument is not the callee, and the callee is
+      // required to be a member, so no further check on `arguments` is needed.
       return (
-        parent?.type === AST_NODE_TYPES.CallExpression &&
+        parent.type === AST_NODE_TYPES.CallExpression &&
         parent.callee.type === AST_NODE_TYPES.MemberExpression &&
         parent.callee.object.type === AST_NODE_TYPES.Identifier &&
-        FILE_API_OBJECTS.has(parent.callee.object.name) &&
-        parent.arguments.includes(id as TSESTree.CallExpressionArgument)
+        FILE_API_OBJECTS.has(parent.callee.object.name)
       );
     }
 

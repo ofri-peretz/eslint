@@ -94,6 +94,7 @@ describe('no-math-random-crypto', () => {
         errors: [{ messageId: 'mathRandomCrypto' }],
       },
       {
+        name: 'a Math.random value bound to a session secret is a predictable credential',
         code: 'const sessionSecret = Math.random();',
         errors: [{ messageId: 'mathRandomCrypto' }],
       },

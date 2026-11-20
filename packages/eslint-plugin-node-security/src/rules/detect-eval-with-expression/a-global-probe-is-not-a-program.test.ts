@@ -48,6 +48,14 @@ ruleTester.run('global-object probe', detectEvalWithExpression, {
       name: 'template literal without substitutions',
       code: 'const g = Function(`return this`)();',
     },
+    {
+      name: 'two spaces after the prologue semicolon',
+      code: 'const g = Function(\'"use strict";  return this\')();',
+    },
+    {
+      name: 'two spaces after return',
+      code: "const g = Function('return  this')();",
+    },
   ],
   invalid: [
     {
@@ -78,6 +86,21 @@ ruleTester.run('global-object probe', detectEvalWithExpression, {
     {
       name: 'a locally declared Function is not the probe, but a global one still reports a different body',
       code: 'const g = new Function(\'return eval("1")\');',
+      errors: 1,
+    },
+    {
+      name: 'text before the probe is a program, not the probe',
+      code: "const g = Function('foo(); return this')();",
+      errors: 1,
+    },
+    {
+      name: 'a stray token between the prologue and its semicolon',
+      code: 'const g = Function(\'"use strict"x; return this\')();',
+      errors: 1,
+    },
+    {
+      name: 'a probe passed as the first of two arguments is a parameter name, not a body',
+      code: "const g = Function('return this', 'return 1');",
       errors: 1,
     },
   ],
