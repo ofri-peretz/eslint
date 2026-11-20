@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.4.0
+
+### Minor Changes
+
+- **✨ Feature** — `no-improper-sanitization` reports Angular's `DomSanitizer.bypassSecurityTrust*` on non-constant input
+
+  `bypassSecurityTrustHtml`, `Script`, `Style`, `Url` and `ResourceUrl` turn Angular's sanitizer off for one value (CWE-79, message `angularSanitizerBypass`). They are reported unless the argument is a literal, a template literal with no substitutions, a concatenation of literals, a `const` bound to one of those, or the output of a sanitizer (`DOMPurify.sanitize`, `sanitizer.sanitize(...)`, `escapeHtml`). Expect new findings in Angular front ends.
+
 ## 6.3.0
 
 ### Minor Changes
