@@ -226,10 +226,39 @@ for (const [name, c] of Object.entries(configs)) {
       `${name}: files silently ignored: ${JSON.stringify(ignored)}`,
     );
   const lintedFiles = reports.map((r) => r.filePath);
+  let expectedFiles = null;
+  if (app.checkAllFilesLinted) {
+    // Trap 2 (TypeScript silently skipped): every tracked file in scope, minus the shared ignores, must have been linted.
+    const tracked = sh(
+      'git',
+      ['ls-files', '-z', '--', ...app.lintGlobs.map((g) => `:(glob)${g}`)],
+      cloneDir,
+    )
+      .split('\0')
+      .filter(Boolean)
+      .filter(
+        (f) =>
+          !/(^|\/)(test|tests|cypress|node_modules|dist|build|coverage)\//.test(
+            f,
+          ) &&
+          !/\.(spec|test)\.(ts|js)$|\.min\.js$/.test(f) &&
+          !/^(frontend\/src\/assets|data\/static\/codefixes|app\/assets|public|artifacts)\//.test(
+            f,
+          ),
+      );
+    const done = new Set(ruleOnFileSet);
+    const missing = tracked.filter((f) => !done.has(f));
+    if (missing.length)
+      throw new Error(
+        `${name}: ${missing.length} in-scope files not linted, e.g. ${missing.slice(0, 5)}`,
+      );
+    expectedFiles = tracked.length;
+  }
   results[name] = {
     ...c,
     cfg: undefined,
     filesLinted: lintedFiles.length,
+    expectedFiles,
     loc: loc(lintedFiles),
     ms: Math.round(ms),
     parseErrors: nullRule,
@@ -290,6 +319,7 @@ for (const [name, r] of Object.entries(results)) {
     label: r.label,
     side: r.side,
     filesLinted: r.filesLinted,
+    expectedFiles: r.expectedFiles,
     loc: r.loc,
     ms: r.ms,
     parseErrors: r.parseErrors.length,
