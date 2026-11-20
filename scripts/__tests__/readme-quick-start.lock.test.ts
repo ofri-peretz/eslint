@@ -1,5 +1,6 @@
 /**
  * @provenBy {"file":"packages/eslint-plugin-secure-coding/README.md","find":"export default [configs.recommended];","replace":"export default [...secureCoding.configs.recommended];"}
+ * @provenBy {"file":"packages/eslint-plugin-react-features/README.md","find":"| [jsx-uses-vars](","replace":"| [jsx-uses-varz]("}
  */
 
 /*
@@ -107,4 +108,76 @@ describe('every plugin README quick start loads in ESLint', () => {
     },
     60_000,
   );
+});
+
+/** Rule names in the README's generated rules table: the first link of each row. */
+function tableRules(readme: string): string[] {
+  const start = readme.indexOf('<!-- AUTO-GENERATED:RULES_TABLE:START');
+  const end = readme.indexOf('<!-- AUTO-GENERATED:RULES_TABLE:END');
+  if (start === -1 || end === -1) return [];
+  return [...readme.slice(start, end).matchAll(/^\| \[([^\]]+)\]\(/gm)].map(
+    (m) => m[1],
+  );
+}
+
+describe('every rule a README lists is a rule its plugin exports', () => {
+  it.each(published)(
+    '%s: the rules table names only exported rules',
+    async (pkg) => {
+      const readme = fs.readFileSync(
+        path.join(PACKAGES, pkg, 'README.md'),
+        'utf8',
+      );
+      const listed = tableRules(readme);
+      if (listed.length === 0) return; // a plugin with no generated table
+      const mod = await import(/* @vite-ignore */ pkg);
+      const exported = (mod.default ?? mod).rules as Record<string, unknown>;
+      const missing = listed.filter((r) => !(r in exported));
+      expect(missing, `${pkg} README lists rules it does not export`).toEqual(
+        [],
+      );
+    },
+    60_000,
+  );
+});
+
+/*
+ * react-features exported four JSX scope rules in #1629. They are not in `recommended`
+ * (so the quick start above never touches them), which is how a README can list a rule
+ * that ESLint then cannot resolve. Each is checked here: listed in the README, exported,
+ * and accepted by a real ESLint instance when a reader enables it by hand.
+ */
+describe('react-features: the four JSX scope rules', () => {
+  const RULES = [
+    'jsx-uses-react',
+    'jsx-uses-vars',
+    'jsx-no-undef',
+    'jsx-no-comment-textnodes',
+  ];
+  const readme = fs.readFileSync(
+    path.join(PACKAGES, 'eslint-plugin-react-features', 'README.md'),
+    'utf8',
+  );
+
+  it.each(RULES)('%s is listed, exported and enableable', async (rule) => {
+    expect(tableRules(readme)).toContain(rule);
+    const { default: plugin } = await import(
+      /* @vite-ignore */ 'eslint-plugin-react-features'
+    );
+    expect(plugin.rules).toHaveProperty(rule);
+    const eslint = new ESLint({
+      cwd: ROOT,
+      overrideConfigFile: true,
+      overrideConfig: [
+        {
+          plugins: { 'react-features': plugin },
+          rules: { [`react-features/${rule}`]: 'error' },
+        },
+      ],
+    });
+    const config = await eslint.calculateConfigForFile(
+      path.join(ROOT, 'readme-quick-start.js'),
+    );
+    expect(config.rules?.[`react-features/${rule}`]).toBeDefined();
+  });
 });

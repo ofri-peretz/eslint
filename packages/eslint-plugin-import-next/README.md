@@ -88,7 +88,7 @@ That trade costs recall, and we measure it:
 
 ## 🔄 Parity with `eslint-plugin-import`
 
-**A drop-in replacement for `eslint-plugin-import`, measured.** Graded by `eslint-plugin-import`'s own test suite, `import-next` passes **2,035 of 2,135** (95.3%) of `eslint-plugin-import`@2.32.0's own test cases, and **all 45 of its tested rules are implemented**. [Measured 2026-11-19](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/results/ilb-import-parity/2026-11-19.json).
+**A drop-in replacement for `eslint-plugin-import`, measured.** The grade at the top of this page is `eslint-plugin-import`'s own test suite run against `import-next`. [Measured 2026-11-19](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/results/ilb-import-parity/2026-11-19.json).
 
 - **Every graded option shape loads.** No graded case sets an option `import-next` rejects, so a config carried over from `eslint-plugin-import` loads, and the options mean what they meant there: `extensions: ["always"]`, `order`'s `newlines-between` and `pathGroups`, `no-restricted-paths`'s `zones`, `no-cycle`'s `commonjs` and `maxDepth: "∞"`, among others. Where an `eslint-plugin-import` default differs from this plugin's own, this plugin's default applies when the option is absent; each rule's docs say where. One option outside the graded cases is still rejected rather than accepted and ignored: `no-unused-modules`'s `unusedExports`, which is not implemented.
 - **Other modules are read without type information.** `named`, `namespace`, `default`, `no-deprecated`, `no-named-as-default`, `no-named-as-default-member` and `export` parse the imported module, as `eslint-plugin-import` does, when there is no TypeScript program; with one, they read it through TypeScript.
