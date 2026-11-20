@@ -1,0 +1,255 @@
+{
+  "rule": "no-unknown-property",
+  "source": "eslint-plugin-react@7.37.5 tests/lib/rules/no-unknown-property.js (MIT)",
+  "cases": [
+    {
+      "kind": "valid",
+      "n": 22,
+      "code": "<App dataNotAnDataAttribute=\"yes\" />;\n// features: [], parser: default, options: [{\"requireDataLowercase\":true}]",
+      "options": [
+        {
+          "requireDataLowercase": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 24,
+      "code": "<App dataNotAnDataAttribute=\"yes\" />;\n// features: [], parser: @typescript-eslint/parser, options: [{\"requireDataLowercase\":true}]",
+      "options": [
+        {
+          "requireDataLowercase": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 175,
+      "code": "<div data-testID=\"bar\" data-under_sCoRe=\"bar\" />;\n// features: [], parser: default, options: [{\"requireDataLowercase\":false}]",
+      "options": [
+        {
+          "requireDataLowercase": false
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 177,
+      "code": "<div data-testID=\"bar\" data-under_sCoRe=\"bar\" />;\n// features: [], parser: @typescript-eslint/parser, options: [{\"requireDataLowercase\":false}]",
+      "options": [
+        {
+          "requireDataLowercase": false
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 178,
+      "code": "<div class=\"bar\"></div>;\n// features: [], parser: default, options: [{\"ignore\":[\"class\"]}]",
+      "options": [
+        {
+          "ignore": ["class"]
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 180,
+      "code": "<div class=\"bar\"></div>;\n// features: [], parser: @typescript-eslint/parser, options: [{\"ignore\":[\"class\"]}]",
+      "options": [
+        {
+          "ignore": ["class"]
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 181,
+      "code": "<div someProp=\"bar\"></div>;\n// features: [], parser: default, options: [{\"ignore\":[\"someProp\"]}]",
+      "options": [
+        {
+          "ignore": ["someProp"]
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 183,
+      "code": "<div someProp=\"bar\"></div>;\n// features: [], parser: @typescript-eslint/parser, options: [{\"ignore\":[\"someProp\"]}]",
+      "options": [
+        {
+          "ignore": ["someProp"]
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 184,
+      "code": "<div css={{flex: 1}}></div>;\n// features: [], parser: default, options: [{\"ignore\":[\"css\"]}]",
+      "options": [
+        {
+          "ignore": ["css"]
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 186,
+      "code": "<div css={{flex: 1}}></div>;\n// features: [], parser: @typescript-eslint/parser, options: [{\"ignore\":[\"css\"]}]",
+      "options": [
+        {
+          "ignore": ["css"]
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 79,
+      "code": "<div data-testID=\"bar\" data-under_sCoRe=\"bar\" dataNotAnDataAttribute=\"yes\" />;\n// features: [], parser: default, options: [{\"requireDataLowercase\":true}]",
+      "errors": 3,
+      "options": [
+        {
+          "requireDataLowercase": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 81,
+      "code": "<div data-testID=\"bar\" data-under_sCoRe=\"bar\" dataNotAnDataAttribute=\"yes\" />;\n// features: [], parser: @typescript-eslint/parser, options: [{\"requireDataLowercase\":true}]",
+      "errors": 3,
+      "options": [
+        {
+          "requireDataLowercase": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 82,
+      "code": "<App data-testID=\"bar\" data-under_sCoRe=\"bar\" dataNotAnDataAttribute=\"yes\" />;\n// features: [], parser: default, options: [{\"requireDataLowercase\":true}]",
+      "errors": 2,
+      "options": [
+        {
+          "requireDataLowercase": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 84,
+      "code": "<App data-testID=\"bar\" data-under_sCoRe=\"bar\" dataNotAnDataAttribute=\"yes\" />;\n// features: [], parser: @typescript-eslint/parser, options: [{\"requireDataLowercase\":true}]",
+      "errors": 2,
+      "options": [
+        {
+          "requireDataLowercase": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    }
+  ]
+}

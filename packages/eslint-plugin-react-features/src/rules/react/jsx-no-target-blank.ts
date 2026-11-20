@@ -42,6 +42,49 @@ function attributeText(value: TSESTree.JSXAttribute['value']): string | null {
   );
 }
 
+/**
+ * The elements a rule treats as links (or forms) and the attribute that holds
+ * the URL, as eslint-plugin-react reads them: the built-in `a` / `form`, then
+ * `settings.linkComponents` / `settings.formComponents`, each a name or
+ * `{ name, linkAttribute }` (the attribute a string or a list of strings).
+ */
+function componentAttributes(
+  settings: unknown,
+  key: 'linkComponents' | 'formComponents',
+  attributeKey: 'linkAttribute' | 'formAttribute',
+  builtIn: string,
+  builtInAttribute: string,
+): Map<string, readonly string[]> {
+  const found = new Map<string, readonly string[]>([
+    [builtIn, [builtInAttribute]],
+  ]);
+  const configured = (settings as Record<string, unknown> | undefined)?.[key];
+  const entries: unknown[] = Array.isArray(configured)
+    ? configured
+    : configured === undefined
+      ? []
+      : [configured];
+  for (const entry of entries) {
+    if (typeof entry === 'string') {
+      found.set(entry, [builtInAttribute]);
+    } else if (entry && typeof entry === 'object') {
+      const { name, [attributeKey]: attribute } = entry as Record<
+        string,
+        unknown
+      >;
+      if (typeof name === 'string') {
+        found.set(
+          name,
+          [attribute]
+            .flat()
+            .filter((a): a is string => typeof a === 'string'),
+        );
+      }
+    }
+  }
+  return found;
+}
+
 export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
   name: 'jsx-no-target-blank',
   meta: {
@@ -108,6 +151,8 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
     let warnOnSpreadAttributes: boolean;
     let links: boolean;
     let forms: boolean;
+    /** Link components and the attributes that hold their URL: `a` plus `settings.linkComponents`. */
+    let linkAttributes: Map<string, readonly string[]>;
     let elementsToCheck: string[];
 
     function hasTargetBlank(node: TSESTree.JSXOpeningElement): boolean {
@@ -142,25 +187,30 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
-    function hasExternalHref(node: TSESTree.JSXOpeningElement): boolean {
-      const hrefAttr = node.attributes.find(
-        (attr): attr is TSESTree.JSXAttribute =>
-          attr.type === 'JSXAttribute' &&
-          attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'href',
-      );
+    function hasExternalHref(
+      node: TSESTree.JSXOpeningElement,
+      attributeNames: readonly string[],
+    ): boolean {
+      return attributeNames.some((attributeName) => {
+        const hrefAttr = node.attributes.find(
+          (attr): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === attributeName,
+        );
 
-      if (!hrefAttr || !hrefAttr.value) return false;
+        if (!hrefAttr || !hrefAttr.value) return false;
 
-      const href = attributeText(hrefAttr.value);
-      if (href !== null) {
-        // External if it starts with http:// or https:// (a URL scheme is
-        // case-insensitive) or is protocol-relative //
-        return /^(https?:)?\/\//i.test(href);
-      }
+        const href = attributeText(hrefAttr.value);
+        if (href !== null) {
+          // External if it starts with http:// or https:// (a URL scheme is
+          // case-insensitive) or is protocol-relative //
+          return /^(https?:)?\/\//i.test(href);
+        }
 
-      // Dynamic href - assume external
-      return enforceDynamicLinks === 'always';
+        // Dynamic href - assume external
+        return enforceDynamicLinks === 'always';
+      });
     }
 
     function getRelAttribute(
@@ -212,15 +262,34 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
           forms = false,
         } = options ?? ({} as Options));
 
+        linkAttributes = componentAttributes(
+          context.settings,
+          'linkComponents',
+          'linkAttribute',
+          'a',
+          'href',
+        );
         elementsToCheck = [];
-        if (links) elementsToCheck.push('a');
-        if (forms) elementsToCheck.push('form');
+        if (links) elementsToCheck.push(...linkAttributes.keys());
+        if (forms) {
+          elementsToCheck.push(
+            ...componentAttributes(
+              context.settings,
+              'formComponents',
+              'formAttribute',
+              'form',
+              'action',
+            ).keys(),
+          );
+        }
       },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
-        if (
-          node.name.type !== 'JSXIdentifier' ||
-          !elementsToCheck.includes(node.name.name)
-        ) {
+        // `Link`, or `Foo.Link` / `ns:link` as a setting spells it
+        const elementName =
+          node.name.type === 'JSXIdentifier'
+            ? node.name.name
+            : context.sourceCode.getText(node.name);
+        if (!elementsToCheck.includes(elementName)) {
           return;
         }
 
@@ -233,8 +302,9 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // For anchors, only check external links
-        if (node.name.name === 'a' && !hasExternalHref(node)) {
+        // For links, only check external ones
+        const urlAttributes = links ? linkAttributes.get(elementName) : undefined;
+        if (urlAttributes && !hasExternalHref(node, urlAttributes)) {
           return;
         }
 

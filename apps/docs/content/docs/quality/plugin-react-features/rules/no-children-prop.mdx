@@ -78,6 +78,12 @@ import). A local function that happens to be called `createElement` is not React
 }
 ```
 
+## Options
+
+| Option           | Type      | Default | Description |
+| ---------------- | --------- | ------- | ----------- |
+| `allowFunctions` | `boolean` | `false` | Allow a function as the `children` prop (`<Foo children={() => ...} />`); a function written between the tags (`<Foo>{() => ...}</Foo>`) or as the third `createElement` argument is then the thing reported |
+
 ## Related Rules
 
 - [`jsx-key`](./jsx-key) - Keys in children lists

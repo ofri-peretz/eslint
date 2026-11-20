@@ -18,6 +18,7 @@ import {
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { extendsReactComponent } from '../../utils/react-api';
+import { reactVersionAtLeast } from '../../utils/react-settings';
 
 type MessageIds = 'noUnsafe';
 
@@ -85,13 +86,15 @@ export const noUnsafe = createRule<RuleOptions, MessageIds>({
     currentOptions,
   ) {
     let checkAliases: boolean;
+    /** The `UNSAFE_` names exist from React 16.3; before it there is nothing to flag. */
+    let applicable: boolean;
 
     function checkMethod(
       node: TSESTree.MethodDefinition | TSESTree.PropertyDefinition,
     ): void {
       // A lifecycle is an instance member of a React class component —
       // declared or a class expression, whatever its superclass is called.
-      if (node.static) return;
+      if (!applicable || node.static) return;
       const owner = node.parent.parent;
       if (
         (owner.type !== 'ClassDeclaration' &&
@@ -126,6 +129,7 @@ export const noUnsafe = createRule<RuleOptions, MessageIds>({
       before() {
         const [options = {} as Options] = currentOptions();
         ({ checkAliases = false } = options ?? ({} as Options));
+        applicable = reactVersionAtLeast(context, '16.3.0');
       },
       MethodDefinition: checkMethod,
       PropertyDefinition: checkMethod,

@@ -242,7 +242,7 @@
     },
     {
       "name": "eslint-plugin-react-features",
-      "rules": 61,
+      "rules": 65,
       "description": "ESLint React hooks and JSX rules — prop-types, JSX correctness, render performance, and class-to-hooks migration for modern React codebases",
       "category": "react",
       "version": "2.0.3",
@@ -257,7 +257,7 @@
       "published": true
     }
   ],
-  "totalRules": 499,
+  "totalRules": 503,
   "totalPlugins": 31,
   "allPluginsCount": 32,
   "generatedAt": "2026-11-20"

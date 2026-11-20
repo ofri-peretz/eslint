@@ -1,0 +1,155 @@
+{
+  "rule": "react-in-jsx-scope",
+  "source": "eslint-plugin-react@7.37.5 tests/lib/rules/react-in-jsx-scope.js (MIT)",
+  "cases": [
+    {
+      "kind": "valid",
+      "n": 18,
+      "code": "/** @jsx Foo */ var Foo, App; <App />;\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 20,
+      "code": "/** @jsx Foo */ var Foo, App; <App />;\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 21,
+      "code": "/** @jsx Foo.Bar */ var Foo, App; <App />;\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 23,
+      "code": "/** @jsx Foo.Bar */ var Foo, App; <App />;\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 27,
+      "code": "var Foo, App; <App />;\n// features: [], parser: default, settings: {\"react\":{\"pragma\":\"Foo\"}}",
+      "settings": {
+        "react": {
+          "pragma": "Foo"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 29,
+      "code": "var Foo, App; <App />;\n// features: [], parser: @typescript-eslint/parser, settings: {\"react\":{\"pragma\":\"Foo\"}}",
+      "settings": {
+        "react": {
+          "pragma": "Foo"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 14,
+      "code": "/** @jsx Foo.bar */ var React, a = <img />;\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 16,
+      "code": "/** @jsx Foo.bar */ var React, a = <img />;\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 17,
+      "code": "var React, a = <img />;\n// features: [], parser: default, settings: {\"react\":{\"pragma\":\"Foo\"}}",
+      "errors": 1,
+      "settings": {
+        "react": {
+          "pragma": "Foo"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 19,
+      "code": "var React, a = <img />;\n// features: [], parser: @typescript-eslint/parser, settings: {\"react\":{\"pragma\":\"Foo\"}}",
+      "errors": 1,
+      "settings": {
+        "react": {
+          "pragma": "Foo"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    }
+  ]
+}

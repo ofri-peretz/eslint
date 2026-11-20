@@ -61,6 +61,12 @@ import { jsxNoDuplicateProps } from './rules/react/jsx-no-duplicate-props';
 import { noDangerWithChildren } from './rules/react/no-danger-with-children';
 import { noDeprecated } from './rules/react/no-deprecated';
 
+// JSX scope and correctness rules (eslint-plugin-react's recommended set)
+import { jsxNoCommentTextnodes } from './rules/react/jsx-no-comment-textnodes';
+import { jsxNoUndef } from './rules/react/jsx-no-undef';
+import { jsxUsesReact } from './rules/react/jsx-uses-react';
+import { jsxUsesVars } from './rules/react/jsx-uses-vars';
+
 // Deprecated API rules
 import { noFindDomNode } from './rules/react/no-find-dom-node';
 import { noUnsafe } from './rules/react/no-unsafe';
@@ -134,6 +140,10 @@ export const rules = {
   'jsx-no-duplicate-props': jsxNoDuplicateProps,
   'no-danger-with-children': noDangerWithChildren,
   'no-deprecated': noDeprecated,
+  'jsx-no-comment-textnodes': jsxNoCommentTextnodes,
+  'jsx-no-undef': jsxNoUndef,
+  'jsx-uses-react': jsxUsesReact,
+  'jsx-uses-vars': jsxUsesVars,
   
   // Deprecated API rules
   'no-find-dom-node': noFindDomNode,
@@ -204,6 +214,10 @@ export const rules = {
   'react/jsx-no-duplicate-props': jsxNoDuplicateProps,
   'react/no-danger-with-children': noDangerWithChildren,
   'react/no-deprecated': noDeprecated,
+  'react/jsx-no-comment-textnodes': jsxNoCommentTextnodes,
+  'react/jsx-no-undef': jsxNoUndef,
+  'react/jsx-uses-react': jsxUsesReact,
+  'react/jsx-uses-vars': jsxUsesVars,
 
   // Deprecated API rules (categorized)
   'react/no-find-dom-node': noFindDomNode,

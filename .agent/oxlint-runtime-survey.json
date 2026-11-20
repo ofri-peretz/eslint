@@ -2014,6 +2014,11 @@
       "failed": 0,
       "examples": []
     },
+    "eslint-plugin-react-features/jsx-no-comment-textnodes": {
+      "cases": 13,
+      "failed": 0,
+      "examples": []
+    },
     "eslint-plugin-react-features/jsx-no-duplicate-props": {
       "cases": 13,
       "failed": 0,
@@ -2031,6 +2036,11 @@
     },
     "eslint-plugin-react-features/jsx-no-target-blank": {
       "cases": 32,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-react-features/jsx-no-undef": {
+      "cases": 14,
       "failed": 0,
       "examples": []
     },
@@ -2294,6 +2304,11 @@
       "failed": 0,
       "examples": []
     },
+    "eslint-plugin-react-features/react/jsx-no-comment-textnodes": {
+      "cases": 13,
+      "failed": 0,
+      "examples": []
+    },
     "eslint-plugin-react-features/react/jsx-no-duplicate-props": {
       "cases": 13,
       "failed": 0,
@@ -2311,6 +2326,11 @@
     },
     "eslint-plugin-react-features/react/jsx-no-target-blank": {
       "cases": 32,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-react-features/react/jsx-no-undef": {
+      "cases": 14,
       "failed": 0,
       "examples": []
     },
