@@ -19,6 +19,8 @@
 import { globSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Link, Root } from 'mdast';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
 import contentDates from '@/data/content-dates.json';
@@ -38,6 +40,9 @@ import {
   shortWhat,
 } from '@/lib/seo';
 import { SITE_ORIGIN } from '@/lib/site-config';
+import { GitHubCard } from '@/components/docs/github-card';
+import { RuleNextStep } from '@/components/docs/rule-next-step';
+import { ruleNextStep } from '@/lib/rule-next-step';
 
 const APP = join(__dirname, '../..');
 const CONTENT = join(APP, 'content/docs');
@@ -308,5 +313,98 @@ describe('builders', () => {
       ]),
     ).toEqual({ kind: 'rule', plugin: 'jwt-security', rule: 'no-weak-secret' });
     expect(classifyDocsSlugs(['getting-started'])).toEqual({ kind: 'other' });
+  });
+});
+
+/**
+ * Conversion surfaces (PostHog analysis, 2026-11-20): rule pages are 57% of
+ * entries, 2.5% of those reach a plugin page, and these docs sent one visitor in
+ * 808 to GitHub. The GitHub card (every docs page) and the Next step block
+ * (every rule page) are generated, not hand-written, so the lock is: the
+ * routes mount them, and rendering them for every rule page on disk yields the
+ * card, the plugin it belongs to, a real plugin page, an install line, the
+ * recommended-preset config and the links the funnel is measured on.
+ */
+describe('GitHub card and Next step block on every rule page', () => {
+  const page = code(read('src/app/docs/[[...slug]]/page.tsx'));
+  const layout = code(read('src/app/docs/layout.tsx'));
+
+  it('the docs layout puts the card in the sidebar, with a build-time star count', () => {
+    expect(layout).toMatch(/banner: <GitHubCard stars=\{stars\} \/>/);
+    expect(layout).toMatch(/await getGitHubStars\(\)/);
+    const card = read('src/components/docs/github-card.tsx');
+    expect(card).not.toMatch(/'use client'|useEffect|fetch\(/);
+    expect(card).toMatch(/data-github-card/);
+  });
+
+  it('the docs route renders the inline card and the Next step block on rule pages', () => {
+    expect(page).toMatch(/<GitHubCard stars=\{stars\} variant="inline" \/>/);
+    expect(page).toMatch(
+      /isRulePage && ruleName \? \(\s*<RuleNextStep plugin=\{rulePlugin\} rule=\{ruleName\} \/>/,
+    );
+  });
+
+  it('the Next step block sits before the rule body, after the summary', () => {
+    expect(page.indexOf('<DocsDescription>')).toBeLessThan(
+      page.indexOf('<RuleNextStep'),
+    );
+    expect(page.indexOf('<RuleNextStep')).toBeLessThan(page.indexOf('<MDX '));
+  });
+
+  it('the card says "View on GitHub" and never asks for a star', () => {
+    const card = read('src/components/docs/github-card.tsx');
+    const text = card.replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(text).toContain('View on GitHub');
+    expect(text).not.toMatch(/Star (us|the repo|on GitHub)|please star/i);
+  });
+
+  it('every rule page renders the block with plugin, install, preset config and links', () => {
+    const bad: string[] = [];
+    for (const p of rulePages) {
+      const data = ruleNextStep(p.plugin);
+      if (!data) {
+        bad.push(`${p.file}: no next-step data`);
+        continue;
+      }
+      const html = renderToStaticMarkup(
+        createElement(RuleNextStep, { plugin: p.plugin, rule: p.rule }),
+      );
+      const want = [
+        `data-next-step="${p.rule}"`,
+        `eslint-plugin-${p.plugin}`,
+        `npm install -D eslint-plugin-${p.plugin}`,
+        'configs.recommended',
+        `href="${pluginDocsPath(p.plugin)}"`,
+        `https://www.npmjs.com/package/eslint-plugin-${p.plugin}`,
+        `https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-${p.plugin}`,
+      ];
+      for (const w of want)
+        if (!html.includes(w)) bad.push(`${p.file}: missing ${w}`);
+      // The plugin page the block links to exists on disk.
+      const dir = pluginDocsPath(p.plugin)!.replace(/^\/docs\//, '');
+      if (globSync(`${dir}/index.mdx`, { cwd: CONTENT }).length === 0)
+        bad.push(`${p.file}: plugin page ${dir} missing`);
+    }
+    expect(bad).toEqual([]);
+  });
+
+  it('the card renders the repo, the count when known, and a link; and survives no count', () => {
+    const withCount = renderToStaticMarkup(
+      createElement(GitHubCard, { stars: 1234 }),
+    );
+    expect(withCount).toContain('data-github-card="sidebar"');
+    expect(withCount).toContain('data-github-stars="1234"');
+    expect(withCount).toContain('ofri-peretz/eslint');
+    expect(withCount).toContain('1.2k');
+    expect(withCount).toContain('href="https://github.com/ofri-peretz/eslint"');
+    const without = renderToStaticMarkup(
+      createElement(GitHubCard, { stars: null }),
+    );
+    expect(without).toContain('data-github-card="sidebar"');
+    expect(without).not.toContain('data-github-stars');
+    const inline = renderToStaticMarkup(
+      createElement(GitHubCard, { stars: 20, variant: 'inline' }),
+    );
+    expect(inline).toContain('data-github-card="inline"');
   });
 });

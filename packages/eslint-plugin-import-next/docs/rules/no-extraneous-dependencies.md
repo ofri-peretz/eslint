@@ -30,6 +30,20 @@ Never checked: Node builtins (`fs/promises`, `node:fs`), names in the
 `import/core-modules` setting (`electron`), relative and absolute paths, `#imports`, URL schemes (`virtual:x`), and names matched by
 `ignore` (exact) or `allowPatterns` (regular expressions).
 
+A specifier is a package to declare only once the configured resolvers
+(`import/resolver`, tsconfig `paths` included) resolve it, as in
+eslint-plugin-import. One that resolves to a file of this package outside
+`node_modules` is the project's own code (see `includeInternal`), and one that
+resolves to nothing is not checked: docusaurus' `@theme/*`, `@docusaurus/*`
+and `@site/*` virtual modules. An undeclared package that is not installed is left to
+`no-unresolved`. This holds when every configured resolver is one this rule
+models (`node`, `typescript`, `custom-alias`); under another, such as
+`webpack`, a specifier none of these resolves may still be a package, and is
+checked.
+
+The message names the package and the `package.json` it belongs in, in one
+line: `'zod' should be listed in the dependencies of packages/app/package.json. Run 'npm i -S zod' to add it.`
+
 Type-only imports are erased at compile time and never reported:
 `import type`, `export type ... from`, `import type x = require()`, and an
 import or re-export whose every specifier is an inline `type`, unless
@@ -73,8 +87,7 @@ options mean what they meant there:
 | `includeInternal`                                                                    | `true` also checks internal modules: a bare specifier matching the `import/internal-regex` setting, or one the configured resolvers (tsconfig `paths` included) resolve to a file of this package outside `node_modules` and `import/external-module-folders`, such as `@/utils`. Absent or `false`: skipped, as upstream skips them. |
 
 `whitelist` is not accepted: eslint-plugin-import 2.32.0 does not accept it
-either. Upstream skips a package that does not resolve; this rule reports it,
-since an undeclared package that is not installed is still missing.
+either.
 
 ## Options
 

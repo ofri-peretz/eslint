@@ -23,7 +23,7 @@ Two import statements of the same module in one scope are reported when they fal
 
 With `prefer-inline: true` the type groups join the value ones: a type-only import is a duplicate of a value import of the same module.
 
-The same module is the file the resolver sees, so `./m` and `./m.js` (for `m.ts`) and `./m/index` are one module, while `./m?raw` is a different module to a bundler.
+The same module is the file the resolver sees, so `./m` and `./m.js` (for `m.ts`) and `./m/index` are one module, while `./m?raw` is a different module to a bundler. It is the file that runs: a package's `exports` are matched without the `types` condition, so `svelte` and `svelte/store`, which share one `types` file, are two modules.
 
 Not reported:
 
@@ -60,6 +60,9 @@ Every statement of a duplicated module is reported, the first included, as
 eslint-plugin-import does: a module imported in three statements gets three
 reports. The fix rides on the later ones, each merging into the first.
 (Before 4.0 only the later statements were reported.)
+
+The message is one line naming the module, and the file it resolves to when
+it resolves: `'./m' imported multiple times (src/m.ts).`
 
 ## Options
 

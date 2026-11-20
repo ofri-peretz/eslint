@@ -13,6 +13,9 @@ import { getMDXComponents } from '@/mdx-components';
 import { RuleCTAExperiment } from '@/components/docs/rule-cta-experiment';
 import { DocsFooterCTA } from '@/components/docs/docs-footer-cta';
 import { EngineSetup } from '@/components/docs/engine-setup';
+import { GitHubCard } from '@/components/docs/github-card';
+import { RuleNextStep } from '@/components/docs/rule-next-step';
+import { getGitHubStars } from '@/lib/github-stars';
 import { JsonLd } from '@/components/json-ld';
 import { docsSeo } from '@/lib/docs-seo';
 import type { TableOfContents } from 'fumadocs-core/toc';
@@ -46,6 +49,7 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
   const rulePlugin = isRulePage ? slug[rulesIdx - 1].replace(/^plugin-/, '') : '';
   const ruleName = isRulePage ? slug[rulesIdx + 1] : '';
   const seo = docsSeo(page);
+  const stars = await getGitHubStars();
 
   return (
     <DocsPage
@@ -66,6 +70,13 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
           (plugins), plus a BreadcrumbList, in the server HTML. */}
       <JsonLd data={seo.jsonLd} />
       <DocsBody>
+        {/* Narrow screens only: the sidebar card is a drawer there. */}
+        <GitHubCard stars={stars} variant="inline" />
+        {/* After the rule summary (the description above): where the plugin,
+            its install line and config, and the way on to the plugin page. */}
+        {isRulePage && ruleName ? (
+          <RuleNextStep plugin={rulePlugin} rule={ruleName} />
+        ) : null}
         {/* Both slots render; the experiment component decides which one is
             visible, so the server stays static and the choice is client-side. */}
         {isRulePage && ruleName ? (
