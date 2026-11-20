@@ -5,6 +5,33 @@ All notable changes to `oxlint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.1.1
+
+### Patch Changes
+
+- **🐛 Fix** — two false-positive classes on real configs, and one-line messages for `no-duplicates` and `no-extraneous-dependencies`
+
+  Measured on a lint-clean svelte + docusaurus monorepo where eslint-plugin-import 2.32.0 reports nothing, import-next reported 129 findings. It now reports none.
+
+  - `no-duplicates` keys a module by the file that runs: a package's `exports` are matched without the `types` condition. `svelte` and `svelte/store` share one `types` file, so `import { onMount } from 'svelte'` beside `import { get } from 'svelte/store'` was reported as a duplicate. Two imports of the same subpath are still reported.
+  - `no-extraneous-dependencies` checks a specifier only once it resolves, as eslint-plugin-import does. Docusaurus' `@theme/*`, `@docusaurus/*` and `@site/*` virtual modules resolve to nothing on disk and were reported as missing packages. Under a resolver this plugin does not model (webpack, a custom one), a specifier none of the modelled resolvers finds is still checked, since that resolver may map it. An undeclared package that is not installed is left to `no-unresolved`.
+  - `eslint-import-resolver-custom-alias` settings are honoured: its `alias` prefixes are rewritten to their folders (relative to the working directory, or to the `packages` folder the file is in) and resolved with its `extensions`, as that resolver does. It was resolved as if it were the node resolver.
+  - The messages are one line, as eslint-plugin-import's are. `no-duplicates`: `'./m' imported multiple times (src/m.ts).`, naming the module and the file it resolves to. `no-extraneous-dependencies`: `'zod' should be listed in the dependencies of packages/app/package.json. Run 'npm i -S zod' to add it.`, naming the package and the `package.json` it belongs in. They were two lines, with an emoji and a severity word, and named neither.
+
+  Graded by eslint-plugin-import 2.32.0's own test suite, import-next still passes 2,035 of 2,135 cases.
+
+- **🐛 Fix** — path aliases, exported types and the resolver chain behave as in eslint-plugin-import
+
+  Three differences from eslint-plugin-import that a TypeScript config carried over unchanged turned into wrong findings:
+
+  - `no-extraneous-dependencies` no longer reports a path alias that resolves to a file of the package (`import { x } from '@/utils'` through tsconfig `paths`, or a bare name the node resolver finds in its `paths`) as a package missing from `package.json`. Such a module is internal, and internal modules are checked only under `includeInternal: true`. It is `false` by default, in eslint-plugin-import 2.32.0 and here. A file outside the linted file's package, or in `node_modules` or an `import/external-module-folders` folder, is external, as there. Before reporting, the rule also reads the name in the `package.json` of the resolved file, so an alias into another workspace package is accepted when that package is declared.
+  - `prefer-default-export` no longer reports a module that exports a type (`export type`, `export interface`, `export type { T }`, `export { type T }`) next to one value, under any target. A type alias cannot be a default export, and eslint-plugin-import leaves such a module alone. This fixes one of eslint-plugin-import's own valid test cases.
+  - Resolution now tries the resolvers in `settings['import/resolver']` in order until one finds the file. Each resolver is approximated (the node and typescript settings, `paths` and custom aliases), not invoked: a resolver this plugin does not model, such as webpack, is treated as the default resolver, so a webpack-only alias can stay unresolved. With `{ node: { extensions: ['.ts', '.json'] }, typescript: true }`, `./b` in a `.js` file now resolves to `b.js` through the typescript resolver after the node resolver misses it. Before, only the node resolver's extensions were tried, so `no-unresolved` reported the import and `extensions` missed `.js` extensions in `.js` files. `import/resolve` is read only when `import/resolver` is absent, as there.
+
+  Graded by eslint-plugin-import 2.32.0's own test suite, import-next now passes 2,035 of 2,135 cases (was 2,033).
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-import-next@4.1.1`
+
 ## 4.1.0
 
 ### Minor Changes
