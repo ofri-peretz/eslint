@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-anthropic-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.0.4
+
+### Patch Changes
+
+- **🐛 Fix** — peer range admits the SDK's shipping major
+
+  `peerDependencies` pinned `@anthropic-ai/sdk` and `@anthropic-ai/claude-agent-sdk` to `>=0.1.0 <1.0.0`. Both are on 1.x now, and `@anthropic-ai/claude-agent-sdk`'s own peer resolves to the SDK's 1.x line, so installing this plugin next to a current SDK failed `npm install` with ERESOLVE. Widened to `<2.0.0`.
+
 ## 2.0.3
 
 ### Patch Changes

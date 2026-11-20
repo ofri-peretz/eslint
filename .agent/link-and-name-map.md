@@ -27,11 +27,11 @@ rule id an adopter copies out of a preset names the plugin key they register.
 
 | npm package | v | prefix | alias | docs slug | pillar | logo | docs | OG | codecov |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :-: | :-: | :-: |
-| `eslint-plugin-anthropic-security` | 2.0.3 | `anthropic-security/` | — | `plugin-anthropic-security` | security | `claude` | ✅ | ✅ | ✅ |
+| `eslint-plugin-anthropic-security` | 2.0.4 | `anthropic-security/` | — | `plugin-anthropic-security` | security | `claude` | ✅ | ✅ | ✅ |
 | `eslint-plugin-browser-security` | 3.1.1 | `browser-security/` | — | `plugin-browser-security` | security | `chromium` | ✅ | ✅ | ✅ |
 | `eslint-plugin-conventions` | 7.0.3 | `conventions/` | — | `plugin-conventions` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-drizzle-security` | 2.0.3 | `drizzle-security/` | — | `plugin-drizzle-security` | security | `drizzle` | ✅ | ✅ | ✅ |
-| `eslint-plugin-express-security` | 4.3.0 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
+| `eslint-plugin-express-security` | 4.3.1 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
 | `eslint-plugin-gemini-security` | 2.0.3 | `gemini-security/` | — | `plugin-gemini-security` | security | `gemini` | ✅ | ✅ | ✅ |
 | `eslint-plugin-import-next` | 4.1.6 | `import-next/` | — | `plugin-import-next` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-jwt-security` | 4.0.3 | `jwt-security/` | `jwt/` | `plugin-jwt-security` | security | `jwt` | ✅ | ✅ | ✅ |
@@ -49,8 +49,8 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-operability` | 5.0.4 | `operability/` | — | `plugin-operability` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-postgresql-security` | 3.0.5 | `postgresql-security/` | `pg/` | `plugin-postgresql-security` | security | `postgresql` | ✅ | ✅ | ✅ |
 | `eslint-plugin-prisma-security` | 2.0.3 | `prisma-security/` | — | `plugin-prisma-security` | security | `prisma` | ✅ | ✅ | ✅ |
-| `eslint-plugin-react-a11y` | 3.0.3 | `react-a11y/` | — | `plugin-react-a11y` | quality | `react` | ✅ | ✅ | ✅ |
-| `eslint-plugin-react-features` | 2.0.3 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
+| `eslint-plugin-react-a11y` | 3.0.4 | `react-a11y/` | — | `plugin-react-a11y` | quality | `react` | ✅ | ✅ | ✅ |
+| `eslint-plugin-react-features` | 2.0.4 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-reliability` | 5.0.3 | `reliability/` | — | `plugin-reliability` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-secure-coding` | 6.4.0 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sequelize-security` | 2.0.3 | `sequelize-security/` | — | `plugin-sequelize-security` | security | `sequelize` | ✅ | ✅ | ✅ |

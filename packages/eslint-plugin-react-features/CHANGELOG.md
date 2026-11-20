@@ -5,6 +5,18 @@ All notable changes to `eslint-plugin-react-features` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.0.4
+
+### Patch Changes
+
+- **🐛 Fix** — `hooks-exhaustive-deps` reports the same thing whatever order files are linted in
+
+  The rule walked callback bodies through a per-node-type table of child keys that it built from the first node of each type it met, keeping a key only when that node had an object under it. The first `if` without an `else` dropped `alternate` for the rest of the run, so a dependency used only inside an `else` branch was never reported, and the count on one commit changed between runs (Shopify/cli: 12, 14, 12). It now walks the parser's visitor keys. Expect a few findings to appear (an `else` branch is now read) and a few to disappear (a stale table also hid the reads that made a listed dependency necessary).
+
+- **🐛 Fix** — no-unknown-property recognises Capture-phase event handlers
+
+  React gives every known event handler a capture-phase twin (`onFocus` → `onFocusCapture`, `onClick` → `onClickCapture`), but the rule's known-DOM-property list only had the bubble-phase name, so `onFocusCapture`/`onClickCapture` were reported as unknown. A `...Capture` suffix is now accepted whenever its bubble-phase base is a known handler; an unknown base (`onBogusHandlerCapture`) still reports.
+
 ## 2.0.3
 
 ### Patch Changes
