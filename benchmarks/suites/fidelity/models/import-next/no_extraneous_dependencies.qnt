@@ -17,8 +17,10 @@
 // `#imports`, URL schemes (`virtual:x`), and an internal module: a specifier
 // that resolves to a file of this package outside `node_modules`, such as a
 // tsconfig `paths` alias (`@/local`) - eslint-plugin-import's default
-// (`includeInternal: false`). An alias that resolves to nothing is checked
-// like any package name. Erased at compile time, so never
+// (`includeInternal: false`). A specifier is a package to declare only once
+// it resolves, as in eslint-plugin-import: an alias that resolves to nothing
+// (`@/nope`) is not checked. Every package name here is installed, listed or
+// not, so its verdict turns on the manifest alone. Erased at compile time, so never
 // reported: `import type`, `export type ... from`, and an import whose
 // specifiers are all inline `type` (unless `verbatimModuleSyntax`, which keeps
 // it as `import {} from 'pkg'`).
@@ -52,11 +54,10 @@ module no_extraneous_dependencies {
       or (l == BundleAlt and o != NoBundled)
 
   pure def packageShape(sh: Shape): bool =
-    Set(Bare, Subpath, Scoped, ScopedSubpath, Marker, AliasMissing).contains(sh)
+    Set(Bare, Subpath, Scoped, ScopedSubpath, Marker).contains(sh)
 
-  // `@/nope` is declared nowhere, whatever the listing.
   pure def reports(f: Form, l: Listing, o: Opts, sh: Shape): bool =
-    packageShape(sh) and not(erased(f, o)) and (sh == AliasMissing or not(allowed(l, o)))
+    packageShape(sh) and not(erased(f, o)) and not(allowed(l, o))
 
   var focus: Focus
   var form: Form
