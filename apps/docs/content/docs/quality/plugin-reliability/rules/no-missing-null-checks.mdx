@@ -74,7 +74,14 @@ call documented to return null on a miss (`find`, `match`, `exec`,
 | Optional chaining | `hit?.name` |
 | Truthy or `!= null` test enclosing the read | `if (hit) { hit.name }`, `hit && hit.name`, `hit ? hit.name : ''` |
 | Falsy guard that **leaves** before the read | `if (!hit) return; hit.name` — also `if (hit == null) throw …; hit.name`, `if (!hit \|\| stale) continue; hit.name` |
+| Loop test guarding its body | `while (m) { m[1] }`, `for (; m; ) { m[1] }` (not `do … while`, not a read after the loop) |
+| Falsy test on the left of `\|\|` | `!hit \|\| hit.stale`, `hit == null \|\| hit.stale` |
+| Any conjunct of a left-nested `&&` | `m && s.length && m[1]`, `Boolean(m) && m[1]`, `m !== null && m[1]` |
+| Call that cannot return, declared in this file | `if (!hit) fail('x'); hit.name` where `fail(): never` is declared in the same file, or `process.exit()` |
+| Length test over `pop()` / `shift()` | `while (q.length) { const n = q.pop(); n.go() }` (one shrinking call per iteration) |
 | TypeScript narrowing (type-aware mode) | `if (!page) notFound(); page.data` when `notFound(): never` |
+
+A binding written by a closure (`let info = null; … enter() { info = node }`) counts as filled when the read sits in another function, because the writer runs before the reader is called. A destructured element (`const [, a] = s.match(re)`) is judged on its own, not on the container.
 
 The exiting guard must name the **same binding** as the read: an outer
 `if (!hit) return` says nothing about an inner `let hit` that shadows it.

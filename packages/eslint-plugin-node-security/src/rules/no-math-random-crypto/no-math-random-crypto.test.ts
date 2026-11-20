@@ -89,6 +89,7 @@ describe('no-math-random-crypto', () => {
 
       // Crypto-named variable
       {
+        name: 'a Math.random value bound to a token is a predictable credential',
         code: 'const token = Math.random().toString(36);',
         errors: [{ messageId: 'mathRandomCrypto' }],
       },

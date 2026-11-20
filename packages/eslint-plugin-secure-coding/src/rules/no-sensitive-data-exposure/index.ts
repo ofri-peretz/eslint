@@ -226,6 +226,7 @@ function memberCarriesSecret(
   node: TSESTree.MemberExpression,
   patterns: string[],
   descriptors: ReadonlySet<string>,
+  skipReceiverName = false,
 ): string | null {
   const prop = node.property;
   // `node.computed` is the whole distinction. In `user.password` the property
@@ -259,6 +260,10 @@ function memberCarriesSecret(
     (VALUE_FREE_PROPERTIES.has(propName) || DIAGNOSTIC_ACCESSORS.has(propName))
   )
     return null;
+  // The receiver's name is the fallback for a key nobody can see. When the
+  // file's own object literal DECLARES the key, the author named the field and
+  // the receiver's name no longer speaks for it.
+  if (skipReceiverName) return null;
   return node.object.type === AST_NODE_TYPES.Identifier
     ? identifierNamesSecret(node.object.name, patterns, descriptors)
     : null;
@@ -681,7 +686,13 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
           sensitivePatterns,
           descriptors,
         );
-        if (pattern) return { node: value, pattern };
+        if (pattern) {
+          // `token` in a DI container is a reference to a class: its name, a
+          // `Symbol`, an `InjectionToken`. The binding's initializer says so.
+          const held = resolveBindingInit(value);
+          if (held && holdsAReference(held)) return null;
+          return { node: value, pattern };
+        }
         const init = resolveBindingInit(value);
         const viaBinding = init ? namedValueExposure(init, seen) : null;
         // Report at the identifier the author wrote, with the pattern the
@@ -693,6 +704,7 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
           value,
           sensitivePatterns,
           descriptors,
+          receiverDeclaresKey(value),
         );
         if (pattern) return { node: value, pattern };
         // `const error = { message: accessToken }; log(`${error.message}`)` —
@@ -703,6 +715,117 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
         return viaLiteral ? { node: value, pattern: viaLiteral.pattern } : null;
       }
       return null;
+    }
+
+    /**
+     * Is this initializer a REFERENCE (a class's name, a `Symbol`, a DI
+     * `InjectionToken`) rather than a string somebody could replay?
+     *
+     * `Function.prototype.name` is platform-defined text, `Symbol()` has no
+     * string form to leak, and a `typeof x === 'function' ? x.name : x` ternary
+     * is the idiom that turns "a class or its name" into the name (nest
+     * `debug-repl-fn.ts`). Anything else keeps judging the binding by its name.
+     */
+    function holdsAReference(init: TSESTree.Node): boolean {
+      const node = unwrapTypeSyntax(init) as TSESTree.Node;
+      if (node.type === AST_NODE_TYPES.MemberExpression) {
+        return propertyName(node) === 'name';
+      }
+      if (node.type === AST_NODE_TYPES.NewExpression) {
+        return (
+          node.callee.type === AST_NODE_TYPES.Identifier &&
+          node.callee.name === 'InjectionToken'
+        );
+      }
+      if (node.type === AST_NODE_TYPES.CallExpression) {
+        const callee = node.callee;
+        return (
+          (callee.type === AST_NODE_TYPES.Identifier &&
+            callee.name === 'Symbol' &&
+            !isShadowed('Symbol', node)) ||
+          (callee.type === AST_NODE_TYPES.MemberExpression &&
+            callee.object.type === AST_NODE_TYPES.Identifier &&
+            callee.object.name === 'Symbol' &&
+            propertyName(callee) === 'for' &&
+            !isShadowed('Symbol', node))
+        );
+      }
+      if (node.type === AST_NODE_TYPES.ConditionalExpression) {
+        // `typeof v === 'function' ? v.name : v`: one arm reads the name of the
+        // very value the test says is a function, the other passes it through.
+        const test = node.test;
+        if (
+          test.type !== AST_NODE_TYPES.BinaryExpression ||
+          (test.operator !== '===' && test.operator !== '==') ||
+          test.left.type !== AST_NODE_TYPES.UnaryExpression ||
+          test.left.operator !== 'typeof' ||
+          test.left.argument.type !== AST_NODE_TYPES.Identifier ||
+          staticString(test.right) !== 'function'
+        ) {
+          return false;
+        }
+        const subject = test.left.argument.name;
+        const named = node.consequent;
+        const passed = node.alternate;
+        return (
+          named.type === AST_NODE_TYPES.MemberExpression &&
+          propertyName(named) === 'name' &&
+          named.object.type === AST_NODE_TYPES.Identifier &&
+          named.object.name === subject &&
+          passed.type === AST_NODE_TYPES.Identifier &&
+          passed.name === subject
+        );
+      }
+      return false;
+    }
+
+    /**
+     * Does a once-written object literal in this file declare the key this
+     * member reads, with nothing writing through the binding afterwards? Then
+     * the field's own name is the evidence, not the receiver's.
+     */
+    function receiverDeclaresKey(member: TSESTree.MemberExpression): boolean {
+      if (member.object.type !== AST_NODE_TYPES.Identifier) return false;
+      const key = propertyName(member);
+      if (key === null) return false;
+      const init = resolveBindingInit(member.object);
+      if (init?.type !== AST_NODE_TYPES.ObjectExpression) return false;
+      // A spread may have overwritten the key; a computed key is unreadable.
+      if (
+        init.properties.some(
+          (property) =>
+            property.type !== AST_NODE_TYPES.Property || property.computed,
+        )
+      ) {
+        return false;
+      }
+      if (
+        !init.properties.some(
+          (property) => objectKeyName(property as TSESTree.Property) === key,
+        )
+      ) {
+        return false;
+      }
+      const variable = findBinding(member.object) as TSESLint.Scope.Variable;
+      // Handing the object to other code is allowed (it is how it gets hashed
+      // or serialized); writing a property through the binding is not.
+      return variable.references.every((reference) => {
+        const parent = reference.identifier.parent as TSESTree.Node;
+        if (
+          parent.type !== AST_NODE_TYPES.MemberExpression ||
+          parent.object !== reference.identifier
+        ) {
+          return true;
+        }
+        const use = parent.parent as TSESTree.Node;
+        return !(
+          (use.type === AST_NODE_TYPES.AssignmentExpression &&
+            use.left === parent) ||
+          use.type === AST_NODE_TYPES.UpdateExpression ||
+          (use.type === AST_NODE_TYPES.UnaryExpression &&
+            use.operator === 'delete')
+        );
+      });
     }
 
     /**

@@ -154,6 +154,7 @@ describe('no-sensitive-data-exposure', () => {
           // expression itself. (Named only by the label in front of it, as in
           // `token=${t}`, it is prose: a-label-is-not-a-value.test.ts.)
           {
+            name: 'an API key interpolated into a log line is exposed',
             code: 'console.log(`value is ${apiKey}`);',
             errors: [{ messageId: 'sensitiveDataExposure' }],
           },

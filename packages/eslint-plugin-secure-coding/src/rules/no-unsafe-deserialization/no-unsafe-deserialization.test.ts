@@ -159,6 +159,7 @@ describe('no-unsafe-deserialization', () => {
       invalid: [
         // The sink that IS dangerous, on the same method-name shape.
         {
+          name: 'js-yaml load of a request body can construct arbitrary objects',
           code: 'const yaml = require("js-yaml"); const obj = yaml.load(req.body.doc);',
           errors: [{ messageId: 'unsafeYamlParsing' }],
         },

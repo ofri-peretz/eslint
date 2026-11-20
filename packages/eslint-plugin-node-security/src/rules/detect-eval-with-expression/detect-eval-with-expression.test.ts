@@ -66,6 +66,7 @@ describe('detect-eval-with-expression', () => {
             errors: [{ messageId: 'useTemplateLiteral' }],
           },
           {
+            name: 'eval of a variable expression is the sink this rule exists for',
             code: 'const result = eval(expression);',
             errors: [{ messageId: 'strategyRefactor' }],
           },

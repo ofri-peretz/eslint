@@ -576,6 +576,11 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
 
         // Check dangerous methods
         if (dangerousFunctions.includes(memberName)) {
+          // `deserialize` is on the list by SPELLING, and every serialization
+          // protocol spells its method that way. A receiver the class holds
+          // (`this.deserializer`) or the function constructed (`new X()`) is a
+          // collaborator the project owns, not a package that revives code.
+          if (isProjectOwnedReceiver(callee.object)) return false;
           return true;
         }
 
@@ -835,6 +840,36 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         scope = scope.upper;
       }
       return true;
+    };
+
+    /**
+     * Is this receiver an object the surrounding code owns: reached through
+     * `this`, or bound once to `new X()`? Sinks that live in a package are
+     * reached through an import, which `MODULE_SINKS` resolves on its own.
+     */
+    const isProjectOwnedReceiver = (receiver: TSESTree.Node): boolean => {
+      let root: TSESTree.Node = receiver;
+      while (root.type === 'MemberExpression') root = root.object;
+      if (root.type === 'ThisExpression') return true;
+      if (root.type !== 'Identifier') return false;
+      let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(root);
+      while (scope) {
+        const found = scope.variables.find((v) => v.name === root.name);
+        if (found) {
+          if (found.defs.length !== 1) return false;
+          const [def] = found.defs;
+          const init =
+            def.type === 'Variable'
+              ? (def.node as TSESTree.VariableDeclarator).init
+              : null;
+          return (
+            init?.type === 'NewExpression' &&
+            found.references.filter((r) => r.isWrite()).length === 1
+          );
+        }
+        scope = scope.upper;
+      }
+      return false;
     };
 
     const checkCallExpression = (

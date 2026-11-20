@@ -1003,6 +1003,56 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
+    /**
+     * A name that IS a secret, as opposed to an everyday word for an identifier.
+     * `hash`, `key`, `code`, `pin` and `auth` are on the vocabulary because they
+     * sometimes hold one; `token` and `salt` essentially always do.
+     */
+    const STRONG_SECRET_NAME =
+      /token|secret|passw|salt|nonce|^iv$|otp|csrf|session|credential|jwt|apikey|cipher|encrypt|signature|seed|mnemonic/i;
+    const FILE_EXTENSION_AFTER = /^\.[A-Za-z0-9]{1,8}(?![A-Za-z0-9_])/;
+    const FILE_API_OBJECTS = new Set(['path', 'posix', 'win32', 'fs', 'fsp']);
+
+    /** Is this read of the binding part of a file name? */
+    function isFileNameUse(id: TSESTree.Node): boolean {
+      const parent = id.parent;
+      if (parent?.type === AST_NODE_TYPES.TemplateLiteral) {
+        const index = parent.expressions.indexOf(id as TSESTree.Expression);
+        const next = parent.quasis[index + 1];
+        return next !== undefined && FILE_EXTENSION_AFTER.test(next.value.raw);
+      }
+      return (
+        parent?.type === AST_NODE_TYPES.CallExpression &&
+        parent.callee.type === AST_NODE_TYPES.MemberExpression &&
+        parent.callee.object.type === AST_NODE_TYPES.Identifier &&
+        FILE_API_OBJECTS.has(parent.callee.object.name) &&
+        parent.arguments.includes(id as TSESTree.CallExpressionArgument)
+      );
+    }
+
+    /**
+     * Does this binding exist only to name a file?
+     *
+     * Vite writes a temp config file named `${base}.${hash}.mjs`, where `hash` is
+     * a timestamp and `Math.random()`. The name is on the vocabulary, but the
+     * value is a uniquifier: every read of it lands in a file name, so nothing
+     * about it has to be unguessable. Needs at least one read, only file-name
+     * reads, and a name that is not itself a strong secret word.
+     */
+    function namesOnlyAFile(declarator: TSESTree.VariableDeclarator): boolean {
+      // The only caller has already matched an Identifier id, which always
+      // declares exactly one variable.
+      const { name } = declarator.id as TSESTree.Identifier;
+      if (STRONG_SECRET_NAME.test(name)) return false;
+      const [variable] = context.sourceCode.getDeclaredVariables(
+        declarator,
+      ) as [TSESLint.Scope.Variable];
+      const reads = variable.references.filter((ref) => ref.isRead());
+      return (
+        reads.length > 0 && reads.every((ref) => isFileNameUse(ref.identifier))
+      );
+    }
+
     function isCryptoContext(
       node: TSESTree.Node,
       followed: Set<TSESLint.Scope.Variable> = new Set(),
@@ -1052,7 +1102,10 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         ) {
           if (current.id.type === AST_NODE_TYPES.Identifier) {
             const varName = current.id.name;
-            if (nameSuggestsCrypto(varName, vocab)) {
+            if (
+              nameSuggestsCrypto(varName, vocab) &&
+              !namesOnlyAFile(current)
+            ) {
               return true;
             }
             if (isOAuthStateBinding(current.id)) {

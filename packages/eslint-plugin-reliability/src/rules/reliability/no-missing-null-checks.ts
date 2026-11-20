@@ -150,6 +150,150 @@ function isShadowedBinding(
   return false;
 }
 
+/**
+ * `a`, `this`, `a.b.c` as a comparable key; null for anything computed or private.
+ */
+function accessKey(node: TSESTree.Node): string | null {
+  if (node.type === 'Identifier') return node.name;
+  if (node.type === 'ThisExpression') return 'this';
+  if (node.type === 'MemberExpression') {
+    // `propertyName` reads `o.k`, `o['k']` and `` o[`k`] `` alike.
+    const name = propertyName(node);
+    const object = accessKey(node.object);
+    return name === null || object === null ? null : `${object}.${name}`;
+  }
+  return null;
+}
+
+/**
+ * Does `test` prove `<key>.length` is positive when it passes?
+ *
+ *   q.length            q.length > 0       q.length >= 1
+ *   q.length !== 0      0 < q.length       and any `&&` containing one
+ */
+function provesNonEmpty(test: TSESTree.Expression, key: string): boolean {
+  const isLength = (e: TSESTree.Node): boolean =>
+    e.type === 'MemberExpression' &&
+    propertyName(e) === 'length' &&
+    accessKey(e.object) === key;
+  const num = (e: TSESTree.Node): number | null =>
+    e.type === 'Literal' && typeof e.value === 'number' ? e.value : null;
+  if (isLength(test)) return true;
+  if (test.type === 'LogicalExpression' && test.operator === '&&') {
+    return provesNonEmpty(test.left, key) || provesNonEmpty(test.right, key);
+  }
+  if (test.type === 'BinaryExpression') {
+    const { left, right, operator } = test;
+    if (isLength(left)) {
+      const n = num(right);
+      if (n === null) return false;
+      return (
+        (operator === '>' && n >= 0) ||
+        (operator === '>=' && n >= 1) ||
+        ((operator === '!==' || operator === '!=') && n === 0)
+      );
+    }
+    if (isLength(right)) {
+      const n = num(left);
+      if (n === null) return false;
+      return (
+        (operator === '<' && n >= 0) ||
+        (operator === '<=' && n >= 1) ||
+        ((operator === '!==' || operator === '!=') && n === 0)
+      );
+    }
+  }
+  return false;
+}
+
+/**
+ * Array methods that remove elements.
+ *
+ * @vocabulary ECMAScript Array.prototype (pop, shift, splice) — defined by the
+ * language, not by a consumer.
+ */
+const SHRINKING_CALLS: ReadonlySet<string> = new Set([
+  'pop',
+  'shift',
+  'splice',
+]);
+
+/** Calls on `key` that change how many elements it holds, up to `upTo`. */
+function countShrinkingCalls(
+  root: TSESTree.Node,
+  key: string,
+  upTo: number,
+): number {
+  let count = 0;
+  const walk = (node: TSESTree.Node): void => {
+    if (
+      node.type === 'CallExpression' &&
+      node.callee.type === 'MemberExpression' &&
+      namesOneOf(propertyName(node.callee), SHRINKING_CALLS) &&
+      accessKey(node.callee.object) === key &&
+      node.range[1] <= upTo
+    ) {
+      count++;
+    }
+    for (const k of Object.keys(node)) {
+      if (k === 'parent') continue;
+      const v = (node as unknown as Record<string, unknown>)[k];
+      for (const c of Array.isArray(v) ? v : [v]) {
+        if (
+          c &&
+          typeof c === 'object' &&
+          typeof (c as TSESTree.Node).type === 'string'
+        ) {
+          walk(c as TSESTree.Node);
+        }
+      }
+    }
+  };
+  walk(root);
+  return count;
+}
+
+/**
+ * `while (q.length) { const n = q.pop(); n.x }` — the loop test already proved
+ * the pop returns a value. One shrinking call only: a second `pop()` in the same
+ * iteration can run on an empty array.
+ */
+function isPopGuardedByLength(
+  call: TSESTree.CallExpression,
+  declarator: TSESTree.Node,
+): boolean {
+  // The only caller has already matched `<receiver>.pop|shift(...)`.
+  const callee = call.callee as TSESTree.MemberExpression;
+  const key = accessKey(callee.object);
+  if (key === null) return false;
+  let child: TSESTree.Node = declarator;
+  let p = (child as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+  while (p) {
+    if (
+      p.type === 'FunctionDeclaration' ||
+      p.type === 'FunctionExpression' ||
+      p.type === 'ArrowFunctionExpression'
+    ) {
+      return false;
+    }
+    let test: TSESTree.Expression | null | undefined;
+    let body: TSESTree.Node | undefined;
+    if (p.type === 'WhileStatement' || p.type === 'ForStatement') {
+      test = p.test;
+      body = p.body;
+    } else if (p.type === 'IfStatement') {
+      test = p.test;
+      body = p.consequent;
+    }
+    if (test && body === child && provesNonEmpty(test, key)) {
+      return countShrinkingCalls(body, key, call.range[1]) === 1;
+    }
+    child = p;
+    p = (child as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+  }
+  return false;
+}
+
 function nullabilityEvidence(
   ident: TSESTree.Identifier,
   scope: TSESLint.Scope.Scope,
@@ -189,6 +333,17 @@ function nullabilityEvidence(
       return null;
 
     const declarator = def.node as TSESTree.VariableDeclarator;
+    // `const [, a] = s.match(re)` binds ELEMENTS. Whether `a` can be null says
+    // nothing about the container's evidence, and a null container is already
+    // judged at the destructuring itself (checkDestructuring).
+    // (Layer-2 tests feed declarators without an `id`; tolerate that.)
+    const bound = declarator.id as TSESTree.BindingName | undefined;
+    if (bound && bound.type !== 'Identifier') return null;
+    // A read inside a function that closes over this binding runs whenever that
+    // function is called, which is not "after the textually earlier writes".
+    // A handler declared further down (`enter() { info = node }`) fills the
+    // binding before the reader is ever invoked, so there ANY write counts.
+    const readInClosure = scope.variableScope !== s.variableScope;
     // `declare const source: Loader` has no initializer BY DEFINITION — the
     // value lives in another module and the declaration only names its type.
     // Reading it as "declared, never written" reported every ambient binding.
@@ -233,7 +388,7 @@ function nullabilityEvidence(
         (reference) =>
           reference.isWrite() &&
           !reference.init &&
-          reference.identifier.range[0] < readAt,
+          (readInClosure || reference.identifier.range[0] < readAt),
       );
       if (written) return null;
       return 'declared-without-initializer';
@@ -255,7 +410,7 @@ function nullabilityEvidence(
       (reference) =>
         reference.isWrite() &&
         !reference.init &&
-        reference.identifier.range[0] < readAt,
+        (readInClosure || reference.identifier.range[0] < readAt),
     );
     if (reassigned) return null;
     if (init.type === 'Literal' && init.value === null) return 'assigned-null';
@@ -323,6 +478,13 @@ function nullabilityEvidence(
       init.callee.type === 'MemberExpression' &&
       namesOneOf(propertyName(init.callee), NULLABLE_RETURNS)
     ) {
+      const method = propertyName(init.callee);
+      if (
+        (method === 'pop' || method === 'shift') &&
+        isPopGuardedByLength(init, declarator)
+      ) {
+        return null;
+      }
       return 'nullable-return';
     }
     return null;
@@ -410,10 +572,27 @@ export function hasNullCheck(
         // Exact identity, or a chain that starts at the guarded value. `endsWith`
         // had the relation backwards: in `wrapper.obj && obj.prop` the left text
         // ends with `obj`, but it guards `wrapper.obj` — a DIFFERENT value.
-        const leftText = sourceCode.getText(
-          (up as TSESTree.LogicalExpression).left,
-        );
-        if (chainStartsWith(leftText, objectText)) return true;
+        const left = (up as TSESTree.LogicalExpression).left;
+        const leftText = sourceCode.getText(left);
+        if (
+          chainStartsWith(leftText, objectText) ||
+          conjunctGuards(left, node.object, sourceCode)
+        ) {
+          return true;
+        }
+      }
+      // `!x || x.y`, `x == null || x.y`: the right operand of `||` runs only
+      // when the left was FALSY, so a falsy guard on the same binding on the
+      // left covers it. `x || x.y` is the opposite and does not.
+      if (
+        up.type === 'LogicalExpression' &&
+        (up as TSESTree.LogicalExpression).operator === '||' &&
+        (up as TSESTree.LogicalExpression).right === cur &&
+        falsyGuardTargets((up as TSESTree.LogicalExpression).left).some(
+          (target) => guardsSameValue(target, node.object, sourceCode),
+        )
+      ) {
+        return true;
       }
       cur = up;
     }
@@ -487,8 +666,15 @@ export function hasNullCheck(
  * log() }` is unreachable code that this rule has no business excusing, and
  * `{}` proves nothing.
  */
-function endsInExit(stmt: TSESTree.Statement): boolean {
+function endsInExit(
+  stmt: TSESTree.Statement,
+  sourceCode?: TSESLint.SourceCode,
+): boolean {
   switch (stmt.type) {
+    case 'ExpressionStatement':
+      return (
+        sourceCode !== undefined && isNeverCall(stmt.expression, sourceCode)
+      );
     case 'ReturnStatement':
     case 'ThrowStatement':
     case 'ContinueStatement':
@@ -496,7 +682,7 @@ function endsInExit(stmt: TSESTree.Statement): boolean {
       return true;
     case 'BlockStatement': {
       const last = stmt.body[stmt.body.length - 1];
-      return last !== undefined && endsInExit(last);
+      return last !== undefined && endsInExit(last, sourceCode);
     }
     case 'TryStatement': {
       // A try/catch leaves only if EVERY way through it leaves: the block and
@@ -504,13 +690,86 @@ function endsInExit(stmt: TSESTree.Statement): boolean {
       // branch that cannot fall through, and reading only the last statement of
       // the enclosing block called it fall-through — so the guard before it was
       // lost. A `finally` that leaves settles it on its own.
-      if (stmt.finalizer !== null && endsInExit(stmt.finalizer)) return true;
-      if (!endsInExit(stmt.block)) return false;
-      return stmt.handler === null || endsInExit(stmt.handler.body);
+      if (stmt.finalizer !== null && endsInExit(stmt.finalizer, sourceCode)) {
+        return true;
+      }
+      if (!endsInExit(stmt.block, sourceCode)) return false;
+      return stmt.handler === null || endsInExit(stmt.handler.body, sourceCode);
     }
     default:
       return false;
   }
+}
+
+/**
+ * Node `process` methods that never return.
+ *
+ * @vocabulary Node.js process API (exit, abort) — defined by the runtime.
+ */
+const PROCESS_TERMINATORS: ReadonlySet<string> = new Set(['exit', 'abort']);
+
+/**
+ * A call that cannot return, decided from this file alone.
+ *
+ * `if (!r) fail('x'); r.index` is a guard exactly like `if (!r) return`, and
+ * TypeScript reads it that way. With a program the rule asks the checker (see
+ * typeSaysNonNullable); without one, three cases are certain from syntax:
+ * `process.exit()` / `process.abort()`, and a callee that resolves in this file
+ * to a function or variable declared `(...) => never`. Anything else — an
+ * imported helper, a method on a parameter — is NOT assumed to be `never`.
+ */
+function isNeverCall(
+  expr: TSESTree.Expression,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  const call = expr.type === 'AwaitExpression' ? expr.argument : expr;
+  if (call.type !== 'CallExpression') return false;
+  const callee = call.callee;
+  const isNever = (ret: TSESTree.TSTypeAnnotation | undefined): boolean =>
+    ret?.typeAnnotation.type === 'TSNeverKeyword';
+  if (
+    callee.type === 'MemberExpression' &&
+    callee.object.type === 'Identifier' &&
+    callee.object.name === 'process' &&
+    namesOneOf(propertyName(callee), PROCESS_TERMINATORS)
+  ) {
+    return !isShadowedBinding(sourceCode.getScope(callee), 'process');
+  }
+  if (callee.type !== 'Identifier') return false;
+  for (
+    let sc: TSESLint.Scope.Scope | null = sourceCode.getScope(callee);
+    sc;
+    sc = sc.upper
+  ) {
+    const variable = sc.variables.find((v) => v.name === callee.name);
+    if (!variable) continue;
+    if (variable.defs.length !== 1) return false;
+    const [def] = variable.defs;
+    const node = def.node as TSESTree.Node;
+    // A parameter's `def.node` is the FUNCTION it belongs to, whose own return
+    // type says nothing about what the parameter does when called.
+    if (def.type === 'FunctionName') {
+      return isNever(
+        (node as TSESTree.FunctionDeclaration | TSESTree.TSDeclareFunction)
+          .returnType,
+      );
+    }
+    if (def.type !== 'Variable') return false;
+    const { init, id } = node as TSESTree.VariableDeclarator;
+    if (
+      init &&
+      (init.type === 'ArrowFunctionExpression' ||
+        init.type === 'FunctionExpression') &&
+      isNever(init.returnType)
+    ) {
+      return true;
+    }
+    const annotation = id.typeAnnotation?.typeAnnotation;
+    return (
+      annotation?.type === 'TSFunctionType' && isNever(annotation.returnType)
+    );
+  }
+  return false;
 }
 
 /**
@@ -635,7 +894,7 @@ function isGuardedByEarlyExit(
         const stmt = list[i];
         if (
           stmt.type === 'IfStatement' &&
-          endsInExit(stmt.consequent) &&
+          endsInExit(stmt.consequent, sourceCode) &&
           falsyGuardTargets(stmt.test).some((guarded) =>
             guardsSameValue(guarded, node.object, sourceCode),
           )
@@ -672,6 +931,19 @@ function hasExplicitNullCheck(
       if (isNullCheckForObject(test, node.object, sourceCode)) {
         return true;
       }
+    }
+
+    // `while (m) { m[1] }` and `for (; m; ) { m[1] }`: a loop test guards the
+    // BODY it controls. Not a `do … while` (its body runs before the test) and
+    // not a read after the loop.
+    if (
+      parent &&
+      (parent.type === 'WhileStatement' || parent.type === 'ForStatement') &&
+      parent.test &&
+      parent.body === current &&
+      isNullCheckForObject(parent.test, node.object, sourceCode)
+    ) {
+      return true;
     }
 
     current = parent as TSESTree.Node;
@@ -800,12 +1072,33 @@ function isNullCheckForObject(
     return true;
   }
 
+  // `Boolean(x)` and `!!x` are the truthy test `x`, spelled as a call.
+  if (
+    test.type === 'CallExpression' &&
+    test.callee.type === 'Identifier' &&
+    test.callee.name === 'Boolean' &&
+    test.arguments.length === 1 &&
+    test.arguments[0].type !== 'SpreadElement'
+  ) {
+    return isNullCheckForObject(test.arguments[0], object, sourceCode);
+  }
+  if (
+    test.type === 'UnaryExpression' &&
+    test.operator === '!' &&
+    test.argument.type === 'UnaryExpression' &&
+    test.argument.operator === '!'
+  ) {
+    return isNullCheckForObject(test.argument.argument, object, sourceCode);
+  }
+
   // Truthy check: `if (obj)` or `if (obj.prop)` — direct truthy guard proves
   // non-null. Also covers nested chains: `if (response) { response.data.items }`
   // because checking the root (response) implicitly protects the full chain.
   if (test.type === 'Identifier' || test.type === 'MemberExpression') {
     const testText = sourceCode.getText(test);
-    if (testText === objectText || objectText.startsWith(testText + '.')) {
+    // `chainStartsWith` reads a computed link as it reads a dotted one, so
+    // `if (m) { m[1].length }` is covered like `if (m) { m.x.length }`.
+    if (chainStartsWith(testText, objectText)) {
       return true;
     }
   }
@@ -846,6 +1139,33 @@ function isNullCheckForObject(
   // isGuardedByEarlyExit.
 
   return false;
+}
+
+/**
+ * Does the left operand of an `&&` prove `object` non-null for its right side?
+ * Read through the `&&` tree: any conjunct that is a guard on the object counts
+ * (`m && s.length && m[1]`). A `||` operand proves nothing about either side,
+ * and `x === null` / `x == null` is the OPPOSITE of a guard here.
+ */
+function conjunctGuards(
+  left: TSESTree.Expression,
+  object: TSESTree.Expression,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  if (left.type === 'LogicalExpression') {
+    return (
+      left.operator === '&&' &&
+      (conjunctGuards(left.left, object, sourceCode) ||
+        conjunctGuards(left.right, object, sourceCode))
+    );
+  }
+  if (
+    left.type === 'BinaryExpression' &&
+    (left.operator === '===' || left.operator === '==')
+  ) {
+    return false;
+  }
+  return isNullCheckForObject(left, object, sourceCode);
 }
 
 /**
