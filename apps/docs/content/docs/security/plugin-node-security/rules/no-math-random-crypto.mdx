@@ -55,6 +55,20 @@ const requestId = randomUUID();
 const j = Math.floor(Math.random() * deck.length);
 ```
 
+### Security values named by their slot
+
+A value is also a security value when the call it is passed to names the slot with a string literal:
+`headers.set('X-SRF-TOKEN', Math.random()...)`, `res.setHeader('X-CSRF-Token', ...)`, `res.cookie('session', ...)`,
+`localStorage.setItem('authToken', ...)`, `url.searchParams.set('nonce', ...)`, and `{ 'X-CSRF-Token': ... }`.
+
+`state` is too ordinary a name to decide on its own, so an OAuth `state` is recognised by where the value goes: after
+`state=` in a URL, as the value of a `state` query parameter, or in an object that also carries `client_id`,
+`redirect_uri`, `response_type`, `scope` or `code_challenge`. `setState(state)` and `{ state }` passed to a renderer are
+not reported.
+
+Not reported: a `.sort(() => Math.random() - 0.5)` shuffle, jitter, colours, and keys qualified as `dom`, `element`,
+`item`, `list`, `component`, `render`, `color` or `data`.
+
 ## Options
 
 | Option               | Type       | Default                                                                                                                                                                                                                                                      | Description                                                                                              |

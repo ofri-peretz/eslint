@@ -14,6 +14,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
+import { packageBindings } from '../../utils/import-bindings';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -43,6 +44,62 @@ export interface Options {
 }
 
 type RuleOptions = [Options?];
+
+/**
+ * Frameworks whose cookie jar writes exactly the attributes it is given and
+ * nothing else: Astro (`cookies.set`), Qwik City (`cookie.set`) and Next
+ * (`cookies().set`). SvelteKit and Koa default httpOnly on, and `js-cookie` runs
+ * where httpOnly cannot be set, so a jar is only read when the FILE says which
+ * framework it belongs to.
+ */
+const BARE_COOKIE_JAR_PACKAGES = [
+  'astro',
+  'astro:middleware',
+  'astro:actions',
+  '@builder.io/qwik-city',
+  'next/headers',
+];
+
+/** Words that make a cookie name a credential: `sb-refresh-token`, `__session`, `auth`. */
+const CREDENTIAL_COOKIE_WORDS: ReadonlySet<string> = new Set([
+  'token',
+  'session',
+  'sid',
+  'auth',
+  'jwt',
+  'secret',
+  'credential',
+  'password',
+  'login',
+]);
+
+function isCredentialCookieName(name: string): boolean {
+  return name
+    .replaceAll(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .split(/[^a-zA-Z0-9]+/)
+    .some((word) => CREDENTIAL_COOKIE_WORDS.has(word.toLowerCase()));
+}
+
+/**
+ * Is this the jar object: `cookies`, `cookie`, `Astro.cookies`,
+ * `context.cookies`, `cookies()`, `(await cookies())`?
+ */
+function isCookieJar(node: TSESTree.Node): boolean {
+  switch (node.type) {
+    case 'Identifier':
+      return node.name === 'cookies' || node.name === 'cookie';
+    case 'MemberExpression':
+      return propertyName(node) === 'cookies';
+    case 'CallExpression':
+      return (
+        node.callee.type === 'Identifier' && node.callee.name === 'cookies'
+      );
+    case 'AwaitExpression':
+      return isCookieJar(node.argument);
+    default:
+      return false;
+  }
+}
 
 /**
  * The name a property key spells, lower-cased, or `undefined` for a key we
@@ -233,6 +290,8 @@ export const noInsecureCookieOptions = createRule<RuleOptions, MessageIds>({
     currentOptions,
   ) {
     let options: Options | undefined;
+    let isExpressFile: boolean;
+    let isBareJarFile: boolean;
 
     return {
       before() {
@@ -241,7 +300,11 @@ export const noInsecureCookieOptions = createRule<RuleOptions, MessageIds>({
         // 107,382 files, 75% of this plugin's findings were in files with no
         // Express import. Registering no visitors is both the gate and the cheap
         // path — a file with no Express in it does no work.
-        if (!fileUsesExpress(context.sourceCode.ast)) return false;
+        const ast = context.sourceCode.ast;
+        isExpressFile = fileUsesExpress(ast);
+        const jar = packageBindings(ast, BARE_COOKIE_JAR_PACKAGES);
+        isBareJarFile = jar.modules.size > 0 || jar.named.size > 0;
+        if (!isExpressFile && !isBareJarFile) return false;
 
         const { allowInTests = false } = options as Options;
 
@@ -256,12 +319,62 @@ export const noInsecureCookieOptions = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
 
+        // `cookies.set(name, value, options)` in a framework whose jar adds no
+        // attributes of its own. Only a credential-named cookie is judged, and
+        // only for the two flags a script or a clear-text hop can take.
+        if (
+          isBareJarFile &&
+          callee.type === 'MemberExpression' &&
+          propertyName(callee) === 'set' &&
+          isCookieJar(callee.object) &&
+          node.arguments.length >= 2
+        ) {
+          const name = staticString(node.arguments[0]);
+          if (name !== null && isCredentialCookieName(name)) {
+            const optionsArg = node.arguments[2];
+            if (optionsArg === undefined) {
+              context.report({
+                node,
+                messageId: 'insecureCookie',
+                data: {
+                  issues:
+                    'Cookie set without options - missing httpOnly and secure flags',
+                },
+                suggest: [
+                  {
+                    messageId: 'addSecureFlags',
+                    fix: (fixer: TSESLint.RuleFixer) =>
+                      fixer.insertTextAfter(
+                        node.arguments[node.arguments.length - 1],
+                        ', { httpOnly: true, secure: true, sameSite: "strict" }',
+                      ),
+                  },
+                ],
+              });
+            } else if (optionsArg.type === 'ObjectExpression') {
+              const { issues } = checkCookieOptions(optionsArg, {
+                ...(options as Options),
+                requireSameSite: false,
+              });
+              if (issues.length > 0) {
+                context.report({
+                  node: optionsArg,
+                  messageId: 'insecureCookie',
+                  data: { issues: issues.join('; ') },
+                });
+              }
+            }
+          }
+          return;
+        }
+
         // Check for res.cookie() calls
         // res.cookie(name, value[, options]) always has a name and a value. A
         // `.cookie()` with fewer arguments is some other API (`secrets.cookie()`,
         // a getter) — reporting it was a false positive, and its suggestion
         // crashed on the missing last argument.
         if (
+          isExpressFile &&
           callee.type === 'MemberExpression' &&
           propertyName(callee) === 'cookie' &&
           node.arguments.length >= 2

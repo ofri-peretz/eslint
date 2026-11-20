@@ -42,7 +42,6 @@
     "nestjs-security/no-permissive-cors",
     "node-security/no-deprecated-buffer",
     "node-security/no-insecure-key-derivation",
-    "node-security/no-math-random-crypto",
     "postgresql-security/no-missing-client-release",
     "postgresql-security/prefer-pool-query",
     "postgresql-security/prevent-double-release",

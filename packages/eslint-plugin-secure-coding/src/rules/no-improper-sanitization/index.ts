@@ -41,6 +41,7 @@ import {
 } from '@interlace/eslint-devkit';
 
 type MessageIds =
+  | 'angularSanitizerBypass'
   | 'insufficientXssProtection'
   | 'incompleteHtmlEscaping'
   | 'unsafeReplaceSanitization';
@@ -77,6 +78,16 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-116',
     },
     messages: {
+      angularSanitizerBypass: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Angular Sanitizer Bypass',
+        cwe: 'CWE-79',
+        description:
+          '{{method}}() tells Angular not to sanitize a value that is not a constant',
+        severity: 'HIGH',
+        fix: 'Sanitize first (DOMPurify.sanitize, or sanitizer.sanitize(SecurityContext.HTML, value)), or drop the bypass and bind the value with interpolation or [innerText]',
+        documentationLink: 'https://angular.dev/best-practices/security',
+      }),
       insufficientXssProtection: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Insufficient XSS Protection',
@@ -333,6 +344,106 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       return !(hasQuoteEscaping && hasAmpersandEscaping);
     };
 
+    /**
+     * Angular's `DomSanitizer` escape hatches. Each one marks a value as already
+     * safe for one context and switches off the framework's sanitiser for it; the
+     * method names exist nowhere else, so the name is the evidence.
+     */
+    const ANGULAR_BYPASS = new Set([
+      'bypassSecurityTrustHtml',
+      'bypassSecurityTrustScript',
+      'bypassSecurityTrustStyle',
+      'bypassSecurityTrustUrl',
+      'bypassSecurityTrustResourceUrl',
+    ]);
+
+    const MAX_CONSTANT_DEPTH = 8;
+
+    /** The `const` a name resolves to, if it resolves to exactly one. */
+    const constInitializer = (
+      id: TSESTree.Identifier,
+    ): TSESTree.Expression | undefined => {
+      let scope: ReturnType<typeof sourceCode.getScope> | null =
+        sourceCode.getScope(id);
+      while (scope) {
+        const variable = scope.set.get(id.name);
+        if (variable) {
+          const [def, ...rest] = variable.defs;
+          if (
+            rest.length === 0 &&
+            def?.type === 'Variable' &&
+            def.parent.kind === 'const' &&
+            def.node.id.type === AST_NODE_TYPES.Identifier
+          ) {
+            return def.node.init ?? undefined;
+          }
+          return undefined;
+        }
+        scope = scope.upper;
+      }
+      return undefined;
+    };
+
+    /** `DOMPurify.sanitize(x)`, `sanitizer.sanitize(ctx, x)`, `escapeHtml(x)`. */
+    const isSanitizerCall = (node: TSESTree.CallExpression): boolean => {
+      const callee = node.callee;
+      const text = sourceCode.getText(callee);
+      if (
+        [
+          ...safeSanitizers,
+          ...trustedSanitizers,
+          'escapeHtml',
+          'escapeHTML',
+          'htmlEscape',
+        ].some((name) => text === name || text.endsWith(`.${name}`))
+      ) {
+        return true;
+      }
+      return (
+        callee.type === AST_NODE_TYPES.MemberExpression &&
+        propertyName(callee) === 'sanitize'
+      );
+    };
+
+    /**
+     * Is every leaf of this expression text the developer typed, or the output
+     * of a sanitizer? A `const` bound to such an expression counts; a `let`, a
+     * parameter, a property read and an arbitrary call do not.
+     */
+    const isTrustedInput = (expr: TSESTree.Node, depth = 0): boolean => {
+      if (depth > MAX_CONSTANT_DEPTH) return false;
+      switch (expr.type) {
+        case AST_NODE_TYPES.Literal:
+          return !('regex' in expr && expr.regex);
+        case AST_NODE_TYPES.TemplateLiteral:
+          return expr.expressions.every((e) => isTrustedInput(e, depth + 1));
+        case AST_NODE_TYPES.BinaryExpression:
+          return (
+            expr.operator === '+' &&
+            isTrustedInput(expr.left, depth + 1) &&
+            isTrustedInput(expr.right, depth + 1)
+          );
+        case AST_NODE_TYPES.LogicalExpression:
+          return (
+            isTrustedInput(expr.left, depth + 1) &&
+            isTrustedInput(expr.right, depth + 1)
+          );
+        case AST_NODE_TYPES.TSAsExpression:
+        case AST_NODE_TYPES.TSSatisfiesExpression:
+        case AST_NODE_TYPES.TSNonNullExpression:
+        case AST_NODE_TYPES.TSTypeAssertion:
+          return isTrustedInput(expr.expression, depth + 1);
+        case AST_NODE_TYPES.CallExpression:
+          return isSanitizerCall(expr);
+        case AST_NODE_TYPES.Identifier: {
+          const init = constInitializer(expr);
+          return init !== undefined && isTrustedInput(init, depth + 1);
+        }
+        default:
+          return false;
+      }
+    };
+
     return {
       before() {
         const options = context.options[0] || {};
@@ -364,6 +475,27 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       // Check call expressions for sanitization issues
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
+
+        // `sanitizer.bypassSecurityTrustHtml(value)`: Angular's sanitiser, off
+        // for a value that is not a constant.
+        if (callee.type === 'MemberExpression') {
+          const method = propertyName(callee);
+          if (method !== null && ANGULAR_BYPASS.has(method)) {
+            const [argument] = node.arguments;
+            if (
+              argument === undefined ||
+              argument.type === AST_NODE_TYPES.SpreadElement ||
+              !isTrustedInput(argument)
+            ) {
+              context.report({
+                node,
+                messageId: 'angularSanitizerBypass',
+                data: { method },
+              });
+            }
+            return;
+          }
+        }
 
         // Check for replace() sanitization
         if (

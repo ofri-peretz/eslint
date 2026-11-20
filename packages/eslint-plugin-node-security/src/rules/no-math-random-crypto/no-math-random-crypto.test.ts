@@ -219,6 +219,7 @@ describe('no-math-random-crypto', () => {
       invalid: [
         // The archetype: a session token built one character at a time.
         {
+          name: 'a token accumulated one random character at a time',
           code: `const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
                  let token = '';
                  for (let i = 0; i < 32; i++) {
