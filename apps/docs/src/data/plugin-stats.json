@@ -5,7 +5,7 @@
       "rules": 46,
       "description": "ESLint browser security and XSS rules — detects DOM XSS, postMessage abuse, tokens in localStorage, insecure cookies, clickjacking, mixed content, and CSP gaps",
       "category": "security",
-      "version": "3.0.2",
+      "version": "3.1.0",
       "published": true
     },
     {
@@ -13,7 +13,7 @@
       "rules": 43,
       "description": "ESLint Node security rules for Node.js — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto",
       "category": "security",
-      "version": "6.0.4",
+      "version": "6.0.6",
       "published": true
     },
     {
@@ -21,7 +21,7 @@
       "rules": 35,
       "description": "ESLint security rules for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "6.1.1",
+      "version": "6.1.2",
       "published": true
     },
     {
@@ -45,7 +45,7 @@
       "rules": 15,
       "description": "ESLint MCP security rules for the Model Context Protocol SDK — follows tool arguments into shells, file paths, URLs, SQL and eval; catches credential leaks, untrusted text in model-facing descriptions and prompts, unhardened HTTP transports, shared stateless servers, predictable session ids, untrusted stdio commands and schema/handler drift",
       "category": "security",
-      "version": "2.0.2",
+      "version": "2.1.0",
       "published": true
     },
     {
@@ -61,7 +61,7 @@
       "rules": 13,
       "description": "ESLint Postgres security rules for the pg PostgreSQL driver — detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL",
       "category": "security",
-      "version": "3.0.3",
+      "version": "3.0.4",
       "published": true
     },
     {
@@ -165,7 +165,7 @@
       "rules": 14,
       "description": "ESLint Lambda security rules for AWS Lambda — detects overly permissive IAM policies and CORS, unvalidated event bodies, secrets in env vars, and leaked error details",
       "category": "framework",
-      "version": "3.0.2",
+      "version": "3.0.3",
       "published": true
     },
     {
@@ -173,7 +173,7 @@
       "rules": 11,
       "description": "ESLint NestJS security rules — detects missing auth guards, missing validation pipes, unthrottled routes, and exposed private fields",
       "category": "framework",
-      "version": "4.2.1",
+      "version": "4.2.2",
       "published": true
     },
     {
@@ -181,7 +181,7 @@
       "rules": 58,
       "description": "ESLint import rules — a drop-in replacement for eslint-plugin-import that passes 95% of its own test cases, covering imports and module boundaries, 3.1x faster end-to-end",
       "category": "architecture",
-      "version": "3.2.0",
+      "version": "4.1.1",
       "published": true
     },
     {
@@ -229,7 +229,7 @@
       "rules": 4,
       "description": "ESLint plugin for the CLI floor — every commander, yargs or burgee command declares a description and a one-line example, writes through the output layer instead of console, and backs every prompt with a flag",
       "category": "quality",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "published": false
     },
     {
@@ -260,5 +260,5 @@
   "totalRules": 499,
   "totalPlugins": 31,
   "allPluginsCount": 32,
-  "generatedAt": "2026-11-18"
+  "generatedAt": "2026-11-20"
 }

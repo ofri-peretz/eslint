@@ -158,3 +158,30 @@ describe('fileUsesExpress', () => {
     expect(fileUsesExpress(ast)).toBe(true);
   });
 });
+
+describe('a (req, res) handler registered against a literal path', () => {
+  // Route modules that receive `app` from their caller import nothing, and
+  // their handlers are the two-argument form the middleware arm refuses.
+  it.each([
+    "module.exports = (app) => { app.get('/learn', (req, res) => res.send('x')); };",
+    "app.post('/items', isLoggedIn, function (request, response) { response.end(); });",
+    "router.use('/api', (req, res, next) => next());",
+    "app.all('/x', guard, (req, res) => {});",
+  ])('%s → true', (code) => {
+    expect(usesExpress(code)).toBe(true);
+  });
+
+  it.each([
+    ["http.createServer((req, res) => res.end());", 'no registration'],
+    ["cache.get('/key', (value, ttl) => value);", 'not a request/response pair'],
+    ["fastify.get('/x', (request, reply) => reply.send());", 'Fastify names its response reply'],
+    ["router.get('/x', (ctx) => {});", 'Koa handler'],
+    ["app.get(path, (req, res) => {});", 'path is not a literal'],
+    ["app.get('items', (req, res) => {});", 'path does not start with a slash'],
+    ["app.get('/x', handler);", 'handler is a reference, not a (req, res) function'],
+    ["app.get('/x', (res, req) => {});", 'parameters in the wrong order'],
+    ["app.listen('/x', (req, res) => {});", 'not a route registrar'],
+  ])('%s → false (%s)', (code) => {
+    expect(usesExpress(code)).toBe(false);
+  });
+});

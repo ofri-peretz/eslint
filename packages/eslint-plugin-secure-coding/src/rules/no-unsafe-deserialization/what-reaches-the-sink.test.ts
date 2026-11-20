@@ -22,7 +22,7 @@ const ruleTester = new RuleTester({
   languageOptions: { parser, ecmaVersion: 2022, sourceType: 'module' },
 });
 
-const EVAL = [{ messageId: 'dangerousEvalUsage' as const, suggestions: 1 }];
+const EVAL = [{ messageId: 'unsafeDeserialization' as const }];
 const UNSAFE = [{ messageId: 'unsafeDeserialization' as const }];
 const YAML = [{ messageId: 'unsafeYamlParsing' as const }];
 
@@ -34,31 +34,31 @@ ruleTester.run(
       // ── what is NOT untrusted ───────────────────────────────────────────
       {
         name: 'a binding reassigned to a constant is not tainted by the assignment',
-        code: "let code = '1 + 1'; code = '2 + 2'; eval(code);",
+        code: "let code = '1 + 1'; code = '2 + 2'; deserialize(code);",
       },
       {
         name: 'arithmetic on request data yields a number, which eval cannot run as code',
-        code: 'export const f = (req) => eval(req.body.count * 2);',
+        code: 'export const f = (req) => deserialize(req.body.count * 2);',
       },
       {
         name: 'concatenating two constants is not untrusted',
-        code: "eval('1' + '2');",
+        code: "deserialize('1' + '2');",
       },
       {
         name: 'a method on a module table the file never taints is not untrusted',
-        code: "const SNIPPETS = new Map(); eval(SNIPPETS.get('warmup'));",
+        code: "const SNIPPETS = new Map(); deserialize(SNIPPETS.get('warmup'));",
       },
       {
         name: 'a helper fed only constants returns nothing untrusted',
-        code: "eval(format('%d', 1));",
+        code: "deserialize(format('%d', 1));",
       },
       {
         name: 'a property of a module constant is not request data',
-        code: "const CONFIG = { code: '1' }; eval(CONFIG.code);",
+        code: "const CONFIG = { code: '1' }; deserialize(CONFIG.code);",
       },
       {
         name: 'a constant read inside a function is not that function’s parameter',
-        code: "export function f(input) { const C = '1'; eval(C); return input; }",
+        code: "export function f(input) { const C = '1'; deserialize(C); return input; }",
       },
       // ── what is NOT the sink ────────────────────────────────────────────
       {
@@ -97,73 +97,73 @@ ruleTester.run(
       // ── where untrusted data comes from ─────────────────────────────────
       {
         name: 'a binding declared from request data carries the taint to eval',
-        code: 'const code = req.body.code; eval(code);',
+        code: 'const code = req.body.code; deserialize(code);',
         errors: EVAL,
       },
       {
         name: 'a fetched response body is untrusted even from a constant URL',
-        code: "export async function f() { const res = await fetch('https://cdn.example/x.js'); eval(await res.text()); }",
+        code: "export async function f() { const res = await fetch('https://cdn.example/x.js'); deserialize(await res.text()); }",
         errors: EVAL,
       },
       {
         name: 'file contents read inline are untrusted',
-        code: "import fs from 'node:fs'; eval(fs.readFileSync('./plugin.js', 'utf8'));",
+        code: "import fs from 'node:fs'; deserialize(fs.readFileSync('./plugin.js', 'utf8'));",
         errors: EVAL,
       },
       {
         name: 'a function-expression parameter is untrusted',
-        code: 'export const run = function (code) { eval(code); };',
+        code: 'export const run = function (code) { deserialize(code); };',
         errors: EVAL,
       },
       {
         name: 'an arrow-function parameter is untrusted',
-        code: 'export const run = (code) => eval(code);',
+        code: 'export const run = (code) => deserialize(code);',
         errors: EVAL,
       },
       {
         name: 'any one parameter is enough, not only a sole one',
-        code: 'export function run(code, options) { eval(code); return options; }',
+        code: 'export function run(code, options) { deserialize(code); return options; }',
         errors: EVAL,
       },
       // @found Stryker mutation-survivor triage, 2026-11-03
       {
         name: 'FN: a parameter with a default value is still a parameter',
-        code: "export function run(code = '') { eval(code); }",
+        code: "export function run(code = '') { deserialize(code); }",
         errors: EVAL,
       },
       // ── how it travels ───────────────────────────────────────────────────
       {
         name: 'one untrusted part of a template is enough',
-        code: 'export const f = (req) => eval(`${req.body.code};${1}`);',
+        code: 'export const f = (req) => deserialize(`${req.body.code};${1}`);',
         errors: EVAL,
       },
       {
         name: 'one untrusted argument taints a helper’s result',
-        code: "export const f = (req) => eval(build(req.body.code, 'x'));",
+        code: "export const f = (req) => deserialize(build(req.body.code, 'x'));",
         errors: EVAL,
       },
       // @found Stryker mutation-survivor triage, 2026-11-03
       {
         name: 'FN: request data spread into a helper taints its result',
-        code: 'export const f = (req) => eval(join(...req.body.parts));',
+        code: 'export const f = (req) => deserialize(join(...req.body.parts));',
         errors: EVAL,
       },
       {
         name: 'a variable named like a deserializer that holds a call result is not an implementation',
-        code: 'export function handler(req) { const unserialize = eval(req.body.code); return unserialize; }',
+        code: 'export function handler(req) { const unserialize = deserialize(req.body.code); return unserialize; }',
         errors: EVAL,
       },
       // ── which callees are sinks ──────────────────────────────────────────
       {
         name: 'a resolved node-serialize sink reports even when dangerousFunctions omits its name',
         code: "import { unserialize } from 'node-serialize'; export const f = (req) => unserialize(req.body);",
-        options: [{ dangerousFunctions: ['eval'] }],
+        options: [{ dangerousFunctions: ['parseUnsafe'] }],
         errors: UNSAFE,
       },
       {
         name: 'a resolved v8.deserialize sink reports even when dangerousFunctions omits its name',
         code: "import v8 from 'node:v8'; export const f = (req) => v8.deserialize(req.body);",
-        options: [{ dangerousFunctions: ['eval'] }],
+        options: [{ dangerousFunctions: ['parseUnsafe'] }],
         errors: UNSAFE,
       },
       {

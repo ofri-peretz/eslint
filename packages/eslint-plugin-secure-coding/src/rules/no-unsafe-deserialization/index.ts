@@ -12,9 +12,15 @@
  * allows attackers to execute arbitrary code or manipulate application logic.
  * This includes:
  * - Using dangerous deserialization libraries
- * - eval() or Function() on untrusted data
+ * - Strings handed to setTimeout/setInterval, which the engine compiles
  * - YAML/XML parsers that can execute code
  * - Unsafe use of serialization libraries
+ *
+ * `eval()` and the `Function` constructor are NOT reported here. They turn a
+ * string into running code, which is code injection (CWE-95), not the
+ * revival of a serialized object (CWE-502), and `node-security/
+ * detect-eval-with-expression` owns them. Two rules reporting the same call
+ * under two CWEs doubled every such finding in a combined run.
  *
  * False Positive Reduction:
  * This rule uses security utilities to reduce false positives by detecting:
@@ -46,7 +52,6 @@ type MessageIds =
   | 'unsafeDeserialization'
   | 'dangerousEvalUsage'
   | 'unsafeYamlParsing'
-  | 'dangerousFunctionConstructor'
   | 'useSafeDeserializer';
 
 export interface Options extends SecurityRuleOptions {
@@ -87,49 +92,16 @@ type RuleOptions = [Options?];
  * deserializer.
  */
 /**
- * Names that are the JavaScript code-execution sink ONLY as a global.
+ * Names that turn a string into running code. That is code injection
+ * (CWE-95), not deserialization, and `node-security/detect-eval-with-expression`
+ * owns it: it already resolves the global binding, the `globalThis.eval` /
+ * `window.eval` spellings and the `Function` constructor. This rule stays
+ * silent on them so a call is reported once, under the right class.
  *
- * `serializer.deserialize(x)` is meaningfully dangerous on any receiver, so
- * these two are listed rather than the whole dangerous set.
+ * Applies to the bare name and to any receiver: `client.eval(lua)` was never a
+ * JavaScript sink, and `window.eval(x)` belongs to the owner.
  */
-const GLOBAL_ONLY_SINKS: ReadonlySet<string> = new Set(['eval', 'Function']);
-
-/**
- * Does this identifier have a declaration in some enclosing scope?
- *
- * A true global does not — that is the whole difference between `window.eval`
- * and a parameter someone happened to name `window`.
- */
-function isLocallyBoundIn(
-  identifier: TSESTree.Identifier,
-  sourceCode: TSESLint.SourceCode,
-): boolean {
-  for (
-    let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(identifier);
-    scope !== null;
-    scope = scope.upper
-  ) {
-    const variable = scope.variables.find((v) => v.name === identifier.name);
-    if (variable !== undefined) return variable.defs.length > 0;
-  }
-  return false;
-}
-
-/**
- * Receivers on which `eval` really is THE `eval`.
- *
- * @protocol-constant The four spellings of the global object — `globalThis`
- * from the language, `window` and `self` from the DOM and worker globals,
- * `global` from Node. Not English words standing in for evidence: the set is
- * fixed by the runtimes, and a consumer given control of it could only remove
- * `window` and lose the sink this branch exists to catch.
- */
-const GLOBAL_OBJECTS: ReadonlySet<string> = new Set([
-  'window',
-  'globalThis',
-  'global',
-  'self',
-]);
+const CODE_INJECTION_SINKS: ReadonlySet<string> = new Set(['eval', 'Function']);
 
 const TIMER_FUNCTIONS = new Set(['setTimeout', 'setInterval']);
 
@@ -302,10 +274,10 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
       }),
       dangerousEvalUsage: formatLLMMessage({
         icon: MessageIcons.SECURITY,
-        issueName: 'Dangerous eval() Usage',
+        issueName: 'Implied eval() through a timer string',
         cwe: 'CWE-502',
         description:
-          'eval() used for deserialization (code execution vulnerability)',
+          'A string handed to setTimeout/setInterval is compiled and run as code (code execution vulnerability)',
         severity: 'CRITICAL',
         fix: 'Use JSON.parse() or safe deserialization libraries',
         documentationLink: 'https://cwe.mitre.org/data/definitions/502.html',
@@ -319,16 +291,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         fix: 'Use yaml.safeLoad() or disable code execution',
         documentationLink:
           'https://www.npmjs.com/package/js-yaml#loadstr---options-',
-      }),
-      dangerousFunctionConstructor: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Dangerous Function Constructor',
-        cwe: 'CWE-502',
-        description: 'Function constructor used with untrusted data',
-        severity: 'CRITICAL',
-        fix: 'Avoid Function constructor with user input',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function',
       }),
       useSafeDeserializer: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -347,8 +309,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [
-              'eval',
-              'Function',
               'setTimeout',
               'setInterval',
               'unserialize',
@@ -425,8 +385,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       dangerousFunctions: [
-        'eval',
-        'Function',
         'setTimeout',
         'setInterval',
         'unserialize',
@@ -541,6 +499,14 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         if (inertPackages.has(binding.module)) return false;
       }
 
+      // `eval(x)` / `Function(x)` belong to detect-eval-with-expression.
+      if (
+        callee.type === 'Identifier' &&
+        CODE_INJECTION_SINKS.has(callee.name)
+      ) {
+        return false;
+      }
+
       // Check for dangerous function calls
       if (
         callee.type === 'Identifier' &&
@@ -601,31 +567,12 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
           return false;
         }
 
-        // `eval` and `Function` as a MEMBER are the JavaScript sink only on a
-        // global object. Everywhere else the name belongs to some library's
-        // own API and compiles nothing in this process:
-        //
-        //   client.eval(luaScript, 1, key, …)   // Redis EVAL — Lua, server-side
-        //
-        // That is animir/node-rate-limiter-flexible `lib/RateLimiterRedis.js:155`,
-        // where the script is a hardcoded class field, and it was the ONLY
-        // finding in that repository.
-        //
-        // The Identifier branch above already restricts these two names to
-        // globals for the same reason; the member branch did not, so `.eval`
-        // on any receiver was a CWE-502 sink.
-        if (GLOBAL_ONLY_SINKS.has(memberName)) {
-          // The NAME is not enough — `function run(window) { window.eval(x) }`
-          // binds a parameter, and a library client called `window` is not the
-          // global object. Require the identifier to resolve to nothing local:
-          // a global has no declaration in any enclosing scope.
-          if (!GLOBAL_OBJECTS.has(objectName)) return false;
-          const object = callee.object;
-          return (
-            object.type === 'Identifier' &&
-            !isLocallyBoundIn(object, sourceCode)
-          );
-        }
+        // `x.eval(...)` / `x.Function(...)`: on a global object this is the
+        // code-injection sink the owner rule reports (`window.eval`,
+        // `globalThis.eval`); on any other receiver it is a library's own API
+        // (`client.eval(luaScript)` is Redis EVAL, not JavaScript). Neither is
+        // deserialization.
+        if (CODE_INJECTION_SINKS.has(memberName)) return false;
 
         // Check dangerous methods
         if (dangerousFunctions.includes(memberName)) {
@@ -893,36 +840,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
     const checkCallExpression = (
       node: TSESTree.CallExpression | TSESTree.NewExpression,
     ) => {
-      // 1. Check Function Constructor (NewExpression or CallExpression)
-      //
-      // The binding, not the spelling: `Function` imported from
-      // `aws-cdk-lib/aws-lambda` is an AWS Lambda construct, and
-      // `new Function(this, id, { runtime: Runtime.PYTHON_3_11 })` is how every CDK
-      // stack declares one. Found in cdklabs/cdk-enterprise-iac
-      // src/constructs/ecsIsoServiceAutoscaler/ecsIsoServiceAutoscaler.ts:132.
-      if (
-        (node.type === 'NewExpression' || node.type === 'CallExpression') &&
-        node.callee.type === 'Identifier' &&
-        node.callee.name === 'Function' &&
-        isGlobalBinding(node.callee)
-      ) {
-        const args: TSESTree.CallExpressionArgument[] = node.arguments;
-        const hasUntrustedInput = args.some((arg): boolean =>
-          isUntrustedInput(arg),
-        );
-
-        if (hasUntrustedInput) {
-          if (safetyChecker.isSafe(node, context)) return;
-
-          context.report({
-            node,
-            messageId: 'dangerousFunctionConstructor',
-          });
-          return;
-        }
-      }
-
-      // 2. Check CallExpressions (eval, unserialize, yaml, etc.)
+      // Check CallExpressions (timer strings, unserialize, yaml, etc.)
       if (
         isDangerousDeserialization(node) &&
         !isInsideDeserializerImplementation(node)
@@ -948,7 +866,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
             // Check for generic dangerous functions
             if (
               node.callee.type === 'Identifier' &&
-              ['eval', 'setTimeout', 'setInterval'].includes(node.callee.name)
+              ['setTimeout', 'setInterval'].includes(node.callee.name)
             ) {
               messageId = 'dangerousEvalUsage';
             }
@@ -1010,8 +928,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         const options = context.options[0] || {};
         ({
           dangerousFunctions = [
-            'eval',
-            'Function',
             'setTimeout',
             'setInterval',
             'unserialize',

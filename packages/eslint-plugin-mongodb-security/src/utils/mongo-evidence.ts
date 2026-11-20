@@ -413,13 +413,101 @@ export function isNativeCollectionHandle(node: TSESTree.Node): boolean {
  * `NATIVE_COLLECTION_METHODS` for the set and for the two methods rejected from
  * it.
  */
-function isNativeCollectionCall(node: TSESTree.Node): boolean {
+function isNativeCollectionCall(
+  node: TSESTree.Node,
+  handles: ReadonlySet<string> = new Set(),
+): boolean {
+  if (
+    node.type !== AST_NODE_TYPES.CallExpression ||
+    node.callee.type !== AST_NODE_TYPES.MemberExpression ||
+    !namesOneOf(propertyName(node.callee), NATIVE_COLLECTION_METHODS)
+  ) {
+    return false;
+  }
   return (
-    node.type === AST_NODE_TYPES.CallExpression &&
-    node.callee.type === AST_NODE_TYPES.MemberExpression &&
-    namesOneOf(propertyName(node.callee), NATIVE_COLLECTION_METHODS) &&
-    isNativeCollectionHandle(node.callee.object)
+    isNativeCollectionHandle(node.callee.object) ||
+    isRootedAtBoundHandle(node.callee.object, handles)
   );
+}
+
+/**
+ * The identifier at the root of `a.b(...).c`: `allocationsCol` in
+ * `allocationsCol.find(q).toArray(cb)`. `null` when the chain starts anywhere
+ * else (`this`, a call result, a literal).
+ */
+function chainRootName(node: TSESTree.Node): string | null {
+  let current: TSESTree.Node = node;
+  for (;;) {
+    if (current.type === AST_NODE_TYPES.Identifier) return current.name;
+    if (current.type === AST_NODE_TYPES.CallExpression) {
+      current = current.callee;
+    } else if (current.type === AST_NODE_TYPES.MemberExpression) {
+      current = current.object;
+    } else {
+      return null;
+    }
+  }
+}
+
+function isRootedAtBoundHandle(
+  node: TSESTree.Node,
+  handles: ReadonlySet<string>,
+): boolean {
+  if (handles.size === 0) return false;
+  const root = chainRootName(node);
+  return root !== null && handles.has(root);
+}
+
+/**
+ * Names this file binds to a `.collection('name')` handle:
+ *
+ *   const allocationsCol = db.collection('allocations');
+ *
+ * is the idiomatic way DAO modules use the native driver — the handle is
+ * opened once in a constructor and every query goes through the variable, so
+ * `allocationsCol.find(q).toArray(cb)` carries no `.collection('…')` of its own
+ * for the chained arm to see. The handle is evidence only when a native-driver
+ * method is then called through it (see `isNativeCollectionCall`), so a
+ * Firestore `const col = db.collection('x'); col.doc(id).get()` still opens
+ * nothing.
+ */
+function collectionHandleNames(ast: TSESTree.Program): ReadonlySet<string> {
+  const names = new Set<string>();
+  const visit = (node: TSESTree.Node): void => {
+    if (
+      node.type === AST_NODE_TYPES.VariableDeclarator &&
+      node.id.type === AST_NODE_TYPES.Identifier &&
+      node.init != null &&
+      isNativeCollectionHandle(node.init)
+    ) {
+      names.add(node.id.name);
+    } else if (
+      node.type === AST_NODE_TYPES.AssignmentExpression &&
+      node.left.type === AST_NODE_TYPES.Identifier &&
+      isNativeCollectionHandle(node.right)
+    ) {
+      names.add(node.left.name);
+    }
+    for (const key of Object.keys(node)) {
+      if (key === 'parent') continue;
+      const value = (node as unknown as Record<string, unknown>)[key];
+      if (Array.isArray(value)) {
+        for (const child of value) {
+          if (child && typeof (child as TSESTree.Node).type === 'string') {
+            visit(child as TSESTree.Node);
+          }
+        }
+      } else if (
+        value &&
+        typeof value === 'object' &&
+        typeof (value as TSESTree.Node).type === 'string'
+      ) {
+        visit(value as TSESTree.Node);
+      }
+    }
+  };
+  visit(ast);
+  return names;
 }
 
 const cache = new WeakMap<TSESTree.Program, boolean>();
@@ -469,6 +557,7 @@ export function fileUsesMongo(ast: TSESTree.Program): boolean {
 function computeUsesMongo(ast: TSESTree.Program): boolean {
   let found = false;
   const foreign = nonMongoImports(ast);
+  const handles = collectionHandleNames(ast);
 
   const visit = (node: TSESTree.Node, requireIsShadowed: boolean): void => {
     if (
@@ -489,7 +578,7 @@ function computeUsesMongo(ast: TSESTree.Program): boolean {
       isSchemaConstruction(node, foreign) ||
       isObjectIdEvidence(node) ||
       isLeanCall(node) ||
-      isNativeCollectionCall(node) ||
+      isNativeCollectionCall(node, handles) ||
       isConnectionString(node)
     ) {
       found = true;
