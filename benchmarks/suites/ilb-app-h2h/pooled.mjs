@@ -9,9 +9,9 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const dir = path.resolve(here, '../../results/ilb-app-h2h');
 const files = {
-  nodegoat: 'nodegoat.rev3.json',
-  dvna: 'dvna.rev2.json',
-  juiceshop: 'juiceshop.json',
+  nodegoat: 'nodegoat.rev4.json',
+  dvna: 'dvna.rev3.json',
+  juiceshop: 'juiceshop.rev2.json',
 };
 const wilson = (k, n) => {
   if (!n) return [null, null];

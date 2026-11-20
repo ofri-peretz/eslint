@@ -84,6 +84,7 @@ export function buildLlmsIndex(): string {
     '## Start here',
     '',
     `- [Use alongside eslint-plugin-security](${SITE}/docs/getting-started/with-eslint-plugin-security): the config, and what each finds on our own corpus (2026-11-15): 74 of 100 vulnerable samples only Interlace, 1 only eslint-plugin-security, 11 neither.`,
+    `- [Measured on NodeGoat, DVNA and Juice Shop](${SITE}/docs/getting-started/security-alternative-benchmark): 72 documented flaws, 2026-11-20. Ours found 19, eslint-plugin-security 4.2.1 found 3, neither 53. Training apps, rules fixed after earlier runs, AI labellers; read the caveats.`,
     `- [Flat config](${SITE}/docs/getting-started/flat-config): eslint.config.mjs setup. Each preset is one object in the array; do not spread it.`,
     `- [Claude Code](${SITE}/docs/integrations/claude-code) and [Cursor](${SITE}/docs/integrations/cursor)`,
     '- Agent skill that detects your stack and writes the config: `npx skills add ofri-peretz/eslint`, or in Claude Code `claude plugin marketplace add ofri-peretz/eslint` then `claude plugin install interlace@interlace`. Source: https://github.com/ofri-peretz/eslint/tree/main/skills/security-linting',

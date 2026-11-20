@@ -1,8 +1,8 @@
 # ilb-app-h2h: graded head-to-head on vulnerable apps
 
 Our plugins (local build) against `eslint-plugin-security` on an app whose vulnerabilities are
-documented by its own maintainers. **Stages so far: OWASP NodeGoat (two revisions) and DVNA.** Draft; no number here is
-published or cited in the docs.
+documented by its own maintainers. **Apps: OWASP NodeGoat, DVNA and OWASP Juice Shop.** The numbers are published and explained, with every caveat, at
+`/docs/getting-started/security-alternative-benchmark` on the docs site.
 
 ## Run it
 
@@ -14,7 +14,7 @@ node benchmarks/suites/ilb-app-h2h/freeze-check.mjs nodegoat         # (or dvna)
 node benchmarks/suites/ilb-app-h2h/diagnose.mjs <clone-dir> --app dvna   # diagnostic only: every class-map rule on, to explain misses
 ```
 
-Results: `benchmarks/results/ilb-app-h2h/`. `nodegoat.json` is revision 1 (labels corrected in 1b); `nodegoat.rev2.json` is the re-run after the rule-gap fixes landed on `main`; `dvna.json` is DVNA. Old revisions are kept beside new ones.
+Results: `benchmarks/results/ilb-app-h2h/`. `pooled.mjs` reads the latest revision of each app: `nodegoat.rev4.json`, `dvna.rev3.json`, `juiceshop.rev2.json` (re-run 2026-11-20 on a build of `main` at `ea9fe2131`). `nodegoat.json` is revision 1 (labels corrected in 1b); `nodegoat.rev2.json` is the re-run after the rule-gap fixes landed on `main`; `dvna.json` is DVNA; `juiceshop.json` is the Juice Shop first run. Old revisions are kept beside new ones, and a re-run after rule changes made because of these apps counts as fix-and-retest.
 
 ## What is in it
 
@@ -27,7 +27,7 @@ Results: `benchmarks/results/ilb-app-h2h/`. `nodegoat.json` is revision 1 (label
 
 ## Honest limits (read before citing)
 
-- Single author for the truth table and the labels; not blind, no second labeller, no kappa yet.
+- Single author for the truth tables; two AI labellers (kappa computed outside the harness, on an earlier build); no human label review yet.
 - Truth lines are judgement from tutorial prose.
 - Textbook vulnerabilities in a training app: this measures recall on those and precision on code written to be vulnerable, not production code.
-- `freeze-check.mjs` reads commit order; a squash-merge erases it, so run it on the PR branch.
+- `freeze-check.mjs` reads commit order; a squash-merge erases it. The harness was merged by rebase so the order survives on `main`.
