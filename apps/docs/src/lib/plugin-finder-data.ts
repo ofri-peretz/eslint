@@ -18,6 +18,7 @@
  * architecture → quality).
  */
 
+import { pluginDocsPath } from '@/lib/plugins';
 import pluginStats from '@/data/plugin-stats.json';
 import rulesManifest from '@/data/rules-manifest.json';
 
@@ -166,7 +167,8 @@ export function getPluginFinderData(): PluginSummary[] {
       withCwe: t.withCwe,
       maxCvss: t.maxCvss > 0 ? t.maxCvss : null,
       withDetection: t.withDetection,
-      docsHref: `/docs/${docsPathSegment(category)}/plugin-${slug}`,
+      docsHref:
+        pluginDocsPath(slug) ?? `/docs/${docsPathSegment(category)}/plugin-${slug}`,
     });
   }
 

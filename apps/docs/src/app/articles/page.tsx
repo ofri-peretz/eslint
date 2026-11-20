@@ -12,6 +12,8 @@ import { Container } from '@interlace/ui/container';
 import type { Metadata } from 'next';
 
 import articlesData from '@/data/articles.json';
+import { JsonLd } from '@/components/json-ld';
+import { topLevelJsonLd } from '@/lib/seo';
 
 export const metadata: Metadata = {
   title: 'Articles',
@@ -80,6 +82,7 @@ export default async function ArticlesPage({
       tabIndex={-1}
       className="py-8 outline-hidden"
     >
+      <JsonLd data={topLevelJsonLd('Articles', '/articles')} />
       <ArticlesClient
         totalArticles={articles.length}
         params={params}

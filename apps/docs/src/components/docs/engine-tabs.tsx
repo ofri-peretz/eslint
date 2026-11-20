@@ -15,15 +15,30 @@ import { InstallSnippet } from '@/components/mdx/install-snippet';
 /**
  * EngineTabs — install + config for both engines a plugin runs on.
  *
- * oxlint / Vite+ is the first tab and the default; ESLint is second. The
- * choice is remembered site-wide (fumadocs `groupId` + `persist`) and
+ * ESLint is the first tab and the default; oxlint / Vite+ is second. Both
+ * panels are rendered into the server HTML (`forceMount`; the inactive one is
+ * hidden by CSS), so a crawler or an assistant fetching the page reads the
+ * `eslint.config.js` snippet without running JavaScript. Before 2026-11-20
+ * oxlint was the default and Radix unmounted the inactive panel, so plugin
+ * pages shipped no ESLint config in their HTML at all (SEO/AEO audit,
+ * 2026-11-19).
+ *
+ * The choice is remembered site-wide (fumadocs `groupId` + `persist`) and
  * deep-linkable by fragment (DEEP_LINKING_PHILOSOPHY: tab state lives in the
- * fragment, defaults never appear in the URL): `#engine-eslint` opens the
- * ESLint tab, and choosing oxlint strips it again.
+ * fragment, defaults never appear in the URL): `#engine-oxlint` opens the
+ * oxlint tab, and choosing ESLint strips it again. `#engine-eslint` still
+ * selects ESLint, so links written before the swap keep working.
+ *
+ * The fragment targets are spans inside each panel, not the panels' own ids:
+ * an `id` on `TabsContent` replaces the id Radix generates, and the trigger's
+ * `aria-controls` then points at nothing — harmless while the inactive panel
+ * was unmounted anyway, a dangling reference once both are in the DOM.
+ * fumadocs' Tabs opens whichever panel contains the fragment's element.
  */
 
 export const ENGINE_GROUP = 'lint-engine';
 export const ESLINT_ANCHOR = 'engine-eslint';
+export const OXLINT_ANCHOR = 'engine-oxlint';
 // Labels and values are separate: fumadocs' `items` shorthand derives the
 // value from the label, and `oxlint / Vite+` put a space into Radix's
 // `aria-controls` (axe aria-valid-attr-value).
@@ -66,6 +81,7 @@ export function EngineTabs({ plugin, rules, preset }: EngineTabsProps) {
    * Mirror the engine choice into the fragment. Capture-phase, on our own
    * wrapper, for clicks and arrow keys alike; reads the active trigger of the
    * outer tablist only (the package-manager tabs inside are not ours).
+   * ESLint is the default, so only oxlint ever puts a fragment in the URL.
    */
   function syncHash(event: React.SyntheticEvent) {
     const list = ref.current?.querySelector('[role="tablist"]');
@@ -74,11 +90,11 @@ export function EngineTabs({ plugin, rules, preset }: EngineTabsProps) {
       const active = list.querySelector('[data-state="active"]')?.textContent;
       const current = window.location.hash.slice(1);
       const { pathname, search } = window.location;
-      if (active === ESLINT_TAB) {
+      if (active === OXLINT_TAB) {
         if (current === '' || current === ESLINT_ANCHOR) {
-          window.history.replaceState(null, '', `#${ESLINT_ANCHOR}`);
+          window.history.replaceState(null, '', `#${OXLINT_ANCHOR}`);
         }
-      } else if (current === ESLINT_ANCHOR) {
+      } else if (current === OXLINT_ANCHOR || current === ESLINT_ANCHOR) {
         window.history.replaceState(null, '', pathname + search);
       }
     });
@@ -93,12 +109,22 @@ export function EngineTabs({ plugin, rules, preset }: EngineTabsProps) {
       onKeyUpCapture={syncHash}
       data-testid="engine-tabs"
     >
-      <Tabs defaultValue="oxlint" groupId={ENGINE_GROUP} persist>
+      <Tabs defaultValue="eslint" groupId={ENGINE_GROUP} persist>
         <TabsList>
-          <TabsTrigger value="oxlint">{OXLINT_TAB}</TabsTrigger>
           <TabsTrigger value="eslint">{ESLINT_TAB}</TabsTrigger>
+          <TabsTrigger value="oxlint">{OXLINT_TAB}</TabsTrigger>
         </TabsList>
-        <TabsContent value="oxlint" data-engine="oxlint">
+        <TabsContent value="eslint" data-engine="eslint" forceMount>
+          <span id={ESLINT_ANCHOR} />
+          <InstallSnippet packages={pkg} dev />
+          <DynamicCodeBlock
+            lang="js"
+            code={eslintConfig}
+            codeblock={{ title: 'eslint.config.js' }}
+          />
+        </TabsContent>
+        <TabsContent value="oxlint" data-engine="oxlint" forceMount>
+          <span id={OXLINT_ANCHOR} />
           <InstallSnippet packages={alias} dev />
           <DynamicCodeBlock
             lang="json"
@@ -115,14 +141,6 @@ export function EngineTabs({ plugin, rules, preset }: EngineTabsProps) {
             rules under the same IDs, and no ESLint install.{' '}
             <Link href="/docs/oxlint">Why oxlint</Link>.
           </p>
-        </TabsContent>
-        <TabsContent value="eslint" id={ESLINT_ANCHOR} data-engine="eslint">
-          <InstallSnippet packages={pkg} dev />
-          <DynamicCodeBlock
-            lang="js"
-            code={eslintConfig}
-            codeblock={{ title: 'eslint.config.js' }}
-          />
         </TabsContent>
       </Tabs>
     </div>

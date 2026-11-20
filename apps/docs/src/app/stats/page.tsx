@@ -19,6 +19,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { getStatsPageData, type PluginRow } from '@/lib/stats-page';
+import { pluginDocsPath } from '@/lib/plugins';
+import { JsonLd } from '@/components/json-ld';
+import { topLevelJsonLd } from '@/lib/seo';
 
 export const dynamic = 'force-static';
 
@@ -52,7 +55,9 @@ function fmtDownloads(n: number): string {
 /** Internal docs link for a plugin row — same-property nav, so no UTM. */
 function pluginDocsHref(p: PluginRow): string {
   const slug = p.name.replace(/^eslint-plugin-/, '');
-  return `/docs/${p.category}/plugin-${slug}`;
+  // The registry pillar, not the stats category: `framework`, `react` and
+  // `architecture` are categories with no docs directory (six 404s here).
+  return pluginDocsPath(slug) ?? `/docs/${p.category}/plugin-${slug}`;
 }
 
 interface CoverageCellProps {
@@ -92,6 +97,7 @@ export default async function StatsPage() {
       tabIndex={-1}
       className="py-12 outline-hidden"
     >
+      <JsonLd data={topLevelJsonLd('Stats', '/stats')} />
       <header>
         <h1 className="text-3xl font-bold tracking-tight">Stats</h1>
         <p className="mt-3 max-w-prose text-base text-fd-muted-foreground">
@@ -106,7 +112,7 @@ export default async function StatsPage() {
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <StarButton stars={data.impact.github.totalStars} surface="stats" />
           <Link
-            href="/docs"
+            href="/docs/getting-started"
             className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 px-3"
           >
             Get started →
