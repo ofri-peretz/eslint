@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-anthropic-security",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "ESLint Anthropic SDK security rules — catches hardcoded Claude API keys, the browser escape hatch that ships them to every visitor, and system prompts assembled from untrusted input.",
   "type": "commonjs",
   "sideEffects": false,

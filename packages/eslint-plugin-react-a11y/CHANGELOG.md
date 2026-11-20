@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-react-a11y` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.0.4
+
+### Patch Changes
+
+- **🐛 Fix** — click-events-have-key-events no longer reports onClick on a custom component
+
+  `<Button onClick={go}>` was reported even though `Button` is a component, not a DOM element — it may already render a native `<button>` and be keyboard-operable, and there is no way to see that from the call site. The rule now only checks intrinsic (lower-case) elements, matching upstream `jsx-a11y/click-events-have-key-events`.
+
 ## 3.0.3
 
 ### Patch Changes

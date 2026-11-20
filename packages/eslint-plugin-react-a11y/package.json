@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-react-a11y",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "ESLint React a11y rules for React accessibility — WCAG 2.1 rules for ARIA, alt text, keyboard interaction, and focus management, with auto-fixes.",
   "type": "commonjs",
   "sideEffects": false,

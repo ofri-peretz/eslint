@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-express-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.3.1
+
+### Patch Changes
+
+- **🐛 Fix** — `require-csrf-protection` finds the request by its binding, not by its name
+
+  Whether a handler reads a cookie, a session or the `Authorization` header is now decided against the handler's first parameter, whatever it is spelled (`(r, s) => r.cookies.sid`). A local variable that merely happens to be called `req` is no longer taken for the request.
+
 ## 4.3.0
 
 ### Minor Changes
