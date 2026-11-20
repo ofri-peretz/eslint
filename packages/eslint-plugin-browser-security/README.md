@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  Browser-specific security rules to prevent XSS and other client-side attacks.
+  ESLint rules that flag DOM XSS, unsafe postMessage, tokens in localStorage, insecure cookies and CSP gaps in browser code.
 </p>
 
 <p align="center">
@@ -47,7 +47,7 @@ Using oxlint or Vite+? Install `oxlint-plugin-browser-security`: the same rules 
 
 ## Description
 
-This plugin provides Browser-specific security rules to prevent XSS and other client-side attacks.
+This plugin provides ESLint rules that flag DOM XSS, unsafe postMessage, tokens in localStorage, insecure cookies and CSP gaps in browser code.
 
 <!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
 

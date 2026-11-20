@@ -863,16 +863,34 @@ export function renderLead(result: ImportParityResult): string {
   ].join('\n');
 }
 
-/** Insert or refresh import-next's lead, directly above the first `## ` heading. */
+/**
+ * Proof lines for plugins whose proof is strong. Only these: a package with nothing
+ * measured or independently verifiable gets no line, and no line beats a weak one
+ * (README audit 2026-11-20). Each names its date and links the public file that shows it.
+ * import-next's is not here: its figures are read from the benchmark result (renderLead).
+ * MDX compiles these files: no curly braces in prose.
+ */
+export const PROOF_LINES: Record<string, string> = {
+  'eslint-plugin-node-security':
+    'Used by [eslint-config-hardcore](https://github.com/EvgenyOrekhov/eslint-config-hardcore/blob/master/package.json), [stamhoofd](https://github.com/stamhoofd/stamhoofd/blob/main/shared/eslint/package.json) and [karajan-code](https://github.com/manufosela/karajan-code/blob/main/eslint.config.js), each in a public file (checked 2026-11-20). Listed in [awesome-nodejs-security](https://github.com/lirantal/awesome-nodejs-security) under Static Code Analysis.',
+};
+
+/** The lead block for a package: the generated drop-in grade, a proof line, or none. */
+export function leadFor(
+  pkg: string,
+  load: () => ImportParityResult,
+): string | null {
+  if (pkg === 'eslint-plugin-import-next') return renderLead(load());
+  const proof = PROOF_LINES[pkg];
+  return proof ? [LEAD_START, '', proof, '', LEAD_END].join('\n') : null;
+}
+
+/** Insert or refresh a package's lead, directly above the first `## ` heading. */
 export function spliceLead(
   readme: string,
-  pkg: string,
-  result: ImportParityResult,
+  block: string | null,
 ): { content: string; modified: boolean } {
-  if (pkg !== 'eslint-plugin-import-next') {
-    return { content: readme, modified: false };
-  }
-  const block = renderLead(result);
+  if (block === null) return { content: readme, modified: false };
   const start = readme.indexOf(LEAD_START);
   const end = readme.indexOf(LEAD_END);
   if (start !== -1 || end !== -1) {
@@ -975,10 +993,10 @@ export function processPlugin(
     const withInstall = spliceInstall(withEcosystem.content, entry.package);
     const withOrder = spliceGettingStartedFirst(withInstall.content);
     const withSupport = spliceSupport(withOrder.content);
-    const withLead =
-      entry.package === 'eslint-plugin-import-next'
-        ? spliceLead(withSupport.content, entry.package, latestImportParity())
-        : { content: withSupport.content, modified: false };
+    const withLead = spliceLead(
+      withSupport.content,
+      leadFor(entry.package, latestImportParity),
+    );
     result = {
       content: withLead.content,
       modified:

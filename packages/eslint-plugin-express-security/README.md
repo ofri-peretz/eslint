@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  Comprehensive security rules for Express.js applications, mapping to OWASP Top 10.
+  ESLint rules that flag permissive CORS, missing CSRF protection, missing helmet headers and insecure cookies in Express apps.
 </p>
 
 <p align="center">
@@ -47,7 +47,7 @@ Using oxlint or Vite+? Install `oxlint-plugin-express-security`: the same rules 
 
 ## Description
 
-This plugin provides Comprehensive security rules for Express.js applications, mapping to OWASP Top 10.
+This plugin provides ESLint rules that flag permissive CORS, missing CSRF protection, missing helmet headers and insecure cookies in Express apps.
 
 <!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
 

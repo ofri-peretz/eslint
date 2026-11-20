@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  Security rules for Vercel AI SDK usage (prompt injection, data handling).
+  ESLint rules that flag prompt injection, system-prompt leaks, hardcoded API keys and unvalidated model output in Vercel AI SDK code.
 </p>
 
 <p align="center">
@@ -47,7 +47,7 @@ Using oxlint or Vite+? Install `oxlint-plugin-vercel-ai-security`: the same rule
 
 ## Description
 
-This plugin provides Security rules for Vercel AI SDK usage (prompt injection, data handling).
+This plugin provides ESLint rules that flag prompt injection, system-prompt leaks, hardcoded API keys and unvalidated model output in Vercel AI SDK code.
 
 <!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
 

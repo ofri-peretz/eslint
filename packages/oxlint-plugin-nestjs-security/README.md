@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  Security rules tailored for NestJS applications (Controllers, Providers, Decorators).
+  ESLint rules that flag missing auth guards, missing validation pipes, unthrottled routes and exposed private fields in NestJS.
 </p>
 
 <p align="center">

@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  Browser-specific security rules to prevent XSS and other client-side attacks.
+  ESLint rules that flag DOM XSS, unsafe postMessage, tokens in localStorage, insecure cookies and CSP gaps in browser code.
 </p>
 
 <p align="center">

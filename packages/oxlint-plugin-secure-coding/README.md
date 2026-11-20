@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  General secure coding practices and OWASP compliance for JavaScript/TypeScript.
+  ESLint rules for injection, ReDoS, XXE, hardcoded credentials and unsafe deserialization in JavaScript and TypeScript.
 </p>
 
 <p align="center">

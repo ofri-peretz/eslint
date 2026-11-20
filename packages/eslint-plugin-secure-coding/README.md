@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  General secure coding practices and OWASP compliance for JavaScript/TypeScript.
+  ESLint rules for injection, ReDoS, XXE, hardcoded credentials and unsafe deserialization in JavaScript and TypeScript.
 </p>
 
 <p align="center">
@@ -52,7 +52,7 @@ Using oxlint or Vite+? Install `oxlint-plugin-secure-coding`: the same rules und
 
 ## Description
 
-This plugin provides General secure coding practices and OWASP compliance for JavaScript/TypeScript.
+This plugin provides ESLint rules for injection, ReDoS, XXE, hardcoded credentials and unsafe deserialization in JavaScript and TypeScript.
 
 <!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
 

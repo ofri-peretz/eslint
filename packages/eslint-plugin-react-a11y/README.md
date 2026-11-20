@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  Accessibility (a11y) rules for React applications, enforcing WCAG standards.
+  ESLint rules for React accessibility: ARIA, alt text, keyboard interaction and focus management, from WCAG 2.1.
 </p>
 
 <p align="center">
@@ -47,7 +47,7 @@ Using oxlint or Vite+? Install `oxlint-plugin-react-a11y`: the same rules under 
 
 ## Description
 
-This plugin provides Accessibility (a11y) rules for React applications, enforcing WCAG standards.
+This plugin provides ESLint rules for React accessibility: ARIA, alt text, keyboard interaction and focus management, from WCAG 2.1.
 
 <!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
 

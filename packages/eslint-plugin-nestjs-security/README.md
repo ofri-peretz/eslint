@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  Security rules tailored for NestJS applications (Controllers, Providers, Decorators).
+  ESLint rules that flag missing auth guards, missing validation pipes, unthrottled routes and exposed private fields in NestJS.
 </p>
 
 <p align="center">
@@ -47,7 +47,7 @@ Using oxlint or Vite+? Install `oxlint-plugin-nestjs-security`: the same rules u
 
 ## Description
 
-This plugin provides Security rules tailored for NestJS applications (Controllers, Providers, Decorators).
+This plugin provides ESLint rules that flag missing auth guards, missing validation pipes, unthrottled routes and exposed private fields in NestJS.
 
 <!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
 

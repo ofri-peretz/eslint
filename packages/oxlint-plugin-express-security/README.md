@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  Comprehensive security rules for Express.js applications, mapping to OWASP Top 10.
+  ESLint rules that flag permissive CORS, missing CSRF protection, missing helmet headers and insecure cookies in Express apps.
 </p>
 
 <p align="center">

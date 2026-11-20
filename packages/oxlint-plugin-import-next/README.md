@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  Next-generation import sorting, validation, and architectural boundaries.
+  ESLint rules for import order, no-cycle and module boundaries, graded against the eslint-plugin-import test suite.
 </p>
 
 <p align="center">

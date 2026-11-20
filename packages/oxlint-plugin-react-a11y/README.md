@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  Accessibility (a11y) rules for React applications, enforcing WCAG standards.
+  ESLint rules for React accessibility: ARIA, alt text, keyboard interaction and focus management, from WCAG 2.1.
 </p>
 
 <p align="center">

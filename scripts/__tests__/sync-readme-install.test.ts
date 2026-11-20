@@ -12,9 +12,12 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
+  PROOF_LINES,
+  leadFor,
   renderLead,
   spliceGettingStartedFirst,
   spliceInstall,
+  spliceLead,
   spliceSupport,
 } from '../sync-readme-rules';
 
@@ -178,5 +181,38 @@ describe('renderLead', () => {
     expect(lead).toContain(
       '**1 of its 45 tested rules are not implemented** (`order`)',
     );
+  });
+});
+
+describe('leadFor', () => {
+  const load = () => {
+    throw new Error('only import-next reads the benchmark result');
+  };
+
+  it('gives node-security a proof line that names its date and links public files', () => {
+    const lead = leadFor('eslint-plugin-node-security', load);
+    expect(lead).toContain('checked 2026-11-20');
+    expect(lead).toContain('https://github.com/');
+  });
+
+  it('gives only the plugins with strong proof a line', () => {
+    expect(Object.keys(PROOF_LINES)).toEqual(['eslint-plugin-node-security']);
+    for (const weak of [
+      'vercel-ai-security',
+      'express-security',
+      'nestjs-security',
+      'react-a11y',
+    ]) {
+      expect(leadFor(`eslint-plugin-${weak}`, load)).toBeNull();
+    }
+  });
+
+  it('splices a lead above the first heading, once', () => {
+    const doc = '</p>\n\n## Getting Started\n';
+    const once = spliceLead(doc, 'LEAD').content;
+    expect(once.indexOf('LEAD')).toBeLessThan(
+      once.indexOf('## Getting Started'),
+    );
+    expect(spliceLead(once, null)).toEqual({ content: once, modified: false });
   });
 });

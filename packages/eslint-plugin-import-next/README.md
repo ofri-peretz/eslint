@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  Next-generation import sorting, validation, and architectural boundaries.
+  ESLint rules for import order, no-cycle and module boundaries, graded against the eslint-plugin-import test suite.
 </p>
 
 <p align="center">
@@ -53,7 +53,7 @@ Using oxlint or Vite+? Install `oxlint-plugin-import-next`: the same rules under
 
 ## Description
 
-This plugin provides Next-generation import sorting, validation, and architectural boundaries.
+This plugin provides ESLint rules for import order, no-cycle and module boundaries, graded against the eslint-plugin-import test suite.
 
 <!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
 

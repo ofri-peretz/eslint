@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  Security-focused ESLint plugin for Node.js built-in modules (fs, child_process, vm, crypto, Buffer).
+  ESLint rules for the Node.js core APIs that flag command injection, path traversal, SSRF, zip slip and weak crypto.
 </p>
 
 <p align="center">

@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  Security-focused ESLint plugin for Node.js built-in modules (fs, child_process, vm, crypto, Buffer).
+  ESLint rules for the Node.js core APIs that flag command injection, path traversal, SSRF, zip slip and weak crypto.
 </p>
 
 <p align="center">
@@ -21,6 +21,12 @@
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
 </p>
+
+<!-- AUTO-GENERATED:LEAD:START - Do not edit manually -->
+
+Used by [eslint-config-hardcore](https://github.com/EvgenyOrekhov/eslint-config-hardcore/blob/master/package.json), [stamhoofd](https://github.com/stamhoofd/stamhoofd/blob/main/shared/eslint/package.json) and [karajan-code](https://github.com/manufosela/karajan-code/blob/main/eslint.config.js), each in a public file (checked 2026-11-20). Listed in [awesome-nodejs-security](https://github.com/lirantal/awesome-nodejs-security) under Static Code Analysis.
+
+<!-- AUTO-GENERATED:LEAD:END -->
 
 ## Getting Started
 
@@ -47,7 +53,7 @@ Using oxlint or Vite+? Install `oxlint-plugin-node-security`: the same rules und
 
 ## Description
 
-This plugin provides Security rules for Node.js core modules (fs, child_process, crypto, etc).
+This plugin provides ESLint rules for the Node.js core APIs that flag command injection, path traversal, SSRF, zip slip and weak crypto.
 
 <!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
 
