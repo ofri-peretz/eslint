@@ -477,13 +477,14 @@ describe('autocomplete-valid — guards and section- prefix (Layer 1)', () => {
 
 describe('click-events-have-key-events — element and role guards (Layer 1)', () => {
   ruleTester.run('click-events guards', clickEventsHaveKeyEvents, {
-    valid: [],
+    valid: [
+      // #1561: a member-expression element is a component, not a DOM element —
+      // only an intrinsic (lower-case JSXIdentifier) element is checked, the
+      // same guard `interactive-supports-focus` already applies to this exact
+      // shape below.
+      { code: '<Foo.Bar onClick={handleClick} />' },
+    ],
     invalid: [
-      // member-expression element: tagName is null → not native-interactive
-      {
-        code: '<Foo.Bar onClick={handleClick} />',
-        errors: [{ messageId: 'missingKeyboardEvent' }],
-      },
       // dynamic role value can't be verified → still requires keyboard events
       {
         code: '<div onClick={handleClick} role={dynamicRole} />',

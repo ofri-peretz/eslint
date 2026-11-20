@@ -570,8 +570,17 @@ export const noUnknownProperty = createRule<[], MessageIds>({
             return;
           }
 
+          // React gives every known event handler a capture-phase twin
+          // (`onFocus` → `onFocusCapture`, `onClick` → `onClickCapture`); see
+          // https://react.dev/reference/react-dom/components/common#react-event-object.
+          // `VALID_DOM_PROPERTIES` only lists the bubble-phase name, so without this
+          // check every `onXCapture` handler reads as unknown (#1568).
+          const isKnownCaptureVariant =
+            propName.endsWith('Capture') &&
+            VALID_DOM_PROPERTIES.has(propName.slice(0, -'Capture'.length));
+
           // Check if it's a valid DOM property
-          if (!VALID_DOM_PROPERTIES.has(propName)) {
+          if (!VALID_DOM_PROPERTIES.has(propName) && !isKnownCaptureVariant) {
             context.report({
               node: node.name,
               messageId: 'noUnknownProperty',
