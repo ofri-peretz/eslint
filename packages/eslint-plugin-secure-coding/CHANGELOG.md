@@ -5,6 +5,34 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.2.0
+
+### Minor Changes
+
+- **🐛 Fix** — no-unsafe-deserialization no longer reports eval() and the Function constructor
+
+  `eval(x)`, `window.eval(x)` and `new Function(x)` turn a string into running code. That is code
+  injection (CWE-95), and `node-security/detect-eval-with-expression` already reports it, so a
+  combined run reported every such line twice, once under the wrong class. This rule now leaves them
+  to the owner and keeps what is deserialization: `unserialize`, `deserialize`, node-serialize, YAML
+  loaders, and strings handed to `setTimeout` / `setInterval`.
+
+  `eval` and `Function` are removed from the default `dangerousFunctions` and are ignored if listed.
+  The `dangerousFunctionConstructor` message is gone. If you run `secure-coding` without
+  `node-security`, add `node-security/detect-eval-with-expression` to keep eval coverage.
+
+- **✨ Feature** — no-disabled-template-escaping covers swig, nunjucks and Handlebars
+
+  The rule only knew `escapeMarkup = false`. It now also reports `swig.setDefaults({ autoescape:
+false })`, `new swig.Swig({ autoescape: false })`, `nunjucks.configure(path, { autoescape: false })`,
+  `new nunjucks.Environment(loader, { autoescape: false })`, `env.opts.autoescape = false` and
+  Handlebars `compile` / `precompile` with `{ noEscape: true }`. An options object declared once as a
+  `const` and then passed to one of those calls is followed.
+
+  The option name alone does not name an engine, so the object has to reach one of those calls:
+  `render(page, { autoescape: false })` stays quiet. EJS `<%-` and Pug `!=` live inside template
+  files that ESLint never parses and are not reachable from a JavaScript rule.
+
 ## 6.1.3
 
 ### Patch Changes

@@ -5,6 +5,29 @@ All notable changes to `eslint-plugin-mongodb-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 10.1.0
+
+### Minor Changes
+
+- **🐛 Fix** — recognise a collection handle held in a variable as MongoDB evidence
+
+  A DAO constructed with a connected `db` keeps its collection in a variable
+  (`const col = db.collection('x'); col.find(q).toArray(cb)`) and imports no Mongo package. Only the
+  chained `db.collection('x').find(...)` form was recognised, so the whole plugin abstained on that
+  layout, including `no-unsafe-where` on a `$where` built from request data. A native-driver method
+  called through a variable bound to a `.collection('name')` handle now opens the gate. A Firestore
+  handle in a variable (`col.doc(id).get()`) still does not. Expect new findings in files of that
+  shape.
+
+### Patch Changes
+
+- **🐛 Fix** — no-hardcoded-connection-string ignores credential-free loopback URIs
+
+  `no-hardcoded-connection-string` is about credentials, and it reported `mongodb://localhost:27017/app`,
+  the default every config file writes behind an environment variable. A credential-free URI whose
+  hosts are all loopback (`localhost`, `127.x.x.x`, `[::1]`) is no longer reported. Credentials on a
+  loopback host, a remote host, and a template that supplies the host still are.
+
 ## 10.0.3
 
 ### Patch Changes
