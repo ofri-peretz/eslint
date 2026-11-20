@@ -37,6 +37,8 @@ with `/`, the rule reports it if its first segment:
 It does not report a path with a parameter (`/user/:id`), the root (`/`), a
 plural path (`/orders`), or a path built at run time.
 
+Test files (`*.test.*`, `*.spec.*`, anything under `__tests__/`) are skipped: their route strings are fixtures, not an API. A `test/` directory is not exempt by name.
+
 **Heuristic.** Whether a segment is a singular noun is read from its spelling,
 so non-resource endpoints such as `/health`, `/login` or `/search` are reported
 too, and a `get` call on a non-router object that takes a path-like string is

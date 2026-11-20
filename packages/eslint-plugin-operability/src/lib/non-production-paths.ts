@@ -66,5 +66,28 @@ export function isNonProductionPath(
   // `split` always yields at least one element, so no fallback here — it would
   // be a branch no input can take.
   const base = parts[parts.length - 1] as string;
-  return BUILD_CONFIG_BASENAMES.test(base) || /^(Gruntfile|Gulpfile)\./i.test(base);
+  return (
+    BUILD_CONFIG_BASENAMES.test(base) || /^(Gruntfile|Gulpfile)\./i.test(base)
+  );
+}
+
+/**
+ * Is this file the module that IS the logger?
+ *
+ * A logger has to call `console.log` somewhere, and it does it in the file the
+ * rest of the code is told to route through. Vite's `node/logger.ts` and
+ * `module-runner/hmrLogger.ts` were reported by `no-console-log` ("use a
+ * logger") and by `no-debug-code-in-production`, which sent the advice back to
+ * the file it came from.
+ *
+ * Decided by the module's own name, nothing broader: `logger`, `logging`, `log`,
+ * `fooLogger`, `foo-logger`, `foo.logger`. `catalog`, `blog`, `dialog` and
+ * `loggerFactory` are not logger modules.
+ */
+export function isLoggerModule(filename: string): boolean {
+  const base = filename.replace(/\\/g, '/').split('/').pop() as string;
+  const stem = base.replace(/(\.d)?\.[cm]?[jt]sx?$/, '');
+  return (
+    /(^|[-_.])(logger|logging|log)$/i.test(stem) || /[a-z0-9]Logger$/.test(stem)
+  );
 }

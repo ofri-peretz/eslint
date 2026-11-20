@@ -37,11 +37,15 @@ it, rethrows it, returns a fallback value, or records a flag for the caller.
 
 | Option             | Type      | Default | Description                                                                                       |
 | ------------------ | --------- | ------- | ------------------------------------------------------------------------------------------------- |
-| `allowWithComment` | `boolean` | `false` | Accept an empty catch with an explanatory comment inside the block or within two lines above it   |
+| `allowWithComment` | `boolean` | `true`  | Accept an empty catch with an explanatory comment inside the block or within two lines above it   |
 | `ignoreInTests`    | `boolean` | `true`  | Skip `*.test.*` / `*.spec.*` files                                                                |
 
-With `allowWithComment`, a comment counts as an explanation when it uses one of
-these words: `intentional`, `expected`, `ignore`, `silent`, `noop` / `no-op`,
+With `allowWithComment` (on by default, as in ESLint core `no-empty`), a comment
+inside the block counts as an explanation when it is a sentence of three or more
+words that gives a reason (`// Files referenced by HTML may not exist yet.`), and
+so does one after the closing brace on the same line. Placeholders such as
+`// Empty` or `/* handle later */` do not. A comment also counts, inside the block
+or within two lines above it, when it uses one of these words: `intentional`, `expected`, `ignore`, `silent`, `noop` / `no-op`,
 `by design`, `known issue`, `legacy`, `third-party`, `framework`, `library`,
 `not implemented`, `TODO`, `FIXME`. A comment far above the `try`, about
 something else, explains nothing.

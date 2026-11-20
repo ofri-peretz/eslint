@@ -89,15 +89,18 @@ describe('no-math-random-crypto', () => {
 
       // Crypto-named variable
       {
+        name: 'a Math.random value bound to a token is a predictable credential',
         code: 'const token = Math.random().toString(36);',
         errors: [{ messageId: 'mathRandomCrypto' }],
       },
       {
+        name: 'a Math.random value bound to a session secret is a predictable credential',
         code: 'const sessionSecret = Math.random();',
         errors: [{ messageId: 'mathRandomCrypto' }],
       },
       // Benchmark TP lock: vuln_random_token (returned from a crypto-named fn)
       {
+        name: 'a Math.random value returned from a token-named function is a predictable credential',
         code: `export function vuln_random_token() {
   return Math.random().toString(36).substring(2);
 }`,

@@ -1003,6 +1003,128 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
+    /**
+     * A name that IS a secret, as opposed to an everyday word for an identifier.
+     * `hash`, `key`, `code`, `pin` and `auth` are on the vocabulary because they
+     * sometimes hold one; `token` and `salt` essentially always do.
+     */
+    const STRONG_SECRET_NAME =
+      /token|secret|passw|salt|nonce|^iv$|otp|csrf|session|credential|jwt|apikey|cipher|encrypt|signature|seed|mnemonic/i;
+    const FILE_EXTENSION_AFTER = /^\.[A-Za-z0-9]{1,8}(?![A-Za-z0-9_])/;
+    /**
+     * Node's path-only modules and its file-system modules.
+     *
+     * @vocabulary Node.js API (path, path.posix, path.win32, fs, fs/promises) —
+     * defined by the runtime.
+     */
+    const PATH_MODULES = new Set(['path', 'posix', 'win32']);
+    const FS_MODULES = new Set(['fs', 'fsp']);
+    /**
+     * `fs` methods whose SECOND argument is also a path (the first is always one).
+     *
+     * @vocabulary Node.js fs API (rename, copyFile, cp, link, symlink and their
+     * Sync variants) — defined by the runtime.
+     */
+    const TWO_PATH_METHODS = /^(rename|copyFile|cp|link|symlink)(Sync)?$/;
+    /** A binding that holds a file name or path, by what it is called. */
+    const FILE_BINDING_NAME = /(file|path|dir|name)$/i;
+
+    /**
+     * Is `argument` a PATH argument of this `path.*` / `fs.*` call? Every `path`
+     * argument is a segment. For `fs`, only the first argument is a path
+     * (`writeFileSync(file, data)` takes the data second), plus the second of
+     * the few two-path methods.
+     */
+    function isPathArgument(
+      call: TSESTree.CallExpression,
+      argument: TSESTree.Node,
+    ): boolean {
+      if (
+        call.callee.type !== AST_NODE_TYPES.MemberExpression ||
+        call.callee.object.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return false;
+      }
+      const owner = call.callee.object.name;
+      if (PATH_MODULES.has(owner)) return true;
+      if (!FS_MODULES.has(owner)) return false;
+      const index = call.arguments.indexOf(
+        argument as TSESTree.CallExpressionArgument,
+      );
+      return (
+        index === 0 ||
+        (index === 1 && TWO_PATH_METHODS.test(propertyName(call.callee) ?? ''))
+      );
+    }
+
+    /**
+     * Does this expression end up as a file name or path: an argument in a path
+     * position of a `path.*` / `fs.*` call, or the value of a binding named for a
+     * file? Looks through the arms of a conditional.
+     */
+    function isFilePosition(expression: TSESTree.Node): boolean {
+      let current = expression;
+      let parent = current.parent as TSESTree.Node;
+      while (
+        parent.type === AST_NODE_TYPES.ConditionalExpression &&
+        parent.test !== current
+      ) {
+        current = parent;
+        parent = current.parent as TSESTree.Node;
+      }
+      if (parent.type === AST_NODE_TYPES.CallExpression) {
+        return isPathArgument(parent, current);
+      }
+      return (
+        parent.type === AST_NODE_TYPES.VariableDeclarator &&
+        parent.id.type === AST_NODE_TYPES.Identifier &&
+        FILE_BINDING_NAME.test(parent.id.name)
+      );
+    }
+
+    /** Is this read of the binding part of a file name? */
+    function isFileNameUse(id: TSESTree.Node): boolean {
+      // Every read of a declared binding sits under a parent.
+      const parent = id.parent as TSESTree.Node;
+      if (parent.type === AST_NODE_TYPES.TemplateLiteral) {
+        const index = parent.expressions.indexOf(id as TSESTree.Expression);
+        // `quasis` is one longer than `expressions`: the next one always exists.
+        // A `.ext` suffix alone is not enough (`${key}.v1` can be an HMAC key):
+        // the template must also END UP as a file name.
+        return (
+          FILE_EXTENSION_AFTER.test(parent.quasis[index + 1].value.raw) &&
+          isFilePosition(parent)
+        );
+      }
+      return (
+        parent.type === AST_NODE_TYPES.CallExpression &&
+        isPathArgument(parent, id)
+      );
+    }
+
+    /**
+     * Does this binding exist only to name a file?
+     *
+     * Vite writes a temp config file named `${base}.${hash}.mjs`, where `hash` is
+     * a timestamp and `Math.random()`. The name is on the vocabulary, but the
+     * value is a uniquifier: every read of it lands in a file name, so nothing
+     * about it has to be unguessable. Needs at least one read, only file-name
+     * reads, and a name that is not itself a strong secret word.
+     */
+    function namesOnlyAFile(declarator: TSESTree.VariableDeclarator): boolean {
+      // The only caller has already matched an Identifier id, which always
+      // declares exactly one variable.
+      const { name } = declarator.id as TSESTree.Identifier;
+      if (STRONG_SECRET_NAME.test(name)) return false;
+      const [variable] = context.sourceCode.getDeclaredVariables(
+        declarator,
+      ) as [TSESLint.Scope.Variable];
+      const reads = variable.references.filter((ref) => ref.isRead());
+      return (
+        reads.length > 0 && reads.every((ref) => isFileNameUse(ref.identifier))
+      );
+    }
+
     function isCryptoContext(
       node: TSESTree.Node,
       followed: Set<TSESLint.Scope.Variable> = new Set(),
@@ -1052,7 +1174,10 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         ) {
           if (current.id.type === AST_NODE_TYPES.Identifier) {
             const varName = current.id.name;
-            if (nameSuggestsCrypto(varName, vocab)) {
+            if (
+              nameSuggestsCrypto(varName, vocab) &&
+              !namesOnlyAFile(current)
+            ) {
               return true;
             }
             if (isOAuthStateBinding(current.id)) {

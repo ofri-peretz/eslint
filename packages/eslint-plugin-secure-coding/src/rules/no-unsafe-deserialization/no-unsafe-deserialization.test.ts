@@ -63,6 +63,7 @@ describe('no-unsafe-deserialization', () => {
           errors: [{ messageId: 'unsafeDeserialization' }],
         },
         {
+          name: 'deserializing the content of a file the code reads is still untrusted data',
           code: `
             const fs = require('fs');
             const data = fs.readFileSync('data.json');
@@ -159,6 +160,7 @@ describe('no-unsafe-deserialization', () => {
       invalid: [
         // The sink that IS dangerous, on the same method-name shape.
         {
+          name: 'js-yaml load of a request body can construct arbitrary objects',
           code: 'const yaml = require("js-yaml"); const obj = yaml.load(req.body.doc);',
           errors: [{ messageId: 'unsafeYamlParsing' }],
         },

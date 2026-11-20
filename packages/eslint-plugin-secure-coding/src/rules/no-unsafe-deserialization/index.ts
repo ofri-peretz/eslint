@@ -576,6 +576,11 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
 
         // Check dangerous methods
         if (dangerousFunctions.includes(memberName)) {
+          // `deserialize` is on the list by SPELLING, and every serialization
+          // protocol spells its method that way. A receiver the class holds
+          // (`this.deserializer`) or the function constructed (`new X()`) is a
+          // collaborator the project owns, not a package that revives code.
+          if (isProjectOwnedReceiver(callee.object)) return false;
           return true;
         }
 
@@ -835,6 +840,133 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         scope = scope.upper;
       }
       return true;
+    };
+
+    /** Does a package (not a relative file) reach this node? */
+    const reachesAPackage = (n: TSESTree.Node): boolean => {
+      if (n.type === 'Identifier' || n.type === 'CallExpression') {
+        const bound = resolveModuleBinding(n, sourceCode.getScope(n));
+        if (bound !== undefined && !bound.module.startsWith('.')) return true;
+      }
+      return Object.keys(n).some((key) => {
+        if (key === 'parent') return false;
+        const value = (n as unknown as Record<string, unknown>)[key];
+        return (Array.isArray(value) ? value : [value]).some(
+          (child) =>
+            child !== null &&
+            typeof child === 'object' &&
+            typeof (child as TSESTree.Node).type === 'string' &&
+            reachesAPackage(child as TSESTree.Node),
+        );
+      });
+    };
+
+    /**
+     * Does the class fill `this.<field>` from a package? Through a constructor
+     * assignment (`this.codec = serialize`) or a field initializer
+     * (`codec = serialize`).
+     */
+    const classFillsFieldFromPackage = (
+      cls: TSESTree.Node,
+      field: string,
+    ): boolean => {
+      const visit = (n: TSESTree.Node): boolean => {
+        if (
+          n.type === 'AssignmentExpression' &&
+          n.left.type === 'MemberExpression' &&
+          n.left.object.type === 'ThisExpression' &&
+          propertyName(n.left) === field &&
+          reachesAPackage(n.right)
+        ) {
+          return true;
+        }
+        if (
+          n.type === 'PropertyDefinition' &&
+          objectKeyName(n) === field &&
+          n.value !== null &&
+          reachesAPackage(n.value)
+        ) {
+          return true;
+        }
+        return Object.keys(n).some((key) => {
+          if (key === 'parent') return false;
+          const value = (n as unknown as Record<string, unknown>)[key];
+          return (Array.isArray(value) ? value : [value]).some(
+            (child) =>
+              child !== null &&
+              typeof child === 'object' &&
+              typeof (child as TSESTree.Node).type === 'string' &&
+              visit(child as TSESTree.Node),
+          );
+        });
+      };
+      return visit(cls);
+    };
+
+    /** Is the class of `new X()` code the project owns, not a package's? */
+    const isOwnedConstructor = (callee: TSESTree.Node): boolean => {
+      const bound = resolveModuleBinding(callee, sourceCode.getScope(callee));
+      if (bound !== undefined) return bound.module.startsWith('.');
+      if (callee.type !== 'Identifier') return true;
+      for (
+        let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(callee);
+        scope;
+        scope = scope.upper
+      ) {
+        const found = scope.variables.find((v) => v.name === callee.name);
+        if (found) {
+          const def = found.defs[0];
+          // A class this file declares may keep a package's sink in a field.
+          return def?.type !== 'ClassName' || !reachesAPackage(def.node);
+        }
+      }
+      return true;
+    };
+
+    /**
+     * Is this receiver an object the surrounding code owns: a `this.<field>` the
+     * class does not fill from a package, or a binding made once with `new X()`
+     * where `X` is the project's own class? A sink that lives in a package is
+     * reached through an import, which `MODULE_SINKS` resolves on its own, and
+     * the two cases above must not let a package in through a field or a
+     * constructor.
+     */
+    const isProjectOwnedReceiver = (receiver: TSESTree.Node): boolean => {
+      let root: TSESTree.Node = receiver;
+      let nearest: TSESTree.MemberExpression | null = null;
+      while (root.type === 'MemberExpression') {
+        nearest = root;
+        root = root.object;
+      }
+      if (root.type === 'ThisExpression') {
+        // A bare `this.deserialize(...)` is exempted before this point, so the
+        // receiver always has a member that reads the field straight off `this`.
+        const field = propertyName(nearest as TSESTree.MemberExpression);
+        if (field === null) return false;
+        let cls: TSESTree.Node | null | undefined = receiver.parent;
+        while (cls && cls.type !== 'ClassBody') cls = cls.parent;
+        return !cls || !classFillsFieldFromPackage(cls, field);
+      }
+      if (root.type !== 'Identifier') return false;
+      let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(root);
+      while (scope) {
+        const found = scope.variables.find((v) => v.name === root.name);
+        if (found) {
+          if (found.defs.length !== 1) return false;
+          const [def] = found.defs;
+          const init =
+            def.type === 'Variable'
+              ? (def.node as TSESTree.VariableDeclarator).init
+              : null;
+          return (
+            init?.type === 'NewExpression' &&
+            found.references.filter((r) => r.isWrite()).length === 1 &&
+            isOwnedConstructor(init.callee)
+          );
+        }
+        scope = scope.upper;
+      }
+      return false;
     };
 
     const checkCallExpression = (

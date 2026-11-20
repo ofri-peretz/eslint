@@ -62,10 +62,12 @@ describe('detect-eval-with-expression', () => {
             errors: [{ messageId: 'strategyRefactor' }],
           },
           {
+            name: 'eval of a template literal that interpolates a value is reported',
             code: 'eval(`code: ${value}`);',
             errors: [{ messageId: 'useTemplateLiteral' }],
           },
           {
+            name: 'eval of a variable expression is the sink this rule exists for',
             code: 'const result = eval(expression);',
             errors: [{ messageId: 'strategyRefactor' }],
           },
