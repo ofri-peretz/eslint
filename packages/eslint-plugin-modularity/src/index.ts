@@ -42,7 +42,7 @@ withCanonicalDocsUrls('plugin-modularity', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-modularity',
-    version: '3.0.3',
+    version: '3.0.4',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

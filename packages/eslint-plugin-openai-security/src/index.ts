@@ -49,7 +49,7 @@ withCanonicalDocsUrls('plugin-openai-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-openai-security',
-    version: '2.0.3',
+    version: '2.0.4',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
