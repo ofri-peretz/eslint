@@ -1,0 +1,197 @@
+{
+  "sources": {
+    "nodegoat": "nodegoat.rev3.json",
+    "dvna": "dvna.rev2.json",
+    "juiceshop": "juiceshop.json"
+  },
+  "configs": {
+    "A": {
+      "items": 72,
+      "itemsHit": 3,
+      "lintableY": 17,
+      "lintableYHit": 3,
+      "findings": 171,
+      "tp": 5,
+      "unlistedReal": 1,
+      "loc": 25968,
+      "recall": {
+        "value": 4.2,
+        "wilson95": [0.014, 0.115]
+      },
+      "recallLintableY": {
+        "value": 17.6,
+        "wilson95": [0.062, 0.41]
+      },
+      "precisionStrict": {
+        "value": 2.9,
+        "wilson95": [0.013, 0.067]
+      },
+      "precisionLenient": {
+        "value": 3.5,
+        "wilson95": [0.016, 0.074]
+      },
+      "findingsPerKLoc": 6.6
+    },
+    "B": {
+      "items": 72,
+      "itemsHit": 16,
+      "lintableY": 17,
+      "lintableYHit": 12,
+      "findings": 161,
+      "tp": 19,
+      "unlistedReal": 7,
+      "loc": 25968,
+      "recall": {
+        "value": 22.2,
+        "wilson95": [0.142, 0.331]
+      },
+      "recallLintableY": {
+        "value": 70.6,
+        "wilson95": [0.469, 0.867]
+      },
+      "precisionStrict": {
+        "value": 11.8,
+        "wilson95": [0.077, 0.177]
+      },
+      "precisionLenient": {
+        "value": 16.1,
+        "wilson95": [0.113, 0.226]
+      },
+      "findingsPerKLoc": 6.2
+    },
+    "C": {
+      "items": 72,
+      "itemsHit": 17,
+      "lintableY": 17,
+      "lintableYHit": 13,
+      "findings": 163,
+      "tp": 20,
+      "unlistedReal": 7,
+      "loc": 25968,
+      "recall": {
+        "value": 23.6,
+        "wilson95": [0.153, 0.346]
+      },
+      "recallLintableY": {
+        "value": 76.5,
+        "wilson95": [0.527, 0.904]
+      },
+      "precisionStrict": {
+        "value": 12.3,
+        "wilson95": [0.081, 0.182]
+      },
+      "precisionLenient": {
+        "value": 16.6,
+        "wilson95": [0.116, 0.23]
+      },
+      "findingsPerKLoc": 6.3
+    }
+  },
+  "perApp": {
+    "nodegoat": {
+      "A": {
+        "items": 20,
+        "itemsHit": 2,
+        "findings": 8,
+        "tp": 4,
+        "unlistedReal": 0,
+        "precisionStrict": 0.5,
+        "recallAll": 0.1,
+        "recallLintableY": 0.286,
+        "findingsPerKLoc": 4.6
+      },
+      "B": {
+        "items": 20,
+        "itemsHit": 4,
+        "findings": 10,
+        "tp": 6,
+        "unlistedReal": 3,
+        "precisionStrict": 0.6,
+        "recallAll": 0.2,
+        "recallLintableY": 0.571,
+        "findingsPerKLoc": 5.7
+      },
+      "C": {
+        "items": 20,
+        "itemsHit": 5,
+        "findings": 12,
+        "tp": 7,
+        "unlistedReal": 3,
+        "precisionStrict": 0.583,
+        "recallAll": 0.25,
+        "recallLintableY": 0.714,
+        "findingsPerKLoc": 6.9
+      }
+    },
+    "dvna": {
+      "A": {
+        "items": 19,
+        "itemsHit": 1,
+        "findings": 4,
+        "tp": 1,
+        "unlistedReal": 0,
+        "precisionStrict": 0.25,
+        "recallAll": 0.053,
+        "recallLintableY": 0.167,
+        "findingsPerKLoc": 5.2
+      },
+      "B": {
+        "items": 19,
+        "itemsHit": 8,
+        "findings": 15,
+        "tp": 9,
+        "unlistedReal": 0,
+        "precisionStrict": 0.6,
+        "recallAll": 0.421,
+        "recallLintableY": 1,
+        "findingsPerKLoc": 19.6
+      },
+      "C": {
+        "items": 19,
+        "itemsHit": 8,
+        "findings": 15,
+        "tp": 9,
+        "unlistedReal": 0,
+        "precisionStrict": 0.6,
+        "recallAll": 0.421,
+        "recallLintableY": 1,
+        "findingsPerKLoc": 19.6
+      }
+    },
+    "juiceshop": {
+      "A": {
+        "items": 33,
+        "itemsHit": 0,
+        "findings": 159,
+        "tp": 0,
+        "unlistedReal": 1,
+        "precisionStrict": 0,
+        "recallAll": 0,
+        "recallLintableY": 0,
+        "findingsPerKLoc": 6.8
+      },
+      "B": {
+        "items": 33,
+        "itemsHit": 4,
+        "findings": 136,
+        "tp": 4,
+        "unlistedReal": 4,
+        "precisionStrict": 0.029,
+        "recallAll": 0.121,
+        "recallLintableY": 0.5,
+        "findingsPerKLoc": 5.8
+      },
+      "C": {
+        "items": 33,
+        "itemsHit": 4,
+        "findings": 136,
+        "tp": 4,
+        "unlistedReal": 4,
+        "precisionStrict": 0.029,
+        "recallAll": 0.121,
+        "recallLintableY": 0.5,
+        "findingsPerKLoc": 5.8
+      }
+    }
+  }
+}
