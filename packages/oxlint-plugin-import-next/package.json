@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-import-next",
-  "version": "4.1.3",
+  "version": "4.1.4",
   "description": "Oxlint import rules — a drop-in replacement for eslint-plugin-import that passes 95% of its own test cases, covering imports and module boundaries, 3.1x faster end-to-end. Same rules and rule IDs as eslint-plugin-import-next, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
@@ -75,6 +75,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-import-next": "4.1.3"
+    "eslint-plugin-import-next": "4.1.4"
   }
 }
