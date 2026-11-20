@@ -1,0 +1,143 @@
+---
+title: "NestJS security linting: ESLint and oxlint on Nest 12"
+description: "Lint a NestJS 12 app for missing guards, open CORS, unguarded Swagger and unsafe uploads with eslint-plugin-nestjs-security on ESLint 10 or oxlint, with the configs we ran and what each reported."
+icon: ShieldCheck
+---
+
+To lint a NestJS 12 app for security mistakes, install `eslint-plugin-nestjs-security` and enable its `recommended` preset in `eslint.config.js`, or install `oxlint-plugin-nestjs-security` and list it under `jsPlugins` in `.oxlintrc.json`. Both packages carry the same 11 rules under the same IDs (`nestjs-security/<rule>`). The rules read decorators and `NestFactory` calls, so they report missing `@UseGuards`, `enableCors({ origin: '*' })`, an unconditional `SwaggerModule.setup()` and similar defaults.
+
+**Covers ESLint 10 flat config and oxlint 1.90.0 and 1.94.0 on a NestJS 12.5.1 fixture. Last updated 2026-11-20.**
+
+## What we ran
+
+A minimal Nest 12 project (six files, written to contain one example of each rule's problem) was linted with both engines. The plugins were not taken from npm: both packages and `@interlace/eslint-devkit` were built from this repository's workspace (`packages/`) and installed from local `npm pack` tarballs.
+
+| Component                         | Version                    |
+| --------------------------------- | -------------------------- |
+| Node.js                           | 24.12.0                    |
+| `@nestjs/common`, `@nestjs/core`  | 12.5.1                     |
+| `@nestjs/swagger`                 | 12.1.2                     |
+| `@nestjs/throttler`               | 6.8.0                      |
+| `typeorm`                         | installed for the fixture  |
+| ESLint, `typescript-eslint`       | 10.15.0, 8.73.0            |
+| oxlint                            | 1.90.0, and 1.94.0 (latest at the time) |
+| `eslint-plugin-nestjs-security`   | 4.2.1 (local build)        |
+| `oxlint-plugin-nestjs-security`   | 4.2.1 (local build)        |
+
+## Install
+
+<Tabs items={['ESLint 10', 'oxlint']}>
+<Tab value="ESLint 10">
+<InstallSnippet packages="eslint typescript-eslint eslint-plugin-nestjs-security" dev />
+
+```js title="eslint.config.js"
+import tseslint from 'typescript-eslint';
+import nestjsSecurity from 'eslint-plugin-nestjs-security';
+
+export default [
+  { files: ['src/**/*.ts'], languageOptions: { parser: tseslint.parser } },
+  nestjsSecurity.configs.recommended,
+];
+```
+
+Run `npx eslint src`. The `recommended` preset enables all 11 rules: 5 at `error` and 6 at `warn`.
+</Tab>
+<Tab value="oxlint">
+<InstallSnippet packages="oxlint oxlint-plugin-nestjs-security" dev />
+
+```json title=".oxlintrc.json"
+{
+  "jsPlugins": ["oxlint-plugin-nestjs-security"],
+  "rules": {
+    "nestjs-security/require-guards": "error",
+    "nestjs-security/no-missing-validation-pipe": "warn",
+    "nestjs-security/require-throttler": "warn",
+    "nestjs-security/require-validation-pipe-whitelist": "error",
+    "nestjs-security/no-permissive-cors": "error",
+    "nestjs-security/no-exposed-private-fields": "warn",
+    "nestjs-security/no-res-bypass-serialization": "warn",
+    "nestjs-security/no-unguarded-swagger": "warn",
+    "nestjs-security/no-hybrid-app-config-loss": "error",
+    "nestjs-security/no-unsafe-multer-filename": "error",
+    "nestjs-security/require-upload-size-limit": "warn"
+  }
+}
+```
+
+Run `npx oxlint -c .oxlintrc.json src`. Oxlint has no preset for a JS plugin, so the rules are listed; the severities above match the ESLint `recommended` preset. For Vite+, the same list goes under `lint.rules` with `lint.jsPlugins: ['oxlint-plugin-nestjs-security']`; we did not run the Vite+ form for this page.
+</Tab>
+</Tabs>
+
+Installing `oxlint-plugin-nestjs-security` installs `eslint-plugin-nestjs-security` as its dependency, because the oxlint package re-exports it. It does not install ESLint.
+
+## What loaded and what fired
+
+Both engines loaded all 11 rules and reported the same 13 findings on the same lines.
+
+| File                                  | Line | Rule                                          | Level | ESLint 10.15.0 | oxlint 1.90.0 | oxlint 1.94.0 |
+| ------------------------------------- | ---- | --------------------------------------------- | ----- | -------------- | ------------- | ------------- |
+| `main.ts`                             | 8    | `no-permissive-cors`                          | error | fired          | fired         | fired         |
+| `main.ts`                             | 9    | `require-validation-pipe-whitelist`           | error | fired          | fired         | fired         |
+| `main.ts`                             | 12   | `no-unguarded-swagger`                        | warn  | fired          | fired         | fired         |
+| `main.ts`                             | 13   | `no-hybrid-app-config-loss`                   | error | fired          | fired         | fired         |
+| `users.controller.ts`                 | 6, 11, 16 | `require-guards`                         | error | fired (3)      | fired (3)     | fired (3)     |
+| `account.controller.ts`               | 9    | `no-missing-validation-pipe`                  | warn  | fired          | fired         | fired         |
+| `account.controller.ts`               | 14   | `no-res-bypass-serialization`                 | warn  | fired          | fired         | fired         |
+| `auth.controller.ts`                  | 5    | `require-throttler`                           | warn  | fired          | fired         | fired         |
+| `upload.controller.ts`                | 11   | `require-upload-size-limit`                   | warn  | fired          | fired         | fired         |
+| `upload.controller.ts`                | 14   | `no-unsafe-multer-filename`                   | error | fired          | fired         | fired         |
+| `user.entity.ts`                      | 8    | `no-exposed-private-fields`                   | warn  | fired          | fired         | fired         |
+
+Both CLIs exit with code 1 because the fixture contains errors. The oxlint run printed nothing on stderr; the plugin loaded without a flag or a workaround. In the oxlint output the rule shows up as `nestjs-security(<rule>)`.
+
+## The 11 rules
+
+**Access control**
+
+- [`require-guards`](/docs/security/plugin-nestjs-security/rules/require-guards): controllers and handlers with no `@UseGuards`.
+- [`require-throttler`](/docs/security/plugin-nestjs-security/rules/require-throttler): no `ThrottlerGuard` or `@Throttle` on routes that look sensitive, such as login and verify.
+- [`no-permissive-cors`](/docs/security/plugin-nestjs-security/rules/no-permissive-cors): `enableCors` accepting any origin.
+- [`no-unguarded-swagger`](/docs/security/plugin-nestjs-security/rules/no-unguarded-swagger): `SwaggerModule.setup()` that runs in every environment, which publishes the API description to anonymous callers.
+
+**Input validation**
+
+- [`no-missing-validation-pipe`](/docs/security/plugin-nestjs-security/rules/no-missing-validation-pipe): a `@Body()` that nothing validates.
+- [`require-validation-pipe-whitelist`](/docs/security/plugin-nestjs-security/rules/require-validation-pipe-whitelist): `new ValidationPipe()` without `whitelist: true`.
+- [`no-hybrid-app-config-loss`](/docs/security/plugin-nestjs-security/rules/no-hybrid-app-config-loss): `connectMicroservice()` without `inheritAppConfig`, so global pipes and guards do not apply.
+
+**Data exposure and uploads**
+
+- [`no-exposed-private-fields`](/docs/security/plugin-nestjs-security/rules/no-exposed-private-fields): password and secret fields on entities or DTOs.
+- [`no-res-bypass-serialization`](/docs/security/plugin-nestjs-security/rules/no-res-bypass-serialization): `@Res()` handlers that write objects past `ClassSerializerInterceptor`.
+- [`no-unsafe-multer-filename`](/docs/security/plugin-nestjs-security/rules/no-unsafe-multer-filename): storing an upload under the client's filename.
+- [`require-upload-size-limit`](/docs/security/plugin-nestjs-security/rules/require-upload-size-limit): multer interceptors with no `limits.fileSize`.
+
+## Limits of this run
+
+- **One small fixture, written to trigger the rules.** It shows that each rule loads and fires on both engines. It says nothing about false positives or misses on a real codebase, and it is not a benchmark.
+- **Same file, same output, by construction.** The oxlint package re-exports the ESLint package, so matching output is expected. The check that mattered was that oxlint's `jsPlugins` loader accepts it, and it did on 1.90.0 and 1.94.0.
+- **A guarded controller is treated as protected from rate limiting.** In the fixture, `account.controller.ts` has a `verifyEmail` route under a class-level `@UseGuards`, and `require-throttler` did not report it; `auth.controller.ts`, with no guard on its `login` route, was reported. We did not investigate whether that is intended.
+- **A public `login` route is not reported by `require-guards`.** `auth.controller.ts` has no guard and `require-guards` stayed silent on it, while it reported the three routes in `users.controller.ts`. We did not look at which names the rule exempts; read the rule page before relying on it for login routes.
+- **Not run:** ESLint 9, Vite+, the Nest CLI scaffold, `.mts`/`.mjs` sources, and any real application.
+- **Type information is not needed.** The ESLint config uses the TypeScript parser only to read decorators.
+
+## Related
+
+- [`eslint-plugin-nestjs-security`](/docs/security/plugin-nestjs-security) lists every rule with its CWE and OWASP mapping.
+- [Why oxlint](/docs/oxlint) explains the alias packages and what they install.
+- [Security plugins in one flat config](/docs/getting-started/security-plugins-one-flat-config) shows how to combine several security plugins without duplicate reports.
+
+The source is at [github.com/ofri-peretz/eslint](https://github.com/ofri-peretz/eslint); issues with a reproduction are welcome there.
+
+{/* FAQ JSON-LD (suggested; each answer must match the page text when it is generated)
+Q: How do I lint a NestJS 12 app for security issues?
+A: Install eslint-plugin-nestjs-security and add nestjsSecurity.configs.recommended to eslint.config.js, or install oxlint-plugin-nestjs-security and list it under jsPlugins in .oxlintrc.json.
+Q: Does eslint-plugin-nestjs-security work on ESLint 10?
+A: Yes. Measured 2026-11-20 on ESLint 10.15.0 with NestJS 12.5.1: all 11 rules loaded and 13 findings were reported on the fixture.
+Q: Does the oxlint version work with jsPlugins?
+A: Yes. oxlint-plugin-nestjs-security 4.2.1 loaded through jsPlugins on oxlint 1.90.0 and 1.94.0, and reported the same 13 findings as ESLint.
+Q: Does it need ESLint installed to run on oxlint?
+A: No. The oxlint package depends on eslint-plugin-nestjs-security, not on ESLint.
+Q: Which NestJS mistakes does it catch?
+A: Missing guards, missing rate limiting, open CORS, unconditional Swagger, unvalidated bodies, ValidationPipe without whitelist, hybrid apps that lose global config, exposed password fields, @Res() bypassing serialization, unsafe upload filenames and missing upload size limits.
+*/}
