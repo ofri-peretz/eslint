@@ -31,6 +31,13 @@ guards **the same value being redirected** — checking `req.query.a` and then
 redirecting `req.query.b` is still flagged, because the checked value and the
 redirected value are different sources.
 
+A handler that is defined in one module and registered in another is covered too. A file with no `express`
+import and no `app.get('/x', …)` of its own is read as Express when it exports a `(req, res)` function that calls
+`res.redirect`, `res.render`, `res.sendStatus` or `res.sendFile`
+(`module.exports.redirect = function (req, res) { … }`, `exports.x = …`, `export function x(req, res)`). Fastify
+(`request, reply`), Koa (`ctx`), an unexported helper, a `node:http` listener that only calls `res.end` or
+`res.writeHead`, and a default export (the shape of a Next.js API route) do not open the gate.
+
 ## Examples
 
 ### ❌ Incorrect
