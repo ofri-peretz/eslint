@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.1.5
+
+### Patch Changes
+
+- **🐛 Fix** — rank an import by the configured resolvers, as upstream does, so a tsconfig `paths` alias such as `@/App.js` that resolves is internal and no longer produces order findings eslint-plugin-import does not make
+
 ## 4.1.4
 
 ### Patch Changes
