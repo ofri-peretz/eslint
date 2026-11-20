@@ -1,0 +1,46 @@
+name: Security Linting Skill
+
+# Runs the with-and-without harness for skills/security-linting: renders the
+# skill's config for three fixture apps and lints them on ESLint 9 and 10
+# against the LOCAL plugin builds (never registry copies of our packages).
+# Exits non-zero if a config fails to load or a planted issue goes unflagged.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'skills/**'
+      - 'evals/security-linting-skill/**'
+      - '.claude-plugin/**'
+      - 'packages/eslint-plugin-*/src/**'
+  workflow_dispatch:
+
+concurrency:
+  group: security-linting-skill-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  harness:
+    name: Skill config on ESLint 9 and 10
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # The harness loads plugins by package name, which resolves through
+      # `exports` to dist/. npm ci links workspaces; it does not compile them.
+      - name: Build plugins (dist/ is what the configs load)
+        run: npx turbo run build --filter='eslint-plugin-*' --filter=@interlace/eslint-devkit
+
+      - name: Run the harness
+        run: npm run eval:security-linting-skill

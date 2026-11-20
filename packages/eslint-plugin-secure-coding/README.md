@@ -83,10 +83,10 @@ import securePlugin from 'eslint-plugin-secure-coding';
 
 export default [
   // Balanced: catches critical issues as errors, lower-confidence rules as warnings
-  ...securePlugin.configs.recommended,
+  securePlugin.configs.recommended,
 
   // Zero-tolerance: same 18 rules, all promoted to error (good for CI gates)
-  // ...securePlugin.configs['recommended-strict'],
+  // securePlugin.configs['recommended-strict'],
 ];
 ```
 

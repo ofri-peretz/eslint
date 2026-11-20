@@ -1,0 +1,317 @@
+{
+  "$comment": "Source of truth for the security-linting skill. Every package, preset key and rule name here is locked against the plugins' own exports by scripts/__tests__/security-linting-skill.lock.test.ts. `dependencies` and `dependencyPrefixes` match a project's package.json (dependencies, devDependencies, peerDependencies, optionalDependencies); `fields` matches a top-level package.json field. A plugin is added when ANY signal matches. `always` plugins are added to every project. `recommendedIsExactly` is set only where the recommended preset is exactly that rule list.",
+  "baseline": {
+    "package": "eslint-plugin-security",
+    "preset": "recommended",
+    "why": "The established baseline, kept as is. The plugin's own README warns it produces many false positives that need human triage."
+  },
+  "plugins": [
+    {
+      "package": "eslint-plugin-secure-coding",
+      "preset": "recommended",
+      "always": true,
+      "why": "Framework-agnostic injection (LDAP, XPath, XXE, GraphQL, template), hardcoded credentials, unsafe deserialization, ReDoS, fail-open auth.",
+      "examples": [
+        "no-ldap-injection",
+        "no-hardcoded-credentials",
+        "no-unsafe-deserialization",
+        "no-redos-vulnerable-regex",
+        "no-fail-open-auth"
+      ],
+      "limits": "Pattern rules inside one file, not taint tracking across files. detect-object-injection and detect-non-literal-regexp exist but are not in recommended."
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "preset": "recommended",
+      "dependencies": [
+        "express",
+        "fastify",
+        "koa",
+        "@hapi/hapi",
+        "restify",
+        "hono",
+        "next",
+        "@nestjs/core",
+        "@nestjs/common",
+        "aws-lambda",
+        "@types/aws-lambda",
+        "@middy/core",
+        "commander",
+        "yargs",
+        "@oclif/core"
+      ],
+      "dependencyPrefixes": ["@modelcontextprotocol/"],
+      "fields": ["bin"],
+      "why": "Node runtime: child_process and shell injection, path traversal, SSRF, weak crypto and hashes, TLS verification off, Buffer misuse, zip slip.",
+      "examples": [
+        "detect-child-process",
+        "no-shell-injection",
+        "no-arbitrary-file-access",
+        "no-ssrf",
+        "no-weak-hash-algorithm",
+        "no-self-signed-certs"
+      ],
+      "limits": "For code that runs on Node. It does not apply to code that only runs in a browser."
+    },
+    {
+      "package": "eslint-plugin-express-security",
+      "preset": "recommended",
+      "dependencies": ["express"],
+      "why": "Express: helmet and CSP, CORS, cookies, CSRF, rate limiting, open redirects, error leakage, body-parser limits.",
+      "examples": [
+        "no-permissive-cors",
+        "no-user-controlled-redirect",
+        "no-insecure-cookie-options",
+        "require-helmet",
+        "no-error-details-in-response"
+      ],
+      "limits": "Express only. Fastify and Koa have no plugin of ours."
+    },
+    {
+      "package": "eslint-plugin-nestjs-security",
+      "preset": "recommended",
+      "dependencies": ["@nestjs/common", "@nestjs/core"],
+      "why": "NestJS: guards, ValidationPipe and its whitelist, throttling, CORS, serialization of private fields, multer uploads.",
+      "examples": [
+        "require-guards",
+        "no-missing-validation-pipe",
+        "no-permissive-cors",
+        "require-throttler",
+        "no-unsafe-multer-filename"
+      ],
+      "limits": "Guards and pipes registered globally in another file are found by a text scan of the project, not by type analysis, so a global guard can be missed or over-trusted."
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "preset": "recommended",
+      "dependencies": [
+        "react",
+        "react-dom",
+        "preact",
+        "vue",
+        "svelte",
+        "@angular/core",
+        "solid-js",
+        "lit",
+        "next",
+        "nuxt"
+      ],
+      "why": "Browser: innerHTML and eval sinks, postMessage origin checks, tokens in localStorage, cookie attributes, insecure WebSocket and URLs.",
+      "examples": [
+        "no-innerhtml",
+        "no-postmessage-wildcard-origin",
+        "require-postmessage-origin-check",
+        "no-jwt-in-storage",
+        "require-cookie-secure-attrs"
+      ],
+      "limits": "DOM and Web API patterns. It does not flag React's dangerouslySetInnerHTML (that is react/no-danger from eslint-plugin-react, or no-danger in our eslint-plugin-react-features)."
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "preset": "recommended",
+      "dependencies": [
+        "jsonwebtoken",
+        "jose",
+        "express-jwt",
+        "@nestjs/jwt",
+        "jwks-rsa",
+        "jwt-decode"
+      ],
+      "why": "JWT: the none algorithm, missing algorithm allowlist, decode without verify, hardcoded or weak secrets, missing expiry.",
+      "examples": [
+        "no-algorithm-none",
+        "require-algorithm-whitelist",
+        "no-hardcoded-secret",
+        "no-decode-without-verify",
+        "require-expiration"
+      ],
+      "limits": "Checks how tokens are signed and verified in your code. It does not check key management or claims at runtime."
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "preset": "recommended",
+      "dependencies": ["pg", "pg-pool", "pg-promise", "postgres", "slonik"],
+      "why": "PostgreSQL drivers: SQL built from strings, TLS verification off, hardcoded credentials, unsafe COPY and search_path, pool misuse.",
+      "examples": [
+        "no-unsafe-query",
+        "no-insecure-ssl",
+        "no-hardcoded-credentials",
+        "no-unsafe-copy-from"
+      ],
+      "limits": "Only files that import one of those drivers are checked. recommended also holds non-security hygiene rules at warn (no-select-all, no-batch-insert-loop)."
+    },
+    {
+      "package": "eslint-plugin-mysql-security",
+      "preset": "recommended",
+      "dependencies": ["mysql2", "mysql"],
+      "recommendedIsExactly": ["no-unsafe-query"],
+      "why": "mysql and mysql2: SQL built from strings.",
+      "examples": ["no-unsafe-query"],
+      "limits": "One rule at recommended."
+    },
+    {
+      "package": "eslint-plugin-mongodb-security",
+      "preset": "recommended",
+      "dependencies": ["mongodb", "mongoose"],
+      "why": "MongoDB and Mongoose: NoSQL operator injection, $where, regex DoS, hardcoded connection strings.",
+      "examples": [
+        "no-unsafe-query",
+        "no-operator-injection",
+        "no-unsafe-where",
+        "no-hardcoded-connection-string"
+      ],
+      "limits": "Query-shape patterns in your code, not schema or index review."
+    },
+    {
+      "package": "eslint-plugin-sqlite-security",
+      "preset": "recommended",
+      "dependencies": ["better-sqlite3", "sqlite3"],
+      "recommendedIsExactly": ["no-unsafe-query"],
+      "why": "SQLite drivers: SQL built from strings.",
+      "examples": ["no-unsafe-query"],
+      "limits": "One rule at recommended."
+    },
+    {
+      "package": "eslint-plugin-knex-security",
+      "preset": "recommended",
+      "dependencies": ["knex"],
+      "recommendedIsExactly": ["no-unsafe-query"],
+      "why": "Knex: SQL built from strings in raw queries.",
+      "examples": ["no-unsafe-query"],
+      "limits": "One rule at recommended."
+    },
+    {
+      "package": "eslint-plugin-prisma-security",
+      "preset": "recommended",
+      "dependencies": ["@prisma/client", "prisma"],
+      "recommendedIsExactly": ["no-unsafe-query"],
+      "why": "Prisma: SQL built from strings in raw queries.",
+      "examples": ["no-unsafe-query"],
+      "limits": "One rule at recommended."
+    },
+    {
+      "package": "eslint-plugin-drizzle-security",
+      "preset": "recommended",
+      "dependencies": ["drizzle-orm"],
+      "recommendedIsExactly": ["no-unsafe-query"],
+      "why": "Drizzle: SQL built from strings in raw queries.",
+      "examples": ["no-unsafe-query"],
+      "limits": "One rule at recommended."
+    },
+    {
+      "package": "eslint-plugin-sequelize-security",
+      "preset": "recommended",
+      "dependencies": ["sequelize"],
+      "recommendedIsExactly": ["no-unsafe-query"],
+      "why": "Sequelize: SQL built from strings in raw queries.",
+      "examples": ["no-unsafe-query"],
+      "limits": "One rule at recommended."
+    },
+    {
+      "package": "eslint-plugin-typeorm-security",
+      "preset": "recommended",
+      "dependencies": ["typeorm"],
+      "recommendedIsExactly": ["no-unsafe-query"],
+      "why": "TypeORM: SQL built from strings in raw queries.",
+      "examples": ["no-unsafe-query"],
+      "limits": "One rule at recommended."
+    },
+    {
+      "package": "eslint-plugin-supabase-security",
+      "preset": "recommended",
+      "dependencies": ["@supabase/supabase-js"],
+      "why": "Supabase: service_role key in client code, dynamic rpc names, unchecked auth errors.",
+      "examples": [
+        "no-service-role-key-in-client",
+        "no-dynamic-rpc-name",
+        "require-auth-error-check"
+      ],
+      "limits": "Client-code patterns. Row-level security policies live in your database and are not linted."
+    },
+    {
+      "package": "eslint-plugin-mcp-sdk-security",
+      "preset": "recommended",
+      "dependencyPrefixes": ["@modelcontextprotocol/"],
+      "why": "MCP servers and clients: tool arguments reaching eval, shell, SQL, fs or fetch, session ids, transport hardening, tool-description injection.",
+      "examples": [
+        "no-command-injection-in-tool",
+        "no-path-traversal-in-tool",
+        "no-ssrf-in-tool",
+        "no-sql-injection-in-tool",
+        "require-tool-input-schema"
+      ],
+      "limits": "Targets the @modelcontextprotocol SDK packages. Other MCP implementations are not claimed."
+    },
+    {
+      "package": "eslint-plugin-openai-security",
+      "preset": "recommended",
+      "dependencies": ["openai", "@openai/agents"],
+      "recommendedIsExactly": [
+        "no-hardcoded-api-key",
+        "no-browser-api-key-exposure"
+      ],
+      "why": "OpenAI SDK: a literal API key, or dangerouslyAllowBrowser exposing it.",
+      "examples": ["no-hardcoded-api-key", "no-browser-api-key-exposure"],
+      "limits": "Two rules at recommended. Prompt-injection handling is not at this preset."
+    },
+    {
+      "package": "eslint-plugin-anthropic-security",
+      "preset": "recommended",
+      "dependencies": ["@anthropic-ai/sdk", "@anthropic-ai/claude-agent-sdk"],
+      "recommendedIsExactly": [
+        "no-browser-api-key-exposure",
+        "no-hardcoded-api-key"
+      ],
+      "why": "Anthropic SDK: a literal API key, or dangerouslyAllowBrowser exposing it.",
+      "examples": ["no-hardcoded-api-key", "no-browser-api-key-exposure"],
+      "limits": "Two rules at recommended."
+    },
+    {
+      "package": "eslint-plugin-gemini-security",
+      "preset": "recommended",
+      "dependencies": ["@google/genai"],
+      "recommendedIsExactly": [
+        "no-hardcoded-api-key",
+        "no-disabled-safety-settings"
+      ],
+      "why": "Gemini SDK: a literal API key, or harm-category filters switched off.",
+      "examples": ["no-hardcoded-api-key", "no-disabled-safety-settings"],
+      "limits": "Two rules at recommended."
+    },
+    {
+      "package": "eslint-plugin-vercel-ai-security",
+      "preset": "recommended",
+      "dependencies": ["ai"],
+      "why": "Vercel AI SDK: unvalidated prompts, AI output reaching eval/SQL/HTML, secrets in prompts, missing tool schemas and limits.",
+      "examples": [
+        "require-validated-prompt",
+        "no-unsafe-output-handling",
+        "no-sensitive-in-prompt",
+        "no-hardcoded-api-keys"
+      ],
+      "limits": "Static patterns around the SDK calls. It cannot judge whether a prompt is actually safe at runtime."
+    },
+    {
+      "package": "eslint-plugin-lambda-security",
+      "preset": "recommended",
+      "dependencies": ["aws-lambda", "@types/aws-lambda", "@middy/core"],
+      "why": "AWS Lambda: hardcoded credentials, wildcard CORS, secrets in env, user-controlled request URLs, over-broad IAM policy literals.",
+      "examples": [
+        "no-hardcoded-credentials-sdk",
+        "no-permissive-cors-response",
+        "no-secrets-in-env",
+        "no-user-controlled-requests",
+        "no-overly-permissive-iam-policy"
+      ],
+      "limits": "Handler and policy-literal patterns in code. Deployed IAM and infrastructure templates are not scanned."
+    }
+  ],
+  "notCovered": [
+    "Vulnerable dependencies (use npm audit, osv-scanner or your SCA tool).",
+    "Secrets already committed to git history.",
+    "Runtime behaviour, authorization logic and business-logic flaws.",
+    "Taint tracking across files: rules look inside one file, plus the project-level scans noted per plugin.",
+    "Fastify, Koa and Hapi application rules, and any framework not in the table.",
+    "Some rules skip files under test, fixtures, mocks or similar directories by design (nestjs-security does), so a proof file must not live there."
+  ]
+}

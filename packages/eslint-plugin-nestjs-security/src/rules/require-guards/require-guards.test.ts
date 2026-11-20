@@ -1268,6 +1268,7 @@ ruleTester.run(
     ]),
     invalid: nest([
       {
+        // @found read against the guard model in #1599: ThrottlerGuard is rate limiting, not authentication
         name: 'FN: a class-level ThrottlerGuard alone leaves the admin API open',
         code: ctl(
           `@Delete('users/:id') remove() {}`,
@@ -1276,6 +1277,7 @@ ruleTester.run(
         errors: [{ messageId: 'missingGuards' }],
       },
       {
+        // @found read against the guard model in #1599: a ThrottlerGuard subclass is still not authentication
         name: 'FN: a ThrottlerGuard subclass on the handler alone leaves it open',
         code: ctl(
           `@Delete('users/:id') @UseGuards(ThrottlerBehindProxyGuard) remove() {}`,
@@ -1330,6 +1332,7 @@ ruleTester.run(
         errors: [{ messageId: 'missingGuards' }],
       },
       {
+        // @found read the route decorator list against the NestJS docs while fixing #1599: @Sse is a route
         name: 'FN: a server-sent-events stream is a route and needs a guard',
         code: ctl(`@Sse('events') events() {}`, `@Controller('admin')`),
         errors: [{ messageId: 'missingGuards' }],

@@ -86,6 +86,21 @@ lint errors" produces a parameterized query instead of a plausible-looking escap
 helper. Machine-readable equivalents ship via the
 [SARIF formatter](./packages/eslint-formatter-sarif) for GitHub code scanning.
 
+## Ask your AI assistant to set it up
+
+An agent skill, [`security-linting`](./skills/security-linting/SKILL.md), reads your
+`package.json`, keeps `eslint-plugin-security` if you have it, writes an ESLint 9/10 flat
+config, and adds the plugins that match your stack, one line of explanation each.
+
+```bash
+npx skills add ofri-peretz/eslint                     # skills CLI (Claude Code, Cursor, Codex, ...)
+claude plugin marketplace add ofri-peretz/eslint      # Claude Code marketplace
+claude plugin install interlace@interlace
+```
+
+Every plugin package also ships an `AGENTS.md` listing its presets and rules. How the
+skill's config was checked on ESLint 9 and 10: [`evals/security-linting-skill/RESULTS.md`](./evals/security-linting-skill/RESULTS.md).
+
 ## Used by
 
 Public repositories that ship these plugins today. Each link opens the file where they do.
