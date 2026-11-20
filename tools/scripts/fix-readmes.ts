@@ -66,11 +66,11 @@ const packages = fs
 // Map of short specific descriptions for the Plugin itself
 const DESCRIPTIONS: Record<string, string> = {
   'eslint-plugin-express-security':
-    'Comprehensive security rules for Express.js applications, mapping to OWASP Top 10.',
+    'ESLint rules that flag permissive CORS, missing CSRF protection, missing helmet headers and insecure cookies in Express apps.',
   'eslint-plugin-react-features':
     'Advanced React patterns, hook usage, and best practices enforcement.',
   'eslint-plugin-nestjs-security':
-    'Security rules tailored for NestJS applications (Controllers, Providers, Decorators).',
+    'ESLint rules that flag missing auth guards, missing validation pipes, unthrottled routes and exposed private fields in NestJS.',
   // jwt / pg are the deprecated pre-rename names. They keep their entries so
   // the generator can still regenerate their READMEs while the deprecation
   // ages out; the -security names below are the ones that ship.
@@ -103,21 +103,21 @@ const DESCRIPTIONS: Record<string, string> = {
   'eslint-plugin-typeorm-security':
     'Security rules for typeorm (SQL injection prevention in raw queries).',
   'eslint-plugin-browser-security':
-    'Browser-specific security rules to prevent XSS and other client-side attacks.',
+    'ESLint rules that flag DOM XSS, unsafe postMessage, tokens in localStorage, insecure cookies and CSP gaps in browser code.',
   'eslint-plugin-lambda-security':
     'Security best practices for AWS Lambda functions (IAM, timeouts, environment).',
   'eslint-plugin-secure-coding':
-    'General secure coding practices and OWASP compliance for JavaScript/TypeScript.',
+    'ESLint rules for injection, ReDoS, XXE, hardcoded credentials and unsafe deserialization in JavaScript and TypeScript.',
   'eslint-plugin-vercel-ai-security':
-    'Security rules for Vercel AI SDK usage (prompt injection, data handling).',
+    'ESLint rules that flag prompt injection, system-prompt leaks, hardcoded API keys and unvalidated model output in Vercel AI SDK code.',
   'eslint-plugin-import-next':
-    'Next-generation import sorting, validation, and architectural boundaries.',
+    'ESLint rules for import order, no-cycle and module boundaries, graded against the eslint-plugin-import test suite.',
   'eslint-plugin-mongodb-security':
     'Security rules for MongoDB queries and interactions (NoSQL injection).',
   'eslint-plugin-react-a11y':
-    'Accessibility (a11y) rules for React applications, enforcing WCAG standards.',
+    'ESLint rules for React accessibility: ARIA, alt text, keyboard interaction and focus management, from WCAG 2.1.',
   'eslint-plugin-node-security':
-    'Security rules for Node.js core modules (fs, child_process, crypto, etc).',
+    'ESLint rules for the Node.js core APIs that flag command injection, path traversal, SSRF, zip slip and weak crypto.',
   'eslint-plugin-reliability':
     'Reliability rules for defensive programming, error handling, and async correctness.',
   'eslint-plugin-conventions':
@@ -409,14 +409,7 @@ function processPackage(pkg: string): void {
   output.push('</p>');
   output.push('');
   output.push('<p align="center">');
-  // For Node Security, use specific descriptions
-  if (pkg.includes('node-security')) {
-    output.push(
-      '  Security-focused ESLint plugin for Node.js built-in modules (fs, child_process, vm, crypto, Buffer).',
-    );
-  } else {
-    output.push(`  ${shortDesc}`);
-  }
+  output.push(`  ${shortDesc}`);
   output.push('</p>');
   output.push('');
 

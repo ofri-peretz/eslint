@@ -361,6 +361,10 @@ react-features	display-name	unaware
 react-features	no-set-state	unaware	
 react-features	prop-types	unaware	
 react-features	required-attributes	unaware	
+react-features	jsx-no-comment-textnodes	unaware	
+react-features	jsx-no-undef	unaware	
+react-features	jsx-uses-react	unaware	
+react-features	jsx-uses-vars	unaware	
 reliability	no-unhandled-promise	unaware	
 reliability	no-silent-errors	unaware	
 reliability	error-message	unaware	

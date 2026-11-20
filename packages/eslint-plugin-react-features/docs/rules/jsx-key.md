@@ -253,6 +253,18 @@ function NestedList({ categories }) {
 | **ESLint MCP**       | ✅ Optimized        | ❌ No               | ❌ No              |
 | **Suggestions**      | ✅ Yes              | ⚠️ Limited          | ❌ No              |
 
+## Options
+
+| Option                     | Type      | Default | Description |
+| -------------------------- | --------- | ------- | ----------- |
+| `warnUnstableKeys`         | `boolean` | `true`  | Report an index used as a key |
+| `checkFragmentShorthand`   | `boolean` | `false` | Also report a shorthand fragment (`<>`) in an array literal: it cannot take a key |
+| `checkKeyMustBeforeSpread` | `boolean` | `false` | Report a `key` written after a `{...spread}`; the new JSX transform lets the spread win |
+| `warnOnDuplicates`         | `boolean` | `false` | Report two sibling elements, in an array literal or written out in JSX, that carry the same key |
+
+An element in an array literal with no `key` is reported, as is one returned from an iterator callback. `Children.toArray(...)` keys what it returns, so nothing inside it is reported.
+
+
 ## Related Rules
 
 - [`react-no-inline-functions`](./react-no-inline-functions.md) - Performance optimization

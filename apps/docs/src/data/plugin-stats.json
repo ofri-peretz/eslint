@@ -5,7 +5,7 @@
       "rules": 46,
       "description": "ESLint browser security and XSS rules — detects DOM XSS, postMessage abuse, tokens in localStorage, insecure cookies, clickjacking, mixed content, and CSP gaps",
       "category": "security",
-      "version": "3.1.0",
+      "version": "3.1.1",
       "published": true
     },
     {
@@ -13,7 +13,7 @@
       "rules": 43,
       "description": "ESLint Node security rules for Node.js — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto",
       "category": "security",
-      "version": "6.0.6",
+      "version": "6.0.7",
       "published": true
     },
     {
@@ -21,7 +21,7 @@
       "rules": 35,
       "description": "ESLint security rules for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "6.1.2",
+      "version": "6.3.0",
       "published": true
     },
     {
@@ -29,7 +29,7 @@
       "rules": 19,
       "description": "ESLint AI SDK security rules for the Vercel AI SDK — detects prompt injection, system-prompt leaks, hardcoded API keys, and unvalidated model output in generateText and streamText",
       "category": "security",
-      "version": "3.0.3",
+      "version": "3.0.4",
       "published": true
     },
     {
@@ -37,7 +37,7 @@
       "rules": 16,
       "description": "ESLint MongoDB security rules for MongoDB and Mongoose — detects NoSQL operator injection, unsafe queries and regex, hardcoded connection strings, and missing TLS",
       "category": "security",
-      "version": "10.0.2",
+      "version": "10.1.0",
       "published": true
     },
     {
@@ -45,7 +45,7 @@
       "rules": 15,
       "description": "ESLint MCP security rules for the Model Context Protocol SDK — follows tool arguments into shells, file paths, URLs, SQL and eval; catches credential leaks, untrusted text in model-facing descriptions and prompts, unhardened HTTP transports, shared stateless servers, predictable session ids, untrusted stdio commands and schema/handler drift",
       "category": "security",
-      "version": "2.1.0",
+      "version": "2.1.1",
       "published": true
     },
     {
@@ -53,7 +53,7 @@
       "rules": 13,
       "description": "ESLint JWT security rules — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify",
       "category": "security",
-      "version": "4.0.2",
+      "version": "4.0.3",
       "published": true
     },
     {
@@ -61,7 +61,7 @@
       "rules": 13,
       "description": "ESLint Postgres security rules for the pg PostgreSQL driver — detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL",
       "category": "security",
-      "version": "3.0.4",
+      "version": "3.0.5",
       "published": true
     },
     {
@@ -69,7 +69,7 @@
       "rules": 5,
       "description": "ESLint Knex security rules — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
       "category": "security",
-      "version": "2.0.2",
+      "version": "2.0.3",
       "published": true
     },
     {
@@ -77,7 +77,7 @@
       "rules": 4,
       "description": "ESLint Drizzle ORM security rules — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
-      "version": "2.0.2",
+      "version": "2.0.3",
       "published": true
     },
     {
@@ -85,7 +85,7 @@
       "rules": 4,
       "description": "ESLint Prisma security rules for @prisma/client — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
-      "version": "2.0.2",
+      "version": "2.0.3",
       "published": true
     },
     {
@@ -93,7 +93,7 @@
       "rules": 4,
       "description": "ESLint Sequelize security rules — detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
       "category": "security",
-      "version": "2.0.2",
+      "version": "2.0.3",
       "published": true
     },
     {
@@ -101,7 +101,7 @@
       "rules": 4,
       "description": "ESLint Supabase security rules — catches the service_role key reaching client code, RPC called with a computed function name, auth results whose error is discarded, and storage buckets created public",
       "category": "security",
-      "version": "2.0.2",
+      "version": "2.0.3",
       "published": true
     },
     {
@@ -109,7 +109,7 @@
       "rules": 4,
       "description": "ESLint TypeORM security rules — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
       "category": "security",
-      "version": "2.0.2",
+      "version": "2.0.3",
       "published": true
     },
     {
@@ -117,7 +117,7 @@
       "rules": 3,
       "description": "ESLint Anthropic SDK security rules — catches hardcoded Claude API keys, the browser escape hatch that ships them to every visitor, and system prompts assembled from untrusted input",
       "category": "security",
-      "version": "2.0.2",
+      "version": "2.0.3",
       "published": true
     },
     {
@@ -125,7 +125,7 @@
       "rules": 3,
       "description": "ESLint Gemini SDK security rules — catches safety thresholds set to BLOCK_NONE, hardcoded API keys, and system instructions assembled from untrusted input",
       "category": "security",
-      "version": "2.0.2",
+      "version": "2.0.3",
       "published": true
     },
     {
@@ -133,7 +133,7 @@
       "rules": 3,
       "description": "ESLint MySQL security rules for mysql2 and mysql — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
       "category": "security",
-      "version": "2.0.2",
+      "version": "2.0.3",
       "published": true
     },
     {
@@ -141,7 +141,7 @@
       "rules": 3,
       "description": "ESLint OpenAI SDK security rules — catches dangerouslyAllowBrowser, hardcoded API keys, and system prompts assembled from untrusted input",
       "category": "security",
-      "version": "2.0.2",
+      "version": "2.0.3",
       "published": true
     },
     {
@@ -149,7 +149,7 @@
       "rules": 1,
       "description": "ESLint SQLite security rules for better-sqlite3 and sqlite3 — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
-      "version": "2.0.2",
+      "version": "2.0.3",
       "published": true
     },
     {
@@ -157,7 +157,7 @@
       "rules": 28,
       "description": "ESLint Express security rules — detects permissive CORS, missing CSRF protection, missing helmet headers, insecure cookies, and GraphQL introspection in production",
       "category": "framework",
-      "version": "4.0.3",
+      "version": "4.2.0",
       "published": true
     },
     {
@@ -165,7 +165,7 @@
       "rules": 14,
       "description": "ESLint Lambda security rules for AWS Lambda — detects overly permissive IAM policies and CORS, unvalidated event bodies, secrets in env vars, and leaked error details",
       "category": "framework",
-      "version": "3.0.3",
+      "version": "3.0.4",
       "published": true
     },
     {
@@ -173,15 +173,15 @@
       "rules": 11,
       "description": "ESLint NestJS security rules — detects missing auth guards, missing validation pipes, unthrottled routes, and exposed private fields",
       "category": "framework",
-      "version": "4.2.2",
+      "version": "4.2.3",
       "published": true
     },
     {
       "name": "eslint-plugin-import-next",
       "rules": 58,
-      "description": "ESLint import rules — a drop-in replacement for eslint-plugin-import that passes 95% of its own test cases, covering imports and module boundaries, 3.1x faster end-to-end",
+      "description": "ESLint import rules — eslint-plugin-import replacement for ESLint 10 (and 8, 9): same import/* rule names and settings (node, typescript and custom-alias resolvers), passes 95% of its own test cases",
       "category": "architecture",
-      "version": "4.1.1",
+      "version": "4.1.6",
       "published": true
     },
     {
@@ -189,7 +189,7 @@
       "rules": 15,
       "description": "ESLint conventions rules for team code — enforces filename case, magic-number bans, commented-out code, expiring TODOs, and deprecated-API usage",
       "category": "quality",
-      "version": "7.0.2",
+      "version": "7.0.3",
       "published": true
     },
     {
@@ -197,7 +197,7 @@
       "rules": 12,
       "description": "ESLint maintainability rules — limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors",
       "category": "quality",
-      "version": "4.0.2",
+      "version": "4.0.3",
       "published": true
     },
     {
@@ -205,7 +205,7 @@
       "rules": 9,
       "description": "ESLint reliability rules for runtime safety — enforces error handling, network timeouts, null checks, and safe type narrowing",
       "category": "quality",
-      "version": "5.0.2",
+      "version": "5.0.3",
       "published": true
     },
     {
@@ -213,7 +213,7 @@
       "rules": 6,
       "description": "ESLint module boundaries and architecture rules — enforces DDD value objects and anemic-model checks, naming, REST conventions, and utility isolation",
       "category": "quality",
-      "version": "3.0.2",
+      "version": "3.0.3",
       "published": true
     },
     {
@@ -221,7 +221,7 @@
       "rules": 6,
       "description": "ESLint production readiness rules — bans debug code and console logging in production, verbose error messages, and process.exit calls",
       "category": "quality",
-      "version": "5.0.2",
+      "version": "5.0.4",
       "published": true
     },
     {
@@ -237,15 +237,15 @@
       "rules": 4,
       "description": "ESLint modernization rules for JavaScript — auto-fixes legacy patterns to ES2022+ (Array.at, template literals, EventTarget, Array.isArray)",
       "category": "quality",
-      "version": "4.0.2",
+      "version": "4.0.4",
       "published": true
     },
     {
       "name": "eslint-plugin-react-features",
-      "rules": 61,
+      "rules": 65,
       "description": "ESLint React hooks and JSX rules — prop-types, JSX correctness, render performance, and class-to-hooks migration for modern React codebases",
       "category": "react",
-      "version": "2.0.2",
+      "version": "2.0.3",
       "published": true
     },
     {
@@ -253,11 +253,11 @@
       "rules": 37,
       "description": "ESLint React a11y rules for React accessibility — WCAG 2.1 rules for ARIA, alt text, keyboard interaction, and focus management, with auto-fixes",
       "category": "react",
-      "version": "3.0.2",
+      "version": "3.0.3",
       "published": true
     }
   ],
-  "totalRules": 499,
+  "totalRules": 503,
   "totalPlugins": 31,
   "allPluginsCount": 32,
   "generatedAt": "2026-11-20"

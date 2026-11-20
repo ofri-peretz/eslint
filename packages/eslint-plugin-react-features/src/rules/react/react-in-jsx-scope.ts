@@ -11,6 +11,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { getPragma } from '../../utils/react-settings';
 
 type MessageIds = 'reactInJsxScope';
 
@@ -48,6 +49,12 @@ export const reactInJsxScope = createRule<[], MessageIds>({
     let automatic: boolean;
 
     /**
+     * What the classic runtime compiles JSX to: `React`, unless a `@jsx Foo`
+     * comment or `settings.react.pragma` names another binding.
+     */
+    let pragma: string;
+
+    /**
      * Does this definition leave a runtime value? A type alias / interface
      * does not, and neither does a type-only import (`import type React`,
      * `import { type default as React }`): both are erased at compile time.
@@ -62,14 +69,14 @@ export const reactInJsxScope = createRule<[], MessageIds>({
       );
     }
 
-    /** Is a value named `React` declared in this scope or an enclosing one? */
+    /** Is a value named by the pragma declared in this scope or an enclosing one? */
     function reactInScope(scope: TSESLint.Scope.Scope): boolean {
       for (
         let s: TSESLint.Scope.Scope | null = scope;
         s !== null;
         s = s.upper
       ) {
-        const variable = s.set.get('React');
+        const variable = s.set.get(pragma);
         if (variable?.defs.some(declaresValue)) return true;
       }
       return false;
@@ -87,6 +94,7 @@ export const reactInJsxScope = createRule<[], MessageIds>({
 
     return {
       Program() {
+        pragma = getPragma(context);
         automatic = context.sourceCode
           .getAllComments()
           .some((c) => /@jsxRuntime\s+automatic\b/.test(c.value));

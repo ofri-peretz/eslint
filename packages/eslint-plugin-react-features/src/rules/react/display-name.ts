@@ -22,13 +22,38 @@
  *   - `memo(() => <div />)` / `forwardRef(...)` not bound to a variable
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
+import {
+  isFunctionComponent,
+  returnsJsx,
+} from '../../utils/function-component';
 import { extendsReactComponent, isReactApi } from '../../utils/react-api';
+import {
+  getCreateClassPragma,
+  getPragma,
+  reactVersionAtLeast,
+} from '../../utils/react-settings';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
-type MessageIds = 'displayName';
+type MessageIds = 'displayName' | 'contextDisplayName';
 
-type RuleOptions = [];
+type RuleOptions = [
+  {
+    /**
+     * Do not take a component's name from the code around it: a class, a
+     * function or a `createReactClass` call is named only by an explicit
+     * `displayName`, because a minifier renames the rest.
+     */
+    ignoreTranspilerName?: boolean;
+    /** Also require `displayName` on `React.createContext()` objects (React 16.3+). */
+    checkContextObjects?: boolean;
+  }?,
+];
 
 type Scope = TSESLint.Scope.Scope;
 
@@ -49,8 +74,27 @@ export const displayName = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/display-name.md',
       description: 'Enforce component display names',
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          ignoreTranspilerName: { type: 'boolean', default: false },
+          checkContextObjects: { type: 'boolean', default: false },
+        },
+        additionalProperties: false,
+      },
+    ],
     messages: {
+      contextDisplayName: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'Unnamed Context',
+        description:
+          'Context object has no displayName, so DevTools shows it as "Context.Provider"',
+        severity: 'LOW',
+        fix: 'Set `MyContext.displayName = "MyContext"` after creating it',
+        documentationLink:
+          'https://react.dev/reference/react/createContext#context-displayname',
+      }),
       displayName: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Anonymous Component',
@@ -63,9 +107,21 @@ export const displayName = createRule<RuleOptions, MessageIds>({
       }),
     },
   },
-  defaultOptions: [],
-  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  defaultOptions: [{}],
+  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>, options) {
+    let ignoreTranspilerName = false;
+    let checkContextObjects = false;
+    let pragma = 'React';
+    let createClass = 'createReactClass';
+    /** Source text of every `X` in `X.displayName = …`. */
+    let assigned: Set<string>;
+    /** Components that need an explicit displayName, with the text a later `X.displayName =` would name. */
+    let unnamed: { node: TSESTree.Node; ref: string | null }[];
+    let contexts: { node: TSESTree.Node; name: string }[];
+    let reported: WeakSet<TSESTree.Node>;
+
     const report = (node: TSESTree.Node): void => {
+      reported.add(node);
       context.report({ node, messageId: 'displayName' });
     };
     const scopeOf = (node: TSESTree.Node): Scope =>
@@ -74,7 +130,81 @@ export const displayName = createRule<RuleOptions, MessageIds>({
     const renders = (node: TSESTree.Node): boolean =>
       containsRender(node, scopeOf);
 
+    /** `createReactClass({...})` / `React.createClass({...})`, by name as the settings spell it. */
+    const isCreateClassCall = (node: TSESTree.CallExpression): boolean => {
+      const callee = node.callee;
+      return callee.type === AST_NODE_TYPES.Identifier
+        ? callee.name === createClass
+        : callee.type === AST_NODE_TYPES.MemberExpression &&
+            callee.object.type === AST_NODE_TYPES.Identifier &&
+            callee.object.name === pragma &&
+            propertyName(callee) === createClass;
+    };
+
+    const isCreateContext = (node: TSESTree.Node): boolean =>
+      node.type === AST_NODE_TYPES.CallExpression &&
+      isReactApi(node.callee, scopeOf(node), 'createContext');
+
+    /** Queue a component that only an explicit `displayName` names. */
+    const needsExplicitName = (node: TSESTree.Node): void => {
+      unnamed.push({ node, ref: referenceText(node, scopeOf) });
+    };
+
     return {
+      before() {
+        const [config] = options();
+        ignoreTranspilerName = config?.ignoreTranspilerName ?? false;
+        checkContextObjects =
+          (config?.checkContextObjects ?? false) &&
+          reactVersionAtLeast(context, '16.3.0');
+        pragma = getPragma(context);
+        createClass = getCreateClassPragma(context);
+        assigned = new Set();
+        unnamed = [];
+        contexts = [];
+        reported = new WeakSet();
+      },
+
+      /** `X.displayName = …` names `X`; `X = createContext()` needs it. */
+      AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        if (
+          node.left.type === AST_NODE_TYPES.MemberExpression &&
+          propertyName(node.left) === 'displayName'
+        ) {
+          assigned.add(context.sourceCode.getText(node.left.object));
+        } else if (
+          checkContextObjects &&
+          node.left.type === AST_NODE_TYPES.Identifier &&
+          isCreateContext(node.right)
+        ) {
+          contexts.push({ node: node.right, name: node.left.name });
+        }
+      },
+
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        if (
+          checkContextObjects &&
+          node.id.type === AST_NODE_TYPES.Identifier &&
+          node.init &&
+          isCreateContext(node.init)
+        ) {
+          contexts.push({ node: node.init, name: node.id.name });
+        }
+      },
+
+      'Program:exit'() {
+        for (const { node, ref } of unnamed) {
+          if (reported.has(node) || (ref !== null && assigned.has(ref)))
+            continue;
+          report(node);
+        }
+        for (const { node, name } of contexts) {
+          if (!assigned.has(name)) {
+            context.report({ node, messageId: 'contextDisplayName' });
+          }
+        }
+      },
+
       /**
        * `export default () => <div />` — the one function position with no
        * identifier anywhere in the chain. A named `export default function
@@ -92,6 +222,18 @@ export const displayName = createRule<RuleOptions, MessageIds>({
        * off the binding, so nothing is reported.
        */
       CallExpression(node: TSESTree.CallExpression) {
+        if (ignoreTranspilerName && isCreateClassCall(node)) {
+          const spec = node.arguments[0];
+          const named =
+            spec?.type === AST_NODE_TYPES.ObjectExpression &&
+            spec.properties.some(
+              (p) =>
+                p.type === AST_NODE_TYPES.Property &&
+                objectKeyName(p) === 'displayName',
+            );
+          if (!named) needsExplicitName(node);
+          return;
+        }
         if (
           !isReactWrapperCall(node, scopeOf) ||
           hasInferableName(node, scopeOf)
@@ -115,14 +257,85 @@ export const displayName = createRule<RuleOptions, MessageIds>({
       'ClassDeclaration, ClassExpression'(
         node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
       ) {
-        if (node.id || !extendsReactComponent(node, scopeOf(node))) return;
-        if (hasDisplayNameProperty(node) || hasInferableName(node, scopeOf))
+        if (!extendsReactComponent(node, scopeOf(node))) return;
+        if (hasDisplayNameProperty(node)) return;
+        if (node.id) {
+          // `Class.name` names it, unless the transpiler's names are not to be trusted
+          if (ignoreTranspilerName) needsExplicitName(node);
           return;
+        }
+        if (hasInferableName(node, scopeOf)) {
+          if (ignoreTranspilerName) needsExplicitName(node);
+          return;
+        }
         report(node);
+      },
+
+      /**
+       * With `ignoreTranspilerName`, a function component is named by an
+       * explicit `displayName` only: a PascalCase function that returns JSX,
+       * or a PascalCase object method that does (`{ Button() { return <b/> } }`).
+       */
+      'FunctionDeclaration, FunctionExpression, ArrowFunctionExpression'(
+        node: FunctionNode,
+      ) {
+        if (!ignoreTranspilerName) return;
+        const parent = node.parent;
+        const method =
+          parent.type === AST_NODE_TYPES.Property &&
+          parent.value === node &&
+          /^[A-Z]/.test(objectKeyName(parent) ?? '') &&
+          returnsJsx(node);
+        if (method || isFunctionComponent(node, context.sourceCode)) {
+          needsExplicitName(node);
+        }
       },
     };
   },
 });
+
+/**
+ * The text a later `X.displayName = …` would use for this component: its own
+ * name, the variable it is bound to (through `memo` / `forwardRef`), or the
+ * dotted path to it inside an object literal (`Mixins.Greetings.Hello`).
+ */
+function referenceText(
+  node: TSESTree.Node,
+  scopeOf: (node: TSESTree.Node) => Scope,
+): string | null {
+  if (
+    (node.type === AST_NODE_TYPES.FunctionDeclaration ||
+      node.type === AST_NODE_TYPES.ClassDeclaration) &&
+    node.id
+  ) {
+    return node.id.name;
+  }
+  const path: string[] = [];
+  let current: TSESTree.Node = node;
+  // Every step either climbs or returns; the walk ends at a non-name ancestor.
+  for (;;) {
+    const parent = current.parent as TSESTree.Node;
+    if (isReactWrapperCall(parent, scopeOf)) {
+      current = parent;
+    } else if (
+      parent.type === AST_NODE_TYPES.VariableDeclarator &&
+      parent.id.type === AST_NODE_TYPES.Identifier
+    ) {
+      return [parent.id.name, ...path].join('.');
+    } else if (
+      parent.type === AST_NODE_TYPES.Property &&
+      parent.value === current &&
+      parent.parent.type === AST_NODE_TYPES.ObjectExpression
+    ) {
+      const key = objectKeyName(parent);
+      if (key === null) return null;
+      path.unshift(key);
+      current = parent.parent;
+    } else {
+      return null;
+    }
+  }
+}
 
 /**
  * Does an identifier exist that React can read a name from?
@@ -182,17 +395,13 @@ function isFunctionNode(node: TSESTree.Node): node is FunctionNode {
 function hasDisplayNameProperty(
   node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
 ): boolean {
-  for (const member of node.body.body) {
-    if (
-      member.type === AST_NODE_TYPES.PropertyDefinition &&
-      member.key.type === AST_NODE_TYPES.Identifier &&
-      member.key.name === 'displayName' &&
-      member.static
-    ) {
-      return true;
-    }
-  }
-  return false;
+  return node.body.body.some(
+    (member) =>
+      (member.type === AST_NODE_TYPES.PropertyDefinition ||
+        member.type === AST_NODE_TYPES.MethodDefinition) && // `static get displayName() {}`
+      member.static &&
+      objectKeyName(member) === 'displayName',
+  );
 }
 
 /**

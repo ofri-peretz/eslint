@@ -31,13 +31,29 @@
  *    complement of this one — see `routeIsAuthenticated`. Before this, both
  *    rules reported the same seven routes.
  *
+ * Three further shapes carry no cross-site authority and stay quiet: a
+ * **guard-only** registration (`app.post('/x', security.denyAll())` handles
+ * nothing), a **bearer** route (an `Authorization` header is not attached by the
+ * browser), and `cookie-parser` on its own (it parses cookies; it does not make
+ * one a credential). The opposite gap is closed too: a routes module that is
+ * handed to the file that configures the session — and renders documents — has
+ * its credential evidence in that other file, so it is read as having it.
+ *
  * @see https://cwe.mitre.org/data/definitions/352.html
  * @see https://owasp.org/www-community/attacks/csrf
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
-import { fileHasAmbientCredentials } from '../../utils/app-composition';
+import {
+  fileHasAmbientCredentials,
+  fileInheritsAmbientCredentials,
+} from '../../utils/app-composition';
 import { routeIsAuthenticated } from '../../utils/auth-evidence';
+import {
+  isGuardOnlyRegistration,
+  routeUsesBearerCredentialOnly,
+} from '../../utils/credential-evidence';
+import { packageBindings } from '../../utils/import-bindings';
 import { flattenMiddleware, routeChainRoot } from '../../utils/route-shapes';
 import {
   formatLLMMessage,
@@ -248,6 +264,7 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
       handler: TSESTree.Node | undefined;
     }[];
     let hasGlobalAuth: boolean;
+    let jwtBindings: ReturnType<typeof packageBindings>;
 
     /**
      * Check if route matches ignore patterns
@@ -277,7 +294,14 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
 
         // Precondition 1 — see the header comment. No cookie, no session, no
         // CSRF: a cross-site request to this file's routes carries no authority.
-        if (!fileHasAmbientCredentials(context.sourceCode.ast)) return false;
+        // The credential may be configured in the module that mounts this one.
+        const ast = context.sourceCode.ast;
+        if (
+          !fileHasAmbientCredentials(ast) &&
+          !fileInheritsAmbientCredentials(ast)
+        )
+          return false;
+        jwtBindings = packageBindings(ast, ['express-jwt']);
 
         ({
           allowInTests = false,
@@ -381,6 +405,23 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
 
           // Check if CSRF middleware is in the route's own chain
           if (hasCsrfInMiddlewareChain(chain)) {
+            return;
+          }
+
+          // A guard mounted alone handles nothing: the request is handled by a
+          // registration elsewhere, which is where this rule looks.
+          if (isGuardOnlyRegistration(flattenMiddleware(rest))) {
+            return;
+          }
+
+          // A bearer token is not attached by the browser on its own.
+          if (
+            routeUsesBearerCredentialOnly(
+              chain,
+              rest[rest.length - 1],
+              jwtBindings,
+            )
+          ) {
             return;
           }
 

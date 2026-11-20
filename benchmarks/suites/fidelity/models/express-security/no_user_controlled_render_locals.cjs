@@ -59,12 +59,16 @@ module.exports = {
         'app',
       ],
     }[tag(s.mount)];
+    // A `(req, res)` handler on a literal path is Express evidence by itself
+    // (#1616), so the no-Express mount registers on an imported constant.
+    const noExpress = tag(s.mount) === 'NoExpress';
     return [
       head,
+      noExpress ? "import { PREVIEW_PATH } from './paths';" : '',
       "import { pick, transform } from './helpers';",
       decl,
       "const VIEWS: Record<string, string> = { news: 'pages/news' };",
-      `${recv}.post('/preview', (${q}: any, ${r}: any) => {`,
+      `${recv}.post(${noExpress ? 'PREVIEW_PATH' : "'/preview'"}, (${q}: any, ${r}: any) => {`,
       l === 'Alias' ? `  const locals = ${q}.body;` : '',
       l === 'Destructured' ? `  const { body } = ${q};` : '',
       `  ${r}.render(${args.join(', ')});`,

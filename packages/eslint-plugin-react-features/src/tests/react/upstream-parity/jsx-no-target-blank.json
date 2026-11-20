@@ -1,0 +1,98 @@
+{
+  "rule": "jsx-no-target-blank",
+  "source": "eslint-plugin-react@7.37.5 tests/lib/rules/jsx-no-target-blank.js (MIT)",
+  "cases": [
+    {
+      "kind": "invalid",
+      "n": 87,
+      "code": "<Link target=\"_blank\" href={ dynamicLink }></Link>\n// features: [], parser: default, options: [{\"enforceDynamicLinks\":\"always\"}], settings: {\"linkComponents\":[\"Link\"]}",
+      "errors": 1,
+      "options": [
+        {
+          "enforceDynamicLinks": "always"
+        }
+      ],
+      "settings": {
+        "linkComponents": ["Link"]
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 89,
+      "code": "<Link target=\"_blank\" href={ dynamicLink }></Link>\n// features: [], parser: @typescript-eslint/parser, options: [{\"enforceDynamicLinks\":\"always\"}], settings: {\"linkComponents\":[\"Link\"]}",
+      "errors": 1,
+      "options": [
+        {
+          "enforceDynamicLinks": "always"
+        }
+      ],
+      "settings": {
+        "linkComponents": ["Link"]
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 90,
+      "code": "<Link target=\"_blank\" to={ dynamicLink }></Link>\n// features: [], parser: default, options: [{\"enforceDynamicLinks\":\"always\"}], settings: {\"linkComponents\":{\"name\":\"Link\",\"linkAttribute\":\"to\"}}",
+      "errors": 1,
+      "options": [
+        {
+          "enforceDynamicLinks": "always"
+        }
+      ],
+      "settings": {
+        "linkComponents": {
+          "name": "Link",
+          "linkAttribute": "to"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 92,
+      "code": "<Link target=\"_blank\" to={ dynamicLink }></Link>\n// features: [], parser: @typescript-eslint/parser, options: [{\"enforceDynamicLinks\":\"always\"}], settings: {\"linkComponents\":{\"name\":\"Link\",\"linkAttribute\":\"to\"}}",
+      "errors": 1,
+      "options": [
+        {
+          "enforceDynamicLinks": "always"
+        }
+      ],
+      "settings": {
+        "linkComponents": {
+          "name": "Link",
+          "linkAttribute": "to"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    }
+  ]
+}

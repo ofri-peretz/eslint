@@ -22,7 +22,28 @@
 
 _Note on branding: this row omits the OpenAI mark. OpenAI's logo is not available under a permissive licence, so we don't reproduce it._
 
-> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
+## Getting Started
+
+- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-openai-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-openai-security), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-openai-security). 📚
+
+<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
+
+```bash
+npm install --save-dev eslint eslint-plugin-openai-security
+```
+
+```js
+// eslint.config.mjs
+import { configs } from 'eslint-plugin-openai-security';
+
+export default [configs.recommended];
+```
+
+`recommended` is the preset to start with. The others are listed under Configuration Presets below.
+
+Using oxlint or Vite+? Install `oxlint-plugin-openai-security`: the same rules under the same `openai-security/<rule>` IDs, without ESLint. Its [page](https://www.npmjs.com/package/oxlint-plugin-openai-security) has the setup.
+
+<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## Description
 
@@ -45,40 +66,6 @@ That trade costs recall, and we measure it:
 · [a false positive is a bug](https://github.com/ofri-peretz/eslint/issues).
 
 <!-- AUTO-GENERATED:DOCTRINE:END -->
-
-## Getting Started
-
-- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-openai-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-openai-security), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-openai-security). 📚
-
-<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
-
-**oxlint / Vite+** — the same rules under the same `openai-security/<rule>` IDs, without ESLint:
-
-```bash
-npm install oxlint-plugin-openai-security --save-dev
-```
-
-```jsonc
-// .oxlintrc.json
-{ "jsPlugins": ["oxlint-plugin-openai-security"] }
-```
-
-```ts
-// vite.config.ts
-import { defineConfig } from 'vite-plus';
-
-export default defineConfig({
-  lint: { jsPlugins: ['oxlint-plugin-openai-security'] },
-});
-```
-
-**ESLint:**
-
-```bash
-npm install eslint-plugin-openai-security --save-dev
-```
-
-<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## ⚙️ Configuration Presets
 
@@ -141,11 +128,10 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) fo
 | [no-untrusted-content-in-prompt](https://eslint.interlace.tools/docs/security/plugin-openai-security/rules/no-untrusted-content-in-prompt?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-openai-security) | CWE-1427 | A03:2021 |  | Disallow untrusted content built into the OpenAI system prompt | 🟢 |  |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 <!-- INTERLACE:STAR_CTA:START -->
-## ⭐ Support & follow
 
-If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+## Support
 
-[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+Found a false positive? [Open an issue](https://github.com/ofri-peretz/eslint/issues): that is a bug. If the plugin helped, a star on [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint) helps others find it.
 
 <!-- INTERLACE:STAR_CTA:END -->
 

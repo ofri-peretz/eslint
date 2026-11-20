@@ -16,66 +16,97 @@ import {
   formatLLMMessage,
   MessageIcons,
   objectKeyName,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { extendsReactComponent, reactExport } from '../../utils/react-api';
+import { getPragma, reactVersionAtLeast } from '../../utils/react-settings';
 
 type MessageIds = 'deprecated';
 
 type RuleOptions = [];
 
 // Deprecated React APIs (React 16+)
-const DEPRECATED_APIS: Record<string, { replacement: string; since: string }> =
-  {
+/**
+ * `from` is the first React version that deprecates the API: below it, with
+ * `settings.react.version`, the API is current and is not reported.
+ */
+const DEPRECATED_APIS: Record<
+  string,
+  { replacement: string; since: string; from: string }
+> = {
     // React methods
     'React.createClass': {
       replacement: 'class extends React.Component',
-      since: 'React 16',
+      since: 'React 16', from: '15.5.0',
     },
     'React.PropTypes': {
       replacement: 'import PropTypes from "prop-types"',
-      since: 'React 15.5',
+      since: 'React 15.5', from: '15.5.0',
     },
-    'React.findDOMNode': { replacement: 'refs', since: 'React 16.3' },
+    'React.findDOMNode': { replacement: 'refs', since: 'React 16.3', from: '0.14.0', },
 
     // ReactDOM methods
     'ReactDOM.render': {
       replacement: 'createRoot().render()',
-      since: 'React 18',
+      since: 'React 18', from: '18.0.0',
     },
-    'ReactDOM.hydrate': { replacement: 'hydrateRoot()', since: 'React 18' },
+    'ReactDOM.hydrate': { replacement: 'hydrateRoot()', since: 'React 18', from: '18.0.0', },
     'ReactDOM.unmountComponentAtNode': {
       replacement: 'root.unmount()',
-      since: 'React 18',
+      since: 'React 18', from: '18.0.0',
     },
-    'ReactDOM.findDOMNode': { replacement: 'refs', since: 'React 16.3' },
+    'ReactDOM.findDOMNode': { replacement: 'refs', since: 'React 16.3', from: '16.6.0', },
 
     // Lifecycle methods (deprecated in strict mode)
     componentWillMount: {
       replacement: 'componentDidMount or constructor',
-      since: 'React 16.3',
+      since: 'React 16.3', from: '16.9.0',
     },
     componentWillReceiveProps: {
       replacement: 'static getDerivedStateFromProps',
-      since: 'React 16.3',
+      since: 'React 16.3', from: '16.9.0',
     },
     componentWillUpdate: {
       replacement: 'getSnapshotBeforeUpdate',
-      since: 'React 16.3',
+      since: 'React 16.3', from: '16.9.0',
     },
     UNSAFE_componentWillMount: {
       replacement: 'componentDidMount or constructor',
-      since: 'React 17',
+      since: 'React 17', from: '17.0.0',
     },
     UNSAFE_componentWillReceiveProps: {
       replacement: 'static getDerivedStateFromProps',
-      since: 'React 17',
+      since: 'React 17', from: '17.0.0',
     },
     UNSAFE_componentWillUpdate: {
       replacement: 'getSnapshotBeforeUpdate',
-      since: 'React 17',
+      since: 'React 17', from: '17.0.0',
     },
   };
+
+/**
+ * `Foo.createClass` where `Foo` is the configured pragma (`settings.react.pragma`
+ * or `@jsx Foo`) and the file never declares it: the pragma IS React.
+ */
+function pragmaExport(
+  node: TSESTree.Identifier | TSESTree.MemberExpression,
+  pragma: string,
+  scope: TSESLint.Scope.Scope,
+): { module: string; name: string } | null {
+  if (
+    pragma === 'React' ||
+    node.type !== 'MemberExpression' ||
+    node.object.type !== 'Identifier' ||
+    node.object.name !== pragma ||
+    propertyName(node) === null
+  )
+    return null;
+  for (let s: TSESLint.Scope.Scope | null = scope; s; s = s.upper) {
+    if ((s.set.get(pragma)?.defs.length ?? 0) > 0) return null;
+  }
+  return { module: 'react', name: propertyName(node) as string };
+}
 
 /** The lifecycle names React renamed; reported on a React class component. */
 const LIFECYCLES = new Set([
@@ -114,8 +145,13 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
     /** One entry per class being walked: is it a React class component? */
     let classes: boolean[];
 
+    /** The binding JSX compiles to, when it is not `React`: `settings.react.pragma` or `@jsx Foo`. */
+    let pragma: string;
+
     function report(node: TSESTree.Node, name: string): void {
       const deprecation = DEPRECATED_APIS[name];
+      // Deprecated from a version on: an older `settings.react.version` still has it
+      if (!reactVersionAtLeast(context, deprecation.from)) return;
       context.report({
         node,
         messageId: 'deprecated',
@@ -133,7 +169,8 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
      * file never imports names no module and is not read.
      */
     function check(node: TSESTree.Identifier | TSESTree.MemberExpression): void {
-      const api = reactExport(node, context.sourceCode.getScope(node));
+      const scope = context.sourceCode.getScope(node);
+      const api = reactExport(node, scope) ?? pragmaExport(node, pragma, scope);
       if (api?.module !== 'react' && api?.module !== 'react-dom') return;
       const name = `${api.module === 'react' ? 'React' : 'ReactDOM'}.${api.name}`;
       if (Object.hasOwn(DEPRECATED_APIS, name)) report(node, name);
@@ -160,6 +197,7 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         classes = [];
+        pragma = getPragma(context);
       },
       ClassDeclaration: enterClass,
       ClassExpression: enterClass,

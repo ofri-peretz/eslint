@@ -5,6 +5,34 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.1.7
+
+### Patch Changes
+
+- **📚 Docs** — Getting Started now leads each plugin README, with the ESLint install line and a flat config that loads
+
+  The install block was below the Description and the doctrine, and on 17 of the 31 plugins there was no flat-config snippet on the page at all. `eslint-plugin-secure-coding`'s README showed `...securePlugin.configs.recommended`, which throws `TypeError: ... is not iterable` when pasted, because `configs.recommended` is one object. Every plugin README now opens with `npm install --save-dev eslint <plugin>` and `import { configs } from '<plugin>'` and `export default [configs.recommended]` in an `eslint.config.mjs`, then the Description. A test now loads that snippet in ESLint for every plugin.
+
+  The star banner above the first heading, the footer block with the star counter and the Dev.to ask are replaced by one `## Support` paragraph at the end: report a false positive, or star the repo if the plugin helped.
+
+  `eslint-plugin-import-next` opens with its drop-in grade, read from the newest `benchmarks/results/ilb-import-parity` result with its date: passes 2,035 of 2,135 (95.3%) of eslint-plugin-import 2.32.0's own test cases, measured 2026-11-19.
+
+  Eight taglines now say what the plugin flags instead of "security rules for X" (secure-coding, node-security, browser-security, nestjs-security, express-security, vercel-ai-security, react-a11y, import-next). `eslint-plugin-node-security` adds one proof line: the public repositories that list it, with the date they were checked.
+
+## 4.1.6
+
+### Patch Changes
+
+- **🐛 Fix** — three false positives and one crash reported by adopters
+
+  - `no-hardcoded-credentials` no longer reports a template placeholder name under a key called `token`. `Replacement.create({ token: 'unsubscribeUrl', value })` (stamhoofd/stamhoofd EmailBuilder.ts and exampleReplacements.ts, four disables) was read as a high-entropy blob because the word check rejected four consonants in a row, which `unsubscribe`, `subscribe`, `construct` and `abstract` all contain. The limit is now five. A value with digits or a real key shape under `token` still reports.
+  - `no-sensitive-data-exposure` no longer reports `` `unexpected key type: ${privateKey.type}` `` (honojs/hono `src/utils/jwt/jws.ts:110`). `type`, `algorithm`, `extractable` and `usages` are CryptoKey's own attributes and cannot carry the key; `privateKey`, `privateKey.pem` and `privateKey.value` still report.
+  - `import-next/no-default-export` no longer throws on `export default class {}` in plain JavaScript. espree gives a class no `decorators` field and the 4.1.2 autofix read its `length`.
+
+- **📚 Docs** — the npm description and keywords now say what people search for
+
+  The description reads "ESLint import rules — eslint-plugin-import replacement for ESLint 10 (and 8, 9)", keeps the 95% measurement and says flat config only; the "3.1x faster" claim is out of the one-line description. Five keywords added: `eslint-plugin-import-replacement`, `eslint-10`, `eslint10`, `flat-config`, `peer-dependency`. No code change.
+
 ## 4.1.5
 
 ### Patch Changes

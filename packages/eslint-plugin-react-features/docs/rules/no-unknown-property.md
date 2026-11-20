@@ -78,6 +78,14 @@ React uses camelCase for DOM attributes and has some renamed attributes (e.g., `
 }
 ```
 
+## Options
+
+| Option                 | Type       | Default | Description |
+| ---------------------- | ---------- | ------- | ----------- |
+| `ignore`               | `string[]` | `[]`    | Attribute names to leave alone, wherever they are written |
+| `requireDataLowercase` | `boolean`  | `false` | Report a `data-*` attribute with an uppercase letter, on a component as well as on a DOM element: React drops it from the DOM |
+
+
 ## Related Rules
 
 - [`no-invalid-html-attribute`](./no-invalid-html-attribute.md) - Validate attribute values

@@ -13,34 +13,11 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { findAttribute, intrinsicName, judgedValue } from '../utils/jsx-static';
+import { findAttribute, intrinsicName } from '../utils/jsx-static';
 
 type MessageIds = 'missingKeyboardEvent';
 
 type RuleOptions = [];
-
-// WAI-ARIA widget roles: on a component they keep the exemption the rule
-// always gave them (see below).
-const INTERACTIVE_ARIA_ROLES = new Set([
-  'button',
-  'link',
-  'checkbox',
-  'menuitem',
-  'menuitemcheckbox',
-  'menuitemradio',
-  'option',
-  'radio',
-  'searchbox',
-  'switch',
-  'tab',
-  'textbox',
-  'treeitem',
-  'combobox',
-  'gridcell',
-  'listbox',
-  'slider',
-  'spinbutton',
-]);
 
 export const clickEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
   name: 'click-events-have-key-events',
@@ -84,6 +61,14 @@ export const clickEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
 
         if (!hasOnClick) return;
 
+        // Only a DOM element has a fixed, known set of built-in key handling to
+        // check for. A custom component (`<Button onClick={go}>`) may render a
+        // native `<button>` underneath and already be keyboard-operable; there is
+        // no way to know from the call site, so — as upstream jsx-a11y does —
+        // this rule only ever checks intrinsic (lower-case) elements (#1561).
+        const tagName = intrinsicName(node);
+        if (tagName === null) return;
+
         const hasKeyboardEvent = node.attributes.some(
           (
             attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
@@ -96,26 +81,12 @@ export const clickEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
         // Native interactive elements fire click from the keyboard themselves.
         // An <a> is one only with an href; an ARIA role adds no key handling
         // (WAI-ARIA APG: the author implements Enter/Space).
-        const tagName =
-          node.name.type === 'JSXIdentifier' ? node.name.name : null;
         const isInteractive =
           ['button', 'input', 'select', 'textarea', 'option'].includes(
-            tagName || '',
+            tagName,
           ) ||
           (tagName === 'a' && findAttribute(node, 'href') !== undefined);
         if (isInteractive) return;
-
-        // A component with an interactive role (`<Link component="button"
-        // role="link">`) may render a native control that handles keys
-        // itself: reporting it is a guess, so the exemption it always had
-        // stays for components. On an intrinsic element the role adds none.
-        if (
-          intrinsicName(node) === null &&
-          INTERACTIVE_ARIA_ROLES.has(
-            judgedValue(node, findAttribute(node, 'role')) ?? '',
-          )
-        )
-          return;
 
         if (!hasKeyboardEvent) {
           context.report({

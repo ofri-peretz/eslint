@@ -134,7 +134,7 @@ Using one of these plugins in a public repository and want it listed? Open an is
 
 <!-- AUTO-GENERATED:NUMBERS:START - Do not edit manually -->
 
-**31 published plugins · 499 rules** — 22 security plugins (291 rules), 7 code-quality plugins (110 rules), 2 React plugins (98 rules). <sub>Counts generated 2026-11-18 from the source tree — never hand-typed.</sub>
+**31 published plugins · 503 rules** — 22 security plugins (291 rules), 7 code-quality plugins (110 rules), 2 React plugins (102 rules). <sub>Counts generated 2026-11-20 from the source tree — never hand-typed.</sub>
 
 <!-- AUTO-GENERATED:NUMBERS:END -->
 
@@ -183,9 +183,9 @@ that match your stack; ignore the other twenty-eight.
 
 <sub>1 plugin · 58 rules</sub>
 
-| Package                                                                                | Rules | What it catches                                                                                                                                      | Docs                                                                                                                               | Downloads                                                                                      |
-| :------------------------------------------------------------------------------------- | ----: | :--------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |    58 | A drop-in replacement for eslint-plugin-import that passes 95% of its own test cases, covering imports and module boundaries, 3.1x faster end-to-end | [docs](https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-import-next?style=flat-square&label=) |
+| Package                                                                                | Rules | What it catches                                                                                                                                                                  | Docs                                                                                                                               | Downloads                                                                                      |
+| :------------------------------------------------------------------------------------- | ----: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |    58 | Eslint-plugin-import replacement for ESLint 10 (and 8, 9): same import/* rule names and settings (node, typescript and custom-alias resolvers), passes 95% of its own test cases | [docs](https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-import-next?style=flat-square&label=) |
 
 ### ✨ Code quality
 
@@ -202,11 +202,11 @@ that match your stack; ignore the other twenty-eight.
 
 ### ⚛️ React
 
-<sub>2 plugins · 98 rules</sub>
+<sub>2 plugins · 102 rules</sub>
 
 | Package                                                                                      | Rules | What it catches                                                                                          | Docs                                                                                                                                  | Downloads                                                                                         |
 | :------------------------------------------------------------------------------------------- | ----: | :------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------ |
-| [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) |    61 | Prop-types, JSX correctness, render performance, and class-to-hooks migration for modern React codebases | [docs](https://eslint.interlace.tools/docs/quality/plugin-react-features?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-react-features?style=flat-square&label=) |
+| [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) |    65 | Prop-types, JSX correctness, render performance, and class-to-hooks migration for modern React codebases | [docs](https://eslint.interlace.tools/docs/quality/plugin-react-features?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-react-features?style=flat-square&label=) |
 | [`eslint-plugin-react-a11y`](https://www.npmjs.com/package/eslint-plugin-react-a11y)         |    37 | WCAG 2.1 rules for ARIA, alt text, keyboard interaction, and focus management, with auto-fixes           | [docs](https://eslint.interlace.tools/docs/quality/plugin-react-a11y?utm_source=github&utm_medium=referral&utm_campaign=monorepo)     | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-react-a11y?style=flat-square&label=)     |
 
 <!-- AUTO-GENERATED:PACKAGE_TABLE:END -->

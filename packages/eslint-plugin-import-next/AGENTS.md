@@ -4,7 +4,7 @@
 
 Guide for AI coding assistants using this plugin in a project. To change the plugin's own source, read https://github.com/ofri-peretz/eslint/blob/main/AGENTS.md instead.
 
-> ESLint import rules — a drop-in replacement for eslint-plugin-import that passes 95% of its own test cases, covering imports and module boundaries, 3.1x faster end-to-end.
+> ESLint import rules — eslint-plugin-import replacement for ESLint 10 (and 8, 9): same import/* rule names and settings (node, typescript and custom-alias resolvers), passes 95% of its own test cases. Flat config.
 
 ## Enable it
 

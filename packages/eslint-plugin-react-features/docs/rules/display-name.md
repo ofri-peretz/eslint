@@ -230,6 +230,16 @@ ThemeProvider.displayName = 'ThemeProvider';
 | **LLM-Optimized**    | ✅ Yes              | ❌ No               | ❌ No              |
 | **ESLint MCP**       | ✅ Optimized        | ❌ No               | ❌ No              |
 
+## Options
+
+| Option                 | Type      | Default | Description |
+| ---------------------- | --------- | ------- | ----------- |
+| `ignoreTranspilerName` | `boolean` | `false` | Do not take a component's name from the code around it. A class, a PascalCase function that returns JSX, an object method component or a `createReactClass` call must set `displayName` itself (`static displayName`, `Foo.displayName = ...`, or the `displayName` key); a minifier renames the rest |
+| `checkContextObjects`  | `boolean` | `false` | Also report `React.createContext()` objects with no `displayName` (React 16.3 and later) |
+
+`settings.react.createClass` (default `createReactClass`) and `settings.react.pragma` name the factory `ignoreTranspilerName` recognises.
+
+
 ## Related Rules
 
 - [`jsx-key`](./jsx-key.md) - Enforce keys in lists

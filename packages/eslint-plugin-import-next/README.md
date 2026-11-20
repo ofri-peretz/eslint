@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  Next-generation import sorting, validation, and architectural boundaries.
+  ESLint rules for import order, no-cycle and module boundaries, graded against the eslint-plugin-import test suite.
 </p>
 
 <p align="center">
@@ -20,11 +20,40 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
 </p>
 
-> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
+<!-- AUTO-GENERATED:LEAD:START - Do not edit manually -->
+
+**A drop-in for `eslint-plugin-import`: change one import line, keep your config.** It passes **2,035 of 2,135** (95.3%) of `eslint-plugin-import`@2.32.0's own test cases, and **all 45 of its tested rules are implemented**. Measured 2026-11-19 on ESLint 10.14.0; [how it is graded](#-parity-with-eslint-plugin-import).
+
+<!-- AUTO-GENERATED:LEAD:END -->
+
+## Getting Started
+
+- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next). 📚
+
+<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
+
+```bash
+npm install --save-dev eslint eslint-plugin-import-next
+```
+
+```js
+// eslint.config.mjs
+import { configs } from 'eslint-plugin-import-next';
+
+export default [configs.recommended];
+```
+
+`recommended` is the preset to start with. The others are listed under Configuration Presets below.
+
+Coming from `eslint-plugin-import`? Change one import line and keep your config: see [Migrating from `eslint-plugin-import`](#migrating-from-eslint-plugin-import).
+
+Using oxlint or Vite+? Install `oxlint-plugin-import-next`: the same rules under the same `import-next/<rule>` IDs, without ESLint. Its [page](https://www.npmjs.com/package/oxlint-plugin-import-next) has the setup.
+
+<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## Description
 
-This plugin provides Next-generation import sorting, validation, and architectural boundaries.
+This plugin provides ESLint rules for import order, no-cycle and module boundaries, graded against the eslint-plugin-import test suite.
 
 <!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
 
@@ -41,40 +70,6 @@ That trade costs recall, and we measure it:
 · [a false positive is a bug](https://github.com/ofri-peretz/eslint/issues).
 
 <!-- AUTO-GENERATED:DOCTRINE:END -->
-
-## Getting Started
-
-- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next). 📚
-
-<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
-
-**oxlint / Vite+** — the same rules under the same `import-next/<rule>` IDs, without ESLint:
-
-```bash
-npm install oxlint-plugin-import-next --save-dev
-```
-
-```jsonc
-// .oxlintrc.json
-{ "jsPlugins": ["oxlint-plugin-import-next"] }
-```
-
-```ts
-// vite.config.ts
-import { defineConfig } from 'vite-plus';
-
-export default defineConfig({
-  lint: { jsPlugins: ['oxlint-plugin-import-next'] },
-});
-```
-
-**ESLint:**
-
-```bash
-npm install eslint-plugin-import-next --save-dev
-```
-
-<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## ⚙️ Configuration Presets
 | Preset              | Description                                      |
@@ -93,7 +88,7 @@ npm install eslint-plugin-import-next --save-dev
 
 ## 🔄 Parity with `eslint-plugin-import`
 
-**A drop-in replacement for `eslint-plugin-import`, measured.** Graded by `eslint-plugin-import`'s own test suite, `import-next` passes **2,035 of 2,135** (95.3%) of `eslint-plugin-import`@2.32.0's own test cases, and **all 45 of its tested rules are implemented**. [Measured 2026-11-19](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/results/ilb-import-parity/2026-11-19.json).
+**A drop-in replacement for `eslint-plugin-import`, measured.** The grade at the top of this page is `eslint-plugin-import`'s own test suite run against `import-next`. [Measured 2026-11-19](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/results/ilb-import-parity/2026-11-19.json).
 
 - **Every graded option shape loads.** No graded case sets an option `import-next` rejects, so a config carried over from `eslint-plugin-import` loads, and the options mean what they meant there: `extensions: ["always"]`, `order`'s `newlines-between` and `pathGroups`, `no-restricted-paths`'s `zones`, `no-cycle`'s `commonjs` and `maxDepth: "∞"`, among others. Where an `eslint-plugin-import` default differs from this plugin's own, this plugin's default applies when the option is absent; each rule's docs say where. One option outside the graded cases is still rejected rather than accepted and ignored: `no-unused-modules`'s `unusedExports`, which is not implemented.
 - **Other modules are read without type information.** `named`, `namespace`, `default`, `no-deprecated`, `no-named-as-default`, `no-named-as-default-member` and `export` parse the imported module, as `eslint-plugin-import` does, when there is no TypeScript program; with one, they read it through TypeScript.
@@ -312,11 +307,10 @@ Part of the **Interlace ESLint ecosystem** — AI-native rules with LLM-optimize
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:END -->
 
 <!-- INTERLACE:STAR_CTA:START -->
-## ⭐ Support & follow
 
-If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+## Support
 
-[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+Found a false positive? [Open an issue](https://github.com/ofri-peretz/eslint/issues): that is a bug. If the plugin helped, a star on [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint) helps others find it.
 
 <!-- INTERLACE:STAR_CTA:END -->
 

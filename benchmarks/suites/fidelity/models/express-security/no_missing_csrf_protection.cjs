@@ -32,6 +32,9 @@ module.exports = {
     const ctx = tag(s.ctx);
     const m = tag(s.mw);
     const path = ctx === 'IgnorePublic' ? '/api/public/users' : '/api/users';
+    // A `(req, res)` handler on a literal path is Express evidence by itself
+    // (#1616), so the no-Express fixture registers on an imported constant.
+    const target = ctx === 'NoExpress' ? 'USERS_PATH' : `'${path}'`;
     const handler = '(req: any, res: any) => {\n  res.json({ ok: true });\n}';
     const head =
       ctx === 'NoExpress'
@@ -57,11 +60,12 @@ module.exports = {
     }[route];
     const reg =
       route === 'ChainPost'
-        ? `app.route('${path}').get(listUsers).${verb}(${MW[m]}${handler});`
-        : `${recv}.${verb}('${path}', ${MW[m]}${handler});`;
+        ? `app.route(${target}).get(listUsers).${verb}(${MW[m]}${handler});`
+        : `${recv}.${verb}(${target}, ${MW[m]}${handler});`;
     return [
       ...head,
       "import { csrf, csurf, csrfProtection, antiForgery, authenticate, listUsers } from './middleware';",
+      ctx === 'NoExpress' ? "import { USERS_PATH } from './paths';" : '',
       m === 'GlobalCsrf' ? `${recv}.use(csrf());` : '',
       reg,
       '',

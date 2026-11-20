@@ -1,0 +1,41 @@
+{
+  "rule": "no-unsafe",
+  "source": "eslint-plugin-react@7.37.5 tests/lib/rules/no-unsafe.js (MIT)",
+  "cases": [
+    {
+      "kind": "valid",
+      "n": 21,
+      "code": "\n        class Foo extends React.Component {\n          UNSAFE_componentWillMount() {}\n          UNSAFE_componentWillReceiveProps() {}\n          UNSAFE_componentWillUpdate() {}\n        }\n      \n// features: [], parser: default, settings: {\"react\":{\"version\":\"16.2.0\"}}",
+      "settings": {
+        "react": {
+          "version": "16.2.0"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 23,
+      "code": "\n        class Foo extends React.Component {\n          UNSAFE_componentWillMount() {}\n          UNSAFE_componentWillReceiveProps() {}\n          UNSAFE_componentWillUpdate() {}\n        }\n      \n// features: [], parser: @typescript-eslint/parser, settings: {\"react\":{\"version\":\"16.2.0\"}}",
+      "settings": {
+        "react": {
+          "version": "16.2.0"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    }
+  ]
+}

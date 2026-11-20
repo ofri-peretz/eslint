@@ -27,6 +27,7 @@
         "security-plugins-one-flat-config",
         "eslint-plugin-security-alternatives",
         "nestjs-security-linting-eslint-oxlint-nest-12",
+        "upgrade-eslint-10-eslint-plugin-import",
         "eslint-plugin-react-eslint-10",
         "---Reference---",
         "concepts/compatibility",
