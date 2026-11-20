@@ -103,7 +103,7 @@ describe('stack map matches the plugins', () => {
     const inMap = new Set(
       MAP.plugins.map((p: { package: string }) => p.package),
     );
-    const notSecurity = [
+    const notSecurity = new Set([
       'eslint-plugin-import-next',
       'eslint-plugin-react-a11y',
       'eslint-plugin-react-features',
@@ -115,13 +115,13 @@ describe('stack map matches the plugins', () => {
       'eslint-plugin-operability',
       'eslint-plugin-reliability',
       'eslint-plugin-eslint-devkit',
-    ];
+    ]);
     const securityDirs = Object.keys(loaders)
       .map((k) => /packages\/(eslint-plugin-[^/]+)\//.exec(k)![1])
       .filter((d) => /-security$|secure-coding$/.test(d));
     for (const d of securityDirs)
       expect(
-        inMap.has(d) || notSecurity.includes(d),
+        inMap.has(d) || notSecurity.has(d),
         `${d} is a security plugin missing from stack-map.json`,
       ).toBe(true);
   });
