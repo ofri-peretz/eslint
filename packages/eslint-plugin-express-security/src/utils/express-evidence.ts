@@ -5,7 +5,7 @@
  */
 
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, propertyName } from '@interlace/eslint-devkit';
 
 /**
  * Packages that put an Express application in a file.
@@ -167,6 +167,67 @@ function hasMiddlewareSignature(node: TSESTree.Node): boolean {
   );
 }
 
+/** The verbs a Connect-style router registers a path handler with. */
+const ROUTE_REGISTRARS: ReadonlySet<string> = new Set([
+  'get',
+  'post',
+  'put',
+  'patch',
+  'delete',
+  'head',
+  'options',
+  'all',
+  'use',
+]);
+
+/**
+ * `app.get('/path', guard, (req, res) => …)`: a handler registered against a
+ * literal path, with the Express `(req, res)` parameter pair.
+ *
+ * This is the shape of the route modules that receive `app` from their caller
+ * (`module.exports = (app, db) => { app.get(...) }`) and so import nothing, and
+ * it is the same two-argument handler the middleware arm refuses on its own
+ * because `node:http` and Next.js share it. What makes it evidence here is the
+ * registration around it: a path string starting with `/` followed by handler
+ * arguments is the router contract, and the `req`/`res` pair names the
+ * Express-shaped request and response. `cache.get('/key', fn)` has no
+ * `(req, res)` handler, and Fastify (`request, reply`) and Koa (`ctx`) name
+ * their handlers differently, so none of them opens the gate.
+ */
+function isRouteRegistration(node: TSESTree.Node): boolean {
+  if (
+    node.type !== AST_NODE_TYPES.CallExpression ||
+    node.callee.type !== AST_NODE_TYPES.MemberExpression
+  ) {
+    return false;
+  }
+  const verb = propertyName(node.callee);
+  if (verb === null || !ROUTE_REGISTRARS.has(verb)) return false;
+  const [path, ...handlers] = node.arguments;
+  if (
+    path?.type !== AST_NODE_TYPES.Literal ||
+    typeof path.value !== 'string' ||
+    !path.value.startsWith('/')
+  ) {
+    return false;
+  }
+  return handlers.some((handler) => {
+    if (
+      handler.type !== AST_NODE_TYPES.FunctionExpression &&
+      handler.type !== AST_NODE_TYPES.ArrowFunctionExpression
+    ) {
+      return false;
+    }
+    const [first, second] = handler.params;
+    return (
+      first?.type === AST_NODE_TYPES.Identifier &&
+      second?.type === AST_NODE_TYPES.Identifier &&
+      REQ_NAMES.has(first.name) &&
+      RES_NAMES.has(second.name)
+    );
+  });
+}
+
 /**
  * One evidence scan per file, not one per rule.
  *
@@ -189,8 +250,9 @@ const cache = new WeakMap<TSESTree.Program, boolean>();
  * function (60%) import no `express` — route modules routinely receive `app` or
  * `router` from their caller.
  *
- * So: an `express` import / `require` / dynamic `import()`, or a
- * `(req, res, next)` middleware signature. Both are local to the file — nothing
+ * So: an `express` import / `require` / dynamic `import()`, a
+ * `(req, res, next)` middleware signature, or a `(req, res)` handler registered
+ * against a literal path (`app.get('/x', (req, res) => …)`). Both are local to the file — nothing
  * is read from `package.json` and nothing is resolved across files, so there is
  * no project state to go stale and no dependency on lint order.
  */
@@ -220,7 +282,8 @@ function computeUsesExpress(ast: TSESTree.Program): boolean {
     if (
       isImportEqualsLoad(node) ||
       isExpressDynamicLoad(node, requireIsShadowed) ||
-      hasMiddlewareSignature(node)
+      hasMiddlewareSignature(node) ||
+      isRouteRegistration(node)
     ) {
       found = true;
       return;
