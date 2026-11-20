@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-supabase-security",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "ESLint Supabase security rules — catches the service_role key reaching client code, RPC called with a computed function name, auth results whose error is discarded, and storage buckets created public.",
   "type": "commonjs",
   "sideEffects": false,

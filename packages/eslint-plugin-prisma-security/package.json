@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-prisma-security",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "ESLint Prisma security rules for @prisma/client — detects SQL injection in raw queries built with string concatenation or template literals.",
   "type": "commonjs",
   "sideEffects": false,

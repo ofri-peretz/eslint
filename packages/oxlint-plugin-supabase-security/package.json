@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-supabase-security",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Oxlint Supabase security rules — catches the service_role key reaching client code, RPC called with a computed function name, auth results whose error is discarded, and storage buckets created public. Same rules and rule IDs as eslint-plugin-supabase-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
@@ -69,6 +69,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-supabase-security": "2.0.2"
+    "eslint-plugin-supabase-security": "2.0.3"
   }
 }

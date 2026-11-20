@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-nestjs-security",
-  "version": "4.2.2",
+  "version": "4.2.3",
   "description": "Oxlint NestJS security rules — detects missing auth guards, missing validation pipes, unthrottled routes, and exposed private fields. Same rules and rule IDs as eslint-plugin-nestjs-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
@@ -75,6 +75,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-nestjs-security": "4.2.2"
+    "eslint-plugin-nestjs-security": "4.2.3"
   }
 }

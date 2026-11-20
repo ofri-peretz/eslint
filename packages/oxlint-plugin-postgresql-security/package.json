@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-postgresql-security",
-  "version": "3.0.4",
+  "version": "3.0.5",
   "description": "Oxlint Postgres security rules for the pg PostgreSQL driver — detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL. Same rules and rule IDs as eslint-plugin-postgresql-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
@@ -74,6 +74,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-postgresql-security": "3.0.4"
+    "eslint-plugin-postgresql-security": "3.0.5"
   }
 }

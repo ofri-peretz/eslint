@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-typeorm-security",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "ESLint TypeORM security rules — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials.",
   "type": "commonjs",
   "sideEffects": false,

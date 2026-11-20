@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-lambda-security",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "ESLint Lambda security rules for AWS Lambda — detects overly permissive IAM policies and CORS, unvalidated event bodies, secrets in env vars, and leaked error details.",
   "type": "commonjs",
   "sideEffects": false,

@@ -48,7 +48,7 @@ withCanonicalDocsUrls('plugin-knex-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-knex-security',
-    version: '2.0.2',
+    version: '2.0.3',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
