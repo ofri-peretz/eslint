@@ -4,9 +4,9 @@
   "generatedAt": "2026-11-20",
   "totalPlugins": 32,
   "totalRules": 503,
-  "oxlintCompatible": 502,
+  "oxlintCompatible": 503,
   "oxlintPartial": 0,
-  "oxlintBlocked": 1,
+  "oxlintBlocked": 0,
   "plugins": [
     {
       "package": "eslint-plugin-anthropic-security",
@@ -1460,11 +1460,8 @@
         },
         {
           "name": "prefer-at",
-          "portability": "incompatible",
-          "blockers": [
-            "Type-aware (requires TS, no parserServices in oxlint)",
-            "TS↔ESTree bridge (no type bridge in oxlint)"
-          ],
+          "portability": "compatible",
+          "blockers": [],
           "isTypeAware": true
         },
         {

@@ -11,6 +11,8 @@
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import {
   createRule,
+  getParserServices,
+  hasParserServices,
   isAnyType,
   isGlobalReference,
   isUnknownType,
@@ -265,11 +267,9 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
      * Syntax cannot tell them from an array, so the type decides when it can.
      */
     const typeHasAt = (node: TSESTree.Node): boolean | undefined => {
-      const services = context.sourceCode.parserServices;
-      if (!services?.program || !services.esTreeNodeToTSNodeMap) {
-        return undefined;
-      }
-      const checker = services.program.getTypeChecker();
+      if (!hasParserServices(context)) return undefined;
+      const services = getParserServices(context);
+      const checker = services.program!.getTypeChecker();
       const type = checker.getTypeAtLocation(
         services.esTreeNodeToTSNodeMap.get(node),
       );
