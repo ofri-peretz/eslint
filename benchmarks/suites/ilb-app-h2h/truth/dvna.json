@@ -1,0 +1,319 @@
+{
+  "app": "dvna",
+  "commit": "9ba473add536f66ac9007966acb2a775dd31277a",
+  "method": "Truth from the maintainers' own fix history and docs. origin/fixes is a separate 2017 history (no merge base with the pin): its 16 numbered 'Fix #N' commits are the mechanical hunks; each removed line was located by text in the pin's files. Vulnerabilities added after 2017 (XXE, insecure deserialization) and the logging chapter come from docs/solution/*.md, which quotes the vulnerable code. Fix #1 (sitewide input validation) wraps the same sinks as DV-01/DV-02 and is not a separate row. Fix #4 also fixes user enumeration in forgotPw (authHandler.js 31,36,59,64); it is not listed in the docs page, so it is not a row. Built before any linter ran; single author, no independent second table yet.",
+  "lintable": "y = a pattern a syntactic rule could flag; maybe = needs data flow or absence detection; n = not visible to a linter (template file, dependency version, missing control). Decided before the first run.",
+  "items": [
+    {
+      "id": "DV-01",
+      "class": "sql-injection",
+      "cwe": "CWE-89",
+      "file": "core/appHandler.js",
+      "ranges": [[10, 13]],
+      "lintable": "y",
+      "vulnerability": "SQL injection in User Search (raw query built by concatenation)",
+      "fixCommit": "dc1f9c5 (Fix #2 Raw Query to ORM; also e246018 Fix #1)",
+      "docPage": "a1-injection.md",
+      "source": [
+        "https://github.com/appsecco/dvna/commit/dc1f9c5 (Fix #2 Raw Query to ORM; also e246018 Fix #1)",
+        "https://github.com/appsecco/dvna/blob/9ba473add536f66ac9007966acb2a775dd31277a/docs/solution/a1-injection.md"
+      ],
+      "note": "req.body.login concatenated into sequelize.query"
+    },
+    {
+      "id": "DV-02",
+      "class": "os-command-injection",
+      "cwe": "CWE-78",
+      "file": "core/appHandler.js",
+      "ranges": [[39, 39]],
+      "lintable": "y",
+      "vulnerability": "Command injection in Ping (exec with concatenated address)",
+      "fixCommit": "4fe36fc (Fix #3 exec to execFile)",
+      "docPage": "a1-injection.md",
+      "source": [
+        "https://github.com/appsecco/dvna/commit/4fe36fc (Fix #3 exec to execFile)",
+        "https://github.com/appsecco/dvna/blob/9ba473add536f66ac9007966acb2a775dd31277a/docs/solution/a1-injection.md"
+      ],
+      "note": "exec('ping -c 2 ' + req.body.address)"
+    },
+    {
+      "id": "DV-03",
+      "class": "weak-password-recovery",
+      "cwe": "CWE-640",
+      "file": "core/authHandler.js",
+      "ranges": [
+        [49, 49],
+        [78, 78]
+      ],
+      "lintable": "maybe",
+      "vulnerability": "Insecure reset password: token is md5(login), guessable",
+      "fixCommit": "c8d519e (Fix #4 Improved Forgot Password)",
+      "docPage": "a2-broken-auth.md",
+      "source": [
+        "https://github.com/appsecco/dvna/commit/c8d519e (Fix #4 Improved Forgot Password)",
+        "https://github.com/appsecco/dvna/blob/9ba473add536f66ac9007966acb2a775dd31277a/docs/solution/a2-broken-auth.md"
+      ],
+      "note": "token == md5(login) in resetPw and resetPwSubmit"
+    },
+    {
+      "id": "DV-04",
+      "class": "hardcoded-secret",
+      "cwe": "CWE-798",
+      "file": "server.js",
+      "ranges": [[24, 24]],
+      "lintable": "y",
+      "vulnerability": "Hard-coded session secret ('keyboard cat')",
+      "fixCommit": "1d01e9a (Fix #15 Hardcoded Session Secret Fix)",
+      "docPage": "a2-broken-auth.md",
+      "source": [
+        "https://github.com/appsecco/dvna/commit/1d01e9a (Fix #15 Hardcoded Session Secret Fix)",
+        "https://github.com/appsecco/dvna/blob/9ba473add536f66ac9007966acb2a775dd31277a/docs/solution/a2-broken-auth.md"
+      ],
+      "note": "docs section 'Insecure Session Secret'"
+    },
+    {
+      "id": "DV-05",
+      "class": "xss-template",
+      "cwe": "CWE-79",
+      "file": "views/app/products.ejs",
+      "ranges": [
+        [20, 20],
+        [49, 53]
+      ],
+      "lintable": "n",
+      "vulnerability": "Reflected XSS in product search (unescaped <%- output)",
+      "fixCommit": "6acbb14 (Fix #5 XSS Fix)",
+      "docPage": "a7-xss.md",
+      "source": [
+        "https://github.com/appsecco/dvna/commit/6acbb14 (Fix #5 XSS Fix)",
+        "https://github.com/appsecco/dvna/blob/9ba473add536f66ac9007966acb2a775dd31277a/docs/solution/a7-xss.md"
+      ],
+      "note": "EJS template: outside any JS lint scope"
+    },
+    {
+      "id": "DV-06",
+      "class": "sensitive-data-exposure",
+      "cwe": "CWE-200",
+      "file": "core/appHandler.js",
+      "ranges": [[206, 213]],
+      "lintable": "maybe",
+      "vulnerability": "Users API returns whole user objects including password hashes",
+      "fixCommit": "7c28c2e (Fix #8 User info leak fix)",
+      "docPage": "a3-sensitive-data-exposure.md",
+      "source": [
+        "https://github.com/appsecco/dvna/commit/7c28c2e (Fix #8 User info leak fix)",
+        "https://github.com/appsecco/dvna/blob/9ba473add536f66ac9007966acb2a775dd31277a/docs/solution/a3-sensitive-data-exposure.md"
+      ],
+      "note": "db.User.findAll({}) sent as JSON"
+    },
+    {
+      "id": "DV-07",
+      "class": "idor",
+      "cwe": "CWE-639",
+      "file": "core/appHandler.js",
+      "ranges": [
+        [145, 148],
+        [173, 174]
+      ],
+      "lintable": "maybe",
+      "vulnerability": "Missing authorization check in Edit User (id taken from request body)",
+      "fixCommit": "edfe31c (Fix #9 UserEdit IDOR Fix)",
+      "docPage": "a5-broken-access-control.md",
+      "source": [
+        "https://github.com/appsecco/dvna/commit/edfe31c (Fix #9 UserEdit IDOR Fix)",
+        "https://github.com/appsecco/dvna/blob/9ba473add536f66ac9007966acb2a775dd31277a/docs/solution/a5-broken-access-control.md"
+      ],
+      "note": "User.find by req.body.id instead of req.user"
+    },
+    {
+      "id": "DV-08",
+      "class": "missing-access-control",
+      "cwe": "CWE-862",
+      "file": "routes/app.js",
+      "ranges": [[42, 44]],
+      "lintable": "maybe",
+      "vulnerability": "Unauthorized access to Users API / admin users page (no admin check)",
+      "fixCommit": "1d10d26 (Fix #11 Added admin authorization checks)",
+      "docPage": "a5-broken-access-control.md",
+      "source": [
+        "https://github.com/appsecco/dvna/commit/1d10d26 (Fix #11 Added admin authorization checks)",
+        "https://github.com/appsecco/dvna/blob/9ba473add536f66ac9007966acb2a775dd31277a/docs/solution/a5-broken-access-control.md"
+      ],
+      "note": "routes /admin/usersapi and /admin/users guarded only by isAuthenticated"
+    },
+    {
+      "id": "DV-09",
+      "class": "csrf",
+      "cwe": "CWE-352",
+      "file": "routes/app.js",
+      "ranges": [
+        [1, 1],
+        [50, 64]
+      ],
+      "lintable": "maybe",
+      "vulnerability": "CSRF in product add/edit and user edit (no anti-CSRF token)",
+      "fixCommit": "2c88ab8 (Fix #12 CSRF Fix)",
+      "docPage": "ax-csrf.md",
+      "source": [
+        "https://github.com/appsecco/dvna/commit/2c88ab8 (Fix #12 CSRF Fix)",
+        "https://github.com/appsecco/dvna/blob/9ba473add536f66ac9007966acb2a775dd31277a/docs/solution/ax-csrf.md"
+      ],
+      "note": "no csurf middleware; absence"
+    },
+    {
+      "id": "DV-10",
+      "class": "open-redirect",
+      "cwe": "CWE-601",
+      "file": "core/appHandler.js",
+      "ranges": [[186, 192]],
+      "lintable": "y",
+      "vulnerability": "Unvalidated redirect (res.redirect(req.query.url))",
+      "fixCommit": "0df0980 (Fix #14 Unvalidated Redirect Fix)",
+      "docPage": "ax-unvalidated-redirects-and-forwards.md",
+      "source": [
+        "https://github.com/appsecco/dvna/commit/0df0980 (Fix #14 Unvalidated Redirect Fix)",
+        "https://github.com/appsecco/dvna/blob/9ba473add536f66ac9007966acb2a775dd31277a/docs/solution/ax-unvalidated-redirects-and-forwards.md"
+      ],
+      "note": ""
+    },
+    {
+      "id": "DV-11",
+      "class": "missing-hardening-middleware",
+      "cwe": "CWE-693",
+      "file": "server.js",
+      "ranges": [[11, 11]],
+      "lintable": "maybe",
+      "vulnerability": "X-Powered-By header not disabled",
+      "fixCommit": "e581000 (Fix #7 Disabled x-powered-by)",
+      "docPage": "a6-securty-misconfig.md",
+      "source": [
+        "https://github.com/appsecco/dvna/commit/e581000 (Fix #7 Disabled x-powered-by)",
+        "https://github.com/appsecco/dvna/blob/9ba473add536f66ac9007966acb2a775dd31277a/docs/solution/a6-securty-misconfig.md"
+      ],
+      "note": "absence; docs section 'X-Powered-By header'"
+    },
+    {
+      "id": "DV-12",
+      "class": "error-detail-leak",
+      "cwe": "CWE-209",
+      "file": "core/appHandler.js",
+      "ranges": [[194, 204]],
+      "lintable": "n",
+      "vulnerability": "Stack trace sent from calculator (no error handling around mathjs.eval)",
+      "fixCommit": "9b17e5a (Fix #6 Calc error handling)",
+      "docPage": "a6-securty-misconfig.md",
+      "source": [
+        "https://github.com/appsecco/dvna/commit/9b17e5a (Fix #6 Calc error handling)",
+        "https://github.com/appsecco/dvna/blob/9ba473add536f66ac9007966acb2a775dd31277a/docs/solution/a6-securty-misconfig.md"
+      ],
+      "note": "absence of try/catch"
+    },
+    {
+      "id": "DV-13",
+      "class": "vulnerable-dependency",
+      "cwe": "CWE-1395",
+      "file": "package.json",
+      "ranges": [[24, 24]],
+      "lintable": "n",
+      "vulnerability": "mathjs 3.10.1 has a known RCE",
+      "fixCommit": "5f1a4ca (Fix #13 mathjs update)",
+      "docPage": "a9-using-components-with-known-vulnerability.md",
+      "source": [
+        "https://github.com/appsecco/dvna/commit/5f1a4ca (Fix #13 mathjs update)",
+        "https://github.com/appsecco/dvna/blob/9ba473add536f66ac9007966acb2a775dd31277a/docs/solution/a9-using-components-with-known-vulnerability.md"
+      ],
+      "note": "JSON dependency version"
+    },
+    {
+      "id": "DV-14",
+      "class": "expression-eval-injection",
+      "cwe": "CWE-95",
+      "file": "core/appHandler.js",
+      "ranges": [[195, 198]],
+      "lintable": "maybe",
+      "vulnerability": "User input evaluated by mathjs.eval in the calculator (the RCE path of the vulnerable component)",
+      "fixCommit": "5f1a4ca (Fix #13 mathjs update)",
+      "docPage": "a9-using-components-with-known-vulnerability.md",
+      "source": [
+        "https://github.com/appsecco/dvna/commit/5f1a4ca (Fix #13 mathjs update)",
+        "https://github.com/appsecco/dvna/blob/9ba473add536f66ac9007966acb2a775dd31277a/docs/solution/a9-using-components-with-known-vulnerability.md"
+      ],
+      "note": "docs: 'The calculator implementation uses mathjs.eval to evaluate user input'"
+    },
+    {
+      "id": "DV-15",
+      "class": "xxe",
+      "cwe": "CWE-611",
+      "file": "core/appHandler.js",
+      "ranges": [[235, 235]],
+      "lintable": "y",
+      "vulnerability": "XML external entity injection (libxmljs parseXmlString with noent:true)",
+      "fixCommit": "",
+      "docPage": "a4-xxe.md",
+      "source": [
+        "https://github.com/appsecco/dvna/blob/9ba473add536f66ac9007966acb2a775dd31277a/docs/solution/a4-xxe.md"
+      ],
+      "note": "docs fix: noent:false; feature added after the 2017 fixes branch"
+    },
+    {
+      "id": "DV-16",
+      "class": "insecure-deserialization",
+      "cwe": "CWE-502",
+      "file": "core/appHandler.js",
+      "ranges": [[218, 218]],
+      "lintable": "y",
+      "vulnerability": "Insecure deserialization (node-serialize unserialize of uploaded file)",
+      "fixCommit": "",
+      "docPage": "a8-insecure-deserialization.md",
+      "source": [
+        "https://github.com/appsecco/dvna/blob/9ba473add536f66ac9007966acb2a775dd31277a/docs/solution/a8-insecure-deserialization.md"
+      ],
+      "note": "feature added after the 2017 fixes branch"
+    },
+    {
+      "id": "DV-17",
+      "class": "insufficient-logging",
+      "cwe": "CWE-778",
+      "file": "core/passport.js",
+      "ranges": [[30, 43]],
+      "lintable": "n",
+      "vulnerability": "Insufficient logging and monitoring (login events not logged)",
+      "fixCommit": "",
+      "docPage": "a10-insufficient-logging.md",
+      "source": [
+        "https://github.com/appsecco/dvna/blob/9ba473add536f66ac9007966acb2a775dd31277a/docs/solution/a10-insufficient-logging.md"
+      ],
+      "note": "docs adds winston logging to passport.js; absence"
+    },
+    {
+      "id": "DV-18",
+      "class": "query-logging",
+      "cwe": "CWE-532",
+      "file": "models/index.js",
+      "ranges": [[12, 15]],
+      "lintable": "n",
+      "vulnerability": "Sequelize query logging left on (sensitive data to logs)",
+      "fixCommit": "60ed581 (Fix #10 Disabled Sequlize Logging)",
+      "docPage": "",
+      "source": [
+        "https://github.com/appsecco/dvna/commit/60ed581 (Fix #10 Disabled Sequlize Logging)"
+      ],
+      "note": "no docs page; fix commit only"
+    },
+    {
+      "id": "DV-19",
+      "class": "template-path-injection",
+      "cwe": "CWE-98",
+      "file": "routes/main.js",
+      "ranges": [[14, 20]],
+      "lintable": "maybe",
+      "vulnerability": "Vulnerability page name from the URL used to build template paths without validation",
+      "fixCommit": "4b16c48 (Fix #16 Vulnerability Validation)",
+      "docPage": "",
+      "source": [
+        "https://github.com/appsecco/dvna/commit/4b16c48 (Fix #16 Vulnerability Validation)"
+      ],
+      "note": "no docs page; fix commit only"
+    }
+  ]
+}
