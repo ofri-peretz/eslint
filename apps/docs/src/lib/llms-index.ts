@@ -90,11 +90,11 @@ export function buildLlmsIndex(): string {
     '',
     '## Install by what the project depends on',
     '',
-    "Every plugin: `npm i -D eslint-plugin-<name>`, then `import x from 'eslint-plugin-<name>'; export default [x.configs.recommended];`. Needs Node 22.13+.",
+    "Install a plugin below with `npm i -D <package>`, then `import x from '<package>'; export default [x.configs.recommended];`. Needs Node 22.13+.",
     '',
     ...PLUGINS.map(
       ([name, when]) =>
-        `- [${name}](${SITE}/docs/security/plugin-${name}): ${when}`,
+        `- [eslint-plugin-${name}](${SITE}/docs/security/plugin-${name}): ${when}`,
     ),
     '',
     '## Limits',
