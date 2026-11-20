@@ -2101,6 +2101,26 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in"
+    },
+    "jsx-no-comment-textnodes": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "jsx-no-undef": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "jsx-uses-react": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "jsx-uses-vars": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
     }
   },
   "eslint-plugin-reliability": {

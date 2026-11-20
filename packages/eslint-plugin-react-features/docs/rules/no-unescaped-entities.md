@@ -85,6 +85,13 @@ them before this rule runs.
 }
 ```
 
+## Options
+
+| Option   | Type                                                                | Default                 | Description |
+| -------- | ------------------------------------------------------------------- | ----------------------- | ----------- |
+| `forbid` | `(string \| { char: string, alternatives: string[] })[]` | `['>', '"', "'", '}']` | The characters to report. It replaces the default set. Each occurrence is reported where it stands, and an entry with `alternatives` suggests each one as a replacement |
+
+
 ## Related Rules
 
 - [`no-danger`](./no-danger.md) - HTML injection safety

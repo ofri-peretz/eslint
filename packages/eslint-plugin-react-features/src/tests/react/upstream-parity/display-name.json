@@ -1,0 +1,1446 @@
+{
+  "rule": "display-name",
+  "source": "eslint-plugin-react@7.37.5 tests/lib/rules/display-name.js (MIT)",
+  "cases": [
+    {
+      "kind": "valid",
+      "n": 0,
+      "code": "\n        var Hello = createReactClass({\n          displayName: 'Hello',\n          render: function() {\n            return <div>Hello {this.props.name}</div>;\n          }\n        });\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 2,
+      "code": "\n        var Hello = createReactClass({\n          displayName: 'Hello',\n          render: function() {\n            return <div>Hello {this.props.name}</div>;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 3,
+      "code": "\n        var Hello = React.createClass({\n          displayName: 'Hello',\n          render: function() {\n            return <div>Hello {this.props.name}</div>;\n          }\n        });\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}], settings: {\"react\":{\"createClass\":\"createClass\"}}",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "createClass": "createClass"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 5,
+      "code": "\n        var Hello = React.createClass({\n          displayName: 'Hello',\n          render: function() {\n            return <div>Hello {this.props.name}</div>;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}], settings: {\"react\":{\"createClass\":\"createClass\"}}",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "createClass": "createClass"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 6,
+      "code": "\n        class Hello extends React.Component {\n          render() {\n            return <div>Hello {this.props.name}</div>;\n          }\n        }\n        Hello.displayName = 'Hello'\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 8,
+      "code": "\n        class Hello extends React.Component {\n          render() {\n            return <div>Hello {this.props.name}</div>;\n          }\n        }\n        Hello.displayName = 'Hello'\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 18,
+      "code": "\n        class Hello extends React.Component {\n          static get displayName() {\n            return 'Hello';\n          }\n          render() {\n            return <div>Hello {this.props.name}</div>;\n          }\n        }\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 20,
+      "code": "\n        class Hello extends React.Component {\n          static get displayName() {\n            return 'Hello';\n          }\n          render() {\n            return <div>Hello {this.props.name}</div>;\n          }\n        }\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 21,
+      "code": "\n        class Hello extends React.Component {\n          static displayName = 'Widget';\n          render() {\n            return <div>Hello {this.props.name}</div>;\n          }\n        }\n      \n// features: [class fields], parser: default, parserOptions: {\"ecmaVersion\":2022}, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "ecmaVersion": 2022,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 23,
+      "code": "\n        class Hello extends React.Component {\n          static displayName = 'Widget';\n          render() {\n            return <div>Hello {this.props.name}</div>;\n          }\n        }\n      \n// features: [class fields], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 39,
+      "code": "\n        var Hello = createReactClass({\n          displayName: 'Hello',\n          render: function() {\n            let { a, ...b } = obj;\n            let c = { ...d };\n            return <div />;\n          }\n        });\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 41,
+      "code": "\n        var Hello = createReactClass({\n          displayName: 'Hello',\n          render: function() {\n            let { a, ...b } = obj;\n            let c = { ...d };\n            return <div />;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 60,
+      "code": "\n        function Hello() {\n          return <div>Hello {this.props.name}</div>;\n        }\n        Hello.displayName = 'Hello';\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 62,
+      "code": "\n        function Hello() {\n          return <div>Hello {this.props.name}</div>;\n        }\n        Hello.displayName = 'Hello';\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 63,
+      "code": "\n        var Hello = () => {\n          return <div>Hello {this.props.name}</div>;\n        }\n        Hello.displayName = 'Hello';\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 65,
+      "code": "\n        var Hello = () => {\n          return <div>Hello {this.props.name}</div>;\n        }\n        Hello.displayName = 'Hello';\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 66,
+      "code": "\n        var Hello = function() {\n          return <div>Hello {this.props.name}</div>;\n        }\n        Hello.displayName = 'Hello';\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 68,
+      "code": "\n        var Hello = function() {\n          return <div>Hello {this.props.name}</div>;\n        }\n        Hello.displayName = 'Hello';\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 69,
+      "code": "\n        var Mixins = {\n          Greetings: {\n            Hello: function() {\n              return <div>Hello {this.props.name}</div>;\n            }\n          }\n        }\n        Mixins.Greetings.Hello.displayName = 'Hello';\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 71,
+      "code": "\n        var Mixins = {\n          Greetings: {\n            Hello: function() {\n              return <div>Hello {this.props.name}</div>;\n            }\n          }\n        }\n        Mixins.Greetings.Hello.displayName = 'Hello';\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 75,
+      "code": "\n        var Hello = createReactClass({\n          displayName: 'Hello',\n          render: function() {\n            return <div>{this._renderHello()}</div>;\n          },\n          _renderHello: function() {\n            return <span>Hello {this.props.name}</span>;\n          }\n        });\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 77,
+      "code": "\n        var Hello = createReactClass({\n          displayName: 'Hello',\n          render: function() {\n            return <div>{this._renderHello()}</div>;\n          },\n          _renderHello: function() {\n            return <span>Hello {this.props.name}</span>;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 81,
+      "code": "\n        var obj = {\n          pouf: function() {\n            return any\n          }\n        };\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 83,
+      "code": "\n        var obj = {\n          pouf: function() {\n            return any\n          }\n        };\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}]",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 90,
+      "code": "\n        import React, { createClass } from 'react';\n        export default createClass({\n          displayName: 'Foo',\n          render() {\n            return <h1>foo</h1>;\n          }\n        });\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}], settings: {\"react\":{\"createClass\":\"createClass\"}}",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "createClass": "createClass"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 92,
+      "code": "\n        import React, { createClass } from 'react';\n        export default createClass({\n          displayName: 'Foo',\n          render() {\n            return <h1>foo</h1>;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}], settings: {\"react\":{\"createClass\":\"createClass\"}}",
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "createClass": "createClass"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 188,
+      "code": "\n        import React from 'react';\n\n        const Hello = React.createContext();\n        Hello.displayName = \"HelloContext\"\n      \n// features: [], parser: default, options: [{\"checkContextObjects\":true}]",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 190,
+      "code": "\n        import React from 'react';\n\n        const Hello = React.createContext();\n        Hello.displayName = \"HelloContext\"\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"checkContextObjects\":true}]",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 191,
+      "code": "\n        import { createContext } from 'react';\n\n        const Hello = createContext();\n        Hello.displayName = \"HelloContext\"\n      \n// features: [], parser: default, options: [{\"checkContextObjects\":true}]",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 193,
+      "code": "\n        import { createContext } from 'react';\n\n        const Hello = createContext();\n        Hello.displayName = \"HelloContext\"\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"checkContextObjects\":true}]",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 194,
+      "code": "\n        import { createContext } from 'react';\n\n        const Hello = createContext();\n\n        const obj = {};\n        obj.displayName = \"False positive\";\n\n        Hello.displayName = \"HelloContext\"\n      \n// features: [], parser: default, options: [{\"checkContextObjects\":true}]",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 196,
+      "code": "\n        import { createContext } from 'react';\n\n        const Hello = createContext();\n\n        const obj = {};\n        obj.displayName = \"False positive\";\n\n        Hello.displayName = \"HelloContext\"\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"checkContextObjects\":true}]",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 197,
+      "code": "\n        import * as React from 'react';\n\n        const Hello = React.createContext();\n\n        const obj = {};\n        obj.displayName = \"False positive\";\n\n        Hello.displayName = \"HelloContext\";\n      \n// features: [], parser: default, options: [{\"checkContextObjects\":true}]",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 199,
+      "code": "\n        import * as React from 'react';\n\n        const Hello = React.createContext();\n\n        const obj = {};\n        obj.displayName = \"False positive\";\n\n        Hello.displayName = \"HelloContext\";\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"checkContextObjects\":true}]",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 200,
+      "code": "\n        const obj = {};\n        obj.displayName = \"False positive\";\n      \n// features: [], parser: default, options: [{\"checkContextObjects\":true}]",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 202,
+      "code": "\n        const obj = {};\n        obj.displayName = \"False positive\";\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"checkContextObjects\":true}]",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 203,
+      "code": "\n        import { createContext } from 'react';\n\n        const Hello = createContext();\n      \n// features: [], parser: default, options: [{\"checkContextObjects\":true}], settings: {\"react\":{\"version\":\"16.2.0\"}}",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "version": "16.2.0"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 205,
+      "code": "\n        import { createContext } from 'react';\n\n        const Hello = createContext();\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"checkContextObjects\":true}], settings: {\"react\":{\"version\":\"16.2.0\"}}",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "version": "16.2.0"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 206,
+      "code": "\n        import { createContext } from 'react';\n\n        const Hello = createContext();\n        Hello.displayName = \"HelloContext\";\n      \n// features: [], parser: default, options: [{\"checkContextObjects\":true}], settings: {\"react\":{\"version\":\">16.3.0\"}}",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "version": ">16.3.0"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 208,
+      "code": "\n        import { createContext } from 'react';\n\n        const Hello = createContext();\n        Hello.displayName = \"HelloContext\";\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"checkContextObjects\":true}], settings: {\"react\":{\"version\":\">16.3.0\"}}",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "version": ">16.3.0"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 209,
+      "code": "\n        import { createContext } from 'react';\n\n        let Hello;\n        Hello = createContext();\n        Hello.displayName = \"HelloContext\";\n      \n// features: [], parser: default, options: [{\"checkContextObjects\":true}]",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 211,
+      "code": "\n        import { createContext } from 'react';\n\n        let Hello;\n        Hello = createContext();\n        Hello.displayName = \"HelloContext\";\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"checkContextObjects\":true}]",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 212,
+      "code": "\n        import { createContext } from 'react';\n\n        const Hello = createContext();\n      \n// features: [], parser: default, options: [{\"checkContextObjects\":false}], settings: {\"react\":{\"version\":\">16.3.0\"}}",
+      "options": [
+        {
+          "checkContextObjects": false
+        }
+      ],
+      "settings": {
+        "react": {
+          "version": ">16.3.0"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 214,
+      "code": "\n        import { createContext } from 'react';\n\n        const Hello = createContext();\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"checkContextObjects\":false}], settings: {\"react\":{\"version\":\">16.3.0\"}}",
+      "options": [
+        {
+          "checkContextObjects": false
+        }
+      ],
+      "settings": {
+        "react": {
+          "version": ">16.3.0"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 215,
+      "code": "\n        import { createContext } from 'react';\n\n        var Hello;\n        Hello = createContext();\n        Hello.displayName = \"HelloContext\";\n      \n// features: [], parser: default, options: [{\"checkContextObjects\":true}]",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 217,
+      "code": "\n        import { createContext } from 'react';\n\n        var Hello;\n        Hello = createContext();\n        Hello.displayName = \"HelloContext\";\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"checkContextObjects\":true}]",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 218,
+      "code": "\n        import { createContext } from 'react';\n\n        var Hello;\n        Hello = React.createContext();\n        Hello.displayName = \"HelloContext\";\n      \n// features: [], parser: default, options: [{\"checkContextObjects\":true}]",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 220,
+      "code": "\n        import { createContext } from 'react';\n\n        var Hello;\n        Hello = React.createContext();\n        Hello.displayName = \"HelloContext\";\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"checkContextObjects\":true}]",
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 0,
+      "code": "\n        var Hello = createReactClass({\n          render: function() {\n            return React.createElement(\"div\", {}, \"text content\");\n          }\n        });\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 2,
+      "code": "\n        var Hello = createReactClass({\n          render: function() {\n            return React.createElement(\"div\", {}, \"text content\");\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 3,
+      "code": "\n        var Hello = React.createClass({\n          render: function() {\n            return React.createElement(\"div\", {}, \"text content\");\n          }\n        });\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}], settings: {\"react\":{\"createClass\":\"createClass\"}}",
+      "errors": 1,
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "createClass": "createClass"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 5,
+      "code": "\n        var Hello = React.createClass({\n          render: function() {\n            return React.createElement(\"div\", {}, \"text content\");\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}], settings: {\"react\":{\"createClass\":\"createClass\"}}",
+      "errors": 1,
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "createClass": "createClass"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 6,
+      "code": "\n        var Hello = createReactClass({\n          render: function() {\n            return <div>Hello {this.props.name}</div>;\n          }\n        });\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 8,
+      "code": "\n        var Hello = createReactClass({\n          render: function() {\n            return <div>Hello {this.props.name}</div>;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 9,
+      "code": "\n        class Hello extends React.Component {\n          render() {\n            return <div>Hello {this.props.name}</div>;\n          }\n        }\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 11,
+      "code": "\n        class Hello extends React.Component {\n          render() {\n            return <div>Hello {this.props.name}</div>;\n          }\n        }\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 12,
+      "code": "\n        function HelloComponent() {\n          return createReactClass({\n            render: function() {\n              return <div>Hello {this.props.name}</div>;\n            }\n          });\n        }\n        module.exports = HelloComponent();\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 14,
+      "code": "\n        function HelloComponent() {\n          return createReactClass({\n            render: function() {\n              return <div>Hello {this.props.name}</div>;\n            }\n          });\n        }\n        module.exports = HelloComponent();\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 24,
+      "code": "\n        var Hello = createReactClass({\n          _renderHello: function() {\n            return <span>Hello {this.props.name}</span>;\n          },\n          render: function() {\n            return <div>{this._renderHello()}</div>;\n          }\n        });\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 26,
+      "code": "\n        var Hello = createReactClass({\n          _renderHello: function() {\n            return <span>Hello {this.props.name}</span>;\n          },\n          render: function() {\n            return <div>{this._renderHello()}</div>;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 27,
+      "code": "\n        var Hello = Foo.createClass({\n          _renderHello: function() {\n            return <span>Hello {this.props.name}</span>;\n          },\n          render: function() {\n            return <div>{this._renderHello()}</div>;\n          }\n        });\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}], settings: {\"react\":{\"pragma\":\"Foo\",\"createClass\":\"createClass\"}}",
+      "errors": 1,
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "pragma": "Foo",
+          "createClass": "createClass"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 29,
+      "code": "\n        var Hello = Foo.createClass({\n          _renderHello: function() {\n            return <span>Hello {this.props.name}</span>;\n          },\n          render: function() {\n            return <div>{this._renderHello()}</div>;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}], settings: {\"react\":{\"pragma\":\"Foo\",\"createClass\":\"createClass\"}}",
+      "errors": 1,
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "pragma": "Foo",
+          "createClass": "createClass"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 30,
+      "code": "\n        /** @jsx Foo */\n        var Hello = Foo.createClass({\n          _renderHello: function() {\n            return <span>Hello {this.props.name}</span>;\n          },\n          render: function() {\n            return <div>{this._renderHello()}</div>;\n          }\n        });\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}], settings: {\"react\":{\"createClass\":\"createClass\"}}",
+      "errors": 1,
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "createClass": "createClass"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 32,
+      "code": "\n        /** @jsx Foo */\n        var Hello = Foo.createClass({\n          _renderHello: function() {\n            return <span>Hello {this.props.name}</span>;\n          },\n          render: function() {\n            return <div>{this._renderHello()}</div>;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}], settings: {\"react\":{\"createClass\":\"createClass\"}}",
+      "errors": 1,
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "createClass": "createClass"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 33,
+      "code": "\n        const Mixin = {\n          Button() {\n            return (\n              <button />\n            );\n          }\n        };\n      \n// features: [], parser: default, options: [{\"ignoreTranspilerName\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 35,
+      "code": "\n        const Mixin = {\n          Button() {\n            return (\n              <button />\n            );\n          }\n        };\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"ignoreTranspilerName\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "ignoreTranspilerName": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 86,
+      "code": "\n        import React from 'react';\n\n        const Hello = React.createContext();\n      \n// features: [], parser: default, options: [{\"checkContextObjects\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 88,
+      "code": "\n        import React from 'react';\n\n        const Hello = React.createContext();\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"checkContextObjects\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 89,
+      "code": "\n        import * as React from 'react';\n\n        const Hello = React.createContext();\n      \n// features: [], parser: default, options: [{\"checkContextObjects\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 91,
+      "code": "\n        import * as React from 'react';\n\n        const Hello = React.createContext();\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"checkContextObjects\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 92,
+      "code": "\n        import { createContext } from 'react';\n\n        const Hello = createContext();\n      \n// features: [], parser: default, options: [{\"checkContextObjects\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 94,
+      "code": "\n        import { createContext } from 'react';\n\n        const Hello = createContext();\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"checkContextObjects\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 95,
+      "code": "\n        import { createContext } from 'react';\n\n        var Hello;\n        Hello = createContext();\n      \n// features: [], parser: default, options: [{\"checkContextObjects\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 97,
+      "code": "\n        import { createContext } from 'react';\n\n        var Hello;\n        Hello = createContext();\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"checkContextObjects\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 98,
+      "code": "\n        import { createContext } from 'react';\n\n        var Hello;\n        Hello = React.createContext();\n      \n// features: [], parser: default, options: [{\"checkContextObjects\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 100,
+      "code": "\n        import { createContext } from 'react';\n\n        var Hello;\n        Hello = React.createContext();\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"checkContextObjects\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "checkContextObjects": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    }
+  ]
+}

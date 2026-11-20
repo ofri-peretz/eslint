@@ -1,0 +1,179 @@
+{
+  "rule": "jsx-uses-react",
+  "source": "eslint-plugin-react@7.37.5 tests/lib/rules/jsx-uses-react.js (MIT)",
+  "cases": [
+    {
+      "kind": "valid",
+      "n": 0,
+      "code": "/*eslint react/jsx-uses-react:1*/ var React; <div />;\n// features: [,no-ts-new], parser: default",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 2,
+      "code": "/*eslint react/jsx-uses-react:1*/ var React; (function () { <div /> })();\n// features: [,no-ts-new], parser: default",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 4,
+      "code": "/*eslint react/jsx-uses-react:1*/ /** @jsx Foo */ var Foo; <div />;\n// features: [,no-ts-new], parser: default",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 6,
+      "code": "/*eslint react/jsx-uses-react:1*/ var Foo; <div />;\n// features: [,no-ts-new], parser: default, settings: {\"react\":{\"pragma\":\"Foo\"}}",
+      "settings": {
+        "react": {
+          "pragma": "Foo"
+        }
+      },
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 8,
+      "code": "/*eslint react/jsx-uses-react:1*/ var Frag; <></>;\n// features: [fragment,no-ts-new], parser: default, settings: {\"react\":{\"fragment\":\"Frag\"}}",
+      "settings": {
+        "react": {
+          "fragment": "Frag"
+        }
+      },
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 10,
+      "code": "/*eslint react/jsx-uses-react:1*/ var React; <></>;\n// features: [fragment,no-ts-old,no-ts-new], parser: default",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 0,
+      "code": "/*eslint react/jsx-uses-react:1*/ var React;\n// features: [,no-ts-new], parser: default",
+      "errors": 1,
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 2,
+      "code": "/*eslint react/jsx-uses-react:1*/ /** @jsx Foo */ var React; <div />;\n// features: [,no-ts-new], parser: default",
+      "errors": 1,
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 4,
+      "code": "/*eslint react/jsx-uses-react:1*/ var React; <div />;\n// features: [,no-ts-new], parser: default, settings: {\"react\":{\"pragma\":\"Foo\"}}",
+      "errors": 1,
+      "settings": {
+        "react": {
+          "pragma": "Foo"
+        }
+      },
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 6,
+      "code": "/*eslint react/jsx-uses-react:1*/ var Frag; <></>;\n// features: [fragment,no-ts-new], parser: default, settings: {\"react\":{\"fragment\":\"Fragment\"}}",
+      "errors": 1,
+      "settings": {
+        "react": {
+          "fragment": "Fragment"
+        }
+      },
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 8,
+      "code": "/*eslint react/jsx-uses-react:1*/ var React; <></>;\n// features: [fragment,no-ts-new], parser: default, settings: {\"react\":{\"pragma\":\"Foo\"}}",
+      "errors": 1,
+      "settings": {
+        "react": {
+          "pragma": "Foo"
+        }
+      },
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    }
+  ]
+}

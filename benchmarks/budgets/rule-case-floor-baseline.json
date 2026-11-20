@@ -3,6 +3,8 @@
   "note": "Rules holding fewer than 3 classified cases on a side. Shrink-only.",
   "rules": [
     "import-next/no-cycle",
+    "react-features/jsx-uses-react",
+    "react-features/jsx-uses-vars",
     "reliability/no-jsdoc-terminator-in-example"
   ]
 }

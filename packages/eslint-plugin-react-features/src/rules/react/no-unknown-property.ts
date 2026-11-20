@@ -12,7 +12,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
-type MessageIds = 'noUnknownProperty';
+type MessageIds = 'noUnknownProperty' | 'dataLowercaseRequired';
 
 // React accepts the XML namespace attributes on SVG and they are spelled
 // exactly like this. Their absence made every inline `<svg xmlns=…>` — the
@@ -502,7 +502,13 @@ const REACT_PROPS = new Set([
   'suppressHydrationWarning',
 ]);
 
-export const noUnknownProperty = createRule<[], MessageIds>({
+/** `data-*` as React and the DOM accept it: no `xml` prefix, and no `:` in the name. */
+const isValidDataAttribute = (name: string): boolean =>
+  !/^data-xml/i.test(name) && /^data-[^:]*$/.test(name);
+
+type Options = [{ ignore?: readonly string[]; requireDataLowercase?: boolean }?];
+
+export const noUnknownProperty = createRule<Options, MessageIds>({
   name: 'no-unknown-property',
   meta: {
     interop: {
@@ -514,8 +520,27 @@ export const noUnknownProperty = createRule<[], MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-unknown-property.md',
       description: 'Disallow unknown DOM properties',
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          ignore: { type: 'array', items: { type: 'string' } },
+          requireDataLowercase: { type: 'boolean', default: false },
+        },
+        additionalProperties: false,
+      },
+    ],
     messages: {
+      dataLowercaseRequired: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'Uppercase data-* Attribute',
+        description:
+          "React does not recognize data-* props with uppercase characters on a DOM element. Found '{{name}}', use '{{lowerCaseName}}' instead",
+        severity: 'MEDIUM',
+        fix: 'Write the data-* attribute name in lowercase',
+        documentationLink:
+          'https://react.dev/learn/writing-markup-with-jsx#html-attributes',
+      }),
       noUnknownProperty: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Unknown DOM Property',
@@ -528,10 +553,43 @@ export const noUnknownProperty = createRule<[], MessageIds>({
       }),
     },
   },
-  defaultOptions: [],
-  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
+  defaultOptions: [{}],
+  createOnce(context: TSESLint.RuleContext<MessageIds, Options>, options) {
+    let ignore: ReadonlySet<string>;
+    let requireDataLowercase = false;
+
     return {
+      before() {
+        const [config] = options();
+        ignore = new Set(config?.ignore);
+        requireDataLowercase = config?.requireDataLowercase ?? false;
+      },
       JSXAttribute(node: TSESTree.JSXAttribute) {
+        // `ignore` names an attribute wherever it is written
+        if (ignore.has(context.sourceCode.getText(node.name))) return;
+
+        // `<Foo.bar />` takes whatever props it likes
+        if (node.parent.name.type === 'JSXMemberExpression') return;
+
+        // `requireDataLowercase` holds components to it too: React drops an
+        // uppercase `data-*` prop from the DOM wherever it lands.
+        if (
+          requireDataLowercase &&
+          node.name.type === 'JSXIdentifier' &&
+          isValidDataAttribute(node.name.name) &&
+          node.name.name !== node.name.name.toLowerCase()
+        ) {
+          context.report({
+            node,
+            messageId: 'dataLowercaseRequired',
+            data: {
+              name: node.name.name,
+              lowerCaseName: node.name.name.toLowerCase(),
+            },
+          });
+          return;
+        }
+
         // Only host (DOM) elements have a fixed property set. Custom
         // components (<Box />, <Motion.div />) accept arbitrary props.
         const elementName = node.parent.name;

@@ -109,6 +109,10 @@ Enable these by name (`'react-features/<rule>': 'error'`):
 - `sort-comp`: Enforce component method ordering.
 - `state-in-constructor`: Enforce state initialization in constructor.
 - `static-property-placement`: Enforce static property placement.
+- `jsx-no-comment-textnodes`: Disallow comments from being inserted as text nodes.
+- `jsx-no-undef`: Disallow undeclared variables in JSX.
+- `jsx-uses-react`: Disallow React to be incorrectly marked as unused.
+- `jsx-uses-vars`: Disallow variables used in JSX to be incorrectly marked as unused.
 - `no-find-dom-node`: Prevent using findDOMNode.
 - `no-unsafe`: Prevent usage of unsafe lifecycle methods.
 - `void-dom-elements-no-children`: Prevent void DOM elements from having children.
