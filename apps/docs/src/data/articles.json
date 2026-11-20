@@ -1,6 +1,26 @@
 {
   "articles": [
     {
+      "id": 5044326,
+      "title": "Every Plugin I Shipped Installed a TypeScript Compiler",
+      "description": "A peer I forgot to mark optional put 24MB of tsc under every plugin I publish. Cutting it took ~30MB off every install tree.",
+      "url": "https://dev.to/ofri-peretz/every-plugin-i-shipped-installed-a-typescript-compiler-34h2",
+      "canonical_url": "https://ofriperetz.dev/articles/eslint-plugin-cold-start-optimization",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Feslint-plugin-cold-start-optimization.jpg",
+      "published_at": "2026-11-16T02:19:22Z",
+      "readable_publish_date": "Nov 16",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 2,
+      "positive_reactions_count": 2,
+      "comments_count": 0,
+      "tag_list": [
+        "javascript",
+        "webdev",
+        "typescript"
+      ]
+    },
+    {
       "id": 5020121,
       "title": "Three of My Planned Articles Cited Numbers That Do Not Exist",
       "description": "I audited twelve planned pieces against the benchmark JSON they cite. Two figures appear in no result file anywhere, one contradicts the source it names, and one real number is attached to the wrong set. Nothing caught it, because nothing recomputes prose.",
@@ -2023,30 +2043,9 @@
         "javascript",
         "devsecops"
       ]
-    },
-    {
-      "id": 3114794,
-      "title": "I Linted Every OWASP LLM Category Against a Real Vercel AI SDK App. 8 Fire. 2 Are Vendor Theater.",
-      "description": "A real mapping of the OWASP LLM Top 10 (2025) to eslint-plugin-vercel-ai-security: which categories a CWE-tagged rule genuinely catches in source — and why each one survives normal code review.",
-      "url": "https://dev.to/ofri-peretz/100-owasp-llm-top-10-coverage-for-vercel-ai-sdk-1bom",
-      "canonical_url": "https://ofriperetz.dev/articles/100-owasp-llm-top-10-coverage-for-vercel-ai-sdk",
-      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2F100-owasp-llm-top-10-coverage-for-vercel-ai-sdk.jpg%3Fv%3Db2",
-      "published_at": "2025-12-19T06:00:22Z",
-      "readable_publish_date": "Dec 19 '25",
-      "reading_time_minutes": 10,
-      "page_views_count": 0,
-      "public_reactions_count": 0,
-      "positive_reactions_count": 0,
-      "comments_count": 0,
-      "tag_list": [
-        "ai",
-        "security",
-        "javascript",
-        "devsecops"
-      ]
     }
   ],
   "total": 100,
-  "lastUpdated": "2026-11-12T08:07:14.079Z",
+  "lastUpdated": "2026-11-20T18:39:14.851Z",
   "source": "public"
 }
