@@ -157,7 +157,7 @@
       "rules": 28,
       "description": "ESLint Express security rules — detects permissive CORS, missing CSRF protection, missing helmet headers, insecure cookies, and GraphQL introspection in production",
       "category": "framework",
-      "version": "4.1.0",
+      "version": "4.2.0",
       "published": true
     },
     {

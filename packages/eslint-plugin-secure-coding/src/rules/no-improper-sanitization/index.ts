@@ -84,7 +84,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-79',
         description:
           '{{method}}() tells Angular not to sanitize a value that is not a constant',
-        severity: 'HIGH',
+        severity: 'MEDIUM',
         fix: 'Sanitize first (DOMPurify.sanitize, or sanitizer.sanitize(SecurityContext.HTML, value)), or drop the bypass and bind the value with interpolation or [innerText]',
         documentationLink: 'https://angular.dev/best-practices/security',
       }),

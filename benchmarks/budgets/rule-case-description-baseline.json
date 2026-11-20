@@ -382,7 +382,7 @@
     "secure-coding/no-graphql-injection": 114,
     "secure-coding/no-hardcoded-credentials": 154,
     "secure-coding/no-hardcoded-session-tokens": 7,
-    "secure-coding/no-improper-sanitization": 102,
+    "secure-coding/no-improper-sanitization": 101,
     "secure-coding/no-improper-type-validation": 119,
     "secure-coding/no-insecure-comparison": 84,
     "secure-coding/no-ldap-injection": 81,
