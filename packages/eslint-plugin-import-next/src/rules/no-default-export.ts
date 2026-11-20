@@ -273,7 +273,8 @@ export const noDefaultExport = createRule<RuleOptions, MessageIds>({
         // name). A decorator sits outside the span the rewrite reads.
         if (
           declaration.type === 'ClassDeclaration' &&
-          declaration.decorators.length > 0
+          // espree has no `decorators` field at all; only the TS parser sets it.
+          (declaration.decorators?.length ?? 0) > 0
         ) {
           return null;
         }

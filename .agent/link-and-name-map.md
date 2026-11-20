@@ -31,7 +31,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-browser-security` | 3.1.1 | `browser-security/` | — | `plugin-browser-security` | security | `chromium` | ✅ | ✅ | ✅ |
 | `eslint-plugin-conventions` | 7.0.3 | `conventions/` | — | `plugin-conventions` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-drizzle-security` | 2.0.3 | `drizzle-security/` | — | `plugin-drizzle-security` | security | `drizzle` | ✅ | ✅ | ✅ |
-| `eslint-plugin-express-security` | 4.0.4 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
+| `eslint-plugin-express-security` | 4.1.0 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
 | `eslint-plugin-gemini-security` | 2.0.3 | `gemini-security/` | — | `plugin-gemini-security` | security | `gemini` | ✅ | ✅ | ✅ |
 | `eslint-plugin-import-next` | 4.1.5 | `import-next/` | — | `plugin-import-next` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-jwt-security` | 4.0.3 | `jwt-security/` | `jwt/` | `plugin-jwt-security` | security | `jwt` | ✅ | ✅ | ✅ |
@@ -41,7 +41,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-mcp-sdk-security` | 2.1.1 | `mcp-sdk-security/` | — | `plugin-mcp-sdk-security` | security | `mcp` | ✅ | ✅ | ✅ |
 | `eslint-plugin-modernization` | 4.0.4 | `modernization/` | — | `plugin-modernization` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-modularity` | 3.0.3 | `modularity/` | — | `plugin-modularity` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-mongodb-security` | 10.0.3 | `mongodb-security/` | — | `plugin-mongodb-security` | security | `mongodb` | ✅ | ✅ | ✅ |
+| `eslint-plugin-mongodb-security` | 10.1.0 | `mongodb-security/` | — | `plugin-mongodb-security` | security | `mongodb` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mysql-security` | 2.0.3 | `mysql-security/` | — | `plugin-mysql-security` | security | `mysql` | ✅ | ✅ | ✅ |
 | `eslint-plugin-nestjs-security` | 4.2.3 | `nestjs-security/` | — | `plugin-nestjs-security` | security | `nestjs` | ✅ | ✅ | ✅ |
 | `eslint-plugin-node-security` | 6.0.7 | `node-security/` | — | `plugin-node-security` | security | `node` | ✅ | ✅ | ✅ |
@@ -52,7 +52,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-react-a11y` | 3.0.3 | `react-a11y/` | — | `plugin-react-a11y` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-react-features` | 2.0.3 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-reliability` | 5.0.3 | `reliability/` | — | `plugin-reliability` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-secure-coding` | 6.1.3 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-secure-coding` | 6.2.0 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sequelize-security` | 2.0.3 | `sequelize-security/` | — | `plugin-sequelize-security` | security | `sequelize` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sqlite-security` | 2.0.3 | `sqlite-security/` | — | `plugin-sqlite-security` | security | `sqlite` | ✅ | ✅ | ✅ |
 | `eslint-plugin-supabase-security` | 2.0.3 | `supabase-security/` | — | `plugin-supabase-security` | security | `—` | ✅ | ✅ | ✅ |

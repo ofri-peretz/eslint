@@ -290,9 +290,10 @@ const VALUE_FREE_PROPERTIES = new Set([
  * Properties that describe how an operation ENDED rather than what it carried.
  *
  * @protocol-constant Every entry is defined by a platform, not by a codebase:
- * `message`, `stack` and `name` are `Error.prototype`'s own (ECMAScript), and
+ * `message`, `stack` and `name` are `Error.prototype`'s own (ECMAScript),
  * `status` / `statusText` are the HTTP response code and reason phrase
- * (WHATWG Fetch, and `XMLHttpRequest` before it). What they have in common is
+ * (WHATWG Fetch, and `XMLHttpRequest` before it), and `type`, `algorithm`,
+ * `extractable` and `usages` are `CryptoKey`'s attributes (Web Crypto). What they have in common is
  * that the platform decides their contents, so none of them can be the
  * credential the surrounding prose is talking about.
  *
@@ -306,6 +307,14 @@ const DIAGNOSTIC_ACCESSORS = new Set([
   'name',
   'status',
   'statusText',
+  // `CryptoKey`'s own public attributes (W3C Web Crypto, section 13): the kind
+  // of key (`'public' | 'private' | 'secret'`), its algorithm, whether it can
+  // be exported and what it may be used for. `${privateKey.type}` prints the
+  // word `private`, never the key (honojs/hono src/utils/jws.ts:110).
+  'type',
+  'algorithm',
+  'extractable',
+  'usages',
 ]);
 
 /**
