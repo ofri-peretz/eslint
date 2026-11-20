@@ -14,6 +14,8 @@ npm install --save-dev eslint-plugin-reliability
 
 Requires ESLint ^8.40.0 || ^9.0.0 || ^10.0.0 and Node >=22.13.0.
 
+Flat config files (`eslint.config.*`) are found by ESLint 8.57 and newer; on ESLint 9 and 10 they are the default.
+
 ```js
 // eslint.config.mjs
 import reliability from 'eslint-plugin-reliability';
@@ -47,15 +49,6 @@ Enable these by name (`'reliability/<rule>': 'error'`):
 - `no-unsafe-type-narrowing`: Detects unsafe type narrowing patterns.
 - `no-await-in-loop`: Disallow await inside loops and suggest appropriate concurrency patterns.
 - `no-jsdoc-terminator-in-example`: Detects `*/` sequences inside JSDoc @example blocks that prematurely close the comment.
-- `error-handling/no-unhandled-promise`: Detects unhandled Promise rejections.
-- `error-handling/no-silent-errors`: Detects empty catch blocks.
-- `error-handling/no-missing-error-context`: Detects thrown errors without context.
-- `error-handling/error-message`: Enforce providing a message when creating built-in Error objects for better debugging.
-- `reliability/no-missing-null-checks`: Detects potential null pointer dereferences.
-- `reliability/no-unsafe-type-narrowing`: Detects unsafe type narrowing patterns.
-- `reliability/require-network-timeout`: Require timeout limits for network requests.
-- `reliability/no-await-in-loop`: Disallow await inside loops and suggest appropriate concurrency patterns.
-- `reliability/no-jsdoc-terminator-in-example`: Detects `*/` sequences inside JSDoc @example blocks that prematurely close the comment.
 
 ## More
 

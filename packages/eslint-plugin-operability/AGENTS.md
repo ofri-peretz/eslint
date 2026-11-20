@@ -14,6 +14,8 @@ npm install --save-dev eslint-plugin-operability
 
 Requires ESLint ^8.40.0 || ^9.0.0 || ^10.0.0 and Node >=22.13.0.
 
+Flat config files (`eslint.config.*`) are found by ESLint 8.57 and newer; on ESLint 9 and 10 they are the default.
+
 ```js
 // eslint.config.mjs
 import operability from 'eslint-plugin-operability';
@@ -44,12 +46,6 @@ Enable these by name (`'operability/<rule>': 'error'`):
 - `no-process-exit`: Prevent usage of process.exit() which can terminate the process unexpectedly.
 - `require-code-minification`: Require minification configuration.
 - `require-data-minimization`: Identify excessive data collection patterns.
-- `operability/no-console-log`: Disallow console.log with configurable remediation strategies.
-- `operability/no-process-exit`: Prevent usage of process.exit() which can terminate the process unexpectedly.
-- `operability/no-debug-code-in-production`: Detect debug code in production.
-- `operability/no-verbose-error-messages`: Prevent exposing stack traces to users.
-- `operability/require-code-minification`: Require minification configuration.
-- `operability/require-data-minimization`: Identify excessive data collection patterns.
 
 ## More
 

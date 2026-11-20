@@ -14,6 +14,8 @@ npm install --save-dev eslint-plugin-cli-floor
 
 Requires ESLint ^8.40.0 || ^9.0.0 || ^10.0.0 and Node >=18.0.0.
 
+Flat config files (`eslint.config.*`) are found by ESLint 8.57 and newer; on ESLint 9 and 10 they are the default.
+
 ```js
 // eslint.config.mjs
 import cliFloor from 'eslint-plugin-cli-floor';

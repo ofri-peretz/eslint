@@ -58,7 +58,7 @@ is the source of truth for dependency signals; the summary:
 | `@nestjs/common` or `@nestjs/core`                                                                                     | `eslint-plugin-nestjs-security`     |
 | react, preact, vue, svelte, angular, solid, lit, next, nuxt                                                            | `eslint-plugin-browser-security`    |
 | `jsonwebtoken`, `jose`, `express-jwt`, `@nestjs/jwt`, `jwks-rsa`, `jwt-decode`                                         | `eslint-plugin-jwt-security`        |
-| `pg`, `pg-promise`, `postgres`, `slonik`                                                                               | `eslint-plugin-postgresql-security` |
+| `pg`, `pg-pool`, `pg-promise`, `postgres`, `slonik`                                                                    | `eslint-plugin-postgresql-security` |
 | `mysql2`, `mysql`                                                                                                      | `eslint-plugin-mysql-security`      |
 | `mongodb`, `mongoose`                                                                                                  | `eslint-plugin-mongodb-security`    |
 | `better-sqlite3`, `sqlite3`                                                                                            | `eslint-plugin-sqlite-security`     |

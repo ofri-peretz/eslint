@@ -85,12 +85,14 @@ export function factsFrom(
     hasOxlintEntry: Boolean(pkg.exports?.['./oxlint']),
     presets,
     rules: Object.fromEntries(
-      Object.entries(rules).map(([k, r]) => [
-        k,
-        String(r?.meta?.docs?.description ?? '')
-          .replace(/\s+/g, ' ')
-          .trim(),
-      ]),
+      Object.entries(rules)
+        .filter(([k]) => !k.includes('/'))
+        .map(([k, r]) => [
+          k,
+          String(r?.meta?.docs?.description ?? '')
+            .replace(/\s+/g, ' ')
+            .trim(),
+        ]),
     ),
     pluginKey: pluginKey || bare,
   };
@@ -112,7 +114,7 @@ export async function renderAgentsMd(
 ): Promise<string> {
   const id = camel(f.name);
   const isSecurity =
-    f.keywords.includes('security') || /-security$/.test(f.name);
+    f.keywords.includes('security') || f.name.endsWith('-security');
   const out: string[] = [];
   out.push(AGENTS_MD_MARKER, '', `# ${f.name}`, '');
   out.push(
@@ -135,6 +137,15 @@ export async function renderAgentsMd(
     f.nodeRange ? `Node ${f.nodeRange}` : '',
   ].filter(Boolean);
   if (reqs.length) out.push(`Requires ${reqs.join(' and ')}.`, '');
+  out.push(
+    'Flat config files (`eslint.config.*`) are found by ESLint 8.57 and newer; on ESLint 9 and 10 they are the default.',
+    '',
+  );
+  if (/react/.test(f.name))
+    out.push(
+      'These presets do not turn on JSX parsing. For `.jsx` files add `languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } }` to a config entry; `.tsx` files are covered by `typescript-eslint`.',
+      '',
+    );
   const first = f.presets.recommended
     ? 'recommended'
     : Object.keys(f.presets)[0];

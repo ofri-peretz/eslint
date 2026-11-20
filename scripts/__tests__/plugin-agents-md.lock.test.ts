@@ -1,4 +1,8 @@
 /**
+ * @provenBy {"file":"scripts/lib/plugin-agents-md.ts","find":"'## Presets'","replace":"'## Presetz'"}
+ */
+
+/**
  * Lock: every eslint-plugin-* package ships a consumer AGENTS.md, and that file
  * is exactly what scripts/lib/plugin-agents-md.ts renders from the package's own
  * metadata (package.json, exported `configs` and `rules`, the skill's stack map).

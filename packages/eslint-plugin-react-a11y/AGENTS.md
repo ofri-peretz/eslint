@@ -14,6 +14,10 @@ npm install --save-dev eslint-plugin-react-a11y
 
 Requires ESLint ^8.40.0 || ^9.0.0 || ^10.0.0 and Node >=22.13.0.
 
+Flat config files (`eslint.config.*`) are found by ESLint 8.57 and newer; on ESLint 9 and 10 they are the default.
+
+These presets do not turn on JSX parsing. For `.jsx` files add `languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } }` to a config entry; `.tsx` files are covered by `typescript-eslint`.
+
 ```js
 // eslint.config.mjs
 import reactA11y from 'eslint-plugin-react-a11y';

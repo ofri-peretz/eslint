@@ -1,4 +1,8 @@
 /**
+ * @provenBy {"file":"skills/security-linting/references/stack-map.json","find":"\"no-ldap-injection\"","replace":"\"no-ldap-injectionx\""}
+ */
+
+/**
  * Lock: the security-linting skill, its plugin manifests and context7.json say
  * only what the packages actually export.
  *

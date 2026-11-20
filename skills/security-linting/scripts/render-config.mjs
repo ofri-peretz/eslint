@@ -19,7 +19,17 @@ const MAP = JSON.parse(
 
 const args = process.argv.slice(2);
 const flag = (n) => args.includes(n);
-const opt = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
+const opt = (n, d) => {
+  if (!args.includes(n)) return d;
+  const v = args[args.indexOf(n) + 1];
+  if (!v || v.startsWith('--')) {
+    console.error(
+      `${n} needs a value. Usage: render-config.mjs [--dir <project>] [--json] [--write] [--force]`,
+    );
+    process.exit(2);
+  }
+  return v;
+};
 const dir = resolve(opt('--dir', process.cwd()));
 
 const readJson = (p) => {
@@ -112,7 +122,7 @@ const ident = (pkg) =>
     .replace(/^eslint-plugin-/, '')
     .replace(/-(\w)/g, (_, c) => c.toUpperCase());
 
-const baselineWired = /eslint-plugin-security\b/.test(existingText);
+const baselineWired = /eslint-plugin-security(?![\w-])/.test(existingText);
 const picked = [];
 if (!baselineWired)
   picked.push({
@@ -136,6 +146,7 @@ const tsParserNeeded =
 // ---- render ----------------------------------------------------------------
 const cjs =
   flatFile?.endsWith('.cjs') ||
+  flatFile?.endsWith('.cts') ||
   (flatFile?.endsWith('.js') && root.type !== 'module');
 const imp = (id, pkg) =>
   cjs ? `const ${id} = require('${pkg}');` : `import ${id} from '${pkg}';`;
@@ -234,7 +245,15 @@ const plan = {
   warnings,
 };
 
-if (flag('--write')) writeFileSync(join(dir, fileName), contents);
+if (flag('--write')) {
+  if (existsSync(join(dir, fileName)) && !flag('--force')) {
+    console.error(
+      `${fileName} already exists; not overwriting. Review it, or pass --force to replace it.`,
+    );
+    process.exit(3);
+  }
+  writeFileSync(join(dir, fileName), contents);
+}
 
 if (flag('--json')) {
   console.log(JSON.stringify(plan, null, 2));

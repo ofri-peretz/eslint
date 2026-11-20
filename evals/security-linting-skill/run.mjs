@@ -287,7 +287,9 @@ for (const app of Object.keys(PLANTS)) {
     fail(`all-plugins: rendered ${plan.additions.length} of ${expected}`);
   for (const e of ENGINES) {
     try {
-      await lint(e, work);
+      const found = await lint(e, work);
+      const fatal = found.find((f) => f.fatal);
+      if (fatal) throw new Error(`fatal diagnostic: ${fatal.message}`);
       rows.push({
         app: `all ${plan.additions.length} plugins`,
         engine: e.label,

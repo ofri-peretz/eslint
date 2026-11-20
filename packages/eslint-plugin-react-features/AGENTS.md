@@ -14,6 +14,10 @@ npm install --save-dev eslint-plugin-react-features
 
 Requires ESLint ^8.40.0 || ^9.0.0 || ^10.0.0 and Node >=22.13.0.
 
+Flat config files (`eslint.config.*`) are found by ESLint 8.57 and newer; on ESLint 9 and 10 they are the default.
+
+These presets do not turn on JSX parsing. For `.jsx` files add `languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } }` to a config entry; `.tsx` files are covered by `typescript-eslint`.
+
 ```js
 // eslint.config.mjs
 import reactFeatures from 'eslint-plugin-react-features';
@@ -57,14 +61,14 @@ Each preset is one flat config object: put it in the array as an element, do not
 
 8 rules:
 
-- `component-api/no-default-test-id` (error): data-testid must be consumer-provided — no runtime default value (R5).
-- `component-api/require-data-slot` (warn): Named composition parts must carry data-slot (R6).
-- `component-api/no-is-prefix-prop` (warn): Boolean props must not be prefixed with `is` (R8).
-- `component-api/no-inline-style` (warn): No inline `style={{}}` except for CSS-variable assignment (R18).
-- `component-api/no-raw-color-literal` (warn): No raw hex / rgb / hsl / oklch color literals in source — use design tokens (R19).
-- `component-api/no-arbitrary-token-class` (warn): No Tailwind arbitrary values when a token exists for that property (R19).
-- `component-api/no-kind-prop-discriminator` (warn): Ban `type`/`kind` string-union props that select between rendered trees (R11).
-- `component-api/no-wrapper-sub-component` (warn): Ban pure-passthrough wrapper sub-components — slot the primitive directly (R12).
+- `component-api/no-default-test-id` (error): no description.
+- `component-api/require-data-slot` (warn): no description.
+- `component-api/no-is-prefix-prop` (warn): no description.
+- `component-api/no-inline-style` (warn): no description.
+- `component-api/no-raw-color-literal` (warn): no description.
+- `component-api/no-arbitrary-token-class` (warn): no description.
+- `component-api/no-kind-prop-discriminator` (warn): no description.
+- `component-api/no-wrapper-sub-component` (warn): no description.
 
 ### Rules in no preset
 
@@ -120,59 +124,6 @@ Enable these by name (`'react-features/<rule>': 'error'`):
 - `no-arbitrary-token-class`: No Tailwind arbitrary values when a token exists for that property (R19).
 - `no-kind-prop-discriminator`: Ban `type`/`kind` string-union props that select between rendered trees (R11).
 - `no-wrapper-sub-component`: Ban pure-passthrough wrapper sub-components — slot the primitive directly (R12).
-- `react/required-attributes`: Enforce required attributes on React components with customizable ignore lists.
-- `react/jsx-key`: Detect missing or problematic React keys that could break reconciliation.
-- `react/no-direct-mutation-state`: Prevent direct mutation of this.state that breaks React reconciliation.
-- `react/require-optimization`: Require performance optimizations for React components based on usage patterns.
-- `react/no-set-state`: Disallow usage of setState to encourage functional components with hooks.
-- `react/no-this-in-sfc`: Disallow this from being used in stateless functional components.
-- `react/no-access-state-in-setstate`: Disallow accessing this.state inside setState calls.
-- `react/no-children-prop`: Disallow passing children as props.
-- `react/no-danger`: Disallow dangerouslySetInnerHTML usage.
-- `react/no-string-refs`: Disallow string refs.
-- `react/no-unknown-property`: Disallow unknown DOM properties.
-- `react/checked-requires-onchange-or-readonly`: Ensure controlled inputs have onChange or readOnly.
-- `react/default-props-match-prop-types`: Validate default props match prop types.
-- `react/display-name`: Enforce component display names.
-- `react/jsx-handler-names`: Enforce event handler naming conventions.
-- `react/jsx-max-depth`: Limit JSX nesting depth.
-- `react/jsx-no-bind`: Prevent .bind() in JSX.
-- `react/jsx-no-literals`: Prevent string literals in JSX.
-- `react/no-adjacent-inline-elements`: Prevent adjacent inline elements.
-- `react/no-arrow-function-lifecycle`: Prevent arrow functions in lifecycle methods.
-- `react/no-did-mount-set-state`: Prevent setState in componentDidMount.
-- `react/no-did-update-set-state`: Prevent setState in componentDidUpdate.
-- `react/no-invalid-html-attribute`: Prevent invalid HTML attributes.
-- `react/no-is-mounted`: Prevent isMounted anti-pattern.
-- `react/no-multi-comp`: Prevent multiple components per file.
-- `react/no-namespace`: Prevent namespace imports.
-- `react/no-object-type-as-default-prop`: Prevent object types as default props.
-- `react/no-redundant-should-component-update`: Prevent redundant shouldComponentUpdate.
-- `react/no-render-return-value`: Prevent using render return value.
-- `react/no-typos`: Catch common typos.
-- `react/no-unescaped-entities`: Prevent unescaped entities.
-- `react/prefer-es6-class`: Prefer ES6 classes over createClass.
-- `react/prefer-stateless-function`: Prefer stateless functions.
-- `react/prop-types`: Enforce prop types usage.
-- `react/react-in-jsx-scope`: Ensure React is in scope.
-- `react/require-default-props`: Require default props.
-- `react/require-render-return`: Require render methods to return.
-- `react/sort-comp`: Enforce component method ordering.
-- `react/state-in-constructor`: Enforce state initialization in constructor.
-- `react/static-property-placement`: Enforce static property placement.
-- `react/hooks-exhaustive-deps`: Enforce exhaustive dependencies in React hooks to prevent stale closures.
-- `react/jsx-no-target-blank`: Forbid target="_blank" without rel="noopener noreferrer".
-- `react/jsx-no-script-url`: Forbid javascript: URLs.
-- `react/jsx-no-duplicate-props`: Prevent duplicate props in JSX.
-- `react/no-danger-with-children`: Prevent using both children and dangerouslySetInnerHTML.
-- `react/no-deprecated`: Prevent using deprecated React methods.
-- `react/no-find-dom-node`: Prevent using findDOMNode.
-- `react/no-unsafe`: Prevent usage of unsafe lifecycle methods.
-- `react/void-dom-elements-no-children`: Prevent void DOM elements from having children.
-- `migration/react-class-to-hooks`: Suggest migrating React class components to hooks with detailed migration path.
-- `performance/no-unnecessary-rerenders`: Detects prevented re-renders in React.
-- `performance/react-render-optimization`: Detects unnecessary re-renders and expensive computations in React.
-- `performance/react-no-inline-functions`: Prevent inline functions in React renders with performance metrics.
 
 ## More
 

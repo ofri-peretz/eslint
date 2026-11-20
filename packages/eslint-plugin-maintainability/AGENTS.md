@@ -14,6 +14,8 @@ npm install --save-dev eslint-plugin-maintainability
 
 Requires ESLint ^8.40.0 || ^9.0.0 || ^10.0.0 and Node >=22.13.0.
 
+Flat config files (`eslint.config.*`) are found by ESLint 8.57 and newer; on ESLint 9 and 10 they are the default.
+
 ```js
 // eslint.config.mjs
 import maintainability from 'eslint-plugin-maintainability';
@@ -50,18 +52,6 @@ Enable these by name (`'maintainability/<rule>': 'error'`):
 - `no-missing-error-context`: Detects thrown errors without context.
 - `no-silent-errors`: Detects empty catch blocks.
 - `no-unhandled-promise`: Detects unhandled Promise rejections.
-- `maintainability/cognitive-complexity`: Enforces a maximum cognitive complexity threshold with refactoring guidance.
-- `maintainability/nested-complexity-hotspots`: Identifies nested control structures that harm readability.
-- `maintainability/identical-functions`: Detects duplicate function implementations with DRY refactoring suggestions.
-- `maintainability/max-parameters`: Detects functions with too many parameters.
-- `maintainability/no-lonely-if`: Prevent lone if statements inside else blocks - use else if instead.
-- `maintainability/no-nested-ternary`: Prevent nested ternary expressions for better readability.
-- `maintainability/consistent-function-scoping`: Move function definitions to the highest possible scope to improve readability and performance.
-- `maintainability/no-unreadable-iife`: Prevent unreadable Immediately Invoked Function Expressions that harm code clarity.
-- `maintainability/error-message`: Enforce providing a message when creating built-in Error objects for better debugging.
-- `maintainability/no-missing-error-context`: Detects thrown errors without context.
-- `maintainability/no-silent-errors`: Detects empty catch blocks.
-- `maintainability/no-unhandled-promise`: Detects unhandled Promise rejections.
 
 ## More
 
