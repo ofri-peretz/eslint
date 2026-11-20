@@ -256,7 +256,6 @@ function renderReadme(
       `${prefix}${alias}`,
     );
   }
-  const cta = /^> ⭐.*$/m.exec(src)?.[0] ?? '';
   // Some plugins keep the doctrine inside "Why"; it is placed once, below.
   const why = section(src, /^## Why[^\n]*$/m)
     .replace(/<!-- AUTO-GENERATED:DOCTRINE:START[\s\S]*?DOCTRINE:END -->/, '')
@@ -266,7 +265,8 @@ function renderReadme(
       .exec(src)?.[1]
       ?.trim() ?? '';
   const rules = section(src, /^## Rules$/m);
-  const support = section(src, /^## ⭐ Support & follow$/m);
+  // The plugin README's one star line, at the end (`## Support`, sync-readme-rules.ts).
+  const support = section(src, /^## Support$/m);
 
   const allRules = [...rules.matchAll(/^\| \[([a-z0-9-]+)\]\(/gm)].map(
     (m) => m[1],
@@ -317,7 +317,6 @@ None of these ${allRules.length} rules has an oxlint built-in equivalent. Every 
     header,
     tagline,
     aliasBadges,
-    cta,
     `## Description
 
 ${lead}\`${alias}\` is the [oxlint](https://oxc.rs/docs/guide/usage/linter/js-plugins) and [Vite+](https://viteplus.dev/guide/lint) name for [\`${plugin.name}\`](https://www.npmjs.com/package/${plugin.name}). It carries the same rules under the same IDs (\`${short}/<rule>\`), always at the same version, because it re-exports that package rather than copying it. Installing it does not install ESLint.`,

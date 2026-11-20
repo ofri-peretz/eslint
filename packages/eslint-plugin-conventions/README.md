@@ -20,7 +20,28 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
 </p>
 
-> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
+## Getting Started
+
+- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-conventions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions). 📚
+
+<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
+
+```bash
+npm install --save-dev eslint eslint-plugin-conventions
+```
+
+```js
+// eslint.config.mjs
+import { configs } from 'eslint-plugin-conventions';
+
+export default [configs.recommended];
+```
+
+`recommended` is the preset to start with. The others are listed under Configuration Presets below.
+
+Using oxlint or Vite+? Install `oxlint-plugin-conventions`: the same rules under the same `conventions/<rule>` IDs, without ESLint. Its [page](https://www.npmjs.com/package/oxlint-plugin-conventions) has the setup.
+
+<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## Description
 
@@ -41,40 +62,6 @@ That trade costs recall, and we measure it:
 · [a false positive is a bug](https://github.com/ofri-peretz/eslint/issues).
 
 <!-- AUTO-GENERATED:DOCTRINE:END -->
-
-## Getting Started
-
-- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-conventions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions). 📚
-
-<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
-
-**oxlint / Vite+** — the same rules under the same `conventions/<rule>` IDs, without ESLint:
-
-```bash
-npm install oxlint-plugin-conventions --save-dev
-```
-
-```jsonc
-// .oxlintrc.json
-{ "jsPlugins": ["oxlint-plugin-conventions"] }
-```
-
-```ts
-// vite.config.ts
-import { defineConfig } from 'vite-plus';
-
-export default defineConfig({
-  lint: { jsPlugins: ['oxlint-plugin-conventions'] },
-});
-```
-
-**ESLint:**
-
-```bash
-npm install eslint-plugin-conventions --save-dev
-```
-
-<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## ⚙️ Configuration Presets
 | Preset        | Description                         |
@@ -123,13 +110,13 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | [consistent-existence-index-check](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/consistent-existence-index-check?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Enforce one form for checking whether an object has a property | 🟢 |  |  |  | 💡 |  |
 | [expiring-todo-comments](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/expiring-todo-comments?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Add expiration conditions to TODO comments to prevent forgotten tasks. This rule is part of eslint-plugin-c… | 🟢 |  | ⚠️ |  | 💡 |  |
 | [filename-case](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/filename-case?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Enforce filename case conventions for consistency across your codebase | 🟢 |  |  |  | 💡 |  |
-| [no-commented-code](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-commented-code?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | ESLint Rule: no-commented-code with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  | ⚠️ |  | 💡 |  |
-| [no-console-spaces](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-console-spaces?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Disallow leading/trailing whitespace in console arguments. This rule is part of eslint-plugin-conventions. | 🟢 |  |  |  | 💡 |  |
+| [no-commented-code](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-commented-code?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Disallow commented-out code: delete it and let version control keep the history. | 🟢 |  | ⚠️ |  | 💡 |  |
+| [no-console-spaces](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-console-spaces?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Disallow leading/trailing whitespace in console arguments. This rule is part of eslint-plugin-conventions. | 🟢 |  |  |  |  |  |
 | [no-deprecated-api](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-deprecated-api?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) | CWE-1078 |  |  | Prevent usage of deprecated APIs with migration context and timeline. This rule is part of eslint-plugin-co… | 🟢 |  | ⚠️ |  | 💡 |  |
 | [no-json-schema-tags](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-json-schema-tags?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Disallow JSON Schema keywords (e.g. @minimum, @maximum, @pattern, @format) used as JSDoc tags. | 🟢 |  |  |  | 💡 |  |
 | [no-magic-numbers](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-magic-numbers?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Disallow magic numbers (numeric literals without a named constant) | 🟢 |  |  |  | 💡 |  |
 | [no-raw-cross-property-href](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-raw-cross-property-href?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Forbid hand-written cross-property hrefs; use buildUtmHref() from lib/utm.ts | 🟢 | 💼 |  |  |  |  |
-| [prefer-code-point](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/prefer-code-point?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Prefer String.codePointAt() over String.charCodeAt(). This rule is part of eslint-plugin-conventions. | 🟢 |  |  |  | 💡 |  |
+| [prefer-code-point](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/prefer-code-point?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Prefer String.codePointAt() over String.charCodeAt(). This rule is part of eslint-plugin-conventions. | 🟢 |  |  |  |  |  |
 | [prefer-dependency-version-strategy](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/prefer-dependency-version-strategy?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Enforce consistent version strategy (caret ^, tilde ~, exact, range, or any) for package.json dependencies.… | 🟢 |  |  |  | 💡 |  |
 | [prefer-dom-node-text-content](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/prefer-dom-node-text-content?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Prefer textContent over innerText. This rule is part of eslint-plugin-conventions. | 🟢 |  |  |  | 💡 |  |
 | [require-data-testid](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/require-data-testid?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Require stable data-testid attributes on interactive elements for end-to-end test reliability | 🟢 |  |  |  | 💡 |  |
@@ -184,11 +171,10 @@ Part of the **Interlace ESLint ecosystem** — AI-native rules with LLM-optimize
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:END -->
 
 <!-- INTERLACE:STAR_CTA:START -->
-## ⭐ Support & follow
 
-If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+## Support
 
-[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+Found a false positive? [Open an issue](https://github.com/ofri-peretz/eslint/issues): that is a bug. If the plugin helped, a star on [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint) helps others find it.
 
 <!-- INTERLACE:STAR_CTA:END -->
 

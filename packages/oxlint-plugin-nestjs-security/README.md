@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  Security rules tailored for NestJS applications (Controllers, Providers, Decorators).
+  ESLint rules that flag missing auth guards, missing validation pipes, unthrottled routes and exposed private fields in NestJS.
 </p>
 
 <p align="center">
@@ -19,8 +19,6 @@
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
 </p>
-
-> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
 
 ## Description
 
@@ -175,11 +173,9 @@ Part of the **Interlace ESLint ecosystem** — AI-native rules with LLM-optimize
 
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:END -->
 
-## ⭐ Support & follow
+## Support
 
-If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
-
-[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+Found a false positive? [Open an issue](https://github.com/ofri-peretz/eslint/issues): that is a bug. If the plugin helped, a star on [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint) helps others find it.
 
 ## 📄 License
 
