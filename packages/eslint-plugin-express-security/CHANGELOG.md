@@ -5,6 +5,24 @@ All notable changes to `eslint-plugin-express-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.1.0
+
+### Minor Changes
+
+- **🐛 Fix** — stop abstaining on route modules that receive `app` instead of importing express
+
+  The plugin skips a file unless it shows Express evidence, and a route module that exports
+  `(app, db) => { app.get(...) }` imports nothing and uses the two-argument `(req, res)` handler, so
+  every rule in the plugin stayed silent on it, `no-user-controlled-redirect` included. A handler
+  registered against a literal path with the `(req, res)` pair
+  (`app.get('/learn', guard, (req, res) => ...)`) now counts as Express evidence. Fastify
+  (`request, reply`), Koa (`ctx`), a bare `node:http` handler and `cache.get('/k', fn)` still do not
+  open the gate. Expect new findings in files of that shape.
+
+  `require-route-authentication` now recognises `isLoggedIn` / `loggedIn` / `ensureLoggedIn()` as
+  authentication guards. The name has neither `auth` nor `login` in it, so the most common spelling of
+  the guard read as no guard at all, which the wider gate would have turned into new false positives.
+
 ## 4.0.4
 
 ### Patch Changes
