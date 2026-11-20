@@ -14,8 +14,10 @@ module no_client_controlled_authorization {
   // Headers also read through Express's accessors req.get() / req.header().
   type Spell = Dot | Bracket | GetFn | HeaderFn
   // Evidence the file is Express code. A file with no Express import is not
-  // analysed (plugin-wide gate).
-  type Evidence = DefaultImport | Require | RouterNamed | TypeOnly | NoExpress
+  // analysed (plugin-wide gate) unless it registers a `(req, res)` handler on a
+  // literal path (#1616): that is the route-module shape, where `app` is handed
+  // in by the caller. NoExpress registers on an imported path constant instead.
+  type Evidence = DefaultImport | Require | RouterNamed | TypeOnly | RouteModule | NoExpress
 
   pure def client(c: Container): bool = c != User and c != Session
   pure def vocab(a: Attr, extra: bool): bool =
@@ -33,21 +35,30 @@ module no_client_controlled_authorization {
   var verdict: bool
 
   action step = {
-    nondet p = Set(Eq, IfTruthy, Not, AndOr, Ternary, Switch, IncludesRecv, IncludesArg,
-                   Nullish, Assign, Json).oneOf()
+    // A quarter of the draws pin the plain body/user role case where every
+    // evidence spelling is crossed, so those ten cells are reached in a few
+    // thousand traces instead of tens of thousands.
+    nondet focus = Set(false, false, false, true).oneOf()
+    nondet p0 = Set(Eq, IfTruthy, Not, AndOr, Ternary, Switch, IncludesRecv, IncludesArg,
+                    Nullish, Assign, Json).oneOf()
+    val p = if (focus) Eq else p0
     // Eq crosses every container/attribute/spelling/option; the other positions
     // are sampled on body vs user, role vs page.
-    nondet c = (if (p == Eq) Set(Body, Query, Params, Cookies, Headers, User, Session)
-                else Set(Body, User)).oneOf()
-    nondet a = (if (p != Eq) Set(Role, Page)
-                else if (c == Headers) Set(Role, UserId, Page)
-                else Set(Role, IsAdmin, UserId, Page, Tier)).oneOf()
-    nondet s = (if (p == Eq and c == Headers) Set(Bracket, GetFn, HeaderFn)
-                else if (p == Eq) Set(Dot, Bracket) else Set(Bracket)).oneOf()
-    nondet x = (if (p == Eq) Set(true, false) else Set(false)).oneOf()
+    nondet c0 = (if (p == Eq) Set(Body, Query, Params, Cookies, Headers, User, Session)
+                 else Set(Body, User)).oneOf()
+    val c = if (focus) (if (c0 == User) User else Body) else c0
+    nondet a0 = (if (p != Eq) Set(Role, Page)
+                 else if (c == Headers) Set(Role, UserId, Page)
+                 else Set(Role, IsAdmin, UserId, Page, Tier)).oneOf()
+    val a = if (focus) Role else a0
+    nondet s0 = (if (p == Eq and c == Headers) Set(Bracket, GetFn, HeaderFn)
+                 else if (p == Eq) Set(Dot, Bracket) else Set(Bracket)).oneOf()
+    val s = if (focus) Dot else s0
+    nondet x0 = (if (p == Eq) Set(true, false) else Set(false)).oneOf()
+    val x = if (focus) false else x0
     // Evidence is crossed on the plain body/role case only.
     nondet ev = (if (p == Eq and (c == Body or c == User) and a == Role and s == Dot and not(x))
-                   Set(DefaultImport, Require, RouterNamed, TypeOnly, NoExpress)
+                   Set(DefaultImport, Require, RouterNamed, TypeOnly, RouteModule, NoExpress)
                  else Set(DefaultImport)).oneOf()
     all { container' = c, attr' = a, pos' = p, spell' = s, extra' = x, evidence' = ev,
           verdict' = reports(c, a, p, x, ev) }

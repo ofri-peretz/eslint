@@ -178,6 +178,22 @@ ruleTester.run(
           `${SESSION}app.post('/items', passport.authenticate('jwt', { ['session']: false }), createItem);`,
         ),
       },
+      // The request is the handler's first parameter, whatever it is spelled;
+      // a binding that merely happens to be called `req` is not the request.
+      {
+        name: 'bearer: the request parameter is not spelled req',
+        code: x(`${SESSION}app.post('/items', requireAuth, (r, s) => {
+          s.json(create(r.headers.authorization, r.body));
+        });`),
+      },
+      {
+        name: 'bearer: a local named req is not the request, so its cookies do not count',
+        code: x(`${SESSION}app.post('/items', requireAuth, (r, s) => {
+          const req = buildOutbound();
+          req.cookies = {};
+          s.json(create(r.get('Authorization'), req.body));
+        });`),
+      },
     ],
     invalid: [
       // ------------------------------------------------------------------
@@ -339,6 +355,27 @@ ruleTester.run(
         router.get('/', authHandler.isAuthenticated, (req, res) => res.render('home'));
         router.post('/ping', requireAuth, appHandler.ping);
         module.exports = router;`),
+        errors: [{ messageId: 'missingCsrf' }],
+      },
+      {
+        name: 'a handler with no parameters carries no bearer evidence',
+        code: x(
+          `${SESSION}app.post('/items', requireAuth, () => createItem());`,
+        ),
+        errors: [{ messageId: 'missingCsrf' }],
+      },
+      {
+        name: 'a destructured request parameter is not bound to a name',
+        code: x(`${SESSION}app.post('/items', requireAuth, ({ headers }) => {
+          return create(headers.authorization);
+        });`),
+        errors: [{ messageId: 'missingCsrf' }],
+      },
+      {
+        name: 'bearer plus a cookie read through a differently spelled request parameter',
+        code: x(`${SESSION}app.post('/items', requireAuth, (r, s) => {
+          s.json(create(r.headers.authorization, r.cookies.sid));
+        });`),
         errors: [{ messageId: 'missingCsrf' }],
       },
     ],
