@@ -1,8 +1,8 @@
 {
   "sources": {
-    "nodegoat": "nodegoat.rev3.json",
-    "dvna": "dvna.rev2.json",
-    "juiceshop": "juiceshop.json"
+    "nodegoat": "nodegoat.rev4.json",
+    "dvna": "dvna.rev3.json",
+    "juiceshop": "juiceshop.rev2.json"
   },
   "configs": {
     "A": {
@@ -34,57 +34,57 @@
     },
     "B": {
       "items": 72,
-      "itemsHit": 16,
+      "itemsHit": 19,
       "lintableY": 17,
-      "lintableYHit": 12,
-      "findings": 161,
-      "tp": 19,
+      "lintableYHit": 14,
+      "findings": 114,
+      "tp": 29,
       "unlistedReal": 7,
       "loc": 25968,
       "recall": {
-        "value": 22.2,
-        "wilson95": [0.142, 0.331]
+        "value": 26.4,
+        "wilson95": [0.176, 0.376]
       },
       "recallLintableY": {
-        "value": 70.6,
-        "wilson95": [0.469, 0.867]
+        "value": 82.4,
+        "wilson95": [0.59, 0.938]
       },
       "precisionStrict": {
-        "value": 11.8,
-        "wilson95": [0.077, 0.177]
+        "value": 25.4,
+        "wilson95": [0.183, 0.341]
       },
       "precisionLenient": {
-        "value": 16.1,
-        "wilson95": [0.113, 0.226]
+        "value": 31.6,
+        "wilson95": [0.238, 0.406]
       },
-      "findingsPerKLoc": 6.2
+      "findingsPerKLoc": 4.4
     },
     "C": {
       "items": 72,
-      "itemsHit": 17,
+      "itemsHit": 20,
       "lintableY": 17,
-      "lintableYHit": 13,
-      "findings": 163,
-      "tp": 20,
+      "lintableYHit": 15,
+      "findings": 116,
+      "tp": 30,
       "unlistedReal": 7,
       "loc": 25968,
       "recall": {
-        "value": 23.6,
-        "wilson95": [0.153, 0.346]
+        "value": 27.8,
+        "wilson95": [0.188, 0.39]
       },
       "recallLintableY": {
-        "value": 76.5,
-        "wilson95": [0.527, 0.904]
+        "value": 88.2,
+        "wilson95": [0.657, 0.967]
       },
       "precisionStrict": {
-        "value": 12.3,
-        "wilson95": [0.081, 0.182]
+        "value": 25.9,
+        "wilson95": [0.188, 0.345]
       },
       "precisionLenient": {
-        "value": 16.6,
-        "wilson95": [0.116, 0.23]
+        "value": 31.9,
+        "wilson95": [0.241, 0.408]
       },
-      "findingsPerKLoc": 6.3
+      "findingsPerKLoc": 4.5
     }
   },
   "perApp": {
@@ -137,25 +137,25 @@
       },
       "B": {
         "items": 19,
-        "itemsHit": 8,
-        "findings": 15,
-        "tp": 9,
+        "itemsHit": 9,
+        "findings": 23,
+        "tp": 17,
         "unlistedReal": 0,
-        "precisionStrict": 0.6,
-        "recallAll": 0.421,
+        "precisionStrict": 0.739,
+        "recallAll": 0.474,
         "recallLintableY": 1,
-        "findingsPerKLoc": 19.6
+        "findingsPerKLoc": 30.1
       },
       "C": {
         "items": 19,
-        "itemsHit": 8,
-        "findings": 15,
-        "tp": 9,
+        "itemsHit": 9,
+        "findings": 23,
+        "tp": 17,
         "unlistedReal": 0,
-        "precisionStrict": 0.6,
-        "recallAll": 0.421,
+        "precisionStrict": 0.739,
+        "recallAll": 0.474,
         "recallLintableY": 1,
-        "findingsPerKLoc": 19.6
+        "findingsPerKLoc": 30.1
       }
     },
     "juiceshop": {
@@ -172,25 +172,25 @@
       },
       "B": {
         "items": 33,
-        "itemsHit": 4,
-        "findings": 136,
-        "tp": 4,
+        "itemsHit": 6,
+        "findings": 81,
+        "tp": 6,
         "unlistedReal": 4,
-        "precisionStrict": 0.029,
-        "recallAll": 0.121,
-        "recallLintableY": 0.5,
-        "findingsPerKLoc": 5.8
+        "precisionStrict": 0.074,
+        "recallAll": 0.182,
+        "recallLintableY": 1,
+        "findingsPerKLoc": 3.5
       },
       "C": {
         "items": 33,
-        "itemsHit": 4,
-        "findings": 136,
-        "tp": 4,
+        "itemsHit": 6,
+        "findings": 81,
+        "tp": 6,
         "unlistedReal": 4,
-        "precisionStrict": 0.029,
-        "recallAll": 0.121,
-        "recallLintableY": 0.5,
-        "findingsPerKLoc": 5.8
+        "precisionStrict": 0.074,
+        "recallAll": 0.182,
+        "recallLintableY": 1,
+        "findingsPerKLoc": 3.5
       }
     }
   }

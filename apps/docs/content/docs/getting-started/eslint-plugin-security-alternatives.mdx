@@ -95,6 +95,8 @@ One corpus run compares three of these. It was run 2026-11-15 on ESLint 10.14.0 
 
 The last row is not `secure-coding` plus `node-security`. Those two found 18 and 19 samples respectively (a sample can be counted by both); the rest came from our other plugins, listed on [Use alongside eslint-plugin-security](/docs/getting-started/with-eslint-plugin-security). `no-unsanitized` covers DOM sinks only, so a low count against a 45-CWE corpus says little about it. Our 0 of 96 does not carry over to real code: on 20 open-source projects (3.04M lines), 28.6% of Interlace's `recommended` findings and 13.0% of `eslint-plugin-security`'s were right, from 24 sampled findings per side. See [benchmarks](/docs/benchmarks).
 
+A second run, on three vulnerable training apps and graded against their documented flaws, is on [eslint-plugin-security alternative: measured on NodeGoat, DVNA and Juice Shop](/docs/getting-started/security-alternative-benchmark).
+
 Unmeasured, and so without numbers here: `eslint-plugin-n`, Semgrep and CodeQL on any corpus; the run time of any tool; false-positive rates of any tool on your repository. The comparison with CodeQL and Semgrep as categories is on [Interlace vs CodeQL vs Semgrep vs Snyk Code](/docs/getting-started/concepts/compare).
 
 ## Combinations
