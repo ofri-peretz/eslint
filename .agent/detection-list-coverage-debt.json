@@ -340,10 +340,8 @@
     "uservar"
   ],
   "packages/eslint-plugin-secure-coding/src/rules/no-hardcoded-credentials/index.ts#DEFAULT_PLACEHOLDER_WORDS": [
-    "dummy",
     "notreal",
     "redacted",
-    "replaceme",
     "tbd",
     "todo",
     "yours"

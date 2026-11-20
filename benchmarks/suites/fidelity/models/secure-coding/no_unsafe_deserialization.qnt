@@ -1,7 +1,9 @@
 // Model of eslint-plugin-secure-coding/no-unsafe-deserialization (CWE-502).
 // Contract: untrusted (request) data reaching a code-executing deserializer is
-// reported: eval, new Function, the string form of setTimeout, node-serialize
-// unserialize, js-yaml load without a safe schema. Safe: JSON.parse, js-yaml
+// reported: the string form of setTimeout, node-serialize unserialize, js-yaml
+// load without a safe schema. `eval` and `new Function` are code injection
+// (CWE-95), owned by node-security/detect-eval-with-expression, and are not
+// reported here (two rules on one call is noise). Safe: JSON.parse, js-yaml
 // load with JSON_SCHEMA, js-yaml safeLoad, the non-executing `yaml` package,
 // setTimeout with a function. A `deserialize` call is a dangerous function when
 // handed request data; the same call INSIDE a deserializer implementation
@@ -14,7 +16,7 @@ module no_unsafe_deserialization {
   type Input = ReqBody | Const
 
   pure def reports(k: Sink, i: Input): bool =
-    i == ReqBody and Set(Eval, NewFunction, SetTimeoutStr, Unserialize, JsYamlLoad, DeserializeCall).contains(k)
+    i == ReqBody and Set(SetTimeoutStr, Unserialize, JsYamlLoad, DeserializeCall).contains(k)
 
   var sink: Sink
   var input: Input
