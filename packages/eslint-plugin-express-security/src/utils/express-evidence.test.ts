@@ -185,3 +185,49 @@ describe('a (req, res) handler registered against a literal path', () => {
     expect(usesExpress(code)).toBe(false);
   });
 });
+
+describe('an exported (req, res) handler that calls an Express-only response method', () => {
+  // A controller module defines handlers that a routes file registers, so it has
+  // no import and no registration of its own. The handler is the evidence.
+  it.each([
+    'module.exports.redirect = function (req, res) { res.redirect(req.query.url); };',
+    'exports.show = (req, res) => res.render("show");',
+    'module.exports = { gone: function (req, res) { res.sendStatus(410); } };',
+    'module.exports = function (request, response) { response.sendFile("/a"); };',
+    'export function go(req, res) { if (req.ok) { return res.redirect("/x"); } }',
+    'export const go = (req, res) => res.render("go");',
+  ])('%s → true', (code) => {
+    expect(usesExpress(code)).toBe(true);
+  });
+
+  it.each([
+    ['function go(req, res) { res.redirect("/x"); }', 'never exported'],
+    ['const go = (req, res) => res.redirect("/x");', 'never exported'],
+    ['exports = function (req, res) { res.redirect("/x"); };', 'a bare `exports =` rebinds the local'],
+    ['exports.go = function (req, res) { res.end(); };', 'res.end is plain node:http'],
+    ['exports.go = function (req, res) { res.status(200).json({}); };', 'status/json are shared with Next.js'],
+    ['exports.go = function (req, res) { res[method]("/x"); };', 'a computed method names nothing'],
+    ['exports.go = function (req, res) { other.redirect("/x"); };', 'redirect on some other object'],
+    ['exports.go = function (req, res) { res.nested.redirect("/x"); };', 'redirect on a member of res'],
+    ['exports.go = function (request, reply) { reply.redirect("/x"); };', 'Fastify names'],
+    ['exports.go = function (ctx) { ctx.redirect("/x"); };', 'Koa'],
+    ['exports.go = function (a, b) { b.redirect("/x"); };', 'parameters not named req/res'],
+    ['exports.go = function (req, res, extra) { res.redirect("/x"); };', 'three parameters, not the middleware tail'],
+    ['exports.go = function (req) { res.redirect("/x"); };', 'one parameter'],
+    ['exports.go = function ({ query }, res) { res.redirect(query.url); };', 'destructured request'],
+    ['exports.go = function (req, { redirect }) { redirect("/x"); };', 'destructured response'],
+    ['x.exports.go = function (req, res) { res.redirect("/x"); };', 'not module.exports'],
+    ['exports.go = wrap(function (req, res) { res.redirect("/x"); });', 'wrapped in a call, not directly exported'],
+    ['module.exports = { go: wrap, other: function (req, res) { res.end(); } };', 'no Express-only call'],
+    ['local = { go: function (req, res) { res.redirect("/x"); } };', 'an object that is not exported'],
+    ['const go = function (req, res) { res.redirect("/x"); }; export { go };', 'a specifier export is not followed'],
+  ])('%s → false (%s)', (code) => {
+    expect(usesExpress(code)).toBe(false);
+  });
+
+  it('refuses a default export, which is how a Next.js API route is written', () => {
+    expect(
+      usesExpress('export default function handler(req, res) { res.redirect("/x"); }'),
+    ).toBe(false);
+  });
+});

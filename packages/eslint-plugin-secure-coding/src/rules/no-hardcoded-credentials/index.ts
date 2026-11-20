@@ -1049,6 +1049,12 @@ function looksLikeCredential(
 // check variable names in addition to values
 // @coverage-note: Not currently used, reserved for future enhancement
 
+/** Packages whose `secret` option signs session cookies. */
+const SESSION_PACKAGES: ReadonlySet<string> = new Set([
+  'express-session',
+  'cookie-session',
+]);
+
 export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
   name: 'no-hardcoded-credentials',
   meta: {
@@ -1398,6 +1404,142 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
     }
 
     /**
+     * Which session-middleware package does this callee load?
+     *
+     * `session({ secret })` is a call on a name the author chose, so the NAME
+     * proves nothing. What proves it is where the name comes from: an import of
+     * (or `require` of) `express-session` / `cookie-session`, resolved through
+     * the scope manager so a local function that merely happens to be called
+     * `session` is not mistaken for the middleware.
+     */
+    function sessionPackageOf(
+      callee: TSESTree.Node,
+      from: TSESTree.Node,
+    ): string | null {
+      const requiredPackage = (n: TSESTree.Node | null | undefined) =>
+        n?.type === 'CallExpression' &&
+        n.callee.type === 'Identifier' &&
+        n.callee.name === 'require' &&
+        n.arguments[0]?.type === 'Literal' &&
+        typeof n.arguments[0].value === 'string' &&
+        SESSION_PACKAGES.has(n.arguments[0].value)
+          ? (n.arguments[0].value as string)
+          : null;
+
+      // `require('express-session')({ secret })` inline.
+      if (callee.type === 'CallExpression') return requiredPackage(callee);
+      if (callee.type !== 'Identifier') return null;
+
+      for (
+        let scope: TSESLint.Scope.Scope | null =
+          context.sourceCode.getScope(from);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.set.get(callee.name);
+        if (!variable) continue;
+        const def = variable.defs[0];
+        if (def?.type === 'ImportBinding') {
+          const source = (def.parent as TSESTree.ImportDeclaration).source
+            .value;
+          return SESSION_PACKAGES.has(source) ? source : null;
+        }
+        if (def?.type === 'Variable') {
+          return requiredPackage(
+            (def.node as TSESTree.VariableDeclarator).init,
+          );
+        }
+        return null;
+      }
+      return null;
+    }
+
+    /**
+     * Is this literal the signing secret handed to a session middleware?
+     *
+     *   app.use(session({ secret: 'keyboard cat' }))
+     *   app.use(cookieSession({ keys: ['a', 'b'] }))
+     *
+     * The rest of this rule reads the VALUE, because a name alone is a weak
+     * signal. Here the slot is not a name guess: the call was resolved to the
+     * package that defines `secret` as the key cookies are signed with, so any
+     * literal in it is a hardcoded signing key whatever its shape. `keyboard
+     * cat` is prose, and prose is exactly what the shape tests (correctly)
+     * refuse everywhere else.
+     *
+     * `process.env.S`, config lookups and `process.env.S || 'dev'` are not
+     * Literals in this slot, so they are never reached.
+     */
+    function isSessionSecretLiteral(
+      node: TSESTree.Literal,
+      parent: TSESTree.Node | undefined,
+    ): boolean {
+      // The literal is the VALUE, not a quoted key: `{ 'secret': … }` has a
+      // string Literal for a key too.
+      let held: TSESTree.Node = node;
+      let property: TSESTree.Node | undefined = parent;
+      if (property?.type === 'ArrayExpression') {
+        held = property;
+        property = property.parent;
+      }
+      if (property?.type !== 'Property' || property.value !== held) {
+        return false;
+      }
+      // Every spelling of the same key: `secret`, `'secret'`, `['secret']`.
+      const key = objectKeyName(property);
+      if (key === null) return false;
+
+      const options = property.parent;
+      const call = options?.parent;
+      if (
+        options?.type !== 'ObjectExpression' ||
+        call?.type !== 'CallExpression' ||
+        call.arguments[0] !== options
+      ) {
+        return false;
+      }
+      const pkg = sessionPackageOf(call.callee, call);
+      if (pkg === null) return false;
+      // `keys` is how cookie-session names its signing keys; express-session has
+      // no such option, so `keys` there is some other value.
+      return key === 'secret' || (pkg === 'cookie-session' && key === 'keys');
+    }
+
+    function reportCredential(
+      node: TSESTree.Node,
+      value: string,
+      credentialType: string,
+      envVarName: string,
+    ): void {
+      context.report({
+        node,
+        messageId: 'useEnvironmentVariable',
+        data: { credentialType, envVarName },
+        suggest: [
+          {
+            messageId: 'useEnvironmentVariable',
+            data: { envVarName, credentialType },
+            fix: (fixer: TSESLint.RuleFixer) => {
+              return fixer.replaceText(
+                node,
+                `process.env.${envVarName} || '${value}'`,
+              );
+            },
+          },
+          {
+            messageId: 'useSecretManager',
+            fix: (fixer: TSESLint.RuleFixer) => {
+              return fixer.replaceText(
+                node,
+                `await getSecret('${envVarName.toLowerCase()}')`,
+              );
+            },
+          },
+        ],
+      });
+    }
+
+    /**
      * Check a string literal node
      */
     function checkStringLiteral(
@@ -1412,6 +1554,19 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
 
       // Skip if in test files and allowed
       if (isTestFile) {
+        return;
+      }
+
+      // A literal handed to a session middleware as its signing secret is
+      // hardcoded whatever it looks like. Placeholders and the user's ignore
+      // patterns still apply: `secret: '<your-secret>'` is documentation.
+      if (
+        value.length > 0 &&
+        isSessionSecretLiteral(node, parent) &&
+        !(allowPlaceholders && isPlaceholderValue(value, placeholderWordSet)) &&
+        !compiledIgnorePatterns.some((pattern) => pattern.test(value))
+      ) {
+        reportCredential(node, value, 'Session secret', 'SESSION_SECRET');
         return;
       }
 
@@ -1572,35 +1727,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
           .replace(/[^A-Z0-9_]/g, '_');
       }
 
-      context.report({
-        node,
-        messageId: 'useEnvironmentVariable',
-        data: {
-          credentialType: finalType,
-          envVarName,
-        },
-        suggest: [
-          {
-            messageId: 'useEnvironmentVariable',
-            data: { envVarName, credentialType: finalType },
-            fix: (fixer: TSESLint.RuleFixer) => {
-              return fixer.replaceText(
-                node,
-                `process.env.${envVarName} || '${value}'`,
-              );
-            },
-          },
-          {
-            messageId: 'useSecretManager',
-            fix: (fixer: TSESLint.RuleFixer) => {
-              return fixer.replaceText(
-                node,
-                `await getSecret('${envVarName.toLowerCase()}')`,
-              );
-            },
-          },
-        ],
-      });
+      reportCredential(node, value, finalType, envVarName);
     }
 
     return {

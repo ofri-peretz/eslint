@@ -132,6 +132,21 @@ boilerplates) that single pattern was 5 of 10 findings. The genuinely committed
 i18n keys far more often than API keys — so they only count as credential
 context when the value is already a random blob by shape.
 
+### Session middleware secrets — reported on the slot, not the shape
+
+A string literal passed as `secret` to `express-session` or `cookie-session` (or as an element of `secret` / `keys`
+in `cookie-session`) is reported whatever it looks like. The README example `secret: 'keyboard cat'` is prose, which
+every shape test above correctly refuses elsewhere; here the call is resolved to the package that defines the option as
+the key cookies are signed with, so the slot itself is the evidence. `process.env.X`, config lookups,
+`process.env.X || 'dev'` defaults, placeholders and values in `ignorePatterns` are left alone, and so is a function that
+merely happens to be named `session` but is not imported from one of those packages.
+
+```js
+import session from 'express-session';
+app.use(session({ secret: 'keyboard cat' })); // reported
+app.use(session({ secret: process.env.SESSION_SECRET })); // fine
+```
+
 ## Examples
 
 ### ❌ Incorrect
