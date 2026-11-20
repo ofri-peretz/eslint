@@ -197,10 +197,17 @@ for (const [name, c] of Object.entries(configs)) {
   const ms = performance.now() - t0;
   const findings = [];
   const nullRule = [];
+  const harnessNoise = [];
   const ruleOnFileSet = reports.map((r) => path.relative(cloneDir, r.filePath));
   for (const r of reports) {
     for (const m of r.messages) {
       const file = path.relative(cloneDir, r.filePath);
+      // The app's own inline `eslint-disable @typescript-eslint/...` comments make ESLint report "Definition for rule ... was
+      // not found" under that rule id. Not a finding of any plugin under test; identical on both sides; counted, not scored.
+      if (/^Definition for rule .* was not found/.test(m.message)) {
+        harnessNoise.push({ file, line: m.line, ruleId: m.ruleId });
+        continue;
+      }
       if (m.ruleId === null) {
         nullRule.push({
           file,
@@ -262,6 +269,7 @@ for (const [name, c] of Object.entries(configs)) {
     loc: loc(lintedFiles),
     ms: Math.round(ms),
     parseErrors: nullRule,
+    harnessNoise,
     rawFindings: findings,
     files: ruleOnFileSet,
   };
@@ -322,7 +330,11 @@ for (const [name, r] of Object.entries(results)) {
     expectedFiles: r.expectedFiles,
     loc: r.loc,
     ms: r.ms,
-    parseErrors: r.parseErrors.length,
+    // ruleId:null messages: fatal = parse errors; the rest are ESLint's own unused-eslint-disable warnings (same on both sides)
+    parseErrors: r.parseErrors.filter((e) => e.fatal).length,
+    parseErrorDetail: r.parseErrors.filter((e) => e.fatal),
+    harnessNoiseDropped: r.harnessNoise.length,
+    otherNullRuleMessages: r.parseErrors.filter((e) => !e.fatal).length,
     findings: findings.length,
     duplicateRuleHitsDropped: dupCount,
     findingsPerKLoc: +((findings.length / r.loc) * 1000).toFixed(1),
