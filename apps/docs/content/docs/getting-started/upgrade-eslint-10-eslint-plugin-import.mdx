@@ -1,0 +1,209 @@
+---
+title: Upgrade to ESLint 10 with eslint-plugin-import
+description: 'eslint-plugin-import has no ESLint 10 release (peer ^9), so installs fail with ERESOLVE. Swap it in one line with eslint-plugin-import-next, or use import-x.'
+icon: RefreshCw
+---
+
+`eslint-plugin-import` 2.32.0 is the latest release, and its `eslint` peer range stops at `^9`. Install ESLint 10 next to it and npm refuses; pnpm with strict peers and Yarn complain the same way. Support for ESLint 10 is merged on its `main` branch ([import-js/eslint-plugin-import#3230](https://github.com/import-js/eslint-plugin-import/pull/3230), merged 2026-06-29) but has not been released.
+
+**Covers ESLint 10 with flat config. Versions and dates were read from the npm registry on 2026-11-20. Last updated 2026-11-20.** We maintain `eslint-plugin-import-next`, so read its rows as claims by an interested party.
+
+## The error
+
+Captured on 2026-11-20 with npm 11.6.2 and Node 24.12.0, running `npm install --save-dev eslint@10.14.0 eslint-plugin-import@2.32.0` in an empty project:
+
+```text
+npm error code ERESOLVE
+npm error ERESOLVE unable to resolve dependency tree
+npm error While resolving: your-app@1.0.0
+npm error Found: eslint@10.14.0
+npm error node_modules/eslint
+npm error   dev eslint@"10.14.0" from the root project
+npm error Could not resolve dependency:
+npm error peer eslint@"^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8 || ^9" from eslint-plugin-import@2.32.0
+npm error node_modules/eslint-plugin-import
+npm error   dev eslint-plugin-import@"2.32.0" from the root project
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+```
+
+## Your options
+
+- **Wait.** If the upstream release is close, the cheapest fix is no change. When it ships, this page is out of date for you.
+- **Keep `eslint-plugin-import` and override the peer** (`npm install --legacy-peer-deps`, or `overrides` in `package.json`). Reports from other projects say most rules load on ESLint 10 and three crash: `no-default-export`, `no-named-export` and `unambiguous` ([import-js#3227](https://github.com/import-js/eslint-plugin-import/issues/3227), [OpenAEV#8480](https://github.com/OpenAEV-Platform/openaev/issues/8480)). We could not reproduce it: on 2026-11-20, with 2.32.0 installed under `--legacy-peer-deps` next to ESLint 10.14.0, every one of its 46 rules ran on a two-line module without throwing, `no-default-export`, `no-named-export` and `unambiguous` included. The crash may depend on the code being linted or on the ESLint 10 patch version, so run your own repository before you rely on either result.
+- **Swap to `eslint-plugin-import-next`.** Same rule names, same `import/*` settings, one changed import line. Below.
+- **Swap to `eslint-plugin-import-x`.** Maintained, supports ESLint 10, but it renames everything to `import-x/*`. See [when import-x is the better choice](#when-import-x-is-the-better-choice).
+
+## The one-line swap
+
+```bash
+npm uninstall eslint-plugin-import
+npm install --save-dev eslint-plugin-import-next
+```
+
+In `eslint.config.js`, change the import line and leave the rest alone:
+
+```diff
+- import importPlugin from 'eslint-plugin-import';
++ import importPlugin from 'eslint-plugin-import-next';
+
+  export default [
+    importPlugin.flatConfigs.recommended,
+    importPlugin.flatConfigs.typescript,
+  ];
+```
+
+If you register the rules yourself instead of using `flatConfigs`, register the plugin under the same `import` key:
+
+```js title="eslint.config.js"
+import importPlugin from 'eslint-plugin-import-next';
+
+export default [
+  {
+    plugins: { import: importPlugin },
+    settings: { 'import/resolver': { node: { extensions: ['.js', '.ts'] } } },
+    rules: { 'import/no-cycle': 'error', 'import/order': 'warn' },
+  },
+];
+```
+
+### A shared config you do not control
+
+If the plugin comes in through a shared config (`eslint-config-airbnb-extended`, `@wordpress/eslint-plugin`, `eslint-plugin-github` and similar) that imports `eslint-plugin-import` itself, point that name at ours with an npm alias:
+
+We ran this on 2026-11-20 with npm 11.6.2 and ESLint 10.14.0. A package that depends on `eslint-plugin-import@^2.32.0`, installed with the override below, resolved to `eslint-plugin-import@npm:eslint-plugin-import-next@4.1.1`, `npm install` finished without ERESOLVE, and `eslint` reported `import/no-duplicates` through the shared config's `flatConfigs.recommended`. We did not run pnpm or Yarn; they take the same idea under `pnpm.overrides` and `resolutions`.
+
+```json title="package.json"
+{
+  "overrides": {
+    "eslint-plugin-import": "npm:eslint-plugin-import-next@^4.1.1"
+  }
+}
+```
+
+The shared config must read only what `flatConfigs` exposes: the seven keys `recommended`, `errors`, `warnings`, `react`, `react-native`, `electron` and `typescript`. A shared config that extends the eslintrc preset (`plugin:import/recommended`) will not work, because those presets are not provided.
+
+## What stays the same
+
+- **Rule names.** The plugin registers as `import`, so `import/no-cycle`, `import/order` and the rest keep their IDs, and so do your `eslint-disable import/...` comments.
+- **`flatConfigs`.** The same seven keys as 2.32.0, with the same rule IDs, severities, `settings` and `languageOptions`. A test in the repository compares each key with an installed `eslint-plugin-import` 2.32.0 and lints a fixture through both, expecting the same findings by rule, line and severity.
+- **Settings.** These `import/*` keys are read, with the meaning they have in `eslint-plugin-import`:
+
+| Setting                                                                          | Read by                                                                                                                                                                                                                                                               |
+| :------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `import/resolver`, `import/resolve`                                              | every rule that resolves an import (`no-unresolved`, `no-duplicates`, `no-extraneous-dependencies`, `no-cycle`, `extensions`, `named`, `namespace`, `default`, `export` and others). `import/resolve` is read only when `import/resolver` is absent, as upstream does |
+| `import/extensions`, `import/parsers`, `import/ignore`                           | the rules that read other modules (`named`, `namespace`, `default`, `export`, `no-deprecated`, `no-named-as-default`, `no-named-as-default-member`)                                                                                                                   |
+| `import/core-modules`, `import/external-module-folders`, `import/internal-regex` | `order` (and `import/external-module-folders` in `no-cycle`)                                                                                                                                                                                                          |
+| `import/node-version`                                                            | `enforce-node-protocol-usage`                                                                                                                                                                                                                                         |
+| `import/docstyle`                                                                | the comment styles (`jsdoc` by default) the module reader accepts when it looks for `@deprecated`                                                                                                                                                                     |
+
+Any `import/*` key that is not in that table is not read. The plugin does not read `import-x/*` keys at all.
+
+- **Resolvers.** `node` (its `extensions` and `paths`), `typescript` (or `eslint-import-resolver-typescript`) and `custom-alias` settings are modelled, in the order you list them, and a specifier the first one misses goes to the next. They are approximated, not invoked: you do not need the resolver packages installed for the plugin to honour the setting. Any other resolver (webpack, a custom one) is treated as the default resolver, so an alias that only webpack knows can still show up as unresolved.
+- **Versions.** Peer `eslint` is `^8.40.0 || ^9.0.0 || ^10.0.0`. Node is `^20.19.0 || ^22.13.0 || >=24`.
+
+## What differs: the 5% of upstream's tests that fail
+
+`eslint-plugin-import-next` implements all 45 rules that `eslint-plugin-import`'s test suite covers. Graded by that suite's own cases, it passes **2,035 of 2,135 (95.3%)**, measured 2026-11-19. A valid case passes when the rule reports nothing and an invalid case passes when the rule reports exactly the expected number of problems; messages, positions and fixes are not compared. Only cases that `eslint-plugin-import` itself passes in the same harness are graded, which leaves out 682 of the 2,817 captured. Most of those are 490 cases that need the `babel-eslint` parser. 24 rules pass every graded case.
+
+The 100 failing cases, by rule:
+
+| Rule                                                                                                      |  Fails | Of graded | What goes wrong                                                                                                                                                                         |
+| :-------------------------------------------------------------------------------------------------------- | -----: | --------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `no-useless-path-segments`                                                                                |     28 |        94 | Misses `require("./bar/index")` and `./test-module/` style paths (14 of the 28 involve `require`; 22 set `noUselessIndex`); reports 2 valid cases                                       |
+| `no-commonjs`                                                                                             |     11 |        45 | **Reports 10 valid cases**: `require` inside a function, behind `&&` or `if`, in `try/catch`, with a non-literal argument                                                               |
+| `dynamic-import-chunkname`                                                                                |      9 |       102 | Misses chunk-name comments when `importFunctions` names a custom function                                                                                                               |
+| `no-cycle`                                                                                                |      8 |       102 | Misses cycles through external folders and some dynamic `import()` cases                                                                                                                |
+| `max-dependencies`                                                                                        |      6 |        11 | Misses cases that count `require` calls and repeated imports                                                                                                                            |
+| `no-anonymous-default-export`                                                                             |      6 |        48 | Misses `export default` of a literal, array, object or `new` expression when no options are given                                                                                       |
+| `no-internal-modules`                                                                                     |      6 |        44 | **Reports 4 valid cases** with `forbid` globs; misses 2                                                                                                                                 |
+| `no-unresolved`                                                                                           |      6 |       100 | **Reports 2 valid cases**: `require("./missing")` under default options, which upstream ignores unless `commonjs: true`; misses 3; one count differs                                    |
+| `no-amd`                                                                                                  |      4 |        15 | **Reports 4 valid cases**: `define` and `require([...])` calls nested in functions or with odd arguments                                                                                |
+| `extensions`                                                                                              |      3 |        70 | Misses `index.js` and TypeScript declare-file cases                                                                                                                                     |
+| `export`, `exports-last`, `no-mutable-exports`, `order`                                                   | 2 each |           | `export` and `no-mutable-exports` miss TypeScript merging and `export default` of a mutable binding; `order` reports 2 valid cases with `alphabetize` and named or `cjsExports` options |
+| `namespace`, `no-import-module-exports`, `no-named-export`, `no-relative-packages`, `no-restricted-paths` | 1 each |           | One case each: a missed finding, one valid case reported, or a different count                                                                                                          |
+
+Totals: 71 invalid cases go unreported (a missed finding), **25 valid cases are reported (a new finding)**, and 4 report a different number of times. The 25 are the ones that can fail your CI after the swap, and they sit in `no-commonjs`, `no-internal-modules`, `no-amd`, `no-unresolved`, `no-useless-path-segments`, `order` and `no-import-module-exports`. If you do not enable those rules, or enable them in a codebase without CommonJS, you will not meet them. Every failing case is listed with its expected and reported counts in [the measurement file](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/results/ilb-import-parity/2026-11-19.json).
+
+Differences the test suite does not show, from a 5-file fixture run on 4.1.0 (not re-run on 4.1.1):
+
+- `no-duplicates` flags `./other` and `./other.ts` as the same module (it resolves TypeScript extensions by default); 2.32.0 did not. That is a new finding on TypeScript code that has both spellings.
+- A multi-line `import {...} from './dep'` is reported on the statement's first line, not on the `from` line, and columns differ, so a disable comment placed above the `from` line stops matching.
+- `export` skips a duplicate `export interface T` (legal TypeScript declaration merging); 2.32.0 reports it. Deliberate.
+- `no-unused-modules` rejects its `unusedExports` option instead of ignoring it.
+- Only the `no-duplicates` and `no-extraneous-dependencies` messages were rewritten to upstream's one-line form in 4.1.1. Anything that matches on message text for other rules should be checked.
+- 4.1.0 reported 129 false positives (58 `no-duplicates`, 71 `no-extraneous-dependencies`) on a lint-clean svelte and docusaurus monorepo that 2.32.0 reports nothing on. 4.1.1 fixed both and the changelog records zero findings on that repo. That is one repository; run your own.
+
+## When import-x is the better choice
+
+[`eslint-plugin-import-x`](https://github.com/un-ts/eslint-plugin-import-x) is the fork most projects chose. It supports ESLint 10 (peer `^8.57.0 || ^9.0.0 || ^10.0.0`), and every project we found that moved off `eslint-plugin-import` for ESLint 10 chose it. Pick it when:
+
+- **You need Node 18.** Its `engines` is `^18.18.0 || ^20.9.0 || >=21.1.0`. Ours starts at 20.19, which is also ESLint 10's own floor, so on ESLint 10 alone the gap is only Node versions below 20.19 on older ESLint.
+- **You still use eslintrc configs.** We provide flat configs only. Its source tree has both `src/config/recommended.ts` and a `src/config/flat/` directory.
+- **You want its newer resolver interface.** It reads `import-x/resolver-next` as well as the legacy `import-x/resolver`.
+- **You are happy to rename.** It reads only `import-x/*` settings and registers rules as `import-x/*`. `import/resolver`, `import/extensions` and the others must be renamed, and so must every `eslint-disable import/...` comment. Mocha's open pull request ([mochajs/mocha#6478](https://github.com/mochajs/mocha/pull/6478)) does that and drops two settings.
+- **You want the larger user base.** Last week's npm downloads, 2026-11-12 to 2026-11-18: `eslint-plugin-import` 85,299,469, `eslint-plugin-import-x` 10,204,049, `eslint-plugin-import-next` 7,826. First published: import-x 2024-03-11, import-next 2025-12-30.
+- **You want the two plugins side by side while you migrate.** Different prefixes cannot collide.
+
+We have not run `eslint-plugin-import-x` against `eslint-plugin-import`'s test suite, so we cannot tell you which is closer to upstream. The one difference we checked in its source is the settings prefix.
+
+## Verify it on your repo
+
+Run your lint before and after, and compare what is reported. Do the "before" run on the ESLint and plugin you have today, before upgrading, so a rule that crashes on ESLint 10 does not get in the way.
+
+```bash
+# 1. before: your current setup
+npx eslint . -f json -o before.json
+
+# 2. swap the plugin (and upgrade ESLint), then
+npx eslint . -f json -o after.json
+
+# 3. confirm the import rules are active under the same IDs
+npx eslint --print-config src/index.ts | grep '"import/'
+```
+
+Compare by rule, file and line. Columns and message text differ for some rules, so do not compare them. Save this as `compare-import.mjs`:
+
+```js title="compare-import.mjs"
+import { readFileSync } from 'node:fs';
+
+const key = (f, m) =>
+  `${m.ruleId}\t${f.filePath.replace(process.cwd() + '/', '')}:${m.line}`;
+const load = (file) => {
+  const found = new Map();
+  for (const f of JSON.parse(readFileSync(file, 'utf8')))
+    for (const m of f.messages)
+      if (m.ruleId?.startsWith('import/'))
+        found.set(key(f, m), (found.get(key(f, m)) ?? 0) + 1);
+  return found;
+};
+
+const [before, after] = [load(process.argv[2]), load(process.argv[3])];
+const only = (a, b) => [...a.keys()].filter((k) => !b.has(k));
+const total = (m) => [...m.values()].reduce((a, b) => a + b, 0);
+
+console.log(`before: ${total(before)}  after: ${total(after)}`);
+for (const k of only(before, after)) console.log(`missing after   ${k}`);
+for (const k of only(after, before)) console.log(`new after       ${k}`);
+process.exitCode =
+  only(before, after).length + only(after, before).length ? 1 : 0;
+```
+
+```bash
+node compare-import.mjs before.json after.json
+```
+
+Empty output after the totals line means the same findings in the same places. A `new after` line is the case to read first: check it against the table above, and if the rule is not on that list, [open an issue](https://github.com/ofri-peretz/eslint/issues) with the file. A false positive is a bug here.
+
+{/* FAQ JSON-LD (suggested; each answer must match the page text when it is generated)
+Q: Does eslint-plugin-import support ESLint 10?
+A: Not in a release. The latest release, 2.32.0, declares an eslint peer range that stops at ^9. ESLint 10 support was merged on main on 2026-06-29 and is unreleased.
+Q: How do I fix the ERESOLVE error for eslint-plugin-import and ESLint 10?
+A: Swap to eslint-plugin-import-next, which keeps the import rule names and import/* settings, or to eslint-plugin-import-x, which renames them to import-x/*. Overriding the peer range also works; three rules are reported to crash, which we could not reproduce.
+Q: Do I have to rename my rules or settings if I switch to eslint-plugin-import-next?
+A: No. It registers as import, so import/* rule names, settings and disable comments keep working. Flat config only.
+Q: How compatible is eslint-plugin-import-next with eslint-plugin-import?
+A: It passes 2,035 of 2,135 graded cases (95.3%) of eslint-plugin-import 2.32.0's own tests. 25 valid cases are reported as findings; they are listed on the page.
+Q: When should I use eslint-plugin-import-x instead?
+A: When you need Node 18, still use eslintrc configs, want its resolver-next interface, or want the larger user base and accept renaming to import-x/*.
+*/}

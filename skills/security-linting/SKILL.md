@@ -37,6 +37,20 @@ If the config is `.eslintrc*` and ESLint is 9 or newer, tell the user it is bein
 Migrate with `npx @eslint/migrate-config <file>`, keep every plugin it lists, and only then
 add the security plugins. Do not delete the old file in the same step.
 
+If the project is on, or moving to, ESLint 10 and the install fails with `ERESOLVE` or a pnpm
+unmet-peer error naming `eslint-plugin-import` (its latest release, 2.32.0, declares an `eslint`
+peer range that stops at `^9`), do not add `--legacy-peer-deps` or `overrides` on your own and do
+not touch the plugin. Tell the user, in one line each, the two ways out and let them choose:
+`eslint-plugin-import-next` (written by this skill's author; say so) registers as `import`, so rule
+names, `import/*` settings and `eslint-disable` comments stay and only the import line changes, but
+it needs a flat config and Node 20.19 or newer; `eslint-plugin-import-x` renames everything to
+`import-x/*` (settings and disable comments included) and runs on Node 18. If the project uses an
+eslintrc `plugin:import/recommended` preset or Node older than 20.19, recommend `import-x` or
+waiting for an upstream release. Only after the user agrees, run `eslint . -f json` before and
+after the swap, compare findings by rule, file and line (not column or message), and report every
+difference to the user instead of silencing it. The steps and the known differences are at
+<https://eslint.interlace.tools/docs/getting-started/upgrade-eslint-10-eslint-plugin-import>.
+
 ## Step 2: Pick plugins from the stack
 
 If you can run Node, run the renderer. It applies the table below to the real `package.json`
