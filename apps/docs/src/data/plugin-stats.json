@@ -179,7 +179,7 @@
     {
       "name": "eslint-plugin-import-next",
       "rules": 58,
-      "description": "ESLint import rules — a drop-in replacement for eslint-plugin-import that passes 95% of its own test cases, covering imports and module boundaries, 3.1x faster end-to-end",
+      "description": "ESLint import rules — eslint-plugin-import replacement for ESLint 10 (and 8, 9): same import/* rule names and settings (node, typescript and custom-alias resolvers), passes 95% of its own test cases",
       "category": "architecture",
       "version": "4.1.1",
       "published": true
