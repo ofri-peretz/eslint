@@ -5,6 +5,20 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.1.6
+
+### Patch Changes
+
+- **🐛 Fix** — three false positives and one crash reported by adopters
+
+  - `no-hardcoded-credentials` no longer reports a template placeholder name under a key called `token`. `Replacement.create({ token: 'unsubscribeUrl', value })` (stamhoofd/stamhoofd EmailBuilder.ts and exampleReplacements.ts, four disables) was read as a high-entropy blob because the word check rejected four consonants in a row, which `unsubscribe`, `subscribe`, `construct` and `abstract` all contain. The limit is now five. A value with digits or a real key shape under `token` still reports.
+  - `no-sensitive-data-exposure` no longer reports `` `unexpected key type: ${privateKey.type}` `` (honojs/hono `src/utils/jwt/jws.ts:110`). `type`, `algorithm`, `extractable` and `usages` are CryptoKey's own attributes and cannot carry the key; `privateKey`, `privateKey.pem` and `privateKey.value` still report.
+  - `import-next/no-default-export` no longer throws on `export default class {}` in plain JavaScript. espree gives a class no `decorators` field and the 4.1.2 autofix read its `length`.
+
+- **📚 Docs** — the npm description and keywords now say what people search for
+
+  The description reads "ESLint import rules — eslint-plugin-import replacement for ESLint 10 (and 8, 9)", keeps the 95% measurement and says flat config only; the "3.1x faster" claim is out of the one-line description. Five keywords added: `eslint-plugin-import-replacement`, `eslint-10`, `eslint10`, `flat-config`, `peer-dependency`. No code change.
+
 ## 4.1.5
 
 ### Patch Changes

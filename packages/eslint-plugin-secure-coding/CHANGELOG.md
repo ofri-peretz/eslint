@@ -5,6 +5,27 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.3.0
+
+### Minor Changes
+
+- **🐛 Fix** — no-hardcoded-credentials reports a literal session secret
+
+  `session({ secret: 'keyboard cat' })` was silent: the value reads as prose, and this rule decides on the
+  value's shape. A string literal passed as `secret` to a call resolved (through the scope manager) to
+  `express-session` or `cookie-session`, as an element of that `secret` array, or in `cookie-session`'s `keys`,
+  is now reported whatever it looks like. `process.env.X`, config lookups, `process.env.X || 'dev'` defaults,
+  placeholders and `ignorePatterns` entries stay quiet, as does a local function that is merely named `session`.
+  Expect new findings wherever a session secret is written in source.
+
+### Patch Changes
+
+- **🐛 Fix** — three false positives and one crash reported by adopters
+
+  - `no-hardcoded-credentials` no longer reports a template placeholder name under a key called `token`. `Replacement.create({ token: 'unsubscribeUrl', value })` (stamhoofd/stamhoofd EmailBuilder.ts and exampleReplacements.ts, four disables) was read as a high-entropy blob because the word check rejected four consonants in a row, which `unsubscribe`, `subscribe`, `construct` and `abstract` all contain. The limit is now five. A value with digits or a real key shape under `token` still reports.
+  - `no-sensitive-data-exposure` no longer reports `` `unexpected key type: ${privateKey.type}` `` (honojs/hono `src/utils/jwt/jws.ts:110`). `type`, `algorithm`, `extractable` and `usages` are CryptoKey's own attributes and cannot carry the key; `privateKey`, `privateKey.pem` and `privateKey.value` still report.
+  - `import-next/no-default-export` no longer throws on `export default class {}` in plain JavaScript. espree gives a class no `decorators` field and the 4.1.2 autofix read its `length`.
+
 ## 6.2.0
 
 ### Minor Changes
