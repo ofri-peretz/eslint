@@ -58,11 +58,14 @@ module.exports = {
       ].filter(Boolean);
       args += `, { ${props.join(', ')} }`;
     }
+    // A `(req, res)` handler on a literal path is Express evidence by itself
+    // (#1616), so the no-Express fixture registers on an imported constant.
+    const path = ctx === 'DefNoExpress' ? 'LOGIN_PATH' : "'/login'";
     return [
       head,
-      "import { cookieDefaults, token } from './config';",
+      "import { cookieDefaults, token, LOGIN_PATH } from './config';",
       app,
-      `app.post('/login', (req: any, ${res}: any) => {`,
+      `app.post(${path}, (req: any, ${res}: any) => {`,
       `  ${call}('session', ${args});`,
       `  ${res}.end();`,
       '});',

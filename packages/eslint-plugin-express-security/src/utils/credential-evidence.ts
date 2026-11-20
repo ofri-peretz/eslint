@@ -79,15 +79,44 @@ const BEARER_STRATEGIES: ReadonlySet<string> = new Set([
   'oauth-bearer',
 ]);
 
+/**
+ * The request a handler receives is its first parameter, whatever it is
+ * spelled: `(req, res) =>`, `(r, s) =>`, `function (request) {}`. Collect those
+ * bindings from every function inside `node` instead of guessing from a
+ * spelling, so `(r) => r.cookies.sid` counts and `req.cookies` on some other
+ * object named `req` does not.
+ */
+function requestBindings(node: TSESTree.Node): ReadonlySet<string> {
+  const names = new Set<string>();
+  walk(node, (n) => {
+    if (
+      n.type !== AST_NODE_TYPES.FunctionExpression &&
+      n.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
+      n.type !== AST_NODE_TYPES.FunctionDeclaration
+    ) {
+      return;
+    }
+    const [first] = n.params;
+    if (first?.type === AST_NODE_TYPES.Identifier) names.add(first.name);
+  });
+  return names;
+}
+
+function isRequestReceiver(
+  object: TSESTree.Node,
+  requests: ReadonlySet<string>,
+): boolean {
+  return object.type === AST_NODE_TYPES.Identifier && requests.has(object.name);
+}
+
 function readsMember(node: TSESTree.Node, names: ReadonlySet<string>): boolean {
+  const requests = requestBindings(node);
   let found = false;
   walk(node, (n) => {
     if (found || n.type !== AST_NODE_TYPES.MemberExpression) return;
     const name = propertyName(n);
     if (name === null || !names.has(name)) return;
-    found =
-      n.object.type === AST_NODE_TYPES.Identifier &&
-      /^(req|request)$/i.test(n.object.name);
+    found = isRequestReceiver(n.object, requests);
   });
   return found;
 }
@@ -105,6 +134,7 @@ function readsCookieCredential(node: TSESTree.Node): boolean {
 
 /** `req.headers.authorization`, `req.headers['authorization']`, `req.get('Authorization')`. */
 function readsAuthorizationHeader(node: TSESTree.Node): boolean {
+  const requests = requestBindings(node);
   let found = false;
   walk(node, (n) => {
     if (found) return;
@@ -120,8 +150,7 @@ function readsAuthorizationHeader(node: TSESTree.Node): boolean {
       n.callee.type === AST_NODE_TYPES.MemberExpression &&
       // @vocabulary Express request API
       ['get', 'header'].includes(propertyName(n.callee) ?? '') &&
-      n.callee.object.type === AST_NODE_TYPES.Identifier &&
-      /^(req|request)$/i.test(n.callee.object.name)
+      isRequestReceiver(n.callee.object, requests)
     ) {
       const [first] = n.arguments;
       found =
