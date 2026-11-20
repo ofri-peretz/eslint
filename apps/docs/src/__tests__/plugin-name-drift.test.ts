@@ -35,6 +35,10 @@ const ALLOWED_THIRD_PARTY = [
   'eslint-plugin-xss',
   // Not a package: the slug of the docs guide /docs/getting-started/eslint-plugin-security-alternatives.
   'eslint-plugin-security-alternatives',
+  // Not a package: the slug of /docs/getting-started/eslint-plugin-react-eslint-10.
+  'eslint-plugin-react-eslint-10',
+  // Compared against in the eslint-plugin-react ESLint 10 guide.
+  'eslint-plugin-react-x',
   // Cited by no-redos-vulnerable-regex as the prior art for using scslre:
   // it is the plugin whose NFA analysis approach that rule follows.
   'eslint-plugin-regexp',
