@@ -1,0 +1,93 @@
+{
+  "comment": "Truth class -> rule IDs that count as the RIGHT reason, per plugin. Written before any run from rule names, meta.description and rule docs. The incumbent's rules carry no CWE metadata, so its column is built by hand from its rule docs; challenge it by PR. An empty list means no rule of that plugin set claims the class. A finding inside a truth region from a rule outside the class is 'right place, wrong reason' (FP for precision, TP for nothing).",
+  "classes": {
+    "code-injection-eval": {
+      "ours": ["node-security/detect-eval-with-expression"],
+      "incumbent": ["security/detect-eval-with-expression"]
+    },
+    "nosql-injection": {
+      "ours": [
+        "mongodb-security/no-unsafe-where",
+        "mongodb-security/no-unsafe-query",
+        "mongodb-security/no-operator-injection",
+        "secure-coding/no-sql-injection"
+      ],
+      "incumbent": []
+    },
+    "log-injection": {
+      "ours": ["secure-coding/no-log-injection"],
+      "incumbent": []
+    },
+    "plaintext-password": {
+      "ours": ["node-security/require-secure-credential-storage"],
+      "incumbent": []
+    },
+    "weak-password-policy": {
+      "ours": ["secure-coding/detect-weak-password-validation"],
+      "incumbent": []
+    },
+    "user-enumeration": { "ours": [], "incumbent": [] },
+    "session-fixation": { "ours": [], "incumbent": [] },
+    "insecure-session-cookie": {
+      "ours": ["express-security/no-insecure-cookie-options"],
+      "incumbent": []
+    },
+    "xss": {
+      "ours": [
+        "secure-coding/no-disabled-template-escaping",
+        "secure-coding/no-improper-sanitization"
+      ],
+      "incumbent": ["security/detect-disable-mustache-escape"]
+    },
+    "idor": {
+      "ours": [
+        "express-security/no-idor-resource-access",
+        "secure-coding/require-backend-authorization"
+      ],
+      "incumbent": []
+    },
+    "missing-hardening-middleware": {
+      "ours": [
+        "express-security/require-helmet",
+        "express-security/no-missing-security-headers",
+        "express-security/no-disabled-helmet-protections"
+      ],
+      "incumbent": []
+    },
+    "cleartext-transport": { "ours": [], "incumbent": [] },
+    "plaintext-sensitive-data": {
+      "ours": [
+        "node-security/require-storage-encryption",
+        "node-security/require-secure-credential-storage"
+      ],
+      "incumbent": []
+    },
+    "missing-access-control": {
+      "ours": [
+        "express-security/require-route-authentication",
+        "secure-coding/no-missing-authentication",
+        "secure-coding/require-backend-authorization",
+        "secure-coding/no-privilege-escalation"
+      ],
+      "incumbent": []
+    },
+    "csrf": {
+      "ours": [
+        "express-security/require-csrf-protection",
+        "express-security/no-missing-csrf-protection"
+      ],
+      "incumbent": []
+    },
+    "vulnerable-dependency": { "ours": [], "incumbent": [] },
+    "open-redirect": {
+      "ours": ["express-security/no-user-controlled-redirect"],
+      "incumbent": []
+    },
+    "redos": {
+      "ours": ["secure-coding/no-redos-vulnerable-regex"],
+      "incumbent": ["security/detect-unsafe-regex"]
+    },
+    "ssrf": { "ours": ["node-security/no-ssrf"], "incumbent": [] }
+  },
+  "ourPrefixAliases": "The ours column uses the short plugin names the local builds register (secure-coding, node-security, express-security, mongodb-security); run.mjs normalises whatever namespace the preset registers to these."
+}
