@@ -16,18 +16,19 @@ ruleTester.run(
   consistentTypeSpecifierStyle,
   {
     valid: [
-      // Default option (prefer-inline): inline types are valid
+      // prefer-inline (written out: the default is prefer-top-level, as upstream's): inline types are valid
       {
         name: 'the inline `{ type Foo }` form',
         code: `import { type Foo } from 'foo';`,
+        options: ['prefer-inline'],
       },
-      { code: `import { type Foo, type Bar } from 'foo';` },
-      { code: `import { type Foo, bar } from 'foo';` },
+      { code: `import { type Foo, type Bar } from 'foo';`, options: ['prefer-inline'] },
+      { code: `import { type Foo, bar } from 'foo';`, options: ['prefer-inline'] },
 
       // Value imports (no type) - always valid
-      { code: `import { foo } from 'foo';` },
-      { code: `import foo from 'foo';` },
-      { code: `import * as foo from 'foo';` },
+      { code: `import { foo } from 'foo';`, options: ['prefer-inline'] },
+      { code: `import foo from 'foo';`, options: ['prefer-inline'] },
+      { code: `import * as foo from 'foo';`, options: ['prefer-inline'] },
 
       // prefer-top-level: top-level type imports are valid
       {
@@ -47,22 +48,25 @@ ruleTester.run(
         options: ['prefer-top-level'],
         errors: [{ messageId: 'preferTopLevel' }],
       },
-      // prefer-inline (default): top-level type should be inline
+      // prefer-inline: top-level type should be inline
       {
         name: 'a top-level `import type` where the configured style is inline',
         code: `import type { Foo } from 'foo';`,
         errors: [{ messageId: 'preferInline' }],
         output: `import { type Foo } from 'foo';`,
+        options: ['prefer-inline'],
       },
       {
         code: `import type { Foo, Bar } from 'foo';`,
         errors: [{ messageId: 'preferInline' }],
         output: `import { type Foo, type Bar } from 'foo';`,
+        options: ['prefer-inline'],
       },
       {
         code: `import type { Foo as F } from 'foo';`,
         errors: [{ messageId: 'preferInline' }],
         output: `import { type Foo as F } from 'foo';`,
+        options: ['prefer-inline'],
       },
       // burgee packages/burgee/src/schema.ts:7 — a seven-specifier `import type`.
       // The `Fix:` line marked only the first name, so an agent or human applying the
@@ -77,6 +81,7 @@ ruleTester.run(
           { messageId: 'preferInline', data: { name: 'type Foo, type Bar' } },
         ],
         output: `import { type Foo, type Bar } from 'foo';`,
+        options: ['prefer-inline'],
       },
 
       // prefer-top-level: inline types should be top-level
@@ -137,6 +142,7 @@ ruleTester.run(
         code: `import type { 'a-b' as AB } from 'foo';`,
         errors: [{ messageId: 'preferInline' }],
         output: `import { type 'a-b' as AB } from 'foo';`,
+        options: ['prefer-inline'],
       },
       {
         name: 'and in the prefer-top-level direction',
@@ -156,6 +162,7 @@ ruleTester.run(
         code: `import type { A } from './m.js' with { type: 'x' };`,
         errors: [{ messageId: 'preferInline' }],
         output: null,
+        options: ['prefer-inline'],
       },
       {
         name: 'and in the prefer-top-level direction',
@@ -177,6 +184,7 @@ ruleTester.run(
         code: `import type { A } from './m.js' assert { type: 'x' };`,
         errors: [{ messageId: 'preferInline' }],
         output: null,
+        options: ['prefer-inline'],
       },
       {
         name: 'and the deprecated spelling in the prefer-top-level direction',

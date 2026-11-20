@@ -18,10 +18,11 @@ An ES module that uses CommonJS cannot be tree-shaken, is not statically analysa
 
 - a call to the global `require` (static or dynamic argument), and TS `import x = require('m')`;
 - assigning `module.exports` (dotted or computed), or one of its properties;
-- assigning a property of the global `exports`;
-- reading the global `__dirname` or `__filename`.
+- assigning a property of the global `exports`.
 
-The rule decides by binding. A `require` the file binds itself (a parameter, or `createRequire(import.meta.url)`, the sanctioned ESM way to load CommonJS), a local `exports` object, and the ESM `__dirname` shim (`const __dirname = dirname(fileURLToPath(import.meta.url))`) are the file's own values; a property named `__dirname` is not the global either.
+`__dirname` and `__filename` are not reported: like `eslint-plugin-import`'s rule, this one looks for the CommonJS module system, not for the two path globals. To ban them, use `no-restricted-globals`.
+
+The rule decides by binding. A `require` the file binds itself (a parameter, or `createRequire(import.meta.url)`, the sanctioned ESM way to load CommonJS), and a local `exports` object are the file's own values.
 
 A `.cjs` / `.cts` file, or one the config parses as CommonJS, is CommonJS on purpose and is not checked. `require.resolve()` loads nothing and is not reported.
 
@@ -31,7 +32,6 @@ A `.cjs` / `.cts` file, or one the config parses as CommonJS, is CommonJS on pur
 const util = require('./util');
 module.exports = { run };
 exports.run = run;
-console.log(__dirname);
 ```
 
 ### ✅ Correct
