@@ -5034,6 +5034,102 @@
           "control": "import css from './app.css';"
         }
       ]
+    },
+    {
+      "id": "ILB-0173",
+      "added": "2026-11-20",
+      "title": "A comment written between JSX tags",
+      "rationale": "`<div>// TODO</div>` has no comment in it: JSX has no comment syntax between tags, so the characters render on the page. The comment belongs in braces.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "export const a = <div>// TODO: remove</div>;",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "react-features/jsx-no-comment-textnodes",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-react-features/src/tests/react/jsx-no-comment-textnodes.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0174",
+      "added": "2026-11-20",
+      "title": "A JSX tag that names no binding",
+      "rationale": "`<Foo />` compiles to a reference to `Foo`. With no import or declaration providing it, the page throws a ReferenceError when it renders.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "export const a = <Foo />;",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "react-features/jsx-no-undef",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-react-features/src/tests/react/jsx-no-undef.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0175",
+      "added": "2026-11-20",
+      "title": "React imported only for classic-runtime JSX",
+      "rationale": "NOT a defect. `import React from 'react'` looks unused because no identifier names it, but classic-runtime JSX compiles to `React.createElement`. `jsx-uses-react` marks it used for `no-unused-vars`, so the rule itself never reports.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import React from 'react';\nexport const a = <div />;",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "react-features/jsx-uses-react",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-react-features/src/tests/react/jsx-uses-react.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0176",
+      "added": "2026-11-20",
+      "title": "A component used only as a JSX tag",
+      "rationale": "NOT a defect. `import App from './App'` looks unused because no expression names it, but `<App />` is a use. `jsx-uses-vars` marks it used for `no-unused-vars`, so the rule itself never reports.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import App from './App';\nexport const a = <App />;",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "react-features/jsx-uses-vars",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-react-features/src/tests/react/jsx-uses-vars.test.ts"
+        }
+      ],
+      "peers": []
     }
   ]
 }
