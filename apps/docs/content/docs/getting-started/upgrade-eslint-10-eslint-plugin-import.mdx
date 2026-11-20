@@ -71,7 +71,7 @@ export default [
 
 If the plugin comes in through a shared config (`eslint-config-airbnb-extended`, `@wordpress/eslint-plugin`, `eslint-plugin-github` and similar) that imports `eslint-plugin-import` itself, point that name at ours with an npm alias:
 
-We ran this on 2026-11-20 with npm 11.6.2 and ESLint 10.14.0. A package that depends on `eslint-plugin-import@^2.32.0`, installed with the override below, resolved to `eslint-plugin-import@npm:eslint-plugin-import-next@4.1.1`, `npm install` finished without ERESOLVE, and `eslint` reported `import/no-duplicates` through the shared config's `flatConfigs.recommended`. We did not run pnpm or Yarn; they take the same idea under `pnpm.overrides` and `resolutions`.
+We ran this on 2026-11-20 with npm 11.6.2 and ESLint 10.14.0. A package that depends on `eslint-plugin-import@^2.32.0`, installed with the override below, resolved to `eslint-plugin-import@npm:eslint-plugin-import-next@4.1.3`, `npm install` finished without ERESOLVE, and `eslint` reported `import/no-duplicates` through the shared config's `flatConfigs.recommended`. We did not run pnpm or Yarn; they take the same idea under `pnpm.overrides` and `resolutions`.
 
 ```json title="package.json"
 {
@@ -87,6 +87,7 @@ The shared config must read only what `flatConfigs` exposes: the seven keys `rec
 
 - **Rule names.** The plugin registers as `import`, so `import/no-cycle`, `import/order` and the rest keep their IDs, and so do your `eslint-disable import/...` comments.
 - **`flatConfigs`.** The same seven keys as 2.32.0, with the same rule IDs, severities, `settings` and `languageOptions`. A test in the repository compares each key with an installed `eslint-plugin-import` 2.32.0 and lints a fixture through both, expecting the same findings by rule, line and severity.
+- **Defaults.** Options you leave out behave as upstream's do. Since 4.1.3 that includes `consistent-type-specifier-style`, which with no options is `prefer-top-level`, as in `eslint-plugin-import` 2.32.0; pass `'prefer-inline'` for the other style.
 - **Settings.** These `import/*` keys are read, with the meaning they have in `eslint-plugin-import`:
 
 | Setting                                                                          | Read by                                                                                                                                                                                                                                                               |
@@ -104,7 +105,7 @@ Any `import/*` key that is not in that table is not read. The plugin does not re
 
 ## What differs: the 5% of upstream's tests that fail
 
-`eslint-plugin-import-next` implements all 45 rules that `eslint-plugin-import`'s test suite covers. Graded by that suite's own cases, it passes **2,035 of 2,135 (95.3%)**, measured 2026-11-19. A valid case passes when the rule reports nothing and an invalid case passes when the rule reports exactly the expected number of problems; messages, positions and fixes are not compared. Only cases that `eslint-plugin-import` itself passes in the same harness are graded, which leaves out 682 of the 2,817 captured. Most of those are 490 cases that need the `babel-eslint` parser. 24 rules pass every graded case.
+`eslint-plugin-import-next` implements all 45 rules that `eslint-plugin-import`'s test suite covers. Graded by that suite's own cases, it passes **2,035 of 2,135 (95.3%)**, measured 2026-11-19 on 4.1.0. A valid case passes when the rule reports nothing and an invalid case passes when the rule reports exactly the expected number of problems; messages, positions and fixes are not compared. Only cases that `eslint-plugin-import` itself passes in the same harness are graded, which leaves out 682 of the 2,817 captured. Most of those are 490 cases that need the `babel-eslint` parser. 24 rules pass every graded case.
 
 The 100 failing cases, by rule:
 
@@ -125,7 +126,7 @@ The 100 failing cases, by rule:
 
 Totals: 71 invalid cases go unreported (a missed finding), **25 valid cases are reported (a new finding)**, and 4 report a different number of times. The 25 are the ones that can fail your CI after the swap, and they sit in `no-commonjs`, `no-internal-modules`, `no-amd`, `no-unresolved`, `no-useless-path-segments`, `order` and `no-import-module-exports`. If you do not enable those rules, or enable them in a codebase without CommonJS, you will not meet them. Every failing case is listed with its expected and reported counts in [the measurement file](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/results/ilb-import-parity/2026-11-19.json).
 
-Differences the test suite does not show, from a 5-file fixture run on 4.1.0 (not re-run on 4.1.1):
+Differences the test suite does not show, from a 5-file fixture run on 4.1.0 and checked again on 2026-11-20 against the 4.1.4 source, except the last bullet:
 
 - `no-duplicates` flags `./other` and `./other.ts` as the same module (it resolves TypeScript extensions by default); 2.32.0 did not. That is a new finding on TypeScript code that has both spellings.
 - A multi-line `import {...} from './dep'` is reported on the statement's first line, not on the `from` line, and columns differ, so a disable comment placed above the `from` line stops matching.
