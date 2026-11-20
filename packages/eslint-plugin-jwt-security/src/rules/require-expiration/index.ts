@@ -136,10 +136,12 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
       node: TSESTree.CallExpression,
       seconds: number | null,
     ): void => {
+      // An unknown lifetime (`null`) is never over the limit. Spelled as
+      // -Infinity rather than a `=== null` test, which `null <= max` already
+      // answered the same way: Stryker found the test changed no verdict.
       if (
         maxExpirationSeconds === undefined ||
-        seconds === null ||
-        seconds <= maxExpirationSeconds
+        (seconds ?? -Infinity) <= maxExpirationSeconds
       ) {
         return;
       }
@@ -219,10 +221,13 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
       if (variable === null || variable.defs.length !== 1) {
         return null;
       }
+      // Only a `Variable` definition's node has an `init`; every other kind
+      // (a parameter, an import, a function or class name) reads as none.
+      // A `type === 'Variable'` test here changed no verdict under Stryker.
       const definition = variable.defs[0]!;
-      return definition.type === 'Variable'
-        ? (definition.node.init ?? null)
-        : null;
+      return (
+        (definition.node as Partial<TSESTree.VariableDeclarator>).init ?? null
+      );
     };
 
     return {
