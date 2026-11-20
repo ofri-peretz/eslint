@@ -228,6 +228,49 @@ export function resolverChain(
  */
 export const RUNTIME_CONDITIONS = ['import', 'require', 'node', 'default'];
 
+/**
+ * What a TypeScript source file is written as in a specifier.
+ *
+ * `./App.jsx` names `App.tsx`, `./a.js` names `a.ts`, `a.tsx` or a declaration
+ * file `a.d.ts`, and `.mjs` / `.cjs` name `.mts` / `.cts` (and their `.d.*`).
+ * eslint-import-resolver-typescript maps these through `extensionAlias`; the
+ * devkit resolver knows `.js` to `.ts` and `.tsx` for a relative specifier only,
+ * so `.jsx`, a declaration file, and the same specifiers behind a `paths` alias
+ * (`@/widget.js`) came back unresolved: 268 `no-unresolved` findings on
+ * lynx-stack that the incumbent, run with the repo's typescript resolver, does
+ * not make.
+ */
+const EMIT_TO_SOURCE: Readonly<Record<string, readonly string[]>> = {
+  '.js': ['.ts', '.tsx', '.d.ts'],
+  '.jsx': ['.tsx'],
+  '.mjs': ['.mts', '.d.mts'],
+  '.cjs': ['.cts', '.d.cts'],
+};
+
+/**
+ * `specifier` with its emit extension swapped for each source extension, tried
+ * through the same resolver (so a `paths` alias still applies). Only runs after
+ * the specifier as written resolved to nothing, so a real `.js` always wins.
+ */
+function resolveEmitExtension(
+  specifier: string,
+  file: string,
+  options: { extensions?: string[]; conditionNames?: string[] },
+): string | null {
+  const emit = Object.keys(EMIT_TO_SOURCE).find((ext) =>
+    specifier.endsWith(ext),
+  );
+  if (!emit) return null;
+  const stem = specifier.slice(0, -emit.length);
+  for (const source of EMIT_TO_SOURCE[emit]) {
+    // The stem plus the full source extension, resolved as written: `./a.d.ts`
+    // is an exact file, `./a.tsx` one the extension list does not need to cover.
+    const hit = resolveModule(stem + source, file, options);
+    if (hit !== null) return hit;
+  }
+  return null;
+}
+
 /** One resolver's attempt: its extensions, then its `paths`. */
 function resolveStep(
   specifier: string,
@@ -240,7 +283,9 @@ function resolveStep(
     ...(extensions ? { extensions } : {}),
     ...(conditionNames ? { conditionNames } : {}),
   };
-  const found = resolveModule(specifier, file, options);
+  const found =
+    resolveModule(specifier, file, options) ??
+    resolveEmitExtension(specifier, file, options);
   if (found !== null || /^[./]/.test(specifier)) return found;
   for (const dir of paths ?? []) {
     // Resolved as a relative specifier from inside that directory. A
