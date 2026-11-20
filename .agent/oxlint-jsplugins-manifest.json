@@ -1,12 +1,12 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-11-18",
+  "generatedAt": "2026-11-20",
   "totalPlugins": 32,
   "totalRules": 503,
-  "oxlintCompatible": 503,
+  "oxlintCompatible": 502,
   "oxlintPartial": 0,
-  "oxlintBlocked": 0,
+  "oxlintBlocked": 1,
   "plugins": [
     {
       "package": "eslint-plugin-anthropic-security",
@@ -1460,9 +1460,12 @@
         },
         {
           "name": "prefer-at",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
+          "portability": "incompatible",
+          "blockers": [
+            "Type-aware (requires TS, no parserServices in oxlint)",
+            "TS↔ESTree bridge (no type bridge in oxlint)"
+          ],
+          "isTypeAware": true
         },
         {
           "name": "prefer-event-target",

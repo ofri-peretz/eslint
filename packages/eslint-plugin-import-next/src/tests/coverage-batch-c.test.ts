@@ -139,10 +139,6 @@ ruleTester.run('no-default-export (coverage)', noDefaultExport, {
 });
 
 describe('no-default-export — Layer 2', () => {
-  const fixer = {
-    replaceText: (_n: unknown, text: string) => ({ text }),
-  } as unknown as TSESLint.RuleFixer;
-
   function runExportDefault(sourceText: string, declaration: unknown) {
     const { listeners, reports } = createWithMockContext(noDefaultExport, {
       sourceText,
@@ -167,7 +163,8 @@ describe('no-default-export — Layer 2', () => {
     expect(report.data.example).toBe(
       '// Convert to: export { defaultFunction };',
     );
-    expect(report.fix(fixer)).toMatchObject({ text: 'export function() {}' });
+    // The rewrite itself (`export function() {}` was invalid syntax, #1540) is
+    // asserted against real source in no-default-export.autofix-safety.test.ts.
   });
 
   it('anonymous default class suggests a generated name', () => {
@@ -176,7 +173,6 @@ describe('no-default-export — Layer 2', () => {
       id: null,
     });
     expect(report.data.example).toBe('// Convert to: export { DefaultClass };');
-    expect(report.fix(fixer)).toMatchObject({ text: 'export class {}' });
   });
 
   it('reports even when the filename is empty', () => {

@@ -37,20 +37,21 @@ describe('prefer-at', () => {
         // array[array.length - 1] -> array.at(-1)
         {
           name: 'indexing the last element through .length',
-          code: 'const last = array[array.length - 1];',
-          output: 'const last = array.at(-1);',
+          code: 'declare const array: number[];\nconst last = array[array.length - 1];',
+          output: 'declare const array: number[];\nconst last = array.at(-1);',
           errors: [{ messageId: 'useAtForLastElement' }],
         },
         // array[array.length - 2] -> array.at(-2)
         {
-          code: 'const second = array[array.length - 2];',
-          output: 'const second = array.at(-2);',
+          code: 'declare const array: number[];\nconst second = array[array.length - 2];',
+          output:
+            'declare const array: number[];\nconst second = array.at(-2);',
           errors: [{ messageId: 'preferAtMethod' }],
         },
         // Using in expression
         {
-          code: 'return items[items.length - 1];',
-          output: 'return items.at(-1);',
+          code: 'declare const items: number[];\nreturn items[items.length - 1];',
+          output: 'declare const items: number[];\nreturn items.at(-1);',
           errors: [{ messageId: 'useAtForLastElement' }],
         },
       ],
@@ -163,21 +164,21 @@ describe('prefer-at', () => {
           // The computed-key blind spot itself: the same object written two
           // ways must still match, so the receiver comparison canonicalises
           // through propertyName() rather than comparing source text.
-          name: 'a string-subscript receiver matches its dotted twin',
+          name: 'a string-subscript receiver matches its dotted twin (reported only without types; the typed fix is in prefer-at.array-likes.test.ts)',
           code: 'const last = c["path"][c.path["length"] - 1];',
-          output: 'const last = c["path"].at(-1);',
+          output: null,
           errors: [{ messageId: 'useAtForLastElement' }],
         },
         {
-          name: 'a dotted receiver is rewritten like a bare identifier',
+          name: 'a dotted receiver is reported like a bare identifier (no fix without types)',
           code: 'const last = c.path[c.path.length - 1];',
-          output: 'const last = c.path.at(-1);',
+          output: null,
           errors: [{ messageId: 'useAtForLastElement' }],
         },
         {
-          name: 'a this-rooted receiver is rewritten too',
+          name: 'a this-rooted receiver is reported too (no fix without types)',
           code: 'const last = this.rows[this.rows.length - 1];',
-          output: 'const last = this.rows.at(-1);',
+          output: null,
           errors: [{ messageId: 'useAtForLastElement' }],
         },
         // burgee packages/burgee/src/yargs/factory.ts:837 —
@@ -186,16 +187,15 @@ describe('prefer-at', () => {
         // receiver never rendered to a path. A private field is the same read as
         // the public `this.rows` case above.
         {
-          name: 'a private-field receiver is rewritten like a public one',
+          name: 'a private-field receiver is reported like a public one (no fix without types)',
           code: 'class F { #rows = []; m() { return this.#rows[this.#rows.length - 1]; } }',
-          output: 'class F { #rows = []; m() { return this.#rows.at(-1); } }',
+          output: null,
           errors: [{ messageId: 'useAtForLastElement' }],
         },
         {
-          name: 'a receiver path through a private field is rewritten',
+          name: 'a receiver path through a private field is reported (no fix without types)',
           code: 'class F { #context = { fullCommands: [] }; m() { return this.#context.fullCommands[this.#context.fullCommands.length - 1]; } }',
-          output:
-            'class F { #context = { fullCommands: [] }; m() { return this.#context.fullCommands.at(-1); } }',
+          output: null,
           errors: [{ messageId: 'useAtForLastElement' }],
         },
         {
@@ -279,15 +279,15 @@ describe('prefer-at', () => {
           errors: [{ messageId: 'useAtForLastElement' }],
         },
         {
-          name: 'a wrapped value that is not called is still rewritten',
+          name: 'a wrapped value that is not called is still reported (no fix without types)',
           code: 'const f = obj.fns[obj.fns.length - 1]!;',
-          output: 'const f = obj.fns.at(-1)!;',
+          output: null,
           errors: [{ messageId: 'useAtForLastElement' }],
         },
         {
           name: 'a call argument is still rewritten — only the callee is unsafe',
-          code: 'f(arr[arr.length - 1]);',
-          output: 'f(arr.at(-1));',
+          code: 'declare const arr: number[];\nf(arr[arr.length - 1]);',
+          output: 'declare const arr: number[];\nf(arr.at(-1));',
           errors: [{ messageId: 'useAtForLastElement' }],
         },
       ],
@@ -313,9 +313,9 @@ describe('prefer-at', () => {
           errors: [{ messageId: 'useAtForLastElement' }],
         },
         {
-          name: 'a non-optional access inside an optional chain is still rewritten',
+          name: 'a non-optional access inside an optional chain is still reported (no fix without types)',
           code: 'const x = o?.list[o.list.length - 1];',
-          output: 'const x = o?.list.at(-1);',
+          output: null,
           errors: [{ messageId: 'useAtForLastElement' }],
         },
       ],
@@ -351,20 +351,20 @@ describe('prefer-at', () => {
       invalid: [
         {
           name: 'a default value inside a pattern is a read and is rewritten',
-          code: '[a = xs[xs.length - 1]] = [];',
-          output: '[a = xs.at(-1)] = [];',
+          code: 'declare const xs: number[];\n[a = xs[xs.length - 1]] = [];',
+          output: 'declare const xs: number[];\n[a = xs.at(-1)] = [];',
           errors: [{ messageId: 'useAtForLastElement' }],
         },
         {
           name: 'a property value in an object literal is a read and is rewritten',
-          code: 'const o = { a: xs[xs.length - 1] };',
-          output: 'const o = { a: xs.at(-1) };',
+          code: 'declare const xs: number[];\nconst o = { a: xs[xs.length - 1] };',
+          output: 'declare const xs: number[];\nconst o = { a: xs.at(-1) };',
           errors: [{ messageId: 'useAtForLastElement' }],
         },
         {
           name: 'a computed key inside an object pattern is a read and is rewritten',
-          code: '({ [xs[xs.length - 1]]: v } = o);',
-          output: '({ [xs.at(-1)]: v } = o);',
+          code: 'declare const xs: number[];\n({ [xs[xs.length - 1]]: v } = o);',
+          output: 'declare const xs: number[];\n({ [xs.at(-1)]: v } = o);',
           errors: [{ messageId: 'useAtForLastElement' }],
         },
       ],
@@ -408,27 +408,27 @@ describe('prefer-at', () => {
       invalid: [
         {
           name: 'a variable the code names arguments is an ordinary receiver',
-          code: 'const f = (args: string[]) => { const arguments_ = args; return arguments_[arguments_.length - 1]; };',
+          code: 'const f = (args: string[]) => { const arguments_: string[] = args; return arguments_[arguments_.length - 1]; };',
           output:
-            'const f = (args: string[]) => { const arguments_ = args; return arguments_.at(-1); };',
+            'const f = (args: string[]) => { const arguments_: string[] = args; return arguments_.at(-1); };',
           errors: [{ messageId: 'useAtForLastElement' }],
         },
         {
           name: 'a non-null asserted receiver is the same array',
-          code: 'const last = maybe![maybe!.length - 1];',
-          output: 'const last = maybe!.at(-1);',
+          code: 'declare const maybe: number[];\nconst last = maybe![maybe!.length - 1];',
+          output: 'declare const maybe: number[];\nconst last = maybe!.at(-1);',
           errors: [{ messageId: 'useAtForLastElement' }],
         },
         {
           name: 'non-null on the receiver only',
-          code: 'const prev = maybe![maybe.length - 2];',
-          output: 'const prev = maybe!.at(-2);',
+          code: 'declare const maybe: number[];\nconst prev = maybe![maybe.length - 2];',
+          output: 'declare const maybe: number[];\nconst prev = maybe!.at(-2);',
           errors: [{ messageId: 'preferAtMethod' }],
         },
         {
           name: 'checkLastElement: false still reports other offsets',
-          code: 'const prev = xs[xs.length - 2];',
-          output: 'const prev = xs.at(-2);',
+          code: 'declare const xs: number[];\nconst prev = xs[xs.length - 2];',
+          output: 'declare const xs: number[];\nconst prev = xs.at(-2);',
           options: [{ checkLastElement: false }],
           errors: [{ messageId: 'preferAtMethod' }],
         },

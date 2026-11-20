@@ -9,7 +9,14 @@
  * Prefer .at() method over array[index] for accessing elements from end (unicorn-inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule, propertyName, variableOf } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  isAnyType,
+  isGlobalReference,
+  isUnknownType,
+  propertyName,
+  variableOf,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -118,6 +125,33 @@ function isCalleeOrTag(node: TSESTree.MemberExpression): boolean {
   }
 }
 
+/**
+ * Does this annotation say the value is an array, a tuple or a string — every
+ * one of which has `.at()`? `NodeListOf<T>`, `HTMLCollection` and a user
+ * `Foo<T>` do not qualify, and neither does anything not named here.
+ */
+function isAtTypeAnnotation(type: TSESTree.TypeNode): boolean {
+  switch (type.type) {
+    case 'TSArrayType':
+    case 'TSTupleType':
+    case 'TSStringKeyword':
+      return true;
+    case 'TSTypeOperator':
+      return (
+        type.typeAnnotation !== undefined &&
+        isAtTypeAnnotation(type.typeAnnotation)
+      );
+    case 'TSTypeReference':
+      return (
+        type.typeName.type === 'Identifier' &&
+        (type.typeName.name === 'Array' ||
+          type.typeName.name === 'ReadonlyArray')
+      );
+    default:
+      return false;
+  }
+}
+
 export const preferAt = createRule<RuleOptions, MessageIds>({
   name: 'prefer-at',
   meta: {
@@ -189,6 +223,94 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
       const variable = variableOf(node, context.sourceCode);
       return variable !== undefined && variable.defs.length === 0;
     };
+
+    /**
+     * Is the initialiser visibly an array or a string? Only the forms that
+     * construct one count: a call such as `getItems()` or `slice.call(x)` says
+     * nothing about what comes back.
+     */
+    const isAtInitialiser = (init: TSESTree.Expression): boolean => {
+      switch (init.type) {
+        case 'ArrayExpression':
+        case 'TemplateLiteral':
+          return true;
+        case 'Literal':
+          return typeof init.value === 'string';
+        case 'NewExpression':
+        case 'CallExpression': {
+          // `new Array(n)`, `Array(n)`, `Array.from(x)`, `Array.of(x)`
+          // @vocabulary ECMAScript Array constructor statics
+          const callee =
+            init.callee.type === 'MemberExpression' &&
+            ['from', 'of'].includes(propertyName(init.callee) ?? '')
+              ? init.callee.object
+              : init.callee;
+          return (
+            callee.type === 'Identifier' &&
+            callee.name === 'Array' &&
+            isGlobalReference(callee, context.sourceCode)
+          );
+        }
+        default:
+          return false;
+      }
+    };
+
+    /**
+     * Does the receiver have `.at()` — `true`, `false`, or `undefined` when
+     * there is no type information to ask?
+     *
+     * A `NodeList` or an `HTMLCollection` is indexable and has `.length` but no
+     * `.at()`, so `xs[xs.length - 1]` → `xs.at(-1)` throws there (#1541).
+     * Syntax cannot tell them from an array, so the type decides when it can.
+     */
+    const typeHasAt = (node: TSESTree.Node): boolean | undefined => {
+      const services = context.sourceCode.parserServices;
+      if (!services?.program || !services.esTreeNodeToTSNodeMap) {
+        return undefined;
+      }
+      const checker = services.program.getTypeChecker();
+      const type = checker.getTypeAtLocation(
+        services.esTreeNodeToTSNodeMap.get(node),
+      );
+      // `any` and `unknown` prove nothing; a union has `.at()` only if every
+      // member does.
+      const members = type.isUnion() ? type.types : [type];
+      return members.every(
+        (member) =>
+          !isAnyType(member) &&
+          !isUnknownType(member) &&
+          checker.getPropertyOfType(checker.getApparentType(member), 'at') !==
+            undefined,
+      );
+    };
+
+    /**
+     * Without types: is the receiver a binding the source itself shows to be an
+     * array or a string? An annotation (`xs: T[]`, `readonly T[]`, `string`)
+     * holds wherever the value came from. An initialiser holds only while the
+     * binding is never written again and is the sole declaration.
+     */
+    const isDeclaredAtReceiver = (node: TSESTree.Node): boolean => {
+      if (node.type !== 'Identifier') return false;
+      const variable = variableOf(node, context.sourceCode);
+      const def = variable?.defs.length === 1 ? variable.defs[0] : undefined;
+      if (variable === undefined || def === undefined) return false;
+      const annotation = (def.name as TSESTree.Identifier).typeAnnotation;
+      if (annotation) return isAtTypeAnnotation(annotation.typeAnnotation);
+      const declarator = def.node as TSESTree.Node;
+      return (
+        declarator.type === 'VariableDeclarator' &&
+        declarator.id === def.name &&
+        declarator.init !== null &&
+        isAtInitialiser(declarator.init) &&
+        !variable.references.some((r) => r.isWrite() && !r.init)
+      );
+    };
+
+    /** May the rewrite to `.at()` be applied without changing behaviour? */
+    const receiverHasAt = (node: TSESTree.Node): boolean =>
+      typeHasAt(node) ?? isDeclaredAtReceiver(unwrapNonNull(node));
 
     return {
       before() {
@@ -291,6 +413,14 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           // Nor on an optional access: `a?.[a.length - 1]` is undefined when
           // `a` is nullish, where `a.at(-1)` throws.
           if (node.optional || isCalleeOrTag(node)) {
+            context.report({ node, messageId });
+            return;
+          }
+
+          // Reported, not rewritten, where the receiver is not known to have
+          // `.at()`: a NodeList or HTMLCollection indexes and has `.length`
+          // but throws on `.at(-1)`. See receiverHasAt().
+          if (!receiverHasAt(node.object)) {
             context.report({ node, messageId });
             return;
           }
