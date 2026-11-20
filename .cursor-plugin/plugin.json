@@ -1,0 +1,13 @@
+{
+  "name": "interlace",
+  "version": "1.0.0",
+  "description": "Adds security linting to a Node.js, TypeScript, React, NestJS or Express project: keeps eslint-plugin-security, writes an ESLint 9/10 flat config, and adds the Interlace plugins that match the stack.",
+  "author": {
+    "name": "Ofri Peretz"
+  },
+  "homepage": "https://eslint.interlace.tools",
+  "repository": "https://github.com/ofri-peretz/eslint",
+  "license": "MIT",
+  "keywords": ["eslint", "security", "sast", "flat-config", "skill"],
+  "logo": "assets/logo.svg"
+}

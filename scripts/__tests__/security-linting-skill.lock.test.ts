@@ -20,7 +20,14 @@
 /// <reference types="vite/client" />
 import { describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import {
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -246,6 +253,49 @@ describe('distribution manifests', () => {
     expect(existsSync(join(ROOT, 'skills/security-linting/SKILL.md'))).toBe(
       true,
     );
+  });
+
+  it('Cursor and Claude manifests agree on identity and point at a real logo', () => {
+    const claude = json('.claude-plugin/plugin.json');
+    const cursor = json('.cursor-plugin/plugin.json');
+    expect(cursor.name).toBe(claude.name);
+    expect(cursor.name).toMatch(/^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/);
+    expect(cursor.version).toBe(claude.version);
+    expect(cursor.description).toBe(claude.description);
+    expect(cursor.repository).toBe(claude.repository);
+    // Cursor reads a repo-relative path; Claude's directory reads ./-relative.
+    expect(existsSync(join(ROOT, cursor.logo)), cursor.logo).toBe(true);
+    expect(existsSync(join(ROOT, claude.icon)), claude.icon).toBe(true);
+    for (const u of [
+      claude.homepage,
+      claude.documentationUrl,
+      claude.supportUrl,
+    ])
+      expect(u).toMatch(/^https:\/\//);
+    expect(read('assets/logo.svg')).not.toMatch(/https?:\/\/(?!www\.w3\.org)/);
+  });
+
+  it('a change to the shipped skill comes with a new plugin version', () => {
+    // Claude Code keeps an installed plugin until `version` changes, so skill
+    // edits that keep the version never reach installed users. The lock file
+    // records one content hash per released version. Append a new entry when
+    // you bump the version in BOTH manifests; never overwrite an old one.
+    const walk = (dir: string): string[] =>
+      readdirSync(join(ROOT, dir), { withFileTypes: true })
+        .flatMap((e) =>
+          e.isDirectory() ? walk(`${dir}/${e.name}`) : [`${dir}/${e.name}`],
+        )
+        .sort();
+    const h = createHash('sha256');
+    for (const f of walk('skills/security-linting'))
+      h.update(f).update('\0').update(read(f)).update('\0');
+    const hash = h.digest('hex');
+    const versions = json('evals/security-linting-skill/skill-versions.json');
+    const { version } = json('.claude-plugin/plugin.json');
+    expect(
+      versions[version],
+      `skills/security-linting changed. Bump "version" in .claude-plugin/plugin.json and .cursor-plugin/plugin.json, then add a "<new version>": "${hash}" entry to evals/security-linting-skill/skill-versions.json. Current hash: ${hash}`,
+    ).toBe(hash);
   });
 
   it('context7.json respects Context7 limits and points at real folders', () => {

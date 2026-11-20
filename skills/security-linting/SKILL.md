@@ -180,7 +180,8 @@ Say this to the user when you finish, in your own words:
 
 ## Verified
 
-`evals/security-linting-skill/` in the repository renders this skill's config for three fixture
+The repository's `evals/security-linting-skill/` renders this skill's config for three fixture
 apps (Express + pg + JWT, NestJS, React) and runs it on ESLint 9 and 10 against local plugin
-builds. Results with dates are in `evals/security-linting-skill/RESULTS.md`. That measures the
-config, not how any assistant behaves with this skill.
+builds. Results with dates:
+<https://github.com/ofri-peretz/eslint/blob/main/evals/security-linting-skill/RESULTS.md>.
+That measures the config, not how any assistant behaves with this skill.
