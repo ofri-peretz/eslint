@@ -2,8 +2,9 @@
 // CommonJS in an ES module: a call to the GLOBAL `require` (static or
 // dynamic argument), TS `import x = require()`, assigning `module.exports`
 // (dotted, computed, or one of its properties), assigning a property of the
-// global `exports`, and reading the global `__dirname` / `__filename`. The
-// rule decides by binding: a locally bound `require` (a parameter, or
+// global `exports`. Reading the global `__dirname` / `__filename` is not a
+// finding (eslint-plugin-import does not report it, and it is not a module
+// system call). The rule decides by binding: a locally bound `require` (a parameter, or
 // `createRequire(import.meta.url)`, the sanctioned ESM way to load CJS), a
 // local `exports` object, a local `__dirname` (the standard ESM shim) and a
 // property named `__dirname` are not CommonJS globals. A `.cjs` file is
@@ -24,7 +25,7 @@ module no_commonjs {
     else if (Set(Require, RequireDynamic, ImportEquals).contains(c)) o != AllowRequire
     else if (Set(ModuleExports, ModuleExportsComputed, ModuleExportsProp).contains(c)) o != AllowModuleExports
     else if (Set(ExportsProp, ExportsComputed).contains(c)) o != AllowExports
-    else c == Dirname
+    else false
 
   var construct: Construct
   var opts: Opts

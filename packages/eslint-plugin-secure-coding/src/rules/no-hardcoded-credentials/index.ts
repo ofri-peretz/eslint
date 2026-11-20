@@ -260,11 +260,20 @@ function classCount(classes: CharClasses): number {
   );
 }
 
-/** A token is "pronounceable" if it has a vowel and no long consonant run. */
+/**
+ * A token is "pronounceable" if it has a vowel and no long consonant run.
+ *
+ * "Long" is five. Four consonants in a row is ordinary English: `unsubscribe`
+ * (`bscr`), `subscribe`, `construct`, `abstract`, `transcript`, `instruct`.
+ * With the limit at four, the template key `token: 'unsubscribeUrl'` read as a
+ * 14-character high-entropy blob and was reported as a hard-coded credential
+ * (stamhoofd/stamhoofd EmailBuilder.ts:503, :786, :847). Five in a row is what
+ * a random string produces and a word almost never does (`strengths`).
+ */
 function isPronounceable(token: string): boolean {
   const lower = token.toLowerCase();
   if (!/[aeiouy]/.test(lower)) return false;
-  if (/[bcdfghjklmnpqrstvwxz]{4,}/.test(lower)) return false;
+  if (/[bcdfghjklmnpqrstvwxz]{5,}/.test(lower)) return false;
   return true;
 }
 
