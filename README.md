@@ -93,13 +93,20 @@ An agent skill, [`security-linting`](./skills/security-linting/SKILL.md), reads 
 config, and adds the plugins that match your stack, one line of explanation each.
 
 ```bash
-npx skills add ofri-peretz/eslint                     # skills CLI (Claude Code, Cursor, Codex, ...)
-claude plugin marketplace add ofri-peretz/eslint      # Claude Code marketplace
+npx skills add ofri-peretz/eslint                     # recommended: skills CLI (Claude Code, Cursor, Codex, ...)
+```
+
+Claude Code users can instead install it as a plugin:
+
+```bash
+claude plugin marketplace add ofri-peretz/eslint
 claude plugin install interlace@interlace
 ```
 
-Every plugin package also ships an `AGENTS.md` listing its presets and rules. How the
-skill's config was checked on ESLint 9 and 10: [`evals/security-linting-skill/RESULTS.md`](./evals/security-linting-skill/RESULTS.md).
+Every plugin package also ships an `AGENTS.md` listing its presets and rules. On a fixture
+Express and PostgreSQL app, the config the skill specifies flags 7 of 7 planted issues; the same app
+without it flags 0 of 7. That measures the generated config, not how any assistant behaves
+([`RESULTS.md`](./evals/security-linting-skill/RESULTS.md)).
 
 ## Used by
 

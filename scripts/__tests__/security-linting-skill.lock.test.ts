@@ -248,6 +248,26 @@ describe('distribution manifests', () => {
     );
   });
 
+  it('Cursor and Claude manifests agree on identity and point at a real logo', () => {
+    const claude = json('.claude-plugin/plugin.json');
+    const cursor = json('.cursor-plugin/plugin.json');
+    expect(cursor.name).toBe(claude.name);
+    expect(cursor.name).toMatch(/^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/);
+    expect(cursor.version).toBe(claude.version);
+    expect(cursor.description).toBe(claude.description);
+    expect(cursor.repository).toBe(claude.repository);
+    // Cursor reads a repo-relative path; Claude's directory reads ./-relative.
+    expect(existsSync(join(ROOT, cursor.logo)), cursor.logo).toBe(true);
+    expect(existsSync(join(ROOT, claude.icon)), claude.icon).toBe(true);
+    for (const u of [
+      claude.homepage,
+      claude.documentationUrl,
+      claude.supportUrl,
+    ])
+      expect(u).toMatch(/^https:\/\//);
+    expect(read('assets/logo.svg')).not.toMatch(/https?:\/\/(?!www\.w3\.org)/);
+  });
+
   it('context7.json respects Context7 limits and points at real folders', () => {
     const c = json('context7.json');
     expect(c.projectTitle.length).toBeLessThanOrEqual(100);
