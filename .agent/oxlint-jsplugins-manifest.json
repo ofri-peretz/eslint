@@ -1,7 +1,7 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-11-18",
+  "generatedAt": "2026-11-20",
   "totalPlugins": 32,
   "totalRules": 503,
   "oxlintCompatible": 503,
@@ -1462,7 +1462,7 @@
           "name": "prefer-at",
           "portability": "compatible",
           "blockers": [],
-          "isTypeAware": false
+          "isTypeAware": true
         },
         {
           "name": "prefer-event-target",
