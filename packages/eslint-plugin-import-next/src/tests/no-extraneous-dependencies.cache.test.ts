@@ -15,6 +15,10 @@ const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ned-cache-'));
 const manifest = path.join(dir, 'package.json');
 const file = path.join(dir, 'src', 'a.js');
 fs.mkdirSync(path.dirname(file));
+// Installed: a dependency is checked once it resolves, as in
+// eslint-plugin-import.
+fs.mkdirSync(path.join(dir, 'node_modules/pkg-b'), { recursive: true });
+fs.writeFileSync(path.join(dir, 'node_modules/pkg-b/index.js'), '');
 
 const linter = new Linter({ configType: 'flat', cwd: dir });
 const config = [
