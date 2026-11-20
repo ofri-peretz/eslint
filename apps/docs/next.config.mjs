@@ -12,6 +12,10 @@ const monorepoRoot = path.resolve(__dirname, '../..');
 
 const withMDX = createMDX();
 
+// Mirrors SITE_ORIGIN in src/lib/site-config.ts (a .ts module this .mjs config
+// cannot import); the security-headers lock test holds the two together.
+const SITE_ORIGIN = 'https://eslint.interlace.tools';
+
 /**
  * Content-Security-Policy in *report-only* mode, with violations reported to
  * PostHog's CSP endpoint (`$csp_violation` events) through the same `/ingest`
@@ -121,6 +125,44 @@ async function withSourcemapUpload(nextConfig) {
   });
 }
 
+/**
+ * One indexable host.
+ *
+ * The Vercel project also answers on `eslint-one.vercel.app`, and that copy
+ * was indexable: 200, `index, follow`, its own robots.txt and sitemap. In the
+ * 2026-11-19 search audit it surfaced for two queries *instead of* this
+ * domain, even though every page's canonical already named this domain.
+ *
+ * Two layers, both in routing config (no middleware, so no function call in
+ * front of statically served pages):
+ *   - the production alias 308s to the same path here, so its signals
+ *     consolidate on the canonical host;
+ *   - any other host — a preview deployment URL, a future alias — gets
+ *     `X-Robots-Tag: noindex`. Local hosts are exempt so `next start` and the
+ *     Lighthouse run on localhost measure the page the canonical host serves.
+ *
+ * Host matching strips the port and anchors the pattern (`^value$`).
+ */
+const CANONICAL_HOST = new URL(SITE_ORIGIN).host;
+const VERCEL_PRODUCTION_ALIASES = ['eslint-one.vercel.app'];
+const escapeHost = (host) => host.replace(/\./g, '\\.');
+const INDEXABLE_HOSTS = `(?:${[CANONICAL_HOST, 'localhost', '127.0.0.1']
+  .map(escapeHost)
+  .join('|')})`;
+
+const hostRedirects = VERCEL_PRODUCTION_ALIASES.map((alias) => ({
+  source: '/:path*',
+  has: [{ type: 'host', value: escapeHost(alias) }],
+  destination: `${SITE_ORIGIN}/:path*`,
+  permanent: true,
+}));
+
+const nonCanonicalHostHeaders = {
+  source: '/:path*',
+  missing: [{ type: 'host', value: INDEXABLE_HOSTS }],
+  headers: [{ key: 'X-Robots-Tag', value: 'noindex' }],
+};
+
 /** @type {import('next').NextConfig} */
 const config = {
   env: {
@@ -217,6 +259,7 @@ const config = {
   },
 
   headers: async () => [
+    nonCanonicalHostHeaders,
     {
       source: '/:path*',
       headers: [
@@ -315,6 +358,8 @@ const config = {
   ],
 
   redirects: async () => [
+    // First: the alias must leave before any path-level redirect runs.
+    ...hostRedirects,
     {
       source: '/docs',
       destination: '/docs/getting-started',

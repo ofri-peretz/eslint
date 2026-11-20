@@ -75,7 +75,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref || github.ref }}
-          fetch-depth: 1
+          # Full history, blob-less: `sync-content-dates.ts` reads each docs
+          # page's last commit date for the sitemap `<lastmod>` and JSON-LD
+          # `dateModified`. A depth-1 clone makes every file look last changed
+          # by the one commit present, so the script refuses to run on it and
+          # the deploy would ship the dates committed in the tree instead.
+          # `blob:none` keeps this to commits and trees (no file contents for
+          # old revisions), which is all `git log -- <path>` needs.
+          fetch-depth: 0
+          filter: blob:none
       - uses: ./.github/actions/setup
         with:
           turbo-cache: 'false'

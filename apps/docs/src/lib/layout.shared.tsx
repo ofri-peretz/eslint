@@ -67,7 +67,10 @@ export function baseOptions(): BaseLayoutProps {
     links: [
       {
         text: 'Documentation',
-        url: '/docs',
+        // The final URL, not `/docs`: that is a 308 to this page, and this
+        // link is on every page of the site (audit 2026-11-19: 620 of 621
+        // pages linked through the redirect).
+        url: '/docs/getting-started',
         active: 'nested-url',
       },
       {

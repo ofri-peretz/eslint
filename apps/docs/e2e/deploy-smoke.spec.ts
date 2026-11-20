@@ -223,17 +223,31 @@ test.describe('Deploy smoke: oxlint-first docs', () => {
     );
   });
 
-  test('a rule page shows the oxlint tab by default', async ({ page }) => {
+  test('a rule page shows the ESLint tab by default', async ({ page }) => {
     await page.goto(RULE_PAGE);
     const tabs = page.getByTestId('engine-tabs');
     // The engine panel itself; the package-manager tabs nest panels inside it.
-    const oxlintPanel = tabs.locator('[data-engine="oxlint"]');
-    await expect(oxlintPanel).toBeVisible();
+    const eslintPanel = tabs.locator('[data-engine="eslint"]');
+    await expect(eslintPanel).toBeVisible();
+    await expect(tabs.getByRole('tab', { name: 'ESLint' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await expect(eslintPanel).toContainText('eslint-plugin-jwt-security');
+    await expect(eslintPanel).toContainText('jwt-security/no-algorithm-none');
+    // Both panels are server-rendered; the inactive one is hidden, not absent.
+    await expect(tabs.locator('[data-engine="oxlint"]')).toBeHidden();
+  });
+
+  test('#engine-oxlint deep-links the oxlint tab', async ({ page }) => {
+    await page.goto(`${RULE_PAGE}#engine-oxlint`);
+    const tabs = page.getByTestId('engine-tabs');
     await expect(
       tabs.getByRole('tab', { name: 'oxlint / Vite+' }),
     ).toHaveAttribute('aria-selected', 'true');
-    await expect(oxlintPanel).toContainText('oxlint-plugin-jwt-security');
-    await expect(oxlintPanel).toContainText('jwt-security/no-algorithm-none');
+    await expect(tabs.locator('[data-engine="oxlint"]')).toContainText(
+      'oxlint-plugin-jwt-security',
+    );
   });
 
   test('#engine-eslint deep-links the ESLint tab', async ({ page }) => {

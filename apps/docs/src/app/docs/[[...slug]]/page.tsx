@@ -13,6 +13,8 @@ import { getMDXComponents } from '@/mdx-components';
 import { RuleCTAExperiment } from '@/components/docs/rule-cta-experiment';
 import { DocsFooterCTA } from '@/components/docs/docs-footer-cta';
 import { EngineSetup } from '@/components/docs/engine-setup';
+import { JsonLd } from '@/components/json-ld';
+import { docsSeo } from '@/lib/docs-seo';
 import type { TableOfContents } from 'fumadocs-core/toc';
 import type { MDXComponents } from 'mdx/types';
 import type { ReactElement } from 'react';
@@ -43,6 +45,7 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
   const isRulePage = rulesIdx > 0 && rulesIdx < slug.length - 1;
   const rulePlugin = isRulePage ? slug[rulesIdx - 1].replace(/^plugin-/, '') : '';
   const ruleName = isRulePage ? slug[rulesIdx + 1] : '';
+  const seo = docsSeo(page);
 
   return (
     <DocsPage
@@ -56,7 +59,12 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
       slots={{ toc: { provider: TOCProvider, main: TocNav, popover: TOCPopover } }}
     >
       <DocsTitle>{page.data.title}</DocsTitle>
-      <DocsDescription>{page.data.description}</DocsDescription>
+      <DocsDescription>
+        {seo.visibleDescription ?? page.data.description}
+      </DocsDescription>
+      {/* schema.org: TechArticle (rules, guides) or SoftwareSourceCode
+          (plugins), plus a BreadcrumbList, in the server HTML. */}
+      <JsonLd data={seo.jsonLd} />
       <DocsBody>
         {/* Both slots render; the experiment component decides which one is
             visible, so the server stays static and the choice is client-side. */}
@@ -97,17 +105,22 @@ export async function generateMetadata(props: PageProps<'/docs/[[...slug]]'>) {
 
   const path = params.slug ? params.slug.join('/') : '';
   const url = canonicalDocsUrl(path);
+  // Query-shaped title and a unique description per page — see @/lib/seo.
+  const seo = docsSeo(page);
+  const ogTitle = typeof seo.title === 'string' ? seo.title : seo.title.absolute;
 
   return {
-    title: page.data.title,
-    description: page.data.description ?? 'ESLint Interlace documentation',
+    title: seo.title,
+    description: seo.description,
     bookmarks: [url],
     alternates: {
       canonical: url,
     },
     openGraph: {
-      title: page.data.title,
-      description: page.data.description ?? 'ESLint Interlace documentation',
+      title: ogTitle,
+      description: seo.description,
+      type: 'article',
+      ...(seo.dateModified ? { modifiedTime: seo.dateModified } : {}),
       // The per-page generator at /og/docs/[...slug] existed for months while
       // nothing referenced it, so every docs share card fell back to the
       // site-wide default. Point at it: rule pages are the pages people share.

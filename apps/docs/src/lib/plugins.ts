@@ -257,3 +257,15 @@ export const PLUGIN_PACKAGES: readonly string[] = PLUGINS.map(
 export function pluginsByPillar(pillar: Pillar): PluginEntry[] {
   return PLUGINS.filter((p) => p.pillar === pillar);
 }
+
+/**
+ * The plugin's docs URL, from the registry's pillar — the directory its pages
+ * actually live in. Callers used to rebuild it from the plugin-stats category
+ * (`framework`, `react`, `architecture`, …), which names no docs directory:
+ * /stats linked six plugins to 404s that way, and the rules tables linked
+ * jwt-security and postgresql-security rules under `/docs/quality/`.
+ */
+export function pluginDocsPath(slug: string): string | undefined {
+  const entry = PLUGINS_BY_SLUG[slug];
+  return entry ? `/docs/${entry.pillar}/plugin-${slug}` : undefined;
+}

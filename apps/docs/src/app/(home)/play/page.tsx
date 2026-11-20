@@ -3,9 +3,12 @@ import { Section } from '@interlace/ui/section';
 import { SectionHeader } from '@interlace/ui/blocks/section-header';
 import { PlaygroundDemo } from '@/components/play/PlaygroundDemo';
 import { PLAYGROUND_SNIPPETS, getSnippetBySlug } from '@/components/play/snippets';
+import { JsonLd } from '@/components/json-ld';
+import { topLevelJsonLd } from '@/lib/seo';
 
 export const metadata: Metadata = {
   title: 'Playground — Interlace ESLint',
+  alternates: { canonical: '/play' },
   description:
     'Paste code on the left, see flagship-rule findings on the right. Try the 6 canonical examples — SQL injection, JWT alg confusion, hardcoded credentials, NoSQL injection, postMessage wildcards, and missing alt text.',
   openGraph: {
@@ -39,6 +42,7 @@ export default async function PlaygroundPage({
 
   return (
     <main>
+      <JsonLd data={topLevelJsonLd('Playground', '/play')} />
       <Section spacing="comfortable" container="content">
         <SectionHeader
           as="h1"

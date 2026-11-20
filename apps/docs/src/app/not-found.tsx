@@ -40,7 +40,10 @@ export default function NotFound() {
         <Link href="/" className={buttonVariants({ variant: 'default' })}>
           Go home
         </Link>
-        <Link href="/docs" className={buttonVariants({ variant: 'outline' })}>
+        <Link
+          href="/docs/getting-started"
+          className={buttonVariants({ variant: 'outline' })}
+        >
           Browse docs
         </Link>
       </div>

@@ -17,6 +17,9 @@ import type { TableOfContents } from 'fumadocs-core/toc';
 import { visit } from 'unist-util-visit';
 import type { Root, Link } from 'mdast';
 import type { PluggableList } from 'unified';
+import { posix } from 'node:path';
+
+const REPO_BLOB_BASE = 'https://github.com/ofri-peretz/eslint/blob/main';
 
 // The compiler is instantiated per-request so remarkPlugins can be provided in mdxOptions
 
@@ -75,7 +78,7 @@ export interface CompileOptions {
  * - `#section` → preserved as-is (anchor links)
  * - `https://github.com/import-js/eslint-plugin-import/...` → rewritten to our repo
  */
-function remarkRelativeLinks(options: CompileOptions) {
+export function remarkRelativeLinks(options: CompileOptions) {
   const { baseUrl, pluginName } = options;
 
   // Map of external repos to rewrite to our monorepo. Anchored with `^` so a
@@ -114,6 +117,21 @@ function remarkRelativeLinks(options: CompileOptions) {
         url.startsWith('/')
       ) {
         return;
+      }
+
+      // A link that climbs out of the package (`../../docs/X.md` from
+      // `packages/eslint-plugin-<name>/README.md`) names a repo file, not a
+      // docs page. Resolving it as `../[plugin]/[rule]` produced
+      // `/docs/security/docs/ESLINT_VERSION_SUPPORT`, a 404 linked from every
+      // plugin page (audit 2026-11-19). Point it at the file on GitHub.
+      if (pluginName && url.startsWith('../../')) {
+        const repoPath = posix.normalize(
+          `packages/eslint-plugin-${pluginName}/${url}`,
+        );
+        if (!repoPath.startsWith('..')) {
+          node.url = `${REPO_BLOB_BASE}/${repoPath}`;
+          return;
+        }
       }
 
       // Handle relative markdown links
