@@ -260,12 +260,32 @@ describe('no-commonjs', () => {
     });
   });
 
-  describe('CommonJS globals', () => {
-    ruleTester.run('detect CommonJS globals', noCommonjs, {
+  // eslint-plugin-import's `no-commonjs` reads the module system (`require`,
+  // `module.exports`, `exports.x`) and nothing else: it never looks at the two
+  // path globals. Reporting them was 102 findings on lynx-stack that upstream
+  // does not make, so every spelling below is silent.
+  describe('CommonJS path globals are not module syntax', () => {
+    ruleTester.run('ignore __dirname and __filename', noCommonjs, {
       valid: [
         {
           code: 'const dirname = import.meta.url;',
           filename: '/src/utils/helpers.js',
+        },
+        {
+          name: 'a read of the __dirname global',
+          code: 'console.log(__dirname);',
+          filename: '/src/utils/helpers.js',
+        },
+        {
+          name: 'a read of the __filename global',
+          code: 'const filename = __filename;',
+          filename: '/src/utils/helpers.js',
+        },
+        {
+          name: 'a configured __dirname global',
+          code: 'console.log(__dirname);',
+          filename: '/src/utils/helpers.js',
+          languageOptions: { globals: { __dirname: 'readonly' } },
         },
         {
           name: 'a script-level var __dirname is the file\'s own binding',
@@ -279,34 +299,25 @@ describe('no-commonjs', () => {
           filename: '/src/utils/helpers.ts',
         },
         {
-          name: 'a property named __dirname is not the global',
+          name: 'a property named __dirname',
           code: 'declare const config: { __dirname: string }; console.log(config.__dirname);',
           filename: '/src/utils/helpers.ts',
         },
       ],
       invalid: [
         {
-          code: 'console.log(__dirname);',
+          name: 'the module system next to __dirname is still reported',
+          code: "const p = require('path'); console.log(__dirname, p);",
           filename: '/src/utils/helpers.js',
           errors: [
             {
-              messageId: 'preferES6',
-            },
-          ],
-        },
-        {
-          name: 'a configured global __dirname is still the CommonJS global',
-          code: 'console.log(__dirname);',
-          filename: '/src/utils/helpers.js',
-          languageOptions: { globals: { __dirname: 'readonly' } },
-          errors: [{ messageId: 'preferES6' }],
-        },
-        {
-          code: 'const filename = __filename;',
-          filename: '/src/utils/helpers.js',
-          errors: [
-            {
-              messageId: 'preferES6',
+              messageId: 'commonjsRequire',
+              suggestions: [
+                {
+                  messageId: 'commonjsRequire',
+                  output: `const p = // Convert to: import * as moduleName from 'path';\nrequire('path'); console.log(__dirname, p);`,
+                },
+              ],
             },
           ],
         },

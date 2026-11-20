@@ -17,7 +17,8 @@
  * The script is a hardcoded class field. Reported as CWE-502 unsafe
  * deserialization because the method is called `eval`.
  *
- * The Identifier branch of this rule already restricts `eval` and `Function` to
+ * (Historical note: `eval` and `Function` are now excluded from this rule
+ * altogether, see the end of this file.) The Identifier branch restricted them to
  * globals — a locally-defined `function Function()` is not the constructor. The
  * member branch did not, so `.eval` on any receiver was a sink. Redis is the
  * common case; mathjs, sequelize and every embedded-language client have the
@@ -47,28 +48,37 @@ ruleTester.run(
       `mathEngine.eval('1 + 1');`,
     ],
     invalid: [
-      // On a global receiver it IS the JavaScript sink.
-      {
-        code: `window.eval(req.body.code);`,
-        errors: 1,
-      },
-      {
-        // Tainted argument, as the rule's untrusted-input gate requires — the
-        // receiver is the only thing this change touches.
-        code: `globalThis.eval(req.query.payload);`,
-        errors: 1,
-      },
-      // And the bare form is unchanged.
-      {
-        code: `eval(req.body.code);`,
-        errors: 1,
-      },
-      // A member `deserialize` is still dangerous on any receiver — only
-      // `eval` and `Function` are global-only.
+      // A member `deserialize` is still dangerous on any receiver; only the
+      // eval-family names are excluded.
       {
         code: `serializer.deserialize(req.body.payload);`,
         errors: 1,
       },
     ],
+  },
+);
+
+// The global-object spellings and the bare form are code injection, owned by
+// node-security's detect-eval-with-expression. This rule stays silent on them
+// so one call is one finding.
+ruleTester.run(
+  'no-unsafe-deserialization: global eval is owned by detect-eval-with-expression',
+  noUnsafeDeserialization,
+  {
+    valid: [
+      {
+        name: 'window.eval is reported by the owner rule only',
+        code: `window.eval(req.body.code);`,
+      },
+      {
+        name: 'globalThis.eval is reported by the owner rule only',
+        code: `globalThis.eval(req.query.payload);`,
+      },
+      {
+        name: 'a bare eval is reported by the owner rule only',
+        code: `eval(req.body.code);`,
+      },
+    ],
+    invalid: [],
   },
 );

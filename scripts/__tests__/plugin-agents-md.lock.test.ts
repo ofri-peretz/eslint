@@ -50,7 +50,7 @@ const plugins = readdirSync(PACKAGES)
 describe('consumer AGENTS.md', () => {
   it('covers every plugin except the declared exclusions', () => {
     expect(plugins.length).toBeGreaterThanOrEqual(31);
-    expect([...AGENTS_MD_EXCLUDED]).toEqual(['eslint-plugin-import-next']);
+    expect([...AGENTS_MD_EXCLUDED]).toEqual([]);
   });
 
   it.each(plugins)(
@@ -115,5 +115,32 @@ describe('consumer AGENTS.md', () => {
       'utf8',
     );
     expect(gate).toContain('AGENTS_MD_MARKER');
+  });
+});
+
+// The gate in scripts/check-published-artifacts.ts refuses a packed AGENTS.md
+// without the generator's marker, but only after a release run has built and
+// packed everything. This catches the same defect in the PR: any package, a
+// plugin or not, that lists AGENTS.md in `files` must carry the marker.
+describe('AGENTS.md in a published `files` list', () => {
+  const shipping = readdirSync(PACKAGES)
+    .filter((d) => existsSync(join(PACKAGES, d, 'package.json')))
+    .filter((d) =>
+      (
+        JSON.parse(readFileSync(join(PACKAGES, d, 'package.json'), 'utf8'))
+          .files ?? []
+      ).includes('AGENTS.md'),
+    )
+    .sort();
+
+  it('is not empty', () => {
+    expect(shipping.length).toBeGreaterThanOrEqual(31);
+  });
+
+  it.each(shipping)('%s ships only the generated consumer guide', (dir) => {
+    expect(
+      readFileSync(join(PACKAGES, dir, 'AGENTS.md'), 'utf8'),
+      `${dir}: AGENTS.md is in "files" but lacks the generator marker, so check-published-artifacts will fail the release`,
+    ).toContain(AGENTS_MD_MARKER);
   });
 });

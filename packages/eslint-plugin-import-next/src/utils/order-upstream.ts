@@ -39,8 +39,8 @@ import {
   MessageIcons,
   objectKeyName,
   propertyName,
-  resolveModule,
 } from '@interlace/eslint-devkit';
+import { resolveWithSettings } from './settings-resolver';
 
 type NewlinesMode = 'ignore' | 'always' | 'always-and-inside-groups' | 'never';
 type SortOrder = 'ignore' | 'asc' | 'desc';
@@ -412,7 +412,13 @@ export function createUpstreamOrder(context: UpstreamContext) {
     if (/^\.\.$|^\.\.[\\/]/.test(name)) return 'parent';
     if (INDEX.has(name)) return 'index';
     if (/^\.[\\/]/.test(name)) return 'sibling';
-    const resolved = resolveModule(name, context.filename);
+    // The configured resolvers, as upstream's `resolve(name, context)` does:
+    // `@/App.js` through tsconfig `paths` to App.tsx is internal, not unknown.
+    const resolved = resolveWithSettings(
+      name,
+      context.filename,
+      context.settings,
+    );
     if (resolved) {
       const inFolder = externalFolders.some((folder) =>
         isInside(path.resolve(packageDir, folder), resolved),

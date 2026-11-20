@@ -71,11 +71,22 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
         {
           type: 'string',
           enum: ['prefer-inline', 'prefer-top-level'],
-          default: 'prefer-inline',
         },
       ],
     },
-    defaultOptions: ['prefer-inline'],
+    /*
+     * No options means `prefer-top-level`, because that is what
+     * eslint-plugin-import does: its code tests `context.options[0] ===
+     * 'prefer-inline'` and falls through to the top-level branch for anything
+     * else, `undefined` included. Its schema says `default: 'prefer-inline'`, but
+     * ESLint never applies a default to an option that was not written, so that
+     * line is documentation of a wish, not behaviour. lynx-stack enables the rule
+     * as a bare `'warn'` and got 1,619 findings from this plugin that the
+     * incumbent does not make. A drop-in matches what runs; a recommendation for
+     * `prefer-inline` belongs in the docs, and the `typescript` preset already
+     * writes it out explicitly.
+     */
+    defaultOptions: ['prefer-top-level'],
 
     createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
       let style: Style;
@@ -104,7 +115,7 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
 
       return {
         before() {
-          style = context.options[0] || 'prefer-inline';
+          style = context.options[0] || 'prefer-top-level';
           sourceCode = context.sourceCode;
         },
         ImportDeclaration(node: TSESTree.ImportDeclaration) {

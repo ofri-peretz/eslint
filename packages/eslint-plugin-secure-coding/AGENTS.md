@@ -91,7 +91,7 @@ Everything in `recommended` plus 17 more (some shared rules run at a different s
 - `require-secure-defaults` (error): Ensure secure default configurations.
 - `no-bidi-characters` (error): Disallows Unicode bidirectional control characters, which let source render differently than it compiles (Trojan Source, CWE-1007).
 - `no-invisible-characters` (error): Disallows invisible letters such as the Hangul fillers (U+3164, U+FFA0), which hide identifiers, values and comment text from code review (CWE-1007).
-- `no-disabled-template-escaping` (error): Disallows assigning `false` to `escapeMarkup`, which disables template HTML auto-escaping (CWE-79).
+- `no-disabled-template-escaping` (error): Disallows turning off template HTML auto-escaping: `escapeMarkup = false`, swig/nunjucks `autoescape: false`, Handlebars `noEscape: true` (CWE-79).
 
 ### `owasp-top-10`
 
