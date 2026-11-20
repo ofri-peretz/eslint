@@ -11,7 +11,10 @@
           "file": "src/server.js",
           "rule": "postgresql-security/no-unsafe-query"
         },
-        { "file": "src/server.js", "rule": "jwt-security/no-hardcoded-secret" },
+        {
+          "file": "src/server.js",
+          "rule": "jwt-security/no-hardcoded-secret"
+        },
         {
           "file": "src/server.js",
           "rule": "jwt-security/require-algorithm-whitelist"
@@ -24,7 +27,10 @@
           "file": "src/server.js",
           "rule": "node-security/no-arbitrary-file-access"
         },
-        { "file": "src/server.js", "rule": "node-security/no-shell-injection" }
+        {
+          "file": "src/server.js",
+          "rule": "node-security/no-shell-injection"
+        }
       ],
       "unflagged": [
         {
@@ -47,22 +53,29 @@
         },
         {
           "file": "src/accounts.controller.ts",
-          "rule": "node-security/no-shell-injection"
+          "rule": "nestjs-security/require-guards"
         },
-        { "file": "src/main.ts", "rule": "nestjs-security/no-permissive-cors" }
-      ],
-      "unflagged": [
         {
           "file": "src/accounts.controller.ts",
-          "rule": "nestjs-security/require-guards",
-          "note": "admin controller without @UseGuards"
+          "rule": "node-security/no-shell-injection"
+        },
+        {
+          "file": "src/main.ts",
+          "rule": "nestjs-security/no-permissive-cors"
         }
-      ]
+      ],
+      "unflagged": []
     },
     "react": {
       "required": [
-        { "file": "src/App.tsx", "rule": "browser-security/no-innerhtml" },
-        { "file": "src/App.tsx", "rule": "browser-security/no-jwt-in-storage" },
+        {
+          "file": "src/App.tsx",
+          "rule": "browser-security/no-innerhtml"
+        },
+        {
+          "file": "src/App.tsx",
+          "rule": "browser-security/no-jwt-in-storage"
+        },
         {
           "file": "src/App.tsx",
           "rule": "browser-security/no-postmessage-wildcard-origin"
