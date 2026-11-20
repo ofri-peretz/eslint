@@ -76,7 +76,7 @@ call documented to return null on a miss (`find`, `match`, `exec`,
 | Falsy guard that **leaves** before the read | `if (!hit) return; hit.name` — also `if (hit == null) throw …; hit.name`, `if (!hit \|\| stale) continue; hit.name` |
 | Loop test guarding its body | `while (m) { m[1] }`, `for (; m; ) { m[1] }` (not `do … while`, not a read after the loop) |
 | Falsy test on the left of `\|\|` | `!hit \|\| hit.stale`, `hit == null \|\| hit.stale` |
-| Any conjunct of a left-nested `&&` | `m && s.length && m[1]`, `Boolean(m) && m[1]`, `m !== null && m[1]` |
+| Any conjunct of a left-nested `&&` | `m && s.length && m[1]`, `Boolean(m) && m[1]`, `m != null && m[1]`, or both `m !== null && m !== undefined` (one strict check alone leaves the other nullish value open) |
 | Call that cannot return, declared in this file | `if (!hit) fail('x'); hit.name` where `fail(): never` is declared in the same file, or `process.exit()` |
 | Length test over `pop()` / `shift()` | `while (q.length) { const n = q.pop(); n.go() }` (one shrinking call per iteration) |
 | TypeScript narrowing (type-aware mode) | `if (!page) notFound(); page.data` when `notFound(): never` |

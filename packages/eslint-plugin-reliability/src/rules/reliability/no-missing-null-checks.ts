@@ -235,6 +235,17 @@ function countShrinkingCalls(
     ) {
       count++;
     }
+    // `q = []`, `q.length = 0`, `q.length--`: a write to the array or to its
+    // length can empty it between the test and the call.
+    if (
+      node.range[1] <= upTo &&
+      ((node.type === 'AssignmentExpression' &&
+        [key, `${key}.length`].includes(accessKey(node.left) ?? '')) ||
+        (node.type === 'UpdateExpression' &&
+          accessKey(node.argument) === `${key}.length`))
+    ) {
+      count++;
+    }
     for (const k of Object.keys(node)) {
       if (k === 'parent') continue;
       const v = (node as unknown as Record<string, unknown>)[k];
@@ -256,7 +267,8 @@ function countShrinkingCalls(
 /**
  * `while (q.length) { const n = q.pop(); n.x }` — the loop test already proved
  * the pop returns a value. One shrinking call only: a second `pop()` in the same
- * iteration can run on an empty array.
+ * iteration can run on an empty array, and so can the same call run twice by a
+ * loop sitting between the guard and the call.
  */
 function isPopGuardedByLength(
   call: TSESTree.CallExpression,
@@ -287,6 +299,17 @@ function isPopGuardedByLength(
     }
     if (test && body === child && provesNonEmpty(test, key)) {
       return countShrinkingCalls(body, key, call.range[1]) === 1;
+    }
+    // Any other loop on the way up runs the call again, and its own test says
+    // nothing about the array.
+    if (
+      p.type === 'WhileStatement' ||
+      p.type === 'DoWhileStatement' ||
+      p.type === 'ForStatement' ||
+      p.type === 'ForInStatement' ||
+      p.type === 'ForOfStatement'
+    ) {
+      return false;
     }
     child = p;
     p = (child as TSESTree.Node & { parent?: TSESTree.Node }).parent;
@@ -941,7 +964,7 @@ function hasExplicitNullCheck(
       (parent.type === 'WhileStatement' || parent.type === 'ForStatement') &&
       parent.test &&
       parent.body === current &&
-      isNullCheckForObject(parent.test, node.object, sourceCode)
+      conjunctGuards(parent.test, node.object, sourceCode)
     ) {
       return true;
     }
@@ -1141,31 +1164,61 @@ function isNullCheckForObject(
   return false;
 }
 
+/** `a && b && c` as `[a, b, c]`. */
+function andOperands(expr: TSESTree.Expression): TSESTree.Expression[] {
+  return expr.type === 'LogicalExpression' && expr.operator === '&&'
+    ? [...andOperands(expr.left), ...andOperands(expr.right)]
+    : [expr];
+}
+
 /**
- * Does the left operand of an `&&` prove `object` non-null for its right side?
- * Read through the `&&` tree: any conjunct that is a guard on the object counts
- * (`m && s.length && m[1]`). A `||` operand proves nothing about either side,
- * and `x === null` / `x == null` is the OPPOSITE of a guard here.
+ * Does this test prove `object` non-nullish when it passes? Read through the
+ * `&&` tree: any operand that is a guard on the object counts (`m && s.length
+ * && m[1]`). Deliberately stricter than the `if` reading in
+ * isNullCheckForObject:
+ *
+ * - `||` / `??` operands prove nothing about either side;
+ * - `x === null` and `x == null` are the OPPOSITE of a guard;
+ * - `x !== null` alone does not exclude `undefined`, which is what `find()`,
+ *   `pop()` and `shift()` produce, and `x !== undefined` alone does not exclude
+ *   `null`. Only the pair does; `x != null` covers both on its own.
  */
 function conjunctGuards(
-  left: TSESTree.Expression,
+  test: TSESTree.Expression,
   object: TSESTree.Expression,
   sourceCode: TSESLint.SourceCode,
 ): boolean {
-  if (left.type === 'LogicalExpression') {
-    return (
-      left.operator === '&&' &&
-      (conjunctGuards(left.left, object, sourceCode) ||
-        conjunctGuards(left.right, object, sourceCode))
-    );
+  const objectText = sourceCode.getText(object);
+  let notNull = false;
+  let notUndefined = false;
+  for (const operand of andOperands(test)) {
+    if (operand.type === 'LogicalExpression') continue;
+    if (operand.type === 'BinaryExpression') {
+      if (operand.operator === '===' || operand.operator === '==') continue;
+      if (operand.operator === '!==') {
+        const sides = [
+          sourceCode.getText(operand.left),
+          sourceCode.getText(operand.right),
+        ];
+        const other =
+          sides[0] === objectText
+            ? sides[1]
+            : sides[1] === objectText
+              ? sides[0]
+              : null;
+        if (other === 'null') {
+          notNull = true;
+          continue;
+        }
+        if (other === 'undefined') {
+          notUndefined = true;
+          continue;
+        }
+      }
+    }
+    if (isNullCheckForObject(operand, object, sourceCode)) return true;
   }
-  if (
-    left.type === 'BinaryExpression' &&
-    (left.operator === '===' || left.operator === '==')
-  ) {
-    return false;
-  }
-  return isNullCheckForObject(left, object, sourceCode);
+  return notNull && notUndefined;
 }
 
 /**

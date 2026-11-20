@@ -100,6 +100,7 @@ describe('no-math-random-crypto', () => {
       },
       // Benchmark TP lock: vuln_random_token (returned from a crypto-named fn)
       {
+        name: 'a Math.random value returned from a token-named function is a predictable credential',
         code: `export function vuln_random_token() {
   return Math.random().toString(36).substring(2);
 }`,

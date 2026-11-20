@@ -59,6 +59,18 @@ ruleTester.run(
         name: 'a code used as a path segment through path.join',
         code: "const code = Math.random().toString(36).slice(2); const out = path.join(dir, 'build', code);",
       },
+      {
+        name: 'the second path of a two-path fs method',
+        code: 'const key = Math.random().toString(36).slice(2); fs.copyFileSync(src, `${key}.bak`);',
+      },
+      {
+        name: 'a template assigned to a binding named for a file',
+        code: 'const key = Math.random().toString(36).slice(2); const outFile = `${key}.tmp`; use(outFile);',
+      },
+      {
+        name: 'a template that is a conditional arm assigned to a file-named binding',
+        code: 'declare const ok: boolean; const key = Math.random().toString(36).slice(2); const tempFileName = ok ? `${key}.a` : `${key}.b`;',
+      },
     ],
     invalid: [
       {
@@ -89,6 +101,46 @@ ruleTester.run(
       {
         name: 'a template without an extension is not a file name',
         code: 'const hash = Math.random().toString(16); const label = `row-${hash}`; render(label);',
+        errors: weak,
+      },
+      {
+        name: 'a suffixed template that is an HMAC key is not a file name',
+        code: "const key = Math.random().toString(36); crypto.createHmac('sha256', `${key}.v1`);",
+        errors: weak,
+      },
+      {
+        name: 'file CONTENT is not a file name',
+        code: "const key = Math.random().toString(36); fs.writeFileSync('credential.key', key);",
+        errors: weak,
+      },
+      {
+        name: 'the second argument of a method that is not a two-path method',
+        code: 'const key = Math.random().toString(36); fs.writeFileSync(`${key}.tmp`, data); fs.appendFileSync(log, key);',
+        errors: weak,
+      },
+      {
+        name: 'a suffixed template bound to a name that is not a file',
+        code: 'const key = Math.random().toString(36); const label = `${key}.v1`; send(label);',
+        errors: weak,
+      },
+      {
+        name: 'a suffixed template that is returned',
+        code: 'function f() { const key = Math.random().toString(36); return `${key}.v1`; }',
+        errors: weak,
+      },
+      {
+        name: 'a read through a call on something other than path or fs',
+        code: 'const key = Math.random().toString(36); archive.add(key);',
+        errors: weak,
+      },
+      {
+        name: 'a read passed to a plain function call',
+        code: 'const key = Math.random().toString(36); send(key);',
+        errors: weak,
+      },
+      {
+        name: 'a read passed through a nested member callee',
+        code: 'const key = Math.random().toString(36); client.api.send(key);',
         errors: weak,
       },
     ],

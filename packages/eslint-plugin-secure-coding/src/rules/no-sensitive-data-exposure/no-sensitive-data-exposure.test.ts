@@ -146,6 +146,7 @@ describe('no-sensitive-data-exposure', () => {
             errors: [{ messageId: 'sensitiveDataExposure' }],
           },
           {
+            name: 'an API key read by a quoted key and logged is exposed',
             code: `logger.info(config['apiKey']);`,
             errors: [{ messageId: 'sensitiveDataExposure' }],
           },

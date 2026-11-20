@@ -700,11 +700,12 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
         return viaBinding ? { node: value, pattern: viaBinding.pattern } : null;
       }
       if (value.type === AST_NODE_TYPES.MemberExpression) {
+        const declared = receiverDeclaresKey(value);
         const pattern = memberCarriesSecret(
           value,
           sensitivePatterns,
           descriptors,
-          receiverDeclaresKey(value),
+          declared,
         );
         if (pattern) return { node: value, pattern };
         // `const error = { message: accessToken }; log(`${error.message}`)` —
@@ -729,25 +730,47 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
     function holdsAReference(init: TSESTree.Node): boolean {
       const node = unwrapTypeSyntax(init) as TSESTree.Node;
       if (node.type === AST_NODE_TYPES.MemberExpression) {
+        // `credential.name` where `credential` is an object literal written in
+        // this file is whatever the literal says it is, not a class name.
+        if (
+          node.object.type === AST_NODE_TYPES.Identifier &&
+          resolveBindingInit(node.object)?.type ===
+            AST_NODE_TYPES.ObjectExpression
+        ) {
+          return false;
+        }
         return propertyName(node) === 'name';
       }
       if (node.type === AST_NODE_TYPES.NewExpression) {
+        // A constructor this file defines itself is not the DI API, whatever it
+        // is called: it can keep and print what it is given.
+        const local =
+          node.callee.type === AST_NODE_TYPES.Identifier
+            ? findBinding(node.callee)
+            : null;
         return (
           node.callee.type === AST_NODE_TYPES.Identifier &&
-          node.callee.name === 'InjectionToken'
+          node.callee.name === 'InjectionToken' &&
+          !local?.defs.some((def) => def.type !== 'ImportBinding')
         );
       }
       if (node.type === AST_NODE_TYPES.CallExpression) {
         const callee = node.callee;
+        // `String(Symbol(secret))` prints the description, so only a fixed label
+        // keeps the symbol an identity rather than a carrier.
+        const fixedLabel = node.arguments.every(
+          (argument) => staticString(argument) !== null,
+        );
         return (
-          (callee.type === AST_NODE_TYPES.Identifier &&
+          fixedLabel &&
+          ((callee.type === AST_NODE_TYPES.Identifier &&
             callee.name === 'Symbol' &&
             !isShadowed('Symbol', node)) ||
-          (callee.type === AST_NODE_TYPES.MemberExpression &&
-            callee.object.type === AST_NODE_TYPES.Identifier &&
-            callee.object.name === 'Symbol' &&
-            propertyName(callee) === 'for' &&
-            !isShadowed('Symbol', node))
+            (callee.type === AST_NODE_TYPES.MemberExpression &&
+              callee.object.type === AST_NODE_TYPES.Identifier &&
+              callee.object.name === 'Symbol' &&
+              propertyName(callee) === 'for' &&
+              !isShadowed('Symbol', node)))
         );
       }
       if (node.type === AST_NODE_TYPES.ConditionalExpression) {
@@ -765,6 +788,11 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
           return false;
         }
         const subject = test.left.argument.name;
+        // The other arm hands the value through unchanged, so a subject that is
+        // itself named like a credential may be one.
+        if (identifierNamesSecret(subject, sensitivePatterns, descriptors)) {
+          return false;
+        }
         const named = node.consequent;
         const passed = node.alternate;
         return (
@@ -799,13 +827,15 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
       ) {
         return false;
       }
-      if (
-        !init.properties.some(
-          (property) => objectKeyName(property as TSESTree.Property) === key,
-        )
-      ) {
-        return false;
-      }
+      const declared = init.properties.find(
+        (property) => objectKeyName(property as TSESTree.Property) === key,
+      ) as TSESTree.Property | undefined;
+      if (!declared) return false;
+      // The receiver's name is set aside only when what the key holds is not
+      // itself named like a secret: `{ value: accessToken }` read through
+      // `tokenBag.value` is still a token, whether or not the object is aliased
+      // or handed to other code.
+      if (namedValueExposure(declared.value)) return false;
       const variable = findBinding(member.object) as TSESLint.Scope.Variable;
       // Handing the object to other code is allowed (it is how it gets hashed
       // or serialized); writing a property through the binding is not.

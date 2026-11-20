@@ -63,6 +63,7 @@ describe('no-unsafe-deserialization', () => {
           errors: [{ messageId: 'unsafeDeserialization' }],
         },
         {
+          name: 'deserializing the content of a file the code reads is still untrusted data',
           code: `
             const fs = require('fs');
             const data = fs.readFileSync('data.json');

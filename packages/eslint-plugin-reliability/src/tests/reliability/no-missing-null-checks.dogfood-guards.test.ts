@@ -82,9 +82,19 @@ const v = c == null || c.range[1] > 1;`,
 const v = Boolean(b) && b.type;`,
     },
     {
-      name: '`x !== null && x.y`',
+      name: '`x != null && x.y` excludes both null and undefined',
       code: `${PRELUDE}const w = xs.find((r) => r);
-const z = w !== null && w.id;`,
+const z = w != null && w.id;`,
+    },
+    {
+      name: 'both strict inequalities together exclude null and undefined',
+      code: `${PRELUDE}const w = xs.find((r) => r);
+const z = w !== null && w !== undefined && w.id;`,
+    },
+    {
+      name: 'the strict pair in either operand order',
+      code: `${PRELUDE}const w = xs.find((r) => r);
+const z = undefined !== w && null !== w && w.id;`,
     },
     {
       name: 'the guard sits on the left of a longer `&&` chain',
@@ -255,6 +265,11 @@ while (ok && q.length) { const n = q.pop(); n.go(); }`,
       name: 'the guard is the SECOND conjunct of a left-nested `&&`',
       code: `${PRELUDE}const m = /a(b)/.exec(s);
 const v = s.length && m && m[1];`,
+    },
+    {
+      name: 'a loop test of `!= null` guards its body',
+      code: `${PRELUDE}const m = /a(b)/.exec(s);
+while (m != null) { use(m[1]); break; }`,
     },
   ],
   invalid: [
@@ -523,6 +538,67 @@ const v = (c || xs) && c.range;`,
       code: `declare const count: number;
 const q: any[] = [];
 while (count > 0) { const n = q.pop(); n.go(); }`,
+      errors: miss,
+    },
+    {
+      name: '`x !== null` alone does not exclude the undefined that find() returns',
+      code: `${PRELUDE}const w = xs.find((r) => r);
+const z = w !== null && w.id;`,
+      errors: miss,
+    },
+    {
+      name: '`x !== undefined` alone does not exclude null',
+      code: `${PRELUDE}const m = /a(b)/.exec(s);
+const z = m !== undefined && m[1];`,
+      errors: miss,
+    },
+    {
+      name: 'a strict inequality about another value proves nothing',
+      code: `${PRELUDE}const w = xs.find((r) => r);
+declare const other: unknown;
+const z = other !== null && other !== undefined && w.id;`,
+      errors: miss,
+    },
+    {
+      name: 'a loop whose test is `=== null` runs its body with the value null',
+      code: `${PRELUDE}const m = /a(b)/.exec(s);
+while (m === null) { use(m[1]); break; }`,
+      errors: miss,
+    },
+    {
+      name: 'a loop test that can pass with a nullish value guards nothing',
+      code: `${PRELUDE}const m = /a(b)/.exec(s);
+while (m || true) { use(m[1]); break; }`,
+      errors: miss,
+    },
+    {
+      name: 'an outer length test does not cover a pop that a loop repeats',
+      code: `const q: any[] = [{}];
+if (q.length) { for (let i = 0; i < 2; i++) { const n = q.pop(); n.x; } }`,
+      errors: miss,
+    },
+    {
+      name: 'a do-while around the pop repeats it too',
+      code: `const q: any[] = [{}];
+if (q.length) { do { const n = q.pop(); n.x; } while (false); }`,
+      errors: miss,
+    },
+    {
+      name: 'emptying the array between the test and the pop',
+      code: `const q: any[] = [{}];
+if (q.length) { q.length = 0; const n = q.pop(); n.x; }`,
+      errors: miss,
+    },
+    {
+      name: 'reassigning the array between the test and the pop',
+      code: `let q: any[] = [{}];
+if (q.length) { q = []; const n = q.pop(); n.x; }`,
+      errors: miss,
+    },
+    {
+      name: 'decrementing the length between the test and the pop',
+      code: `const q: any[] = [{}];
+if (q.length) { q.length--; const n = q.pop(); n.x; }`,
       errors: miss,
     },
   ],

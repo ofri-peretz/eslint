@@ -78,6 +78,37 @@ ruleTester.run(
         name: 'a named deserialize function delegating to the next layer',
         code: `function unserialize(data) { return peer.deserialize(data); }`,
       },
+      {
+        name: 'a field filled from an injected parameter is the project’s collaborator',
+        code: `class A { constructor(codec) { this.other = 1; this.codec = codec; } run(p) { return this.codec.deserialize(p); } }`,
+      },
+      {
+        name: 'a field initialized with an instance of a relative import is owned',
+        code: `import { Helper } from './helper';
+class A { 'quoted' = 1; label; codec = new Helper(); run(p) { return this.codec.deserialize(p); } }`,
+      },
+      {
+        name: 'an instance of a relative import is owned',
+        code: `import { Local } from './local';
+export function run(p) { const c = new Local(); return c.deserialize(p); }`,
+      },
+      {
+        name: 'an instance of a class this file declares, with no package in it, is owned',
+        code: `class Codec { run(x) { return x; } }
+export function run(p) { const c = new Codec(); return c.deserialize(p); }`,
+      },
+      {
+        name: 'a this-rooted receiver outside any class has no field to trace',
+        code: `function f(p) { return this.codec.deserialize(p); }`,
+      },
+      {
+        name: 'an instance of a member constructor that resolves to no module',
+        code: `export function run(lib, p) { const c = new lib.Codec(); return c.deserialize(p); }`,
+      },
+      {
+        name: 'an instance of an undeclared constructor',
+        code: `export function run(p) { const c = new GlobalCodec(); return c.deserialize(p); }`,
+      },
     ],
     invalid: [
       {
@@ -110,6 +141,42 @@ class H { handle(req) { return serialize.unserialize(req.body.cookie); } }`,
       {
         name: 'a receiver reached through a function parameter, not this, still reports',
         code: `export function run(ctx, packet) { return ctx.deserializer.deserialize(packet); }`,
+        errors: [{ messageId: 'unsafeDeserialization' }],
+      },
+      {
+        name: 'a field a constructor fills from a package keeps reporting',
+        code: `import serialize from 'node-serialize';
+class A { constructor() { this.codec = serialize; } run(req) { return this.codec.unserialize(req.body.cookie); } }`,
+        errors: [{ messageId: 'unsafeDeserialization' }],
+      },
+      {
+        name: 'a field initializer that is a package keeps reporting',
+        code: `import serialize from 'node-serialize';
+class A { codec = serialize; run(req) { return this.codec.unserialize(req.body.cookie); } }`,
+        errors: [{ messageId: 'unsafeDeserialization' }],
+      },
+      {
+        name: 'a quoted field name is the same field',
+        code: `import serialize from 'node-serialize';
+class A { 'codec' = serialize; run(req) { return this.codec.unserialize(req.body.cookie); } }`,
+        errors: [{ messageId: 'unsafeDeserialization' }],
+      },
+      {
+        name: 'a computed field off this cannot be traced and keeps reporting',
+        code: `class A { run(req, k) { return this[k].deserialize(req.body); } }`,
+        errors: [{ messageId: 'unsafeDeserialization' }],
+      },
+      {
+        name: 'an instance of a local class that keeps a package sink in a field',
+        code: `import serialize from 'node-serialize';
+class Codec { constructor() { this.unserialize = serialize.unserialize; } }
+export function run(req) { const c = new Codec(); return c.unserialize(req.body.cookie); }`,
+        errors: [{ messageId: 'unsafeDeserialization' }],
+      },
+      {
+        name: 'an instance of a class imported from a package is not the project’s',
+        code: `import { Foo } from 'some-pkg';
+export function run(req) { const c = new Foo(); return c.deserialize(req.body); }`,
         errors: [{ messageId: 'unsafeDeserialization' }],
       },
     ],
