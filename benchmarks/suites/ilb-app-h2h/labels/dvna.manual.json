@@ -1,0 +1,27 @@
+{
+  "_comment": "Manual verdicts for DVNA findings the mechanical labeller marked FP. Single labeller (the fixer agent), not blind, not double-labelled. No finding was judged unlisted-real. Entries below only record the reason for the less obvious FPs.",
+  "core/authHandler.js:52:express-security/no-sensitive-data-in-query": {
+    "verdict": "FP",
+    "reason": "Re-renders the reset form with req.query.token. A reset link carrying the token in the query string is how the feature is designed; the documented flaw is that the token is md5(login), not the transport. Arguable (morgan('tiny') logs full URLs), but not the documented or an independently proven exploit."
+  },
+  "core/authHandler.js:97:express-security/no-sensitive-data-in-query": {
+    "verdict": "FP",
+    "reason": "Same as line 52."
+  },
+  "routes/app.js:36:express-security/no-exposed-debug-endpoints": {
+    "verdict": "FP",
+    "reason": "/admin is an authenticated route (authHandler.isAuthenticated); the rule's 'debug endpoint without authentication' claim is wrong for it."
+  },
+  "models/index.js:37:security/detect-non-literal-fs-filename": {
+    "verdict": "FP",
+    "reason": "readdirSync(__dirname): a fixed directory, no attacker input."
+  },
+  "models/index.js:48:security/detect-object-injection": {
+    "verdict": "FP",
+    "reason": "db[modelName] where modelName comes from Object.keys(db): not attacker-controlled."
+  },
+  "models/index.js:49:security/detect-object-injection": {
+    "verdict": "FP",
+    "reason": "Same as line 48."
+  }
+}

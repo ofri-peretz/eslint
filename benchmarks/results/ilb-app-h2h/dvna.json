@@ -1,0 +1,591 @@
+{
+  "suite": "ilb-app-h2h",
+  "app": "dvna",
+  "pin": "9ba473add536f66ac9007966acb2a775dd31277a",
+  "license": "MIT (LICENSE file at the pin: The MIT License, Copyright (c) 2023 Appsecco Ltd.; package.json says MIT)",
+  "generatedAt": "2026-11-20T10:50:09.602Z",
+  "toolchain": {
+    "node": "v24.12.0",
+    "platform": "darwin-arm64",
+    "eslint": "10.13.0",
+    "tsParser": "8.68.0",
+    "ourRepo": {
+      "head": "a17ccfaa56335d886dd3952e3968b4e078e99a7a",
+      "dirtyPackages": []
+    },
+    "plugins": {
+      "secure-coding": {
+        "name": "eslint-plugin-secure-coding",
+        "version": "6.1.3",
+        "path": "packages/eslint-plugin-secure-coding/dist/src/index.js",
+        "source": "local-build"
+      },
+      "node-security": {
+        "name": "eslint-plugin-node-security",
+        "version": "6.0.7",
+        "path": "packages/eslint-plugin-node-security/dist/src/index.js",
+        "source": "local-build"
+      },
+      "express-security": {
+        "name": "eslint-plugin-express-security",
+        "version": "4.0.4",
+        "path": "packages/eslint-plugin-express-security/dist/src/index.js",
+        "source": "local-build"
+      },
+      "mongodb-security": {
+        "name": "eslint-plugin-mongodb-security",
+        "version": "10.0.3",
+        "path": "packages/eslint-plugin-mongodb-security/dist/src/index.js",
+        "source": "local-build"
+      },
+      "sequelize-security": {
+        "name": "eslint-plugin-sequelize-security",
+        "version": "2.0.3",
+        "path": "packages/eslint-plugin-sequelize-security/dist/src/index.js",
+        "source": "local-build"
+      },
+      "security": {
+        "name": "eslint-plugin-security",
+        "version": "4.2.1",
+        "source": "npm"
+      }
+    }
+  },
+  "truthItems": 19,
+  "summary": {
+    "A": {
+      "label": "eslint-plugin-security recommended",
+      "side": "incumbent",
+      "filesLinted": 12,
+      "loc": 764,
+      "ms": 65,
+      "parseErrors": 0,
+      "findings": 4,
+      "duplicateRuleHitsDropped": 0,
+      "findingsPerKLoc": 5.2,
+      "tp": 1,
+      "fpTotal": 3,
+      "fpRightPlaceWrongReason": 0,
+      "unlistedReal": 0,
+      "undecidable": 0,
+      "precisionStrict": 0.25,
+      "precisionLenient": 0.25,
+      "precisionStrictWilson95": [0.046, 0.699],
+      "truthItems": 19,
+      "itemsHit": ["DV-02"],
+      "recallAll": 0.053,
+      "recallLintableY": 0.167,
+      "lintableYCount": 6,
+      "byRule": {
+        "security/detect-child-process": 1,
+        "security/detect-non-literal-fs-filename": 1,
+        "security/detect-object-injection": 2
+      },
+      "findingsDetail": [
+        {
+          "file": "core/appHandler.js",
+          "line": 39,
+          "ruleId": "security/detect-child-process",
+          "message": "Found child_process.exec() with non Literal first argument",
+          "verdict": "TP",
+          "itemIds": ["DV-02"],
+          "regionIds": ["DV-02"]
+        },
+        {
+          "file": "models/index.js",
+          "line": 37,
+          "ruleId": "security/detect-non-literal-fs-filename",
+          "message": "Found readdirSync from package \"fs\" with non literal argument at index 0",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "readdirSync(__dirname): a fixed directory, no attacker input."
+        },
+        {
+          "file": "models/index.js",
+          "line": 48,
+          "ruleId": "security/detect-object-injection",
+          "message": "Generic Object Injection Sink",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "db[modelName] where modelName comes from Object.keys(db): not attacker-controlled."
+        },
+        {
+          "file": "models/index.js",
+          "line": 49,
+          "ruleId": "security/detect-object-injection",
+          "message": "Generic Object Injection Sink",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "Same as line 48."
+        }
+      ]
+    },
+    "A-all": {
+      "label": "eslint-plugin-security, every rule at error",
+      "side": "incumbent",
+      "filesLinted": 12,
+      "loc": 764,
+      "ms": 14,
+      "parseErrors": 0,
+      "findings": 4,
+      "duplicateRuleHitsDropped": 0,
+      "findingsPerKLoc": 5.2,
+      "tp": 1,
+      "fpTotal": 3,
+      "fpRightPlaceWrongReason": 0,
+      "unlistedReal": 0,
+      "undecidable": 0,
+      "precisionStrict": 0.25,
+      "precisionLenient": 0.25,
+      "precisionStrictWilson95": [0.046, 0.699],
+      "truthItems": 19,
+      "itemsHit": ["DV-02"],
+      "recallAll": 0.053,
+      "recallLintableY": 0.167,
+      "lintableYCount": 6,
+      "byRule": {
+        "security/detect-child-process": 1,
+        "security/detect-non-literal-fs-filename": 1,
+        "security/detect-object-injection": 2
+      },
+      "findingsDetail": [
+        {
+          "file": "core/appHandler.js",
+          "line": 39,
+          "ruleId": "security/detect-child-process",
+          "message": "Found child_process.exec() with non Literal first argument",
+          "verdict": "TP",
+          "itemIds": ["DV-02"],
+          "regionIds": ["DV-02"]
+        },
+        {
+          "file": "models/index.js",
+          "line": 37,
+          "ruleId": "security/detect-non-literal-fs-filename",
+          "message": "Found readdirSync from package \"fs\" with non literal argument at index 0",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "readdirSync(__dirname): a fixed directory, no attacker input."
+        },
+        {
+          "file": "models/index.js",
+          "line": 48,
+          "ruleId": "security/detect-object-injection",
+          "message": "Generic Object Injection Sink",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "db[modelName] where modelName comes from Object.keys(db): not attacker-controlled."
+        },
+        {
+          "file": "models/index.js",
+          "line": 49,
+          "ruleId": "security/detect-object-injection",
+          "message": "Generic Object Injection Sink",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "Same as line 48."
+        }
+      ]
+    },
+    "B": {
+      "label": "secure-coding + node-security + express-security, recommended presets",
+      "side": "ours",
+      "filesLinted": 12,
+      "loc": 764,
+      "ms": 143,
+      "parseErrors": 0,
+      "findings": 13,
+      "duplicateRuleHitsDropped": 0,
+      "findingsPerKLoc": 17,
+      "tp": 7,
+      "fpTotal": 6,
+      "fpRightPlaceWrongReason": 3,
+      "unlistedReal": 0,
+      "undecidable": 0,
+      "precisionStrict": 0.538,
+      "precisionLenient": 0.538,
+      "precisionStrictWilson95": [0.291, 0.768],
+      "truthItems": 19,
+      "itemsHit": ["DV-01", "DV-02", "DV-03", "DV-11", "DV-15", "DV-16"],
+      "recallAll": 0.316,
+      "recallLintableY": 0.667,
+      "lintableYCount": 6,
+      "byRule": {
+        "express-security/no-exposed-debug-endpoints": 3,
+        "express-security/no-sensitive-data-in-query": 3,
+        "express-security/require-helmet": 1,
+        "node-security/no-shell-injection": 1,
+        "node-security/no-weak-hash-algorithm": 2,
+        "secure-coding/no-sql-injection": 1,
+        "secure-coding/no-unsafe-deserialization": 1,
+        "secure-coding/no-xxe-injection": 1
+      },
+      "findingsDetail": [
+        {
+          "file": "server.js",
+          "line": 11,
+          "ruleId": "express-security/require-helmet",
+          "message": "🔒 CWE-693 OWASP:A05-Injection CVSS:7.5 | This Express app renders documents to a browser but never mounts helmet. Without it the responses carry no Content-Security-Policy, X-Frame-Options or referrer policy, so any rendered page is framable and unconstrained. | HIGH\n   Fix: Add helmet middleware: app.use(helmet()). Install with 'npm install helmet'. | https://helmetjs.github.io/",
+          "verdict": "TP",
+          "itemIds": ["DV-11"],
+          "regionIds": ["DV-11"]
+        },
+        {
+          "file": "core/appHandler.js",
+          "line": 11,
+          "ruleId": "secure-coding/no-sql-injection",
+          "message": "🔒 CWE-89 OWASP:A03-Injection CVSS:9.8 | SQL statement built from \"req.body.login\" and executed. An attacker controls part of the statement text. | CRITICAL [SOC2,PCI-DSS,NIST-CSF]\n   Fix: Pass the value as a bound parameter (`$1` / `?`) instead of concatenating it into the statement. | https://owasp.org/www-community/attacks/SQL_Injection",
+          "verdict": "TP",
+          "itemIds": ["DV-01"],
+          "regionIds": ["DV-01"]
+        },
+        {
+          "file": "core/appHandler.js",
+          "line": 39,
+          "ruleId": "node-security/no-shell-injection",
+          "message": "🔒 CWE-78 OWASP:A05-Injection CVSS:9.8 | Shell command built via string concatenation or template literal. An attacker who controls any interpolated value can execute arbitrary OS commands. | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix: Use spawn(cmd, [arg1, arg2]) with separate arguments instead of exec(cmd + args). Never build shell commands via string interpolation. | https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html",
+          "verdict": "TP",
+          "itemIds": ["DV-02"],
+          "regionIds": ["DV-02"]
+        },
+        {
+          "file": "core/appHandler.js",
+          "line": 218,
+          "ruleId": "secure-coding/no-unsafe-deserialization",
+          "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Unsafe deserialization of untrusted data (incl. model/tool output) | HIGH\n   Fix: Use JSON.parse() or validated safe deserialization libraries | validate model/tool output via schema and size limits | https://cwe.mitre.org/data/definitions/502.html",
+          "verdict": "TP",
+          "itemIds": ["DV-16"],
+          "regionIds": ["DV-16"]
+        },
+        {
+          "file": "core/appHandler.js",
+          "line": 235,
+          "ruleId": "secure-coding/no-xxe-injection",
+          "message": "🔒 CWE-611 OWASP:A05-Injection CVSS:9.1 | External entity processing is enabled | CRITICAL\n   Fix: Disable external entity processing | https://cwe.mitre.org/data/definitions/611.html",
+          "verdict": "TP",
+          "itemIds": ["DV-15"],
+          "regionIds": ["DV-15"]
+        },
+        {
+          "file": "core/authHandler.js",
+          "line": 49,
+          "ruleId": "express-security/no-sensitive-data-in-query",
+          "message": "🔒 CWE-598 | Query parameter 'token' is sensitive. Query strings are stored in access logs, proxy logs, browser history and leak via the Referer header. | MEDIUM\n   Fix: Move the value to the POST request body (req.body) or an Authorization header; never accept secrets via the query string. | https://cwe.mitre.org/data/definitions/598.html",
+          "verdict": "FP-right-place-wrong-reason",
+          "itemIds": [],
+          "regionIds": ["DV-03"]
+        },
+        {
+          "file": "core/authHandler.js",
+          "line": 49,
+          "ruleId": "node-security/no-weak-hash-algorithm",
+          "message": "🔒 CWE-327 OWASP:A04-Cryptographic CVSS:7.5 | Use of weak hash algorithm: MD5. MD5 is cryptographically broken and unsuitable for security purposes. | CRITICAL [PCI-DSS,HIPAA,ISO27001,NIST-CSF]\n   Fix: Replace with sha256: crypto.createHash(\"sha256\").update(data). If this hash is an identifier rather than a security control — an EVALSHA key, an ETag, a cache key — store it under one of the nonCryptographicNames instead. | https://owasp.org/www-community/vulnerabilities/Weak_Cryptography",
+          "verdict": "TP",
+          "itemIds": ["DV-03"],
+          "regionIds": ["DV-03"]
+        },
+        {
+          "file": "core/authHandler.js",
+          "line": 52,
+          "ruleId": "express-security/no-sensitive-data-in-query",
+          "message": "🔒 CWE-598 | Query parameter 'token' is sensitive. Query strings are stored in access logs, proxy logs, browser history and leak via the Referer header. | MEDIUM\n   Fix: Move the value to the POST request body (req.body) or an Authorization header; never accept secrets via the query string. | https://cwe.mitre.org/data/definitions/598.html",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "Re-renders the reset form with req.query.token. A reset link carrying the token in the query string is how the feature is designed; the documented flaw is that the token is md5(login), not the transport. Arguable (morgan('tiny') logs full URLs), but not the documented or an independently proven exploit."
+        },
+        {
+          "file": "core/authHandler.js",
+          "line": 78,
+          "ruleId": "node-security/no-weak-hash-algorithm",
+          "message": "🔒 CWE-327 OWASP:A04-Cryptographic CVSS:7.5 | Use of weak hash algorithm: MD5. MD5 is cryptographically broken and unsuitable for security purposes. | CRITICAL [PCI-DSS,HIPAA,ISO27001,NIST-CSF]\n   Fix: Replace with sha256: crypto.createHash(\"sha256\").update(data). If this hash is an identifier rather than a security control — an EVALSHA key, an ETag, a cache key — store it under one of the nonCryptographicNames instead. | https://owasp.org/www-community/vulnerabilities/Weak_Cryptography",
+          "verdict": "TP",
+          "itemIds": ["DV-03"],
+          "regionIds": ["DV-03"]
+        },
+        {
+          "file": "core/authHandler.js",
+          "line": 97,
+          "ruleId": "express-security/no-sensitive-data-in-query",
+          "message": "🔒 CWE-598 | Query parameter 'token' is sensitive. Query strings are stored in access logs, proxy logs, browser history and leak via the Referer header. | MEDIUM\n   Fix: Move the value to the POST request body (req.body) or an Authorization header; never accept secrets via the query string. | https://cwe.mitre.org/data/definitions/598.html",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "Same as line 52."
+        },
+        {
+          "file": "routes/app.js",
+          "line": 36,
+          "ruleId": "express-security/no-exposed-debug-endpoints",
+          "message": "🔒 CWE-489 | Debug endpoint exposed without authentication | HIGH\n   Fix: Remove debug endpoints from production or add authentication | https://cwe.mitre.org/data/definitions/489.html",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "/admin is an authenticated route (authHandler.isAuthenticated); the rule's 'debug endpoint without authentication' claim is wrong for it."
+        },
+        {
+          "file": "routes/app.js",
+          "line": 42,
+          "ruleId": "express-security/no-exposed-debug-endpoints",
+          "message": "🔒 CWE-489 | Debug endpoint exposed without authentication | HIGH\n   Fix: Remove debug endpoints from production or add authentication | https://cwe.mitre.org/data/definitions/489.html",
+          "verdict": "FP-right-place-wrong-reason",
+          "itemIds": [],
+          "regionIds": ["DV-08"]
+        },
+        {
+          "file": "routes/app.js",
+          "line": 44,
+          "ruleId": "express-security/no-exposed-debug-endpoints",
+          "message": "🔒 CWE-489 | Debug endpoint exposed without authentication | HIGH\n   Fix: Remove debug endpoints from production or add authentication | https://cwe.mitre.org/data/definitions/489.html",
+          "verdict": "FP-right-place-wrong-reason",
+          "itemIds": [],
+          "regionIds": ["DV-08"]
+        }
+      ]
+    },
+    "C": {
+      "label": "B + sequelize-security recommended",
+      "side": "ours",
+      "filesLinted": 12,
+      "loc": 764,
+      "ms": 41,
+      "parseErrors": 0,
+      "findings": 13,
+      "duplicateRuleHitsDropped": 0,
+      "findingsPerKLoc": 17,
+      "tp": 7,
+      "fpTotal": 6,
+      "fpRightPlaceWrongReason": 3,
+      "unlistedReal": 0,
+      "undecidable": 0,
+      "precisionStrict": 0.538,
+      "precisionLenient": 0.538,
+      "precisionStrictWilson95": [0.291, 0.768],
+      "truthItems": 19,
+      "itemsHit": ["DV-01", "DV-02", "DV-03", "DV-11", "DV-15", "DV-16"],
+      "recallAll": 0.316,
+      "recallLintableY": 0.667,
+      "lintableYCount": 6,
+      "byRule": {
+        "express-security/no-exposed-debug-endpoints": 3,
+        "express-security/no-sensitive-data-in-query": 3,
+        "express-security/require-helmet": 1,
+        "node-security/no-shell-injection": 1,
+        "node-security/no-weak-hash-algorithm": 2,
+        "secure-coding/no-sql-injection": 1,
+        "secure-coding/no-unsafe-deserialization": 1,
+        "secure-coding/no-xxe-injection": 1
+      },
+      "findingsDetail": [
+        {
+          "file": "server.js",
+          "line": 11,
+          "ruleId": "express-security/require-helmet",
+          "message": "🔒 CWE-693 OWASP:A05-Injection CVSS:7.5 | This Express app renders documents to a browser but never mounts helmet. Without it the responses carry no Content-Security-Policy, X-Frame-Options or referrer policy, so any rendered page is framable and unconstrained. | HIGH\n   Fix: Add helmet middleware: app.use(helmet()). Install with 'npm install helmet'. | https://helmetjs.github.io/",
+          "verdict": "TP",
+          "itemIds": ["DV-11"],
+          "regionIds": ["DV-11"]
+        },
+        {
+          "file": "core/appHandler.js",
+          "line": 11,
+          "ruleId": "secure-coding/no-sql-injection",
+          "message": "🔒 CWE-89 OWASP:A03-Injection CVSS:9.8 | SQL statement built from \"req.body.login\" and executed. An attacker controls part of the statement text. | CRITICAL [SOC2,PCI-DSS,NIST-CSF]\n   Fix: Pass the value as a bound parameter (`$1` / `?`) instead of concatenating it into the statement. | https://owasp.org/www-community/attacks/SQL_Injection",
+          "verdict": "TP",
+          "itemIds": ["DV-01"],
+          "regionIds": ["DV-01"]
+        },
+        {
+          "file": "core/appHandler.js",
+          "line": 39,
+          "ruleId": "node-security/no-shell-injection",
+          "message": "🔒 CWE-78 OWASP:A05-Injection CVSS:9.8 | Shell command built via string concatenation or template literal. An attacker who controls any interpolated value can execute arbitrary OS commands. | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix: Use spawn(cmd, [arg1, arg2]) with separate arguments instead of exec(cmd + args). Never build shell commands via string interpolation. | https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html",
+          "verdict": "TP",
+          "itemIds": ["DV-02"],
+          "regionIds": ["DV-02"]
+        },
+        {
+          "file": "core/appHandler.js",
+          "line": 218,
+          "ruleId": "secure-coding/no-unsafe-deserialization",
+          "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Unsafe deserialization of untrusted data (incl. model/tool output) | HIGH\n   Fix: Use JSON.parse() or validated safe deserialization libraries | validate model/tool output via schema and size limits | https://cwe.mitre.org/data/definitions/502.html",
+          "verdict": "TP",
+          "itemIds": ["DV-16"],
+          "regionIds": ["DV-16"]
+        },
+        {
+          "file": "core/appHandler.js",
+          "line": 235,
+          "ruleId": "secure-coding/no-xxe-injection",
+          "message": "🔒 CWE-611 OWASP:A05-Injection CVSS:9.1 | External entity processing is enabled | CRITICAL\n   Fix: Disable external entity processing | https://cwe.mitre.org/data/definitions/611.html",
+          "verdict": "TP",
+          "itemIds": ["DV-15"],
+          "regionIds": ["DV-15"]
+        },
+        {
+          "file": "core/authHandler.js",
+          "line": 49,
+          "ruleId": "express-security/no-sensitive-data-in-query",
+          "message": "🔒 CWE-598 | Query parameter 'token' is sensitive. Query strings are stored in access logs, proxy logs, browser history and leak via the Referer header. | MEDIUM\n   Fix: Move the value to the POST request body (req.body) or an Authorization header; never accept secrets via the query string. | https://cwe.mitre.org/data/definitions/598.html",
+          "verdict": "FP-right-place-wrong-reason",
+          "itemIds": [],
+          "regionIds": ["DV-03"]
+        },
+        {
+          "file": "core/authHandler.js",
+          "line": 49,
+          "ruleId": "node-security/no-weak-hash-algorithm",
+          "message": "🔒 CWE-327 OWASP:A04-Cryptographic CVSS:7.5 | Use of weak hash algorithm: MD5. MD5 is cryptographically broken and unsuitable for security purposes. | CRITICAL [PCI-DSS,HIPAA,ISO27001,NIST-CSF]\n   Fix: Replace with sha256: crypto.createHash(\"sha256\").update(data). If this hash is an identifier rather than a security control — an EVALSHA key, an ETag, a cache key — store it under one of the nonCryptographicNames instead. | https://owasp.org/www-community/vulnerabilities/Weak_Cryptography",
+          "verdict": "TP",
+          "itemIds": ["DV-03"],
+          "regionIds": ["DV-03"]
+        },
+        {
+          "file": "core/authHandler.js",
+          "line": 52,
+          "ruleId": "express-security/no-sensitive-data-in-query",
+          "message": "🔒 CWE-598 | Query parameter 'token' is sensitive. Query strings are stored in access logs, proxy logs, browser history and leak via the Referer header. | MEDIUM\n   Fix: Move the value to the POST request body (req.body) or an Authorization header; never accept secrets via the query string. | https://cwe.mitre.org/data/definitions/598.html",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "Re-renders the reset form with req.query.token. A reset link carrying the token in the query string is how the feature is designed; the documented flaw is that the token is md5(login), not the transport. Arguable (morgan('tiny') logs full URLs), but not the documented or an independently proven exploit."
+        },
+        {
+          "file": "core/authHandler.js",
+          "line": 78,
+          "ruleId": "node-security/no-weak-hash-algorithm",
+          "message": "🔒 CWE-327 OWASP:A04-Cryptographic CVSS:7.5 | Use of weak hash algorithm: MD5. MD5 is cryptographically broken and unsuitable for security purposes. | CRITICAL [PCI-DSS,HIPAA,ISO27001,NIST-CSF]\n   Fix: Replace with sha256: crypto.createHash(\"sha256\").update(data). If this hash is an identifier rather than a security control — an EVALSHA key, an ETag, a cache key — store it under one of the nonCryptographicNames instead. | https://owasp.org/www-community/vulnerabilities/Weak_Cryptography",
+          "verdict": "TP",
+          "itemIds": ["DV-03"],
+          "regionIds": ["DV-03"]
+        },
+        {
+          "file": "core/authHandler.js",
+          "line": 97,
+          "ruleId": "express-security/no-sensitive-data-in-query",
+          "message": "🔒 CWE-598 | Query parameter 'token' is sensitive. Query strings are stored in access logs, proxy logs, browser history and leak via the Referer header. | MEDIUM\n   Fix: Move the value to the POST request body (req.body) or an Authorization header; never accept secrets via the query string. | https://cwe.mitre.org/data/definitions/598.html",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "Same as line 52."
+        },
+        {
+          "file": "routes/app.js",
+          "line": 36,
+          "ruleId": "express-security/no-exposed-debug-endpoints",
+          "message": "🔒 CWE-489 | Debug endpoint exposed without authentication | HIGH\n   Fix: Remove debug endpoints from production or add authentication | https://cwe.mitre.org/data/definitions/489.html",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "/admin is an authenticated route (authHandler.isAuthenticated); the rule's 'debug endpoint without authentication' claim is wrong for it."
+        },
+        {
+          "file": "routes/app.js",
+          "line": 42,
+          "ruleId": "express-security/no-exposed-debug-endpoints",
+          "message": "🔒 CWE-489 | Debug endpoint exposed without authentication | HIGH\n   Fix: Remove debug endpoints from production or add authentication | https://cwe.mitre.org/data/definitions/489.html",
+          "verdict": "FP-right-place-wrong-reason",
+          "itemIds": [],
+          "regionIds": ["DV-08"]
+        },
+        {
+          "file": "routes/app.js",
+          "line": 44,
+          "ruleId": "express-security/no-exposed-debug-endpoints",
+          "message": "🔒 CWE-489 | Debug endpoint exposed without authentication | HIGH\n   Fix: Remove debug endpoints from production or add authentication | https://cwe.mitre.org/data/definitions/489.html",
+          "verdict": "FP-right-place-wrong-reason",
+          "itemIds": [],
+          "regionIds": ["DV-08"]
+        }
+      ]
+    }
+  },
+  "comparison": {
+    "A_vs_B": {
+      "incumbentOnly": [],
+      "oursOnly": ["DV-01", "DV-03", "DV-11", "DV-15", "DV-16"],
+      "both": ["DV-02"],
+      "neither": [
+        "DV-04",
+        "DV-05",
+        "DV-06",
+        "DV-07",
+        "DV-08",
+        "DV-09",
+        "DV-10",
+        "DV-12",
+        "DV-13",
+        "DV-14",
+        "DV-17",
+        "DV-18",
+        "DV-19"
+      ]
+    },
+    "A_vs_C": {
+      "incumbentOnly": [],
+      "oursOnly": ["DV-01", "DV-03", "DV-11", "DV-15", "DV-16"],
+      "both": ["DV-02"],
+      "neither": [
+        "DV-04",
+        "DV-05",
+        "DV-06",
+        "DV-07",
+        "DV-08",
+        "DV-09",
+        "DV-10",
+        "DV-12",
+        "DV-13",
+        "DV-14",
+        "DV-17",
+        "DV-18",
+        "DV-19"
+      ]
+    },
+    "A-all_vs_B": {
+      "incumbentOnly": [],
+      "oursOnly": ["DV-01", "DV-03", "DV-11", "DV-15", "DV-16"],
+      "both": ["DV-02"],
+      "neither": [
+        "DV-04",
+        "DV-05",
+        "DV-06",
+        "DV-07",
+        "DV-08",
+        "DV-09",
+        "DV-10",
+        "DV-12",
+        "DV-13",
+        "DV-14",
+        "DV-17",
+        "DV-18",
+        "DV-19"
+      ]
+    },
+    "A-all_vs_C": {
+      "incumbentOnly": [],
+      "oursOnly": ["DV-01", "DV-03", "DV-11", "DV-15", "DV-16"],
+      "both": ["DV-02"],
+      "neither": [
+        "DV-04",
+        "DV-05",
+        "DV-06",
+        "DV-07",
+        "DV-08",
+        "DV-09",
+        "DV-10",
+        "DV-12",
+        "DV-13",
+        "DV-14",
+        "DV-17",
+        "DV-18",
+        "DV-19"
+      ]
+    }
+  }
+}
