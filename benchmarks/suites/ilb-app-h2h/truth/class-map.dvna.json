@@ -1,0 +1,70 @@
+{
+  "comment": "DVNA-only classes, merged over truth/class-map.json (which supplies idor, missing-access-control, csrf, open-redirect, missing-hardening-middleware, vulnerable-dependency). Written before any DVNA run from rule names and docs; the incumbent column is built by hand from its rule docs. node-security/detect-child-process is accepted for ours as well as no-shell-injection because both describe child_process misuse.",
+  "classes": {
+    "sql-injection": {
+      "ours": [
+        "secure-coding/no-sql-injection",
+        "sequelize-security/no-unsafe-query"
+      ],
+      "incumbent": []
+    },
+    "os-command-injection": {
+      "ours": [
+        "node-security/detect-child-process",
+        "node-security/no-shell-injection",
+        "node-security/no-dynamic-command-string"
+      ],
+      "incumbent": ["security/detect-child-process"]
+    },
+    "weak-password-recovery": {
+      "ours": [
+        "secure-coding/no-weak-password-recovery",
+        "node-security/no-weak-hash-algorithm"
+      ],
+      "incumbent": []
+    },
+    "hardcoded-secret": {
+      "ours": [
+        "secure-coding/no-hardcoded-credentials",
+        "secure-coding/no-hardcoded-session-tokens"
+      ],
+      "incumbent": []
+    },
+    "xss-template": {
+      "ours": [],
+      "incumbent": []
+    },
+    "sensitive-data-exposure": {
+      "ours": ["secure-coding/no-sensitive-data-exposure"],
+      "incumbent": []
+    },
+    "error-detail-leak": {
+      "ours": ["express-security/no-error-details-in-response"],
+      "incumbent": []
+    },
+    "expression-eval-injection": {
+      "ours": ["node-security/detect-eval-with-expression"],
+      "incumbent": ["security/detect-eval-with-expression"]
+    },
+    "xxe": {
+      "ours": ["secure-coding/no-xxe-injection"],
+      "incumbent": []
+    },
+    "insecure-deserialization": {
+      "ours": ["secure-coding/no-unsafe-deserialization"],
+      "incumbent": []
+    },
+    "insufficient-logging": {
+      "ours": [],
+      "incumbent": []
+    },
+    "query-logging": {
+      "ours": [],
+      "incumbent": []
+    },
+    "template-path-injection": {
+      "ours": [],
+      "incumbent": []
+    }
+  }
+}
