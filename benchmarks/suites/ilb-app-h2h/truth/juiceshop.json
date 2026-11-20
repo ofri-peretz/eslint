@@ -1,0 +1,780 @@
+{
+  "app": "juiceshop",
+  "commit": "c9f99228d9d56afb5f5ca7925376292f7fa44b13",
+  "method": "Line-level truth from the 'vuln-code-snippet vuln-line <challengeKey...>' markers at the pin (verified format: a trailing comment on the vulnerable line itself; 'start'/'end' bound the snippet, 'neutral-line' and 'hide-*' are context). Item-level metadata joined from data/static/challenges.yml through the challenge key (118 challenges; every marker key resolves). Challenges whose markers sit on identical lines are one row (for example three login-SQLi challenges on one line), so 37 line-annotated challenges are 33 rows. The 81 challenges with no vuln-line marker (business logic, OSINT, forged tokens, anything solved through the UI) are not line-truthable and are not rows; recall is reported on the line-annotated rows and on the lintable=y subset. Built before any linter ran; single author, no independent second table yet.",
+  "lintable": "y = a pattern a syntactic rule could flag; maybe = needs data flow or absence detection; n = not visible to a linter (business logic, client route tables, wrappers, commented-out code, or a file type outside the JS/TS lint scope: YAML, Terraform, Solidity, Docker). Decided before the first run.",
+  "items": [
+    {
+      "id": "JS-01",
+      "class": "security-question",
+      "cwe": "CWE-640",
+      "file": "data/static/securityQuestions.yml",
+      "ranges": [[3, 3]],
+      "lintable": "n",
+      "vulnerability": "Guessable security question (Jim)",
+      "challenges": [
+        {
+          "key": "resetPasswordJimChallenge",
+          "name": "Reset Jim''s Password",
+          "category": "Broken Authentication",
+          "difficulty": 3
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/data/static/securityQuestions.yml#L3",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": "YAML data"
+    },
+    {
+      "id": "JS-02",
+      "class": "security-question",
+      "cwe": "CWE-640",
+      "file": "data/static/securityQuestions.yml",
+      "ranges": [[15, 15]],
+      "lintable": "n",
+      "vulnerability": "Guessable security question (Bjoern OWASP)",
+      "challenges": [
+        {
+          "key": "resetPasswordBjoernOwaspChallenge",
+          "name": "Bjoern''s Favorite Pet",
+          "category": "Broken Authentication",
+          "difficulty": 3
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/data/static/securityQuestions.yml#L15",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": "YAML data"
+    },
+    {
+      "id": "JS-03",
+      "class": "security-question",
+      "cwe": "CWE-640",
+      "file": "data/static/securityQuestions.yml",
+      "ranges": [[19, 19]],
+      "lintable": "n",
+      "vulnerability": "Guessable security question (Bjoern)",
+      "challenges": [
+        {
+          "key": "resetPasswordBjoernChallenge",
+          "name": "Reset Bjoern''s Password",
+          "category": "Broken Authentication",
+          "difficulty": 5
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/data/static/securityQuestions.yml#L19",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": "YAML data"
+    },
+    {
+      "id": "JS-04",
+      "class": "security-question",
+      "cwe": "CWE-640",
+      "file": "data/static/securityQuestions.yml",
+      "ranges": [[21, 21]],
+      "lintable": "n",
+      "vulnerability": "Guessable security question (Bender)",
+      "challenges": [
+        {
+          "key": "resetPasswordBenderChallenge",
+          "name": "Reset Bender''s Password",
+          "category": "Broken Authentication",
+          "difficulty": 4
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/data/static/securityQuestions.yml#L21",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": "YAML data"
+    },
+    {
+      "id": "JS-05",
+      "class": "security-question",
+      "cwe": "CWE-200",
+      "file": "data/static/securityQuestions.yml",
+      "ranges": [[25, 25]],
+      "lintable": "n",
+      "vulnerability": "Security question answer publicly findable (Uvogin)",
+      "challenges": [
+        {
+          "key": "resetPasswordUvoginChallenge",
+          "name": "Reset Uvogin''s Password",
+          "category": "Sensitive Data Exposure",
+          "difficulty": 4
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/data/static/securityQuestions.yml#L25",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": "YAML data"
+    },
+    {
+      "id": "JS-06",
+      "class": "smart-contract",
+      "cwe": "CWE-841",
+      "file": "data/static/web3-snippets/ETHWalletBank.sol",
+      "ranges": [[34, 34]],
+      "lintable": "n",
+      "vulnerability": "Smart-contract reentrancy",
+      "challenges": [
+        {
+          "key": "web3WalletChallenge",
+          "name": "Wallet Depletion",
+          "category": "Miscellaneous",
+          "difficulty": 6
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/data/static/web3-snippets/ETHWalletBank.sol#L34",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": "Solidity, outside lint scope"
+    },
+    {
+      "id": "JS-07",
+      "class": "smart-contract",
+      "cwe": "CWE-1068",
+      "file": "data/static/web3-snippets/HoneyPotNFT.sol",
+      "ranges": [[26, 26]],
+      "lintable": "n",
+      "vulnerability": "NFT mint contract flaw",
+      "challenges": [
+        {
+          "key": "nftMintChallenge",
+          "name": "Mint the Honey Pot",
+          "category": "Improper Input Validation",
+          "difficulty": 3
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/data/static/web3-snippets/HoneyPotNFT.sol#L26",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": "Solidity, outside lint scope"
+    },
+    {
+      "id": "JS-08",
+      "class": "smart-contract",
+      "cwe": "CWE-1068",
+      "file": "data/static/web3-snippets/JuiceShopSBT.sol",
+      "ranges": [[18, 18]],
+      "lintable": "n",
+      "vulnerability": "SBT unlock contract flaw",
+      "challenges": [
+        {
+          "key": "nftUnlockChallenge",
+          "name": "NFT Takeover",
+          "category": "Sensitive Data Exposure",
+          "difficulty": 2
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/data/static/web3-snippets/JuiceShopSBT.sol#L18",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": "Solidity, outside lint scope"
+    },
+    {
+      "id": "JS-09",
+      "class": "client-route-guard",
+      "cwe": "CWE-862",
+      "file": "frontend/src/app/app.routing.ts",
+      "ranges": [[80, 80]],
+      "lintable": "n",
+      "vulnerability": "Administration route reachable without a guard",
+      "challenges": [
+        {
+          "key": "adminSectionChallenge",
+          "name": "Admin Section",
+          "category": "Broken Access Control",
+          "difficulty": 2
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/frontend/src/app/app.routing.ts#L80",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": ""
+    },
+    {
+      "id": "JS-10",
+      "class": "client-route-guard",
+      "cwe": "CWE-200",
+      "file": "frontend/src/app/app.routing.ts",
+      "ranges": [[187, 187]],
+      "lintable": "n",
+      "vulnerability": "Hidden score-board route",
+      "challenges": [
+        {
+          "key": "scoreBoardChallenge",
+          "name": "Score Board",
+          "category": "Miscellaneous",
+          "difficulty": 1
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/frontend/src/app/app.routing.ts#L187",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": ""
+    },
+    {
+      "id": "JS-11",
+      "class": "client-route-guard",
+      "cwe": "CWE-862",
+      "file": "frontend/src/app/app.routing.ts",
+      "ranges": [[245, 245]],
+      "lintable": "n",
+      "vulnerability": "Hidden web3 sandbox route",
+      "challenges": [
+        {
+          "key": "web3SandboxChallenge",
+          "name": "Web3 Sandbox",
+          "category": "Broken Access Control",
+          "difficulty": 1
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/frontend/src/app/app.routing.ts#L245",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": ""
+    },
+    {
+      "id": "JS-12",
+      "class": "security-through-obscurity",
+      "cwe": "CWE-656",
+      "file": "frontend/src/app/app.routing.ts",
+      "ranges": [
+        [267, 267],
+        [306, 306]
+      ],
+      "lintable": "n",
+      "vulnerability": "Token-sale route hidden by obfuscated matcher",
+      "challenges": [
+        {
+          "key": "tokenSaleChallenge",
+          "name": "Blockchain Hype",
+          "category": "Security through Obscurity",
+          "difficulty": 5
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/frontend/src/app/app.routing.ts#L267",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": ""
+    },
+    {
+      "id": "JS-13",
+      "class": "xss-bypass-sanitizer",
+      "cwe": "CWE-79",
+      "file": "frontend/src/app/search-result/search-result.component.ts",
+      "ranges": [[113, 113]],
+      "lintable": "y",
+      "vulnerability": "XSS: bypassSecurityTrustHtml on product descriptions",
+      "challenges": [
+        {
+          "key": "restfulXssChallenge",
+          "name": "API-only XSS",
+          "category": "XSS",
+          "difficulty": 3
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/frontend/src/app/search-result/search-result.component.ts#L113",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": ""
+    },
+    {
+      "id": "JS-14",
+      "class": "xss-bypass-sanitizer",
+      "cwe": "CWE-79",
+      "file": "frontend/src/app/search-result/search-result.component.ts",
+      "ranges": [[146, 146]],
+      "lintable": "y",
+      "vulnerability": "DOM XSS: bypassSecurityTrustHtml on the search query",
+      "challenges": [
+        {
+          "key": "localXssChallenge",
+          "name": "DOM XSS",
+          "category": "XSS",
+          "difficulty": 1
+        },
+        {
+          "key": "xssBonusChallenge",
+          "name": "Bonus Payload",
+          "category": "XSS",
+          "difficulty": 1
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/frontend/src/app/search-result/search-result.component.ts#L146",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": "two challenges, one line"
+    },
+    {
+      "id": "JS-15",
+      "class": "docker-image",
+      "cwe": "CWE-1395",
+      "file": "infrastructure/docker-compose.yml",
+      "ranges": [[59, 59]],
+      "lintable": "n",
+      "vulnerability": "Vulnerable base image in docker-compose",
+      "challenges": [
+        {
+          "key": "vulnerableDockerImageChallenge",
+          "name": "Vulnerable Infrastructure",
+          "category": "Vulnerable Components",
+          "difficulty": 3
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/infrastructure/docker-compose.yml#L59",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": "YAML, outside JS/TS lint scope"
+    },
+    {
+      "id": "JS-16",
+      "class": "iac-leaked-key",
+      "cwe": "CWE-798",
+      "file": "infrastructure/terraform/networking.tf",
+      "ranges": [[171, 171]],
+      "lintable": "n",
+      "vulnerability": "Leaked key in Terraform",
+      "challenges": [
+        {
+          "key": "iacLeakedKeyChallenge",
+          "name": "Login Cloud Admin",
+          "category": "Sensitive Data Exposure",
+          "difficulty": 4
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/infrastructure/terraform/networking.tf#L171",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": "Terraform, outside lint scope; same marker also in terraform/networking.tf"
+    },
+    {
+      "id": "JS-17",
+      "class": "insecure-allowlist-url",
+      "cwe": "CWE-601",
+      "file": "lib/insecurity.ts",
+      "ranges": [
+        [124, 124],
+        [125, 125],
+        [126, 126]
+      ],
+      "lintable": "n",
+      "vulnerability": "Outdated crypto-address URLs left in the redirect allowlist",
+      "challenges": [
+        {
+          "key": "redirectCryptoCurrencyChallenge",
+          "name": "Outdated Allowlist",
+          "category": "Unvalidated Redirects",
+          "difficulty": 1
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/lib/insecurity.ts#L124",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": "http:// literals; the plan's four-rules-one-http:// trap"
+    },
+    {
+      "id": "JS-18",
+      "class": "open-redirect-allowlist",
+      "cwe": "CWE-601",
+      "file": "lib/insecurity.ts",
+      "ranges": [[136, 136]],
+      "lintable": "maybe",
+      "vulnerability": "Redirect allowlist bypass (url.includes(allowedUrl))",
+      "challenges": [
+        {
+          "key": "redirectChallenge",
+          "name": "Allowlist Bypass",
+          "category": "Unvalidated Redirects",
+          "difficulty": 4
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/lib/insecurity.ts#L136",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": ""
+    },
+    {
+      "id": "JS-19",
+      "class": "weak-password-hash",
+      "cwe": "CWE-328",
+      "file": "models/user.ts",
+      "ranges": [[73, 73]],
+      "lintable": "n",
+      "vulnerability": "Passwords hashed with MD5 through a wrapper (security.hash)",
+      "challenges": [
+        {
+          "key": "weakPasswordChallenge",
+          "name": "Password Strength",
+          "category": "Broken Authentication",
+          "difficulty": 2
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/models/user.ts#L73",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": "the md5 call is in lib/insecurity.ts, not on the marked line"
+    },
+    {
+      "id": "JS-20",
+      "class": "prompt-injection",
+      "cwe": "CWE-77",
+      "file": "routes/chat.ts",
+      "ranges": [[180, 180]],
+      "lintable": "n",
+      "vulnerability": "Chatbot discount limit only described to the model (greedy injection)",
+      "challenges": [
+        {
+          "key": "chatbotGreedyInjectionChallenge",
+          "name": "Greedy Chatbot Manipulation",
+          "category": "Injection",
+          "difficulty": 3
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/routes/chat.ts#L180",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": ""
+    },
+    {
+      "id": "JS-21",
+      "class": "prompt-injection",
+      "cwe": "CWE-77",
+      "file": "routes/chat.ts",
+      "ranges": [
+        [180, 180],
+        [185, 185]
+      ],
+      "lintable": "n",
+      "vulnerability": "Chatbot prompt injection yields a coupon",
+      "challenges": [
+        {
+          "key": "chatbotPromptInjectionChallenge",
+          "name": "Chatbot Prompt Injection",
+          "category": "Injection",
+          "difficulty": 2
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/routes/chat.ts#L180",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": ""
+    },
+    {
+      "id": "JS-22",
+      "class": "sql-injection",
+      "cwe": "CWE-89",
+      "file": "routes/login.ts",
+      "ranges": [[34, 34]],
+      "lintable": "y",
+      "vulnerability": "SQL injection in login (email concatenated into sequelize.query)",
+      "challenges": [
+        {
+          "key": "loginAdminChallenge",
+          "name": "Login Admin",
+          "category": "Injection",
+          "difficulty": 2
+        },
+        {
+          "key": "loginBenderChallenge",
+          "name": "Login Bender",
+          "category": "Injection",
+          "difficulty": 3
+        },
+        {
+          "key": "loginJimChallenge",
+          "name": "Login Jim",
+          "category": "Injection",
+          "difficulty": 3
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/routes/login.ts#L34",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": "three challenges, one line"
+    },
+    {
+      "id": "JS-23",
+      "class": "authz-flaw",
+      "cwe": "CWE-639",
+      "file": "routes/passkey.ts",
+      "ranges": [[142, 142]],
+      "lintable": "n",
+      "vulnerability": "Passkey credential of another user can be overwritten",
+      "challenges": [
+        {
+          "key": "passkeyCredentialOverwriteChallenge",
+          "name": "Passkey Hijack",
+          "category": "Broken Access Control",
+          "difficulty": 5
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/routes/passkey.ts#L142",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": ""
+    },
+    {
+      "id": "JS-24",
+      "class": "authz-flaw",
+      "cwe": "CWE-347",
+      "file": "routes/passkey.ts",
+      "ranges": [[222, 222]],
+      "lintable": "n",
+      "vulnerability": "Passkey signature not verified before issuing a session",
+      "challenges": [
+        {
+          "key": "passkeySignatureChallenge",
+          "name": "Passkey Bypass",
+          "category": "Broken Authentication",
+          "difficulty": 5
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/routes/passkey.ts#L222",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": ""
+    },
+    {
+      "id": "JS-25",
+      "class": "sql-injection",
+      "cwe": "CWE-89",
+      "file": "routes/search.ts",
+      "ranges": [[23, 23]],
+      "lintable": "y",
+      "vulnerability": "SQL injection in product search (criteria concatenated into sequelize.query)",
+      "challenges": [
+        {
+          "key": "dbSchemaChallenge",
+          "name": "Database Schema",
+          "category": "Injection",
+          "difficulty": 3
+        },
+        {
+          "key": "unionSqlInjectionChallenge",
+          "name": "User Credentials",
+          "category": "Injection",
+          "difficulty": 4
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/routes/search.ts#L23",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": "two challenges, one line; the plan's pinned test case"
+    },
+    {
+      "id": "JS-26",
+      "class": "broken-access-control-logic",
+      "cwe": "CWE-639",
+      "file": "routes/updateProductReviews.ts",
+      "ranges": [
+        [16, 16],
+        [18, 18]
+      ],
+      "lintable": "n",
+      "vulnerability": "Review author taken from a field the user controls (forged review)",
+      "challenges": [
+        {
+          "key": "forgedReviewChallenge",
+          "name": "Forged Review",
+          "category": "Broken Access Control",
+          "difficulty": 3
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/routes/updateProductReviews.ts#L16",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": "business logic"
+    },
+    {
+      "id": "JS-27",
+      "class": "nosql-injection",
+      "cwe": "CWE-943",
+      "file": "routes/updateProductReviews.ts",
+      "ranges": [
+        [18, 18],
+        [20, 20]
+      ],
+      "lintable": "maybe",
+      "vulnerability": "NoSQL injection in review update ({ _id: req.body.id }, multi: true)",
+      "challenges": [
+        {
+          "key": "noSqlReviewsChallenge",
+          "name": "NoSQL Manipulation",
+          "category": "Injection",
+          "difficulty": 4
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/routes/updateProductReviews.ts#L18",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": ""
+    },
+    {
+      "id": "JS-28",
+      "class": "directory-listing",
+      "cwe": "CWE-548",
+      "file": "server.ts",
+      "ranges": [
+        [294, 294],
+        [295, 295]
+      ],
+      "lintable": "maybe",
+      "vulnerability": "Directory listing and public file serving of /ftp",
+      "challenges": [
+        {
+          "key": "directoryListingChallenge",
+          "name": "Confidential Document",
+          "category": "Sensitive Data Exposure",
+          "difficulty": 1
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/server.ts#L294",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": ""
+    },
+    {
+      "id": "JS-29",
+      "class": "directory-listing",
+      "cwe": "CWE-532",
+      "file": "server.ts",
+      "ranges": [
+        [306, 306],
+        [308, 308]
+      ],
+      "lintable": "maybe",
+      "vulnerability": "Access logs listed and served at /support/logs",
+      "challenges": [
+        {
+          "key": "accessLogDisclosureChallenge",
+          "name": "Access Log",
+          "category": "Observability Failures",
+          "difficulty": 4
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/server.ts#L306",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": ""
+    },
+    {
+      "id": "JS-30",
+      "class": "header-trust-rate-limit",
+      "cwe": "CWE-348",
+      "file": "server.ts",
+      "ranges": [[378, 378]],
+      "lintable": "maybe",
+      "vulnerability": "Rate limit keyed by the X-Forwarded-For header (spoofable)",
+      "challenges": [
+        {
+          "key": "resetPasswordMortyChallenge",
+          "name": "Reset Morty''s Password",
+          "category": "Broken Anti Automation",
+          "difficulty": 5
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/server.ts#L378",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": ""
+    },
+    {
+      "id": "JS-31",
+      "class": "missing-access-control",
+      "cwe": "CWE-862",
+      "file": "server.ts",
+      "ranges": [[402, 402]],
+      "lintable": "n",
+      "vulnerability": "Authorization middleware for PUT /api/Products commented out",
+      "challenges": [
+        {
+          "key": "changeProductChallenge",
+          "name": "Product Tampering",
+          "category": "Broken Access Control",
+          "difficulty": 3
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/server.ts#L402",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": "the marked line is a code comment"
+    },
+    {
+      "id": "JS-32",
+      "class": "mass-assignment",
+      "cwe": "CWE-915",
+      "file": "server.ts",
+      "ranges": [[550, 550]],
+      "lintable": "maybe",
+      "vulnerability": "Registration accepts a role field (mass assignment)",
+      "challenges": [
+        {
+          "key": "registerAdminChallenge",
+          "name": "Admin Registration",
+          "category": "Improper Input Validation",
+          "difficulty": 3
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/server.ts#L550",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": ""
+    },
+    {
+      "id": "JS-33",
+      "class": "exposed-endpoint",
+      "cwe": "CWE-200",
+      "file": "server.ts",
+      "ranges": [[771, 771]],
+      "lintable": "maybe",
+      "vulnerability": "Prometheus /metrics exposed without authentication",
+      "challenges": [
+        {
+          "key": "exposedMetricsChallenge",
+          "name": "Exposed Metrics",
+          "category": "Observability Failures",
+          "difficulty": 1
+        }
+      ],
+      "source": [
+        "https://github.com/juice-shop/juice-shop/blob/c9f99228d9d56afb5f5ca7925376292f7fa44b13/server.ts#L771",
+        "data/static/challenges.yml (joined on the challenge key)"
+      ],
+      "note": ""
+    }
+  ]
+}
