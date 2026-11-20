@@ -1,0 +1,23 @@
+{
+  "_comment": "Manual verdicts for findings the mechanical labeller marked FP (not on a truth line). Single labeller (the fixer agent), NOT blind, NOT double-labelled: the plan's blind two-labeller step (section 6.2) is still to do. Only unlisted-real / undecidable need an entry; every other non-TP stays FP with the default reason.",
+  "app/routes/session.js:143:secure-coding/no-redos-vulnerable-regex": {
+    "verdict": "unlisted-real",
+    "reason": "EMAIL_RE = /^[\\S]+@[\\S]+\\.[\\S]+$/ is reachable from unauthenticated POST /signup (email is regex-tested after the other fields pass; email has no length cap). Input '@'.repeat(n) fails the match after quadratic backtracking: measured 2000 chars 2 ms, 4000 chars 8 ms, 8000 chars 31 ms (Node 24, V8 irregexp), so a 100 KB body (body-parser default limit) costs about 5 s of event-loop time. A real, undocumented ReDoS."
+  },
+  "config/env/development.js:6:secure-coding/no-hardcoded-credentials": {
+    "verdict": "FP",
+    "reason": "zapApiKey is the API key of a local OWASP ZAP scanner in a developer-only config, not a secret guarding the app or its data. Arguable: the rule's own definition (hard-coded credential literal) is met; the plan's rule is that a finding is FP unless a real exploitable vulnerability is shown, and none is."
+  },
+  "config/env/test.js:6:secure-coding/no-hardcoded-credentials": {
+    "verdict": "FP",
+    "reason": "Same ZAP scanner key in the test config. Same arguable-but-FP call."
+  },
+  "Gruntfile.js:166:node-security/no-shell-injection": {
+    "verdict": "FP",
+    "reason": "exec() command is built from process.env.NODE_ENV or a CLI argument of a developer-run grunt task (db-reset). No attacker-controlled input reaches it."
+  },
+  "Gruntfile.js:165:security/detect-child-process": {
+    "verdict": "FP",
+    "reason": "Same grunt db-reset task as above: developer-run, no remote input."
+  }
+}
