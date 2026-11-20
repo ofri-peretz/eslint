@@ -4,7 +4,7 @@
 
 Guide for AI coding assistants using this plugin in a project. To change the plugin's own source, read https://github.com/ofri-peretz/eslint/blob/main/AGENTS.md instead.
 
-> ESLint import rules — eslint-plugin-import replacement for ESLint 10 (and 8, 9): same import/* rule names and settings, passes 95% of its own test cases. Flat config.
+> ESLint import rules — eslint-plugin-import replacement for ESLint 10 (and 8, 9): same import/* rule names and settings (node, typescript and custom-alias resolvers), passes 95% of its own test cases. Flat config.
 
 ## Enable it
 

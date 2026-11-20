@@ -124,7 +124,7 @@ The 100 failing cases, by rule:
 | `export`, `exports-last`, `no-mutable-exports`, `order`                                                   | 2 each |           | `export` and `no-mutable-exports` miss TypeScript merging and `export default` of a mutable binding; `order` reports 2 valid cases with `alphabetize` and named or `cjsExports` options |
 | `namespace`, `no-import-module-exports`, `no-named-export`, `no-relative-packages`, `no-restricted-paths` | 1 each |           | One case each: a missed finding, one valid case reported, or a different count                                                                                                          |
 
-Totals: 71 invalid cases go unreported (a missed finding), **25 valid cases are reported (a new finding)**, and 4 report a different number of times. The 25 are the ones that can fail your CI after the swap, and they sit in `no-commonjs`, `no-internal-modules`, `no-amd`, `no-unresolved`, `no-useless-path-segments`, `order` and `no-import-module-exports`. If you do not enable those rules, or enable them in a codebase without CommonJS, you will not meet them. Every failing case is listed with its expected and reported counts in [the measurement file](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/results/ilb-import-parity/2026-11-19.json).
+Totals: 71 invalid cases go unreported (a missed finding), **25 valid cases are reported (a new finding)**, and 4 report a different number of times. The 25 are the ones that can fail your CI after the swap, and they sit in `no-commonjs`, `no-internal-modules`, `no-amd`, `no-unresolved`, `no-useless-path-segments`, `order` and `no-import-module-exports`. If you do not enable those rules you will not meet them; a codebase with no CommonJS is not exempt (`no-internal-modules` reports one valid `export * from` case). Every failing case is listed with its expected and reported counts in [the measurement file](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/results/ilb-import-parity/2026-11-19.json).
 
 Differences the test suite does not show, from a 5-file fixture run on 4.1.0 and checked again on 2026-11-20 against the 4.1.4 source, except the last bullet:
 
@@ -163,38 +163,48 @@ npx eslint . -f json -o after.json
 npx eslint --print-config src/index.ts | grep '"import/'
 ```
 
-Compare by rule, file and line. Columns and message text differ for some rules, so do not compare them. Save this as `compare-import.mjs`:
+Compare by rule, file and line. Columns and message text differ for some rules, so do not compare them. If you moved to `eslint-plugin-import-x`, the script reads its `import-x/*` findings as `import/*`. Save this as `compare-import.mjs`:
 
 ```js title="compare-import.mjs"
 import { readFileSync } from 'node:fs';
 
+// import-x registers as `import-x/*`; read both prefixes as `import/*`.
+const rule = (m) => m.ruleId?.replace(/^import-x\//, 'import/');
 const key = (f, m) =>
-  `${m.ruleId}\t${f.filePath.replace(process.cwd() + '/', '')}:${m.line}`;
+  `${rule(m)}\t${f.filePath.replace(process.cwd() + '/', '')}:${m.line}`;
 const load = (file) => {
   const found = new Map();
   for (const f of JSON.parse(readFileSync(file, 'utf8')))
     for (const m of f.messages)
-      if (m.ruleId?.startsWith('import/'))
+      if (rule(m)?.startsWith('import/'))
         found.set(key(f, m), (found.get(key(f, m)) ?? 0) + 1);
   return found;
 };
 
 const [before, after] = [load(process.argv[2]), load(process.argv[3])];
 const only = (a, b) => [...a.keys()].filter((k) => !b.has(k));
+const changed = (a, b) =>
+  [...a].filter(([k, n]) => b.has(k) && b.get(k) !== n);
 const total = (m) => [...m.values()].reduce((a, b) => a + b, 0);
 
 console.log(`before: ${total(before)}  after: ${total(after)}`);
 for (const k of only(before, after)) console.log(`missing after   ${k}`);
 for (const k of only(after, before)) console.log(`new after       ${k}`);
+for (const [k, n] of changed(before, after))
+  console.log(`count ${n} -> ${after.get(k)}   ${k}`);
 process.exitCode =
-  only(before, after).length + only(after, before).length ? 1 : 0;
+  only(before, after).length +
+  only(after, before).length +
+  changed(before, after).length
+    ? 1
+    : 0;
 ```
 
 ```bash
 node compare-import.mjs before.json after.json
 ```
 
-Empty output after the totals line means the same findings in the same places. A `new after` line is the case to read first: check it against the table above, and if the rule is not on that list, [open an issue](https://github.com/ofri-peretz/eslint/issues) with the file. A false positive is a bug here.
+Empty output after the totals line means the same findings in the same places, the same number of times. A `new after` line is the case to read first: check it against the table above, and if the rule is not on that list, [open an issue](https://github.com/ofri-peretz/eslint/issues) with the file. A false positive is a bug here.
 
 {/* FAQ JSON-LD (suggested; each answer must match the page text when it is generated)
 Q: Does eslint-plugin-import support ESLint 10?

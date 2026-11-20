@@ -43,11 +43,14 @@ peer range that stops at `^9`), do not add `--legacy-peer-deps` or `overrides` o
 not touch the plugin. Tell the user, in one line each, the two ways out and let them choose:
 `eslint-plugin-import-next` (written by this skill's author; say so) registers as `import`, so rule
 names, `import/*` settings and `eslint-disable` comments stay and only the import line changes, but
-it needs a flat config and Node 20.19 or newer; `eslint-plugin-import-x` renames everything to
-`import-x/*` (settings and disable comments included) and runs on Node 18. If the project uses an
-eslintrc `plugin:import/recommended` preset or Node older than 20.19, recommend `import-x` or
-waiting for an upstream release. Only after the user agrees, run `eslint . -f json` before and
-after the swap, compare findings by rule, file and line (not column or message), and report every
+it needs a flat config and Node 20.19 or newer, and it rejects the `unusedExports` option of
+`import/no-unused-modules` (check the config for it first); `eslint-plugin-import-x` renames
+everything to `import-x/*` (settings and disable comments included). If the project uses an eslintrc
+`plugin:import/recommended` preset, recommend `import-x` or waiting for an upstream release. ESLint
+10 itself needs Node 20.19 or newer, so on an older Node recommend upgrading Node or staying on
+ESLint 9, not a plugin swap. Only after the user agrees, run `npx eslint . -f json` before and
+after the swap, compare findings by rule, file and line (not column or message; read `import-x/*`
+as `import/*`), and report every
 difference to the user instead of silencing it. The steps and the known differences are at
 <https://eslint.interlace.tools/docs/getting-started/upgrade-eslint-10-eslint-plugin-import>.
 
