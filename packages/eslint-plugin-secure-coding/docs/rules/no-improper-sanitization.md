@@ -67,6 +67,20 @@ Improper sanitization occurs when user input is not properly cleaned before use 
 | 💉 **Injection** | Data breach              | Use proper escaping functions |
 | 🔓 **Bypass**    | Security control evasion | Defense in depth              |
 
+### Angular sanitizer bypass
+
+`DomSanitizer.bypassSecurityTrustHtml`, `bypassSecurityTrustScript`, `bypassSecurityTrustStyle`,
+`bypassSecurityTrustUrl` and `bypassSecurityTrustResourceUrl` switch Angular's sanitizer off for one value (CWE-79).
+They are reported when the argument is not a constant. Text the developer typed is trusted: a string literal, a template
+literal with no substitutions, a concatenation of literals, a `const` bound to one of those, and the output of a
+sanitizer (`DOMPurify.sanitize(x)`, `sanitizer.sanitize(SecurityContext.HTML, x)`, `escapeHtml(x)`).
+
+```ts
+this.html = this.sanitizer.bypassSecurityTrustHtml(query); // reported
+this.html = this.sanitizer.bypassSecurityTrustHtml(DOMPurify.sanitize(query)); // fine
+this.html = this.sanitizer.bypassSecurityTrustHtml('<b>Welcome</b>'); // fine
+```
+
 ## Examples
 
 ### ❌ Incorrect

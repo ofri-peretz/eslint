@@ -66,6 +66,23 @@ route is CWE-306 and that rule owns it; adding a CSRF token there fixes no
 vulnerability. Before 2026-08-12 both rules reported the same seven routes on
 the 8-repo corpus.
 
+### What counts as a credential
+
+CSRF needs a credential the browser attaches on its own. The rule therefore stays quiet on four shapes that carry
+none, and reads one more shape as carrying one:
+
+- **A guard registered alone.** `app.post('/api/Products', security.isAuthorized())` mounts a guard and handles
+  nothing, so no state-changing handler is on that line. A guard plus a real handler is still reported.
+- **A bearer route.** `passport.authenticate('bearer' | 'jwt', { session: false })`, `express-jwt` with its default
+  token source, or a handler that reads the `Authorization` header and no cookie or session. A cross-site request
+  cannot set that header. `express-jwt` with `getToken`, or a handler that also reads `req.cookies`, is not exempt.
+- **`cookie-parser` on its own.** It fills `req.cookies` for whatever a cookie holds (a language flag, a consent
+  banner). A session store (`express-session`, `cookie-session`, `passport`, `csurf`, ...), or code that reads
+  `req.cookies` / `res.cookie` / `req.session`, is what shows a cookie carrying authority.
+- **A router that is handed to its importer and renders documents** (`module.exports = router`, `return router`,
+  `export default router`, plus `res.render` / `res.sendFile` in the same file) is read as having the session that
+  the mounting module configures. A router that renders nothing is the shape of a JSON API and is not.
+
 ## Examples
 
 ### ❌ Incorrect

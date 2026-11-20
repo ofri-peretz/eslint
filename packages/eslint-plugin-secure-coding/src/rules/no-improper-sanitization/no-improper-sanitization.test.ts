@@ -483,6 +483,7 @@ describe('no-improper-sanitization', () => {
         invalid: [
           // innerHTML with unsanitized user input
           {
+            name: 'request body assigned straight to innerHTML',
             code: 'element.innerHTML = req.body.content;',
             errors: [{ messageId: 'insufficientXssProtection' }],
           },
