@@ -15,10 +15,12 @@ PRELUDE  (everything above the first `## ` heading — uses HTML, not markdown)
   3. Header badges row (centered <p>, HTML <a><img>)
 
 BODY  (markdown, may contain shields.io badges in tables)
-  4.  ## Description
-  5.  why / how / what                    (generated, between DOCTRINE markers,
+  4.  ## Getting Started                  (one guide link, then the generated install
+                                           line and a working flat config: `export default
+                                           [configs.recommended]`, between INSTALL markers)
+  5.  ## Description
+  6.  why / how / what                    (generated, between DOCTRINE markers,
                                            three bullets — NO heading of its own)
-  6.  ## Getting Started                  (one guide link + npm install)
   7.  ## ⚙️ Configuration Presets
   8.  ## 📚 Supported Libraries           (lib-specific plugins only)
   9.  ## 🤖 AI-Optimized Messages         (security plugins only)
@@ -188,7 +190,7 @@ The Philosophy text must not come back; the gate fails on its fingerprint. A plu
 may still carry a hand-written `## Why <ecosystem>-specific?` — that is the
 per-plugin why, and it is a real section.
 
-### 6. Getting Started
+### 6. Getting Started (first section, above Description)
 
 One English guide link + a fenced `npm install` block.
 

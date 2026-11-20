@@ -636,51 +636,62 @@ const INSTALL_START =
 const INSTALL_END = '<!-- AUTO-GENERATED:INSTALL:END -->';
 
 /**
- * Install block, oxlint / Vite+ first and ESLint second.
+ * Install block: the ESLint install line and a flat config that works pasted.
  *
- * Every `eslint-plugin-<name>` has an `oxlint-plugin-<name>` twin that re-exports its
- * `./oxlint` entry (scripts/generate-oxlint-aliases.mts), so this is one implementation
- * under two package names. oxlint takes the rule prefix from `meta.name`, normalized
- * the same way for both prefixes, so the IDs (`<name>/<rule>`) are identical in both
- * engines. Generated rather than hand-edited for the same reason as the doctrine:
- * thirty copies of one install story drift.
+ * Every `eslint-plugin-<name>` exports a named `configs`, and `configs.recommended`
+ * is ONE flat-config object (registers the plugin and enables its rules). So the
+ * snippet is `export default [configs.recommended]`: an array of that object.
+ * Spreading it (`...configs.recommended`) throws `TypeError: ... is not iterable`,
+ * which is what eslint-plugin-secure-coding's README shipped.
+ *
+ * Named, not `import plugin from '...'`: these packages are CommonJS builds, and 24
+ * of the 31 default-export an object WITHOUT `configs`. Node's own ESM loader hands
+ * `import plugin from` the whole `module.exports` (which has `configs`), but anything
+ * that honours `__esModule` (a bundler, TypeScript's `esModuleInterop`) reads
+ * `exports.default`, where `plugin.configs` is undefined. The named export is the same
+ * object in every loader. Run through ESLint 10 for all 31 builds, and its shape
+ * locked in scripts/__tests__/readme-quick-start.lock.test.ts.
+ *
+ * `.mjs`, not `.js`: the snippet is ESM, and a CommonJS project (no `"type":
+ * "module"`) would fail to load an `eslint.config.js` written this way.
+ *
+ * oxlint / Vite+ is one sentence pointing at the twin package
+ * (`oxlint-plugin-<name>`, scripts/generate-oxlint-aliases.mts), which carries its own
+ * working setup: an ESLint reader should not have to scroll past it to find theirs.
+ * Generated rather than hand-edited: thirty copies of one install story drift.
  */
 export function renderInstall(pkg: string): string {
   const name = pkg.replace(/^eslint-plugin-/, '');
   const alias = `oxlint-plugin-${name}`;
-  return [
+  const lines = [
     INSTALL_START,
     '',
-    `**oxlint / Vite+** — the same rules under the same \`${name}/<rule>\` IDs, without ESLint:`,
-    '',
     '```bash',
-    `npm install ${alias} --save-dev`,
+    `npm install --save-dev eslint ${pkg}`,
     '```',
     '',
-    '```jsonc',
-    '// .oxlintrc.json',
-    `{ "jsPlugins": ["${alias}"] }`,
+    '```js',
+    '// eslint.config.mjs',
+    `import { configs } from '${pkg}';`,
+    '',
+    'export default [configs.recommended];',
     '```',
     '',
-    '```ts',
-    '// vite.config.ts',
-    "import { defineConfig } from 'vite-plus';",
+    '`recommended` is the preset to start with. The others are listed under Configuration Presets below.',
     '',
-    // Expanded the way prettier prints it: a long alias name would otherwise be
-    // re-wrapped by prettier and the generator and the formatter would fight.
-    'export default defineConfig({',
-    `  lint: { jsPlugins: ['${alias}'] },`,
-    '});',
-    '```',
-    '',
-    '**ESLint:**',
-    '',
-    '```bash',
-    `npm install ${pkg} --save-dev`,
-    '```',
+  ];
+  if (pkg === 'eslint-plugin-import-next') {
+    lines.push(
+      'Coming from `eslint-plugin-import`? Change one import line and keep your config: see [Migrating from `eslint-plugin-import`](#migrating-from-eslint-plugin-import).',
+      '',
+    );
+  }
+  lines.push(
+    `Using oxlint or Vite+? Install \`${alias}\`: the same rules under the same \`${name}/<rule>\` IDs, without ESLint. Its [page](https://www.npmjs.com/package/${alias}) has the setup.`,
     '',
     INSTALL_END,
-  ].join('\n');
+  );
+  return lines.join('\n');
 }
 
 /**
@@ -708,6 +719,172 @@ export function spliceInstall(
   const at = readme.indexOf(fence, gs);
   if (at === -1) return { content: readme, modified: false };
   const content = readme.slice(0, at) + block + readme.slice(at + fence.length);
+  return { content, modified: true };
+}
+
+/**
+ * Move `## Getting Started` above `## Description`.
+ *
+ * A reader from npm wants the install line and a working config before anything
+ * else (README audit 2026-11-20: 17 of 31 pages had no config snippet at all, the
+ * rest showed one 79 to 133 lines down). The section is cut from where it is, up to
+ * the next `## ` heading, and pasted before Description. Sections that sat between
+ * the two (`## Why Knex-specific?`) stay with Description. A README already in the
+ * new order, or without either heading, is returned unchanged, so a second run is a
+ * no-op.
+ */
+export function spliceGettingStartedFirst(readme: string): {
+  content: string;
+  modified: boolean;
+} {
+  const desc = readme.search(/^## Description$/m);
+  const gs = readme.search(/^## Getting Started$/m);
+  if (desc === -1 || gs === -1 || gs < desc) {
+    return { content: readme, modified: false };
+  }
+  const after = readme.slice(gs + 3).search(/^## /m);
+  const end = after === -1 ? readme.length : gs + 3 + after;
+  const section = readme.slice(gs, end).replace(/\n*$/, '\n\n');
+  const rest = readme.slice(0, gs) + readme.slice(end);
+  const content = rest.slice(0, desc) + section + rest.slice(desc);
+  return { content, modified: true };
+}
+
+const STAR_CTA_START = '<!-- INTERLACE:STAR_CTA:START -->';
+const STAR_CTA_END = '<!-- INTERLACE:STAR_CTA:END -->';
+
+/**
+ * The one star line, at the end. It used to be a banner above the first heading
+ * ("If this plugin caught a real bug for you, star the repo") plus a footer block
+ * with a live star counter: an ask made before the reader had installed anything,
+ * beside a small number. Now it is one short paragraph under `## Support`, after
+ * the rules, and the first thing it offers is the issue tracker. No counter badge
+ * until the repo has 50 stars. The `INTERLACE:STAR_CTA` markers stay: the growth
+ * lock (apps/docs/src/__tests__/growth-conversion-lock.test.ts) pins them.
+ */
+export function renderSupport(): string {
+  return [
+    STAR_CTA_START,
+    '',
+    '## Support',
+    '',
+    'Found a false positive? [Open an issue](https://github.com/ofri-peretz/eslint/issues): that is a bug. If the plugin helped, a star on [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint) helps others find it.',
+    '',
+    STAR_CTA_END,
+  ].join('\n');
+}
+
+/**
+ * Drop the `> ⭐ ...` banner under the badges and rewrite the footer block. A README
+ * with no STAR_CTA marker pair keeps its footer (only the banner goes), like the
+ * other splices: no guessing where a block belongs.
+ */
+export function spliceSupport(readme: string): {
+  content: string;
+  modified: boolean;
+} {
+  const noBanner = readme.replace(/^> ⭐ .*\n\n?/m, '');
+  const start = noBanner.indexOf(STAR_CTA_START);
+  const end = noBanner.indexOf(STAR_CTA_END);
+  if (start === -1 && end === -1) {
+    return { content: noBanner, modified: noBanner !== readme };
+  }
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error('STAR_CTA markers are unpaired or out of order');
+  }
+  const content =
+    noBanner.slice(0, start) +
+    renderSupport() +
+    noBanner.slice(end + STAR_CTA_END.length);
+  return { content, modified: content !== readme };
+}
+
+const LEAD_START = '<!-- AUTO-GENERATED:LEAD:START - Do not edit manually -->';
+const LEAD_END = '<!-- AUTO-GENERATED:LEAD:END -->';
+const IMPORT_PARITY_DIR = path.join(
+  ROOT_DIR,
+  'benchmarks',
+  'results',
+  'ilb-import-parity',
+);
+
+interface ImportParityResult {
+  timestamp: string;
+  incumbent: string;
+  toolchain: { eslint: string };
+  headline: {
+    passed: number;
+    graded: number;
+    rules: number;
+    rulesNotImplemented: string[];
+  };
+}
+
+/** The newest dated envelope (`YYYY-MM-DD.json`) the import-next parity benchmark wrote. */
+export function latestImportParity(
+  dir = IMPORT_PARITY_DIR,
+): ImportParityResult {
+  const files = fs
+    .readdirSync(dir)
+    .filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/.test(f))
+    .sort();
+  const newest = files[files.length - 1];
+  if (!newest) throw new Error(`no dated parity result in ${dir}`);
+  return JSON.parse(fs.readFileSync(path.join(dir, newest), 'utf-8'));
+}
+
+/**
+ * import-next's lead: the drop-in grade, from the benchmark result, with its date.
+ *
+ * The page's one differentiator is graded parity with the plugin that has no ESLint
+ * 10 release; it sat at line 77, under Description, the doctrine and the install
+ * block. Every number and the date are read from the newest envelope, never typed,
+ * so a README cannot ship a figure the benchmark did not print (npm 4.1.0 said
+ * 95.2% while main said 95.3%). The sentence keeps the exact shape
+ * scripts/__tests__/import-next-parity.lock.test.ts parses, and links the Parity
+ * section, not the JSON: that lock allows exactly one link to the envelope.
+ */
+export function renderLead(result: ImportParityResult): string {
+  const { passed, graded, rules, rulesNotImplemented } = result.headline;
+  const fmt = (n: number) => n.toLocaleString('en-US');
+  const pct = ((100 * passed) / graded).toFixed(1);
+  const version = result.incumbent.replace(/^eslint-plugin-import@/, '');
+  const date = result.timestamp.slice(0, 10);
+  const implemented =
+    rulesNotImplemented.length === 0
+      ? `**all ${rules} of its tested rules are implemented**`
+      : `**${rulesNotImplemented.length} of its ${rules} tested rules are not implemented** (${rulesNotImplemented.map((r) => `\`${r}\``).join(', ')})`;
+  return [
+    LEAD_START,
+    '',
+    `**A drop-in for \`eslint-plugin-import\`: change one import line, keep your config.** It passes **${fmt(passed)} of ${fmt(graded)}** (${pct}%) of \`eslint-plugin-import\`@${version}'s own test cases, and ${implemented}. Measured ${date} on ESLint ${result.toolchain.eslint}; [how it is graded](#-parity-with-eslint-plugin-import).`,
+    '',
+    LEAD_END,
+  ].join('\n');
+}
+
+/** Insert or refresh import-next's lead, directly above the first `## ` heading. */
+export function spliceLead(
+  readme: string,
+  pkg: string,
+  result: ImportParityResult,
+): { content: string; modified: boolean } {
+  if (pkg !== 'eslint-plugin-import-next') {
+    return { content: readme, modified: false };
+  }
+  const block = renderLead(result);
+  const start = readme.indexOf(LEAD_START);
+  const end = readme.indexOf(LEAD_END);
+  if (start !== -1 || end !== -1) {
+    if (start === -1 || end === -1 || end < start)
+      throw new Error('LEAD markers are unpaired or out of order');
+    const content =
+      readme.slice(0, start) + block + readme.slice(end + LEAD_END.length);
+    return { content, modified: content !== readme };
+  }
+  const first = readme.search(/^## /m);
+  if (first === -1) return { content: readme, modified: false };
+  const content = `${readme.slice(0, first)}${block}\n\n${readme.slice(first)}`;
   return { content, modified: true };
 }
 
@@ -796,13 +973,22 @@ export function processPlugin(
       renderEcosystemTable(opts.registry, entry.package),
     );
     const withInstall = spliceInstall(withEcosystem.content, entry.package);
+    const withOrder = spliceGettingStartedFirst(withInstall.content);
+    const withSupport = spliceSupport(withOrder.content);
+    const withLead =
+      entry.package === 'eslint-plugin-import-next'
+        ? spliceLead(withSupport.content, entry.package, latestImportParity())
+        : { content: withSupport.content, modified: false };
     result = {
-      content: withInstall.content,
+      content: withLead.content,
       modified:
         result.modified ||
         withDoctrine.modified ||
         withEcosystem.modified ||
-        withInstall.modified,
+        withInstall.modified ||
+        withOrder.modified ||
+        withSupport.modified ||
+        withLead.modified,
     };
   } catch (e) {
     return {

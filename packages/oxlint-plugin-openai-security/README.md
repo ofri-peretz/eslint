@@ -18,8 +18,6 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
 </p>
 
-> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
-
 ## Description
 
 `oxlint-plugin-openai-security` is the [oxlint](https://oxc.rs/docs/guide/usage/linter/js-plugins) and [Vite+](https://viteplus.dev/guide/lint) name for [`eslint-plugin-openai-security`](https://www.npmjs.com/package/eslint-plugin-openai-security). It carries the same rules under the same IDs (`openai-security/<rule>`), always at the same version, because it re-exports that package rather than copying it. Installing it does not install ESLint.
@@ -157,11 +155,9 @@ Part of the **Interlace ESLint ecosystem** — AI-native rules with LLM-optimize
 
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:END -->
 
-## ⭐ Support & follow
+## Support
 
-If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
-
-[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+Found a false positive? [Open an issue](https://github.com/ofri-peretz/eslint/issues): that is a bug. If the plugin helped, a star on [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint) helps others find it.
 
 ## 📄 License
 

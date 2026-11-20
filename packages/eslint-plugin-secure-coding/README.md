@@ -20,7 +20,35 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
 </p>
 
-> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
+## Getting Started
+
+- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-secure-coding?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding). 📚
+
+<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
+
+```bash
+npm install --save-dev eslint eslint-plugin-secure-coding
+```
+
+```js
+// eslint.config.mjs
+import { configs } from 'eslint-plugin-secure-coding';
+
+export default [configs.recommended];
+```
+
+`recommended` is the preset to start with. The others are listed under Configuration Presets below.
+
+Using oxlint or Vite+? Install `oxlint-plugin-secure-coding`: the same rules under the same `secure-coding/<rule>` IDs, without ESLint. Its [page](https://www.npmjs.com/package/oxlint-plugin-secure-coding) has the setup.
+
+<!-- AUTO-GENERATED:INSTALL:END -->
+
+> **Using `recommended` already?** Extend your coverage with domain-specific plugins:
+> [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) (crypto, eval, buffer) ·
+> [`eslint-plugin-jwt-security`](https://www.npmjs.com/package/eslint-plugin-jwt-security) (JWT auth) ·
+> [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) (Express middleware)
+
+---
 
 ## Description
 
@@ -41,69 +69,6 @@ That trade costs recall, and we measure it:
 · [a false positive is a bug](https://github.com/ofri-peretz/eslint/issues).
 
 <!-- AUTO-GENERATED:DOCTRINE:END -->
-
-## Getting Started
-
-- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-secure-coding?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding). 📚
-
-<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
-
-**oxlint / Vite+** — the same rules under the same `secure-coding/<rule>` IDs, without ESLint:
-
-```bash
-npm install oxlint-plugin-secure-coding --save-dev
-```
-
-```jsonc
-// .oxlintrc.json
-{ "jsPlugins": ["oxlint-plugin-secure-coding"] }
-```
-
-```ts
-// vite.config.ts
-import { defineConfig } from 'vite-plus';
-
-export default defineConfig({
-  lint: { jsPlugins: ['oxlint-plugin-secure-coding'] },
-});
-```
-
-**ESLint:**
-
-```bash
-npm install eslint-plugin-secure-coding --save-dev
-```
-
-<!-- AUTO-GENERATED:INSTALL:END -->
-
-**Add to your `eslint.config.mjs` — one line activates 18 security rules:**
-
-```js
-import securePlugin from 'eslint-plugin-secure-coding';
-
-export default [
-  // Balanced: catches critical issues as errors, lower-confidence rules as warnings
-  securePlugin.configs.recommended,
-
-  // Zero-tolerance: same 18 rules, all promoted to error (good for CI gates)
-  // securePlugin.configs['recommended-strict'],
-];
-```
-
-**Or if you use a legacy `.eslintrc.json`:**
-
-```json
-{
-  "extends": ["plugin:secure-coding/recommended"]
-}
-```
-
-> **Using `recommended` already?** Extend your coverage with domain-specific plugins:
-> [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) (crypto, eval, buffer) ·
-> [`eslint-plugin-jwt-security`](https://www.npmjs.com/package/eslint-plugin-jwt-security) (JWT auth) ·
-> [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) (Express middleware)
-
----
 
 ## Benchmarks vs competitors (CWE-798 ground truth)
 `no-hardcoded-credentials` is part of the [ILB-Flagship benchmark suite](../../benchmarks/suites/ilb-flagship). On the labeled CWE-798 fixture set (Juliet-style: 2 vulnerable + 2 safe files, ground-truthed):
@@ -155,7 +120,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | [detect-non-literal-regexp](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/detect-non-literal-regexp?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-400 |  |  | Detects RegExp(variable), which might allow an attacker to DOS your server with a long-running regular expr… | 🟢 |  |  |  |  |  |
-| [detect-object-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/detect-object-injection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-915 |  |  | Detects variable[key] written as an assignment target, or read and then invoked (prototype pollution, method injection) | 🟡 |  |  |  |  |  |
+| [detect-object-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/detect-object-injection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-915 |  |  | Detects variable[key] written as an assignment target, or read and then invoked (prototype pollution, metho… | 🟡 |  |  |  |  |  |
 | [detect-weak-password-validation](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/detect-weak-password-validation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-521 | A07:2021 |  | Detects weak password length requirements (less than 8 characters) in validation code. | 🟢 |  |  |  |  |  |
 | [no-bidi-characters](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-bidi-characters?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-1007 |  |  | Disallows Unicode bidirectional control characters, which let source render differently than it compiles (T… | 🟢 |  |  |  |  |  |
 | [no-directive-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-directive-injection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding) | CWE-94 |  |  | Detects directive injection vulnerabilities in template systems | 🟢 |  |  |  |  |  |
@@ -239,11 +204,10 @@ Part of the **Interlace ESLint ecosystem** — AI-native rules with LLM-optimize
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:END -->
 
 <!-- INTERLACE:STAR_CTA:START -->
-## ⭐ Support & follow
 
-If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+## Support
 
-[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+Found a false positive? [Open an issue](https://github.com/ofri-peretz/eslint/issues): that is a bug. If the plugin helped, a star on [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint) helps others find it.
 
 <!-- INTERLACE:STAR_CTA:END -->
 

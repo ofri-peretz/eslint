@@ -18,8 +18,6 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
 </p>
 
-> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
-
 ## Description
 
 **Fills the gaps in oxlint's import plugin.** oxlint's native `import` plugin already covers 34 of these rules (listed below; use those natively). This package adds the 24 it does not have: `dynamic-import-chunkname`, `enforce-dependency-direction`, `enforce-import-order`, `enforce-node-protocol-usage`, `enforce-team-boundaries`, `no-barrel-import`, `no-cross-domain-imports`, `no-deprecated`, `no-extraneous-dependencies`, `no-full-package-import`, `no-import-module-exports`, `no-internal-modules`, `no-legacy-imports`, `no-relative-packages`, `no-restricted-paths`, `no-unresolved`, `no-unused-modules`, `no-useless-path-segments`, `no-webpack-loader-syntax`, `order`, `prefer-direct-import`, `prefer-modern-api`, `prefer-tree-shakeable-imports`, `require-import-approval`.
@@ -253,11 +251,9 @@ Part of the **Interlace ESLint ecosystem** — AI-native rules with LLM-optimize
 
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:END -->
 
-## ⭐ Support & follow
+## Support
 
-If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
-
-[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+Found a false positive? [Open an issue](https://github.com/ofri-peretz/eslint/issues): that is a bug. If the plugin helped, a star on [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint) helps others find it.
 
 ## 📄 License
 
