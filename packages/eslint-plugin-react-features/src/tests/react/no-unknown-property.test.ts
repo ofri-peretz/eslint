@@ -73,6 +73,31 @@ describe('no-unknown-property', () => {
     });
   });
 
+  describe('Capture-phase event handlers (regression lock)', () => {
+    // #1568: React gives every known event handler a `...Capture` twin for
+    // the capture phase. `VALID_DOM_PROPERTIES` only lists the bubble-phase
+    // name, so onFocusCapture/onClickCapture read as unknown without this.
+    ruleTester.run('capture-phase handlers', noUnknownProperty, {
+      valid: [
+        {
+          name: 'onFocusCapture is the capture twin of the known onFocus',
+          code: '<article onFocusCapture={() => {}} />',
+        },
+        {
+          name: 'onClickCapture is the capture twin of the known onClick',
+          code: '<article onFocusCapture={() => {}} onClickCapture={() => {}} />',
+        },
+      ],
+      invalid: [
+        {
+          name: 'a Capture suffix on an unknown base handler is still unknown',
+          code: '<article onBogusHandlerCapture={() => {}} />',
+          errors: [{ messageId: 'noUnknownProperty' }],
+        },
+      ],
+    });
+  });
+
   describe('Modern image attributes (regression lock)', () => {
     // Lock for the article-card.tsx false positives: `loading`, `decoding`
     // and `fetchPriority` are standard React DOM props on <img> (React 19
