@@ -5,6 +5,12 @@ All notable changes to `oxlint-plugin-mongodb-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 10.0.3
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-mongodb-security@10.0.3`
+
 ## 10.0.2
 
 ### Patch Changes

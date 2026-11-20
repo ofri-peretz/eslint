@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-sqlite-security",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Oxlint SQLite security rules for better-sqlite3 and sqlite3 — detects SQL injection in raw queries built with string concatenation or template literals. Same rules and rule IDs as eslint-plugin-sqlite-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
@@ -73,6 +73,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-sqlite-security": "2.0.2"
+    "eslint-plugin-sqlite-security": "2.0.3"
   }
 }

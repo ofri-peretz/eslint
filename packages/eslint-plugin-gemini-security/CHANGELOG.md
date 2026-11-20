@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-gemini-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.0.3
+
+### Patch Changes
+
+- **📚 Docs** — ship an AGENTS.md that tells AI assistants how to enable the plugin and what each preset catches
+
+  Generated from the package's own presets and rules, so it cannot drift. `eslint-plugin-secure-coding`: the README no longer shows `...configs.recommended` spread into an array, which threw "not iterable".
+
 ## 2.0.2
 
 ### Patch Changes
