@@ -3,14 +3,14 @@
   "app": "nodegoat",
   "pin": "c5cb68a7084e4ae7dcc60e6a98768720a81841e8",
   "license": "Apache-2.0 (LICENSE file at the pin is the Apache License 2.0 text; package.json says \"Apache 2.0\")",
-  "generatedAt": "2026-11-20T09:38:29.408Z",
+  "generatedAt": "2026-11-20T10:37:16.387Z",
   "toolchain": {
     "node": "v24.12.0",
     "platform": "darwin-arm64",
     "eslint": "10.13.0",
     "tsParser": "8.68.0",
     "ourRepo": {
-      "head": "9198d13e21fbc19212e3860b9f2864d980af2f79",
+      "head": "50baf869da47eb47884df7ea8e7d305bf9f70e11",
       "dirtyPackages": []
     },
     "plugins": {
@@ -52,7 +52,7 @@
       "side": "incumbent",
       "filesLinted": 24,
       "loc": 1745,
-      "ms": 90,
+      "ms": 87,
       "parseErrors": 0,
       "findings": 8,
       "duplicateRuleHitsDropped": 0,
@@ -158,7 +158,7 @@
       "side": "incumbent",
       "filesLinted": 24,
       "loc": 1745,
-      "ms": 24,
+      "ms": 26,
       "parseErrors": 0,
       "findings": 8,
       "duplicateRuleHitsDropped": 0,
@@ -264,18 +264,18 @@
       "side": "ours",
       "filesLinted": 24,
       "loc": 1745,
-      "ms": 336,
+      "ms": 654,
       "parseErrors": 0,
       "findings": 12,
       "duplicateRuleHitsDropped": 0,
       "findingsPerKLoc": 6.9,
       "tp": 5,
-      "fpTotal": 6,
+      "fpTotal": 4,
       "fpRightPlaceWrongReason": 3,
-      "unlistedReal": 1,
+      "unlistedReal": 3,
       "undecidable": 0,
       "precisionStrict": 0.417,
-      "precisionLenient": 0.5,
+      "precisionLenient": 0.667,
       "precisionStrictWilson95": [0.193, 0.68],
       "truthItems": 20,
       "itemsHit": ["NG-01", "NG-19", "NG-20"],
@@ -388,20 +388,20 @@
           "line": 6,
           "ruleId": "secure-coding/no-hardcoded-credentials",
           "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Credential value detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.ZAP_API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html",
-          "verdict": "FP",
+          "verdict": "unlisted-real",
           "itemIds": [],
           "regionIds": [],
-          "reason": "zapApiKey is the API key of a local OWASP ZAP scanner in a developer-only config, not a secret guarding the app or its data. Arguable: the rule's own definition (hard-coded credential literal) is met; the plan's rule is that a finding is FP unless a real exploitable vulnerability is shown, and none is."
+          "reason": "zapApiKey is a committed random-looking 26-character literal (a hard-coded credential in source). Label corrected from FP on the coordinator's review (2026-11-21, rev 1b). Impact is bounded (a local OWASP ZAP scanner key in developer configs, not documented in the NodeGoat tutorial), so it is unlisted-real, not a truth-table hit: strict precision still counts it as FP, lenient counts it as TP."
         },
         {
           "file": "config/env/test.js",
           "line": 6,
           "ruleId": "secure-coding/no-hardcoded-credentials",
           "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Credential value detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.ZAP_API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html",
-          "verdict": "FP",
+          "verdict": "unlisted-real",
           "itemIds": [],
           "regionIds": [],
-          "reason": "Same ZAP scanner key in the test config. Same arguable-but-FP call."
+          "reason": "zapApiKey is a committed random-looking 26-character literal (a hard-coded credential in source). Label corrected from FP on the coordinator's review (2026-11-21, rev 1b). Impact is bounded (a local OWASP ZAP scanner key in developer configs, not documented in the NodeGoat tutorial), so it is unlisted-real, not a truth-table hit: strict precision still counts it as FP, lenient counts it as TP."
         }
       ]
     },
@@ -410,18 +410,18 @@
       "side": "ours",
       "filesLinted": 24,
       "loc": 1745,
-      "ms": 81,
+      "ms": 125,
       "parseErrors": 0,
       "findings": 14,
       "duplicateRuleHitsDropped": 0,
       "findingsPerKLoc": 8,
       "tp": 5,
-      "fpTotal": 8,
+      "fpTotal": 6,
       "fpRightPlaceWrongReason": 3,
-      "unlistedReal": 1,
+      "unlistedReal": 3,
       "undecidable": 0,
       "precisionStrict": 0.357,
-      "precisionLenient": 0.429,
+      "precisionLenient": 0.571,
       "precisionStrictWilson95": [0.163, 0.612],
       "truthItems": 20,
       "itemsHit": ["NG-01", "NG-19", "NG-20"],
@@ -554,20 +554,20 @@
           "line": 6,
           "ruleId": "secure-coding/no-hardcoded-credentials",
           "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Credential value detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.ZAP_API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html",
-          "verdict": "FP",
+          "verdict": "unlisted-real",
           "itemIds": [],
           "regionIds": [],
-          "reason": "zapApiKey is the API key of a local OWASP ZAP scanner in a developer-only config, not a secret guarding the app or its data. Arguable: the rule's own definition (hard-coded credential literal) is met; the plan's rule is that a finding is FP unless a real exploitable vulnerability is shown, and none is."
+          "reason": "zapApiKey is a committed random-looking 26-character literal (a hard-coded credential in source). Label corrected from FP on the coordinator's review (2026-11-21, rev 1b). Impact is bounded (a local OWASP ZAP scanner key in developer configs, not documented in the NodeGoat tutorial), so it is unlisted-real, not a truth-table hit: strict precision still counts it as FP, lenient counts it as TP."
         },
         {
           "file": "config/env/test.js",
           "line": 6,
           "ruleId": "secure-coding/no-hardcoded-credentials",
           "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Credential value detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.ZAP_API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html",
-          "verdict": "FP",
+          "verdict": "unlisted-real",
           "itemIds": [],
           "regionIds": [],
-          "reason": "Same ZAP scanner key in the test config. Same arguable-but-FP call."
+          "reason": "zapApiKey is a committed random-looking 26-character literal (a hard-coded credential in source). Label corrected from FP on the coordinator's review (2026-11-21, rev 1b). Impact is bounded (a local OWASP ZAP scanner key in developer configs, not documented in the NodeGoat tutorial), so it is unlisted-real, not a truth-table hit: strict precision still counts it as FP, lenient counts it as TP."
         }
       ]
     }

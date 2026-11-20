@@ -17,15 +17,34 @@ const arg = (n, d) => {
   return i > -1 ? process.argv[i + 1] : d;
 };
 const appName = arg('app', 'nodegoat');
-const apps = JSON.parse(fs.readFileSync(path.join(here, 'apps.json'), 'utf8'));
+// apps.json holds NodeGoat; later apps live in apps.<name>.json so the frozen file is never edited.
+const apps = Object.assign(
+  {},
+  ...fs
+    .readdirSync(here)
+    .filter((f) => /^apps(\.[a-z0-9-]+)?\.json$/.test(f))
+    .sort()
+    .map((f) => JSON.parse(fs.readFileSync(path.join(here, f), 'utf8'))),
+);
 const app = apps[appName];
 if (!app) throw new Error(`unknown app ${appName}`);
 const truth = JSON.parse(
   fs.readFileSync(path.join(here, app.truthFile), 'utf8'),
 );
-const classMap = JSON.parse(
-  fs.readFileSync(path.join(here, 'truth/class-map.json'), 'utf8'),
-).classes;
+// Base map (frozen with NodeGoat) plus an optional per-app map for classes that app adds.
+const classMap = {
+  ...JSON.parse(
+    fs.readFileSync(path.join(here, 'truth/class-map.json'), 'utf8'),
+  ).classes,
+  ...(fs.existsSync(path.join(here, `truth/class-map.${appName}.json`))
+    ? JSON.parse(
+        fs.readFileSync(
+          path.join(here, `truth/class-map.${appName}.json`),
+          'utf8',
+        ),
+      ).classes
+    : {}),
+};
 const manualPath = path.join(here, 'labels', `${appName}.manual.json`);
 const manual = fs.existsSync(manualPath)
   ? JSON.parse(fs.readFileSync(manualPath, 'utf8'))
@@ -60,6 +79,7 @@ const ours = {
   'node-security': 'eslint-plugin-node-security',
   'express-security': 'eslint-plugin-express-security',
   'mongodb-security': 'eslint-plugin-mongodb-security',
+  'sequelize-security': 'eslint-plugin-sequelize-security',
 };
 const toolchain = {
   node: process.version,
@@ -128,6 +148,13 @@ const incumbent = await import(
 const oursCfg = await import(
   pathToFileURL(path.join(here, 'configs/ours.config.mjs'))
 );
+// Per-app driver config (C) may live in configs/ours.<app>.config.mjs so the frozen file is untouched.
+const appOursPath = path.join(here, `configs/ours.${appName}.config.mjs`);
+const appOurs = fs.existsSync(appOursPath)
+  ? await import(pathToFileURL(appOursPath))
+  : null;
+const cCfg = (appOurs?.C ?? oursCfg.C)[appName];
+const cLabel = appOurs?.C_LABEL ?? 'B + mongodb-security recommended';
 const configs = {
   A: {
     side: 'incumbent',
@@ -147,8 +174,8 @@ const configs = {
   },
   C: {
     side: 'ours',
-    cfg: oursCfg.C[appName],
-    label: 'B + mongodb-security recommended',
+    cfg: cCfg,
+    label: cLabel,
   },
 };
 const targets = app.lintGlobs.filter((g) =>

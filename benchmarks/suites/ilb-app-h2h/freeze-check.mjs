@@ -30,10 +30,29 @@ const commits = (paths) =>
     .split('\n')
     .filter(Boolean)
     .map((h) => idx.get(h));
+// NodeGoat owns the original files; later apps add their own so earlier apps' freeze evidence is never disturbed.
+const first = app === 'nodegoat';
 const stages = [
-  ['a: apps.json + truth', [rel('apps.json'), rel(`truth/${app}.json`)]],
-  ['b: class-map', [rel('truth/class-map.json')]],
-  ['c: configs', [rel('configs')]],
+  [
+    'a: apps + truth',
+    first
+      ? [rel('apps.json'), rel('truth/nodegoat.json')]
+      : [rel(`apps.${app}.json`), rel(`truth/${app}.json`)],
+  ],
+  [
+    'b: class-map',
+    [rel(first ? 'truth/class-map.json' : `truth/class-map.${app}.json`)],
+  ],
+  [
+    'c: configs',
+    first
+      ? [
+          rel('configs/shared.mjs'),
+          rel('configs/incumbent.config.mjs'),
+          rel('configs/ours.config.mjs'),
+        ]
+      : [rel(`configs/ours.${app}.config.mjs`)],
+  ],
   [
     'd: results',
     [
