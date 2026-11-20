@@ -1,0 +1,16 @@
+{
+  "name": "fixture-express-pg",
+  "private": true,
+  "type": "module",
+  "description": "Fixture: an Express + pg + jsonwebtoken API with an existing flat config that runs eslint-plugin-security only.",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.0",
+    "eslint-plugin-security": "^4.0.0"
+  }
+}

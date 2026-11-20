@@ -1,0 +1,21 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "Interlace ESLint security plugins",
+  "description": "ESLint plugins for JavaScript and TypeScript security: rules for Node.js, Express, NestJS, browser code, JWT, PostgreSQL, MongoDB and other database drivers, MCP servers and AI SDKs. Flat config for ESLint 9 and 10, designed to run alongside eslint-plugin-security. Each package documents its presets and rules.",
+  "folders": ["apps/docs/content/docs", "packages", "skills"],
+  "excludeFolders": [
+    "src",
+    "dist",
+    "node_modules",
+    "__tests__",
+    "oxlint-plugin-*",
+    "eslint-devkit"
+  ],
+  "excludeFiles": ["CHANGELOG.md", "CONTRIBUTING.md"],
+  "rules": [
+    "Use ESLint flat config (eslint.config.mjs). Each preset, such as configs.recommended, is one config object: put it in the exported array as an element and do not spread it.",
+    "Keep eslint-plugin-security if the project already uses it, and add the Interlace plugin for each library listed in package.json next to it. The plugins complement each other.",
+    "Database, framework and SDK plugins only report in files that import that library, so check a new setup against a file that imports it.",
+    "Some plugins skip files under test, fixtures or mocks directories, so check a new setup against a file outside them."
+  ]
+}

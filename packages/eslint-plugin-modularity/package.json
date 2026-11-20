@@ -34,7 +34,8 @@
     "src/",
     "dist/",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "AGENTS.md"
   ],
   "keywords": [
     "eslint",

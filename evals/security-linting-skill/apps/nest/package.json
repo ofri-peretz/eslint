@@ -1,0 +1,19 @@
+{
+  "name": "fixture-nest",
+  "private": true,
+  "description": "Fixture: a NestJS service with an existing typescript-eslint + eslint-plugin-security flat config.",
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "class-validator": "^0.14.0",
+    "reflect-metadata": "^0.2.0",
+    "rxjs": "^7.8.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.0",
+    "eslint-plugin-security": "^4.0.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}

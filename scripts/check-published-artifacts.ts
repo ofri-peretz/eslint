@@ -12,9 +12,11 @@
  *      map was DEAD — `.npmignore` strips `*.ts`, so each one pointed at a
  *      source file absent from the tarball.
  *
- *   2. AGENTS.md (48 kB across 12 packages). Contributor documentation
- *      ("context for AI coding agents working on <pkg>") with monorepo-root
- *      install steps and `nx` commands this repo no longer uses.
+ *   2. Contributor AGENTS.md (48 kB across 12 packages). ("context for AI
+ *      coding agents working on <pkg>") with monorepo-root install steps and
+ *      `nx` commands this repo no longer uses. A GENERATED consumer AGENTS.md
+ *      (scripts/generate-plugin-agents-md.ts, carries AGENTS_MD_MARKER) is
+ *      the one AGENTS.md that is allowed to ship.
  *
  * WHERE THIS RUNS: `npm run quality` and the release workflow's pre-publish
  * stage, where it inspects the exact artifact STAGE 3 will publish. It is
@@ -42,6 +44,8 @@ import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 
+import { AGENTS_MD_MARKER } from './lib/agents-md-marker.ts';
+
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES_DIR = join(ROOT, 'packages');
 const JSON_OUT = process.argv.includes('--json');
@@ -49,7 +53,7 @@ const JSON_OUT = process.argv.includes('--json');
 /** Patterns that must never appear in a published tarball. */
 const FORBIDDEN: {
   label: string;
-  test: (p: string) => boolean;
+  test: (p: string, readText: () => string) => boolean;
   why: string;
 }[] = [
   {
@@ -59,8 +63,10 @@ const FORBIDDEN: {
   },
   {
     label: 'AGENTS.md',
-    test: (p) => p === 'AGENTS.md' || p.endsWith('/AGENTS.md'),
-    why: 'contributor docs, wrong outside this repo',
+    test: (p, readText) =>
+      (p === 'AGENTS.md' || p.endsWith('/AGENTS.md')) &&
+      !readText().includes(AGENTS_MD_MARKER),
+    why: 'contributor docs, wrong outside this repo (only the generated consumer guide may ship)',
   },
 ];
 
@@ -289,7 +295,9 @@ for (const dir of readdirSync(PACKAGES_DIR)) {
   }
 
   for (const f of meta.files) {
-    const hit = FORBIDDEN.find((r) => r.test(f.path));
+    const hit = FORBIDDEN.find((r) =>
+      r.test(f.path, () => readFileSync(join(distDir, f.path), 'utf8')),
+    );
     if (hit) {
       violations.push({
         pkg: meta.name,
@@ -416,7 +424,7 @@ const failed = FAILURES.some((n) => n > 0);
 
 if (!failed) {
   console.log(
-    '  ✅ No source maps, no AGENTS.md, no commented or indented JS;' +
+    '  ✅ No source maps, no contributor AGENTS.md, no commented or indented JS;' +
       ' every declared export resolves; no build-only manifest fields;' +
       ' metadata complete.\n',
   );

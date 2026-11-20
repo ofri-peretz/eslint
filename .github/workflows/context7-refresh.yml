@@ -1,0 +1,48 @@
+name: Context7 Refresh
+
+# Context7 re-crawls an unclaimed or low-traffic library only every 45 days
+# (upstash/context7 docs: library-updates). This asks it to re-index on a push
+# to main that touches indexed content, using its documented refresh API
+# (docs/integrations/github-actions.mdx: POST /api/v1/refresh, Bearer key).
+#
+# Inert until two one-time steps by the owner: submit ofri-peretz/eslint at
+# context7.com/add-library, then store CONTEXT7_API_KEY as a repository secret.
+# Without the secret the job succeeds as a no-op so it never turns main red.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/docs/content/docs/**'
+      - 'packages/*/README.md'
+      - 'packages/*/AGENTS.md'
+      - 'skills/**'
+      - 'context7.json'
+  workflow_dispatch:
+
+concurrency:
+  group: context7-refresh
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  refresh:
+    name: Refresh Context7 index
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
+    steps:
+      - name: Skip without a key
+        if: env.CONTEXT7_API_KEY == ''
+        run: echo "::notice::CONTEXT7_API_KEY is not set; skipping the Context7 refresh."
+
+      - name: Ask Context7 to re-index
+        if: env.CONTEXT7_API_KEY != ''
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error -X POST https://context7.com/api/v1/refresh \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${CONTEXT7_API_KEY}" \
+            -d '{"libraryName": "/${{ github.repository }}"}'
