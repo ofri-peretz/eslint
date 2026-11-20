@@ -8,7 +8,11 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { resolverChain, resolveWithSettings } from './settings-resolver';
+import {
+  namesUnmodelledResolver,
+  resolverChain,
+  resolveWithSettings,
+} from './settings-resolver';
 
 const ROOT = fs.realpathSync(
   fs.mkdtempSync(path.join(os.tmpdir(), 'settings-resolver-')),
@@ -20,6 +24,10 @@ for (const [rel, text] of Object.entries({
   'alt/in-alt-root.js': '',
   'app/only.js': '',
   'app/only.mts': '',
+  'ws/packages/pkg-a/src/lib/x.js': '',
+  'ws/packages/pkg-a/src/main.js': '',
+  'ws/packages/README.md': '',
+  'ws/shared/s.js': '',
 })) {
   fs.mkdirSync(path.dirname(path.join(ROOT, rel)), { recursive: true });
   fs.writeFileSync(path.join(ROOT, rel), text);
@@ -186,5 +194,103 @@ describe('the resolver chain', () => {
 
   it('nothing resolves: null after the last resolver', () => {
     expect(resolveWithSettings('./missing', FILE, chain)).toBeNull();
+  });
+});
+
+/**
+ * eslint-import-resolver-custom-alias: an `alias` prefix becomes its folder,
+ * relative to the workspace package the file is in when `packages` names one,
+ * else to the working directory; the rest resolves with its `extensions`.
+ */
+describe('custom-alias', () => {
+  const main = path.join(ROOT, 'ws/packages/pkg-a/src/main.js');
+
+  it('a prefix, relative to the package the file is in', () => {
+    expect(
+      resolveWithSettings('@lib/x', main, {
+        'import/resolver': {
+          'eslint-import-resolver-custom-alias': {
+            alias: { '@lib': './src/lib' },
+            packages: [
+              path.join(ROOT, 'ws/packages/*'),
+              path.join(ROOT, 'ws/missing/*'),
+            ],
+          },
+        },
+      }),
+    ).toBe(path.join(ROOT, 'ws/packages/pkg-a/src/lib/x.js'));
+  });
+
+  it('a prefix that is the whole specifier, and a packages entry with no glob', () => {
+    expect(
+      resolveWithSettings('@s', main, {
+        'import/resolver': {
+          'custom-alias': {
+            alias: { '@s': path.join(ROOT, 'ws/shared/s') },
+            packages: [path.join(ROOT, 'ws/packages')],
+          },
+        },
+      }),
+    ).toBe(path.join(ROOT, 'ws/shared/s.js'));
+  });
+
+  it('an empty prefix maps every bare specifier, never a relative one', () => {
+    const settings = {
+      'import/resolver': {
+        'custom-alias': { alias: { '': path.join(ROOT, 'app') } },
+      },
+    };
+    expect(resolveWithSettings('foo', main, settings)).toBe(
+      path.join(ROOT, 'app/foo.js'),
+    );
+    expect(resolveWithSettings('./foo', main, settings)).toBeNull();
+  });
+
+  it('a non-string folder is ignored, and extensions default to .js', () => {
+    expect(
+      resolverChain({
+        'import/resolver': {
+          'custom-alias': { alias: { a: './a', b: 42 } },
+        },
+      }),
+    ).toEqual([
+      {
+        kind: 'alias',
+        extensions: ['.js'],
+        alias: [['a', './a']],
+        packages: [],
+      },
+    ]);
+    expect(
+      resolverChain({ 'import/resolver': { 'custom-alias': true } }),
+    ).toEqual([
+      { kind: 'alias', extensions: ['.js'], alias: [], packages: [] },
+    ]);
+  });
+});
+
+describe('namesUnmodelledResolver', () => {
+  it('is false for node, typescript and custom-alias, and for no settings', () => {
+    expect(namesUnmodelledResolver({})).toBe(false);
+    expect(
+      namesUnmodelledResolver({
+        'import/resolver': {
+          node: true,
+          'eslint-import-resolver-typescript': true,
+          'custom-alias': {},
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it('is true when webpack or another resolver is named', () => {
+    expect(namesUnmodelledResolver({ 'import/resolver': 'webpack' })).toBe(
+      true,
+    );
+    expect(
+      namesUnmodelledResolver({
+        'import/resolver': ['node', { 'my-resolver': {} }],
+      }),
+    ).toBe(true);
   });
 });

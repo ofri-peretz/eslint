@@ -4,11 +4,15 @@
  * MIT license that can be found in the LICENSE file.
  */
 
+import * as path from 'node:path';
+
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
-import { resolveWithSettings } from '../utils/settings-resolver';
+import {
+  RUNTIME_CONDITIONS,
+  resolveWithSettings,
+} from '../utils/settings-resolver';
 
 type MessageIds = 'noDuplicates';
 
@@ -108,16 +112,13 @@ export const noDuplicates = createRule<RuleOptions, MessageIds>({
       description: 'Reports duplicate imports',
     },
     fixable: 'code',
+    // One line naming the module, as eslint-plugin-import's
+    // (`'./dep' imported multiple times.`): a drop-in rule's output is read
+    // beside the incumbent's, so it is not formatLLMMessage's two-line,
+    // icon-and-severity shape. `{{file}}` is the file both resolve to, when
+    // they resolve, relative to the working directory.
     messages: {
-      noDuplicates: formatLLMMessage({
-        icon: MessageIcons.QUALITY,
-        issueName: 'Duplicate Import',
-        description: 'Duplicate import from the same module',
-        severity: 'HIGH',
-        fix: 'Merge imports into a single statement',
-        documentationLink:
-          'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-duplicates.md',
-      }),
+      noDuplicates: "'{{module}}' imported multiple times{{file}}.",
     },
     schema: [
       {
@@ -141,6 +142,7 @@ export const noDuplicates = createRule<RuleOptions, MessageIds>({
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let imports: Map<string, TSESTree.ImportDeclaration[]>;
+    let resolvedTo: Map<TSESTree.ImportDeclaration, string | null>;
     let scopes: Map<TSESTree.Node | null, number>;
     let ignoreQuery: boolean;
     let preferInline: boolean;
@@ -148,6 +150,7 @@ export const noDuplicates = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         imports = new Map<string, TSESTree.ImportDeclaration[]>();
+        resolvedTo = new Map();
         scopes = new Map<TSESTree.Node | null, number>();
         const [options] = context.options;
         ignoreQuery = options?.considerQueryString === false;
@@ -167,11 +170,23 @@ export const noDuplicates = createRule<RuleOptions, MessageIds>({
         // resolver's `paths`). A specifier that does not resolve keeps its
         // own spelling; a query ('./m?raw') stays part of the module.
         //
+        // The module is the one that RUNS: resolved without the `types`
+        // condition. svelte sends `.` and `./store` to one `types` file, and
+        // keying by it made `svelte` and `svelte/store` one module.
+        //
         // `considerQueryString: false` drops the query before any of that.
         const written = node.source.value;
         const spec = ignoreQuery ? written.replace(/\?.*$/, '') : written;
         const target =
-          resolveWithSettings(spec, context.filename, context.settings) ?? spec;
+          resolveWithSettings(
+            spec,
+            context.filename,
+            context.settings,
+            undefined,
+            undefined,
+            RUNTIME_CONDITIONS,
+          ) ?? spec;
+        resolvedTo.set(node, target === spec ? null : target);
         const owner = enclosingModule(node);
         let scopeId = scopes.get(owner);
         if (scopeId === undefined) {
@@ -193,11 +208,17 @@ export const noDuplicates = createRule<RuleOptions, MessageIds>({
         for (const nodes of imports.values()) {
           if (nodes.length < 2) continue;
           const [first, ...rest] = nodes;
-          context.report({ node: first, messageId: 'noDuplicates' });
+          const file = resolvedTo.get(first);
+          const data = {
+            module: first.source.value,
+            file: file ? ` (${path.relative(context.cwd, file)})` : '',
+          };
+          context.report({ node: first, messageId: 'noDuplicates', data });
           for (const duplicate of rest) {
             context.report({
               node: duplicate,
               messageId: 'noDuplicates',
+              data,
               fix(fixer: TSESLint.RuleFixer) {
                 // Simple fix: if both are named imports, merge them
                 const firstHasDefault = first.specifiers.some(
