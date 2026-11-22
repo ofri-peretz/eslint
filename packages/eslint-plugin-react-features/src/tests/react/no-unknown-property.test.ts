@@ -37,6 +37,7 @@ describe('no-unknown-property', () => {
           code: '<input type="text" value="test" />',
         },
         {
+          name: 'className and id are known properties of a div',
           code: '<div className="container" id="main" />',
         },
         {

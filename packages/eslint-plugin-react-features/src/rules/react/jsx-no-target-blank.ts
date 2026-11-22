@@ -35,11 +35,105 @@ type RuleOptions = [Options?];
  * The static text of an attribute value: `"x"`, `{"x"}` and `` {`x`} `` all
  * name `x`. `null` when the value is not statically known.
  */
-function attributeText(value: TSESTree.JSXAttribute['value']): string | null {
-  if (!value) return null;
+function attributeText(
+  value: NonNullable<TSESTree.JSXAttribute['value']>,
+): string | null {
   return staticString(
     value.type === 'JSXExpressionContainer' ? value.expression : value,
   );
+}
+
+type Blankness = 'blank' | 'dynamic' | 'no';
+
+/**
+ * Is this `target` expression `_blank`? A ternary is `_blank` when either
+ * branch is, and not a target at all when both branches are known and
+ * neither is (`cond ? "_self" : ""`, `cond ? undefined : null`). Anything
+ * the file does not spell out is `dynamic`.
+ */
+function blankness(expr: TSESTree.Node): Blankness {
+  const text = staticString(expr);
+  if (text !== null) return text.toLowerCase() === '_blank' ? 'blank' : 'no';
+  if (
+    (expr.type === 'Literal' && expr.value === null) ||
+    (expr.type === 'Identifier' && expr.name === 'undefined')
+  )
+    return 'no';
+  if (expr.type === 'ConditionalExpression') {
+    const a = blankness(expr.consequent);
+    const b = blankness(expr.alternate);
+    if (a === 'blank' || b === 'blank') return 'blank';
+    return a === 'dynamic' || b === 'dynamic' ? 'dynamic' : 'no';
+  }
+  return 'dynamic';
+}
+
+/**
+ * Does this expression read the same on every evaluation? Only then may two
+ * copies of it be taken as one observation: `i++ === 0` is not, because the
+ * second copy sees what the first one changed.
+ */
+function isStable(node: TSESTree.Node): boolean {
+  switch (node.type) {
+    case 'Identifier':
+    case 'Literal':
+    case 'ThisExpression':
+      return true;
+    case 'MemberExpression':
+      return isStable(node.object) && isStable(node.property);
+    case 'UnaryExpression':
+      return node.operator !== 'delete' && isStable(node.argument);
+    case 'BinaryExpression':
+    case 'LogicalExpression':
+      return isStable(node.left) && isStable(node.right);
+    default:
+      return false;
+  }
+}
+
+/**
+ * The `rel` values that can reach the browser together with a `_blank`
+ * target; `null` stands for a value nothing here proves safe. A ternary `rel`
+ * keyed on the same stable condition as a ternary `target` is read on every
+ * branch where the target can be `_blank` (`t ? "_blank" : undefined` pairs
+ * with `t ? "noreferrer" : undefined`); otherwise both branches count.
+ * `target` is `undefined` when a later spread can replace it, since the
+ * explicit target then says nothing about what the element opens with.
+ */
+function relValues(
+  rel: TSESTree.JSXAttribute['value'],
+  target: TSESTree.JSXAttribute['value'] | undefined,
+  textOf: (node: TSESTree.Node) => string,
+  dynamicTargetCounts: boolean,
+): (string | null)[] {
+  const expr = rel?.type === 'JSXExpressionContainer' ? rel.expression : rel;
+  if (!expr) return [null];
+  const text = staticString(expr);
+  if (text !== null) return [text];
+  if (expr.type !== 'ConditionalExpression') return [null];
+  const branches = [expr.consequent, expr.alternate].map((b) =>
+    staticString(b),
+  );
+  const targetExpr =
+    target?.type === 'JSXExpressionContainer' ? target.expression : undefined;
+  if (
+    targetExpr?.type === 'ConditionalExpression' &&
+    isStable(targetExpr.test) &&
+    isStable(expr.test) &&
+    textOf(targetExpr.test) === textOf(expr.test)
+  ) {
+    // No branch that can be `_blank` leaves nothing to check
+    const reachable = [targetExpr.consequent, targetExpr.alternate].flatMap(
+      (b, i) => {
+        const kind = blankness(b);
+        return kind === 'blank' || (kind === 'dynamic' && dynamicTargetCounts)
+          ? [branches[i]]
+          : [];
+      },
+    );
+    return reachable;
+  }
+  return branches;
 }
 
 /**
@@ -75,9 +169,7 @@ function componentAttributes(
       if (typeof name === 'string') {
         found.set(
           name,
-          [attribute]
-            .flat()
-            .filter((a): a is string => typeof a === 'string'),
+          [attribute].flat().filter((a): a is string => typeof a === 'string'),
         );
       }
     }
@@ -165,26 +257,19 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
 
       if (!targetAttr || !targetAttr.value) return false;
 
-      /*
-       * `target={"_self"}` names the same value as `target="_self"`, which is
-       * in the valid set. `staticString` folds `Literal` and zero-expression
-       * `TemplateLiteral` but does not unwrap a `JSXExpressionContainer`, so
-       * the container is opened before folding and both spellings take the
-       * same path. Only a target that is still not statically known after
-       * that is "dynamic" and falls through to the fail-closed branch below.
-       */
-      const staticTarget = attributeText(targetAttr.value);
-      if (staticTarget !== null) {
-        // Browsing-context keywords are ASCII case-insensitive (HTML).
-        return staticTarget.toLowerCase() === '_blank';
-      }
-
-      // Dynamic value - check enforceDynamicLinks option
-      if (enforceDynamicLinks === 'always') {
-        return true;
-      }
-
-      return false;
+      // `target={"_self"}` names the same value as `target="_self"`, and a
+      // ternary is read branch by branch (see `blankness`). Only a target that
+      // is still not known after that is "dynamic" and falls to the
+      // fail-closed `enforceDynamicLinks` default.
+      const kind = blankness(
+        targetAttr.value.type === 'JSXExpressionContainer'
+          ? targetAttr.value.expression
+          : targetAttr.value,
+      );
+      return (
+        kind === 'blank' ||
+        (kind === 'dynamic' && enforceDynamicLinks === 'always')
+      );
     }
 
     function hasExternalHref(
@@ -222,33 +307,6 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
           attr.name.type === 'JSXIdentifier' &&
           attr.name.name === 'rel',
       );
-    }
-
-    // oxlint-disable-next-line consistent-function-scoping
-    function hasNoopener(relAttr: TSESTree.JSXAttribute): boolean {
-      const staticText2 = attributeText(relAttr.value);
-      if (staticText2 !== null) {
-        const relValues = staticText2.toLowerCase().split(/\s+/);
-        return relValues.includes('noopener');
-      }
-
-      return false;
-    }
-
-    // oxlint-disable-next-line consistent-function-scoping
-    function hasNoreferrer(relAttr: TSESTree.JSXAttribute): boolean {
-      const staticText3 = attributeText(relAttr.value);
-      if (staticText3 !== null) {
-        const relValues = staticText3.toLowerCase().split(/\s+/);
-        return relValues.includes('noreferrer');
-      }
-
-      return false;
-    }
-
-    // oxlint-disable-next-line consistent-function-scoping
-    function hasSpreadAttribute(node: TSESTree.JSXOpeningElement): boolean {
-      return node.attributes.some((attr) => attr.type === 'JSXSpreadAttribute');
     }
 
     return {
@@ -293,34 +351,64 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Skip if spread attributes and not warning on them
-        if (hasSpreadAttribute(node) && !warnOnSpreadAttributes) {
+        // A spread may carry `target`, the URL or `rel`; unless asked to
+        // warn about that, such an element is left alone.
+        const spreadAt = node.attributes.findLastIndex(
+          (attr) => attr.type === 'JSXSpreadAttribute',
+        );
+        if (spreadAt !== -1 && !warnOnSpreadAttributes) {
+          return;
+        }
+        const warnSpread = spreadAt !== -1;
+
+        // With a spread in play the target may arrive through it
+        if (!warnSpread && !hasTargetBlank(node)) {
           return;
         }
 
-        if (!hasTargetBlank(node)) {
-          return;
-        }
-
-        // For links, only check external ones
-        const urlAttributes = links ? linkAttributes.get(elementName) : undefined;
+        // For links, only check external ones; an attribute written before
+        // the spread can be overridden by it
+        const urlAttributes = links
+          ? linkAttributes.get(elementName)
+          : undefined;
         if (urlAttributes && !hasExternalHref(node, urlAttributes)) {
-          return;
+          const urlAt = node.attributes.findLastIndex(
+            (attr) =>
+              attr.type === 'JSXAttribute' &&
+              attr.name.type === 'JSXIdentifier' &&
+              urlAttributes.includes(attr.name.name),
+          );
+          if (!(warnSpread && urlAt < spreadAt)) return;
         }
 
         const relAttr = getRelAttribute(node);
-        const hasNoopenerValue = relAttr ? hasNoopener(relAttr) : false;
-        const hasNoreferrerValue = relAttr ? hasNoreferrer(relAttr) : false;
-
-        // noreferrer implies noopener in modern browsers
-        if (hasNoopenerValue || hasNoreferrerValue) {
-          // If allowReferrer is false, we need both noopener and noreferrer (or just noreferrer)
-          if (!allowReferrer && !hasNoreferrerValue) {
-            // Has noopener but not noreferrer - acceptable if allowReferrer is true
-            return; // noopener is sufficient for security
-          }
-          return;
-        }
+        const targetAttr = node.attributes.find(
+          (attr): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'target',
+        );
+        const overridable =
+          warnSpread &&
+          relAttr !== undefined &&
+          node.attributes.indexOf(relAttr) < spreadAt;
+        // noreferrer implies noopener in modern browsers, and noopener is enough on its own
+        const secure =
+          relAttr !== undefined &&
+          !overridable &&
+          relValues(
+            relAttr.value,
+            targetAttr &&
+              !(warnSpread && node.attributes.indexOf(targetAttr) < spreadAt)
+              ? targetAttr.value
+              : undefined,
+            (n) => context.sourceCode.getText(n),
+            enforceDynamicLinks === 'always',
+          ).every((value) => {
+            const tokens = value?.toLowerCase().split(/\s+/) ?? [];
+            return tokens.includes('noopener') || tokens.includes('noreferrer');
+          });
+        if (secure) return;
 
         // Missing rel or rel doesn't have noopener/noreferrer
         context.report({
