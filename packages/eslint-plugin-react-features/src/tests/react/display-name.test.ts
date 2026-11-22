@@ -46,7 +46,7 @@ describe('display-name', () => {
     ruleTester.run('named components', displayName, {
       valid: [
         { name: 'a named function', code: `function Profile() { return <div>Hello</div>; }` },
-        { code: `const Profile = () => { return <div>Hello</div>; };` },
+        { name: 'an arrow function bound to a name', code: `const Profile = () => { return <div>Hello</div>; };` },
         { code: `const Profile = () => <div>Hello</div>;` },
         { code: `const Profile = function() { return <div>Hello</div>; };` },
         { code: `export default function Profile() { return <div>Hello</div>; }` },

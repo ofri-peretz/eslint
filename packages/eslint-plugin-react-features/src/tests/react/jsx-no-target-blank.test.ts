@@ -92,6 +92,7 @@ describe('jsx-no-target-blank', () => {
         errors: [{ messageId: 'noRelWithoutNoopener' }],
       },
       {
+        name: 'an http link opened in a new tab with no rel',
         code: '<a href="http://example.com" target="_blank">Link</a>',
         output:
           '<a href="http://example.com" target="_blank" rel="noopener noreferrer">Link</a>',

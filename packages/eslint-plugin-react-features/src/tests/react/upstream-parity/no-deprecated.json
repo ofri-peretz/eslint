@@ -143,6 +143,581 @@
           "jsx": true
         }
       }
+    },
+    {
+      "kind": "valid",
+      "n": 9,
+      "code": "ReactDOM.findDOMNode(instance);\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 11,
+      "code": "ReactDOM.findDOMNode(instance);\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 0,
+      "code": "React.renderComponent()\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 2,
+      "code": "React.renderComponent()\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 3,
+      "code": "Foo.renderComponent()\n// features: [], parser: default, settings: {\"react\":{\"pragma\":\"Foo\"}}",
+      "errors": 1,
+      "settings": {
+        "react": {
+          "pragma": "Foo"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 5,
+      "code": "Foo.renderComponent()\n// features: [], parser: @typescript-eslint/parser, settings: {\"react\":{\"pragma\":\"Foo\"}}",
+      "errors": 1,
+      "settings": {
+        "react": {
+          "pragma": "Foo"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 6,
+      "code": "/** @jsx Foo */ Foo.renderComponent()\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 8,
+      "code": "/** @jsx Foo */ Foo.renderComponent()\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 9,
+      "code": "this.transferPropsTo()\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 11,
+      "code": "this.transferPropsTo()\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 12,
+      "code": "React.addons.TestUtils\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 14,
+      "code": "React.addons.TestUtils\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 15,
+      "code": "React.addons.classSet()\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 17,
+      "code": "React.addons.classSet()\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 18,
+      "code": "React.render(element, container);\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 20,
+      "code": "React.render(element, container);\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 21,
+      "code": "React.unmountComponentAtNode(container);\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 23,
+      "code": "React.unmountComponentAtNode(container);\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 27,
+      "code": "React.renderToString(element);\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 29,
+      "code": "React.renderToString(element);\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 30,
+      "code": "React.renderToStaticMarkup(element);\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 32,
+      "code": "React.renderToStaticMarkup(element);\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 48,
+      "code": "import {createClass} from 'react';\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 50,
+      "code": "import {createClass} from 'react';\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 51,
+      "code": "import {createClass, PropTypes} from 'react';\n// features: [], parser: default",
+      "errors": 2,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 53,
+      "code": "import {createClass, PropTypes} from 'react';\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 2,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 57,
+      "code": "import {printDOM} from 'react-addons-perf';\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 59,
+      "code": "import {printDOM} from 'react-addons-perf';\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 60,
+      "code": "\n        import ReactPerf from 'react-addons-perf';\n        const {printDOM} = ReactPerf;\n      \n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 62,
+      "code": "\n        import ReactPerf from 'react-addons-perf';\n        const {printDOM} = ReactPerf;\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 63,
+      "code": "React.DOM.div\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 65,
+      "code": "React.DOM.div\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 81,
+      "code": "\n        var Foo = createReactClass({\n          componentWillMount: function() {},\n          componentWillReceiveProps: function() {},\n          componentWillUpdate: function() {}\n        })\n      \n// features: [], parser: default",
+      "errors": 3,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 83,
+      "code": "\n        var Foo = createReactClass({\n          componentWillMount: function() {},\n          componentWillReceiveProps: function() {},\n          componentWillUpdate: function() {}\n        })\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 3,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 87,
+      "code": "\n        import { render } from 'react-dom';\n        ReactDOM.render(<div></div>, container);\n      \n// features: [], parser: default",
+      "errors": 2,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 89,
+      "code": "\n        import { render } from 'react-dom';\n        ReactDOM.render(<div></div>, container);\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 2,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 90,
+      "code": "\n        import { hydrate } from 'react-dom';\n        ReactDOM.hydrate(<div></div>, container);\n      \n// features: [], parser: default",
+      "errors": 2,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 92,
+      "code": "\n        import { hydrate } from 'react-dom';\n        ReactDOM.hydrate(<div></div>, container);\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 2,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 93,
+      "code": "\n        import { unmountComponentAtNode } from 'react-dom';\n        ReactDOM.unmountComponentAtNode(container);\n      \n// features: [], parser: default",
+      "errors": 2,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 95,
+      "code": "\n        import { unmountComponentAtNode } from 'react-dom';\n        ReactDOM.unmountComponentAtNode(container);\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 2,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 96,
+      "code": "\n        import { renderToNodeStream } from 'react-dom/server';\n        ReactDOMServer.renderToNodeStream(element);\n      \n// features: [], parser: default",
+      "errors": 2,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 98,
+      "code": "\n        import { renderToNodeStream } from 'react-dom/server';\n        ReactDOMServer.renderToNodeStream(element);\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 2,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
     }
   ]
 }

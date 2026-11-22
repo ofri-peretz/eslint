@@ -93,6 +93,524 @@
           "jsx": true
         }
       }
+    },
+    {
+      "kind": "valid",
+      "n": 93,
+      "code": "<a target={null} href=\"//example.com\"></a>\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 95,
+      "code": "<a target={null} href=\"//example.com\"></a>\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 162,
+      "code": "<a href={href} target={isExternal ? undefined : \"_blank\"} rel={isExternal ? \"noreferrer\" : \"noopener noreferrer\"} />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 164,
+      "code": "<a href={href} target={isExternal ? undefined : \"_blank\"} rel={isExternal ? \"noreferrer\" : \"noopener noreferrer\"} />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 165,
+      "code": "<a href={href} target={isExternal ? undefined : \"_blank\"} rel={isExternal ? \"noreferrer noopener\" : \"noreferrer\"} />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 167,
+      "code": "<a href={href} target={isExternal ? undefined : \"_blank\"} rel={isExternal ? \"noreferrer noopener\" : \"noreferrer\"} />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 168,
+      "code": "<a href={href} target=\"_blank\" rel={isExternal ? \"noreferrer\" : \"noopener\"} />\n// features: [], parser: default, options: [{\"allowReferrer\":true}]",
+      "options": [
+        {
+          "allowReferrer": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 170,
+      "code": "<a href={href} target=\"_blank\" rel={isExternal ? \"noreferrer\" : \"noopener\"} />\n// features: [], parser: @typescript-eslint/parser, options: [{\"allowReferrer\":true}]",
+      "options": [
+        {
+          "allowReferrer": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 171,
+      "code": "<a href={href} target={isExternal ? \"_blank\" : undefined} rel={isExternal ? \"noreferrer\" : undefined} />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 173,
+      "code": "<a href={href} target={isExternal ? \"_blank\" : undefined} rel={isExternal ? \"noreferrer\" : undefined} />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 174,
+      "code": "<a href={href} target={isSelf ? \"_self\" : \"_blank\"} rel={isSelf ? undefined : \"noreferrer\"} />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 176,
+      "code": "<a href={href} target={isSelf ? \"_self\" : \"_blank\"} rel={isSelf ? undefined : \"noreferrer\"} />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 177,
+      "code": "<a href={href} target={isSelf ? \"_self\" : \"\"} rel={isSelf ? undefined : \"\"} />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 179,
+      "code": "<a href={href} target={isSelf ? \"_self\" : \"\"} rel={isSelf ? undefined : \"\"} />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 180,
+      "code": "<a href={href} target={isExternal ? \"_blank\" : undefined} rel={isExternal ? \"noopener noreferrer\" : undefined} />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 182,
+      "code": "<a href={href} target={isExternal ? \"_blank\" : undefined} rel={isExternal ? \"noopener noreferrer\" : undefined} />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 72,
+      "code": "<a {...someObject}></a>\n// features: [], parser: default, options: [{\"enforceDynamicLinks\":\"always\",\"warnOnSpreadAttributes\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "enforceDynamicLinks": "always",
+          "warnOnSpreadAttributes": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 74,
+      "code": "<a {...someObject}></a>\n// features: [], parser: @typescript-eslint/parser, options: [{\"enforceDynamicLinks\":\"always\",\"warnOnSpreadAttributes\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "enforceDynamicLinks": "always",
+          "warnOnSpreadAttributes": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 75,
+      "code": "<a {...someObject} target=\"_blank\"></a>\n// features: [], parser: default, options: [{\"enforceDynamicLinks\":\"always\",\"warnOnSpreadAttributes\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "enforceDynamicLinks": "always",
+          "warnOnSpreadAttributes": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 77,
+      "code": "<a {...someObject} target=\"_blank\"></a>\n// features: [], parser: @typescript-eslint/parser, options: [{\"enforceDynamicLinks\":\"always\",\"warnOnSpreadAttributes\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "enforceDynamicLinks": "always",
+          "warnOnSpreadAttributes": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 78,
+      "code": "<a href=\"foobar\" {...someObject} target=\"_blank\"></a>\n// features: [], parser: default, options: [{\"enforceDynamicLinks\":\"always\",\"warnOnSpreadAttributes\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "enforceDynamicLinks": "always",
+          "warnOnSpreadAttributes": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 80,
+      "code": "<a href=\"foobar\" {...someObject} target=\"_blank\"></a>\n// features: [], parser: @typescript-eslint/parser, options: [{\"enforceDynamicLinks\":\"always\",\"warnOnSpreadAttributes\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "enforceDynamicLinks": "always",
+          "warnOnSpreadAttributes": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 81,
+      "code": "<a href=\"foobar\" target=\"_blank\" rel=\"noreferrer\" {...someObject}></a>\n// features: [], parser: default, options: [{\"enforceDynamicLinks\":\"always\",\"warnOnSpreadAttributes\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "enforceDynamicLinks": "always",
+          "warnOnSpreadAttributes": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 83,
+      "code": "<a href=\"foobar\" target=\"_blank\" rel=\"noreferrer\" {...someObject}></a>\n// features: [], parser: @typescript-eslint/parser, options: [{\"enforceDynamicLinks\":\"always\",\"warnOnSpreadAttributes\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "enforceDynamicLinks": "always",
+          "warnOnSpreadAttributes": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 84,
+      "code": "<a href=\"foobar\" target=\"_blank\" {...someObject}></a>\n// features: [], parser: default, options: [{\"enforceDynamicLinks\":\"always\",\"warnOnSpreadAttributes\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "enforceDynamicLinks": "always",
+          "warnOnSpreadAttributes": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 86,
+      "code": "<a href=\"foobar\" target=\"_blank\" {...someObject}></a>\n// features: [], parser: @typescript-eslint/parser, options: [{\"enforceDynamicLinks\":\"always\",\"warnOnSpreadAttributes\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "enforceDynamicLinks": "always",
+          "warnOnSpreadAttributes": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 93,
+      "code": "<a href=\"some-link\" {...otherProps} target=\"some-non-blank-target\"></a>\n// features: [], parser: default, options: [{\"warnOnSpreadAttributes\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "warnOnSpreadAttributes": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 95,
+      "code": "<a href=\"some-link\" {...otherProps} target=\"some-non-blank-target\"></a>\n// features: [], parser: @typescript-eslint/parser, options: [{\"warnOnSpreadAttributes\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "warnOnSpreadAttributes": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 96,
+      "code": "<a href=\"some-link\" target=\"some-non-blank-target\" {...otherProps}></a>\n// features: [], parser: default, options: [{\"warnOnSpreadAttributes\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "warnOnSpreadAttributes": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 98,
+      "code": "<a href=\"some-link\" target=\"some-non-blank-target\" {...otherProps}></a>\n// features: [], parser: @typescript-eslint/parser, options: [{\"warnOnSpreadAttributes\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "warnOnSpreadAttributes": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 147,
+      "code": "<form action={action} {...spread} />\n// features: [], parser: default, options: [{\"forms\":true,\"warnOnSpreadAttributes\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "forms": true,
+          "warnOnSpreadAttributes": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 149,
+      "code": "<form action={action} {...spread} />\n// features: [], parser: @typescript-eslint/parser, options: [{\"forms\":true,\"warnOnSpreadAttributes\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "forms": true,
+          "warnOnSpreadAttributes": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
     }
   ]
 }

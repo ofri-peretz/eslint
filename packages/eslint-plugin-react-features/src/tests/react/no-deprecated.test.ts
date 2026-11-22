@@ -27,7 +27,7 @@ describe('no-deprecated', () => {
     valid: [
       // Modern React APIs
       { name: 'a current API', code: 'import { createRoot } from "react-dom/client";' },
-      'import { StrictMode } from "react";',
+      { name: 'a current React export', code: 'import { StrictMode } from "react";' },
       'import React from "react"; React.createElement("div");',
       // Regular code
       'const render = () => {};',

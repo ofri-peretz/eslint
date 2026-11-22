@@ -141,6 +141,19 @@ export const displayName = createRule<RuleOptions, MessageIds>({
             propertyName(callee) === createClass;
     };
 
+    /** Does the `createReactClass` spec in this call name itself with `displayName`? */
+    const hasDisplayNameKey = (node: TSESTree.CallExpression): boolean => {
+      const spec = node.arguments[0];
+      return (
+        spec?.type === AST_NODE_TYPES.ObjectExpression &&
+        spec.properties.some(
+          (p) =>
+            p.type === AST_NODE_TYPES.Property &&
+            objectKeyName(p) === 'displayName',
+        )
+      );
+    };
+
     const isCreateContext = (node: TSESTree.Node): boolean =>
       node.type === AST_NODE_TYPES.CallExpression &&
       isReactApi(node.callee, scopeOf(node), 'createContext');
@@ -165,8 +178,24 @@ export const displayName = createRule<RuleOptions, MessageIds>({
         reported = new WeakSet();
       },
 
-      /** `X.displayName = …` names `X`; `X = createContext()` needs it. */
+      /**
+       * `module.exports = () => <div />` and `module.exports =
+       * createReactClass({...})`: the export carries no name, and `exports`
+       * is a property, which names nothing.
+       */
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        if (isModuleExports(node.left)) {
+          const value = node.right;
+          if (isFunctionNode(value) && !value.id && renders(value.body)) {
+            report(value);
+          } else if (
+            value.type === AST_NODE_TYPES.CallExpression &&
+            isCreateClassCall(value) &&
+            !hasDisplayNameKey(value)
+          ) {
+            report(value);
+          }
+        }
         if (
           node.left.type === AST_NODE_TYPES.MemberExpression &&
           propertyName(node.left) === 'displayName'
@@ -223,15 +252,7 @@ export const displayName = createRule<RuleOptions, MessageIds>({
        */
       CallExpression(node: TSESTree.CallExpression) {
         if (ignoreTranspilerName && isCreateClassCall(node)) {
-          const spec = node.arguments[0];
-          const named =
-            spec?.type === AST_NODE_TYPES.ObjectExpression &&
-            spec.properties.some(
-              (p) =>
-                p.type === AST_NODE_TYPES.Property &&
-                objectKeyName(p) === 'displayName',
-            );
-          if (!named) needsExplicitName(node);
+          if (!hasDisplayNameKey(node)) needsExplicitName(node);
           return;
         }
         if (
@@ -279,6 +300,18 @@ export const displayName = createRule<RuleOptions, MessageIds>({
       'FunctionDeclaration, FunctionExpression, ArrowFunctionExpression'(
         node: FunctionNode,
       ) {
+        // A component made inside another function and handed straight back
+        // (`const renderer = (a) => (item) => <li />`) has no binding of its
+        // own to take a name from.
+        if (
+          node.type !== AST_NODE_TYPES.FunctionDeclaration &&
+          !node.id &&
+          isReturned(node) &&
+          returnsJsx(node)
+        ) {
+          report(node);
+          return;
+        }
         if (!ignoreTranspilerName) return;
         const parent = node.parent;
         const method =
@@ -315,7 +348,7 @@ function referenceText(
   // Every step either climbs or returns; the walk ends at a non-name ancestor.
   for (;;) {
     const parent = current.parent as TSESTree.Node;
-    if (isReactWrapperCall(parent, scopeOf)) {
+    if (isReactWrapperCall(parent, scopeOf) || isTypeWrapper(parent)) {
       current = parent;
     } else if (
       parent.type === AST_NODE_TYPES.VariableDeclarator &&
@@ -349,7 +382,10 @@ function hasInferableName(
   scopeOf: (node: TSESTree.Node) => Scope,
 ): boolean {
   let current: TSESTree.Node | undefined = node.parent;
-  while (current && isReactWrapperCall(current, scopeOf)) {
+  while (
+    current &&
+    (isReactWrapperCall(current, scopeOf) || isTypeWrapper(current))
+  ) {
     current = current.parent;
   }
   switch (current?.type) {
@@ -378,6 +414,36 @@ function isReactWrapperCall(
   return (
     isReactApi(node.callee, scope, 'memo') ||
     isReactApi(node.callee, scope, 'forwardRef')
+  );
+}
+
+/** `x as T`, `x satisfies T`, `x!`, `<T>x`: type syntax that changes nothing at runtime. */
+function isTypeWrapper(node: TSESTree.Node): boolean {
+  return (
+    node.type === AST_NODE_TYPES.TSAsExpression ||
+    node.type === AST_NODE_TYPES.TSSatisfiesExpression ||
+    node.type === AST_NODE_TYPES.TSNonNullExpression ||
+    node.type === AST_NODE_TYPES.TSTypeAssertion
+  );
+}
+
+/** `module.exports`, the assignment target of a CommonJS default export. */
+function isModuleExports(node: TSESTree.Node): boolean {
+  return (
+    node.type === AST_NODE_TYPES.MemberExpression &&
+    node.object.type === AST_NODE_TYPES.Identifier &&
+    node.object.name === 'module' &&
+    propertyName(node) === 'exports'
+  );
+}
+
+/** Is this function what an enclosing function returns (`return () => …` or `a => b => …`)? */
+function isReturned(node: FunctionNode): boolean {
+  const parent = node.parent;
+  return (
+    parent.type === AST_NODE_TYPES.ReturnStatement ||
+    (parent.type === AST_NODE_TYPES.ArrowFunctionExpression &&
+      parent.body === node)
   );
 }
 
