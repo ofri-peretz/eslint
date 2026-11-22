@@ -63,11 +63,14 @@ interface ButtonProps {
 
 - Boolean *variables* (not props) are not flagged — this rule targets the API surface.
 - A boolean named through a type alias (`isLooped: Flag`) is not followed.
+- A props type reached through `forwardRef<...>`, `memo` or a props type named without a `Props` suffix is not read as props.
 
 ## Known False Positives
 
-- Every property signature is read as a prop, including types that are not a
-  component's props (`interface User { isAdmin: boolean }`).
+- None known for a data type: only a member of an interface or type alias whose name
+  ends in `Props`, of an inline parameter type of a component (a PascalCase function,
+  or one that returns JSX, first parameter), or of the type argument of `FC<...>` is
+  read as a prop (`interface User { isAdmin: boolean }` is left alone).
 
 ## Related
 
