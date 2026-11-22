@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-maintainability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.0.5
+
+### Patch Changes
+
+- **🐛 Fix** — `no-silent-errors` accepts a catch that says why it is empty
+
+  Defaults `allowWithComment` to `true`, as ESLint core `no-empty` does. A comment inside the block that gives a reason in prose (three or more words, not a placeholder), or a same-line comment after the closing brace, documents the catch. A bare `catch {}`, `// Empty` and `/* handle later */` still report. Set `allowWithComment: false` to restore the old behaviour.
+
 ## 4.0.4
 
 ### Patch Changes

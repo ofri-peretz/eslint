@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-operability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.0.6
+
+### Patch Changes
+
+- **🐛 Fix** — `no-console-log` and `no-debug-code-in-production` skip the module that is the logger
+
+  A logger has to call `console.log` somewhere. A module named `logger`, `logging`, `log`, `fooLogger` or `foo-logger` is now skipped by both rules, behind a new `ignoreLoggerModules` option (default `true`). `catalog.ts`, `blog.ts`, `loggerFactory.ts` and every other file still report.
+
 ## 5.0.5
 
 ### Patch Changes
