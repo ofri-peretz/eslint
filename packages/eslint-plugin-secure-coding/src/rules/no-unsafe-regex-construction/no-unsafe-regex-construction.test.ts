@@ -150,6 +150,7 @@ describe('no-unsafe-regex-construction', () => {
         invalid: [
           // Dynamic flags from variable
           {
+            name: 'flags read from a variable are dynamic, not a closed set of literals',
             code: 'const regex = new RegExp("^test$", flags);',
             errors: [{ messageId: 'unsafeRegexConstruction' }],
           },

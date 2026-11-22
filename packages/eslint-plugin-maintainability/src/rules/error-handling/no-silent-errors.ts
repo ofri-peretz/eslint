@@ -18,7 +18,10 @@ type MessageIds =
   'silentError' | 'addErrorLogging' | 'addErrorHandling' | 'rethrowError';
 
 export interface Options {
-  /** Allow empty catch if comment explains why. Default: false */
+  /**
+   * Allow an empty catch whose comment explains why. Default: true, as in
+   * ESLint core `no-empty`: a catch that documents its decision is not silent.
+   */
   allowWithComment?: boolean;
 
   /** Ignore in test files. Default: true */
@@ -50,6 +53,23 @@ function isEmptyCatchBlock(catchClause: TSESTree.CatchClause): boolean {
   );
 
   return nonEmptyStatements.length === 0;
+}
+
+/**
+ * A comment that gives a REASON, as opposed to marking the spot: three or more
+ * words of prose that do not open with a placeholder. `// Empty`, `// nothing`
+ * and `// handle later` fail; `// Files referenced by HTML may not exist yet.` passes.
+ */
+function isReasonProse(text: string): boolean {
+  const words = text
+    .replace(/[*/\s]+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter((word) => /[a-z]/i.test(word));
+  if (words.length < 3) return false;
+  return !/^(todo|fixme|xxx|hack|tbd|placeholder|handle|empty|nothing)\b/i.test(
+    words.join(' '),
+  );
 }
 
 /**
@@ -110,7 +130,22 @@ function hasExplanatoryComment(
   // a stray comment far below disarming every catch above it.
   for (const comment of sourceCode.getCommentsInside(catchClause.body)) {
     const commentText = comment.value.toLowerCase();
-    if (explanatoryPatterns.some((pattern) => pattern.test(commentText))) {
+    if (
+      explanatoryPatterns.some((pattern) => pattern.test(commentText)) ||
+      isReasonProse(comment.value)
+    ) {
+      return true;
+    }
+  }
+
+  // A reason written after the closing brace on the same line:
+  // `catch {} // an error is thrown when the length is incorrect`.
+  for (const comment of comments) {
+    if (
+      comment.loc.start.line === catchClause.loc.end.line &&
+      comment.range[0] >= catchClause.range[1] &&
+      isReasonProse(comment.value)
+    ) {
       return true;
     }
   }
@@ -172,7 +207,7 @@ export const noSilentErrors = createRule<RuleOptions, MessageIds>({
         properties: {
           allowWithComment: {
             type: 'boolean',
-            default: false,
+            default: true,
             description: 'Allow empty catch if comment explains why',
           },
           ignoreInTests: {
@@ -187,7 +222,7 @@ export const noSilentErrors = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      allowWithComment: false,
+      allowWithComment: true,
       ignoreInTests: true,
     },
   ],
@@ -235,7 +270,7 @@ export const noSilentErrors = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        ({ allowWithComment = false, ignoreInTests = true } = options || {});
+        ({ allowWithComment = true, ignoreInTests = true } = options || {});
 
         const filename = context.filename;
         // `ignoreInTests` is documented ecosystem-wide as "Skip this rule in

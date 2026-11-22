@@ -32,6 +32,8 @@ The auto-fix replaces `let` or `var` with `const`. If the variable is later reas
 
 An export list exports the same live binding, so `let count = 0; export { count }` (or `export { count as total }`) is reported too, on the specifier and without an auto-fix.
 
+Ambient declarations are not reported: a `.d.ts` file, a `declare module` / `declare namespace` / `declare global` block, and `export declare let`. They describe a binding that lives elsewhere, importers cannot reassign them, and the auto-fix to `const` would rewrite a published type.
+
 `export const`, `export function`, and `export class` are all fine and are never flagged. Neither is `export default count`, which exports the value rather than the binding.
 
 ### Why This Matters

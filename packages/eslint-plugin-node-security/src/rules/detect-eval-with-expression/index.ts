@@ -190,6 +190,25 @@ function isStaticStringNode(node: TSESTree.Node): boolean {
 }
 
 /**
+ * `Function('return this')` — the portable way to ask the engine for the global
+ * object (lodash, core-js, regenerator-runtime, Vite's env.ts). The body is
+ * fixed, there is nothing to steer, and it takes no parameters. Only that probe:
+ * `return this`, `return globalThis`, with an optional strict-mode prologue and
+ * a trailing semicolon. Any other literal body is a program and is judged as one.
+ */
+// Quote characters are written \x22 / \x27 so the audit's comment stripper (which
+// keeps string literals) is not fooled into reading the rest of the file as one.
+const GLOBAL_PROBE =
+  /^\s*(?:[\x22\x27]use strict[\x22\x27]\s*;\s*)?return\s+(?:this|globalThis)\s*;?\s*$/;
+function isGlobalObjectProbe(
+  args: readonly TSESTree.CallExpressionArgument[],
+): boolean {
+  if (args.length !== 1) return false;
+  // `null` (an argument that is not a static string) has no `match`.
+  return staticString(args[0])?.match(GLOBAL_PROBE) != null;
+}
+
+/**
  * Generate refactoring steps based on pattern.
  * Module-scope so it is directly unit-testable (Layer-2).
  */
@@ -551,6 +570,11 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         // drop-in gate measured on this rule.
         if (node.arguments.length === 0) return;
 
+        // `Function('return this')` asks for the global object; see GLOBAL_PROBE.
+        if (evalName === 'Function' && isGlobalObjectProbe(node.arguments)) {
+          return;
+        }
+
         // Skip a program the author wrote out when literals are allowed —
         // including one hop of single-write constant, the same reading the vm
         // sinks use.
@@ -614,6 +638,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         node.callee.type === 'Identifier' &&
         node.callee.name === 'Function' &&
         isGlobalBinding(node.callee) &&
+        !isGlobalObjectProbe(node.arguments) &&
         // `new Function('price', 'total = price * 2')` is an eval-like sink
         // whose parameters and body the author wrote out: with literals
         // allowed, it is as exempt as `eval('…')`.
