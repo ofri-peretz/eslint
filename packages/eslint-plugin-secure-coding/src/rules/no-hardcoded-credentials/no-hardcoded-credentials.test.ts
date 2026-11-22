@@ -1324,7 +1324,10 @@ describe('no-hardcoded-credentials', () => {
           code: `throw new Error({ errors: { password: 'incorrectPassword' } });`,
         },
         { code: `const errors = { password: 'incorrectPassword' };` },
-        { code: `const e = { token: 'notFoundToken' };` },
+        {
+          name: 'a camelCase message constant under a token key',
+          code: `const e = { token: 'notFoundToken' };`,
+        },
         { code: `const e = { secret: 'missingSecret' };` },
         // Identifier-shaped constants (the vercel/ai FP class), now excluded
         // by shape even inside a credential-named slot.
