@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.4.4
+
+### Patch Changes
+
+- **🐛 Fix** — `no-hardcoded-credentials` no longer reports a word identifier with one trailing colon, a key or clipboard prefix such as `'huly-table-metadata:'` under a `TOKEN`-named constant (an adopter had to disable it). A colon between a label and a payload (`user:Zk9f...`, `admin:...`), and a dense value that merely ends in a colon, still report.
+
 ## 6.4.3
 
 ### Patch Changes
