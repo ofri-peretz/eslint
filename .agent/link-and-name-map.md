@@ -50,7 +50,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-postgresql-security` | 3.0.6 | `postgresql-security/` | `pg/` | `plugin-postgresql-security` | security | `postgresql` | ✅ | ✅ | ✅ |
 | `eslint-plugin-prisma-security` | 2.0.4 | `prisma-security/` | — | `plugin-prisma-security` | security | `prisma` | ✅ | ✅ | ✅ |
 | `eslint-plugin-react-a11y` | 3.0.6 | `react-a11y/` | — | `plugin-react-a11y` | quality | `react` | ✅ | ✅ | ✅ |
-| `eslint-plugin-react-features` | 2.2.0 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
+| `eslint-plugin-react-features` | 2.3.0 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-reliability` | 5.0.6 | `reliability/` | — | `plugin-reliability` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-secure-coding` | 6.4.4 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sequelize-security` | 2.0.4 | `sequelize-security/` | — | `plugin-sequelize-security` | security | `sequelize` | ✅ | ✅ | ✅ |
