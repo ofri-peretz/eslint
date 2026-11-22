@@ -46,6 +46,7 @@ interface ReactSettings {
   createClass?: unknown;
   version?: unknown;
   defaultVersion?: unknown;
+  runtime?: unknown;
 }
 
 function reactSettings(context: Context): ReactSettings {
@@ -68,6 +69,21 @@ export function getPragma(context: Context): string {
     if (typeof configured === 'string' && configured) pragma = configured;
   }
   return JS_IDENTIFIER.test(pragma) ? pragma : 'React';
+}
+
+/**
+ * The JSX runtime: `settings.react.runtime`, read the way eslint-plugin-react
+ * reads it (`'automatic'` or `'classic'`, default `'classic'`). The automatic
+ * runtime (React 17+, `@jsxRuntime automatic` or a bundler/framework default
+ * like Next.js' `"jsx": "react-jsx"`) compiles JSX to its own import and
+ * needs no `React` binding in scope — unlike a file-level `@jsxRuntime`
+ * comment, this is a project-wide default a config sets once, so every
+ * JSX file does not need its own pragma comment (#1550).
+ */
+export function getJsxRuntime(context: Context): 'classic' | 'automatic' {
+  return reactSettings(context).runtime === 'automatic'
+    ? 'automatic'
+    : 'classic';
 }
 
 /** The fragment binding: `settings.react.fragment`, else `Fragment`. */
