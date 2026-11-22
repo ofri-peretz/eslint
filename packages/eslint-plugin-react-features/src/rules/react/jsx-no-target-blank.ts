@@ -69,16 +69,42 @@ function blankness(expr: TSESTree.Node): Blankness {
 }
 
 /**
+ * Does this expression read the same on every evaluation? Only then may two
+ * copies of it be taken as one observation: `i++ === 0` is not, because the
+ * second copy sees what the first one changed.
+ */
+function isStable(node: TSESTree.Node): boolean {
+  switch (node.type) {
+    case 'Identifier':
+    case 'Literal':
+    case 'ThisExpression':
+      return true;
+    case 'MemberExpression':
+      return isStable(node.object) && isStable(node.property);
+    case 'UnaryExpression':
+      return node.operator !== 'delete' && isStable(node.argument);
+    case 'BinaryExpression':
+    case 'LogicalExpression':
+      return isStable(node.left) && isStable(node.right);
+    default:
+      return false;
+  }
+}
+
+/**
  * The `rel` values that can reach the browser together with a `_blank`
  * target; `null` stands for a value nothing here proves safe. A ternary `rel`
- * keyed on the same condition as a ternary `target` is read on the branch
- * where the target is `_blank` (`t ? "_blank" : undefined` pairs with
- * `t ? "noreferrer" : undefined`).
+ * keyed on the same stable condition as a ternary `target` is read on every
+ * branch where the target can be `_blank` (`t ? "_blank" : undefined` pairs
+ * with `t ? "noreferrer" : undefined`); otherwise both branches count.
+ * `target` is `undefined` when a later spread can replace it, since the
+ * explicit target then says nothing about what the element opens with.
  */
 function relValues(
   rel: TSESTree.JSXAttribute['value'],
   target: TSESTree.JSXAttribute['value'] | undefined,
   textOf: (node: TSESTree.Node) => string,
+  dynamicTargetCounts: boolean,
 ): (string | null)[] {
   const expr = rel?.type === 'JSXExpressionContainer' ? rel.expression : rel;
   if (!expr) return [null];
@@ -92,12 +118,20 @@ function relValues(
     target?.type === 'JSXExpressionContainer' ? target.expression : undefined;
   if (
     targetExpr?.type === 'ConditionalExpression' &&
+    isStable(targetExpr.test) &&
+    isStable(expr.test) &&
     textOf(targetExpr.test) === textOf(expr.test)
   ) {
-    const blankAt = [targetExpr.consequent, targetExpr.alternate].findIndex(
-      (b) => staticString(b)?.toLowerCase() === '_blank',
+    // No branch that can be `_blank` leaves nothing to check
+    const reachable = [targetExpr.consequent, targetExpr.alternate].flatMap(
+      (b, i) => {
+        const kind = blankness(b);
+        return kind === 'blank' || (kind === 'dynamic' && dynamicTargetCounts)
+          ? [branches[i]]
+          : [];
+      },
     );
-    return [blankAt === -1 ? null : branches[blankAt]];
+    return reachable;
   }
   return branches;
 }
@@ -362,8 +396,14 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
         const secure =
           relAttr !== undefined &&
           !overridable &&
-          relValues(relAttr.value, targetAttr?.value, (n) =>
-            context.sourceCode.getText(n),
+          relValues(
+            relAttr.value,
+            targetAttr &&
+              !(warnSpread && node.attributes.indexOf(targetAttr) < spreadAt)
+              ? targetAttr.value
+              : undefined,
+            (n) => context.sourceCode.getText(n),
+            enforceDynamicLinks === 'always',
           ).every((value) => {
             const tokens = value?.toLowerCase().split(/\s+/) ?? [];
             return tokens.includes('noopener') || tokens.includes('noreferrer');

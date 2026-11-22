@@ -128,7 +128,10 @@ export const displayName = createRule<RuleOptions, MessageIds>({
       context.sourceCode.getScope(node);
     /** Does this subtree render: JSX, or React's `createElement`? */
     const renders = (node: TSESTree.Node): boolean =>
-      containsRender(node, scopeOf);
+      containsRender(node, scopeOf, true);
+    /** Does this function's own body render, not a component declared inside it? */
+    const rendersOwn = (node: TSESTree.Node): boolean =>
+      containsRender(node, scopeOf, false);
 
     /** `createReactClass({...})` / `React.createClass({...})`, by name as the settings spell it. */
     const isCreateClassCall = (node: TSESTree.CallExpression): boolean => {
@@ -186,14 +189,15 @@ export const displayName = createRule<RuleOptions, MessageIds>({
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         if (isModuleExports(node.left)) {
           const value = node.right;
-          if (isFunctionNode(value) && !value.id && renders(value.body)) {
-            report(value);
+          // Queued, not reported: a later `module.exports.displayName = …` names it.
+          if (isFunctionNode(value) && !value.id && rendersOwn(value.body)) {
+            unnamed.push({ node: value, ref: 'module.exports' });
           } else if (
             value.type === AST_NODE_TYPES.CallExpression &&
             isCreateClassCall(value) &&
             !hasDisplayNameKey(value)
           ) {
-            report(value);
+            unnamed.push({ node: value, ref: 'module.exports' });
           }
         }
         if (
@@ -439,11 +443,16 @@ function isModuleExports(node: TSESTree.Node): boolean {
 
 /** Is this function what an enclosing function returns (`return () => …` or `a => b => …`)? */
 function isReturned(node: FunctionNode): boolean {
-  const parent = node.parent;
+  // `return (() => <div />) as FC` is the same return
+  let current: TSESTree.Node = node;
+  while (isTypeWrapper(current.parent as TSESTree.Node)) {
+    current = current.parent as TSESTree.Node;
+  }
+  const parent = current.parent as TSESTree.Node;
   return (
     parent.type === AST_NODE_TYPES.ReturnStatement ||
     (parent.type === AST_NODE_TYPES.ArrowFunctionExpression &&
-      parent.body === node)
+      parent.body === current)
   );
 }
 
@@ -482,6 +491,7 @@ function hasDisplayNameProperty(
 function containsRender(
   node: TSESTree.Node,
   scopeOf: (node: TSESTree.Node) => Scope,
+  nested: boolean,
 ): boolean {
   if (
     node.type === AST_NODE_TYPES.JSXElement ||
@@ -490,6 +500,16 @@ function containsRender(
       isReactApi(node.callee, scopeOf(node), 'createElement'))
   ) {
     return true;
+  }
+
+  // A component declared inside is not what this body renders
+  if (
+    !nested &&
+    (isFunctionNode(node) ||
+      node.type === AST_NODE_TYPES.ClassDeclaration ||
+      node.type === AST_NODE_TYPES.ClassExpression)
+  ) {
+    return false;
   }
 
   for (const key in node) {
@@ -503,11 +523,12 @@ function containsRender(
       for (const item of child) {
         // Array holes are null, and `range` is a pair of numbers.
         if (item && typeof item === 'object' && 'type' in item) {
-          if (containsRender(item as TSESTree.Node, scopeOf)) return true;
+          if (containsRender(item as TSESTree.Node, scopeOf, nested))
+            return true;
         }
       }
     } else if ('type' in child) {
-      if (containsRender(child as TSESTree.Node, scopeOf)) return true;
+      if (containsRender(child as TSESTree.Node, scopeOf, nested)) return true;
     }
   }
 

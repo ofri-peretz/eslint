@@ -145,6 +145,7 @@ const ONE_WORD = words(`
   widths x x1 x2 xmlns y y1 y2 z
   property ref key children results security controls
   popover popovertarget popovertargetaction
+  is scoped
 `);
 
 /** Names React spells in camelCase (HTML first, then SVG, then React's own and event handlers). */
@@ -170,6 +171,7 @@ const CAMEL_CASE = words(`
   targetY textLength transformOrigin viewBox viewTarget xChannelSelector
   xmlnsXlink yChannelSelector zoomAndPan
   className dangerouslySetInnerHTML defaultValue defaultChecked htmlFor
+  allowReorder autoReverse externalResourcesRequired
   suppressContentEditableWarning suppressHydrationWarning
   autoPictureInPicture controlsList disablePictureInPicture
   disableRemotePlayback popoverTarget popoverTargetAction
@@ -200,28 +202,32 @@ const CAPTURE_OF = words(`
   onLoadStart onPause onPlay onPlaying onProgress onRateChange onSeeked
   onSeeking onStalled onSuspend onTimeUpdate onVolumeChange onWaiting onSelect
   onTouchCancel onTouchEnd onTouchMove onTouchStart onScroll onWheel
-  onAnimationEnd onAnimationStart onTransitionEnd onAuxClick onClick
+  onAnimationEnd onAnimationIteration onAnimationStart onTransitionEnd
+  onAuxClick onClick
   onContextMenu onDoubleClick onDrag onDragEnd onDragEnter onDragExit
   onDragLeave onDragOver onDragStart onDrop onMouseDown onMouseMove onMouseOut
   onMouseOver onMouseUp
 `);
 
-/** Pointer events, added in React 16.4. */
+/**
+ * Pointer events, added in React 16.4. Enter and leave do not bubble, so React
+ * registers no capture twin of them; the rest have both.
+ */
 const POINTER_EVENTS = [
-  'onGotPointerCapture',
-  'onLostPointerCapture',
-  'onPointerCancel',
-  'onPointerDown',
+  ...[
+    'onGotPointerCapture',
+    'onLostPointerCapture',
+    'onPointerCancel',
+    'onPointerDown',
+    'onPointerMove',
+    'onPointerOut',
+    'onPointerOver',
+    'onPointerUp',
+  ].flatMap((n) => [n, `${n}Capture`]),
   'onPointerEnter',
   'onPointerLeave',
-  'onPointerMove',
-  'onPointerOut',
-  'onPointerOver',
-  'onPointerUp',
-].flatMap((n) => [n, `${n}Capture`]);
+];
 
-// Camel-case spellings come first: a case-insensitive match of `popovertarget`
-// must land on React's `popoverTarget`, not on the one-word lowercase twin.
 const ALWAYS_KNOWN = [
   ...CAMEL_CASE,
   ...ONE_WORD,
@@ -338,6 +344,7 @@ export const ATTRIBUTE_TAGS: Readonly<Record<string, readonly string[]>> =
         'audio',
         'video',
         'img',
+        'image',
         'link',
         'source',
         'script',
@@ -347,6 +354,7 @@ export const ATTRIBUTE_TAGS: Readonly<Record<string, readonly string[]>> =
       onLoad: [
         'script',
         'img',
+        'image',
         'link',
         'picture',
         'iframe',

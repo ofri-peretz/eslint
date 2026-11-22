@@ -42,6 +42,21 @@ const has = (table: object, key: string): boolean =>
 const isValidDataAttribute = (name: string): boolean =>
   !/^data-xml/i.test(name) && /^data-[^:]*$/.test(name);
 
+/**
+ * Does this `is` attribute make the element a customized built-in
+ * (`<div is="x-y">`)? `is={null}`, `is={undefined}` and `is={false}` do not:
+ * React renders an ordinary element and still validates its props.
+ */
+const makesCustomElement = (attr: TSESTree.JSXAttribute): boolean => {
+  const value = attr.value;
+  if (value?.type !== 'JSXExpressionContainer') return true;
+  const expr = value.expression;
+  return !(
+    (expr.type === 'Literal' && (expr.value === null || expr.value === false)) ||
+    (expr.type === 'Identifier' && expr.name === 'undefined')
+  );
+};
+
 /** A name written in lowercase, without a hyphen, and not a customized built-in (`is="x-y"`). */
 const isHostTag = (opening: TSESTree.JSXOpeningElement): boolean =>
   opening.name.type === 'JSXIdentifier' &&
@@ -50,7 +65,8 @@ const isHostTag = (opening: TSESTree.JSXOpeningElement): boolean =>
     (a) =>
       a.type === 'JSXAttribute' &&
       a.name.type === 'JSXIdentifier' &&
-      a.name.name === 'is',
+      a.name.name === 'is' &&
+      makesCustomElement(a),
   );
 
 const docs = 'https://react.dev/learn/writing-markup-with-jsx#html-attributes';

@@ -232,8 +232,12 @@ const AMBIENT_GLOBALS: Readonly<Record<string, string>> = {
   Perf: 'ReactPerf',
 };
 
+/**
+ * `preact/compat` is the documented drop-in for `react`, so its exports follow
+ * React's deprecations. Preact's own entry point is not: its `render` is not
+ * `React.render`, and reading it as one reported every Preact app.
+ */
 const PREACT_AS_REACT: Readonly<Record<string, string>> = {
-  preact: 'react',
   'preact/hooks': 'react',
   'preact/compat': 'react',
 };
@@ -325,13 +329,18 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
         return path.length === 1 ? `this.${path[0]}` : null;
       }
       if (current.type !== AST_NODE_TYPES.Identifier) return null;
-      for (let s: TSESLint.Scope.Scope | null = scope; s; s = s.upper) {
-        if ((s.set.get(current.name)?.defs.length ?? 0) > 0) return null;
-      }
+      if (isDeclared(current.name, scope)) return null;
       const root =
         AMBIENT_GLOBALS[current.name] ??
         (current.name === pragma ? 'React' : undefined);
       return root ? [root, ...path].join('.') : null;
+    }
+
+    function isDeclared(name: string, scope: TSESLint.Scope.Scope): boolean {
+      for (let s: TSESLint.Scope.Scope | null = scope; s; s = s.upper) {
+        if ((s.set.get(name)?.defs.length ?? 0) > 0) return true;
+      }
+      return false;
     }
 
     function check(
@@ -352,12 +361,29 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
       )
         return false;
       const callee = call.callee;
+      const scope = context.sourceCode.getScope(call);
+      // Bound to a module: React's own `createClass`, or `create-react-class`.
+      const binding = resolveModuleBinding(callee, scope, {
+        equivalents: PREACT_AS_REACT,
+      });
+      if (binding) {
+        return binding.module === 'react'
+          ? binding.path.length === 1 && binding.path[0] === 'createClass'
+          : binding.module === 'create-react-class' && binding.path.length <= 1;
+      }
+      // Not bound: only a name the file never declares is the ambient factory
+      // (`createReactClass` or `React.createClass`, as the settings spell them).
       const names = new Set([createClass, 'createClass']);
-      return callee.type === AST_NODE_TYPES.Identifier
-        ? names.has(callee.name)
-        : callee.type === AST_NODE_TYPES.MemberExpression &&
-            callee.object.type === AST_NODE_TYPES.Identifier &&
-            names.has(propertyName(callee) ?? '');
+      if (callee.type === AST_NODE_TYPES.Identifier) {
+        return names.has(callee.name) && !isDeclared(callee.name, scope);
+      }
+      return (
+        callee.type === AST_NODE_TYPES.MemberExpression &&
+        callee.object.type === AST_NODE_TYPES.Identifier &&
+        !isDeclared(callee.object.name, scope) &&
+        (callee.object.name === 'React' || callee.object.name === pragma) &&
+        names.has(propertyName(callee) ?? '')
+      );
     }
 
     function enterClass(
@@ -409,12 +435,17 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
       ImportSpecifier(node: TSESTree.ImportSpecifier) {
         const source = (node.parent as TSESTree.ImportDeclaration).source.value;
         const root = MODULE_GLOBALS[source];
-        if (!root || node.imported.type !== AST_NODE_TYPES.Identifier) return;
+        if (!root) return;
+        // `import { createClass }` and `import { "createClass" as made }` name the same export
+        const imported =
+          node.imported.type === AST_NODE_TYPES.Identifier
+            ? node.imported.name
+            : String(node.imported.value);
         const used = context.sourceCode
           .getDeclaredVariables(node)
           .some((v) => v.references.length > 0);
         if (used) return;
-        const name = `${root}.${node.imported.name}`;
+        const name = `${root}.${imported}`;
         if (Object.hasOwn(DEPRECATED_APIS, name)) report(node, name);
       },
       /** The lifecycle names in a `createReactClass` spec. */
