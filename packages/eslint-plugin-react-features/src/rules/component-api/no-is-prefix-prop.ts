@@ -78,6 +78,73 @@ const isInsidePropsType = (node: TSESTree.Node): boolean => {
   return false;
 };
 
+const FC_TYPE_NAMES = new Set(['FC', 'FunctionComponent', 'VFC']);
+
+type FunctionNode =
+  | TSESTree.FunctionDeclaration
+  | TSESTree.FunctionExpression
+  | TSESTree.ArrowFunctionExpression;
+
+const isFunctionNode = (
+  node: TSESTree.Node | undefined,
+): node is FunctionNode =>
+  node?.type === 'FunctionDeclaration' ||
+  node?.type === 'FunctionExpression' ||
+  node?.type === 'ArrowFunctionExpression';
+
+const isJsx = (node: TSESTree.Node | null | undefined): boolean =>
+  node?.type === 'JSXElement' || node?.type === 'JSXFragment';
+
+/** `Card`, `const Card = ...`, `const Card = function () {}`; '' for anything else. */
+const functionName = (fn: FunctionNode): string => {
+  const holder = fn.parent;
+  if (
+    holder?.type === 'VariableDeclarator' &&
+    holder.id.type === 'Identifier'
+  ) {
+    return holder.id.name;
+  }
+  return fn.type === 'FunctionDeclaration' ? (fn.id?.name ?? '') : '';
+};
+
+/** A component is a PascalCase function, or one whose own return is JSX. */
+const isComponentFunction = (fn: FunctionNode): boolean => {
+  if (/^[A-Z]/.test(functionName(fn))) return true;
+  if (fn.body.type !== 'BlockStatement') return isJsx(fn.body);
+  return fn.body.body.some(
+    (statement) =>
+      statement.type === 'ReturnStatement' && isJsx(statement.argument),
+  );
+};
+
+/**
+ * Whether `node` is a member of an inline type literal that is a component's
+ * props: the annotation of the first parameter of a component function
+ * (`function Card({ isOpen }: { isOpen: boolean })`), or the type argument of
+ * `FC<...>` / `React.FC<...>`. #1556 exempted data interfaces, not these.
+ */
+const isInlineComponentProps = (node: TSESTree.Node): boolean => {
+  const literal = node.parent;
+  if (literal?.type !== 'TSTypeLiteral') return false;
+  const holder = literal.parent;
+  if (holder?.type === 'TSTypeParameterInstantiation') {
+    const reference = holder.parent;
+    if (reference?.type !== 'TSTypeReference') return false;
+    const name = reference.typeName;
+    return FC_TYPE_NAMES.has(
+      name.type === 'TSQualifiedName'
+        ? name.right.name
+        : (name as TSESTree.Identifier).name,
+    );
+  }
+  const param = holder?.parent;
+  if (holder?.type !== 'TSTypeAnnotation' || !param) return false;
+  const fn = param.parent;
+  return (
+    isFunctionNode(fn) && fn.params[0] === param && isComponentFunction(fn)
+  );
+};
+
 const stripIsPrefix = (name: string): string => {
   const rest = name.slice(2);
   // A leading run of capitals is an acronym, not a word boundary, so lowering
@@ -127,7 +194,7 @@ export const noIsPrefixProp = createRule<RuleOptions, MessageIds>({
         const name = signatureKeyName(node);
         if (name === null || !/^is[A-Z]/.test(name)) return;
         if (!isBooleanType(node.typeAnnotation?.typeAnnotation)) return;
-        if (!isInsidePropsType(node)) return;
+        if (!isInsidePropsType(node) && !isInlineComponentProps(node)) return;
         const suggested = stripIsPrefix(name);
         const keyNode = node.key;
         context.report({
