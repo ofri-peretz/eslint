@@ -16,6 +16,7 @@ import { createRule } from '@interlace/eslint-devkit';
 import {
   attributeValue,
   findAttribute,
+  hasSpreadAttribute,
   staticAttributeValue,
 } from '../utils/jsx-static';
 
@@ -157,6 +158,9 @@ export const noMissingAriaLabels = createRule<RuleOptions, MessageIds>({
 
       // aria-label / aria-labelledby / title already provide an accessible name
       if (hasAriaLabel(node)) return;
+
+      // The label a spread carries is invisible at the call site (#1563).
+      if (hasSpreadAttribute(node)) return;
 
       if (elementName === 'input') {
         const type = staticAttributeValue(findAttribute(node, 'type'));

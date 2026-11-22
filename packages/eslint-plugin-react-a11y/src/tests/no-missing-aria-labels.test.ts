@@ -57,6 +57,12 @@ describe('no-missing-aria-labels', () => {
           name: 'submit input has a default accessible name',
           code: '<input type="submit" />',
         },
+        // #1563: the label this rule looks for may arrive through a spread
+        // the call site cannot see into
+        {
+          name: 'a spread-prop input needs no label at the call site',
+          code: 'function Field(props) { return <input {...props} />; }',
+        },
         // Test files (if ignoreInTests is true)
         {
           code: '<button><Icon /></button>',
@@ -89,48 +95,52 @@ describe('no-missing-aria-labels', () => {
   });
 
   describe('Invalid Code - Missing ARIA Labels', () => {
-    ruleTester.run('invalid - elements without ARIA labels', noMissingAriaLabels, {
-      valid: [],
-      invalid: [
-        // An empty aria-label yields no accessible name (accname 1.2)
-        {
-          name: 'empty aria-label is not a name',
-          code: '<input type="text" aria-label="" />',
-          errors: [{ messageId: 'missingAriaLabel' }],
-        },
-        // Icon-only button — no text child, no aria-label/aria-labelledby/title,
-        // so it has no accessible name. (Buttons WITH text children, e.g.
-        // `<button>Click</button>`, are exempted — see hasTextContent() below.)
-        {
-          name: 'an icon-only button with no accessible name',
-          code: '<button><Icon /></button>',
-          errors: [{ messageId: 'missingAriaLabel' }],
-        },
-        // Same icon-only case wrapped in a JSX expression container — must
-        // still be flagged; only string-like expressions (Literal,
-        // TemplateLiteral, Identifier) are treated as text content.
-        {
-          code: '<button>{<Icon />}</button>',
-          errors: [{ messageId: 'missingAriaLabel' }],
-        },
-        {
-          code: '<button>{true}</button>',
-          errors: [{ messageId: 'missingAriaLabel' }],
-        },
-        {
-          code: '<input type="text" />',
-          errors: [{ messageId: 'missingAriaLabel' }],
-        },
-        {
-          code: '<select><option>Option</option></select>',
-          errors: [{ messageId: 'missingAriaLabel' }],
-        },
-        {
-          code: '<textarea></textarea>',
-          errors: [{ messageId: 'missingAriaLabel' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - elements without ARIA labels',
+      noMissingAriaLabels,
+      {
+        valid: [],
+        invalid: [
+          // An empty aria-label yields no accessible name (accname 1.2)
+          {
+            name: 'empty aria-label is not a name',
+            code: '<input type="text" aria-label="" />',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          // Icon-only button — no text child, no aria-label/aria-labelledby/title,
+          // so it has no accessible name. (Buttons WITH text children, e.g.
+          // `<button>Click</button>`, are exempted — see hasTextContent() below.)
+          {
+            name: 'an icon-only button with no accessible name',
+            code: '<button><Icon /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          // Same icon-only case wrapped in a JSX expression container — must
+          // still be flagged; only string-like expressions (Literal,
+          // TemplateLiteral, Identifier) are treated as text content.
+          {
+            code: '<button>{<Icon />}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            code: '<button>{true}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            code: '<input type="text" />',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            code: '<select><option>Option</option></select>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            code: '<textarea></textarea>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Options', () => {
@@ -171,4 +181,3 @@ describe('no-missing-aria-labels', () => {
     });
   });
 });
-

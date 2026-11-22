@@ -366,6 +366,12 @@ const REGISTERED: RegistryEntry[] = [
       'A leading `--` IS the CSS Custom Properties specification for a custom property name (`--snp-x`). Setting one inline is the documented way to pass a dynamic value to a class, so a style key that starts with `--` is not static styling and the rule stays silent.',
   },
   {
+    file: 'eslint-plugin-react-features/src/rules/component-api/no-is-prefix-prop.ts',
+    direction: 'report',
+    reason:
+      'R8 ("boolean props default-false") is stated about a component\'s props type, and the only way a type declaration says "I am a props type" is its name: the `Props` suffix (`ButtonProps`, `Props`) is the convention every component in this codebase and its dogfood targets follows. Without the test the rule reported every `isXxx` field of a plain data interface that is never passed to a component (#1556). A type that is a props type under another name goes unreported, the conservative direction for a naming-convention rule.',
+  },
+  {
     file: 'eslint-plugin-react-features/src/rules/react/no-invalid-html-attribute.ts',
     direction: 'suppress',
     reason:

@@ -11,7 +11,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { getPragma } from '../../utils/react-settings';
+import { getJsxRuntime, getPragma } from '../../utils/react-settings';
 
 type MessageIds = 'reactInJsxScope';
 
@@ -95,9 +95,11 @@ export const reactInJsxScope = createRule<[], MessageIds>({
     return {
       Program() {
         pragma = getPragma(context);
-        automatic = context.sourceCode
-          .getAllComments()
-          .some((c) => /@jsxRuntime\s+automatic\b/.test(c.value));
+        automatic =
+          getJsxRuntime(context) === 'automatic' ||
+          context.sourceCode
+            .getAllComments()
+            .some((c) => /@jsxRuntime\s+automatic\b/.test(c.value));
       },
       JSXOpeningElement: check,
       JSXOpeningFragment: check,
