@@ -307,7 +307,12 @@ function isPronounceable(token: string): boolean {
  * allowed but kept sparse, and every alphabetic token must still read as a
  * word — which is what rejects the random blob above (`qbp` has no vowel).
  */
-export function isNaturalWordString(value: string): boolean {
+export function isNaturalWordString(raw: string): boolean {
+  // One trailing colon is how a key prefix is written (`huly-table-metadata:`,
+  // a clipboard marker an adopter had to disable). It is a namespace, not a
+  // `user:secret` pair: nothing follows the colon, and what precedes it still
+  // has to read as words. A colon anywhere else keeps the value out.
+  const value = raw.length > 1 && raw.endsWith(':') ? raw.slice(0, -1) : raw;
   if (!/^[A-Za-z][A-Za-z0-9_\-. ]*$/.test(value)) return false;
   const digits = value.replace(/[^0-9]/g, '').length;
   // Sparse: an ordinal or a well-known numeric suffix, not encoded entropy.
