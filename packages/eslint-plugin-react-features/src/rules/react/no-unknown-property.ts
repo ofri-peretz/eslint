@@ -29,7 +29,10 @@ import {
 import { getReactVersion } from '../../utils/react-settings';
 
 type MessageIds =
-  'noUnknownProperty' | 'invalidPropOnTag' | 'dataLowercaseRequired';
+  | 'noUnknownProperty'
+  | 'invalidPropOnTag'
+  | 'dataLowercaseRequired'
+  | 'invalidNamespacedProp';
 
 type Options = [
   { ignore?: readonly string[]; requireDataLowercase?: boolean }?,
@@ -52,7 +55,8 @@ const makesCustomElement = (attr: TSESTree.JSXAttribute): boolean => {
   if (value?.type !== 'JSXExpressionContainer') return true;
   const expr = value.expression;
   return !(
-    (expr.type === 'Literal' && (expr.value === null || expr.value === false)) ||
+    (expr.type === 'Literal' &&
+      (expr.value === null || expr.value === false)) ||
     (expr.type === 'Identifier' && expr.name === 'undefined')
   );
 };
@@ -110,6 +114,15 @@ export const noUnknownProperty = createRule<Options, MessageIds>({
           '`{{propName}}` is not a DOM property of `<{{elementName}}>`',
         severity: 'MEDIUM',
         fix: 'Use standard DOM properties or data attributes (data-*)',
+        documentationLink: docs,
+      }),
+      invalidNamespacedProp: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'Namespaced DOM Property',
+        description:
+          'Invalid DOM property `{{propName}}`. Did you mean `{{suggestion}}`?',
+        severity: 'MEDIUM',
+        fix: 'Write the camelCase form React expects',
         documentationLink: docs,
       }),
       invalidPropOnTag: formatLLMMessage({
@@ -203,14 +216,21 @@ export const noUnknownProperty = createRule<Options, MessageIds>({
 
         if (standard === name) return;
 
-        // A namespaced name is XML the renderer passes through (this rule has
-        // always left `xlink:href` alone), unless it is a `data-*` attempt,
-        // which the data-attribute grammar rules out (`data-x:y`).
-        if (
-          node.name.type === 'JSXNamespacedName' &&
-          !written.startsWith('data-')
-        )
-          return;
+        // React rejects the namespaced SVG spellings (`xlink:href`, `xml:lang`)
+        // and wants the camelCase form; eslint-plugin-react does the same.
+        if (node.name.type === 'JSXNamespacedName') {
+          if (standard && standard !== name) {
+            context.report({
+              node,
+              messageId: 'invalidNamespacedProp',
+              data: { propName: written, suggestion: standard },
+            });
+          }
+          // Any other namespaced name is XML the renderer passes through,
+          // unless it is a `data-*` attempt, which the data-attribute grammar
+          // rules out (`data-x:y`).
+          if (!written.startsWith('data-')) return;
+        }
 
         context.report({
           node,
