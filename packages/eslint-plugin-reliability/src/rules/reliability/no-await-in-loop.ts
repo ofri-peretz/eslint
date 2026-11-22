@@ -124,6 +124,29 @@ function someNode(
  * collected for later and never read back by the loop (`results.push(r)`,
  * `total += r`) is not carried: the work is independent.
  */
+/** Every identifier a binding pattern introduces: `{ a, b: [c], ...d }` gives a, c, d. */
+function patternIdentifiers(pattern: TSESTree.Node): TSESTree.Identifier[] {
+  switch (pattern.type) {
+    case 'Identifier':
+      return [pattern];
+    case 'ObjectPattern':
+      return pattern.properties.flatMap((property) =>
+        patternIdentifiers(
+          property.type === 'Property' ? property.value : property,
+        ),
+      );
+    case 'ArrayPattern':
+      return pattern.elements.flatMap((element) =>
+        element === null ? [] : patternIdentifiers(element),
+      );
+    case 'AssignmentPattern':
+      return patternIdentifiers(pattern.left);
+    default:
+      // The only other member of a binding pattern is `...rest`.
+      return patternIdentifiers((pattern as TSESTree.RestElement).argument);
+  }
+}
+
 function carriesAwaitedValue(
   loop: TSESTree.Node,
   awaits: readonly TSESTree.AwaitExpression[],
@@ -139,8 +162,11 @@ function carriesAwaitedValue(
   const writes: Array<[TSESTree.Identifier, TSESTree.Node | null]> = [];
   const exits: TSESTree.Node[] = [];
   walkSameFunction(loop, (n) => {
-    if (n.type === 'VariableDeclarator' && n.id.type === 'Identifier') {
-      writes.push([n.id, n.init]);
+    if (n.type === 'VariableDeclarator') {
+      // `const { done, value } = await reader.read()` binds `done` and `value`
+      // from the awaited result exactly as `const r = await reader.read()` binds
+      // `r`, so every name in the pattern carries it.
+      for (const id of patternIdentifiers(n.id)) writes.push([id, n.init]);
     } else if (
       n.type === 'AssignmentExpression' &&
       n.left.type === 'Identifier'

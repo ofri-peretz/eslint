@@ -37,6 +37,7 @@ describe('no-improper-type-validation', () => {
         },
         // Non-user-input typeof checks are valid
         {
+          name: 'typeof string is not the object test, so there is no null or array hole',
           code: 'if (typeof value === "string" && value.length > 0) { /* process */ }',
         },
         // Safe type guards

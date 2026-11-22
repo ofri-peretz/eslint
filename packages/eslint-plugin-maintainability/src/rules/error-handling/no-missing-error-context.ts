@@ -213,6 +213,14 @@ function hasErrorMessage(
     return true;
   }
 
+  // `throw res.error` / `throw this.reason` re-throws a value that already
+  // exists. Whatever message and stack it has were given where it was made; this
+  // statement adds none and removes none. A bare identifier is accepted for the
+  // same reason, and the member form is the same re-throw one hop further.
+  if (node.argument.type === 'MemberExpression') {
+    return true;
+  }
+
   // `throw Error(msg)` and `throw new Error(msg)` build the same object — the spec
   // makes `new` optional on the Error constructors, and yargs writes it without.
   // Reading only `NewExpression` meant the callable form had "no message".
@@ -300,6 +308,14 @@ function hasErrorStack(
     node.argument.name !== 'NaN' &&
     node.argument.name !== 'Infinity'
   ) {
+    return true;
+  }
+
+  // `throw res.error` / `throw this.reason` re-throws a value that already
+  // exists. Whatever message and stack it has were given where it was made; this
+  // statement adds none and removes none. A bare identifier is accepted for the
+  // same reason, and the member form is the same re-throw one hop further.
+  if (node.argument.type === 'MemberExpression') {
     return true;
   }
 

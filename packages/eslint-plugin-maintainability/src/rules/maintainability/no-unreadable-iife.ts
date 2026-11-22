@@ -9,7 +9,7 @@
  * Prevent unreadable Immediately Invoked Function Expressions (unicorn-inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -227,11 +227,61 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
       return maxNestingDepth;
     }
 
+    /**
+     * `(function () { ...; module.exports = x; }());` as the whole of a file's
+     * top-level statement. Two things must hold: the IIFE is itself a top-level
+     * statement (not a call buried in an expression), and its own body assigns
+     * `module.exports` or `exports.x`, which is what makes it a module and not an
+     * arbitrary block of work.
+     */
+    function isModuleWrapper(
+      call: TSESTree.CallExpression,
+      functionNode:
+        TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression,
+    ): boolean {
+      const statement = call.parent;
+      if (
+        statement?.type !== 'ExpressionStatement' ||
+        statement.parent?.type !== 'Program' ||
+        functionNode.body.type !== 'BlockStatement'
+      ) {
+        return false;
+      }
+      return functionNode.body.body.some((inner) => {
+        if (
+          inner.type !== 'ExpressionStatement' ||
+          inner.expression.type !== 'AssignmentExpression' ||
+          inner.expression.left.type !== 'MemberExpression'
+        ) {
+          return false;
+        }
+        const target = inner.expression.left;
+        const isModuleExports = (n: TSESTree.Node): boolean =>
+          n.type === 'MemberExpression' &&
+          n.object.type === 'Identifier' &&
+          n.object.name === 'module' &&
+          propertyName(n) === 'exports';
+        return (
+          isModuleExports(target) ||
+          isModuleExports(target.object) ||
+          (target.object.type === 'Identifier' &&
+            target.object.name === 'exports')
+        );
+      });
+    }
+
     function analyzeIIFE(
       node: TSESTree.CallExpression,
       functionNode:
         TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression,
     ) {
+      // The classic Node module wrapper is the one IIFE everyone reads: the
+      // whole file wrapped in `(function () { 'use strict'; ... module.exports =
+      // x; }());` so its helpers stay out of the global scope. cors, body-parser's
+      // ancestors and most pre-ESM packages are written this way, and its length
+      // is the length of the module.
+      if (isModuleWrapper(node, functionNode)) return;
+
       const body = functionNode.body;
       const statementCount = countStatements(body);
       const nestingDepth = calculateDepth(body);

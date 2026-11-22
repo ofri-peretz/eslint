@@ -38,6 +38,7 @@ describe('no-unchecked-loop-condition', () => {
         },
         // Safe while loops with conditions
         {
+          name: 'a loop whose counter is capped by a literal attempt limit',
           code: 'while (condition && attempts < 3) { attemptOperation(); attempts++; }',
         },
         // Plain BinaryExpression while-test (not an Identifier, no user

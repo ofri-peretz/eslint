@@ -272,6 +272,11 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       if (node.type === AST_NODE_TYPES.Literal)
         return typeof node.value === 'string';
       if (node.type === AST_NODE_TYPES.TemplateLiteral) return true;
+      // `typeof x` always evaluates to a string, so `"function" == typeof x`
+      // compares two strings and coerces nothing.
+      if (node.type === AST_NODE_TYPES.UnaryExpression) {
+        return node.operator === 'typeof';
+      }
       if (node.type !== AST_NODE_TYPES.Identifier) return false;
       // `var a = b; var b = a;` resolves forever without this — a stack overflow that
       // takes the whole ESLint run down, not just the rule. A cycle proves nothing about
@@ -591,8 +596,36 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         // `token === '--'` is a parser reading the option terminator. Comparing a secret
         // to a hardcoded string IS a finding, but a hardcoded-credential one (CWE-798),
         // which this rule deliberately does not make — see the split at the top.
+        // A `const` bound to a literal in this file is that literal with a name:
+        // `const NOT_FOUND = 'NEXT_NOT_FOUND'; error.digest === NOT_FOUND` compares
+        // against text the source already contains, which is no more a secret than
+        // the same text written inline. A `let`, a value read from the environment
+        // or a call result is not decided here, so those still report.
+        const isConstLiteral = (id: TSESTree.Identifier): boolean => {
+          for (
+            let scope: TSESLint.Scope.Scope | null = scopeAtNode;
+            scope;
+            scope = scope.upper
+          ) {
+            const variable = scope.variables.find((v) => v.name === id.name);
+            if (!variable) continue;
+            const def = variable.defs[0];
+            return (
+              variable.defs.length === 1 &&
+              def.type === 'Variable' &&
+              def.parent.kind === 'const' &&
+              def.node.init !== null &&
+              (def.node.init.type === AST_NODE_TYPES.Literal ||
+                (def.node.init.type === AST_NODE_TYPES.TemplateLiteral &&
+                  def.node.init.expressions.length === 0))
+            );
+          }
+          return false;
+        };
+
         const isNonSecretLiteral = (expr: TSESTree.Expression): boolean =>
           expr.type === AST_NODE_TYPES.Literal ||
+          (expr.type === AST_NODE_TYPES.Identifier && isConstLiteral(expr)) ||
           (expr.type === AST_NODE_TYPES.TemplateLiteral &&
             expr.expressions.length === 0) ||
           (expr.type === AST_NODE_TYPES.UnaryExpression &&

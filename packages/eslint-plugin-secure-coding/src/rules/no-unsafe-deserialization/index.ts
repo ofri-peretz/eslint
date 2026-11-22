@@ -249,6 +249,16 @@ function isStringValued(arg: TSESTree.Node | undefined): boolean {
   return false;
 }
 
+/** Does a member chain read a property called `name` on its way to the root? */
+function receiverPassesThrough(node: TSESTree.Node, name: string): boolean {
+  let current: TSESTree.Node = node;
+  while (current.type === 'MemberExpression') {
+    if (propertyName(current) === name) return true;
+    current = current.object;
+  }
+  return false;
+}
+
 export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-deserialization',
   meta: {
@@ -581,6 +591,10 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
           // (`this.deserializer`) or the function constructed (`new X()`) is a
           // collaborator the project owns, not a package that revives code.
           if (isProjectOwnedReceiver(callee.object)) return false;
+          // `config.transformer.input.deserialize(raw)`: a data transformer is the
+          // codec the application chose for its own wire format (tRPC, superjson),
+          // reached through a property named `transformer`.
+          if (receiverPassesThrough(callee.object, 'transformer')) return false;
           return true;
         }
 

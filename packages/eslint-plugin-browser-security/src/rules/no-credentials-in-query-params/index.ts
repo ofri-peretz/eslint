@@ -123,6 +123,13 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+/**
+ * Google's documented token-validation endpoint takes `?id_token=` / `?access_token=`
+ * on a GET; there is no body form to move it to.
+ */
+const GOOGLE_TOKENINFO =
+  /\/\/(?:oauth2\.googleapis\.com|www\.googleapis\.com\/oauth2\/v\d)\/tokeninfo\b/;
+
 export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
   name: 'no-credentials-in-query-params',
   meta: {
@@ -208,7 +215,8 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
       const match = [...url.matchAll(QUERY_PARAMETER)].find(
         ([, name]) =>
           isCredentialParam(name, credentialSuffixWords) &&
-          !(name.toLowerCase() === 'token' && OUT_OF_BAND_FLOWS.test(url)),
+          !(name.toLowerCase() === 'token' && OUT_OF_BAND_FLOWS.test(url)) &&
+          !GOOGLE_TOKENINFO.test(url),
       );
       // The matched NAME goes into the message. On a large literal — a
       // generated HTML bundle with a framework inlined — the report sits at the

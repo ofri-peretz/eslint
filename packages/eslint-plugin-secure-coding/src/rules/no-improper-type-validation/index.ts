@@ -281,6 +281,27 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
       return false;
     };
 
+    /** `!!x` and `Boolean(x)` read as `x`: the same truthiness test. */
+    const unwrapBoolean = (expression: TSESTree.Node): TSESTree.Node => {
+      if (
+        expression.type === 'UnaryExpression' &&
+        expression.operator === '!' &&
+        expression.argument.type === 'UnaryExpression' &&
+        expression.argument.operator === '!'
+      ) {
+        return unwrapBoolean(expression.argument.argument);
+      }
+      if (
+        expression.type === 'CallExpression' &&
+        expression.callee.type === 'Identifier' &&
+        expression.callee.name === 'Boolean' &&
+        expression.arguments.length === 1
+      ) {
+        return unwrapBoolean(expression.arguments[0]);
+      }
+      return expression;
+    };
+
     /**
      * Is `operand` proven non-null by another test in the same chain?
      *
@@ -314,9 +335,13 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
     ): boolean => {
       /** `x !== null`, `x != undefined`, or a bare truthy `x`. */
       const excludesNullish = (
-        expression: TSESTree.Node,
+        written: TSESTree.Node,
         negated: boolean,
       ): boolean => {
+        // `!!x` and `Boolean(x)` are the truthiness test `x` returning a boolean,
+        // so they exclude exactly what the bare operand does. trpc's guard is
+        // written `!!value && !Array.isArray(value) && typeof value === 'object'`.
+        const expression = unwrapBoolean(written);
         if (sameExpression(expression, operand)) return !negated;
         if (
           expression.type === 'UnaryExpression' &&

@@ -38,6 +38,7 @@ describe('no-unsafe-deserialization', () => {
         },
         // Safe libraries
         {
+          name: 'a project-named safe parser is not a deserialization sink',
           code: 'const data = safeJsonParse(input);',
         },
         // Non-deserialization operations

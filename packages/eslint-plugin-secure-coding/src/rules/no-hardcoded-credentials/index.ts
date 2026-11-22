@@ -107,6 +107,13 @@ export interface Options {
 
   /** Extra placeholder words, ON TOP of `placeholderWords`. Default: [] */
   additionalPlaceholderWords?: string[];
+
+  /**
+   * Secrets copied from a README or tutorial that are reported in a session
+   * middleware's signing slot even when `allowPlaceholders` is on. REPLACES the
+   * built-in list. Default: DEFAULT_KNOWN_SESSION_SECRETS
+   */
+  knownSessionSecrets?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -1049,11 +1056,49 @@ function looksLikeCredential(
 // check variable names in addition to values
 // @coverage-note: Not currently used, reserved for future enhancement
 
-/** Packages whose `secret` option signs session cookies. */
+/**
+ * Packages whose `secret` option signs session cookies.
+ *
+ * @protocol-constant npm package names whose documented options define the signing slot; they identify an API, not English words a project could extend.
+ */
 const SESSION_PACKAGES: ReadonlySet<string> = new Set([
   'express-session',
   'cookie-session',
+  '@fastify/session',
+  'fastify-session',
 ]);
+
+/** Fastify loads session plugins with `fastify.register(plugin, { secret })`. */
+const REGISTERED_SESSION_PACKAGES: ReadonlySet<string> = new Set([
+  '@fastify/session',
+  'fastify-session',
+]);
+
+/**
+ * Secrets copied from a README or a tutorial into real configuration. In a session
+ * middleware's signing slot these are not documentation: they are the value every
+ * other deployment that copied the same line is signing with, so they are reported
+ * even with `allowPlaceholders` on. Configurable through `knownSessionSecrets`. Bracketed templates (`<your-secret>`) are not
+ * here and stay placeholders.
+ */
+const DEFAULT_KNOWN_SESSION_SECRETS: string[] = [
+  'keyboard cat',
+  'secret',
+  'changeme',
+  'change-me',
+  'change_me',
+  'your-secret-key',
+  'your_secret_key',
+  'your-secret',
+  'yoursecret',
+  'mysecret',
+  'my-secret',
+  'supersecret',
+  'super-secret',
+  'shhhhh',
+  'session secret',
+  'secret key',
+];
 
 export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
   name: 'no-hardcoded-credentials',
@@ -1178,6 +1223,13 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
             description:
               'Extra placeholder words, on top of `placeholderWords`.',
           },
+          knownSessionSecrets: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_KNOWN_SESSION_SECRETS,
+            description:
+              'Secrets copied from a README or tutorial (`keyboard cat`, `changeme`) that are reported as the signing secret of a session middleware even when `allowPlaceholders` is true. Matched case-insensitively against the whole value. Replaces the built-in list.',
+          },
         },
         additionalProperties: false,
       },
@@ -1196,6 +1248,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       allowPlaceholders: true,
       placeholderWords: DEFAULT_PLACEHOLDER_WORDS,
       additionalPlaceholderWords: [],
+      knownSessionSecrets: DEFAULT_KNOWN_SESSION_SECRETS,
     },
   ],
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -1210,6 +1263,8 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
     let customPatterns: { type: string; pattern: string }[];
     let allowPlaceholders: boolean;
     let placeholderWords: string[];
+    let knownSessionSecrets: string[];
+    let knownSessionSecretSet: Set<string>;
     let additionalPlaceholderWords: string[];
     let placeholderWordSet: ReadonlySet<string>;
     let isTestFile: boolean;
@@ -1455,6 +1510,57 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
     }
 
     /**
+     * Which session package receives this options object?
+     *
+     *   session({ secret })                       the object is the first argument
+     *   const opts = { secret }; session(opts)   a const holding it, passed on
+     *   fastify.register(fastifySession, { secret })   the plugin form
+     */
+    function sessionPackageOfOptions(
+      options: TSESTree.ObjectExpression,
+    ): string | null {
+      const holder = options.parent;
+      if (holder?.type === 'CallExpression') {
+        if (holder.arguments[0] === options) {
+          return sessionPackageOf(holder.callee, holder);
+        }
+        const plugin = holder.arguments[0];
+        if (
+          holder.arguments[1] === options &&
+          plugin?.type === 'Identifier' &&
+          holder.callee.type === 'MemberExpression' &&
+          propertyName(holder.callee) === 'register'
+        ) {
+          const pkg = sessionPackageOf(plugin, holder);
+          return pkg !== null && REGISTERED_SESSION_PACKAGES.has(pkg)
+            ? pkg
+            : null;
+        }
+        return null;
+      }
+      if (
+        holder?.type === 'VariableDeclarator' &&
+        holder.init === options &&
+        holder.id.type === 'Identifier' &&
+        holder.parent.kind === 'const'
+      ) {
+        // An identifier-named declarator declares exactly one variable.
+        const [variable] = context.sourceCode.getDeclaredVariables(holder);
+        for (const reference of variable.references) {
+          const use = reference.identifier.parent;
+          if (
+            use?.type === 'CallExpression' &&
+            use.arguments[0] === reference.identifier
+          ) {
+            const pkg = sessionPackageOf(use.callee, use);
+            if (pkg !== null) return pkg;
+          }
+        }
+      }
+      return null;
+    }
+
+    /**
      * Is this literal the signing secret handed to a session middleware?
      *
      *   app.use(session({ secret: 'keyboard cat' }))
@@ -1489,16 +1595,10 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       const key = objectKeyName(property);
       if (key === null) return false;
 
-      const options = property.parent;
-      const call = options?.parent;
-      if (
-        options?.type !== 'ObjectExpression' ||
-        call?.type !== 'CallExpression' ||
-        call.arguments[0] !== options
-      ) {
-        return false;
-      }
-      const pkg = sessionPackageOf(call.callee, call);
+      // A literal value can only sit in an object EXPRESSION; a pattern's values
+      // are binding targets.
+      const options = property.parent as TSESTree.ObjectExpression;
+      const pkg = sessionPackageOfOptions(options);
       if (pkg === null) return false;
       // `keys` is how cookie-session names its signing keys; express-session has
       // no such option, so `keys` there is some other value.
@@ -1563,7 +1663,11 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       if (
         value.length > 0 &&
         isSessionSecretLiteral(node, parent) &&
-        !(allowPlaceholders && isPlaceholderValue(value, placeholderWordSet)) &&
+        !(
+          allowPlaceholders &&
+          isPlaceholderValue(value, placeholderWordSet) &&
+          !knownSessionSecretSet.has(value.trim().toLowerCase())
+        ) &&
         !compiledIgnorePatterns.some((pattern) => pattern.test(value))
       ) {
         reportCredential(node, value, 'Session secret', 'SESSION_SECRET');
@@ -1752,7 +1856,12 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
           allowPlaceholders = true,
           placeholderWords = DEFAULT_PLACEHOLDER_WORDS,
           additionalPlaceholderWords = [],
+          knownSessionSecrets = DEFAULT_KNOWN_SESSION_SECRETS,
         } = options);
+
+        knownSessionSecretSet = new Set(
+          knownSessionSecrets.map((secret) => secret.trim().toLowerCase()),
+        );
 
         placeholderWordSet = new Set([
           ...placeholderWords,

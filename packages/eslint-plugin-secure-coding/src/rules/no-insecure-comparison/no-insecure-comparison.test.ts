@@ -40,6 +40,7 @@ describe('no-insecure-comparison', () => {
           code: 'if (x !== y) {}',
         },
         {
+          name: 'a strict equality in a ternary is a safe comparison',
           code: 'const result = a === b ? 1 : 0;',
         },
         {
