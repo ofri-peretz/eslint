@@ -594,9 +594,12 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
           // `config.transformer.input.deserialize(raw)`: a data transformer is the
           // codec the application chose for its own wire format (tRPC, superjson),
           // reached through a property named `transformer`.
+          // Only with evidence in the file: the module imports or requires tRPC or
+          // superjson. A `transformer` property alone could hold anything.
           if (
             memberName === 'deserialize' &&
-            receiverPassesThrough(callee.object, 'transformer')
+            receiverPassesThrough(callee.object, 'transformer') &&
+            loadsTransformerPackage()
           ) {
             return false;
           }
@@ -960,6 +963,31 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         }
       }
       return true;
+    };
+
+    /** Does this module import or require `@trpc/*` or `superjson`? */
+    const loadsTransformerPackage = (): boolean => {
+      const isTransformerPackage = (specifier: unknown): boolean =>
+        typeof specifier === 'string' &&
+        (specifier.startsWith('@trpc/') ||
+          specifier === 'superjson' ||
+          specifier.startsWith('superjson/'));
+      return sourceCode.ast.body.some((statement) => {
+        if (statement.type === 'ImportDeclaration') {
+          return isTransformerPackage(statement.source.value);
+        }
+        return (
+          statement.type === 'VariableDeclaration' &&
+          statement.declarations.some(
+            (declarator) =>
+              declarator.init?.type === 'CallExpression' &&
+              declarator.init.callee.type === 'Identifier' &&
+              declarator.init.callee.name === 'require' &&
+              declarator.init.arguments[0]?.type === 'Literal' &&
+              isTransformerPackage(declarator.init.arguments[0].value),
+          )
+        );
+      });
     };
 
     /**

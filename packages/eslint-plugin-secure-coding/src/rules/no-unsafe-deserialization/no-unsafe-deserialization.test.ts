@@ -48,6 +48,7 @@ describe('no-unsafe-deserialization', () => {
         },
         // Validated input
         {
+          name: 'JSON.parse of validated input is not a deserialization sink',
           code: 'const cleanData = validateInput(req.body); const obj = JSON.parse(cleanData);',
         },
       ],
