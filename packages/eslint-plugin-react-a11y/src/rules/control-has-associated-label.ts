@@ -16,6 +16,7 @@ import { createRule } from '@interlace/eslint-devkit';
 import {
   findAttribute,
   hasSpreadAttribute,
+  isJsxAttributeValue,
   staticAttributeValue,
 } from '../utils/jsx-static';
 
@@ -330,6 +331,11 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
         );
 
         if (!isControl && !hasInteractiveRoleAttr) return;
+
+        // A render-prop/asChild element (`<Button render={<a href="/docs" />}>`)
+        // is not rendered as written: the parent clones it with its own
+        // children, so the control the DOM sees is not this one (#1562).
+        if (isJsxAttributeValue(node)) return;
 
         // Hidden from assistive technology: there is nothing to name.
         if (

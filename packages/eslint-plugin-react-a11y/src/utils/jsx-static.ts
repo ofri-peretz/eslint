@@ -122,6 +122,22 @@ export function hasSpreadAttribute(node: TSESTree.JSXOpeningElement): boolean {
 }
 
 /**
+ * Whether a JSX element is passed as the VALUE of a JSX attribute
+ * (`<Button render={<a href="/docs" />}>`, an `asChild` slot). Such an
+ * element is a prop the parent component may clone with its own children —
+ * base-ui/Radix's `render`/`asChild` pattern — so it is not rendered as
+ * written, and a rule checking its content/label would be checking an
+ * element the DOM never actually sees in that shape (#1562).
+ */
+export function isJsxAttributeValue(node: TSESTree.JSXElement): boolean {
+  const parent = node.parent;
+  return (
+    parent?.type === AST_NODE_TYPES.JSXExpressionContainer &&
+    parent.parent?.type === AST_NODE_TYPES.JSXAttribute
+  );
+}
+
+/**
  * Whether an attribute gives a value: a dynamic value counts (the file cannot
  * prove it empty), a static one must be non-blank, `{undefined}` gives none.
  * A bare string attribute (`<iframe title />`) gives none either: React does

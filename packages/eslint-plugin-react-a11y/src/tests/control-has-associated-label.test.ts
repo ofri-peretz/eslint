@@ -91,6 +91,12 @@ describe('control-has-associated-label', () => {
           name: 'a spread-prop input needs no label at the call site',
           code: 'function Field(props) { return <input {...props} />; }',
         },
+        // #1562: a render-prop/asChild element is not rendered as written —
+        // the parent clones it with its own label/content.
+        {
+          name: 'an unlabeled anchor passed as a render prop is not rendered as written',
+          code: '<Button render={<a href="/docs" />}>Read the docs</Button>',
+        },
       ],
       invalid: [],
     });
