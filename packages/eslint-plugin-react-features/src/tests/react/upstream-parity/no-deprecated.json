@@ -145,31 +145,6 @@
       }
     },
     {
-      "kind": "valid",
-      "n": 9,
-      "code": "ReactDOM.findDOMNode(instance);\n// features: [], parser: default",
-      "ecmaVersion": 2018,
-      "sourceType": "module",
-      "parserOptions": {
-        "ecmaFeatures": {
-          "jsx": true
-        }
-      }
-    },
-    {
-      "kind": "valid",
-      "n": 11,
-      "code": "ReactDOM.findDOMNode(instance);\n// features: [], parser: @typescript-eslint/parser",
-      "parser": "@typescript-eslint/parser",
-      "ecmaVersion": 2018,
-      "sourceType": "module",
-      "parserOptions": {
-        "ecmaFeatures": {
-          "jsx": true
-        }
-      }
-    },
-    {
       "kind": "invalid",
       "n": 0,
       "code": "React.renderComponent()\n// features: [], parser: default",

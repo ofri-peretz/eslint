@@ -73,6 +73,12 @@ const DEPRECATED_APIS: Record<
     since: 'React 18',
     from: '18.0.0',
   },
+  // Upstream 7.37.5 leaves this one valid; React itself warns on it from 18.3.
+  'ReactDOM.findDOMNode': {
+    replacement: 'refs',
+    since: 'React 16.3',
+    from: '16.6.0',
+  },
   'ReactDOMServer.renderToNodeStream': {
     replacement: 'renderToPipeableStream()',
     since: 'React 18',
