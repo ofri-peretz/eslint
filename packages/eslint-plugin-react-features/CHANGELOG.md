@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-react-features` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.3.1
+
+### Patch Changes
+
+- **🐛 Fix** — `no-unknown-property` reports `xlink:href` and the other namespaced `xlink:*` / `xml:*` attributes React rejects, and suggests the camelCase form (`xlinkHref`), as eslint-plugin-react 7.37.5 does. Behaviour change: this code was previously accepted. README and rule docs now state the two intentional differences from eslint-plugin-react 7.37.5 (`display-name` on a named `memo`/`forwardRef` binding, `no-deprecated` on `findDOMNode`) and the current parity figure, 1,828 of 2,181 (83.8%).
+
 ## 2.3.0
 
 ### Minor Changes
